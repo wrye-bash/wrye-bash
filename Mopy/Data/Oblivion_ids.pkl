@@ -1703,4 +1703,10 @@ I21174
 sS'fVanityModeWheelMin'
 p570
 I15803388
+sS'iTrainingSkills'
+p571
+I17410164
+sS'fMaxArmorRating'
+p571
+I17821228
 ss.
