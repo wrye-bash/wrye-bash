@@ -1,0 +1,15 @@
+H1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #39ACAC; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+H2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #66CCCC; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+H3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+H4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+P { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+P.empty {}
+P.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+P.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+P.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+P.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+P.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+P.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+PRE { border: 1px solid; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+CODE { background-color: #FDF5E6;}
+BODY { background-color: #F2F2D9; }
