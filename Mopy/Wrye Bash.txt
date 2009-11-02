@@ -1774,6 +1774,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 273 [11/02/2009] [Raziel23x]
+Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
+Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
+
+
+=== 272 [11/01/2009] [Raziel23x]
+* Added two new gaming settings
+
 === 271 [8/28/2009]
 * Revert autorecognize Data\ini. Already standardized as Data\Scripts.
 * Minor change to errlog deletion to support Python 2.6 (hopefully).
