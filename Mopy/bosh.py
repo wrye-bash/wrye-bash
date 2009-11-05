@@ -1019,7 +1019,9 @@ class MelStrings(MelString):
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
-        out.packSub0(self.subType,null1.join(record.__getattribute__(self.attr)))
+        strings = record.__getattribute__(self.attr)
+        if strings:
+            out.packSub0(self.subType,null1.join(strings)+null1)
 
 #------------------------------------------------------------------------------
 class MelStruct(MelBase):
@@ -8919,6 +8921,12 @@ class Installer(object):
             progress(0.05,_("%s: Pre-Scanning...\n%s") % (rootName,asDir[relPos:]))
             if rootIsMods and asDir == asRoot:
                 sDirs[:] = [x for x in sDirs if x.lower() not in Installer.dataDirsMinus]
+                if settings['bash.installers.skipDistantLOD']:
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
+                if settings['bash.installers.skipScreenshots']:
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']	
+                if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']					
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_("%s: Scanning...") % rootName)
@@ -13731,6 +13739,132 @@ class ImportScripts(ImportPatcher):
         for type,count in sorted(type_count.items()):
             if count: log("* %s: %d" % (type,count))
 #------------------------------------------------------------------------------
+class ImportScriptContents(ImportPatcher):
+    """Imports the contents of scripts -- currently only object/mgef scripts."""
+    name = _('Import Script Contents')
+    text = _("Import the actual contents of scripts scripts.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'ScriptContents'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        for recClass in (MreScpt,):
+            recAttrs_class[recClass] = ('numRefs','lastIndex','compiledSize','scriptType','compiled_p','scriptText','vars','references',) # invalid attributes for plain script: SCHR, 4s4I,SCDA,'SLSD','I12sB7s','index', 'SCVR', 'name', 
+#        for recClass in (MreInfo,):
+ #           recAttrs_class[recClass] = ('SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
+        for recClass in (MreQust,):
+            recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)			
+        self.longTypes = set(('SCPT','QUST','DIAL','INFO'))
+#        MelGroups('stages',
+#            MelStruct('INDX','h','stage'),
+#            MelGroups('entries',
+#                MelStruct('QSDT','B',(stageFlags,'flags')),
+#                MelConditions(),
+#                MelString('CNAM','text'),
+#                MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+#                MelBase('SCDA','compiled_p'),
+#                MelString('SCTX','scriptText'),
+#                MelScrxen('SCRV/SCRO','references')
+#                ),
+
+		
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        for index,srcMod in enumerate(self.sourceMods):
+            if srcMod not in modInfos: continue
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+            progress.plus()
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            #deprint(recClass,type,type_count[type])
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.items()):
+            if count: log("* %s: %d" % (type,count))
+#------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
     """Merge changes to actor inventories."""
     name = _('Import Inventory')
@@ -15630,6 +15764,35 @@ class GmstTweaker(MultiTweaker):
             ('300',300),
             ('450',450),
             ),
+		GmstTweak(_('Bounty: Theft'),
+           _("Bounty for stealing, as fraction of item value."),
+            'fCrimeGoldSteal',
+            ('1/4',0.25),
+            ('[1/2]',0.5),
+            ('3/4',0.75),
+            ('1',1),
+            ),
+        GmstTweak(_('Combat: Alchemy'),
+            _("Allow alchemy during combat."),
+            'iAllowAlchemyDuringCombat',
+            ('Allow',1),
+            ('[Disallow]',0),
+            ),
+        GmstTweak(_('Combat: Repair'),
+            _("Allow repairing armor/weapons during combat."),
+           'iAllowRepairDuringCombat',
+            ('Allow',1),
+            ('[Disallow]',0),
+            ),
+        GmstTweak(_('Companions: Max Number'),
+            _("Maximum number of actors following the player"),
+            'iNumberActorsAllowedToFollowPlayer',
+            ('2',2),
+            ('4',4),
+            ('[6]',6),
+            ('8',8),
+            ('10',10),
+            ),
 			#--Raziel23x Changes
 		#--Training Max
 		GmstTweak(_('Training Max'),
@@ -15643,7 +15806,7 @@ class GmstTweaker(MultiTweaker):
 			('999',999),
 			),
 		#--Maximum Armor Rating
-		GmstTweak(_('Maximum Armor Rating'),
+		GmstTweak(_('Combat: Maximum Armor Rating'),
 			_("The Maximun amount of protection you will get from armor."),
 			'fMaxArmorRating',
 			('50',50),
@@ -15652,40 +15815,7 @@ class GmstTweaker(MultiTweaker):
 			('90',90),
 			('95',95),
 			),
-        #GmstTweak(_('Bounty: Theft'),
-        #   _("Bounty for stealing, as fraction of item value."),
-        #    'fCrimeGoldSteal',
-        #    ('1/4',0.25),
-        #    ('[1/2]',0.5),
-        #    ('3/4',0.75),
-        #    ('1',1),
-        #    ),
-        #fCrimeGoldSteal is not defined in Oblivion.esm therefor can't do it this way... 
-        #GmstTweak(_('Combat: Alchemy'),
-        #    _("Allow alchemy during combat."),
-        #    'iAllowAlchemyDuringCombat',
-        #    ('Allow',1),
-        #    ('[Disallow]',0),
-        #    ),
-        # same as fCrimeGoldSteal aaargh...
-        #GmstTweak(_('Combat: Repair'),
-        #    _("Allow repairing armor/weapons during combat."),
-        #   'iAllowRepairDuringCombat',
-        #    ('Allow',1),
-        #    ('[Disallow]',0),
-        #    ),
-        #again aaaaaarch.
-        #GmstTweak(_('Companions: Max Number'),
-        #    _("Maximum number of actors following the player"),
-        #    'iNumberActorsAllowedToFollowPlayer',
-        #    ('2',2),
-        #    ('4',4),
-        #    ('[6]',6),
-        #    ('8',8),
-        #   ('10',10),
-        #    ),
         ],key=lambda a: a.label.lower())
-    # and again?!?!?! ....
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""

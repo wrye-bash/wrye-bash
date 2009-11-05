@@ -1774,10 +1774,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 273 [11/02/2009] [Raziel23x]
-Tweaked Training Max settings 1, default[5], 50, 100, 200, 999
-Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
+=== 274 [11/05/2009] [PacificMorrowind]
+* BAIN: Couple changes to speed up prescanning if skipping file types.
+* Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
+* Bashed Patch: Added Import Script Contents (at last & only partially unfortunately); see details up above.
+* Added 4 new game settings tweaks, updated docs
 
+=== 273 [11/02/2009] [Raziel23x]
+* Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
+* Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
 
 === 272 [11/01/2009] [Raziel23x]
 * Added two new gaming settings
@@ -3329,4 +3334,3 @@ Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
 * **First Release!**
 
 {{CONTENTS=2}}
-

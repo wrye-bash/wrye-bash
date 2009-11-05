@@ -119,6 +119,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportRelations">Import Relations</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportRoads">Import Roads</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportScripts">Import Scripts</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ImportScript Contents">Import Script Contents</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportSound">Import Sound</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportStats">Import Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakAssorted">Tweak Assorted</a></p>
@@ -1138,6 +1139,7 @@
   <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceInfo">Race Info</a>).
   <p class=list-2>&bull;&nbsp; Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).
+  <p class=list-2>&bull;&nbsp; ScriptContents: Mod modifies the contents of a script (result script, quest stage script or object/mgef script) (<a href="#ImportScriptContents">Import Script Contents</a></p>
   <p class=list-2>&bull;&nbsp; Sound: Mod is a sound replacer (<a href="#ImportSound">Import Sound</a>).
   <p class=list-2>&bull;&nbsp; SpellStats: Mod modifies spell stats (<a href="#ImportSpellStats">Import Spell Stats</a>).
   <p class=list-2>&bull;&nbsp; Stats: Mod modifies item stats (<a href="#ImportStats">Import Stats</a>).
@@ -1303,6 +1305,14 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
   <p class=list-2>&bull;&nbsp; all editor object except spells and quests
   <p class=empty>&nbsp;</p>
+  <h3><a name='ImportScriptContents'>Import Script Contents</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
+  <p class=list-2>&bull;&nbsp; There are a some mods that change the script contents importantly and they often got blocked by the overhauls or non-important changes and so cause problems. This fixes it so the script content changes get brought forward but not other conflicting data. 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
+  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>ScriptContents</code> <a href="#BashTags">tag</a> in the mod description. 
+<p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
+  <p class=list-2>&bull;&nbsp; The contents of Object, Magic Effect scripts. Hopefully Dialogue, Quest, and Quest Stage scripts will get figure out and added soon - was the initial point of this tag, but they are not yet working.
+  <p class=empty>&nbsp;</p>
 <h3><a name='ImportSound'>Import Sound</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; There are not many mods that modify the sounds of existing records, but there are a few mods that tweak the sounds of magic effects (e.g. to silence them). Since magic effect records tend to modified for other reasons as well, other changes to the same records will wipe out the changes to sounds. This patcher component allows you to make sure that changes to the sounds of spells are included in the final version of the record.
@@ -1393,12 +1403,17 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Attack:</B> The Bounty for attacking a "good" npc when observed.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Horse Theft:</B> The Bounty for horse stealing.
+<p class=list-1>&bull;&nbsp; <B>Bounty: Theft:</B> The bounty for stealing an object in fraction of object price.
 <p class=list-1>&bull;&nbsp; <B>Camera: Chase Distance:</B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150 but also a little bit uber for that reason.
 <p class=list-1>&bull;&nbsp; <B>Camera: Chase Tightness:</B> Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
 <p class=list-1>&bull;&nbsp; <B>Camera: PC Death Time:</B> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
 <p class=list-1>&bull;&nbsp; <B>Cell Respawn Time:</B> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
-<p class=list-1>&bull;&nbsp; <B>Combat: Max Actors:</B> the maximum number of actors that the engine will process in combat. 
+<p class=list-1>&bull;&nbsp; <B>Combat: Alchemy:</B> Toggle whether you can or can't do Alchemy while in combat.
+<p class=list-1>&bull;&nbsp; <B>Combat: Max Actors:</B> The maximum number of actors that the engine will process in combat. 
+<p class=list-1>&bull;&nbsp; <B>Combat: Maximum Armor Rating:</B> The maximum armor rating that Oblivion will apply.
 <p class=list-1>&bull;&nbsp; <B>Combat: Recharge Weapons:</B> By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.
+<p class=list-1>&bull;&nbsp; <B>Combat: Repair:</B> Toggle whether you can or can't do Repairing while in combat.
+<p class=list-1>&bull;&nbsp; <B>Companions: Max Number:</B> The maximum number of actors that can follow the player.
 <p class=list-1>&bull;&nbsp; <B>Compass: Disable XXX:</B> Disables POI's (Points of Interest), Quest Markers, or both on the compass. 
   <p class=list-2>&bull;&nbsp; Warning: Some quests may be hard to complete when quest markers are turned off (e.g., an early stage of Knights of the Nine).
   <p class=list-2>&bull;&nbsp; Note: While this works with the vanilla interface, it appears to not work with some modifications of the UI. Problem might be changes to the marker icons, or it might be due to the POI recognition tweak.
@@ -1417,6 +1432,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Magic: Chameleon Refraction:</B> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
 <p class=list-1>&bull;&nbsp; <B>Master of Mercantile Extra Gold Amount:</B> The extra barter gold all vendor's have for a master of mercantile.
 <p class=list-1>&bull;&nbsp; <B>Msg: Equip Misc. Item:</B> sets the message on equiping a misc item to blank or either "." or "Hmm..."
+<p class=list-1>&bull;&nbsp; <B>Training Max:</B> the maximum number of training sessions the player can take per level.
 <p class=empty>&nbsp;</p>
 <hr>
 <p><B>Special</B> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
@@ -1955,11 +1971,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-  <h3><a name='2718299999'>273 [11/02/2009] [Raziel23x]</a></h3>
-    <p class=list-1>&bull;&nbsp; Tweaked Training Max settings 1, default[5], 50, 100, 200, 999
+  <h3><a name='27411022009'>274 [11/05/2009] [PacificMorrowind]</a></h3>
+    <p class=list-1>&bull;&nbsp; BAIN: Couple changes to speed up prescanning if skipping file types.
+	<p class=list-1>&bull;&nbsp; Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
+	<p class=list-1>&bull;&nbsp; Bashed Patch: Added Import Script Contents (at last & only partially unfortunately); see details up above.
+	<p class=list-1>&bull;&nbsp; Added 4 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
+   <p class=empty>&nbsp;</p>
+  <h3><a name='27311022009'>273 [11/02/2009] [Raziel23x]</a></h3>
+    <p class=list-1>&bull;&nbsp; Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
     <p class=list-1>&bull;&nbsp; Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
    <p class=empty>&nbsp;</p>
-  <h3><a name='2718299000'>272 [11/01/2009] [Raziel23x]</h3>
+  <h3><a name='27211012009'>272 [11/01/2009] [Raziel23x]</h3>
     <p class=list-1>&bull;&nbsp; Added two new gaming settings
   <p class=empty>&nbsp;</p>
   <h3><a name='2718282009'>271 [8/28/2009]</a></h3>
