@@ -1774,6 +1774,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 275 [11/06/2009] [PacificMorrowind]
+* Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
+* Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
+* Added 2 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
+
 === 274 [11/05/2009] [PacificMorrowind]
 * BAIN: Couple changes to speed up prescanning if skipping file types.
 * Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.

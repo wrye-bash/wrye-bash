@@ -15764,7 +15764,7 @@ class GmstTweaker(MultiTweaker):
             ('8',8),
             ('10',10),
             ),
-        GmstTweak(_('Magic: Max NPC creatureSummons'),
+        GmstTweak(_('Magic: Max NPC Summons'),
             _("Maximum number of creatures that each NPC can summon"),
             'iAICombatMaxAllySummonCount',
             ('1',1),

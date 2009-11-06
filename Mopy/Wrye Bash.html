@@ -130,6 +130,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#CoblExhaustion">Cobl Exhaustion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ContentChecker">Content Checker</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#LeveledLists">Leveled Lists</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#MAOpatcher">Mayu's Animation Overhaul Patcher</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#MorphFactions">Morph Factions</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#PowerExhaustion">Power Exhaustion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#RaceRecords">Race Records</a></p>
@@ -1429,13 +1430,15 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Horse Turning Speed:</B> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
 <p class=list-1>&bull;&nbsp; <B>Jump Higher:</B> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)
 <p class=list-1>&bull;&nbsp; <B>Magic: Bolt Speed:</B> Speed at which at which magic bolts (projectiles) travel.
+<p class=list-1>&bull;&nbsp; <B>Magic: Max Player Summons</B> Maximum number of creatures the Player can summon.
+<p class=list-1>&bull;&nbsp; <B>Magic: Max NPC Summons:</B> Maximum number of creatures NPC's are allowed to summon.
 <p class=list-1>&bull;&nbsp; <B>Magic: Chameleon Refraction:</B> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
 <p class=list-1>&bull;&nbsp; <B>Master of Mercantile Extra Gold Amount:</B> The extra barter gold all vendor's have for a master of mercantile.
 <p class=list-1>&bull;&nbsp; <B>Msg: Equip Misc. Item:</B> sets the message on equiping a misc item to blank or either "." or "Hmm..."
 <p class=list-1>&bull;&nbsp; <B>Training Max:</B> the maximum number of training sessions the player can take per level.
 <p class=empty>&nbsp;</p>
 <hr>
-<p><B>Special</B> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
+<p><B>Special</B> patch components don't fit into the categories above. Five of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>), <a href="#MAOpatcher">MAO Patcher</a>, <a href="#MorphFactions">Morph Factions</a>, and <a href="#CoblExhaustion">COBL Exhaustion</a> are for use with specific mods. The remaining components, <a href="#LeveledLists">Leveled Lists</a> and <a href='#ContentChecker'>Content Checker</a>are for general use.
 <p class=empty>&nbsp;</p>
 <h3><a name='AlchemicalCatalogs'>Alchemical Catalogs</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
@@ -1476,6 +1479,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Lists occasionally contain empty sublists, which will cause the list to produce nothing when it selects the sublist.
   <p class=list-2>&bull;&nbsp; As of Bash v 183, the leveled list merger will now remove any empty sublists from a leveled list.
   <p class=empty>&nbsp;</p>
+<h3><a name="MAOpatcher">Mayu's Animation Overhaul Patcher</a></p>
+<p class=list-1>&bull;&nbsp; This is only for users of Mayu's Animation Overhaul.
+<p class=empty>&nbsp;</p>
 <h3><a name='MorphFactions'>Morph Factions</a></h3>
 <p class=list-1>&bull;&nbsp; This is only for users of the Wrye Morph mod 0.05 or higher. It requires Cobl 1.28 or higher.
 <p class=empty>&nbsp;</p>
@@ -1971,7 +1977,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-  <h3><a name='27411022009'>274 [11/05/2009] [PacificMorrowind]</a></h3>
+  <h3><a name='27511062009PacificMorrowind'>275 [11/06/2009] [PacificMorrowind]</a></h3>
+    <p class=list-1>&bull;&nbsp; Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
+	<p class=list-1>&bull;&nbsp; Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
+	<p class=list-1>&bull;&nbsp; Added 2 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
+   <p class=empty>&nbsp;</p>
+  <h3><a name='27411052009PacificMorrowind'>274 [11/05/2009] [PacificMorrowind]</a></h3>
     <p class=list-1>&bull;&nbsp; BAIN: Couple changes to speed up prescanning if skipping file types.
 	<p class=list-1>&bull;&nbsp; Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
 	<p class=list-1>&bull;&nbsp; Bashed Patch: Added Import Script Contents (at last & only partially unfortunately); see details up above.
@@ -1981,7 +1992,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class=list-1>&bull;&nbsp; Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
     <p class=list-1>&bull;&nbsp; Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
    <p class=empty>&nbsp;</p>
-  <h3><a name='27211012009'>272 [11/01/2009] [Raziel23x]</h3>
+  <h3><a name='27211012009'>272 [11/01/2009] [Raziel23x]</a></h3>
     <p class=list-1>&bull;&nbsp; Added two new gaming settings
   <p class=empty>&nbsp;</p>
   <h3><a name='2718282009'>271 [8/28/2009]</a></h3>
