@@ -8924,9 +8924,9 @@ class Installer(object):
                 if settings['bash.installers.skipDistantLOD']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']	
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots'] 
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']					
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']                    
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_("%s: Scanning...") % rootName)
@@ -13762,7 +13762,7 @@ class ImportScriptContents(ImportPatcher):
 #        for recClass in (MreInfo,):
  #           recAttrs_class[recClass] = ('SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
         for recClass in (MreQust,):
-            recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)			
+            recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)          
         self.longTypes = set(('SCPT','QUST','DIAL','INFO'))
 #        MelGroups('stages',
 #            MelStruct('INDX','h','stage'),
@@ -13776,7 +13776,7 @@ class ImportScriptContents(ImportPatcher):
 #                MelScrxen('SCRV/SCRO','references')
 #                ),
 
-		
+        
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return
@@ -15746,6 +15746,34 @@ class GmstTweaker(MultiTweaker):
             ('10',10),
             ('15',15),
             ),
+        GmstTweak(_('Cost Multiplier: Repair'),
+            _("Cost factor for making spells."),
+            'fSpellmakingGoldMult',
+            ('[3]',3),
+            ('5',5),
+            ('8',8),
+            ('10',10),
+            ('15',15),
+            ),
+        GmstTweak(_('Magic: Max Player Summons'),
+            _("Maximum number of creatures the player can summon."),
+            'iMaxPlayerSummonedCreatures',
+            ('[1]',1),
+            ('3',3),
+            ('5',5),
+            ('8',8),
+            ('10',10),
+            ),
+        GmstTweak(_('Magic: Max NPC creatureSummons'),
+            _("Maximum number of creatures that each NPC can summon"),
+            'iAICombatMaxAllySummonCount',
+            ('1',1),
+            ('[3]',3),
+            ('5',5),
+            ('8',8),
+            ('10',10),
+            ('15',15),
+            ),          
         GmstTweak(_('Bounty: Attack'),
             _("Bounty for attacking a 'good' npc."),
             'iCrimeGoldAttackMin',
@@ -15764,7 +15792,7 @@ class GmstTweaker(MultiTweaker):
             ('300',300),
             ('450',450),
             ),
-		GmstTweak(_('Bounty: Theft'),
+        GmstTweak(_('Bounty: Theft'),
            _("Bounty for stealing, as fraction of item value."),
             'fCrimeGoldSteal',
             ('1/4',0.25),
@@ -15793,28 +15821,28 @@ class GmstTweaker(MultiTweaker):
             ('8',8),
             ('10',10),
             ),
-			#--Raziel23x Changes
-		#--Training Max
-		GmstTweak(_('Training Max'),
-			_("Maximum number of Training allowed by trainers."),
-			'iTrainingSkills',
-			('1',1),
-			('[5]',50),
-			('50',50),
-			('100',100),
-			('200',200),
-			('999',999),
-			),
-		#--Maximum Armor Rating
-		GmstTweak(_('Combat: Maximum Armor Rating'),
-			_("The Maximun amount of protection you will get from armor."),
-			'fMaxArmorRating',
-			('50',50),
-			('75',75),
-			('[85]',85),
-			('90',90),
-			('95',95),
-			),
+            #--Raziel23x Changes
+        #--Training Max
+        GmstTweak(_('Training Max'),
+            _("Maximum number of Training allowed by trainers."),
+            'iTrainingSkills',
+            ('1',1),
+            ('[5]',50),
+            ('50',50),
+            ('100',100),
+            ('200',200),
+            ('999',999),
+            ),
+        #--Maximum Armor Rating
+        GmstTweak(_('Combat: Maximum Armor Rating'),
+            _("The Maximun amount of protection you will get from armor."),
+            'fMaxArmorRating',
+            ('50',50),
+            ('75',75),
+            ('[85]',85),
+            ('90',90),
+            ('95',95),
+            ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
@@ -17226,6 +17254,60 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             log(_("\n=== Eyes/Hair Assigned for NPCs"))
             for srcMod in sorted(mod_npcsFixed):
                 log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
+#------------------------------------------------------------------------------
+class MAONPCSkeletonPatcher(SpecialPatcher,Patcher):
+    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+    group = _('Tweakers')
+    name = _("MAO Patcher")
+    text = _("Changes the skeleton for all vanilla and mod added NPCs (except for due to a as yet unfixed bug not Sheogorath) - for compatibility with Mayu's Animation Overhaul.")
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return tuple()
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return tuple()
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod, 
+        but won't alter it."""
+        if not self.isActive: return
+        #modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        modFile.convertToLongFids(('NPC_'))
+        patchBlock = self.patchFile.NPC_
+        id_records = patchBlock.id_records
+        for record in modFile.NPC_.getActiveRecords():
+            patchBlock.setRecord(record.getTypeCopy(mapper))
+                
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        count = {}
+        keep = self.patchFile.getKeeper()
+        for record in self.patchFile.NPC_.records:
+            model = record.model
+            if record.full == 'Sheogorath':
+			#This block ain't running for some unknown reason :shrug:... okay for version 1 until I figure it out - works for 99.9% of vanilla chars + any non vanilla chars.
+                model.modPath == "Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+            else:
+                model.modPath = "Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader('= '+self.__class__.name)
+        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        for srcMod in sorted(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class SEWorldEnforcer(SpecialPatcher,Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
