@@ -648,7 +648,7 @@ def gmstIds(fileName=None):
     maxId = max(maxId,0xf12345)
     maxOld = maxId
     print 'maxId',hex(maxId)
-    #--Eid list? - if you the GMST has a 0000000 eid when looking at it in the cs with nothing 
+    #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing 
 	# but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
     for eid in ['iTrainingSkills']:
         if eid not in fids:
@@ -676,6 +676,16 @@ def gmstIds(fileName=None):
             fids[eid] = maxId
             print '%08X  %08X %s' % (0,maxId,eid)
     for eid in ['iAllowRepairDuringCombat']:
+        if eid not in fids:
+            maxId += 1
+            fids[eid] = maxId
+            print '%08X  %08X %s' % (0,maxId,eid)
+    for eid in ['iMaxPlayerSummonedCreatures']:
+        if eid not in fids:
+            maxId += 1
+            fids[eid] = maxId
+            print '%08X  %08X %s' % (0,maxId,eid)
+    for eid in ['iAICombatMaxAllySummonCount']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId

@@ -54,8 +54,6 @@ import struct
 import sys
 import textwrap
 import time
-import win32api
-import win32con
 from types import *
 from operator import attrgetter,itemgetter
 
@@ -4442,6 +4440,8 @@ class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
 
+class MAONPCSkeletonPatch(bosh.MAONPCSkeletonPatcher,Patcher): pass
+
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
 
@@ -4474,6 +4474,7 @@ PatchDialog.patchers.extend((
 	ImportFactions(),
 	ImportInventory(),
 	#NPCChanger(),
+	MAONPCSkeletonPatch(),
 	ImportRelations(),
 	ImportScripts(),
 	ImportScriptContents(),
