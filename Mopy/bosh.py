@@ -14856,6 +14856,58 @@ class AssortedTweak_BowReach(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 #------------------------------------------------------------------------------
+class VanillaNPCSkeletonPatcher(MultiTweakItem):
+    """Changes all NPCs to use the beast race skeleton."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
+            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            'Vanilla Skeleton',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod, 
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.NPC_
+        for record in modFile.NPC_.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+                
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            model = record.model
+            if record.full == 'Sheogorath':
+			#This block ain't running for some unknown reason :shrug:... okay for version 1 until I figure it out - works for 99.9% of vanilla chars + any non vanilla chars.
+                model.modPath == "characters\_Male\SkeletonSESheogorath.nif"
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+            else:
+                model.modPath = "Characters\_Male\SkeletonBeast.nif"
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===Vanilla Skeleton'))
+        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
 class AssortedTweak_ConsistentRings(MultiTweakItem):
     """Sets rings to all work on same finger."""
 
@@ -15143,7 +15195,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh Potions'))
+        log.setHeader(_('=== Reweigh Potions to Maximum Weight'))
         log(_('* Potions Reweighed by max weight potions: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -15197,7 +15249,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh Potions'))
+        log.setHeader(_('=== Reweigh Potions to Mimimum Weight'))
         log(_('* Potions Reweighed by Minimum Weight Potions: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -15291,9 +15343,10 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_DarnBooks(),
         AssortedTweak_FogFix(),
         AssortedTweak_NoLightFlicker(),
+        AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_PotionWeight(),
-          AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_StaffWeight(),
+        VanillaNPCSkeletonPatcher(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -15487,12 +15540,37 @@ class GmstTweak(MultiTweakItem):
         else:
             log('* ' + self.label)
 
+class GlobalTweak(MultiTweakItem):
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,patchFile,keep,log):
+        """Build patch."""
+        eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
+        for eid,value in zip(eids,self.choiceValues[self.chosen]):
+            glob = MreGlob(('GLOB',0,0,0,0))
+            glob.eid,glob.value,glob.longFids = eid,value,True
+            fid = glob.fid = MreGlob.eid
+            patchFile.GLOB.setRecord(glob)
+        if len(self.choiceLabels) > 1:
+            log('* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
+        else:
+            log('* ' + self.label)
+
 #------------------------------------------------------------------------------
 class GmstTweaker(MultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
     tweaks = sorted([
+        GlobalTweak(_('Timescale'),
+            _("Oblivion's Timescale."),
+            'Timescale',
+            ('15',15),
+            ('25',25),
+            ('[30]',30),
+            ('50',50),
+            ('100',100),
+            ('500',500),
+            ),
         GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
             'iArrowMaxRefCount',
@@ -17255,42 +17333,40 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             for srcMod in sorted(mod_npcsFixed):
                 log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
 #------------------------------------------------------------------------------
-class MAONPCSkeletonPatcher(SpecialPatcher,Patcher):
+class MAONPCSkeletonPatcher(MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
-    group = _('Tweakers')
-    name = _("MAO Patcher")
-    text = _("Changes the skeleton for all vanilla and mod added NPCs (except for due to a as yet unfixed bug not Sheogorath) - for compatibility with Mayu's Animation Overhaul.")
 
     #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
+            'Vanilla Skeleton',
+            ('1.0',  '1.0'),
+            )
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
         return (MreNpc,)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
         return (MreNpc,)
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod, 
         but won't alter it."""
-        if not self.isActive: return
-        #modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
-        modFile.convertToLongFids(('NPC_'))
-        patchBlock = self.patchFile.NPC_
-        id_records = patchBlock.id_records
+        patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
-            patchBlock.setRecord(record.getTypeCopy(mapper))
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
                 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
         count = {}
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.NPC_.records:
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
             model = record.model
             if record.full == 'Sheogorath':
 			#This block ain't running for some unknown reason :shrug:... okay for version 1 until I figure it out - works for 99.9% of vanilla chars + any non vanilla chars.
@@ -17304,10 +17380,47 @@ class MAONPCSkeletonPatcher(SpecialPatcher,Patcher):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader(_('===Vanilla Skeleton'))
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
-        for srcMod in sorted(count.keys()):
+        for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class SkelTweaker(MultiTweaker):
+    """Sets NPC Skeletons to better work with mods or avoid bugs."""
+    name = _('Set NPC Skeletons')
+    text = _("Set NPC Skeletons.")
+    tweaks = sorted([
+        MAONPCSkeletonPatcher(),
+        VanillaNPCSkeletonPatcher(),
+        ],key=lambda a: a.label.lower())
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return None
+        classTuples = [tweak.getReadClasses() for tweak in self.enabledTweaks]
+        return sum(classTuples,tuple())
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return None
+        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
+        return sum(classTuples,tuple())
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive: return
+        for tweak in self.enabledTweaks:
+            tweak.scanModFile(modFile,progress,self.patchFile)
+
+    def buildPatch(self,log,progress):
+        """Applies individual clothes tweaks."""
+        if not self.isActive: return
+        log.setHeader('= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(log,progress,self.patchFile)
+
 #------------------------------------------------------------------------------
 class SEWorldEnforcer(SpecialPatcher,Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""

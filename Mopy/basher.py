@@ -4440,7 +4440,7 @@ class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
 
-class MAONPCSkeletonPatch(bosh.MAONPCSkeletonPatcher,Patcher): pass
+class SkelTweaker(bosh.SkelTweaker,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
@@ -4474,7 +4474,7 @@ PatchDialog.patchers.extend((
 	ImportFactions(),
 	ImportInventory(),
 	#NPCChanger(),
-	MAONPCSkeletonPatch(),
+	SkelTweaker(),
 	ImportRelations(),
 	ImportScripts(),
 	ImportScriptContents(),
@@ -5425,6 +5425,36 @@ class Installer_OpenTesNexus(InstallerLink):
 			id = bosh.reTesNexus.search(self.selected[0].s).group(1)
 			os.startfile('http://tesnexus.com/downloads/file.php?id='+id)
 
+class Installer_OpenSearch(InstallerLink):
+	"""Open selected file(s)."""
+	def AppendToMenu(self,menu,window,data):
+		Link.AppendToMenu(self,menu,window,data)
+		menuItem = wx.MenuItem(menu,self.id,_('Open Google search for file'))
+		menu.AppendItem(menuItem)
+		menuItem.Enable(bool(self.isSingleArchive))
+
+	def Execute(self,event):
+		"""Handle selection."""
+		message = _("Open a search for this on Google?")
+		if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open at search')):
+			#fileName = bosh.reBaseName(self.selected[0].s).group(1)
+			filename = 'Wrye Bash'
+			os.startfile('http://www.google.com/search?hl=en&q='+filename+'aq=f&oq=&aqi=')
+
+class Installer_OpenTESA(InstallerLink):
+	"""Open selected file(s)."""
+	def AppendToMenu(self,menu,window,data):
+		Link.AppendToMenu(self,menu,window,data)
+		menuItem = wx.MenuItem(menu,self.id,_('Open at TesAlliance'))
+		menu.AppendItem(menuItem)
+		menuItem.Enable(bool(self.isSingleArchive() and bosh.reTesNexus.search(data[0].s)))
+
+	def Execute(self,event):
+		"""Handle selection."""
+		message = _("Attempt to open this as a mod at TesNexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesNexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesNexus.")
+		if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TesNexus')):
+			id = bosh.reTesNexus.search(self.selected[0].s).group(1)
+			os.startfile('http://tesnexus.com/downloads/file.php?id='+id)			
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
 	"""Rescans selected Installers."""
@@ -9805,3 +9835,15 @@ def InitLinks():
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
 	print _('Compiled')
+	#Testing re.compile function...
+	
+def funkychicken():
+        text = raw_input ('input relative path')
+#result = #re.search (r'(?<=\\)[^\\][?=\.]',text,re.I)
+        result = os.path.basename(text)
+        print result
+        print 'compiled'
+        newpathtemp = r'pm\dungeons\bloodyayleid\interior'
+        result = (newpathtemp+result)
+        print result
+#(?=.nif)
