@@ -15824,7 +15824,7 @@ class GmstTweaker(MultiTweaker):
             ('10',10),
             ('15',15),
             ),
-        GmstTweak(_('Cost Multiplier: Repair'),
+        GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
             'fSpellmakingGoldMult',
             ('[3]',3),
