@@ -15154,7 +15154,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
     def __init__(self):
         MultiTweakItem.__init__(self,_("Max Weight Potions"),
             _('Potion weight will be capped.'),
-            'PotionWeight',
+            'MaximumPotionWeight',
             (_('0.1'),  0.1),
             (_('0.2'),  0.2),
             (_('0.4'),  0.4),
@@ -15208,7 +15208,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
     def __init__(self):
         MultiTweakItem.__init__(self,_("Minimum Weight Potions"),
             _('Potion weight will be floored.'),
-            'PotionWeight',
+            'MinimumPotionWeight',
             (_('1'),  1),
             (_('2'),  2),
             (_('3'),  3),
@@ -15249,7 +15249,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh Potions to Mimimum Weight'))
+        log.setHeader(_('=== Potions Reweighed to Mimimum Weight'))
         log(_('* Potions Reweighed by Minimum Weight Potions: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -15318,10 +15318,6 @@ class AssortedTweaker(MultiTweaker):
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
     tweaks = sorted([
-    #RedguardPatcher(_("patch Redguard NPCs for use with Better Redguards"),
-        #    _("nulls the FGTS setting for Redguard NPCs for compatibility with BR"),
-        #    'redguardpatchertweak',
-        #    ),
         AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
             _("Prevents armor from hiding amulets."),
             'armorShowsAmulets',
@@ -15343,10 +15339,9 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_DarnBooks(),
         AssortedTweak_FogFix(),
         AssortedTweak_NoLightFlicker(),
-        AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_PotionWeight(),
+        AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_StaffWeight(),
-        VanillaNPCSkeletonPatcher(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
