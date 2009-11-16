@@ -8858,10 +8858,10 @@ class Installer(object):
     dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts'))
     dataDirsMinus = set(('bash','obse','replacers')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|\.(esp|esm|bsa))$',re.I)
-    reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
+    reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|docx|odt|mht|pdf|css|xls)$',re.I)
     skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db'))
     skipExts.update(set(readExts))
-    docExts = set(('.txt','.rtf','.htm','.html','.doc','.odt','.mht','.pdf','.css','.xls'))
+    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
     imageExts = set(('.gif','.jpg','.png'))
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
@@ -17385,6 +17385,51 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
+class SWALKNPCAnimationPatcher(MultiTweakItem):
+    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Use Mur Zuk's Real Walk on all female NPCs"),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
+            'Vanilla Skeleton',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod, 
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.NPC_
+        for record in modFile.NPC_.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+                
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            if record.flags.female == 1:
+                record.animations = set(('0sexywalk01.kf'))
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===RWalk for Female NPCs'))
+        log(_('* %d NPCs Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
 class SkelTweaker(MultiTweaker):
     """Sets NPC Skeletons to better work with mods or avoid bugs."""
     name = _('Set NPC Skeletons')
@@ -17392,6 +17437,7 @@ class SkelTweaker(MultiTweaker):
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
+        SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
