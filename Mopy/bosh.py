@@ -14954,7 +14954,100 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
         log(_('* Rings fixed: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class AssortedTweak_ClothingPlayable(MultiTweakItem):
+    """Sets rings to all work on same finger."""
 
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("All Clothing Playable"),
+            _('Sets all clothing to be playable.'),
+            'PlayableClothing',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreClot,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreClot,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.CLOT
+        for record in modFile.CLOT.getActiveRecords():
+            if record.flags.notPlayable:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.CLOT.records:
+            if record.flags.notPlayable:
+                if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
+                    record.flags.notPlayable = 0
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Playable Clothes'))
+        log(_('* Clothes set as playable: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class AssortedTweak_ArmorPlayable(MultiTweakItem):
+    """Sets rings to all work on same finger."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("All Armor Playable"),
+            _('Sets all armor to be playable.'),
+            'PlayableArmor',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreArmo,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreArmo,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.ARMO
+        for record in modFile.ARMO.getActiveRecords():
+            if record.flags.notPlayable:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.ARMO.records:
+            if record.flags.notPlayable:
+                if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
+                    record.flags.notPlayable = 0
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Playable Armor'))
+        log(_('* Armor pieces set as playable: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class AssortedTweak_DarnBooks(MultiTweakItem):
     """DarNifies books."""
@@ -15334,6 +15427,8 @@ class AssortedTweaker(MultiTweaker):
             _("Prevents Clothing from hiding rings."),
             'ClothingShowsRings',
             ),
+        AssortedTweak_ArmorPlayable(),
+        AssortedTweak_ClothingPlayable(),
         AssortedTweak_BowReach(),
         AssortedTweak_ConsistentRings(),
         AssortedTweak_DarnBooks(),
