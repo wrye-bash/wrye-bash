@@ -3117,7 +3117,7 @@ class MreNpc(MreActor):
             ('aggression',5),('confidence',50),('energyLevel',50),('responsibility',50),
             (aiService,'services',0L),'trainSkill','trainLevel',('unused1',null2)),
         MelFids('PKID','aiPackages'),
-        MelStrings('KFFZ','animations'),
+        MelString('KFFZ','animations'), #MAJOR CHANGE (267) ----- NEEDS MAJOR TESTING!!
         MelFid('CNAM','iclass'),
         MelNpcData('DATA','',('skills',[0]*21),'health',('unused2',null2),('attributes',[0]*8)),
         MelFid('HNAM','hair'),
@@ -14256,7 +14256,7 @@ class NpcSkeletonChecker(Patcher):
                     race in (0x5b54,)
                     ):
                     patchBlock.setRecord(record.getTypeCopy(mapper))
-            elif record.model.modPath == 'Characters\_male\SkeletonBeast.nif':
+            elif model.modPath == 'Characters\_male\SkeletonBeast.nif':
                 if race in (0x224fc,0x191c1,0x19204,0x00907,0x224fd,0x00d43,0x00019,0x223c8):
                     patchBlock.setRecord(record.getTypeCopy(mapper))
                 
@@ -14857,7 +14857,7 @@ class AssortedTweak_BowReach(MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(MultiTweakItem):
-    """Changes all NPCs to use the beast race skeleton."""
+    """Changes all NPCs to use the vanilla beast race skeleton."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -14883,27 +14883,21 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
+            model = record.model.modPath
+            if model == r'Characters\_Male\skeleton.nif':
+                patchRecords.setRecord(record)
                 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            model = record.model
-            if record.full == 'Sheogorath':
-			#This block ain't running for some unknown reason :shrug:... okay for version 1 until I figure it out - works for 99.9% of vanilla chars + any non vanilla chars.
-                model.modPath == "characters\_Male\SkeletonSESheogorath.nif"
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-            else:
-                model.modPath = "Characters\_Male\SkeletonBeast.nif"
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+            record.model.modPath = "Characters\_Male\SkeletonBeast.nif"
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Vanilla Skeleton'))
+        log.setHeader(_('===Vanilla Beast Skeleton'))
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -14956,7 +14950,7 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
-    """Sets rings to all work on same finger."""
+    """Sets all clothes to playable"""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -14991,7 +14985,8 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
-                if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
+			#If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
+                if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -15003,7 +14998,7 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
-    """Sets rings to all work on same finger."""
+    """Sets all armors to be playable"""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -15038,7 +15033,9 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.ARMO.records:
             if record.flags.notPlayable:
+                # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
                 if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
+                    name = record.full
                     record.flags.notPlayable = 0
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -17430,7 +17427,7 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
     def __init__(self):
         MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
-            'Vanilla Skeleton',
+            'MAO Skeleton',
             ('1.0',  '1.0'),
             )
 
@@ -17457,32 +17454,31 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            model = record.model
-            if record.full == 'Sheogorath':
-			#This block ain't running for some unknown reason :shrug:... okay for version 1 until I figure it out - works for 99.9% of vanilla chars + any non vanilla chars.
-                model.modPath == "Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
+            model = record.model.modPath
+            if model == r'Characters\_Male\skeletonSESheogorath.nif':
+                record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
             else:
-                model.modPath = "Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+                record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Vanilla Skeleton'))
+        log.setHeader(_('===MAO Skeleton Setter'))
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
-class SWALKNPCAnimationPatcher(MultiTweakItem):
+class RWALKNPCAnimationPatcher(MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Use Mur Zuk's Real Walk on all female NPCs"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
-            'Vanilla Skeleton',
+        MultiTweakItem.__init__(self,_("Use Mur Zuk's Sexy Walk on all female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Sexy Walk"),
+            'Mur Zuk SWalk',
             ('1.0',  '1.0'),
             )
 
@@ -17510,7 +17506,52 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = set(('0sexywalk01.kf'))
+                record.animations = '0sexywalk01.kf'
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===SWalk for Female NPCs'))
+        log(_('* %d NPCs Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class SWALKNPCAnimationPatcher(MultiTweakItem):
+    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Use Mur Zuk's Real Walk on all female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Real Walk"),
+            'Mur Zuk RWalk',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod, 
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.NPC_
+        for record in modFile.NPC_.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+                
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            if record.flags.female == 1:
+                record.animations = '0realwalk01.kf'
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -17521,12 +17562,13 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class SkelTweaker(MultiTweaker):
-    """Sets NPC Skeletons to better work with mods or avoid bugs."""
-    name = _('Set NPC Skeletons')
-    text = _("Set NPC Skeletons.")
+    """Sets NPC Skeletons or animations to better work with mods or avoid bugs."""
+    name = _('Set NPC Skeletons and animations.')
+    text = _("Set NPC Skeletons and animations.")
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
+        RWALKNPCAnimationPatcher(),
         SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
 
