@@ -9215,7 +9215,7 @@ class App_Tes4Gecko(App_Button):
 		"""Initialize"""
 		App_Button.__init__(self,exePathArgs,image,tip)
 		self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
-		self.jar = bosh.dirs['app'].join('Tes4Gecko.jar')
+		self.jar = bosh.dirs['app'].join('TES4 Gecko\Tes4Gecko.jar')
 		self.javaArg = '-Xmx1024m'
 		if GPath('bash.ini').exists():
 			bashIni = ConfigParser.ConfigParser()
