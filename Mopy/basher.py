@@ -9215,7 +9215,7 @@ class App_Tes4Gecko(App_Button):
 		"""Initialize"""
 		App_Button.__init__(self,exePathArgs,image,tip)
 		self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
-		self.jar = bosh.dirs['app'].join('TES4 Gecko\Tes4Gecko.jar')
+		self.jar = bosh.dirs['app'].join('..\TES4 Gecko\Tes4Gecko.jar')
 		self.javaArg = '-Xmx1024m'
 		if GPath('bash.ini').exists():
 			bashIni = ConfigParser.ConfigParser()
@@ -9473,22 +9473,27 @@ def InitStatusBar():
 			Image(r'images/database_connect.png'),
 			_("Launch OBMM")))
 	BashStatusBar.buttons.append(
+		App_Button(
+			bosh.dirs['app'].join('..\TES4Files\TES4FILES.exe'),
+			Image(r'images/tes4files.png'),
+			_("Launch TES4Files")))		
+	BashStatusBar.buttons.append(
 		App_Tes4Gecko(None,
 			Image(r'images/cog.png'),
 			_("Launch Tes4Gecko")))
 	BashStatusBar.buttons.append(
 		App_Tes4View(
-			(bosh.dirs['app'].join('Tes4edit.exe'), '-view'),
+			(bosh.dirs['app'].join('..\TES4Edit\Tes4edit.exe'), '-view'),
 			Image(r'images/brick_edit.png'),
 			_("Launch Tes4View")))
 	BashStatusBar.buttons.append(
 		App_Tes4View(
-			bosh.dirs['app'].join('Tes4edit.exe'),
+			bosh.dirs['app'].join('..\TES4Edit\Tes4edit.exe'),
 			Image(r'images/brick.png'),
 			_("Launch Tes4Edit")))
 	BashStatusBar.buttons.append(
 		App_Tes4View(
-			(bosh.dirs['app'].join('Tes4edit.exe'),'-translate'),
+			(bosh.dirs['app'].join('..\TES4Edit\Tes4edit.exe'),'-translate'),
 			Image(r'images/brick_error.png'),
 			_("Launch Tes4Trans")))
 	BashStatusBar.buttons.append(
