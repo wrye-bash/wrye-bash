@@ -1,0 +1,26 @@
+== Bashed Lists ===================================================#
+This is a merge file created by __Wrye Bash__. 
+
+== Contents
+===Alchemical Catalogs
+* Book catalogs of all alchemical ingredients sorted by ingredient name and effect. 
+* These are updated versions of the allchemical catalogs found in __Cobl Main.esm__ and will only be created if __Cobl Main__ is included in the load list.
+
+===Merged Lists
+* Merged versions of currently conflicting lists.
+
+== To Update
+* In __Wrye Bash__...
+* Select the mods that you want to merge. Usually this will be your current set of load mods, and so should already be loaded.
+* On the __Mods__ tab, right click on the __Bashed Lists__ mod and then select __Import: Merged Lists__.
+* In the resulting mod, check **only releveling** mods. All mods shown, ~~whether checked or not~~ will be allowed to add new items to the list, but the checked mods can also remove items from the lists. (Releveling work by removing and shifting items on lists.)
+* Click Okay.
+* **Note:** If you have different loads lists for different games, you can use a different __Bashed List__ mod for each loadset. Just duplicate an existing Bashed List, rename it to something like __Bashed List, Alpha.esp__ and then update it with the correct set of mods loaded.
+
+== Notes 
+This is an esp-on-esp mod -- i.e., it has esps as masters. While the game will accept this fine, TESCS will not. Do not try to edit this in TESCS.
+
+== Credit/Contact/Links
+* **Wrye Bash** by **Wrye**
+  * **Contact: PM to [[http://www.elderscrolls.com/forums/index.php?showuser=50104 | Elder Scrolls Forum]]**
+  * **Home Page: [[http://wrye.ufrealms.net | Wrye Musings]]**
