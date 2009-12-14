@@ -1,0 +1,5660 @@
+=== bolt.py, 121
+Abstract section called
+>>>>
+
+=== bolt.py, 127
+Argument is out of allowed ranged of values
+>>>>
+Аргумент превысил допустимое значение
+=== bolt.py, 133
+Object is in a bad state
+>>>>
+Объект в 'плохом' состоянии
+=== bolt.py, 139
+Section is not coded yet
+>>>>
+Секция еще не создана
+=== bolt.py, 488
+cannot be moved because it does not exist
+>>>>
+Не может быть перемещено потому что не существует
+=== bolt.py, 937
+String too long to convert
+>>>>
+Строковая переменная не подходит для конвертирования
+=== balt.py, 132
+Missing resource file: %s
+>>>>
+Отсутствующие файлы ресурсов: %s
+=== balt.py, 332
+Choose a directory
+>>>>
+Укажите папку
+=== balt.py, 344
+Warning
+>>>>
+Осторожно
+=== balt.py, 353
+Don't show this in the future
+>>>>
+Не показывать это в дальнейшем
+=== balt.py, 434
+Error
+>>>>
+Ошибка
+=== balt.py, 442
+Information
+>>>>
+Информация
+=== balt.py, 453
+\n(And %d others.)
+>>>>
+\n(и %d других.)
+=== balt.py, 682
+Action
+>>>>
+Действие
+=== balt.py, 683
+Add
+>>>>
+Добавить
+=== balt.py, 684
+Edit
+>>>>
+Редактировать
+=== balt.py, 685
+Rename
+>>>>
+Переименовать
+=== balt.py, 686
+Remove
+>>>>
+Удалить
+=== balt.py, 687
+Save
+>>>>
+Сохранить
+=== balt.py, 688
+Cancel
+>>>>
+Отмена
+=== balt.py, 758
+Rename to
+>>>>
+Переименовать в
+=== balt.py, 762
+Name must be unique
+>>>>
+Имя должно быть уникальным
+=== balt.py, 880
+Progress
+>>>>
+Прогресс
+=== balt.py, 893
+Dialog already destroyed
+>>>>
+Диалог уже уничтожен
+=== balt.py, 1224
+Delete Items
+>>>>
+Удалить предметы
+=== balt.py, 1317
+Open
+>>>>
+Открыть
+=== balt.py, 1332
+Delete
+>>>>
+Удалить
+=== balt.py, 1363
+Duplicate
+>>>>
+Создать копию
+=== balt.py, 1372
+Duplicate as
+>>>>
+Сохранить копию как
+=== balt.py, 1376
+Files cannot be duplicated to themselves!
+>>>>
+Имена оригинального файла и копии должны различаться!
+=== bush.py, 74
+Top (Type)
+>>>>
+
+=== bush.py, 75
+World Children
+>>>>
+
+=== bush.py, 76
+Int Cell Block
+>>>>
+
+=== bush.py, 77
+Int Cell Sub-Block
+>>>>
+
+=== bush.py, 78
+Ext Cell Block
+>>>>
+
+=== bush.py, 79
+Ext Cell Sub-Block
+>>>>
+
+=== bush.py, 80
+Cell Children
+>>>>
+
+=== bush.py, 81
+Topic Children
+>>>>
+
+=== bush.py, 82
+Cell Persistent Childen
+>>>>
+
+=== bush.py, 83
+Cell Temporary Children
+>>>>
+
+=== bush.py, 84
+Cell Visible Distant Children
+>>>>
+
+=== bush.py, 109
+Argonian
+>>>>
+Аргонианин
+=== bush.py, 110
+Breton
+>>>>
+Бретон
+=== bush.py, 111
+Dark Elf
+>>>>
+Темный эльф
+=== bush.py, 112
+High Elf
+>>>>
+Высокий эльф
+=== bush.py, 113
+Imperial
+>>>>
+Имперец
+=== bush.py, 114
+Khajiit
+>>>>
+Каджит
+=== bush.py, 115
+Nord
+>>>>
+Норд
+=== bush.py, 116
+Orc
+>>>>
+Орк
+=== bush.py, 117
+Redguard
+>>>>
+Редгард
+=== bush.py, 118
+Vampire
+>>>>
+Вампир
+=== bush.py, 119
+Wood Elf
+>>>>
+Лесной эльф
+=== bush.py, 377
+Blade (1 Handed)
+>>>>
+Клинки (одноручные)
+=== bush.py, 378
+Blade (2 Handed)
+>>>>
+Клинки (двуручные)
+=== bush.py, 379
+Blunt (1 Handed)
+>>>>
+Дробящ. оружие (одноручное)
+=== bush.py, 380
+Blunt (2 Handed)
+>>>>
+Дробящ. оружие (двуручное)
+=== bush.py, 381
+Staff
+>>>>
+Посохи
+=== bush.py, 382
+Bow
+>>>>
+Луки
+=== bush.py, 386
+Absorb Attribute
+>>>>
+Поглощение атрибута
+=== bush.py, 387
+Absorb Fatigue
+>>>>
+Поглощение запаса сил
+=== bush.py, 388
+Absorb Health
+>>>>
+Поглощение здоровья
+=== bush.py, 389
+Absorb Skill
+>>>>
+Поглощение навыка
+=== bush.py, 390
+Absorb Magicka
+>>>>
+Поглощение маны
+=== bush.py, 391
+Bound Armor Extra 01
+>>>>
+
+=== bush.py, 392
+Bound Armor Extra 02
+>>>>
+
+=== bush.py, 393
+Bound Armor Extra 03
+>>>>
+
+=== bush.py, 394
+Bound Armor Extra 04
+>>>>
+
+=== bush.py, 395
+Bound Armor Extra 05
+>>>>
+
+=== bush.py, 396
+Bound Armor Extra 06
+>>>>
+
+=== bush.py, 397
+Bound Armor Extra 07
+>>>>
+
+=== bush.py, 398
+Bound Armor Extra 08
+>>>>
+
+=== bush.py, 399
+Bound Armor Extra 09
+>>>>
+
+=== bush.py, 400
+Bound Armor Extra 10
+>>>>
+
+=== bush.py, 401
+Bound Boots
+>>>>
+Призванные сапоги
+=== bush.py, 402
+Bound Cuirass
+>>>>
+Призванная кираса
+=== bush.py, 403
+Bound Gauntlets
+>>>>
+Призванные перчатки
+=== bush.py, 404
+Bound Greaves
+>>>>
+Призванные поножи
+=== bush.py, 405
+Bound Helmet
+>>>>
+ПРизванный шлем
+=== bush.py, 406
+Bound Shield
+>>>>
+Призванный щит
+=== bush.py, 407
+Burden
+>>>>
+Обуза
+=== bush.py, 408
+Bound Order Weapon 1
+>>>>
+
+=== bush.py, 409
+Bound Order Weapon 2
+>>>>
+
+=== bush.py, 410
+Bound Order Weapon 3
+>>>>
+
+=== bush.py, 411
+Bound Order Weapon 4
+>>>>
+
+=== bush.py, 412
+Bound Order Weapon 5
+>>>>
+
+=== bush.py, 413
+Bound Order Weapon 6
+>>>>
+
+=== bush.py, 414
+Summon Staff of Sheogorath
+>>>>
+
+=== bush.py, 415
+Bound Priest Dagger
+>>>>
+
+=== bush.py, 416
+Bound Weapon Extra 09
+>>>>
+
+=== bush.py, 417
+Bound Weapon Extra 10
+>>>>
+
+=== bush.py, 418
+Bound Axe
+>>>>
+Призванная секира
+=== bush.py, 419
+Bound Bow
+>>>>
+Призванный лук
+=== bush.py, 420
+Bound Dagger
+>>>>
+Призванный кинжал
+=== bush.py, 421
+Bound Mace
+>>>>
+Призванная булава
+=== bush.py, 422
+Bound Sword
+>>>>
+Призванный меч
+=== bush.py, 423
+Calm
+>>>>
+Успокоение
+=== bush.py, 424
+Chameleon
+>>>>
+Хамелеон
+=== bush.py, 425
+Charm
+>>>>
+Очарование
+=== bush.py, 426
+Command Creature
+>>>>
+Подчинение существа
+=== bush.py, 427
+Command Humanoid
+>>>>
+Подчинение гуманоида
+=== bush.py, 428
+Cure Disease
+>>>>
+Исцелить болезнь
+=== bush.py, 429
+Cure Paralysis
+>>>>
+Исцелить паралич
+=== bush.py, 430
+Cure Poison
+>>>>
+Исцелить яд
+=== bush.py, 431
+DO NOT USE - Darkness
+>>>>
+НЕ ИСПОЛЬЗОВАТЬ - Тьма
+=== bush.py, 432
+Demoralize
+>>>>
+Деморализовать
+=== bush.py, 433
+Damage Attribute
+>>>>
+Повр. атрибут
+=== bush.py, 434
+Damage Fatigue
+>>>>
+Повр. запас сил
+=== bush.py, 435
+Damage Health
+>>>>
+Повр. здоровья
+=== bush.py, 436
+Damage Magicka
+>>>>
+Повр. маны
+=== bush.py, 437
+Disintegrate Armor
+>>>>
+Разрушение доспехов
+=== bush.py, 438
+Disease Info
+>>>>
+Инфо о болезни
+=== bush.py, 439
+Disintegrate Weapon
+>>>>
+Разрушение оружия
+=== bush.py, 440
+Drain Attribute
+>>>>
+Вытягивание атрибута
+=== bush.py, 441
+Drain Fatigue
+>>>>
+Вытягивание запаса сил
+=== bush.py, 442
+Drain Health
+>>>>
+Вытягивание здоровья
+=== bush.py, 443
+Drain Skill
+>>>>
+Вытягивание навыка
+=== bush.py, 444
+Drain Magicka
+>>>>
+Вытягивание маны
+=== bush.py, 445
+Dispel
+>>>>
+Развеять
+=== bush.py, 446
+Detect Life
+>>>>
+Обнаружение жизни
+=== bush.py, 447
+Mehrunes Dagon
+>>>>
+Мехрунес Жагон
+=== bush.py, 448
+Fire Damage
+>>>>
+Урон огнем
+=== bush.py, 449
+Fire Shield
+>>>>
+Огненный щит
+=== bush.py, 450
+Fortify Attribute
+>>>>
+Увеличение атрибута
+=== bush.py, 451
+Fortify Fatigue
+>>>>
+Увеличение запаса сил
+=== bush.py, 452
+Fortify Health
+>>>>
+Увеличение здоровья
+=== bush.py, 453
+Fortify Magicka Multiplier
+>>>>
+Увеличение множителя маны
+=== bush.py, 454
+Fortify Skill
+>>>>
+Увеличение навыка
+=== bush.py, 455
+Fortify Magicka
+>>>>
+Увеличение маны
+=== bush.py, 456
+Frost Damage
+>>>>
+Урон холодом
+=== bush.py, 457
+Frenzy
+>>>>
+Бешенство
+=== bush.py, 458
+Frost Shield
+>>>>
+Инеевый щит
+=== bush.py, 459
+Feather
+>>>>
+Перышко
+=== bush.py, 460
+Invisibility
+>>>>
+Невидимость
+=== bush.py, 461
+Light
+>>>>
+Свет
+=== bush.py, 462
+Shock Shield
+>>>>
+Электр. щит
+=== bush.py, 463
+DO NOT USE - Lock
+>>>>
+НЕ ИСПОЛЬЗОВАТЬ - Замок
+=== bush.py, 464
+Summon Mythic Dawn Helm
+>>>>
+Вызов шлема мифич. рассвета
+=== bush.py, 465
+Summon Mythic Dawn Armor
+>>>>
+Вызов брони мифич. рассвета
+=== bush.py, 466
+Night-Eye
+>>>>
+Ночной глаз
+=== bush.py, 468
+Paralyze
+>>>>
+Паралич
+=== bush.py, 469
+Poison Info
+>>>>
+Инфо о яде
+=== bush.py, 470
+Rally
+>>>>
+Воодушевление
+=== bush.py, 471
+Reanimate
+>>>>
+Воскрешение
+=== bush.py, 472
+Restore Attribute
+>>>>
+Восстановить атрибут
+=== bush.py, 473
+Reflect Damage
+>>>>
+Отражение урона
+=== bush.py, 474
+Restore Fatigue
+>>>>
+Восстановить запас сил
+=== bush.py, 475
+Restore Health
+>>>>
+Восстановить здоровье
+=== bush.py, 476
+Restore Magicka
+>>>>
+Восстановить ману
+=== bush.py, 477
+Reflect Spell
+>>>>
+Отражение заклинаний
+=== bush.py, 478
+Resist Disease
+>>>>
+Сопр. болезням
+=== bush.py, 479
+Resist Fire
+>>>>
+Сопр. огню
+=== bush.py, 480
+Resist Frost
+>>>>
+Сопр. холоду
+=== bush.py, 481
+Resist Magic
+>>>>
+Отражение магии
+=== bush.py, 482
+Resist Normal Weapons
+>>>>
+Сопр. обычному оружию
+=== bush.py, 483
+Resist Paralysis
+>>>>
+Сопр. параличу
+=== bush.py, 484
+Resist Poison
+>>>>
+Сопр. яду
+=== bush.py, 485
+Resist Shock
+>>>>
+Сопр. эл-ву
+=== bush.py, 486
+Resist Water Damage
+>>>>
+Сопро. воде
+=== bush.py, 487
+Spell Absorption
+>>>>
+Поглощение заклинаний
+=== bush.py, 488
+Script Effect
+>>>>
+
+=== bush.py, 489
+Shock Damage
+>>>>
+Урон эл-вом
+=== bush.py, 490
+Shield
+>>>>
+Щит
+=== bush.py, 491
+Silence
+>>>>
+Молчание
+=== bush.py, 492
+Stunted Magicka
+>>>>
+Замороженная магия
+=== bush.py, 493
+Soul Trap
+>>>>
+Захват душ
+=== bush.py, 494
+Sun Damage
+>>>>
+Солнечный ожог
+=== bush.py, 495
+Telekinesis
+>>>>
+Телекинез
+=== bush.py, 496
+Turn Undead
+>>>>
+Отпугивание нежити
+=== bush.py, 497
+Vampirism
+>>>>
+Вампиризм
+=== bush.py, 498
+Water Breathing
+>>>>
+Водное дыхание
+=== bush.py, 499
+Water Walking
+>>>>
+Хождение по воде
+=== bush.py, 500
+Weakness to Disease
+>>>>
+Уязвим. к болезням
+=== bush.py, 501
+Weakness to Fire
+>>>>
+Уязвим. к огню
+=== bush.py, 502
+Weakness to Frost
+>>>>
+Уязвим. к холоду
+=== bush.py, 503
+Weakness to Magic
+>>>>
+Уязвим. к магии
+=== bush.py, 504
+Weakness to Normal Weapons
+>>>>
+Уязвим. к обычн. оружию
+=== bush.py, 505
+Weakness to Poison
+>>>>
+Уязвим. к яду
+=== bush.py, 506
+Weakness to Shock
+>>>>
+Уязвим. к эл-ву
+=== bush.py, 507
+Summon Rufio\'s Ghost
+>>>>
+Вызов призрака Руфио
+=== bush.py, 508
+Summon Ancestor Guardian
+>>>>
+Вызов стража предков
+=== bush.py, 509
+Summon Spiderling
+>>>>
+Вызов паучка
+=== bush.py, 510
+Summon Flesh Atronach
+>>>>
+Вызов атронаха из плоти
+=== bush.py, 511
+Summon Bear
+>>>>
+Вызов медведя
+=== bush.py, 512
+Summon Gluttonous Hunger
+>>>>
+Вызов прожорливого алчущего
+=== bush.py, 513
+Summon Ravenous Hunger
+>>>>
+Вызов изголодавшегося алчущего
+=== bush.py, 514
+Summon Voracious Hunger
+>>>>
+Вызов ненасытного алчущего
+=== bush.py, 515
+Summon Dark Seducer
+>>>>
+Вызов темного соблазнителя
+=== bush.py, 516
+Summon Golden Saint
+>>>>
+Вызов золотого святого
+=== bush.py, 517
+Wabba Summon
+>>>>
+Вызов Вабба
+=== bush.py, 518
+Summon Decrepit Shambles
+>>>>
+Вызов слабого кавардака
+=== bush.py, 519
+Summon Shambles
+>>>>
+Вызов кавардака
+=== bush.py, 520
+Summon Replete Shambles
+>>>>
+Вызов обширного кавардака
+=== bush.py, 521
+Summon Hunger
+>>>>
+Вызов алчущего
+=== bush.py, 522
+Summon Mangled Flesh Atronach
+>>>>
+Вызов увечного атронаха из плоти
+=== bush.py, 523
+Summon Torn Flesh Atronach
+>>>>
+Вызов порванного атронаха
+=== bush.py, 524
+Summon Stitched Flesh Atronach
+>>>>
+Вызов простроченного атронаха
+=== bush.py, 525
+Summon Sewn Flesh Atronach
+>>>>
+Вызов сшитого атронаха из плоти
+=== bush.py, 526
+Extra Summon 20
+>>>>
+
+=== bush.py, 527
+Summon Clannfear
+>>>>
+Вызов кланфира
+=== bush.py, 528
+Summon Daedroth
+>>>>
+Вызов дэйдрота
+=== bush.py, 529
+Summon Dremora
+>>>>
+Вызов дремора
+=== bush.py, 530
+Summon Dremora Lord
+>>>>
+Вызов лорда дремора
+=== bush.py, 531
+Summon Flame Atronach
+>>>>
+Вызов огненного атронаха
+=== bush.py, 532
+Summon Frost Atronach
+>>>>
+Вызов ледяного атронаха
+=== bush.py, 533
+Summon Ghost
+>>>>
+Вызов призрака
+=== bush.py, 534
+Summon Headless Zombie
+>>>>
+Вызов безголового зомби
+=== bush.py, 535
+Summon Lich
+>>>>
+Вызов лича
+=== bush.py, 536
+Summon Scamp
+>>>>
+Вызов скампа
+=== bush.py, 537
+Summon Skeleton Guardian
+>>>>
+Вызов скелета-стража
+=== bush.py, 538
+Summon Skeleton Champion
+>>>>
+Вызов скелета-воина
+=== bush.py, 539
+Summon Skeleton
+>>>>
+Вызов скелета
+=== bush.py, 540
+Summon Skeleton Hero
+>>>>
+Вызов скелета-героя
+=== bush.py, 541
+Summon Spider Daedra
+>>>>
+Вызов дэйдра-паука
+=== bush.py, 542
+Summon Storm Atronach
+>>>>
+Вызов грозового атронаха
+=== bush.py, 543
+Summon Faded Wraith
+>>>>
+Вызов туманного привидения
+=== bush.py, 544
+Summon Gloom Wraith
+>>>>
+Вызов темного привидения
+=== bush.py, 545
+Summon Xivilai
+>>>>
+Вызов зивилаи
+=== bush.py, 546
+Summon Zombie
+>>>>
+Вызов зомби
+=== bush.py, 601
+Strength
+>>>>
+Сила
+=== bush.py, 602
+Intelligence
+>>>>
+Интеллект
+=== bush.py, 603
+Willpower
+>>>>
+Сила воли
+=== bush.py, 604
+Agility
+>>>>
+Ловкость
+=== bush.py, 605
+Speed
+>>>>
+Скорость
+=== bush.py, 606
+Endurance
+>>>>
+Выносливость
+=== bush.py, 607
+Personality
+>>>>
+Привлекательность
+=== bush.py, 608
+Luck
+>>>>
+Удача
+=== bush.py, 609
+Health
+>>>>
+Здоровье
+=== bush.py, 610
+Magicka
+>>>>
+Мана
+=== bush.py, 612
+Fatigue
+>>>>
+Запас сил
+=== bush.py, 613
+Encumbrance
+>>>>
+Нагрузка
+=== bush.py, 614
+Armorer
+>>>>
+Кузнец
+=== bush.py, 615
+Athletics
+>>>>
+Атлетика
+=== bush.py, 616
+Blade
+>>>>
+Клинки
+=== bush.py, 617
+Block
+>>>>
+Парирование
+=== bush.py, 618
+Blunt
+>>>>
+Дробящ. оружие
+=== bush.py, 619
+Hand To Hand
+>>>>
+Рукопашный бой
+=== bush.py, 620
+Heavy Armor
+>>>>
+Тяж. броня
+=== bush.py, 621
+Alchemy
+>>>>
+Алхимия
+=== bush.py, 623
+Alteration
+>>>>
+Изменение
+=== bush.py, 624
+Conjuration
+>>>>
+Колдовсктво
+=== bush.py, 625
+Destruction
+>>>>
+Разрушения
+=== bush.py, 626
+Illusion
+>>>>
+Иллюзии
+=== bush.py, 627
+Mysticism
+>>>>
+Мистицизм
+=== bush.py, 628
+Restoration
+>>>>
+Восстановление
+=== bush.py, 629
+Acrobatics
+>>>>
+Акробатика
+=== bush.py, 630
+Light Armor
+>>>>
+Легкая броня
+=== bush.py, 631
+Marksman
+>>>>
+Стрельба
+=== bush.py, 632
+Mercantile
+>>>>
+Торговля
+=== bush.py, 634
+Security
+>>>>
+Взлом
+=== bush.py, 635
+Sneak
+>>>>
+Скрытность
+=== bush.py, 636
+Speechcraft
+>>>>
+Красноречие
+=== bush.py, 717
+Faction
+>>>>
+Фракция
+=== bush.py, 718
+Apparatus
+>>>>
+Аппарат
+=== bush.py, 719
+Armor
+>>>>
+Доспехи
+=== bush.py, 720
+Book
+>>>>
+Книги
+=== bush.py, 721
+Clothing
+>>>>
+Одежда
+=== bush.py, 722
+Ingredient
+>>>>
+Ингредиент
+=== bush.py, 724
+Misc. Item
+>>>>
+Разл. предметы
+=== bush.py, 725
+Weapon
+>>>>
+Оружие
+=== bush.py, 726
+NPC
+>>>>
+
+=== bush.py, 727
+Creature
+>>>>
+Существо
+=== bush.py, 728
+Key
+>>>>
+Ключ
+=== bush.py, 729
+Potion
+>>>>
+Зелье
+=== bush.py, 730
+Cell
+>>>>
+Область
+=== bush.py, 731
+Object Ref
+>>>>
+Ссылка на объект
+=== bush.py, 732
+NPC Ref
+>>>>
+Ссылка на NPC
+=== bush.py, 733
+Creature Ref
+>>>>
+Ссылка на существо
+=== bush.py, 734
+Dialog Entry
+>>>>
+Запись в диалоге
+=== bush.py, 735
+Quest
+>>>>
+Квест
+=== bush.py, 736
+AI Package
+>>>>
+Пакет AI
+=== bush.py, 741
+Alchemical Ingredients I
+>>>>
+Алхимические ингредиенты I
+=== bush.py, 742
+Alchemical Ingredients II
+>>>>
+Алхимические ингредиенты II
+=== bush.py, 743
+Alchemical Ingredients III
+>>>>
+Алхимические ингредиенты III
+=== bush.py, 744
+Alchemical Ingredients IV
+>>>>
+Алхимические ингредиенты IV
+=== bush.py, 747
+Alchemical Effects I
+>>>>
+Алхимические эффекты I
+=== bush.py, 748
+Alchemical Effects II
+>>>>
+Алхимические эффекты II
+=== bush.py, 749
+Alchemical Effects III
+>>>>
+Алхимические эффекты III
+=== bush.py, 750
+Alchemical Effects IV
+>>>>
+Алхимические эффекты IV
+=== bosh.py, 118
+Unknown File
+>>>>
+Неизвестный файл
+=== bosh.py, 124
+Unable to edit file %s
+>>>>
+Невозможно отредактировать файл %s
+=== bosh.py, 362
+%s: Attempted to read before (%d) beginning of file/buffer
+>>>>
+%s: Попытка чтения данных до (%d) в начале файла/буфера памяти
+=== bosh.py, 365
+%s: Attempted to read past (%d) end (%d) of file/buffer
+>>>>
+%s: Попытка чтения данных от (%d) до (%d) в конце файла/буфера памяти
+=== bosh.py, 378
+%s: Expected size == %d, but got: %d
+>>>>
+%s: Ожидаемый размер == %d, текущий: %d
+=== bosh.py, 380
+%s: Expected size <= %d, but got: %d
+>>>>
+%s: Ожидаемый размер <= %d, текущий: %d
+=== bosh.py, 388
+Extraneous subrecord (%s) in %s record
+>>>>
+Посторонняя подзапись (%s) в %s записи
+=== bosh.py, 432
+Exceded limit of
+>>>>
+Предел
+=== bosh.py, 468
+Bad header type
+>>>>
+Некорректный тип заголовка
+=== bosh.py, 481
+Bad Top GRUP type
+>>>>
+Некорректный тип GRUP
+=== bosh.py, 496
+%s: Expected %s subrecord, but found %s instead
+>>>>
+%s: Ожидается %s подзапись, но вместо этого найдено %s
+=== bosh.py, 1295
+Unknown condition function: %d
+>>>>
+Неизвестное условия функции: %d
+=== bosh.py, 1531
+Unexpected subrecord
+>>>>
+Некорректная подзапись
+=== bosh.py, 1573
+Fids not in long format
+>>>>
+FormID не в формате long
+=== bosh.py, 1644
+Data changed
+>>>>
+Дата изменена
+=== bosh.py, 1645
+Data undefined
+>>>>
+Дата не определена
+=== bosh.py, 1729
+Mis-sized compressed data. Expected %d, got %d
+>>>>
+Данные сжаты, но размер отличается. Ожидаемый: %d, полученный: %d
+=== bosh.py, 1803
+Packing Error: %s %s: Fids in long format
+>>>>
+Ошибка упаковки: %s %s: formID в формате long
+=== bosh.py, 2068
+(Attribute|Skill)
+>>>>
+(Атрибут|Навык)
+=== bosh.py, 2549
+Unexpected %s record in %s group
+>>>>
+Некорректная %s запись в %s группе
+=== bosh.py, 3953
+No valid mapping for mod index 0x%02X
+>>>>
+Отсутствует корректный мэппинг для 0x%02X
+=== bosh.py, 5052
+Invalid top group type
+>>>>
+Некорректный тип группы
+=== bosh.py, 5072
+Improperly grouped file
+>>>>
+Неправильно сгруппированный файл
+=== bosh.py, 5120
+Insufficient data to write file
+>>>>
+Недостаточно данных для записи файла
+=== bosh.py, 5520
+File header is corrupted
+>>>>
+Заголовок файла поврежден
+=== bosh.py, 5527
+File does not exist
+>>>>
+Файл не существует
+=== bosh.py, 5618
+Reading Header
+>>>>
+Чтение заголовка
+=== bosh.py, 5657
+Reading created
+>>>>
+Чтение
+=== bosh.py, 5669
+Reading records
+>>>>
+Чтение записей
+=== bosh.py, 5675
+Reading fids, worldids
+>>>>
+Чтение FormID, worldID
+=== bosh.py, 5691
+Finished reading
+>>>>
+Чтение завершено
+=== bosh.py, 5706
+Writing Header
+>>>>
+Запись заголовков
+=== bosh.py, 5731
+Writing created
+>>>>
+Запись создана
+=== bosh.py, 5739
+Writing records
+>>>>
+Запись
+=== bosh.py, 5747
+Writing fids, worldids
+>>>>
+Запись FormID, worldID
+=== bosh.py, 5758
+Writing complete
+>>>>
+Запись завершена
+=== bosh.py, 5861
+Missing Master
+>>>>
+Отсутствующие мастер-файлы
+=== bosh.py, 5864
+Abomb Counter
+>>>>
+Значение Abomb
+=== bosh.py, 5865
+Integer:\t0x%08X
+>>>>
+Целое:\t0x%08X
+=== bosh.py, 5866
+Float:\t%.2f
+>>>>
+Вещественное:\t%.2f
+=== bosh.py, 5868
+Fbomb Counter
+>>>>
+Счетчик Fbomb
+=== bosh.py, 5869
+Next in-game object: %08X
+>>>>
+Следующий внутриигровой объект: %08X
+=== bosh.py, 5872
+Created Items
+>>>>
+Созданные предметы
+=== bosh.py, 5873
+Records
+>>>>
+Записи
+=== bosh.py, 5874
+Fids
+>>>>
+
+=== bosh.py, 5941
+LostChanges
+>>>>
+Потерянные изменения
+=== bosh.py, 5947
+Unknown
+>>>>
+Неизвестно
+=== bosh.py, 5952
+New ObjectRef Bases
+>>>>
+
+=== bosh.py, 5956
+Count IRef     BaseId
+>>>>
+
+=== bosh.py, 5972
+Scanning created objects
+>>>>
+Поиск измененных объектов
+=== bosh.py, 5975
+full
+>>>>
+
+=== bosh.py, 5988
+Scanning change records
+>>>>
+Поиск измененных записей
+=== bosh.py, 6202
+Backing up BSA file. This will take a while
+>>>>
+Создание резервной копии BSA файла
+=== bosh.py, 6441
+Load list is full
+>>>>
+Список загрузки полон
+=== bosh.py, 6745
+Can't get snapshot parameters for file outside main directory
+>>>>
+Создание снимка невозможно, т.к. файл находится вне основной папки
+=== bosh.py, 6910
+Expected TES4, but got
+>>>>
+Ожидается TES4, но получено
+=== bosh.py, 6915
+Struct.error
+>>>>
+Структурная ошибка
+=== bosh.py, 7209
+Getting sizes
+>>>>
+Получение размеров
+=== bosh.py, 7358
+247388848
+>>>>
+
+=== bosh.py, 7359
+277504985
+>>>>
+
+=== bosh.py, 7607
+Balo group header
+>>>>
+Заголовок группы Balo
+=== bosh.py, 7776
+Some mods were unavailable and were skipped:\n*
+>>>>
+Некоторые моды недоступны и были пропущены:\n*
+=== bosh.py, 7780
+Mod list is full, so some mods were skipped:\n
+>>>>
+Список модов полон, поэтому некоторые файлы были пропущены:\n
+=== bosh.py, 7793
+----> MISSING MASTER
+>>>>
+----> ОТСУТСТВУЮЩИЕ МАСТЕР-ФАЙЛЫ
+=== bosh.py, 7793
+* __Missing Master:__
+>>>>
+* __Отсутствующие мастер-файлы:__
+=== bosh.py, 7794
+----> Delinquent MASTER
+>>>>
+----> Перерасположенные МАСТЕР-ФАЙЛЫ
+=== bosh.py, 7794
+* __Delinquent Master:__
+>>>>
+* __НПерерасположенные мастер-файлы:__
+=== bosh.py, 7800
+Missing Masters for
+>>>>
+Отсутствуют мастер-файлы для
+=== bosh.py, 7803
+Masters for
+>>>>
+Мастер-файлы для
+=== bosh.py, 7809
+Active Mod Files
+>>>>
+Подключенные моды
+=== bosh.py, 7835
+%s  %s  [Version %s]
+>>>>
+%s  %s  [версия %s]
+=== bosh.py, 7869
+Circular Masters
+>>>>
+Цикличные мастер-файлы
+=== bosh.py, 7989
+Can't match current Oblivion.esm to known version
+>>>>
+Невозможно определить версию Oblivion.esm
+=== bosh.py, 7992
+Can't swap: %s already exists
+>>>>
+Нельзя переключить: %s не существует
+=== bosh.py, 7995
+Can't swap: %s doesn't exist
+>>>>
+Нельзя переключить: %s не существует
+=== bosh.py, 8288
+ONLYONE does not support %s operators
+>>>>
+Операторы %s не поддерживаются текущей операцией
+=== bosh.py, 8395
+<font color=red>WARNING:</font>
+>>>>
+<font color=red>ВНИМАНИЕ:</font>
+=== bosh.py, 8398
+Check Mods
+>>>>
+Проверка модов
+=== bosh.py, 8399
+This is a report on your currently active/merged mods
+>>>>
+Ниже отчет о ваших текущих модах
+=== bosh.py, 8406
+Mergeable
+>>>>
+Объединяемые
+=== bosh.py, 8407
+Following mods are active, but could be merged into the bashed patch
+>>>>
+Следующие моды активны, но должны быть объединены в bashed patch
+=== bosh.py, 8414
+Missing/Delinquent Masters
+>>>>
+Отсутствующие/Перерасположенные мастер-файлы
+=== bosh.py, 8420
+MISSING
+>>>>
+Отсутствующие
+=== bosh.py, 8422
+DELINQUENT
+>>>>
+Перерасположенные
+=== bosh.py, 8442
+Only one of these should be active/merged
+>>>>
+Только один файл должен быть активным/объединенным
+=== bosh.py, 8450
+NOTES
+>>>>
+ЗАМЕЧАНИЯ
+=== bosh.py, 8453
+CONFIGURATION
+>>>>
+КОНФИГУРАЦИЯ
+=== bosh.py, 8461
+%s __%s__ -- %s
+>>>>
+
+=== bosh.py, 8463
+SUGGESTIONS
+>>>>
+ПРЕДЛОЖЕНИЯ
+=== bosh.py, 8470
+* __%s__ -- %s
+>>>>
+
+=== bosh.py, 8685
+ModBase
+>>>>
+
+=== bosh.py, 8733
+People
+>>>>
+Люди
+=== bosh.py, 8909
+%s: Pre-Scanning
+>>>>
+%s: Подготовка к сканированию
+=== bosh.py, 8921
+%s: Pre-Scanning...\n%s
+>>>>
+%s: Подготовка к сканированию...\n%s
+=== bosh.py, 8932
+%s: Scanning
+>>>>
+%s: Сканирование
+=== bosh.py, 8969
+%s\nCalculating CRCs...\n
+>>>>
+%s\nПодсчет CRC...\n
+=== bosh.py, 8972
+%s\nCalculating CRCs...\n%s
+>>>>
+%s\nПодсчет CRC...\n%s
+=== bosh.py, 9354
+\nLoading %s:\nBCF doesn't exist
+>>>>
+\nЗагрузка %s:\nBCF не существует
+=== bosh.py, 9369
+\nLoading %s:\nBCF extraction failed
+>>>>
+\nЗагрузка %s:\nОшибка распаковки BCF
+=== bosh.py, 9382
+%s\nExtracting files
+>>>>
+%s\nРаспаковка файлов
+=== bosh.py, 9394
+%s: Extraction failed:\n%s
+>>>>
+%s: Не удалось распаковать:\n%s
+=== bosh.py, 9402
+\nExtracting files
+>>>>
+\nРаспаковка файлов
+=== bosh.py, 9422
+Moving files
+>>>>
+Перемещение файлов
+=== bosh.py, 9439
+%s: Missing file:\n%s
+>>>>
+%s: Пропущен файл:\n%s
+=== bosh.py, 9445
+Copying file...\n%s
+>>>>
+Копирование файла...\n%s
+=== bosh.py, 9449
+Moving file...\n%s
+>>>>
+Перемещение файла...\n%s
+=== bosh.py, 9540
+%s\nMapping files
+>>>>
+%s\nПреобразование файлов
+=== bosh.py, 9545
+%s\nMapping files...\n%s
+>>>>
+%s\nПреобразование файлов...\n%s
+=== bosh.py, 9567
+Error creating BCF.dat:\nError Code: %s
+>>>>
+Не удалось создать BCF.dat:\nКод ошибки: %s
+=== bosh.py, 9588
+%s\nCompressing files
+>>>>
+%s\nСжатие файлов
+=== bosh.py, 9604
+\nCompressing files...\n%s
+>>>>
+\nСжатие файлов...\n%s
+=== bosh.py, 9609
+%s: Compression failed:\n%s
+>>>>
+%s: Сжатие не удалось:\n%s
+=== bosh.py, 9619
+No files to extract for %s
+>>>>
+Нет файлов для распаковки для %s
+=== bosh.py, 9627
+Error creating file list for 7z:\nError Code: %s
+>>>>
+Ошибка создания списка файлов для 7z:\nКод ошибки: %s
+=== bosh.py, 9659
+%s\nExtracting files...\n%s
+>>>>
+%s\nРаспаковка файлов...\n%s
+=== bosh.py, 9771
+%s: Extraction failed\n%s
+>>>>
+%s: Не удалось распаковать\n%s
+=== bosh.py, 9789
+\nMoving files
+>>>>
+\nПеремещение файлов
+=== bosh.py, 10015
+Installers
+>>>>
+Установщики
+=== bosh.py, 10051
+Loading Data
+>>>>
+Загрузка данных
+=== bosh.py, 10251
+Scanning Packages
+>>>>
+Сканирование
+=== bosh.py, 10254
+Scanning Packages...\n
+>>>>
+Сканирование...\n
+=== bosh.py, 10404
+Scanning Converters
+>>>>
+Сканирование преобразователей
+=== bosh.py, 10407
+Scanning Converter...\n
+>>>>
+Сканирование...\n
+=== bosh.py, 10666
+Lower
+>>>>
+Ниже
+=== bosh.py, 10666
+Higher
+>>>>
+Выше
+=== bosh.py, 10674
+No Underrides. Mod is not completely un-installed
+>>>>
+Мод удален не полностью
+=== bosh.py, 10681
+Bain Packages
+>>>>
+Пакеты Bain
+=== bosh.py, 10689
+%s - %s
+>>>>
+
+=== bosh.py, 10691
+%s - %s (%08X)
+>>>>
+
+=== bosh.py, 10805
+Type
+>>>>
+Тип
+=== bosh.py, 10805
+Actor Eid
+>>>>
+
+=== bosh.py, 10805
+Actor Mod
+>>>>
+
+=== bosh.py, 10805
+Actor Object
+>>>>
+
+=== bosh.py, 10805
+Faction Eid
+>>>>
+
+=== bosh.py, 10805
+Faction Mod
+>>>>
+
+=== bosh.py, 10805
+Faction Object
+>>>>
+
+=== bosh.py, 10805
+Rank
+>>>>
+
+=== bosh.py, 10824
+Loading
+>>>>
+Загрузка
+=== bosh.py, 10834
+Loading Oblivion.esm
+>>>>
+Загрузка Oblivion.esm
+=== bosh.py, 10843
+Writing
+>>>>
+Запись
+=== bosh.py, 10845
+Fid
+>>>>
+
+=== bosh.py, 10845
+EditorId
+>>>>
+
+=== bosh.py, 10845
+Offset
+>>>>
+
+=== bosh.py, 10845
+CalcMin
+>>>>
+
+=== bosh.py, 10845
+CalcMax
+>>>>
+
+=== bosh.py, 10846
+Old bOffset
+>>>>
+
+=== bosh.py, 10846
+Old Offset
+>>>>
+
+=== bosh.py, 10846
+Old CalcMin
+>>>>
+
+=== bosh.py, 10846
+Old CalcMax
+>>>>
+
+=== bosh.py, 10858
+Done
+>>>>
+Готово
+=== bosh.py, 10866
+Reading
+>>>>
+Чтение
+=== bosh.py, 10884
+Saving
+>>>>
+Сохранение
+=== bosh.py, 10970
+Script
+>>>>
+Скрипт
+=== bosh.py, 11016
+Mod Name
+>>>>
+Имя мода
+=== bosh.py, 11016
+ObjectIndex
+>>>>
+
+=== bosh.py, 11016
+Editor Id
+>>>>
+
+=== bosh.py, 11094
+Main Eid
+>>>>
+
+=== bosh.py, 11094
+Main Mod
+>>>>
+
+=== bosh.py, 11094
+Main Object
+>>>>
+
+=== bosh.py, 11094
+Other Eid
+>>>>
+
+=== bosh.py, 11094
+Other Mod
+>>>>
+
+=== bosh.py, 11094
+Other Object
+>>>>
+
+=== bosh.py, 11094
+Disp
+>>>>
+
+=== bosh.py, 11253
+Name
+>>>>
+Имя
+=== bosh.py, 11339
+Model
+>>>>
+Модель
+=== bosh.py, 11339
+Icon
+>>>>
+Иконка
+=== bosh.py, 11339
+Uses
+>>>>
+Используется
+=== bosh.py, 11339
+Value
+>>>>
+Цена
+=== bosh.py, 11339
+Weight
+>>>>
+Вес
+=== bosh.py, 11339
+Effects
+>>>>
+Эффекты
+=== bosh.py, 11488
+Damage
+>>>>
+Урон
+=== bosh.py, 11488
+EPoints
+>>>>
+
+=== bosh.py, 11492
+AR
+>>>>
+
+=== bosh.py, 11512
+Duration
+>>>>
+Длительность
+=== bosh.py, 11529
+Reach
+>>>>
+Дист. атаки
+=== bosh.py, 11615
+Cost
+>>>>
+Стоимость
+=== bosh.py, 11615
+Level
+>>>>
+Уровень
+=== bosh.py, 11615
+Spell Type
+>>>>
+Тип заклинания
+=== bosh.py, 11794
+Scanning
+>>>>
+Сканирование
+=== bosh.py, 11861
+Mod
+>>>>
+Мод
+=== bosh.py, 11861
+Group
+>>>>
+Группа
+=== bosh.py, 11911
+Failed to find pcName in PC ACRH record
+>>>>
+Имя игрока не найдено
+=== bosh.py, 12280
+Face dump from save game
+>>>>
+Дамп лица из сохраненной игры
+=== bosh.py, 12538
+Is esm
+>>>>
+мастер-файл
+=== bosh.py, 12541
+Is Bashed Patch
+>>>>
+Bashed-патч
+=== bosh.py, 12546
+Has BSA archive
+>>>>
+Имеет BSA-архив
+=== bosh.py, 12556
+Unsupported types
+>>>>
+Неподдерживаемые типы
+=== bosh.py, 12559
+Empty mod
+>>>>
+Пустой мод
+=== bosh.py, 12565
+New record %08X in block %s
+>>>>
+Новая запись %08X в блоке %s
+=== bosh.py, 12614
+Preparing\n%s
+>>>>
+Подготовка\n%s
+=== bosh.py, 12616
+Patchers prepared
+>>>>
+Подготовка завершена
+=== bosh.py, 12620
+Processing
+>>>>
+Обработка
+=== bosh.py, 12650
+%s\nLoading
+>>>>
+%s\nЗагрузка
+=== bosh.py, 12672
+%s\nMerging
+>>>>
+%s\nОбъединение
+=== bosh.py, 12675
+%s\nScanning
+>>>>
+%s\nСканирование
+=== bosh.py, 12679
+%s\n%s
+>>>>
+
+=== bosh.py, 12683
+MERGE/SCAN ERROR
+>>>>
+Ошибка поиска/объединения
+=== bosh.py, 12685
+Load mods scanned
+>>>>
+Загруженные моды просканированы
+=== bosh.py, 12702
+Merge unsupported for type
+>>>>
+Объединение невозможно для
+=== bosh.py, 12738
+Overview
+>>>>
+Обзор
+=== bosh.py, 12739
+Date/Time
+>>>>
+Дата/Время
+=== bosh.py, 12742
+Unfiltered Mods
+>>>>
+Неотфильтрованные моды
+=== bosh.py, 12746
+Load Error Mods
+>>>>
+Моды с ошибкой при загрузке
+=== bosh.py, 12750
+World Orphans
+>>>>
+Потери миров
+=== bosh.py, 12754
+Compiled All
+>>>>
+Скомпилированы все скрипты
+=== bosh.py, 12757
+Active Mods
+>>>>
+Активные моды
+=== bosh.py, 12765
+%s  [Version %s]
+>>>>
+%s  [Версия %s]
+=== bosh.py, 12771
+Mod Aliases
+>>>>
+Сокращения названий модов
+=== bosh.py, 12778
+Completing\n%s
+>>>>
+Завершение\n%s
+=== bosh.py, 12781
+Completing\nTrimming records
+>>>>
+Завершение\nДоработка записей
+=== bosh.py, 12784
+Completing\nConverting fids
+>>>>
+Завершение\nПреобразование FormID
+=== bosh.py, 12791
+Updated: %s\n\nRecords Changed: %d
+>>>>
+Обновлено: %s\n\nЗаписей изменено: %d
+=== bosh.py, 12885
++('|'.join(autoKey))+r
+>>>>
+
+=== bosh.py, 12987
+Tweakers
+>>>>
+Улучшения
+=== bosh.py, 13015
+General
+>>>>
+Общее
+=== bosh.py, 13016
+Alias Mod Names
+>>>>
+Сокращения для модов
+=== bosh.py, 13017
+Specify mod aliases for reading CSV source files
+>>>>
+Находит сокращения для модов в исходном CSV-файле
+=== bosh.py, 13041
+Merge Patches
+>>>>
+Объединение патчей
+=== bosh.py, 13042
+Merge patch mods into Bashed Patch
+>>>>
+Объединяет различные файлы в один Bash-патч
+=== bosh.py, 13068
+Importers
+>>>>
+Импортеры
+=== bosh.py, 13082
+Import Cells
+>>>>
+Импорт областей
+=== bosh.py, 13083
+Import cells (climate, lighting, and water) from source mods
+>>>>
+Импорт областей(климат, освещение и вода) из модов-источников
+=== bosh.py, 13209
+Source Mods
+>>>>
+Моды-источники
+=== bosh.py, 13212
+\n=== Cells Patched
+>>>>
+\n=== областей затронуто
+=== bosh.py, 13219
+Import World Maps
+>>>>
+Импорт карт миров
+=== bosh.py, 13287
+\n=== Worlds Patched
+>>>>
+\n=== Миров изменено
+=== bosh.py, 13294
+Import Graphics
+>>>>
+Импорт графики
+=== bosh.py, 13295
+Import graphics (models, icons, etc.) from source mods
+>>>>
+Импортирует графику (модели, иконки и т.д.) из модов-источников
+=== bosh.py, 13411
+\n=== Modified Records
+>>>>
+\n=== Измененные записи
+=== bosh.py, 13418
+Import Factions
+>>>>
+Импорт фракций
+=== bosh.py, 13419
+Import factions from source mods/files
+>>>>
+Импорт фракций из модов-источников
+=== bosh.py, 13522
+Source Mods/Files
+>>>>
+Моды/файлы источники
+=== bosh.py, 13525
+\n=== Refactioned Actors
+>>>>
+\n=== Измененные персонажи
+=== bosh.py, 13532
+Import Relations
+>>>>
+Импорт отношений
+=== bosh.py, 13533
+Import relations from source mods/files
+>>>>
+Импорт отношений из модов-источников
+=== bosh.py, 13629
+\n=== Modified Factions: %d
+>>>>
+\n=== Измененные фракции: %d
+=== bosh.py, 13634
+Import Scripts
+>>>>
+Импорт скриптов
+=== bosh.py, 13635
+Import Scripts on containers, plants, misc, weapons etc. from source mods
+>>>>
+Импортирует скрипты на контейнерах, растениях, оружии и пр. из модов-источников
+=== bosh.py, 13744
+Import Script Contents
+>>>>
+Импорт содержимого скриптов
+=== bosh.py, 13745
+Import the actual contents of scripts scripts
+>>>>
+Импорт измененного содержимого скриптов
+=== bosh.py, 13870
+Import Inventory
+>>>>
+Импорт инвентаря
+=== bosh.py, 13871
+Merges changes to NPC, creature and container inventories
+>>>>
+Объединяет изменения для NPC, существ и для содержимого контейнеров
+=== bosh.py, 13993
+\n=== Inventories Changed: %d
+>>>>
+\n=== Инвентарей изменено: %d
+=== bosh.py, 13999
+Import Names
+>>>>
+Импорт названий
+=== bosh.py, 14000
+Import names from source mods/files
+>>>>
+Импортирует названия из модоф-источников (или из файлов)
+=== bosh.py, 14092
+\n=== Renamed Items
+>>>>
+\n=== Переименованые предметы
+=== bosh.py, 14099
+Import NPC Faces
+>>>>
+Импорт лиц NPC
+=== bosh.py, 14100
+Import NPC face/eyes/hair from source mods. For use with TNR and similar mods
+>>>>
+Импортирует лица/глаза/волосы и пр. из модов-источников. Для использования с TNR и подобными модами
+=== bosh.py, 14166
+\n=== Faces Patched: %d
+>>>>
+\n=== Лиц изменено: %d
+=== bosh.py, 14172
+Redguard Patcher
+>>>>
+Патч для Редгардов
+=== bosh.py, 14173
+Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards
+>>>>
+Сбрасывает значение FGTS (FaceGen Textures) для всех NPC редгардов - используется для совместимости с Better Redguards
+=== bosh.py, 14219
+* %d Redquard NPCs Tweaked
+>>>>
+* %d персонажей изменено
+=== bosh.py, 14226
+NPCSkeletonChecker
+>>>>
+Проверка скелетной модели NPC
+=== bosh.py, 14290
+* %d Skeletons Tweaked
+>>>>
+* %d моделей изменено
+=== bosh.py, 14296
+Import Roads
+>>>>
+Импорт дорог
+=== bosh.py, 14297
+Import roads from source mods
+>>>>
+Импорт дорог из модов-источников
+=== bosh.py, 14376
+Import Sounds
+>>>>
+Импорт звуков
+=== bosh.py, 14377
+Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods
+>>>>
+Импортирует звуки (от магических эффектов, контейнеров, активаторов, погоды, дверей и пр.) из модов-источников
+=== bosh.py, 14499
+Import Stats
+>>>>
+Импорт параметров
+=== bosh.py, 14500
+Import stats from any pickupable items from source mods/files
+>>>>
+Импорт параметров всех подбираемых предметов из модов-источников
+=== bosh.py, 14599
+\n=== Modified Stats
+>>>>
+\n=== параметров затронуто
+=== bosh.py, 14602
+alch
+>>>>
+алх
+=== bosh.py, 14602
+Ammo
+>>>>
+Экипировка
+=== bosh.py, 14602
+Ingr
+>>>>
+Ингр
+=== bosh.py, 14602
+Misc
+>>>>
+Проч
+=== bosh.py, 14602
+Weapons
+>>>>
+Оружие
+=== bosh.py, 14602
+Soulgem
+>>>>
+Камень душ
+=== bosh.py, 14602
+Sigil Stone
+>>>>
+Сигил
+=== bosh.py, 14602
+Lights
+>>>>
+Источн. света
+=== bosh.py, 14602
+Keys
+>>>>
+Ключи
+=== bosh.py, 14602
+Clothes
+>>>>
+Одежда
+=== bosh.py, 14602
+Books
+>>>>
+Книги
+=== bosh.py, 14611
+Import Spell Stats
+>>>>
+Импорт параметров заклинаний
+=== bosh.py, 14612
+Import stats from any spells from source mods/files
+>>>>
+Импортирует параметры заклинаний из модов-источников
+=== bosh.py, 14714
+Spells
+>>>>
+Заклинания
+=== bosh.py, 14761
+* Armor Pieces Tweaked: %d
+>>>>
+* Частей брони изменено: %d
+=== bosh.py, 14807
+* Clothing Pieces Tweaked: %d
+>>>>
+* Частей одежды изменено: %d
+=== bosh.py, 14817
+Bow Reach Fix
+>>>>
+Исправление луков с нулевой дальностью
+=== bosh.py, 14818
+Fix bows with zero reach. (Zero reach causes CTDs.)
+>>>>
+Исправляет подобные луки (они служат источником багов)
+=== bosh.py, 14854
+* Bows fixed: %d
+>>>>
+* Луков исправлено: %d
+=== bosh.py, 14864
+Right Hand Rings
+>>>>
+Кольца на правой руке
+=== bosh.py, 14865
+Fixes rings to unequip consistently by making them prefer the right hand
+>>>>
+Предотвращает снятие кольца с левой руки при попытке надеть еще одно кольцо, делая правую руку предпочтительной для его ношения
+=== bosh.py, 14902
+* Rings fixed: %d
+>>>>
+* Колец исправлено: %d
+=== bosh.py, 14912
+DarNified Books
+>>>>
+Книги под DarN UI
+=== bosh.py, 14913
+Books will be reformatted for DarN UI
+>>>>
+Книги будут изменены под мод DarN UI
+=== bosh.py, 14993
+* Books DarNified: %d
+>>>>
+* Книг изменено: %d
+=== bosh.py, 15003
+Nvidia Fog Fix
+>>>>
+Испр. баг черного экрана nVidia
+=== bosh.py, 15004
+Fix fog related Nvidia black screen problems.)
+>>>>
+Исправляет проблему почернения экрана у видеокарт Nvidia.)
+=== bosh.py, 15051
+No Light Flicker
+>>>>
+Откл. мерцание пламени
+=== bosh.py, 15052
+Remove flickering from lights. For use on low-end machines
+>>>>
+Удаляет мерцание с источников света. Для слабых компьютеров
+=== bosh.py, 15093
+* Lights unflickered: %d
+>>>>
+* Источников света изменено: %d
+=== bosh.py, 15103
+Max Weight Potions
+>>>>
+Максимальный вес зелий
+=== bosh.py, 15104
+Potion weight will be capped
+>>>>
+Вес будет четко заданной величиной
+=== bosh.py, 15106
+0.1
+>>>>
+
+=== bosh.py, 15107
+0.2
+>>>>
+
+=== bosh.py, 15108
+0.4
+>>>>
+
+=== bosh.py, 15109
+0.6
+>>>>
+
+=== bosh.py, 15146
+Reweigh Potions
+>>>>
+Изменить вес зелий
+=== bosh.py, 15147
+* Potions Reweighed by max weight potions: %d
+>>>>
+* Изменен вес к максимально допустимому для зелий: %d
+=== bosh.py, 15157
+Minimum Weight Potions
+>>>>
+Минимиальный вес зелий
+=== bosh.py, 15158
+Potion weight will be floored
+>>>>
+Вес зелий будет снижен
+=== bosh.py, 15160
+1
+>>>>
+
+=== bosh.py, 15161
+2
+>>>>
+
+=== bosh.py, 15162
+3
+>>>>
+
+=== bosh.py, 15163
+4
+>>>>
+
+=== bosh.py, 15201
+* Potions Reweighed by Minimum Weight Potions: %d
+>>>>
+* Изменен вес к минимально допустимому для зелий: %d
+=== bosh.py, 15211
+Max Weight Staffs
+>>>>
+Максимальный вес посохов
+=== bosh.py, 15212
+Staff weight will be capped
+>>>>
+Вес будет четко заданной величиной
+=== bosh.py, 15218
+5
+>>>>
+
+=== bosh.py, 15219
+6
+>>>>
+
+=== bosh.py, 15220
+7
+>>>>
+
+=== bosh.py, 15221
+8
+>>>>
+
+=== bosh.py, 15258
+Reweigh Staffs
+>>>>
+Изменить вес посохов
+=== bosh.py, 15259
+* Staffs Reweighed: %d
+>>>>
+* Посохов изменено: %d
+=== bosh.py, 15266
+Tweak Assorted
+>>>>
+Прочие исправления
+=== bosh.py, 15267
+Tweak various records in miscellaneous ways
+>>>>
+Изменение ряда параметров игры
+=== bosh.py, 15273
+Armor Shows Amulets
+>>>>
+Амулеты поверх брони
+=== bosh.py, 15274
+Prevents armor from hiding amulets
+>>>>
+Амулеты будут отображаться поверх доспехов
+=== bosh.py, 15277
+Armor Shows Rings
+>>>>
+Кольца поверх брони
+=== bosh.py, 15278
+Prevents armor from hiding rings
+>>>>
+Кольца будут отображаться поверх доспехов
+=== bosh.py, 15281
+Clothing Shows Amulets
+>>>>
+Амулеты поверх одежды
+=== bosh.py, 15282
+Prevents Clothing from hiding amulets
+>>>>
+Предотвращает скрытие одеждой амулетов
+=== bosh.py, 15285
+Clothing Shows Rings
+>>>>
+Кольца поверх одежды
+=== bosh.py, 15286
+Prevents Clothing from hiding rings
+>>>>
+Предотвращает скрытие одеждой колец
+=== bosh.py, 15399
+Tweak Clothes
+>>>>
+Исправления одежды
+=== bosh.py, 15400
+Tweak clothing weight and blocking
+>>>>
+Различные исправления для одежды
+=== bosh.py, 15402
+Unlimited Amulets
+>>>>
+Безгр. число амулетов
+=== bosh.py, 15403
+Wear unlimited number of amulets - but they won't display
+>>>>
+Вы сможете одеть неограниченное кол-во амулетов - но они не будут отображаться
+=== bosh.py, 15405
+Unlimited Rings
+>>>>
+Безгр. число колец
+=== bosh.py, 15406
+Wear unlimited number of rings - but they won't display
+>>>>
+Вы сможете одеть неограниченное кол-во колец - но они не будут отображаться
+=== bosh.py, 15408
+Gloves Show Rings
+>>>>
+Кольца поверх перчаток
+=== bosh.py, 15409
+Gloves will always show rings. (Conflicts with Unlimited Rings.)
+>>>>
+Перчатки не будут скрывать кольца (конфликтует с надстройкой 'Безгр. число колец')
+=== bosh.py, 15411
+Robes Show Pants
+>>>>
+Штаны поверх роб
+=== bosh.py, 15412
+Robes will allow pants, greaves, skirts - but they'll clip
+>>>>
+Вы сможете одевать штаны вместе с робами, поножами, рубашками
+=== bosh.py, 15414
+Robes Show Amulets
+>>>>
+Амулеты поверх роб
+=== bosh.py, 15415
+Robes will always show amulets. (Conflicts with Unlimited Amulets.)
+>>>>
+Отображение амулета поверх робы (конфликтует с Безгр. амулетами)
+=== bosh.py, 15417
+Max Weight Amulets
+>>>>
+Максимальный вес амулетов
+=== bosh.py, 15418
+Amulet weight will be capped
+>>>>
+Изменение веса амулетов
+=== bosh.py, 15420
+0.0
+>>>>
+
+=== bosh.py, 15423
+0.5
+>>>>
+
+=== bosh.py, 15425
+Max Weight Rings
+>>>>
+Максимальный вес колец
+=== bosh.py, 15426
+Ring weight will be capped
+>>>>
+Изменение веса колец
+=== bosh.py, 15433
+Max Weight Hoods
+>>>>
+Максимальный вес капюшонов
+=== bosh.py, 15434
+Hood weight will be capped
+>>>>
+Изменение веса капюшонов
+=== bosh.py, 15438
+1.0
+>>>>
+
+=== bosh.py, 15493
+Tweak Settings
+>>>>
+Исправления параметров игры
+=== bosh.py, 15494
+Tweak game settings
+>>>>
+Исправления различных игровых настроек
+=== bosh.py, 15496
+Arrow: Litter Count
+>>>>
+Стрелы: число разбросанных
+=== bosh.py, 15497
+Maximum number of spent arrows allowed in cell
+>>>>
+Максимальное число разбросанных стрел, допустимое для отображения в области игрового мира
+=== bosh.py, 15506
+Arrow: Litter Time
+>>>>
+Стрелы: время отображения
+=== bosh.py, 15507
+Time before spent arrows fade away from cells and actors
+>>>>
+Время до исчезновения использованных стрел из областей игрового мира
+=== bosh.py, 15509
+1 Minute
+>>>>
+1 минута
+=== bosh.py, 15510
+[1.5 Minutes]
+>>>>
+[1.5 минуты]
+=== bosh.py, 15511
+2 Minutes
+>>>>
+2 минуты
+=== bosh.py, 15512
+3 Minutes
+>>>>
+3 минуты
+=== bosh.py, 15513
+5 Minutes
+>>>>
+5 минут
+=== bosh.py, 15514
+10 Minutes
+>>>>
+10 минут
+=== bosh.py, 15515
+30 Minutes
+>>>>
+30 минут
+=== bosh.py, 15516
+1 Hour
+>>>>
+1 час
+=== bosh.py, 15518
+Arrow: Recovery from Actor
+>>>>
+Стрелы: извлечение из персонажей
+=== bosh.py, 15519
+Chance that an arrow shot into an actor can be recovered
+>>>>
+Шанс добычи стрел, выпущенных в персонажа
+=== bosh.py, 15528
+Arrow: Speed
+>>>>
+Стрелы: скорость
+=== bosh.py, 15529
+Speed of full power arrow
+>>>>
+Регулирует скорость летящей стрелы
+=== bosh.py, 15531
+x 1.2
+>>>>
+
+=== bosh.py, 15532
+x 1.4
+>>>>
+
+=== bosh.py, 15533
+x 1.6
+>>>>
+
+=== bosh.py, 15534
+x 1.8
+>>>>
+
+=== bosh.py, 15535
+x 2.0
+>>>>
+
+=== bosh.py, 15536
+x 2.2
+>>>>
+
+=== bosh.py, 15537
+x 2.4
+>>>>
+
+=== bosh.py, 15538
+x 2.6
+>>>>
+
+=== bosh.py, 15539
+x 2.8
+>>>>
+
+=== bosh.py, 15540
+x 3.0
+>>>>
+
+=== bosh.py, 15542
+Camera: Chase Tightness
+>>>>
+Камера: чувствительность
+=== bosh.py, 15543
+Tightness of chase camera to player turning
+>>>>
+Регулирует чувствительность камеры при поворотах игрока
+=== bosh.py, 15545
+x 1.5
+>>>>
+
+=== bosh.py, 15548
+x 5.0
+>>>>
+
+=== bosh.py, 15550
+Camera: Chase Distance
+>>>>
+Камера: дистанция
+=== bosh.py, 15551
+Distance camera can be moved away from PC using mouse wheel
+>>>>
+Расстояние, на которое камера может быть удалена от игрока с помощью колесика мыши
+=== bosh.py, 15554
+x 2
+>>>>
+
+=== bosh.py, 15555
+x 3
+>>>>
+
+=== bosh.py, 15556
+x 5
+>>>>
+
+=== bosh.py, 15557
+x 10
+>>>>
+
+=== bosh.py, 15559
+Magic: Chameleon Refraction
+>>>>
+Магия: Хамелеон (рефракция)
+=== bosh.py, 15560
+Chameleon with transparency instead of refraction effect
+>>>>
+Удаляет (упрощает) визуальный эффект заклинания Хамелеон
+=== bosh.py, 15566
+Compass: Disable
+>>>>
+Компас: отключение
+=== bosh.py, 15567
+No quest and/or points of interest markers on compass
+>>>>
+Удаляет квестовые маркеры и обозначения локаций с компаса
+=== bosh.py, 15569
+Quests
+>>>>
+Квестовых маркеров
+=== bosh.py, 15570
+POIs
+>>>>
+Маркеров локаций
+=== bosh.py, 15571
+Quests and POIs
+>>>>
+Отключить все
+=== bosh.py, 15573
+Compass: POI Recognition
+>>>>
+Компас: дистанция обнаружения маркеров
+=== bosh.py, 15574
+Distance at which POI markers begin to show on compass
+>>>>
+Минимальное расстояние до маркера, при котором он появится на компасе
+=== bosh.py, 15576
+x 0.25
+>>>>
+
+=== bosh.py, 15577
+x 0.50
+>>>>
+
+=== bosh.py, 15578
+x 0.75
+>>>>
+
+=== bosh.py, 15580
+Essential NPC Unconsciousness
+>>>>
+Обморок бессмертных NPC
+=== bosh.py, 15581
+Time which essential NPCs stay unconscious
+>>>>
+Время, которое бессмертные NPC остаются без сознания
+=== bosh.py, 15583
+[10 Seconds]
+>>>>
+[10 секунд]
+=== bosh.py, 15584
+20 Seconds
+>>>>
+20 секунд
+=== bosh.py, 15585
+30 Seconds
+>>>>
+30 секунд
+=== bosh.py, 15590
+Fatigue from Running/Encumbrance
+>>>>
+Усталость от бега/перегрузки
+=== bosh.py, 15591
+Fatigue cost of running and encumbrance
+>>>>
+Влияние бега или лишнего веса в инвентаре на ваш запас сил
+=== bosh.py, 15599
+Horse Turning Speed
+>>>>
+Скорость поворота лошади
+=== bosh.py, 15600
+Speed at which horses turn
+>>>>
+Скорость с которой лошадь изменяет направления движения
+=== bosh.py, 15605
+Jump Higher
+>>>>
+Более высокий прыжок
+=== bosh.py, 15606
+Maximum height player can jump to
+>>>>
+Максимальная высота на которую может прыгать игрок
+=== bosh.py, 15608
+x 1.1
+>>>>
+
+=== bosh.py, 15616
+Camera: PC Death Time
+>>>>
+Камера: смерть игрока
+=== bosh.py, 15617
+Time after player's death before reload menu appears
+>>>>
+Время до появления меню загрузки сохраненной игры после смерти игрока
+=== bosh.py, 15619
+15 Seconds
+>>>>
+15 секунд
+=== bosh.py, 15622
+5 Minute
+>>>>
+5 минут
+=== bosh.py, 15623
+Unlimited
+>>>>
+Неограниченно
+=== bosh.py, 15625
+Cell Respawn Time
+>>>>
+Респаун областей игрового мира
+=== bosh.py, 15626
+Time before unvisited cell respawns. But longer times increase save sizes
+>>>>
+Время респауна. Более высокие значения увеличат размер вашего файла сохранения
+=== bosh.py, 15628
+1 Day
+>>>>
+1 день
+=== bosh.py, 15629
+[3 Days]
+>>>>
+[3 дня]
+=== bosh.py, 15630
+5 Days
+>>>>
+5 дней
+=== bosh.py, 15631
+10 Days
+>>>>
+10 дней
+=== bosh.py, 15632
+20 Days
+>>>>
+20 дней
+=== bosh.py, 15633
+1 Month
+>>>>
+1 месяц
+=== bosh.py, 15634
+6 Months
+>>>>
+6 месяцев
+=== bosh.py, 15635
+1 Year
+>>>>
+1 год
+=== bosh.py, 15637
+Combat: Recharge Weapons
+>>>>
+Бой: подзарядка оружия
+=== bosh.py, 15638
+Allow recharging weapons during combat
+>>>>
+Позволяет/запрещает подзаряжать зачарованное оружие во время боя
+=== bosh.py, 15640
+[Allow]
+>>>>
+[Разрешить]
+=== bosh.py, 15641
+Disallow
+>>>>
+Запретить
+=== bosh.py, 15643
+Magic: Bolt Speed
+>>>>
+Магия: скорость полета заклинания
+=== bosh.py, 15644
+Speed of magic bolt/projectile
+>>>>
+Скорость выпущенных во врага заклинаний
+=== bosh.py, 15657
+Msg: Equip Misc. Item
+>>>>
+Сообщение: предмет экипирован
+=== bosh.py, 15658
+Message upon equipping misc. item
+>>>>
+Сообщения об экипировке предмета
+=== bosh.py, 15660
+[None]
+>>>>
+[Нет]
+=== bosh.py, 15661
+.
+>>>>
+
+=== bosh.py, 15662
+Hmm
+>>>>
+Хмм
+=== bosh.py, 15664
+Cost Multiplier: Repair
+>>>>
+Модификатор цены: ремонт
+=== bosh.py, 15665
+Cost factor for repairing items
+>>>>
+Коэффициент, влияющий на цену ремонта
+=== bosh.py, 15678
+Greeting Distance
+>>>>
+Дистанция срабатывания приветствия
+=== bosh.py, 15679
+Distance at which NPCs will greet the player. Default: 150
+>>>>
+Дистанция на которой NPC будут приветствовать игрока. По умолч.: 150
+=== bosh.py, 15685
+Cost Multiplier: Recharge
+>>>>
+Модификатор цены: перезарядка
+=== bosh.py, 15686
+Cost factor for recharging items
+>>>>
+Коэффициент, влияющий на цену перезарядки
+=== bosh.py, 15698
+Master of Mercantile extra gold amount
+>>>>
+Доп. золото для мастера торговли
+=== bosh.py, 15699
+How much more barter gold all merchants have for a master of mercantile
+>>>>
+Определяет насколько больше золота будут иметь торговцы при достижении вами звания мастера в торговле
+=== bosh.py, 15708
+Combat: Max Actors
+>>>>
+Бой: максимум персонажей
+=== bosh.py, 15709
+Maximum number of actors that can actively be in combat with the player
+>>>>
+Максимальное число персонажей, которые могут быть вовлечены в бой с игроком
+=== bosh.py, 15718
+Crime Alarm Distance
+>>>>
+Преступления: дистанция тревоги
+=== bosh.py, 15719
+Distance from player that NPCs(guards) will be alerted of a crime
+>>>>
+Дистанция от игрока до NPC, на которой они будут засекать преступление
+=== bosh.py, 15728
+Cost Multiplier: Enchantment
+>>>>
+Модификатор цены: зачарование
+=== bosh.py, 15729
+Cost factor for enchanting items, OOO default is 120, vanilla 10
+>>>>
+Коэффициент, влияющий на цену зачарования. В ООО 120, по умолчанию в игре - 10
+=== bosh.py, 15740
+Cost Multiplier: Spellmaking
+>>>>
+Модификатор цены: создание заклинаний
+=== bosh.py, 15741
+Cost factor for making spells
+>>>>
+Коэффициент, влияющий на цену создания заклинаний
+=== bosh.py, 15758
+Magic: Max Player Summons
+>>>>
+Магия: макс. число призываемых существ
+=== bosh.py, 15759
+Maximum number of creatures the player can summon
+>>>>
+Максимальное число существ, которое может призывать игрок
+=== bosh.py, 15767
+Magic: Max NPC Summons
+>>>>
+Магия: макс. число призываемых NPC существ
+=== bosh.py, 15768
+Maximum number of creatures that each NPC can summon
+>>>>
+Максимальное число существ, которое может призывать NPC
+=== bosh.py, 15777
+Bounty: Attack
+>>>>
+Штрафы: атака
+=== bosh.py, 15778
+Bounty for attacking a 'good' npc
+>>>>
+Штраф за атаку 'хороших' NPC
+=== bosh.py, 15786
+Bounty: Horse Theft
+>>>>
+Штрафы: конокрадство
+=== bosh.py, 15787
+Bounty for horse theft
+>>>>
+Штраф за воровство лошади
+=== bosh.py, 15795
+Bounty: Theft
+>>>>
+Штрафы: воровство
+=== bosh.py, 15796
+Bounty for stealing, as fraction of item value
+>>>>
+Величина штрафа за воровство равна части стоимости предмета
+=== bosh.py, 15803
+Combat: Alchemy
+>>>>
+Бой: алхимия
+=== bosh.py, 15804
+Allow alchemy during combat
+>>>>
+Позволяет заниматься алхимией во время боя
+=== bosh.py, 15809
+Combat: Repair
+>>>>
+Бой: ремонт
+=== bosh.py, 15810
+Allow repairing armor/weapons during combat
+>>>>
+Позволяет заниматься ремонтом снаряжения во время боя
+=== bosh.py, 15815
+Companions: Max Number
+>>>>
+Компаньоны: макс. количество
+=== bosh.py, 15816
+Maximum number of actors following the player
+>>>>
+Максимально возможное число следующих за игроком компаньонов
+=== bosh.py, 15826
+Training Max
+>>>>
+Макс. число тренировок
+=== bosh.py, 15827
+Maximum number of Training allowed by trainers
+>>>>
+Максимальное за уровень число тренировок у учителей
+=== bosh.py, 15837
+Combat: Maximum Armor Rating
+>>>>
+Бой: максимальный показатель брони
+=== bosh.py, 15838
+The Maximun amount of protection you will get from armor
+>>>>
+Максимальный показатель защиты, получаемый вами от доспехов
+=== bosh.py, 15864
+Body Part Codes
+>>>>
+Обозначения для частей тела
+=== bosh.py, 15865
+Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc
+>>>>
+Устанавливает обозначения для частей тела в улучшениях брони/одежды, напр.: А: Амулет, R: Кольцо и т.д/
+=== bosh.py, 15946
+* %s: %d
+>>>>
+
+=== bosh.py, 15954
+Potions
+>>>>
+Зелья
+=== bosh.py, 15955
+Label potions to sort by type and effect
+>>>>
+Помечает зелья для сортировки по типу и эффекту
+=== bosh.py, 15957
+XD Illness
+>>>>
+
+=== bosh.py, 15958
+XD. Illness
+>>>>
+
+=== bosh.py, 15959
+XD - Illness
+>>>>
+
+=== bosh.py, 15960
+(XD) Illness
+>>>>
+
+=== bosh.py, 16032
+Notes and Scrolls
+>>>>
+Записки и свитки
+=== bosh.py, 16033
+Mark notes and scrolls to sort separately from books
+>>>>
+Помечает записки и свитки для отделения их от книг
+=== bosh.py, 16035
+~Fire Ball
+>>>>
+
+=== bosh.py, 16036
+~D Fire Ball
+>>>>
+
+=== bosh.py, 16037
+~D. Fire Ball
+>>>>
+
+=== bosh.py, 16038
+~D - Fire Ball
+>>>>
+
+=== bosh.py, 16039
+~(D) Fire Ball
+>>>>
+
+=== bosh.py, 16041
+Fire Ball
+>>>>
+
+=== bosh.py, 16042
+D Fire Ball
+>>>>
+
+=== bosh.py, 16043
+D. Fire Ball
+>>>>
+
+=== bosh.py, 16044
+D - Fire Ball
+>>>>
+
+=== bosh.py, 16045
+(D) Fire Ball
+>>>>
+
+=== bosh.py, 16126
+Label spells to sort by school and level
+>>>>
+Маркирует заклинания, добавляя школу и уровень
+=== bosh.py, 16135
+D2 Fire Ball
+>>>>
+
+=== bosh.py, 16136
+D2. Fire Ball
+>>>>
+
+=== bosh.py, 16137
+D2 - Fire Ball
+>>>>
+
+=== bosh.py, 16138
+(D2) Fire Ball
+>>>>
+
+=== bosh.py, 16203
+Label ammo and weapons to sort by type and damage
+>>>>
+Маркирует экипировку и оружие для сортировки по типу и урону
+=== bosh.py, 16205
+B Iron Bow
+>>>>
+
+=== bosh.py, 16206
+B. Iron Bow
+>>>>
+
+=== bosh.py, 16207
+B - Iron Bow
+>>>>
+
+=== bosh.py, 16208
+(B) Iron Bow
+>>>>
+
+=== bosh.py, 16210
+B08 Iron Bow
+>>>>
+
+=== bosh.py, 16211
+B08. Iron Bow
+>>>>
+
+=== bosh.py, 16212
+B08 - Iron Bow
+>>>>
+
+=== bosh.py, 16213
+(B08) Iron Bow
+>>>>
+
+=== bosh.py, 16274
+Tweak Names
+>>>>
+Исправления названий
+=== bosh.py, 16275
+Tweak object names to show type and/or quality
+>>>>
+Исправляет названия различных предметов для отображения их уровня и/или качества (прим. перев. - используется только для английских названий)
+=== bosh.py, 16277
+Rename armor to sort by type
+>>>>
+Переименование брони для сортировки по типу
+=== bosh.py, 16278
+BL Leather Boots
+>>>>
+
+=== bosh.py, 16279
+BL. Leather Boots
+>>>>
+
+=== bosh.py, 16280
+BL - Leather Boots
+>>>>
+
+=== bosh.py, 16281
+(BL) Leather Boots
+>>>>
+
+=== bosh.py, 16283
+BL02 Leather Boots
+>>>>
+
+=== bosh.py, 16284
+BL02. Leather Boots
+>>>>
+
+=== bosh.py, 16285
+BL02 - Leather Boots
+>>>>
+
+=== bosh.py, 16286
+(BL02) Leather Boots
+>>>>
+
+=== bosh.py, 16288
+Rename clothes to sort by type
+>>>>
+Переименование одежды для сортировки по типу
+=== bosh.py, 16289
+P Grey Trowsers
+>>>>
+
+=== bosh.py, 16290
+P. Grey Trowsers
+>>>>
+
+=== bosh.py, 16291
+P - Grey Trowsers
+>>>>
+
+=== bosh.py, 16292
+(P) Grey Trowsers
+>>>>
+
+=== bosh.py, 16331
+Special
+>>>>
+
+=== bosh.py, 16338
+Cobl Catalogs
+>>>>
+Каталоги COBL
+=== bosh.py, 16339
+Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded
+>>>>
+Обновляет каталоги ингредиентов и эффектов в COBL.\n\nЗапустится только при наличии основного esm-файла COBL
+=== bosh.py, 16392
+Salan's Catalog of %s\r\n\r\n
+>>>>
+
+=== bosh.py, 16440
+* Ingredients Cataloged: %d
+>>>>
+
+=== bosh.py, 16441
+* Effects Cataloged: %d
+>>>>
+
+=== bosh.py, 16446
+Cobl Exhaustion
+>>>>
+
+=== bosh.py, 16447
+Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active
+>>>>
+Для использования с функцией Power Exhaustion из Cobl.\n\nЗапустится только при наличии основного esm-файла COBL версии 1.66 и выше
+=== bosh.py, 16532
+Power Exhaustion
+>>>>
+
+=== bosh.py, 16544
+* Powers Tweaked: %d
+>>>>
+
+=== bosh.py, 16553
+Leveled Lists
+>>>>
+Уровневые списки
+=== bosh.py, 16554
+Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below
+>>>>
+Объединяет изменения в левелинг-листах только для АКТИВНЫХ/ОБЪЕДИНЕННЫХ МОДОВ.\n\nПродвинутые пользователи могут регулировать этот список включением/выключением тегов Relev/Delev
+=== bosh.py, 16555
+Merges changes to leveled lists from all active mods
+>>>>
+Объединяет изменения в уровневых списках из всех активных модов
+=== bosh.py, 16679
+Delevelers/Relevelers
+>>>>
+Затрагивающие левелинг моды
+=== bosh.py, 16683
+Item
+>>>>
+Предмет
+=== bosh.py, 16683
+Spell
+>>>>
+Заклинание
+=== bosh.py, 16684
+Merged %s Lists
+>>>>
+объединено %s списков
+=== bosh.py, 16725
+Empty %s Sublists
+>>>>
+Пустые %s подсписки
+=== bosh.py, 16728
+Empty %s Sublists Removed
+>>>>
+Пустых %s подсписков удалено
+=== bosh.py, 16735
+Morph Factions
+>>>>
+Слияние фракций
+=== bosh.py, 16736
+Mark factions that player can acquire while morphing.\n\nRequires Cobl 2.18 and Wrye Morph or similar
+>>>>
+Помечает фракции в которые может вступать игрок.\n\nТребует Cobl 2.18 и Wrye Morph
+=== bosh.py, 16767
+Member
+>>>>
+Участник
+=== bosh.py, 16844
+\n=== Morphable Factions
+>>>>
+\n=== Фракции для слияния
+=== bosh.py, 16852
+Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active
+>>>>
+Использовать при установленном моде Power Exhaustion
+=== bosh.py, 16931
+Race Records
+>>>>
+Данные рас
+=== bosh.py, 16932
+Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED
+>>>>
+Объединяет изменения глаз, волос, тел, голосов из АКТИВНЫХ или ОБЪЕДИНЕННЫХ модов. Все моды, которые не подключены на момент создания патча будут ПРОИГНОРИРОВАНЫ
+=== bosh.py, 16933
+Merge race eyes, hair, body, voice from mods
+>>>>
+Объединяет изменения глаз, волос, тел, голосов из модов
+=== bosh.py, 17153
+Mesh undefined for eye %s in race %s
+>>>>
+Модель глаз %s расы %s не определена
+=== bosh.py, 17234
+\n=== Merged
+>>>>
+\n=== объединено
+=== bosh.py, 17236
+~~None~~
+>>>>
+
+=== bosh.py, 17240
+\n=== Eyes/Hair Sorted
+>>>>
+\n=== глаз/причесок отсортировано
+=== bosh.py, 17246
+\n=== Eye Meshes Filtered
+>>>>
+\n=== Моделей глаз отфильтровано
+=== bosh.py, 17250
+In order to prevent 'googly eyes', incompatible eyes have been removed from the following races
+>>>>
+'Несовместимые' глаза были удалены у следующих рас
+=== bosh.py, 17254
+\n=== Eyes/Hair Assigned for NPCs
+>>>>
+\n=== Глаза/прически заданы для NPC
+=== bosh.py, 17261
+MAO Patcher
+>>>>
+Патч для MAO
+=== bosh.py, 17262
+Changes the skeleton for all vanilla and mod added NPCs (except for due to a as yet unfixed bug not Sheogorath) - for compatibility with Mayu's Animation Overhaul
+>>>>
+Патч совместимости с Mayu's Animation Overhaul для модов, затрагивающих скелетную модель NPC
+=== bosh.py, 17314
+SEWorld Tests
+>>>>
+Проверка нахождения в SEWorld
+=== bosh.py, 17315
+Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary
+>>>>
+Приостанавливает квесты Сиродила, пока игрок находится на Дрожащих островах, т.е. заново инициализирует параметр GetPlayerInSEWorld при необходимости
+=== bosh.py, 17381
+Quests Patched: %d
+>>>>
+Квестов затронуто: %d
+=== bosh.py, 17388
+Contents Checker
+>>>>
+Проверка содержимого
+=== bosh.py, 17389
+Checks contents of leveled lists, inventories and containers for correct types
+>>>>
+Проверяет содержимое левелинг-листов, инвентаря и контейнеров на корректность их типа
+=== bosh.py, 17499
+-p command line argument is missing
+>>>>
+-p отсутствует аргумент командной строки
+=== bosh.py, 17500
+-l command line argument is missing
+>>>>
+-l отсутствует аргумент командной строки
+=== bosh.py, 17505
+Error in %s argument: Non-existent directory:\n>> %s
+>>>>
+Ошибка в %s аргументе: Несуществующая папка:\n>> %s
+=== bosh.py, 17506
+Folder paths specified on command line
+>>>>
+Пути заданы командной строкой
+=== bosh.py, 17515
+Folder paths extracted from win32com.shell
+>>>>
+Пути папок извлечены из win32com.shell
+=== bosh.py, 17523
+Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help
+>>>>
+Невозможно найти папки пользователя в реестре Windows.\n>>Смотрите секцию ридми \"Если Wrye Bash не запускается\"
+=== bosh.py, 17569
+Personal folder does not exist\nPersonal folder: %s\nAdditional info:\n%s
+>>>>
+Личные папки не существуют\nЛичная папка: %s\nДоп. информация:\n%s
+=== bosh.py, 17572
+Local app data folder does not exist.\nLocal app data folder: %s\nAdditional info:\n%s
+>>>>
+Папка приложения не существует\nПапка приложения: %s\nДоп. информация:\n%s
+=== bosh.py, 17576
+Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe
+>>>>
+Ошибка установки\nOblivion.exe не найден в %s.\nЗамечание: папка Mopy должна находиться в той же папке, что и Oblivion.exe
+=== bosh.py, 17588
+Compiled
+>>>>
+Скомпилировано
+=== basher.py, 133
+Author
+>>>>
+Автор
+=== basher.py, 135
+Date
+>>>>
+Дата
+=== basher.py, 136
+Day
+>>>>
+День
+=== basher.py, 137
+File
+>>>>
+Файл
+=== basher.py, 139
+Load Order
+>>>>
+Порядок загрузки
+=== basher.py, 140
+Modified
+>>>>
+Изменен
+=== basher.py, 141
+MI
+>>>>
+
+=== basher.py, 142
+Hours
+>>>>
+Часов сыграно
+=== basher.py, 143
+Player
+>>>>
+Имя персонажа
+=== basher.py, 144
+Rating
+>>>>
+Рейтинг
+=== basher.py, 146
+Save Order
+>>>>
+Сохранить порядок
+=== basher.py, 147
+Size
+>>>>
+Размер
+=== basher.py, 148
+Status
+>>>>
+Статус
+=== basher.py, 149
+Subject
+>>>>
+Тема письма
+=== basher.py, 581
+${count} Children deactivated
+>>>>
+${count} потомков деактивировано
+=== basher.py, 581
+%s
+>>>>
+
+=== basher.py, 590
+${count} Masters activated
+>>>>
+${count} мастер-файлов активировано
+=== basher.py, 858
+Unrecognized sort key
+>>>>
+Неопознанная клавиша сортировки
+=== basher.py, 916
+Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving
+>>>>
+Измененить/обновить список мастер-файлов? Учтите, что в процессе обновления имена некоторых файлов могут измениться. Перед сохранением убедитесь в том, что внесены именно желаемые вами изменения
+=== basher.py, 917
+Update Masters
+>>>>
+Обновить мастер-файлы
+=== basher.py, 939
+File "%s" does not exist
+>>>>
+Файла "%s" не существует
+=== basher.py, 1056
+Master file
+>>>>
+Мастер файл
+=== basher.py, 1059
+Can be merged into Bashed Patch
+>>>>
+Может быть объединено в Bashed патч
+=== basher.py, 1063
+One or more masters are missing
+>>>>
+Один или более мастер-файлов отсутствуют
+=== basher.py, 1064
+Active in load list
+>>>>
+Активен в списке загрузки
+=== basher.py, 1065
+Merged into Bashed Patch
+>>>>
+Объединен в Bashed патч
+=== basher.py, 1066
+Imported into Bashed Patch
+>>>>
+Импортирован в Bashed патч
+=== basher.py, 1067
+Masters have been re-ordered
+>>>>
+Мастер-файлы переназначены
+=== basher.py, 1071
+WARNING: Has same load order as another mod
+>>>>
+ОСТОРОЖНО: имеет аналогичный другому порядок щагрузки
+=== basher.py, 1074
+WARNING: Exclusion group is overloaded
+>>>>
+ОСТОРОЖНО: Группа переполнена
+=== basher.py, 1077
+Has same time as another (unloaded) mod
+>>>>
+Имеет дату редактирования, аналогичную другому моду
+=== basher.py, 1080
+Group header
+>>>>
+Заголовок группы
+=== basher.py, 1083
+File is ghosted
+>>>>
+Файл скрыт
+=== basher.py, 1163
+Auto-ordered files cannot be manually moved
+>>>>
+Авто-отсортированные файлы не могут быть перемещены вручную
+=== basher.py, 1279
+Description
+>>>>
+Описание
+=== basher.py, 1281
+Masters
+>>>>
+Мастер-файлы
+=== basher.py, 1288
+Bash Tags
+>>>>
+Теги Wrye Bash
+=== basher.py, 1369
+Incorrect file extension
+>>>>
+Некорректное расширение файла
+=== basher.py, 1373
+File %s already exists
+>>>>
+Файл %s уже существует
+=== basher.py, 1395
+Unrecognized date
+>>>>
+Некорректная дата
+=== basher.py, 1399
+Bash cannot handle files dates greater than January 19, 2038.)
+>>>>
+Bash не может работать с файлами, чья дата посл. изменений превышает 19 янв 2038 г.)
+=== basher.py, 1428
+This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted
+>>>>
+С модом ассоциирован bsa архив и звуковые/голосовые папки (Sound\\Voices\\%s), которые перестанут работать после переименовывания esp-файла.\n\nЗамечание: возможно BSA архив также содержит звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут восприниматься esp-файлом, если его имя будет отличаться от имени bsa-архива
+=== basher.py, 1430
+This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted
+>>>>
+С модом ассоциирован bsa архив (%s.bsa), который перестанет работать после переименовывания esp-файла.\n\nЗамечание: возможно BSA архив также содержит звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут восприниматься esp-файлом, если его имя будет отличаться от имени bsa-архива
+=== basher.py, 1432
+This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed
+>>>>
+С модом ассоциирована звуковая/голосовая папка (Sound\\Voice\\%s), которая перестанет работать после переименовывания esp-файла
+=== basher.py, 1473
+File corrupted on save!
+>>>>
+Файл поврежден при сохранении!
+=== basher.py, 1492
+Automatic
+>>>>
+Автоматически
+=== basher.py, 1495
+Copy to Description
+>>>>
+Копировать в описание
+=== basher.py, 1547
+Mods: %d/%d
+>>>>
+Моды: %d/%d
+=== basher.py, 1794
+%s\nLevel %d, Day %d, Play %d:%02d\n%s
+>>>>
+%s\nУровень %d, День %d, Сыграно %d:%02d\n%s
+=== basher.py, 1813
+Notes
+>>>>
+Замечания
+=== basher.py, 1908
+Saves: %d
+>>>>
+Файлы сохранений: %d
+=== basher.py, 1978
+Matched
+>>>>
+Совпадения
+=== basher.py, 1979
+Missing
+>>>>
+Отсутствуют
+=== basher.py, 1980
+Mismatched
+>>>>
+Несовпадения
+=== basher.py, 1981
+Conflicts
+>>>>
+Конфликты
+=== basher.py, 1982
+Underridden
+>>>>
+Перезаписаны
+=== basher.py, 1983
+Dirty
+>>>>
+'Грязные'
+=== basher.py, 1984
+Skipped
+>>>>
+Пропущены
+=== basher.py, 2009
+Sub-Packages
+>>>>
+Под-пакеты
+=== basher.py, 2013
+Esp/m Filter
+>>>>
+Фильтр esm/esp
+=== basher.py, 2017
+Comments
+>>>>
+Комментарии
+=== basher.py, 2026
+Do you want to enable Installers If you do, Bash will first need to initialize some data. If you have many mods installed, this can take on the order of five minutes.\n\nIf you prefer to not enable Installers at this time, you can always enable it later from the column header context menu
+>>>>
+Вы хотите включить 'Установщики'? Если да, то Wrye Bash требуется инициализировать данные. Если у вас установлено много модов, это может занять несколько минут.\n\nЕсли вы сейчас предпочтете не включать эту функцию, в дальнейшем вы сможете активировать ее из контекстного меню
+=== basher.py, 2036
+Refreshing Installers
+>>>>
+Обновление установщиков
+=== basher.py, 2049
+Refreshing Converters
+>>>>
+Обновление преобразователей
+=== basher.py, 2073
+Packages: %d/%d
+>>>>
+Пакеты: %d/%d
+=== basher.py, 2164
+Overview\n
+>>>>
+Обзор\n
+=== basher.py, 2167
+Project
+>>>>
+Проект
+=== basher.py, 2169
+Marker
+>>>>
+Пометка
+=== basher.py, 2171
+Archive
+>>>>
+Архив
+=== basher.py, 2173
+Unrecognized
+>>>>
+Неопределено
+=== basher.py, 2176
+Structure: N/A\n
+>>>>
+Структура: N/A\n
+=== basher.py, 2178
+Structure: Simple\n
+>>>>
+Структура: Простая\n
+=== basher.py, 2181
+Structure: Complex/Simple\n
+>>>>
+Структура: Комплексная/Простая\n
+=== basher.py, 2183
+Structure: Complex\n
+>>>>
+Структура: Комплексная\n
+=== basher.py, 2185
+Structure: Corrupt/Incomplete\n
+>>>>
+Структура: Поврежденная/Незавершенная\n
+=== basher.py, 2187
+Structure: Unrecognized\n
+>>>>
+Структура: Неорганизованная\n
+=== basher.py, 2192
+Size: %s KB\n
+>>>>
+Размер: %s KB\n
+=== basher.py, 2194
+Size: N/A\n
+>>>>
+Размер: N/A\n
+=== basher.py, 2196
+Non-solid
+>>>>
+Раздельный
+=== basher.py, 2196
+Solid
+>>>>
+Непрерывный
+=== basher.py, 2197
+Size: %s kb (%s)\n
+>>>>
+Размер: %s kb (%s)\n
+=== basher.py, 2199
+Size: Unrecognized\n
+>>>>
+Размер: неопределен\n
+=== basher.py, 2200
+Modified: %s\n
+>>>>
+Изменен: %s\n
+=== basher.py, 2202
+Data CRC: %08X\n
+>>>>
+Контрольная CRC-сумма: %08X\n
+=== basher.py, 2204
+Files: %s\n
+>>>>
+Файлов: %s\n
+=== basher.py, 2206
+Configured: %s (%s KB)\n
+>>>>
+Готовых к установке: %s (%s KB)\n
+=== basher.py, 2209
+Matched: %s\n
+>>>>
+Совпавших: %s\n
+=== basher.py, 2211
+Missing: %s\n
+>>>>
+Отсутствующих: %s\n
+=== basher.py, 2213
+Conflicts: %s\n
+>>>>
+Конфликтующих: %s\n
+=== basher.py, 2218
+Configured Files
+>>>>
+Готовые к установке файлы
+=== basher.py, 2234
+Skipped (Extension)
+>>>>
+Пропущено (расширения)
+=== basher.py, 2235
+Skipped (Dir)
+>>>>
+Пропущено (папки)
+=== basher.py, 2390
+Automatically update Textures BSA after adding/removing a replacer
+>>>>
+Автоматически обновляет bsa-архивы после установки/удаления заменителя
+=== basher.py, 2392
+Update
+>>>>
+Обновить
+=== basher.py, 2393
+Enable replacement textures by updating Textures archive
+>>>>
+Обновляет bsa-архив
+=== basher.py, 2394
+Restore
+>>>>
+Восстановить
+=== basher.py, 2395
+Restore Textures archive to its original state
+>>>>
+Возвращает bsa-архивам первоначальное состояние
+=== basher.py, 2397
+Textures BSA
+>>>>
+BSA-архивы
+=== basher.py, 2412
+Reps: %d/%d
+>>>>
+Заменители: %d/%d
+=== basher.py, 2431
+BSA editing disabled becase OBMM or BSAPatch is in use
+>>>>
+Редактирование BSA-архивов выключено т.к. использовались OBMM или BSAPatch
+=== basher.py, 2437
+Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source
+>>>>
+Редактировать текстуры в BSA-архиве?\n\nЭта команда напрямую редактирует Oblivion - Textures - Compressed.bsa. Если файл поврежден (бывает очень редко), то вам понадобится переустановка Oblivion
+=== basher.py, 2457
+BSA Hashes reset: %d\nBSA Hashes Invalidated: %d.\nAIText entries: %d
+>>>>
+BSA хешей сброшено: %d\nИнвалидация записей BSA: %d.\nВхождений AIText: %d
+=== basher.py, 2467
+BSA Hashes reset: %d
+>>>>
+BSA-хешей сброшено: %d
+=== basher.py, 2591
+Screens: %d
+>>>>
+Скриншоты: %d
+=== basher.py, 2747
+Search
+>>>>
+Поиск
+=== basher.py, 2748
+Clear
+>>>>
+Очистить
+=== basher.py, 2773
+PMs: %d/%d
+>>>>
+Сообщения: %d/%d
+=== basher.py, 2852
+People: %d
+>>>>
+Люди: %d
+=== basher.py, 2925
+Package
+>>>>
+Пакет
+=== basher.py, 2929
+Version
+>>>>
+Версия
+=== basher.py, 2931
+Tags
+>>>>
+Теги
+=== basher.py, 2939
+Abstract
+>>>>
+
+=== basher.py, 2946
+ModBase: %d
+>>>>
+
+=== basher.py, 2985
+Replacers
+>>>>
+Заменители
+=== basher.py, 2986
+Mods
+>>>>
+Моды
+=== basher.py, 2988
+Saves
+>>>>
+Сохраненные игры
+=== basher.py, 2989
+Screenshots
+>>>>
+Скриншоты
+=== basher.py, 2991
+PM Archive
+>>>>
+Архив ПМ сообщений
+=== basher.py, 3087
+Default
+>>>>
+По умолчанию
+=== basher.py, 3104
+\n+ %d others
+>>>>
+\n+ %d других
+=== basher.py, 3118
+Modified dates have been reset for some mod files
+>>>>
+Для некоторых файлов измененные даты возвращены в исходное состояние
+=== basher.py, 3125
+Some mods have been auto-grouped
+>>>>
+Некоторые файлы были перегруппированы
+=== basher.py, 3146
+Missing files have been removed from load list
+>>>>
+Отсутствующие файлы удалены из списка загрузки
+=== basher.py, 3153
+Load list is overloaded. Some files have been de-activated
+>>>>
+Список загрузки переполнен. Некоторые файлы были отключены
+=== basher.py, 3162
+The following mod files have corrupted headers
+>>>>
+Следующие файлы модов имеют поврежденные заголовки
+=== basher.py, 3168
+The following save files have corrupted headers
+>>>>
+Следующие файлы сохранений имеют поврежденные заголовки
+=== basher.py, 3176
+Your Oblivion.ini should begin with a section header (e.g. "[General]
+>>>>
+Oblivion.ini должен начинаться с общей секции настроек ([General]
+=== basher.py, 3180
+Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date
+>>>>
+Bash не может работать с файлами, чья дата посл. изменений превышает 19 янв 2038 г. Соответственно, даты следующих файлов были сброшены к более ранним
+=== basher.py, 3187
+Turn Lock Times Off?\n\nLock Times a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM
+>>>>
+Отключить запрет на изменение дат?\n\nФункция запрета изменения дат позволит вам запомнить порядок загрузки модов, чтобы в дальнейшем при изменении/редактировании файлов он не менялся (Wrye Bash будет восстанавливать запомненный)
+=== basher.py, 3188
+Lock Times
+>>>>
+Запретить изменение дат
+=== basher.py, 3194
+Lock Times is now %s. To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'
+>>>>
+Запрет на изменение дат сейчас %s. Для переключения кликните на 'Запретить изменение дат' в контекстном меню
+=== basher.py, 3195
+off
+>>>>
+выкл
+=== basher.py, 3195
+on
+>>>>
+вкл
+=== basher.py, 3200
+Installation appears incomplete. Please re-unzip bash to Oblivion directory so that ALL files are installed.\n\nCorrect installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblvion\\Data\\INI Tweaks directories
+>>>>
+Установка не завершена. Пожалуйста, переустановите Wrye Bash
+=== basher.py, 3201
+Incomplete Installation
+>>>>
+Некорректная установка
+=== basher.py, 3207
+Mark Mergeable
+>>>>
+Пометить объединяемым
+=== basher.py, 3273
+Doc Browser
+>>>>
+Браузер документов
+=== basher.py, 3285
+Set Doc
+>>>>
+Задать документ
+=== basher.py, 3287
+Forget Doc
+>>>>
+Отменить документ
+=== basher.py, 3289
+Rename Doc
+>>>>
+Переименовать документ
+=== basher.py, 3291
+Edit Doc
+>>>>
+Редактировать документ
+=== basher.py, 3293
+Open Doc
+>>>>
+Открыть документ
+=== basher.py, 3293
+Open doc in external editor
+>>>>
+Открывает документ во внешнем редакторе
+=== basher.py, 3402
+Select doc for %s
+>>>>
+Задать документ для %s
+=== basher.py, 3417
+Rename file to
+>>>>
+Переименовать файл в
+=== basher.py, 3436
+Filename not defined
+>>>>
+Имя файла не задано
+=== basher.py, 3475
+My Readme Template.txt
+>>>>
+Мой шаблон ридми Readme Template.txt
+=== basher.py, 3476
+Bash Readme Template.txt
+>>>>
+Шаблон ридми Readme Template.txt
+=== basher.py, 3555
+Mod Checker
+>>>>
+Проверка модов
+=== basher.py, 3572
+Mod List
+>>>>
+Список модов
+=== basher.py, 3574
+Configuration
+>>>>
+Конфигурация
+=== basher.py, 3575
+Suggestions
+>>>>
+Предложения
+=== basher.py, 3576
+Copy Text
+>>>>
+Копировать текст
+=== basher.py, 3668
+Initializing Data
+>>>>
+Инициализация данных
+=== basher.py, 3671
+Initializing Version
+>>>>
+Инициализация версии
+=== basher.py, 3675
+Initializing Windows
+>>>>
+Инициализация окон
+=== basher.py, 3699
+Initializing ModInfos
+>>>>
+Инициализация описаний модов
+=== basher.py, 3705
+Initializing SaveInfos
+>>>>
+Инициализация описаний сохранений
+=== basher.py, 3714
+Generating Blank Bashed Patch
+>>>>
+Создание шаблона патча
+=== basher.py, 3779
+Race
+>>>>
+Раса
+=== basher.py, 3780
+Gender
+>>>>
+Пол
+=== basher.py, 3781
+Stats
+>>>>
+Данные
+=== basher.py, 3782
+Class
+>>>>
+Класс
+=== basher.py, 3796
+Import
+>>>>
+Импорт
+=== basher.py, 3867
+Face imported
+>>>>
+Лицо импортировано
+=== basher.py, 3981
+\nSaving
+>>>>
+\nСохранение
+=== basher.py, 4000
+Activate %s?
+>>>>
+Активировать %s?
+=== basher.py, 4007
+Masters Activated
+>>>>
+Мастер-файлы активированы
+=== basher.py, 4014
+File Edit Error
+>>>>
+Ошибка редактирования файла
+=== basher.py, 4208
+Oblivion Mod Files
+>>>>
+Файлы модов
+=== basher.py, 4210
+Get
+>>>>
+Получить
+=== basher.py, 4286
+Tweaks
+>>>>
+Настройки
+=== basher.py, 4400
+Mergeable Mods
+>>>>
+Объединяемые моды
+=== basher.py, 4420
+Race Mods
+>>>>
+Моды, затрагивающие расы
+=== basher.py, 4451
+Override Delev/Relev Tags
+>>>>
+Управление тегами Delev/Relev
+=== basher.py, 4538
+Unhide
+>>>>
+Показать
+=== basher.py, 4553
+Unhide files
+>>>>
+Показаны файлы
+=== basher.py, 4560
+You can't unhide files from this directory
+>>>>
+Вы не можете показывать файлы из этой папки
+=== basher.py, 4565
+File skipped: %s. File is already present
+>>>>
+Пропущенный файл: %s. Файл уже отображается
+=== basher.py, 4586
+Delete Files
+>>>>
+Удалить файлы
+=== basher.py, 4615
+This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created
+>>>>
+С модом ассоциирован bsa архив и звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут работать с его копией.\n\nЗамечание: возможно BSA архив также содержит звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут восприниматься esp-файлом копии даже если будет создана копия bsa архива
+=== basher.py, 4617
+This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created
+>>>>
+С модом ассоциирован bsa архив (%s.bsa), который не будет работать с его копией.\n\nЗамечание: возможно BSA архив также содержит звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут восприниматься esp-файлом копии даже если будет создана копия bsa архива
+=== basher.py, 4619
+This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod
+>>>>
+С модом ассоциирован bsa архив и звуковые/голосовые папки (Sound\\Voices\\%s), которые не будут работать с его копией
+=== basher.py, 4650
+Hide
+>>>>
+Скрыть
+=== basher.py, 4654
+Hide Files
+>>>>
+Скрыть файлы
+=== basher.py, 4672
+A file named %s already exists in the hidden files directory. Overwrite it?
+>>>>
+Файл %s уже существует в папке скрытых файлов. Перезаписать?
+=== basher.py, 4685
+List Masters
+>>>>
+Список мастер-файлов
+=== basher.py, 4703
+Redate
+>>>>
+Изменить дату редактирования
+=== basher.py, 4712
+Redate selected mods starting at
+>>>>
+Изменить дату последнего изменения файлов на
+=== basher.py, 4713
+Redate Mods
+>>>>
+Изменить дату редактирования модов
+=== basher.py, 4722
+Bash cannot handle dates greater than January 19, 2038.)
+>>>>
+Bash не способен работать с файлами, чья дата последнего изменения больше 19 янв 2038 г.)
+=== basher.py, 4740
+Sort
+>>>>
+Сортировка
+=== basher.py, 4745
+Reorder selected mods in alphabetical order? The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.\n\nNote that this operation cannot be undone. Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order
+>>>>
+Пересортировать выбранные моды в алфавитном порядке? Первый файл будет иметь ту же дату, что и самый старый файл группы, дата изм. остальных будет увеличиваться на минуту для каждого последующего. \n\nУчтите, что эта операция необратима. Для корректной работы некоторых модов нужен особый порядок загрузки, и эта операция может его нарушить
+=== basher.py, 4746
+Sort Mods
+>>>>
+Сортировать моды
+=== basher.py, 4773
+Snapshot
+>>>>
+Снимок
+=== basher.py, 4785
+Save snapshot as
+>>>>
+Сохранить снимок как
+=== basher.py, 4813
+Revert to Snapshot
+>>>>
+Восстановить из снимка
+=== basher.py, 4827
+Revert %s to snapshot
+>>>>
+Восстановить %s из снимка
+=== basher.py, 4832
+Revert %s to snapshot %s dated %s?
+>>>>
+Восстановить %s из снимка %s от %s?
+=== basher.py, 4842
+Snapshot file is corrupt!
+>>>>
+Файл снимка поврежден!
+=== basher.py, 4852
+Backup
+>>>>
+Создать резервную копию
+=== basher.py, 4871
+Revert to Backup
+>>>>
+Восстановить из резервн. копии
+=== basher.py, 4877
+Revert to First Backup
+>>>>
+Восст. из самой первой резервн. копии
+=== basher.py, 4891
+Revert %s to backup dated %s?
+>>>>
+Восстановить %s из резервной копии от %s?
+=== basher.py, 4903
+Old file is corrupt!
+>>>>
+Старый файл поврежден!
+=== basher.py, 4928
+Anneal All
+>>>>
+Нормализовать все
+=== basher.py, 4933
+Annealing
+>>>>
+Нормализация
+=== basher.py, 4946
+Auto-Anneal
+>>>>
+Авто-нормализация
+=== basher.py, 4959
+Auto-Refresh Projects
+>>>>
+Авто-обновление проектов
+=== basher.py, 4971
+Enabled
+>>>>
+Включено
+=== basher.py, 4978
+Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes
+>>>>
+Вы хотите включить 'Установщики'? Если да, то Wrye Bash требуется инициализировать данные. Если у вас установлено много модов, это может занять несколько минут
+=== basher.py, 4995
+BSA Redirection
+>>>>
+
+=== basher.py, 5015
+Show Inactive Conflicts
+>>>>
+Неактивные конфликты
+=== basher.py, 5029
+Show Lower Conflicts
+>>>>
+Конфликты с нижеследующими пакетами
+=== basher.py, 5043
+Avoid at Startup
+>>>>
+Отменить при старте
+=== basher.py, 5061
+Refresh Data
+>>>>
+Обновить данные
+=== basher.py, 5061
+Full Refresh
+>>>>
+Полное обновление
+=== basher.py, 5068
+Refresh ALL data from scratch? This may take five to ten minutes (or more) depending on the number of mods you have installed
+>>>>
+Обновить все данные? Это может занять от 5 до 10 минут
+=== basher.py, 5079
+Clean Data Directory
+>>>>
+Очищать папку Data
+=== basher.py, 5092
+Show Replacers Tab
+>>>>
+Показывать вкладку 'Заменители'
+=== basher.py, 5100
+This option will take effect when Bash is restarted. Note that if any files are present in Data\\Replacers, then the Replacers tab will be shown regardless of this setting
+>>>>
+Опция подтвердится после перезапуска программы. Имейте ввиду, что если в Data\\Replacers есть хоть какие-то файлы, вкладка будет показана независимо от этой опции
+=== basher.py, 5108
+Skip Screenshots
+>>>>
+Пропускать скриншоты
+=== basher.py, 5125
+Skip Images
+>>>>
+Пропускать изображения
+=== basher.py, 5142
+Skip Docs
+>>>>
+Пропускать документы
+=== basher.py, 5159
+Skip DistantLOD
+>>>>
+Пропускать LOD-файлы
+=== basher.py, 5176
+Sort by Active
+>>>>
+Отсортировать активные
+=== basher.py, 5189
+Projects First
+>>>>
+Проекты в начало
+=== basher.py, 5202
+Sort by Structure
+>>>>
+Сортировать по структуре
+=== basher.py, 5243
+Anneal
+>>>>
+Нормализовать
+=== basher.py, 5284
+Copy (%d)
+>>>>
+Копировать (%d)
+=== basher.py, 5286
+Duplicate %s to
+>>>>
+Дублировать %s в
+=== basher.py, 5293
+%s is not a valid name
+>>>>
+%s некорректное имя
+=== basher.py, 5296
+%s already exists
+>>>>
+%s уже существует
+=== basher.py, 5300
+%s does not have correct extension (%s)
+>>>>
+%s не имеет соответствующее расширение (%s)
+=== basher.py, 5317
+Has Extra Directories
+>>>>
+Имеет специальные папки
+=== basher.py, 5336
+Install
+>>>>
+Установить
+=== basher.py, 5336
+Install Last
+>>>>
+Установить в конец
+=== basher.py, 5336
+Install Missing
+>>>>
+Установить пропущенные
+=== basher.py, 5351
+Installing
+>>>>
+Установка
+=== basher.py, 5366
+List Packages
+>>>>
+Список пакетов
+=== basher.py, 5375
+BAIN Packages
+>>>>
+BAIN пакеты
+=== basher.py, 5381
+Move To
+>>>>
+Переместить в
+=== basher.py, 5387
+Move selected archives to what position?\nEnter position number.\nLast: -1; First of Last: -2; Semi-Last: -3
+>>>>
+Куда переместить выбранные архивы?\nВведите номер позиции.\nВ конец: -1; Первым из последних: -2; Не до конца: -3
+=== basher.py, 5392
+Position must be an integer
+>>>>
+Число должно быть целым
+=== basher.py, 5417
+Open at TesNexus
+>>>>
+Открыть на TesNexus
+=== basher.py, 5423
+Attempt to open this as a mod at TesNexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesNexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesNexus
+>>>>
+Попытка открыть страницу мода, работает в случае если цифры в имени архива соответствуют номеру страницы на TesNexus
+=== basher.py, 5433
+Refresh
+>>>>
+Обновить
+=== basher.py, 5439
+Refreshing Packages
+>>>>
+Обновление
+=== basher.py, 5443
+Refreshing Packages...\n
+>>>>
+Обновление пакетов
+=== basher.py, 5459
+Skip Voices
+>>>>
+Пропускать голоса
+=== basher.py, 5479
+Uninstall
+>>>>
+Деинсталировать
+=== basher.py, 5485
+Uninstalling
+>>>>
+Удаление
+=== basher.py, 5500
+Unpack to Project
+>>>>
+Распаковать в проект
+=== basher.py, 5508
+Unpack %s to Project
+>>>>
+Распаковать %s в проект
+=== basher.py, 5515
+%s is not a valid project name
+>>>>
+%s некорректное имя для проекта
+=== basher.py, 5518
+%s is a file
+>>>>
+%s является файлом
+=== basher.py, 5521
+%s already exists. Overwrite it?
+>>>>
+%s уже существует. Перезаписать?
+=== basher.py, 5524
+Unpacking to Project
+>>>>
+Распаковать в проект
+=== basher.py, 5552
+Omod Config
+>>>>
+Omod конфигурация
+=== basher.py, 5577
+Website
+>>>>
+Сайт
+=== basher.py, 5579
+Email
+>>>>
+
+=== basher.py, 5625
+Omod Info
+>>>>
+Omod данные
+=== basher.py, 5640
+Sync from Data
+>>>>
+Синхронизировать с Data
+=== basher.py, 5655
+Update %s according to data directory?\nFiles to delete: %d\nFiles to update: %d
+>>>>
+Обновить %s в соответствии с папкой Data?\nФайлы для удаления: %d\nФайлы для обновления: %d
+=== basher.py, 5661
+Updating files
+>>>>
+Обновление
+=== basher.py, 5676
+Sync and Pack
+>>>>
+Синхронизировать и упаковать
+=== basher.py, 5690
+Pack to Archive
+>>>>
+Упаковать в архив
+=== basher.py, 5700
+Pack %s to Archive
+>>>>
+Упаковка %s в архив
+=== basher.py, 5707
+%s is not a valid archive name
+>>>>
+%s не является корректным именем для архива
+=== basher.py, 5710
+%s is a directory
+>>>>
+%s это директория
+=== basher.py, 5713
+The %s extension is unsupported. Using %s instead
+>>>>
+Расширение %s не поддерживается. Использовано %s вместо него
+=== basher.py, 5721
+Use solid compression for %s?
+>>>>
+Использовать непрерывное сжатие для %s?
+=== basher.py, 5722
+Packing to Archive
+>>>>
+Упаковка в архив
+=== basher.py, 5747
+Package for Release
+>>>>
+Упаковать для релиза
+=== basher.py, 5812
+Apply BCF
+>>>>
+Применить BCF
+=== basher.py, 5820
+Using:\n*
+>>>>
+Использование:\n*
+=== basher.py, 5836
+Converting to Archive
+>>>>
+Преобразование в архив
+=== basher.py, 5900
+Create BCF
+>>>>
+Создать BCF
+=== basher.py, 5901
+Create
+>>>>
+Создать
+=== basher.py, 5908
+Select the BAIN\'ed Archive
+>>>>
+Выберите BAIN-оптимизированный архив
+=== basher.py, 5916
+%s must be in the Bash Installers directory
+>>>>
+%s должен быть в папке Bash Installers
+=== basher.py, 5918
+-bcf
+>>>>
+
+=== basher.py, 5919
+-BCF
+>>>>
+
+=== basher.py, 5921
+Convert
+>>>>
+Преоьразовать
+=== basher.py, 5923
+\n\nTo:\n* (%08X) - %s
+>>>>
+\n\nВ:\n* (%08X) - %s
+=== basher.py, 5936
+BCF's only support %s. The %s extension will be discarded
+>>>>
+BCF поддерживают только %s. Расширение %s не будет использовано
+=== basher.py, 5943
+Creating %s
+>>>>
+Создание %s
+=== basher.py, 5956
+Name: %s
+>>>>
+Название: %s
+=== basher.py, 5957
+Size: %s KB
+>>>>
+Размер: %s KB
+=== basher.py, 5958
+Remapped: %s file
+>>>>
+Преобразовано: %s файлов
+=== basher.py, 5958
+s
+>>>>
+
+=== basher.py, 5959
+Requires: %s file
+>>>>
+Требует: %s файл
+=== basher.py, 5961
+Options
+>>>>
+Опции
+=== basher.py, 5962
+*  Skip Voices   = %s
+>>>>
+*  Пропуск голосов   = %s
+=== basher.py, 5963
+*  Solid Archive = %s
+>>>>
+*  Непрерывный архив = %s
+=== basher.py, 5964
+*  Has Comments  = %s
+>>>>
+*  Имеет коментарии  = %s
+=== basher.py, 5965
+*  Has Extra Directories = %s
+>>>>
+*  Имеет специальные папки = %s
+=== basher.py, 5966
+*  Has Esps Unselected   = %s
+>>>>
+*  имеет невыбранные esp   = %s
+=== basher.py, 5967
+*  Has Packages Selected = %s
+>>>>
+*  Имеет выбранные пакеты = %s
+=== basher.py, 5968
+Contains: %s file
+>>>>
+Содержит: %s файлов
+=== basher.py, 5973
+BCF Information
+>>>>
+Информация о BCF
+=== basher.py, 6022
+Name must be between 1 and 64 characters long
+>>>>
+Длина имени должна быть в пределах от 1 до 64 символов
+=== basher.py, 6052
+None
+>>>>
+
+=== basher.py, 6053
+Save List
+>>>>
+Сохранить список
+=== basher.py, 6054
+Edit Lists
+>>>>
+Редактировать списки
+=== basher.py, 6084
+All load list slots are full. Please delete an existing load list before adding another
+>>>>
+Все слоты для хранения списков загрузки полны. Пожалуйста, удалите какой-либо из них перед добавлением другого
+=== basher.py, 6087
+Save current load list as
+>>>>
+Сохранить текущий список загрузки как
+=== basher.py, 6090
+Load list name must be between 1 and 64 characters long
+>>>>
+Длина имени списка должна быть в пределах от 1 до 64 символов
+=== basher.py, 6097
+Load Lists
+>>>>
+Списки загрузки
+=== basher.py, 6127
+Selection
+>>>>
+Выделение
+=== basher.py, 6140
+Auto-Ghost
+>>>>
+Авто-скрытие
+=== basher.py, 6154
+Auto Group
+>>>>
+Авто-группировка
+=== basher.py, 6167
+Debug Mode
+>>>>
+Режим отладки
+=== basher.py, 6172
+Debug Printing: Off
+>>>>
+Печать отладочной информации: ВЫКЛ
+=== basher.py, 6174
+Debug Printing: On
+>>>>
+Печать отладочной информации: ВКЛ
+=== basher.py, 6181
+Full Balo
+>>>>
+Balo - полная сортировка
+=== basher.py, 6187
+Activate Full Balo?\n\nFull Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order. Full Balo is still in development and may have some rough edges
+>>>>
+Активировать?\n\nДанная операция перераспределит ваши моды по группам, после чего отсортирует их в алфавитном порядке. Функция все еще в разработке и может вызвать ряд проблем
+=== basher.py, 6188
+Balo Groups
+>>>>
+Группы Balo
+=== basher.py, 6203
+Dump Translator
+>>>>
+Дамп для перевода
+=== basher.py, 6207
+Generate Bash program translator file?\n\nThis function is for translating Bash itself (NOT mods) into non-English languages. For more info, see Internationalization section of Bash readme
+>>>>
+Сгенерировать файл строковых переменных для перевода?\n\nЭта функция предоставляет возможность перевести на не-английские языки САМУ программу Wrye Bash. Для получения более полной информации смотрите секцию файла ридми - Internationalization
+=== basher.py, 6245
+INI Tweaks
+>>>>
+Надстройки для INI
+=== basher.py, 6252
+Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!
+>>>>
+Подтвердить надстройку для Oblivion.ini?\n\nОСТОРОЖНО: Некорректные настройки могут стать причиной ошибок и даже повредить ваш компьютер!
+=== basher.py, 6261
+applied
+>>>>
+подтверждены
+=== basher.py, 6268
+List Mods
+>>>>
+Список модов
+=== basher.py, 6300
+Oblivion.ini
+>>>>
+
+=== basher.py, 6338
+Tes4Edit Expert
+>>>>
+
+=== basher.py, 6351
+Update Archive Invalidator
+>>>>
+Обновить ArchiveInvalidation.txt
+=== basher.py, 6355
+Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating
+>>>>
+Обновить ArchiveInvalidation.txt? Будет изменен файл, управляющий заменой оригинальных внутриигровых текстур. Учтите, что реализация этой функции все еще находится в разработке, поэтому она может работать не всегда корректно. Вы также можете использовать другие программы, обновляющие ArchiveInvalidation.txt
+=== basher.py, 6356
+ArchiveInvalidation.txt
+>>>>
+
+=== basher.py, 6367
+NPC Levels
+>>>>
+Уровни NPC
+=== basher.py, 6372
+This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported.\n\nSee the Bash help file for more info
+>>>>
+Эта команда экспортирует списки уровней NPC и все данные о их сдвиге относительно уровня игрока. Полученный файл может быть отредактирован любым редактором электронных таблиц и затем ре-импортирован.\n\nИзучите файл справки для получения более подробной информации
+=== basher.py, 6373
+Export NPC Levels
+>>>>
+Экспорт уровней NPC
+=== basher.py, 6377
+_NPC_Levels.csv
+>>>>
+
+=== basher.py, 6380
+Export NPC levels to
+>>>>
+Экспортировать список уровней в
+=== basher.py, 6402
+This command will import NPC level info from a previously exported file.\n\nSee the Bash help file for more info
+>>>>
+Эта команда выполнит импорт уровней NPC из экспортированного ранее файла.\n\nИзучите файл справки для получения более подробной информации
+=== basher.py, 6403
+Import NPC Levels
+>>>>
+Импорт уровней NPC
+=== basher.py, 6427
+Add Master
+>>>>
+Добавить мастер-файл
+=== basher.py, 6432
+WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs
+>>>>
+ОСТОРОЖНО! Только для опытных моддеров! Позволяет пополнить список мастер-файлов мода. Функция полезна для разделения мода на esm/esp пары
+=== basher.py, 6437
+Oblivion Masters
+>>>>
+Мастер-файлы
+=== basher.py, 6438
+Add master
+>>>>
+Добавить мастер-файл
+=== basher.py, 6443
+File must be selected from Oblivion Data Files directory
+>>>>
+Файл должен быть выбран из папки Data
+=== basher.py, 6445
+%s is already a master!
+>>>>
+%s уже является мастер-файлом!
+=== basher.py, 6478
+Move Up
+>>>>
+Вверх
+=== basher.py, 6479
+Move Down
+>>>>
+Вниз
+=== basher.py, 6490
+Offsets
+>>>>
+
+=== basher.py, 6517
+Group name must be letters, spaces, underscores only!
+>>>>
+Имя группы должно состоять из букв, цифр или подчеркиваний!
+=== basher.py, 6520
+group %s already exists
+>>>>
+группа %s уже существует
+=== basher.py, 6523
+Group names must be less than forty characters
+>>>>
+Имя не может быть длиннее 14 символов
+=== basher.py, 6576
+Add Balo Group
+>>>>
+Добавить группу Balo
+=== basher.py, 6581
+Name of new group (spaces and letters only)
+>>>>
+Имя новой группы (пробелы и буквы)
+=== basher.py, 6605
+Rename Balo Group
+>>>>
+Переименовать группу Balo
+=== basher.py, 6610
+Rename %s to (spaces, letters and underscores only)
+>>>>
+Переименовать %s в (пробелы, буквы и нижние подчеркивания)
+=== basher.py, 6723
+Allow Ghosting
+>>>>
+Позволить скрытие
+=== basher.py, 6740
+Disallow Ghosting
+>>>>
+Запретить скрытие
+=== basher.py, 6757
+Invert Ghosting
+>>>>
+Инвертировать скрытие
+=== basher.py, 6777
+Don't Ghost
+>>>>
+Не скрывать
+=== basher.py, 6808
+Apply Nvidia fog fix. This modify fog values in interior cells to avoid the Nvidia black screen bug
+>>>>
+Использовать фикс для видео-карт Nvidia. Эта операция модифицирует параметры тумана в областях игрового мира для предотвращения бага 'черного экрана'
+=== basher.py, 6818
+Scanning %s
+>>>>
+Поиск %s
+=== basher.py, 6826
+Cells Fixed:\n
+>>>>
+Ячеек исправлено:\n
+=== basher.py, 6829
+No changes required
+>>>>
+Изменения не требуются
+=== basher.py, 6839
+New Mod
+>>>>
+Новый esp
+=== basher.py, 6868
+Relations
+>>>>
+Отношения
+=== basher.py, 6875
+_Relations.csv
+>>>>
+
+=== basher.py, 6879
+Export faction relations to
+>>>>
+Экспортировать отношения фракций в
+=== basher.py, 6883
+Export Relations
+>>>>
+Экспорт отношений
+=== basher.py, 6890
+Reading %s
+>>>>
+Чтение %s
+=== basher.py, 6892
+Exporting to %s
+>>>>
+Экспортирование в %s
+=== basher.py, 6903
+Factions
+>>>>
+Фракции
+=== basher.py, 6910
+_Factions.csv
+>>>>
+
+=== basher.py, 6914
+Export factions to
+>>>>
+Экспортировать фракции
+=== basher.py, 6918
+Export Factions
+>>>>
+Экспорт фракций
+=== basher.py, 6938
+Mark Levelers
+>>>>
+Пометить левелинг-моды
+=== basher.py, 6943
+Obsolete. Mods are now automatically tagged when possible
+>>>>
+Моды по возможности теперь помечаются автоматически
+=== basher.py, 6973
+Mergeable\n*
+>>>>
+Объединяемые\n*
+=== basher.py, 6977
+Not Mergeable\n*
+>>>>
+НеОбъединяемые\n*
+=== basher.py, 6988
+Copy to Esm
+>>>>
+Копировать в esm
+=== basher.py, 6988
+Copy to Esp
+>>>>
+Копировать в esp
+=== basher.py, 7006
+Replace existing %s?
+>>>>
+Заменить существующий файл %s?
+=== basher.py, 7027
+Face
+>>>>
+Лицо
+=== basher.py, 7034
+Oblivion Files
+>>>>
+Файлы Oblivion
+=== basher.py, 7056
+Imported face to: %s
+>>>>
+Импорт лица в: %s
+=== basher.py, 7063
+Esmify Masters
+>>>>
+Преобразовать ESP мастер-файлы в псевдо-ESM
+=== basher.py, 7075
+Espify Masters
+>>>>
+Убрать 'псевдо' состояние у мастер-файлов
+=== basher.py, 7083
+WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods
+>>>>
+ОСТРОЖНО! Только для опытных моддеров! Конвертирует несколько бит во всех ESP мастер-файлах выбранного мода для придания им свойств ESM, что позволит открыть в CS мод, содержащий esp как мастер-файл(ы)
+=== basher.py, 7106
+Esmify Self
+>>>>
+Сделать псевдо-esm файлом
+=== basher.py, 7106
+Espify Self
+>>>>
+Вернуть в esp
+=== basher.py, 7116
+WARNING! For advanced modders only!\n\nThis command flips an internal bit in the mod, converting an esp to an esm and vice versa. Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod
+>>>>
+ОСТРОЖНО! Только для опытных моддеров! Конвертирует несколько бит в esp/esm файле, для придания ему свойств противоположного файла БЕЗ ИЗМЕНЕНИЯ РАСШИРЕНИЯ. Используется для анализа esm-содержащих модов
+=== basher.py, 7117
+Flip to Esm
+>>>>
+Изменить в esm
+=== basher.py, 7264
+Edit Groups
+>>>>
+Редактировать группы
+=== basher.py, 7265
+Groups
+>>>>
+Группы
+=== basher.py, 7266
+Add group
+>>>>
+Добавить группу
+=== basher.py, 7293
+Export groups to
+>>>>
+Экспортировать группы в
+=== basher.py, 7301
+Exported %d mod/groups
+>>>>
+Экспортировано %d модов/групп
+=== basher.py, 7302
+Export Groups
+>>>>
+Экспорт групп
+=== basher.py, 7315
+Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered
+>>>>
+Импортировать группы из текстового файла. Любые моды, которые изменили свою группу будут переназначены в новую
+=== basher.py, 7317
+Import Groups
+>>>>
+Импорт групп
+=== basher.py, 7321
+Import names from
+>>>>
+Импорт названий из
+=== basher.py, 7327
+Source file must be a csv file
+>>>>
+Файл-источник должен иметь расширение csv
+=== basher.py, 7336
+Imported %d mod/groups (%d changed)
+>>>>
+Импортировано %d модов/групп (%d изменено)
+=== basher.py, 7344
+Editor Ids
+>>>>
+
+=== basher.py, 7351
+_Eids.csv
+>>>>
+
+=== basher.py, 7355
+Export eids to
+>>>>
+Экспорт EditorID в
+=== basher.py, 7359
+Export Editor Ids
+>>>>
+Экспорт EditorID
+=== basher.py, 7384
+Import editor ids from a text file. This will replace existing ids and is not reversible!
+>>>>
+Импортировать ID из текстового файла? Это заменит существующие ID, операция необратима!
+=== basher.py, 7386
+Import Editor Ids
+>>>>
+Импорт Editor Ids
+=== basher.py, 7408
+Applying to %s
+>>>>
+Подтверждение %s
+=== basher.py, 7421
+Objects Changed
+>>>>
+Объекты изменены
+=== basher.py, 7430
+Decompile All
+>>>>
+Декомпилировать все
+=== basher.py, 7436
+This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override
+>>>>
+Эта команда удалит лишние скрипты из esp-файла, если вы случайно нажали кнопку 'Компилировать все'
+=== basher.py, 7442
+Skipping %s
+>>>>
+Пропуск %s
+=== basher.py, 7476
+Scripts removed: %d.\nScripts remaining: %d
+>>>>
+Скриптов удалено: %d.\nСкриптов осталось: %d
+=== basher.py, 7478
+Only %d scripts were identical. This is probably intentional, so no changes have been made
+>>>>
+Только %d скриптов были идентичны. Изменения не были произведены
+=== basher.py, 7487
+Form IDs
+>>>>
+
+=== basher.py, 7492
+For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file
+>>>>
+
+=== basher.py, 7494
+Import Form IDs
+>>>>
+Импорт FormID
+=== basher.py, 7500
+Form ID mapper file
+>>>>
+Из файла соответствий
+=== basher.py, 7531
+Names
+>>>>
+Имена/Названия
+=== basher.py, 7538
+_Names.csv
+>>>>
+
+=== basher.py, 7542
+Export names to
+>>>>
+Экспорт названий в
+=== basher.py, 7547
+Export Names
+>>>>
+Экспорт названий
+=== basher.py, 7572
+Import record names from a text file. This will replace existing names and is not reversible!
+>>>>
+Импорт названий записей из текстового файла. Это заменит существующие имена/названия, операция необратима!
+=== basher.py, 7588
+Source file must be mod (.esp or .esm) or csv file
+>>>>
+Файл должен иметь разрешение *esp, *.esm или *.csv
+=== basher.py, 7616
+Objects Renamed
+>>>>
+Объекты переименованы
+=== basher.py, 7624
+Rebuild Patch
+>>>>
+Создание патча
+=== basher.py, 7633
+The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s\n\nDeactivate the mods now?
+>>>>
+Следующие моды помечены как 'Filter'. Они должны быть отключены перед созданием патча, т.к. их изменения все равно войдут в патч в процессе его создания.\n*%s\n\nОтключить их?
+=== basher.py, 7634
+Deactivate Filter Mods
+>>>>
+Отключить моды-фильтры
+=== basher.py, 7642
+That which does not exist cannot be patched.\nLoad some mods and try again
+>>>>
+Патч не создан.\nЗагрузите моды и попробуйте снова
+=== basher.py, 7642
+Existential Error
+>>>>
+Ошибка существования
+=== basher.py, 7655
+Edit Ratings
+>>>>
+Редактировать рейтинг
+=== basher.py, 7656
+Ratings
+>>>>
+Рейтинги
+=== basher.py, 7657
+Add rating
+>>>>
+Установить рейтинг
+=== basher.py, 7667
+Version 0.8
+>>>>
+Установить версию CS в 0.8
+=== basher.py, 7673
+WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way
+>>>>
+ОСТОРОЖНО! Только для опытных моддеров! Эта функция позволит вам открывать в TES: CS официальные плагины от Bethesda, которые сделаны в более новой версии CS. При использовании этой функции родительская версия CS в файле мода будет установлена равной 0.8
+=== basher.py, 7674
+Set File Version
+>>>>
+Установить версию файла
+=== basher.py, 7688
+Details
+>>>>
+Детали
+=== basher.py, 7700
+Sorting records
+>>>>
+Сортировка записей
+=== basher.py, 7704
+(Details not provided for this record type.)\n\n
+>>>>
+
+=== basher.py, 7724
+Remove World Orphans
+>>>>
+Удалить потери 'миров'
+=== basher.py, 7729
+In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans
+>>>>
+
+=== basher.py, 7748
+Saving %s
+>>>>
+Сохранение %s
+=== basher.py, 7755
+Orphan cell blocks removed: %d
+>>>>
+Потерянных блоков областей удалено: %d
+=== basher.py, 7764
+Readme
+>>>>
+Файл ридми
+=== basher.py, 7790
+_Stats.csv
+>>>>
+
+=== basher.py, 7794
+Export stats to
+>>>>
+Экспорт данных в
+=== basher.py, 7799
+Export Stats
+>>>>
+Экспорт данных
+=== basher.py, 7824
+Import item stats from a text file. This will replace existing stats and is not reversible!
+>>>>
+Экспорт данных о предметах (оружии, доспехах и пр.) из текстового файла. Это заменит существующие данные, операция необратима!
+=== basher.py, 7833
+Import stats from
+>>>>
+Импорт данных из
+=== basher.py, 7840
+Source file must be a Stats.csv file
+>>>>
+Файл-источник должен иметь расширение csv
+=== basher.py, 7860
+No relevant stats to import
+>>>>
+Подходящие для импорта данные отсутствуют
+=== basher.py, 7872
+Undelete Refs
+>>>>
+Отменить удаление 'ссылок'
+=== basher.py, 7877
+Changes deleted refs to ignored. This is a very advanced feature and should only be used by modders who know exactly what they're doing
+>>>>
+Изменяет состояние удаленных ссылок с 'удалено' на 'игнорировать'. Это очень сложная функция, следует использовать только тем моддерам, которые понимают что они делают
+=== basher.py, 7936
+About %s
+>>>>
+О %s
+=== basher.py, 7944
+Enter profile name
+>>>>
+Введите имя профиля
+=== basher.py, 7986
+Active profile cannot be removed
+>>>>
+Активный профиль не может быть удален
+=== basher.py, 7992
+Delete profile %s and the %d save files it contains?
+>>>>
+Удалить профиль %s и %d сохранить входящие в него файлы?
+=== basher.py, 7993
+Delete Profile
+>>>>
+Удалить профиль
+=== basher.py, 7997
+Sanity check failed: No "Oblivion\\Saves" in %s
+>>>>
+Ошибка проверки целостности: Отсутствует папка "Oblivion\\Saves" в %s
+=== basher.py, 8016
+Edit Profiles
+>>>>
+Редактировать профили
+=== basher.py, 8035
+Save Profiles
+>>>>
+Профили сохраненных игр
+=== basher.py, 8085
+Load Masters
+>>>>
+Загрузить мастер-файлы
+=== basher.py, 8104
+Import Face
+>>>>
+Импорт лица
+=== basher.py, 8149
+No player (PC) faces found in %s
+>>>>
+В %s лица не найдены
+=== basher.py, 8161
+Diff Masters
+>>>>
+Сравнение мастер-файлов
+=== basher.py, 8172
+Active Masters
+>>>>
+Активные мастер-файлы
+=== basher.py, 8181
+Masters are the same
+>>>>
+Мастер-файлы одинаковы
+=== basher.py, 8186
+Removed Masters (%s):\n*
+>>>>
+Удалены мастер-файлы (%s):\n*
+=== basher.py, 8190
+Added Masters (%s):\n*
+>>>>
+Новые мастер-файлы (%s):\n*
+=== basher.py, 8234
+Armor\nFlags
+>>>>
+
+=== basher.py, 8239
+Clothing\nFlags
+>>>>
+
+=== basher.py, 8261
+Name is too long
+>>>>
+Имя слишком длинное
+=== basher.py, 8264
+Name is already used
+>>>>
+Имя уже используется
+=== basher.py, 8274
+No changes made
+>>>>
+Изменений не произведено
+=== basher.py, 8286
+Names modified: %d
+>>>>
+Названий изменено: %d
+=== basher.py, 8291
+Rename Enchanted
+>>>>
+Переименовать зачаров. вещи
+=== basher.py, 8291
+Rename Spells
+>>>>
+Переименовать заклинания
+=== basher.py, 8291
+Rename Potions
+>>>>
+Переименовать зелья
+=== basher.py, 8323
+No items to edit
+>>>>
+Нет предметов для редактирования
+=== basher.py, 8337
+Loading Masters
+>>>>
+Загрузка мастер-файлов
+=== basher.py, 8378
+Delete Spells
+>>>>
+Удалить заклинания
+=== basher.py, 8386
+Player Spells
+>>>>
+Заклинания игрока
+=== basher.py, 8434
+You can't move saves to the current profile!
+>>>>
+Вы не можете перемещать сейвы в текущий профиль
+=== basher.py, 8442
+A file named %s already exists in %s. Overwrite it?
+>>>>
+Файл %s уже существует в %s. Перезаписать?
+=== basher.py, 8444
+Move File
+>>>>
+Переместить файл
+=== basher.py, 8455
+%d files copied to %s
+>>>>
+%d файл(ов) скопировано в %s
+=== basher.py, 8455
+Copy File
+>>>>
+Копировать файл(ы)
+=== basher.py, 8462
+Repair Abomb
+>>>>
+Испр. баг с замедлением анимаций
+=== basher.py, 8478
+Abomb counter is too low to reset
+>>>>
+Значение счетчика Abomb еще слишком низко чтобы его сбрасывать
+=== basher.py, 8480
+Reset Abomb counter? (Current progress: %.0f%%.)\n\nNote: Abomb animation slowing won't occur until progress is near 100%%
+>>>>
+Сбросить счетчик abomb? (Текущее значение: %.0f%%.)\n\nЗаметка: при значении в районе 100%% возникает баг замедления анимации
+=== basher.py, 8484
+Abomb counter reset
+>>>>
+Сброс счетчика Abomb
+=== basher.py, 8491
+Repair Factions
+>>>>
+Исправить баг с фракциями
+=== basher.py, 8497
+This will (mostly) repair faction membership errors due to Wrye Bash v 105 bug and/or faction changes in underlying mods.\n\nWARNING! This repair is NOT perfect! Do not use it unless you have to!
+>>>>
+Эта функция (в большинстве случаев) исправит баг Wrye Bash версии 105, при котором игрок утрачивал членнство в различных гильдиях (после обработки сейва)
+=== basher.py, 8498
+Update NPC Levels
+>>>>
+Обновить уровни NPC
+=== basher.py, 8500
+Restore dropped factions too? WARNING: This may involve clicking through a LOT of yes/no dialogs
+>>>>
+Восстановить фракции? ОСТОРОЖНО: это повлечени появления множества окон подтверждения операции
+=== basher.py, 8538
+NPC Factions Restored/UnNulled
+>>>>
+Фракций NPC восстановлено
+=== basher.py, 8541
+Updating
+>>>>
+Обновление
+=== basher.py, 8598
+Restore %s to %s faction?
+>>>>
+Restore %s в %s фракцию?
+=== basher.py, 8627
+Repair Hair
+>>>>
+Исправить баг с прической
+=== basher.py, 8636
+Hair repaired
+>>>>
+Баг исправлен
+=== basher.py, 8638
+No repair necessary
+>>>>
+Исправление не требуется
+=== basher.py, 8652
+Set weight of all player potions to
+>>>>
+Установить вес всех зелий игрока равным
+=== basher.py, 8658
+Invalid weight: %f
+>>>>
+Некорректное число: %f
+=== basher.py, 8680
+Potions reweighed: %d
+>>>>
+Зелий изменено: %d
+=== basher.py, 8683
+No potions to reweigh!
+>>>>
+Зелья не найдены!
+=== basher.py, 8692
+Statistics
+>>>>
+Статистика
+=== basher.py, 8704
+Calculating statistics
+>>>>
+Подсчет статистики
+=== basher.py, 8717
+Remove Bloat
+>>>>
+Очистить
+=== basher.py, 8725
+Scanning for Bloat
+>>>>
+Поиск нулевых ссылок
+=== basher.py, 8735
+No bloating found
+>>>>
+Нулевых ссылок в файле сохранения не обнаружено
+=== basher.py, 8743
+Null Ref Objects: %s\n
+>>>>
+Ссылки на отсутств. объекты: %s\n
+=== basher.py, 8744
+Remove savegame bloating?\n%s\nWARNING: This is a risky procedure that may corrupt your savegame! Use only if necessary!
+>>>>
+Уменьшить размер файла сохранения?\n%s\nОСТОРОЖНО: Эта процедура может повредить файл! Используйте только если необходимо!
+=== basher.py, 8745
+Remove bloating?
+>>>>
+Очистить?
+=== basher.py, 8748
+Removing Bloat
+>>>>
+Очистка
+=== basher.py, 8754
+Uncreated Objects: %d\nUncreated Refs: %d\nUnNulled Refs: %d
+>>>>
+Несозданные объекты: %d\nНесозданные ссылки: %d\nНеобнуленные ссылки: %d
+=== basher.py, 8772
+This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods. This supercedes the older "Import NPC Levels" command
+>>>>
+Это изменит уровень NPC в выбранном файле сохранения согласно их уровням в текущих активных модах. Это альтертанива устаревшей команде "Импорт уровней NPC"
+=== basher.py, 8802
+NPCs Releveled
+>>>>
+Изменены уровни для NPC
+=== basher.py, 8843
+\n\nSome mods had load errors and were skipped:\n*
+>>>>
+\n\nНекоторые моды имеют ошибки при загрузке и были пропущены:\n*
+=== basher.py, 8855
+Next Shot
+>>>>
+Следующий скриншот
+=== basher.py, 8863
+Screenshot base name, optionally with next screenshot number.\nE.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201
+>>>>
+Базовое имя для файлов скриншотов
+=== basher.py, 8885
+Convert to jpg
+>>>>
+Преобразовать в jpg
+=== basher.py, 8893
+Converting to Jpg
+>>>>
+Преобразование
+=== basher.py, 8924
+Enter new name. E.g. Screenshot 123.bmp
+>>>>
+Введите новое имя
+=== basher.py, 8925
+Rename Files
+>>>>
+Переименовать файлы
+=== basher.py, 8929
+Bad extension or file root
+>>>>
+Некорректное расширение файла
+=== basher.py, 8954
+Import Archives
+>>>>
+Импорт архивов
+=== basher.py, 8960
+Import message archive(s)
+>>>>
+Импорт сообщений
+=== basher.py, 8977
+Delete Messages
+>>>>
+Удалить сообщения
+=== basher.py, 8993
+Add New Person
+>>>>
+Добавить нового человека
+=== basher.py, 8996
+Add new person
+>>>>
+Добавить нового человека
+=== basher.py, 8999
+already exists
+>>>>
+уже существует
+=== basher.py, 9010
+Export
+>>>>
+Экспорт
+=== basher.py, 9012
+Export People
+>>>>
+Экспорт списка
+=== basher.py, 9017
+Export people to text file
+>>>>
+Экспортировать в текстовый файл
+=== basher.py, 9022
+Records exported: %d
+>>>>
+Записей экспортировано: %d
+=== basher.py, 9031
+Import People
+>>>>
+Импорт списка
+=== basher.py, 9036
+Import people from text file
+>>>>
+Импорт из файла
+=== basher.py, 9041
+People imported: %d
+>>>>
+Записей импортировано: %d
+=== basher.py, 9077
+Change to
+>>>>
+Изменить на
+=== basher.py, 9087
+Change master name to
+>>>>
+Изменить имя мастер-файла на
+=== basher.py, 9110
+Disable
+>>>>
+Отключить
+=== basher.py, 9249
+OBSE Disabled
+>>>>
+OBSE выключен
+=== basher.py, 9249
+OBSE Enabled
+>>>>
+OBSE включен
+=== basher.py, 9287
+Auto-Quit Disabled
+>>>>
+Авто-выход выключен
+=== basher.py, 9287
+Auto-Quit Enabled
+>>>>
+Авто-выход включен
+=== basher.py, 9308
+Help File
+>>>>
+Файл помощи
+=== basher.py, 9354
+Launch BashMon
+>>>>
+Запустить BashMon
+=== basher.py, 9430
+Launch Oblivion
+>>>>
+Запустить Oblivion
+=== basher.py, 9431
+Launch Oblivion + OBSE
+>>>>
+Запустить Oblivion + OBSE
+=== basher.py, 9437
+Launch TESCS
+>>>>
+Запустить TESCS
+=== basher.py, 9438
+Launch TESCS + OBSE
+>>>>
+Запустить TESCS + OBSE
+=== basher.py, 9444
+Launch OBMM
+>>>>
+Запустить OBMM
+=== basher.py, 9448
+Launch Tes4Gecko
+>>>>
+Запустить Tes4Gecko
+=== basher.py, 9453
+Launch Tes4View
+>>>>
+Запустить Tes4View
+=== basher.py, 9458
+Launch Tes4Edit
+>>>>
+Запустить Tes4Edit
+=== basher.py, 9463
+Launch Tes4Trans
+>>>>
+Запустить Tes4Trans
+=== basher.py, 9468
+Launch Tes4LODGen
+>>>>
+Запустить Tes4LODGen
+=== basher.py, 9473
+Launch BOSS
+>>>>
+Запустить BOSS
+=== basher.py, 9488
+Sort by
+>>>>
+Сортировать по
+=== basher.py, 9560
+Conversions
+>>>>
+Преобразования
+=== basher.py, 9562
+Apply
+>>>>
+Применить
+=== basher.py, 9581
+Load
+>>>>
+Загрузка
+=== basher.py, 9709
+Profile
+>>>>
+Профиль
+=== basher.py, 9734
+Copy To
+>>>>
+Копировать в
+=== bashmon.py, 248
+exists and is not a save file
+>>>>
+уже существует и не является файлом сохранения
+=== bashmon.py, 250
+is not a save file
+>>>>
+не явяляется файлом-сохранения
+=== bashmon.py, 280
+Bashmon stopped
+>>>>
+Остановлено
+=== bashmon.py, 284
+Oblivion.ini is busy
+>>>>
+Oblivion.ini занят другим процессо
