@@ -9121,11 +9121,11 @@ class Installer(object):
             #--Silent skips
             if fileLower[-9:] == 'thumbs.db' or fileLower[-11:] == 'desktop.ini':
                 continue #--Silent skip
-            elif skipDistantLOD and fileLower[:10] == 'distantlod':
+            elif skipDistantLOD and fileLower[:-10] == 'distantlod':
                 continue
-            elif skipVoices and fileLower[:11] == 'sound\\voice':
+            elif skipVoices and fileLower[:-11] == r'sound\voice':
                 continue
-            elif skipScreenshots and fileLower[:11] == 'screenshots':
+            elif skipScreenshots and fileLower[:-11] == 'screenshots':
                 continue
             elif skipImages :
                 if fileExt in imageExts :
@@ -15859,7 +15859,6 @@ class GmstTweaker(MultiTweaker):
             ('1.5',1.5),
             ('[2.0]',2.0),
             ),
-          #--Pacific Morrowind Additions
         GmstTweak(_('Master of Mercantile extra gold amount'),
             _("How much more barter gold all merchants have for a master of mercantile."),
             'iPerkExtraBarterGoldMaster',
@@ -15901,15 +15900,6 @@ class GmstTweaker(MultiTweaker):
             ('90',90),
             ('120',120),
             ('150',150),
-            ),
-        GmstTweak(_('Cost Multiplier: Spellmaking'),
-            _("Cost factor for making spells."),
-            'fSpellmakingGoldMult',
-            ('[3]',3),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('15',15),
             ),
         GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
@@ -15973,7 +15963,7 @@ class GmstTweaker(MultiTweaker):
             ),
         GmstTweak(_('Combat: Repair'),
             _("Allow repairing armor/weapons during combat."),
-           'iAllowRepairDuringCombat',
+            'iAllowRepairDuringCombat',
             ('Allow',1),
             ('[Disallow]',0),
             ),
@@ -15986,19 +15976,16 @@ class GmstTweaker(MultiTweaker):
             ('8',8),
             ('10',10),
             ),
-            #--Raziel23x Changes
-        #--Training Max
         GmstTweak(_('Training Max'),
             _("Maximum number of Training allowed by trainers."),
             'iTrainingSkills',
             ('1',1),
-            ('[5]',50),
-            ('50',50),
-            ('100',100),
-            ('200',200),
-            ('999',999),
+            ('[5]',5),
+            ('8',8),
+            ('10',10),
+            ('20',20),
+            ('unlimited',9999),
             ),
-        #--Maximum Armor Rating
         GmstTweak(_('Combat: Maximum Armor Rating'),
             _("The Maximun amount of protection you will get from armor."),
             'fMaxArmorRating',
@@ -17838,6 +17825,24 @@ def initDirs(personal='',localAppData=''):
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')
+    #-- other tool directories
+    dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
+    dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
+    dirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
+    if bashIni and bashIni.has_option('Tool Options','sTes4FilesPath'):
+        dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
+        if not dirs['TES4FilesPath'].isabs():
+            dirs['TES4FilesPath'] = dirs['app'].join(dirs['TES4FilesPath'])
+
+    if bashIni and bashIni.has_option('Tool Options','sTes4EditPath'):
+        dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
+        if not dirs['TES4EditPath'].isabs():
+            dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
+        
+    if bashIni and bashIni.has_option('Tool Options','sTes4LodGenPath'):
+        dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
+        if not dirs['TES4LodGenPath'].isabs():
+            dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
 
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
@@ -17855,6 +17860,7 @@ def initDirs(personal='',localAppData=''):
     dirs['converters'] = dirs['installers'].join('Bain Converters')
     dirs['converters'].makedirs()
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
+    dirs['dupeBCFs'].makedirs()
     #--Error checks
     if not personal.exists():
         raise BoltError(_("Personal folder does not exist\nPersonal folder: %s\nAdditional info:\n%s")
