@@ -1774,6 +1774,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 276 [12/28/2009] [PacificMorrowind & Raziel23x]
+* bugfix: fixed potion weight deselection error
+* paths for external tools (TES4edit/view/trans, TES4LodGen, TES4Gecko, TES4Files) settable via the ini for better organization/fun
+* tweaked game settings
+
 === 275 [11/06/2009] [PacificMorrowind]
 * Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
 * Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
