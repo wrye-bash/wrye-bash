@@ -3117,7 +3117,7 @@ class MreNpc(MreActor):
             ('aggression',5),('confidence',50),('energyLevel',50),('responsibility',50),
             (aiService,'services',0L),'trainSkill','trainLevel',('unused1',null2)),
         MelFids('PKID','aiPackages'),
-        MelString('KFFZ','animations'), #MAJOR CHANGE (267) ----- NEEDS MAJOR TESTING!!
+        MelStrings('KFFZ','animations'),
         MelFid('CNAM','iclass'),
         MelNpcData('DATA','',('skills',[0]*21),'health',('unused2',null2),('attributes',[0]*8)),
         MelFid('HNAM','hair'),
@@ -17555,8 +17555,8 @@ class SkelTweaker(MultiTweaker):
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
-        RWALKNPCAnimationPatcher(),
-        SWALKNPCAnimationPatcher(),
+        #RWALKNPCAnimationPatcher(),
+        #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
