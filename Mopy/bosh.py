@@ -11562,7 +11562,7 @@ class ScriptText:
                 #return stats
 
     def writeToMod(self,modInfo):
-        """Writes stats to specified mod."""
+        """Writes scripts to specified mod."""
         loadFactory= LoadFactory(False,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -11584,19 +11584,18 @@ class ScriptText:
         """Reads stats from specified text file."""
         ScriptTexts = [self.type_stats[type] for type in ('SCPT',)]
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            type,modName,objectStr,eid = fields[0:4]
+        text = open(textPath, "r")
+        #lines = text.readlines()
+        #modName,ScriptName,ScriptText = lines[0],lines[1],lines[2:-1]
+        for lines in text.readlines():
+            type,modName,objectStr,eid = lines[0:4]
             modName = GPath(modName)
             longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
             if type == 'SCPT':
                 ScriptTexts[longid] = (eid,scriptText) #+ tuple(func(field) for func,field in
                     #--( scrptText)
                     #zip((sfloat,sfloat,sfloat,sfloat,sfloat,int,float,int,sfloat,),fields[4:12]))
-        ins.close()
+        text.close()
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -11608,9 +11607,10 @@ class ScriptText:
             return longids
         scriptTexts = self.type_stats['SCPT']
         for longid in getSortedIds(scriptTexts):
-            outpath = dirs['patches'].join(longid[0]+'-'+scriptTexts[longid][0]+'.txt')
+            outpath = dirs['patches'].join(longid[0]+'_'+scriptTexts[longid][0]+'_scripts.txt')
             out = outpath.open('w')
-            out.write(scriptTexts[longid][1])
+            formid = '0x%06X' %(longid[1])
+            out.write('SCPT'+'\n'+str(longid[0].s)+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
             out.close
 
 class SpellRecords:
