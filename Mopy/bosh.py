@@ -17961,50 +17961,51 @@ def initDirs(personal='',localAppData=''):
     dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
     dirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
     dirs['NifskopePath'] = GPath('C:\Program Files\NifTools\NifSkope\Nifskope.exe')
-    dirs['BlenderPath'] = GPath('C:\Program Files\Blender Foundation\Blender\blender.exe')
+    dirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
     dirs['GmaxPath'] = GPath('C:\GMAX\gmax.exe')
-    dirs['MaxPath'] = GPath('C:\something\dunnuthepath.exe')
-    dirs['MayaPath'] = GPath('C:\something\dunnuthepath.exe')
+    dirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
+    dirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
     # Then if bash.ini exists set from the settings in there:
-    if bashIni and bashIni.has_option('Tool Options','sTes4FilesPath'):
-        dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
-        if not dirs['TES4FilesPath'].isabs():
-            dirs['TES4FilesPath'] = dirs['app'].join(dirs['TES4FilesPath'])
+    if bashIni:
+        if bashIni.has_option('Tool Options','sTes4FilesPath'):
+            dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
+            if not dirs['TES4FilesPath'].isabs():
+                dirs['TES4FilesPath'] = dirs['app'].join(dirs['TES4FilesPath'])
 
-    if bashIni and bashIni.has_option('Tool Options','sTes4EditPath'):
-        dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
-        if not dirs['TES4EditPath'].isabs():
-            dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
-        
-    if bashIni and bashIni.has_option('Tool Options','sTes4LodGenPath'):
-        dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
-        if not dirs['TES4LodGenPath'].isabs():
-            dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
-
-    if bashIni and bashIni.has_option('Tool Options','sNifskopePath'):
-        dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
-        if not dirs['NifskopePath'].isabs():
-            dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
+        if bashIni.has_option('Tool Options','sTes4EditPath'):
+            dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
+            if not dirs['TES4EditPath'].isabs():
+                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
             
-    if bashIni and bashIni.has_option('Tool Options','sBlenderPath'):
-        dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
-        if not dirs['BlenderPath'].isabs():
-            dirs['BlenderPath'] = dirs['app'].join(dirs['BlenderPath'])
+        if bashIni.has_option('Tool Options','sTes4LodGenPath'):
+            dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
+            if not dirs['TES4LodGenPath'].isabs():
+                dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
 
-    if bashIni and bashIni.has_option('Tool Options','sGmaxPath'):
-        dirs['GmaxPath'] = GPath(bashIni.get('Tool Options','sGmaxPath').strip())
-        if not dirs['GmaxPath'].isabs():
-            dirs['GmaxPath'] = dirs['app'].join(dirs['GmaxPath'])
+        if bashIni.has_option('Tool Options','sNifskopePath'):
+            dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
+            if not dirs['NifskopePath'].isabs():
+                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
+                
+        if bashIni.has_option('Tool Options','sBlenderPath'):
+            dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
+            if not dirs['BlenderPath'].isabs():
+                dirs['BlenderPath'] = dirs['app'].join(dirs['BlenderPath'])
 
-    if bashIni and bashIni.has_option('Tool Options','sMaxPath'):
-        dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
-        if not dirs['MaxPath'].isabs():
-            dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
-            
-    if bashIni and bashIni.has_option('Tool Options','sMayaPath'):
-        dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
-        if not dirs['MayaPath'].isabs():
-            dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
+        if bashIni.has_option('Tool Options','sGmaxPath'):
+            dirs['GmaxPath'] = GPath(bashIni.get('Tool Options','sGmaxPath').strip())
+            if not dirs['GmaxPath'].isabs():
+                dirs['GmaxPath'] = dirs['app'].join(dirs['GmaxPath'])
+
+        if bashIni.has_option('Tool Options','sMaxPath'):
+            dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
+            if not dirs['MaxPath'].isabs():
+                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
+                
+        if bashIni.has_option('Tool Options','sMayaPath'):
+            dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
+            if not dirs['MayaPath'].isabs():
+                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
             
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
