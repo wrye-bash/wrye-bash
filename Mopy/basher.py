@@ -9514,6 +9514,31 @@ def InitStatusBar():
             bosh.dirs['app'].join('Data\\BOSS.bat'),
             Image(r'images/boss2.png'),
             _("Launch BOSS")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['BlenderPath'],
+            Image(r'images/blender.png'),
+            _("Launch Blender")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['GmaxPath'],
+            Image(r'images/gmax.png'),
+            _("Launch Gmax")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['MaxPath'],
+            Image(r'images/max.png'),
+            _("Launch 3dsMax")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['MayaPath'],
+            Image(r'images/maya.png'),
+            _("Launch Maya")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['NifskopePath'],
+            Image(r'images/nifskope.png'),
+            _("Launch Nifskope")))
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
