@@ -13994,6 +13994,135 @@ class ImportInventory(ImportPatcher):
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
 #------------------------------------------------------------------------------
+class ImportSpells(ImportPatcher):
+    """Merge changes to actor inventories."""
+    name = _('Import Spells')
+    text = _("Merges changes to NPC, creature spell lists.")
+    autoKey = ('Spells','spellsOnly')
+    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    siMode = True
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_deltas = {}
+        self.srcMods = self.getConfigChecked()
+        self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
+        self.spellsOnlyMods = set(x for x in self.srcMods if
+            (x in patchFile.mergeSet and set(('spellsOnly','SIM')) & modInfos[x].getBashTags()))
+        self.isActive = bool(self.srcMods)
+        self.masters = set()
+        for srcMod in self.srcMods:
+            self.masters |= set(modInfos[srcMod].header.masters)
+        self.allMods = self.masters | set(self.srcMods)
+        self.mod_id_entries = {}
+        self.touched = set()
+
+    def initData(self,progress):
+        """Get data from source files."""
+        if not self.isActive or not self.srcMods: return
+        loadFactory = LoadFactory(False,'CREA','NPC_')
+        progress.setFull(len(self.srcMods))
+        for index,srcMod in enumerate(self.srcMods):
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile.load(True)
+            mapper = srcFile.getLongMapper()
+            for block in (srcFile.CREA, srcFile.NPC_):
+                for record in block.getActiveRecords():
+                    self.touched.add(mapper(record.fid))
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (None,(MreNpc,MreCrea))[self.isActive]
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (None,(MreNpc,MreCrea))[self.isActive]
+
+    def scanModFile(self, modFile, progress):
+        """Add record from modFile."""
+        if not self.isActive: return
+        touched = self.touched
+        id_deltas = self.id_deltas
+        mod_id_entries = self.mod_id_entries
+        mapper = modFile.getLongMapper()
+        modName = modFile.fileInfo.name
+        #--Master or source?
+        if modName in self.allMods:
+            id_entries = mod_id_entries[modName] = {}
+            modFile.convertToLongFids(('NPC_','CREA'))
+            for type in ('NPC_','CREA'):
+                for record in getattr(modFile,type).getActiveRecords():
+                    if record.fid in touched:
+                        id_entries[record.fid] = record.spells[:]
+        #--Source mod?
+        if modName in self.srcMods:
+            id_entries = {}
+            for master in modFile.tes4.masters:
+                if master in mod_id_entries:
+                    id_entries.update(mod_id_entries[master])
+            for fid,entries in mod_id_entries[modName].iteritems():
+                masterEntries = id_entries.get(fid)
+                if masterEntries is None: continue
+                masterItems = set(x.spells for x in masterEntries)
+                modItems = set(x.spells for x in entries)
+                removeItems = masterItems - modItems
+                addItems = modItems - masterItems
+                addEntries = [x for x in entries if x.item in addItems]
+                deltas = self.id_deltas.get(fid)
+                if deltas is None: deltas = self.id_deltas[fid] = []
+                deltas.append((removeItems,addEntries))
+        #--Keep record?
+        if modFile.fileInfo.name not in self.inventOnlyMods:
+            for type in ('NPC_','CREA'):
+                patchBlock = getattr(self.patchFile,type)
+                id_records = patchBlock.id_records
+                for record in getattr(modFile,type).getActiveRecords():
+                    fid = mapper(record.fid)
+                    if fid in touched and fid not in id_records:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Applies delta to patchfile."""
+        if not self.isActive: return
+        keep = self.patchFile.getKeeper()
+        id_deltas = self.id_deltas
+        mod_count = {}
+        for type in ('NPC_','CREA'):
+            for record in getattr(self.patchFile,type).records:
+                changed = False
+                deltas = id_deltas.get(record.fid)
+                if not deltas: continue
+                removable = set(x.spells for x in record.spells)
+                for removeItems,addEntries in reversed(deltas):
+                    if removeItems:
+                        #--Skip if some items to be removed have already been removed
+                        if not removeItems.issubset(removable): continue
+                        record.items = [x for x in record.spells if x.spells not in removeItems]
+                        removable -= removeItems
+                        changed = True
+                    if addEntries:
+                        current = set(x.spells for x in record.spells)
+                        for entry in addEntries:
+                            if entry.spells not in current:
+                                record.spells.append(entry)
+                                changed = True
+                if changed:
+                    keep(record.fid)
+                    mod = record.fid[0]
+                    mod_count[mod] = mod_count.get(mod,0) + 1
+        #--Log
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
+        log(_("\n=== Spell lists Changed: %d") % (sum(mod_count.values()),))
+        for mod in modInfos.getOrdered(mod_count):
+            log('* %s: %3d' % (mod.s,mod_count[mod]))
+#------------------------------------------------------------------------------
 class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _('Import Names')
@@ -17814,6 +17943,7 @@ def initDirs(personal='',localAppData=''):
             return GPath(path)
         personal = getShellPath('Personal')
         localAppData = getShellPath('Local AppData')
+        #programfiles = getShellPath 'Program Files'
         errorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
 
     #--User sub folders
@@ -17825,10 +17955,15 @@ def initDirs(personal='',localAppData=''):
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')
-    #-- other tool directories
+    #-- Other tool directories 
+    #   First to default path
     dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
     dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
     dirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
+    dirs['NifskopePath'] = GPath('C:\Program Files\NifTools\NifSkope\Nifskope.exe')
+    dirs['BlenderPath'] = GPath('C:\Program Files\Blender Foundation\Blender\blender.exe')
+    dirs['GmaxPath'] = GPath('C:\GMAX\gmax.exe')
+    # Then if bash.ini exists set from the settings in there:
     if bashIni and bashIni.has_option('Tool Options','sTes4FilesPath'):
         dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
         if not dirs['TES4FilesPath'].isabs():
@@ -17844,6 +17979,31 @@ def initDirs(personal='',localAppData=''):
         if not dirs['TES4LodGenPath'].isabs():
             dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
 
+    if bashIni and bashIni.has_option('Tool Options','sNifskopePath'):
+        dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
+        if not dirs['NifskopePath'].isabs():
+            dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
+            
+    if bashIni and bashIni.has_option('Tool Options','sBlenderPath'):
+        dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
+        if not dirs['BlenderPath'].isabs():
+            dirs['BlenderPath'] = dirs['app'].join(dirs['BlenderPath'])
+
+    if bashIni and bashIni.has_option('Tool Options','sGmaxPath'):
+        dirs['GmaxPath'] = GPath(bashIni.get('Tool Options','sGmaxPath').strip())
+        if not dirs['GmaxPath'].isabs():
+            dirs['GmaxPath'] = dirs['app'].join(dirs['GmaxPath'])
+
+    if bashIni and bashIni.has_option('Tool Options','sMaxPath'):
+        dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
+        if not dirs['MaxPath'].isabs():
+            dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
+            
+    if bashIni and bashIni.has_option('Tool Options','sMayaPath'):
+        dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
+        if not dirs['MayaPath'].isabs():
+            dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
+            
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         oblivionMods = GPath(bashIni.get('General','sOblivionMods').strip())
