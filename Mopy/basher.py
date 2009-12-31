@@ -7842,6 +7842,27 @@ class Mod_Stats_Export(Link):
             progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
+class Mod_Scripts_Export(Link):
+    """Export scripts from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Scripts...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textDir = bosh.dirs['patches']
+        #--Export
+        progress = balt.Progress(_("Export Scripts"))
+        try:
+            ScriptText = bosh.ScriptText()
+            ScriptText.readFromMod(fileInfo)
+            ScriptText.writeToText(fileInfo)
+        finally:
+            progress = progress.Destroy()
+#------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
     """Import stats from text file or other mod."""
     def AppendToMenu(self,menu,window,data):
@@ -9730,6 +9751,7 @@ def InitModLinks():
         exportMenu.links.append(Mod_ActorLevels_Export())
         exportMenu.links.append(Mod_FactionRelations_Export())
         exportMenu.links.append(Mod_Stats_Export())
+        exportMenu.links.append(Mod_Scripts_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
         importMenu = MenuLink(_("Import"))

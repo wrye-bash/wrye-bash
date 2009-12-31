@@ -11537,6 +11537,175 @@ class ItemStats:
         out.close()
 
 #------------------------------------------------------------------------------
+class ScriptText:
+    """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.type_stats = {'SCPT':{},}
+        self.type_attrs = {
+            'SCPT':('eid', 'scriptText'),
+            }
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        loadFactory= LoadFactory(False,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in self.type_stats:
+            ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                recordGetAttr = record.__getattribute__
+                ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                #return stats
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        loadFactory= LoadFactory(False,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = {} #--changed[modName] = numChanged
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                itemStats = stats.get(longid,None)
+                if not itemStats: continue
+                map(record.__setattr__,attrs,itemStats)
+                record.setChanged()
+                changed[longid[0]] = 1 + changed.get(longid[0],0)
+        if changed: modFile.safeSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        ScriptTexts = [self.type_stats[type] for type in ('SCPT',)]
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
+        for fields in ins:
+            if len(fields) < 3 or fields[2][:2] != '0x': continue
+            type,modName,objectStr,eid = fields[0:4]
+            modName = GPath(modName)
+            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+            if type == 'SCPT':
+                ScriptTexts[longid] = (eid,scriptText) #+ tuple(func(field) for func,field in
+                    #--( scrptText)
+                    #zip((sfloat,sfloat,sfloat,sfloat,sfloat,int,float,int,sfloat,),fields[4:12]))
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        #out = textPath.open('w')
+        def getSortedIds(ScriptTexts):
+            longids = ScriptTexts.keys()
+            longids.sort(key=lambda a: ScriptTexts[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        scriptTexts = self.type_stats['SCPT']
+        for longid in getSortedIds(scriptTexts):
+            outpath = dirs['patches'].join(longid[0]+'-'+scriptTexts[longid][0]+'.txt')
+            out = outpath.open('w')
+            out.write(scriptTexts[longid][1])
+            out.close
+
+class dudScriptText:
+    """Script text with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.type_stats = {'SCPT':{},}
+        self.type_attrs = {
+            'SCPT':('eid', 'scriptText'),
+            }
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        loadFactory = LoadFactory(True,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = {} #--changed[modName] = numChanged
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                itemStats = stats.get(longid,None)
+                if not itemStats: continue
+                map(record.__setattr__,attrs,itemStats)
+                record.setChanged()
+                changed[longid[0]] = 1 + changed.get(longid[0],0)
+        if changed: modFile.safeSave()
+        return changed
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        loadFactory = LoadFactory(False,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                recordGetAttr = record.__getattribute__
+                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        alch, ammo, appa, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
+        for fields in ins:
+            if len(fields) < 3 or fields[2][:2] != '0x': continue
+            type,modName,objectStr,eid = fields[0:4]
+            modName = GPath(modName)
+            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+            if type == 'ALCH':
+                alch[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+        ins.close()
+
+    def writeToText(self,modFile):
+        """Writes stats to specified text file."""
+        loadFactory = LoadFactory(False,MreScpt)
+        modFile = ModFile(modFile,loadFactory)
+        modFile.load(True)
+        for record in modFile.SCPT.records:
+            out = dirs['patches'].join(GPath(modFile).root()+record.eid+'.txt')
+            out.write(record.scriptText)
+            out.close()
+
+    def exportScripts(self,modFile):
+        """Compares scripts between old and new files and prints scripts which differ
+        from old to new to to two text files which can then be diffed by a diff utility."""
+        #init(3)
+        scripts, oldScripts = {}, {}
+        nullFile = modFile
+        for scripts,FileName in ((scripts,modFile),(oldScripts,nullFile)):
+            loadFactory = LoadFactory(False,MreScpt)
+            modFile = ModFile(nullFile,loadFactory)
+            modFile.load(True)
+            scripts.update(dict((record.eid, record.scriptText) for record in modFile.SCPT.records))
+        for eid in sorted(scripts):
+            #if eid in newScripts and oldScripts[eid] != newScripts[eid]:
+            print 'Modified:',eid
+            out = dirs['patches'].join(GPath(modFile).root()+record.eid+'.txt')
+            out.write(record.scriptText)
+                #oldDump.write(';;;OLD %s %s\n' %( eid,'='*40))
+                #newDump.write(';;;NEW %s %s\n' %( eid,'='*40))
+                #oldDump.write(oldScripts[eid]+'\n\n')
+                #newDump.write(newScripts[eid]+'\n\n')
+            out.close()
+#------------------------------------------------------------------------------
 class SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
 
@@ -15777,16 +15946,6 @@ class GmstTweaker(MultiTweaker):
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
     tweaks = sorted([
-        GlobalTweak(_('Timescale'),
-            _("Oblivion's Timescale."),
-            'Timescale',
-            ('15',15),
-            ('25',25),
-            ('[30]',30),
-            ('50',50),
-            ('100',100),
-            ('500',500),
-            ),
         GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
             'iArrowMaxRefCount',
