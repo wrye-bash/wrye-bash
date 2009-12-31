@@ -17963,6 +17963,8 @@ def initDirs(personal='',localAppData=''):
     dirs['NifskopePath'] = GPath('C:\Program Files\NifTools\NifSkope\Nifskope.exe')
     dirs['BlenderPath'] = GPath('C:\Program Files\Blender Foundation\Blender\blender.exe')
     dirs['GmaxPath'] = GPath('C:\GMAX\gmax.exe')
+    dirs['MaxPath'] = GPath('C:\something\dunnuthepath.exe')
+    dirs['MayaPath'] = GPath('C:\something\dunnuthepath.exe')
     # Then if bash.ini exists set from the settings in there:
     if bashIni and bashIni.has_option('Tool Options','sTes4FilesPath'):
         dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
