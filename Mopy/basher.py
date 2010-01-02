@@ -3661,10 +3661,6 @@ class BashApp(wx.App):
         #--Constants
         self.InitResources()
         #--Init Data
-        oldErr,errLog = sys.stderr,None
-        if not bolt.deprintOn and isinstance(oldErr,wx.PyOnDemandOutputWindow):
-            errLog = bosh.dirs['app'].join('Mopy','bash.log')
-            sys.stderr = sys.stdout = errLog.open('w')
         progress = wx.ProgressDialog("Wrye Bash",_("Initializing Data")+' '*10,
             style=wx.PD_AUTO_HIDE | wx.PD_APP_MODAL | (sys.version[:3] != '2.4' and wx.PD_SMOOTH))
         self.InitData(progress)
@@ -3676,11 +3672,9 @@ class BashApp(wx.App):
         frame = BashFrame(
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
-        sys.stderr = sys.stdout = oldErr
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
-        #if errLog: errLog.remove()
         #--DocBrowser
         if settings['bash.modDocs.show']:
             #DocBrowser().Show()

@@ -11564,7 +11564,7 @@ class ScriptText:
 
     def writeToMod(self,modInfo,eid,newScriptText):
         """Writes scripts to specified mod."""
-        loadFactory= LoadFactory(True,MreScpt)
+        loadFactory = LoadFactory(True,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -18103,11 +18103,25 @@ def initDirs(personal='',localAppData=''):
         
     #other settings from the INI:
     inisettings['scriptFileExt']='.txt'
-
+    inisettings['keepLog'] = 0
+    inisettings['logFile'] = dirs['app'].join('Mopy').join('bash.log')
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
             inisettings['scriptFileExt'] = str(bashIni.get('Settings','sScriptFileExt').strip())
-    
+        if bashIni.has_option('Settings','iKeepLog'):
+            inisettings['keepLog'] = int(bashIni.get('Settings','iKeepLog').strip())
+        if bashIni.has_option('Settings','sLogFile'):
+            inisettings['logFile'] = GPath(bashIni.get('Settings','sLogFile').strip())
+            if not inisettings['logFile'].isabs():
+                inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
+
+    if inisettings['keepLog'] == 0:
+        os.remove(inisettings['logFile'])
+    else:
+        log = inisettings['logFile'].open("a")
+        log.write('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\n'%(datetime.datetime.now(),inisettings['keepLog']))
+        log.close()
+
 def initSettings(readOnly=False):
     global settings
     settings = bolt.Settings(PickleDict(
