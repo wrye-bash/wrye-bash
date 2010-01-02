@@ -91,6 +91,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
 #--Settings
 dirs = {} #--app, user, mods, saves, userApp
+inisettings = {}
 defaultExt = '.7z'
 writeExts = dict({'.7z':'7z','.zip':'zip'})
 readExts = set(('.rar',))
@@ -11561,21 +11562,25 @@ class ScriptText:
                 ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
                 #return stats
 
-    def writeToMod(self,modInfo,eid,scriptText):
+    def writeToMod(self,modInfo,eid,newScriptText):
         """Writes scripts to specified mod."""
-        loadFactory= LoadFactory(False,MreScpt)
+        loadFactory= LoadFactory(True,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
         for type in self.type_stats:
             scriptData, attrs = self.type_stats[type], self.type_attrs[type]
             for record in getattr(modFile,type).getActiveRecords():
                 if record.eid == eid:
-                    record.scriptText = scriptText
-                    return 1
-                else:
-                    return 0
+                    if str(record.scriptText) != str(newScriptText):
+                        record.scriptText = newScriptText
+                        record.setChanged()
+                        modFile.safeSave()
+                        return 1
+                    else:
+                        return 0
+            print "eid %s doesn't match any record." %(eid)
+            return 0
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
@@ -11583,16 +11588,14 @@ class ScriptText:
         changed = 0
         for root, dirs, files in os.walk(textPath):
             for name in files:
-                if name[-4:] == '.txt':
-                    #numScripts += 1
-                    text = open(os.path.join(root, name),"r")
-                    lines = text.readlines()
-                    modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]
-                    scriptText = ''
-                    for line in lines[4:]:
-                        scriptText = (scriptText+line)
-                    text.close()
-                    changed += self.writeToMod(modInfo,eid,scriptText)
+                text = open(os.path.join(root, name),"r")
+                lines = text.readlines()
+                modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]
+                scriptText = ''
+                for line in lines[3:]:
+                    scriptText = (scriptText+line)
+                text.close()
+                changed = changed + self.writeToMod(modInfo,eid,scriptText)
         return changed
 
     def writeToText(self,textPath):
@@ -11604,7 +11607,7 @@ class ScriptText:
             return longids
         scriptTexts = self.type_stats['SCPT']
         for longid in getSortedIds(scriptTexts):
-            outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+'.txt')
+            outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
             out = outpath.open('w')
             formid = '0x%06X' %(longid[1])
             out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
@@ -18097,7 +18100,14 @@ def initDirs(personal='',localAppData=''):
     if not dirs['app'].join('Oblivion.exe').exists():
         print dirs['app'].join('Oblivion.exe')
         raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % dirs['app'])
+        
+    #other settings from the INI:
+    inisettings['scriptFileExt']='.txt'
 
+    if bashIni:
+        if bashIni.has_option('Settings','sScriptFileExt'):
+            inisettings['scriptFileExt'] = str(bashIni.get('Settings','sScriptFileExt').strip())
+    
 def initSettings(readOnly=False):
     global settings
     settings = bolt.Settings(PickleDict(
