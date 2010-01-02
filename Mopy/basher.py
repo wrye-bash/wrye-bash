@@ -7853,7 +7853,6 @@ class Mod_Scripts_Export(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textDir = bosh.dirs['patches']
         #--Export
         progress = balt.Progress(_("Export Scripts"))
         try:
@@ -7862,6 +7861,38 @@ class Mod_Scripts_Export(Link):
             ScriptText.writeToText(fileInfo)
         finally:
             progress = progress.Destroy()
+#------------------------------------------------------------------------------
+class Mod_Scripts_Import(Link):
+    """Import scripts from text file or other mod."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Scripts...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)==1)
+
+    def Execute(self,event):
+        message = (_("Import script from a text file. This will replace existing scripts and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.scripts.import.continue',
+            _('Import Scripts')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textDir = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
+        progress = balt.Progress(_("Import Scripts"))
+        changed = None
+        try:
+            ScriptText = bosh.ScriptText()
+            progress(0.1,_("Reading scripts for %s.") % (fileName.s,))
+            changed=ScriptText.readFromText(str(textDir.s),fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if changed == 0:
+            balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
+        else:
+            balt.showLog(self.window,_('changed %d scripts in %s'%(changed,fileName.s)),_('Import Scripts'),icons=bashBlue)
+
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
     """Import stats from text file or other mod."""
@@ -9762,6 +9793,7 @@ def InitModLinks():
         importMenu.links.append(Mod_Groups_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
         importMenu.links.append(Mod_Stats_Import())
+        importMenu.links.append(Mod_Scripts_Import())
         ModList.itemMenu.append(importMenu)
     ModList.itemMenu.append(Mod_AddMaster())
     ModList.itemMenu.append(Mod_CopyToEsmp())
