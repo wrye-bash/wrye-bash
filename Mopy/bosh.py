@@ -11561,7 +11561,7 @@ class ScriptText:
                 ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
                 #return stats
 
-    def writeToMod(self,modInfo):
+    def writeToMod(self,modInfo,eid,scriptText):
         """Writes scripts to specified mod."""
         loadFactory= LoadFactory(False,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
@@ -11569,37 +11569,34 @@ class ScriptText:
         mapper = modFile.getLongMapper()
         changed = {} #--changed[modName] = numChanged
         for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            scriptData, attrs = self.type_stats[type], self.type_attrs[type]
             for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                itemStats = stats.get(longid,None)
-                if not itemStats: continue
-                map(record.__setattr__,attrs,itemStats)
-                record.setChanged()
-                changed[longid[0]] = 1 + changed.get(longid[0],0)
-        if changed: modFile.safeSave()
-        return changed
+                if record.eid == eid:
+                    record.scriptText = scriptText
+                    return 1
+                else:
+                    return 0
 
-    def readFromText(self,textPath):
-        """Reads stats from specified text file."""
-        ScriptTexts = [self.type_stats[type] for type in ('SCPT',)]
+    def readFromText(self,textPath,modInfo):
+        """Reads scripts from files in specified mods' directory in bashed patches folder."""
         aliases = self.aliases
-        text = open(textPath, "r")
-        #lines = text.readlines()
-        #modName,ScriptName,ScriptText = lines[0],lines[1],lines[2:-1]
-        for lines in text.readlines():
-            type,modName,objectStr,eid = lines[0:4]
-            modName = GPath(modName)
-            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
-            if type == 'SCPT':
-                ScriptTexts[longid] = (eid,scriptText) #+ tuple(func(field) for func,field in
-                    #--( scrptText)
-                    #zip((sfloat,sfloat,sfloat,sfloat,sfloat,int,float,int,sfloat,),fields[4:12]))
-        text.close()
+        changed = 0
+        for root, dirs, files in os.walk(textPath):
+            for name in files:
+                if name[-4:] == '.txt':
+                    #numScripts += 1
+                    text = open(os.path.join(root, name),"r")
+                    lines = text.readlines()
+                    modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]
+                    scriptText = ''
+                    for line in lines[4:]:
+                        scriptText = (scriptText+line)
+                    text.close()
+                    changed += self.writeToMod(modInfo,eid,scriptText)
+        return changed
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        #out = textPath.open('w')
         def getSortedIds(ScriptTexts):
             longids = ScriptTexts.keys()
             longids.sort(key=lambda a: ScriptTexts[a][0])
@@ -11607,10 +11604,10 @@ class ScriptText:
             return longids
         scriptTexts = self.type_stats['SCPT']
         for longid in getSortedIds(scriptTexts):
-            outpath = dirs['patches'].join(longid[0]+'_'+scriptTexts[longid][0]+'_scripts.txt')
+            outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+'.txt')
             out = outpath.open('w')
             formid = '0x%06X' %(longid[1])
-            out.write('SCPT'+'\n'+str(longid[0].s)+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
+            out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
             out.close
 
 class SpellRecords:
