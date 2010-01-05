@@ -85,7 +85,9 @@ oiMask = 0xFFFFFFL
 oblivionIni = None
 modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
+BSAInfos = None #--BSAInfos singleton
 screensData = None #--ScreensData singleton
+bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
@@ -281,6 +283,7 @@ reImageExt = re.compile(r'\.(gif|jpg|bmp|png)$',re.I)
 reModExt  = re.compile(r'\.es[mp](.ghost)?$',re.I)
 reEsmExt  = re.compile(r'\.esm(.ghost)?$',re.I)
 reEspExt  = re.compile(r'\.esp(.ghost)?$',re.I)
+reBSAExt  = re.compile(r'\.bsa(.ghost)?$',re.I)
 reEssExt  = re.compile(r'\.ess$',re.I)
 reSaveExt = re.compile(r'(quicksave(\.bak)+|autosave(\.bak)+|\.es[rs])$',re.I)
 reCsvExt  = re.compile(r'\.csv$',re.I)
@@ -5215,6 +5218,10 @@ class SaveFileError(FileError):
     """TES4 Save File Error: File is corrupted."""
     pass
 
+class BSAFileError(FileError):
+    """TES4 BSA File Error: File is corrupted."""
+    pass
+    
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
@@ -5570,6 +5577,31 @@ class SaveHeader:
             pluggy.load()
             pluggy.mapMasters(masterMap)
             pluggy.safeSave()
+
+#------------------------------------------------------------------------------
+class BSAHeader:
+    """Represents selected info from a Tes4BSA file."""
+    def __init__(self,path=None):
+        """Initialize."""
+        self.folderCount = 0
+        self.fileCount = 0
+        self.lenFolderNames = 0
+        self.lenFileNames = 0
+        self.fileFlags = 0
+        if path: self.load(path)
+
+    def load(self,path):
+        """Extract info from save file."""
+        ins = path.open('rb')
+        try:
+            #--Header
+            ins.seek(4*4)
+            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
+        #--Errors
+        except:
+            raise BSAFileError(path.tail,_('File header is corrupted..'))
+        #--Done
+        ins.close()
 
 #------------------------------------------------------------------------------
 class SaveFile:
@@ -7020,6 +7052,36 @@ class SaveInfo(FileInfo):
         return CoSaves(self.getPath())
 
 #------------------------------------------------------------------------------
+class BSAInfo(FileInfo):
+    def getFileInfos(self):
+        """Returns modInfos or saveInfos depending on fileInfo type."""
+        return BSAInfos
+
+    def getStatus(self):
+        #status = FileInfo.getStatus(self)
+        #masterOrder = self.masterOrder
+        #--File size?
+        #if status > 0 or len(masterOrder) > len(modInfos.ordered):
+        #    return status
+        #--Current ordering?
+        #if masterOrder != modInfos.ordered[:len(masterOrder)]:
+        #    return status
+        #elif masterOrder == modInfos.ordered:
+        #    return -20
+        #else:
+        return 10
+
+    def getHeader(self):
+        """Read header for file."""
+        try:
+            self.header = BSAHeader(self.getPath())
+            #--Master Names/Order
+            #self.masterNames = tuple(self.header.masters)
+            #self.masterOrder = tuple() #--Reset to empty for now
+        except struct.error, rex:
+            raise BSAFileError(self.name,_('Struct.error: ')+`rex`)
+
+#------------------------------------------------------------------------------
 class FileInfos(DataDict):
     def __init__(self,dir,factory=FileInfo):
         """Init with specified directory and specified factory type."""
@@ -8122,6 +8184,81 @@ class SaveInfos(FileInfos):
         return newName
 
 #------------------------------------------------------------------------------
+class BSAInfos(FileInfos):
+    """BSAInfo collection. Represents bsa directory and related info."""
+    #--Init
+    def __init__(self):
+        self.iniMTime = 0
+        self.dir = dirs['mods']
+        FileInfos.__init__(self,self.dir,BSAInfo)
+        self.profiles = bolt.Table(PickleDict(
+            dirs['saveBase'].join('BashProfiles.dat'),
+            dirs['userApp'].join('Profiles.pkl')))
+        self.table = bolt.Table(PickleDict(self.bashDir.join('Table.dat')))
+
+    #--Right File Type (Used by Refresh)
+    def rightFileType(self,fileName):
+        """Bool: File is a bsa."""
+        return reBSAExt.search(fileName.s)
+
+    def refresh(self):
+        #if self.refreshLocalSave():
+        self.data.clear()
+        self.table.save()
+        self.table = bolt.Table(PickleDict(
+            self.bashDir.join('Table.dat'),
+            self.bashDir.join('Table.pkl')))
+        return FileInfos.refresh(self)
+       #     def refresh(self):
+       # """Refresh list of screenshots."""
+       # self.dir = dirs['mods']
+        #ssBase = GPath(oblivionIni.getSetting('Display','SScreenShotBaseName','ScreenShot'))
+        #if ssBase.head:
+        #    self.dir = self.dir.join(ssBase.head)
+       # newData = {}
+       # reImageExt = re.compile(r'\.(bmp|jpg)$',re.I)
+       # #--Loop over files in directory
+       # for fileName in self.dir.list():
+       #     filePath = self.dir.join(fileName)
+       #     maImageExt = reImageExt.search(fileName.s)
+       #     if maImageExt and filePath.isfile():
+       #         newData[fileName] = (maImageExt.group(1).lower(),filePath.mtime)
+       # changed = (self.data != newData)
+       # self.data = newData
+       # return changed
+
+    def delete(self,fileName):
+        """Deletes savefile and associated pluggy file."""
+        FileInfos.delete(self,fileName)
+
+    def rename(self,oldName,newName):
+        """Renames member file from oldName to newName."""
+        FileInfos.rename(self,oldName,newName)
+
+    def copy(self,fileName,destDir,destName=None,mtime=False):
+        """Copies savefile and associated pluggy file."""
+        FileInfos.copy(self,fileName,destDir,destName,mtime)
+
+    def move(self,fileName,destDir,doRefresh=True):
+        """Moves member file to destDir. Will overwrite!"""
+        FileInfos.move(self,fileName,destDir,doRefresh)
+
+    #--Enabled ----------------------------------------------------------------
+    def isEnabled(self,fileName):
+        """True if fileName is enabled)."""
+        return (fileName.cext == '.bsa')
+
+    def enable(self,fileName,value=True):
+        """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
+        isEnabled = self.isEnabled(fileName)
+        if isEnabled or value == isEnabled:
+            return fileName
+        (root,ext) = fileName.rootExt
+        newName = root + ((value and '.bsa') or '.bsa.ghost')
+        self.rename(fileName,newName)
+        return newName
+
+#------------------------------------------------------------------------------
 class ReplacersData(DataDict):
     def __init__(self):
         """Initialize."""
@@ -8840,6 +8977,7 @@ class ScreensData(DataDict):
         del self.data[fileName]
 
 #------------------------------------------------------------------------------
+
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -8922,12 +9060,20 @@ class Installer(object):
             progress(0.05,_("%s: Pre-Scanning...\n%s") % (rootName,asDir[relPos:]))
             if rootIsMods and asDir == asRoot:
                 sDirs[:] = [x for x in sDirs if x.lower() not in Installer.dataDirsMinus]
+                if inisettings['keepLog'] >= 1:
+                    log = inisettings['logFile'].open("a")
+                    log.write('(in refreshSizeCRCDate) sDirs = %s\n'%(sDirs[:]))
+                    log.close()
                 if settings['bash.installers.skipDistantLOD']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots'] 
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']                    
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
+                if inisettings['keepLog'] >= 1:
+                    log = inisettings['logFile'].open("a")
+                    log.write('(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
+                    log.close()                    
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_("%s: Scanning...") % rootName)
@@ -9121,12 +9267,13 @@ class Installer(object):
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
             #--Silent skips
             if fileLower[-9:] == 'thumbs.db' or fileLower[-11:] == 'desktop.ini':
-                continue #--Silent skip
-            elif skipDistantLOD and fileLower[:-10] == 'distantlod':
+                continue 
+            elif skipDistantLOD and fileLower[:10] == 'distantlod':
+                skipDirFiles.add(full)
                 continue
-            elif skipVoices and fileLower[:-11] == r'sound\voice':
+            elif skipVoices and fileLower[:11].lower == 'sound\\voice':
                 continue
-            elif skipScreenshots and fileLower[:-11] == 'screenshots':
+            elif skipScreenshots and fileLower[:11] == 'screenshots':
                 continue
             elif skipImages :
                 if fileExt in imageExts :
