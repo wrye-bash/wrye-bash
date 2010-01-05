@@ -101,7 +101,7 @@ settingDefaults = {
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     #--BSA Redirection
-    'bash.bsaRedirection':False,
+    'bash.BSARedirection':False,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {
         'Bethesda ESMs': [
@@ -221,6 +221,21 @@ settingDefaults = {
         'Size':1,
         'PlayTime':1,
         },
+    #Wrye Bash: BSAs
+    'bash.BSAs.cols': ['File','Modified','Size'],
+    'bash.BSAs.colAligns': {
+        'Size':1,
+        'Modified':1,
+        },
+    'bash.BSAs.colReverse': {
+        'Modified':1,
+        },
+    'bash.BSAs.colWidths': {
+        'File':150,
+        'Modified':150,
+        'Size':75,
+        },
+    'bash.BSAs.sort': 'File',
     #--Wrye Bash: Replacers
     'bash.replacers.show':False,
     'bash.replacers.cols': ['File'],
@@ -1420,14 +1435,14 @@ class ModDetails(wx.Window):
         changeHedr = ((self.authorStr != modInfo.header.author) or
             (self.descriptionStr != modInfo.header.description ))
         changeMasters = self.masters.edited
-        #--Warn on rename if file has bsa and/or dialog
+        #--Warn on rename if file has BSA and/or dialog
         hasBsa, hasVoices = modInfo.hasResources()
         if changeName and (hasBsa or hasVoices):
             modName = modInfo.name.s
             if hasBsa and hasVoices:
-                message = _("This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.") % (modName[:-4],modName,modName)
+                message = _("This mod has an associated archive (%s.BSA) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.") % (modName[:-4],modName,modName)
             elif hasBsa:
-                message = _("This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.") % (modName[:-4],modName)
+                message = _("This mod has an associated archive (%s.BSA), which will become detached when the mod is renamed.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.") % (modName[:-4],modName)
             else: #hasVoices
                 message = _("This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed.") % (modName,)
             if not balt.askOk(self,message):
@@ -2434,7 +2449,7 @@ class ReplacersPanel(NotebookPanel):
 
     def ContinueEdit(self):
         """Continuation warning for Invalidate and Reset."""
-        message = _("Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source.")
+        message = _("Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.BSA file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source.")
         return balt.askContinue(self,message,'bash.replacers.editBSAs.continue',_('Textures BSA'))
 
     def OnAutomatic(self,event=None):
@@ -2449,10 +2464,10 @@ class ReplacersPanel(NotebookPanel):
     def OnInvalidateTextures(self,event):
         """Invalid."""
         if not self.ContinueEdit(): return
-        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
-        bsaFile = bosh.BsaFile(bsaPath)
-        bsaFile.scan()
-        result = bsaFile.invalidate()
+        BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
+        BSAFile = bosh.BsaFile(BSAPath)
+        BSAFile.scan()
+        result = BSAFile.invalidate()
         balt.showOk(self,
             _("BSA Hashes reset: %d\nBSA Hashes Invalidated: %d.\nAIText entries: %d.") %
             tuple(map(len,result)))
@@ -2460,10 +2475,10 @@ class ReplacersPanel(NotebookPanel):
     def OnResetTextures(self,event):
         """Invalid."""
         if not self.ContinueEdit(): return
-        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
-        bsaFile = bosh.BsaFile(bsaPath)
-        bsaFile.scan()
-        resetCount = bsaFile.reset()
+        BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
+        BSAFile = bosh.BsaFile(BSAPath)
+        BSAFile.scan()
+        resetCount = BSAFile.reset()
         balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
 
 #------------------------------------------------------------------------------
@@ -2610,6 +2625,357 @@ class ScreensPanel(NotebookPanel):
             #self.Refresh()
         self.SetStatusCount()
 
+#------------------------------------------------------------------------------
+class BSAList(List):
+    #--Class Data
+    mainMenu = Links() #--Column menu
+    itemMenu = Links() #--Single item menu
+
+    def __init__(self,parent):
+        #--Columns
+        self.cols = settings['bash.BSAs.cols']
+        self.colAligns = settings['bash.BSAs.colAligns']
+        self.colNames = settings['bash.colNames']
+        self.colReverse = settings.getChanged('bash.BSAs.colReverse')
+        self.colWidths = settings['bash.BSAs.colWidths']
+        #--Data/Items
+        self.data = data = bosh.BSAInfos
+        self.details = None #--Set by panel
+        self.sort = settings['bash.BSAs.sort']
+        #--Links
+        self.mainMenu = BSAList.mainMenu
+        self.itemMenu = BSAList.itemMenu
+        #--Parent init
+        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
+        #--Image List
+        checkboxesIL = self.checkboxes.GetImageList()
+        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
+        #--Events
+        self.list.Bind(wx.EVT_CHAR, self.OnChar)
+        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
+        #--ScrollPos
+        self.list.ScrollLines(settings.get('bash.BSAs.scrollPos',0))
+        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+
+    def RefreshUI(self,files='ALL',detail='SAME'):
+        """Refreshes UI for specified files."""
+        #--Details
+        if detail == 'SAME':
+            selected = set(self.GetSelected())
+        else:
+            selected = set([detail])
+        #--Populate
+        if files == 'ALL':
+            self.PopulateItems(selected=selected)
+        elif isinstance(files,bolt.Path):
+            self.PopulateItem(files,selected=selected)
+        else: #--Iterable
+            for file in files:
+                self.PopulateItem(file,selected=selected)
+        BSADetails.SetFile(detail)
+        bashFrame.SetStatusCount()
+
+    #--Populate Item
+    def PopulateItem(self,itemDex,mode=0,selected=set()):
+        #--String name of item?
+        if not isinstance(itemDex,int):
+            itemDex = self.items.index(itemDex)
+        fileName = GPath(self.items[itemDex])
+        fileInfo = self.data[fileName]
+        cols = self.cols
+        for colDex in range(self.numCols):
+            col = cols[colDex]
+            if col == 'File':
+                value = fileName.s
+            elif col == 'Modified':
+                value = formatDate(fileInfo.mtime)
+            elif col == 'Size':
+                value = formatInteger(fileInfo.size/1024)+' KB'
+            else:
+                value = '-'
+            if mode and (colDex == 0):
+                self.list.InsertStringItem(itemDex, value)
+            else:
+                self.list.SetStringItem(itemDex, colDex, value)
+        #--Image
+        #status = fileInfo.getStatus()
+        on = fileName.cext == '.bsa'
+        #self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
+        #--Selection State
+        if fileName in selected:
+            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+        else:
+            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+
+    #--Sort Items
+    def SortItems(self,col=None,reverse=-2):
+        (col, reverse) = self.GetSortSettings(col,reverse)
+        settings['bash.BSAs.sort'] = col
+        data = self.data
+        #--Start with sort by name
+        self.items.sort()
+        if col == 'File':
+            pass #--Done by default
+        elif col == 'Modified':
+            self.items.sort(key=lambda a: data[a].mtime)
+        elif col == 'Size':
+            self.items.sort(key=lambda a: data[a].size)
+        else:
+            raise BashError(_('Unrecognized sort key: ')+col)
+        #--Ascending
+        if reverse: self.items.reverse()
+
+    #--Events ---------------------------------------------
+    def OnChar(self,event):
+        """Char event: Reordering."""
+        if (event.GetKeyCode() == 127):
+            self.DeleteSelected()
+        event.Skip()
+
+    #--Column Resize
+    def OnColumnResize(self,event):
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        settings.setChanged('bash.BSAs.colWidths')
+
+    #--Event: Left Down
+    def OnLeftDown(self,event):
+        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
+        if hitFlag == 32:
+            fileName = GPath(self.items[hitItem])
+            newEnabled = not self.data.isEnabled(fileName)
+            newName = self.data.enable(fileName,newEnabled)
+            if newName != fileName: self.RefreshUI()
+        #--Pass Event onward
+        event.Skip()
+
+    def OnItemSelected(self,event=None):
+        BSAName = self.items[event.m_itemIndex]
+        self.details.SetFile(BSAName)
+
+#------------------------------------------------------------------------------
+class BSADetails(wx.Window):
+    """BSAfile details panel."""
+    def __init__(self,parent):
+        """Initialize."""
+        wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
+        readOnlyColour = self.GetBackgroundColour()
+        #--Singleton
+        global BSADetails
+        BSADetails = self
+        #--Data
+        self.BSAInfo = None
+        self.edited = False
+        textWidth = 200
+        #--File Name
+        id = self.fileId = wx.NewId()
+        self.file = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.file.SetMaxLength(256)
+        wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
+        wx.EVT_TEXT(self.file,id,self.OnTextEdit)
+        #--Modified
+        id = self.modifiedId = wx.NewId()
+        self.modified = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.modified.SetMaxLength(32)
+        wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
+        wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
+        #--BSA Info
+        self.gInfo = wx.TextCtrl(self,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
+        self.gInfo.SetMaxLength(2048)
+        self.gInfo.Bind(wx.EVT_TEXT,self.OnInfoEdit)
+        #--Save/Cancel
+        self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
+        self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)
+        self.save.Disable()
+        self.cancel.Disable()
+        #--Layout
+        sizer = vSizer(
+            (staticText(self,_("File:")),0,wx.TOP,4),
+            (self.file,0,wx.EXPAND|wx.TOP,4),
+            #(hSizer(
+            #    (self.playerInfo,1,wx.EXPAND),
+            #    (self.gCoSaves,0,wx.EXPAND),
+            #    ),0,wx.EXPAND|wx.TOP,4),
+            #(self.picture,0,wx.TOP,4),
+            #(staticText(self,_("Masters:")),0,wx.TOP,4),
+            #(self.masters,2,wx.EXPAND|wx.TOP,4),
+            (hSizer(
+                spacer,
+                self.save,
+                (self.cancel,0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.TOP,4),
+            (self.gInfo,0,wx.TOP,4),
+            )
+        self.SetSizer(sizer)
+
+    def SetFile(self,fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        if fileName == 'SAME':
+            if not self.BSAInfo or self.BSAInfo.name not in bosh.BSAInfos:
+                fileName = None
+            else:
+                fileName = self.BSAInfo.name
+        #--Null fileName?
+        if not fileName:
+            BSAInfo = self.BSAInfo = None
+            self.fileStr = ''
+        #--Valid fileName?
+        else:
+            BSAInfo = self.BSAInfo = bosh.BSAInfos[fileName]
+            #--Remember values for edit checks
+            self.fileStr = BSAInfo.name.s
+        #--Set Fields
+        self.file.SetValue(self.fileStr)
+        #--Picture
+        #if not self.picData:
+        #    self.picture.SetBitmap(None)
+        #else:
+        #    width,height,data = self.picData
+        #    image = wx.EmptyImage(width,height)
+        #    image.SetData(data)
+        #    self.picture.SetBitmap(image.ConvertToBitmap())
+        #--Edit State
+        self.edited = 0
+        self.save.Disable()
+        self.cancel.Disable()
+        #--Info Box
+        self.gInfo.DiscardEdits()
+        if fileName:
+            self.gInfo.SetValue(bosh.BSAInfos.table.getItem(fileName,'info',_('Notes: ')))
+        else:
+            self.gInfo.SetValue(_('Notes: '))
+
+    def SetEdited(self):
+        """Mark as edited."""
+        self.edited = True
+        self.save.Enable()
+        self.cancel.Enable()
+
+    def OnInfoEdit(self,event):
+        """Info field was edited."""
+        if self.BSAInfo and self.gInfo.IsModified():
+            bosh.BSAInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
+
+    def OnTextEdit(self,event):
+        """Event: Editing file or save name text."""
+        if self.BSAInfo and not self.edited:
+            if self.fileStr != self.file.GetValue():
+                self.SetEdited()
+        event.Skip()
+
+    def OnEditFile(self,event):
+        """Event: Finished editing file name."""
+        if not self.BSAInfo: return
+        #--Changed?
+        fileStr = self.file.GetValue()
+        if fileStr == self.fileStr: return
+        #--Extension Changed?
+        if self.fileStr[-4:].lower() not in ('.bsa'):
+            balt.showError(self,"Incorrect file extension: "+fileStr[-3:])
+            self.file.SetValue(self.fileStr)
+        #--Else file exists?
+        elif self.BSAInfo.dir.join(fileStr).exists():
+            balt.showError(self,"File %s already exists." % (fileStr,))
+            self.file.SetValue(self.fileStr)
+        #--Okay?
+        else:
+            self.fileStr = fileStr
+            self.SetEdited()
+
+    def OnEditModified(self,event):
+        if not self.BSAInfo: return
+        modifiedStr = self.modified.GetValue()
+        if modifiedStr == self.modifiedStr: return
+        try:
+            newTimeTup = bosh.unformatDate(modifiedStr,'%c')
+            time.mktime(newTimeTup)
+        except ValueError:
+            balt.showError(self,_('Unrecognized date: ')+modifiedStr)
+            self.modified.SetValue(self.modifiedStr)
+            return
+        except OverflowError:
+            balt.showError(self,_('Bash cannot handle files dates greater than January 19, 2038.)'))
+            self.modified.SetValue(self.modifiedStr)
+            return
+        #--Normalize format
+        modifiedStr = time.strftime('%c',newTimeTup)
+        self.modifiedStr = modifiedStr
+        self.modified.SetValue(modifiedStr) #--Normalize format
+        self.SetEdited()
+    def DoSave(self,event):
+        """Event: Clicked Save button."""
+        BSAInfo = self.BSAInfo
+        #--Change Tests
+        changeName = (self.fileStr != BSAInfo.name)
+        #changeMasters = self.masters.edited
+        #--Backup
+        BSAInfo.makeBackup()
+        prevMTime = BSAInfo.mtime
+        #--Change Name?
+        if changeName:
+            (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
+            BSAList.items[BSAList.items.index(oldName)] = newName
+            bosh.BSAInfos.rename(oldName,newName)
+        #--Change masters?
+        #if changeMasters:
+        #    BSAInfo.header.masters = self.masters.GetNewMasters()
+        #    BSAInfo.header.writeMasters(BSAInfo.getPath())
+        #    BSAInfo.setmtime(prevMTime)
+        #--Done
+        try:
+            bosh.BSAInfos.refreshFile(BSAInfo.name)
+            self.SetFile(self.BSAInfo.name)
+        except bosh.FileError:
+            balt.showError(self,_('File corrupted on save!'))
+            self.SetFile(None)
+        self.SetFile(self.BSAInfo.name)
+        BSAList.RefreshUI(BSAInfo.name)
+
+    def DoCancel(self,event):
+        """Event: Clicked cancel button."""
+        self.SetFile(self.BSAInfo.name)
+
+#------------------------------------------------------------------------------
+class BSAPanel(NotebookPanel):
+    """BSA info tab."""
+    def __init__(self,parent):
+        wx.Panel.__init__(self, parent, -1)
+        global BSAList
+        BSAList = BSAList(self)
+        self.BSADetails = BSADetails(self)
+        BSAList.details = self.BSADetails
+        #--Events
+        wx.EVT_SIZE(self,self.OnSize)
+        #--Layout
+        sizer = hSizer(
+            (BSAList,1,wx.GROW),
+            ((4,-1),0),
+            (self.BSADetails,0,wx.EXPAND))
+        self.SetSizer(sizer)
+        self.BSADetails.Fit()
+
+    def SetStatusCount(self):
+        """Sets mod count in last field."""
+        text = _("BSAs: %d") % (len(bosh.BSAInfos.data))
+        statusBar.SetStatusText(text,2)
+
+    def OnSize(self,event=None):
+        wx.Window.Layout(self)
+        BSAList.Layout()
+        self.BSADetails.Layout()
+
+    def OnCloseWindow(self):
+        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
+        table = bosh.BSAInfos.table
+        for BSAName in table.keys():
+            if BSAName not in bosh.BSAInfos:
+                del table[BSAName]
+        table.save()
+        bosh.BSAInfos.profiles.save()
+        settings['bash.BSAs.scrollPos'] = BSAList.vScrollPos
+        
 #------------------------------------------------------------------------------
 class MessageList(List):
     #--Class Data
@@ -2985,6 +3351,7 @@ class BashNotebook(wx.Notebook):
             self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
+        self.AddPage(BSAPanel(self),_("BSAs"))
         self.AddPage(SavePanel(self),_("Saves"))
         self.AddPage(ScreensPanel(self),_("Screenshots"))
         if re.match('win',sys.platform):
@@ -3699,6 +4066,9 @@ class BashApp(wx.App):
         progress.Update(30,_("Initializing SaveInfos"))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
+        progress.Update(55,_("Initializing BSAInfos"))
+        bosh.BSAInfos = bosh.BSAInfos()
+        bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
         if not firstBashed:
@@ -4601,14 +4971,14 @@ class File_Duplicate(Link):
             fileInfos = self.window.data
             fileInfo = fileInfos[fileName]
             #--Mod with resources?
-            #--Warn on rename if file has bsa and/or dialog
+            #--Warn on rename if file has BSA and/or dialog
             if fileInfo.isMod() and tuple(fileInfo.hasResources()) != (False,False):
                 hasBsa, hasVoices = fileInfo.hasResources()
                 modName = fileInfo.name
                 if hasBsa and hasVoices:
-                    message = _("This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s,modName.s)
+                    message = _("This mod has an associated archive (%s.BSA) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s,modName.s)
                 elif hasBsa:
-                    message = _("This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s)
+                    message = _("This mod has an associated archive (%s.BSA), which will not be attached to the duplicate mod.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s)
                 else: #hasVoices
                     message = _("This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod.") % (modName.s,)
                 if not balt.askWarning(self.window,message,_("Duplicate ")+fileName.s):
@@ -4988,18 +5358,18 @@ class Installers_BsaRedirection(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('BSA Redirection'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.bsaRedirection'])
+        menuItem.Check(settings['bash.BSARedirection'])
 
     def Execute(self,event):
         """Handle selection."""
-        settings['bash.bsaRedirection'] ^= True
-        if settings['bash.bsaRedirection']:
-            bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
-            bsaFile = bosh.BsaFile(bsaPath)
-            bsaFile.scan()
-            resetCount = bsaFile.reset()
+        settings['bash.BSARedirection'] ^= True
+        if settings['bash.BSARedirection']:
+            BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
+            BSAFile = bosh.BsaFile(BSAPath)
+            BSAFile.scan()
+            resetCount = BSAFile.reset()
             #balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
-        bosh.oblivionIni.setBsaRedirection(settings['bash.bsaRedirection'])
+        bosh.oblivionIni.setBsaRedirection(settings['bash.BSARedirection'])
 
 #------------------------------------------------------------------------------
 class Installers_ConflictsReportShowsInactive(Link):
@@ -9298,8 +9668,32 @@ class App_Tes4View(App_Button):
 class App_BOSS(App_Button):
     """loads BOSS"""
 
-    def Execute(self,event):
-        App_Button.Execute(self,event)
+    def Execute(self,event,extraArgs=None):
+        exeObse = bosh.dirs['app'].join('obse_loader.exe')
+        exeArgs = self.exeArgs
+        if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
+            exePath = exeObse
+            if self.obseArg != '': exeArgs += (self.obseArg,)
+        else:
+            exePath = self.exePath
+        exeArgs = (exePath.stail,)+exeArgs
+        if extraArgs: exeArgs += extraArgs
+        statusBar.SetStatusText(' '.join(exeArgs),1)
+        cwd = bolt.Path.getcwd()
+        exePath.head.setcwd()
+        if settings.get('bash.mods.autoGhost'):
+            print "ghosted -- deghosting to run BOSS"
+            reghost = True
+           # Mods_AutoGhost.Execute
+            bosh.modInfos.autoGhost(False)
+        else:
+            reghost = False
+            print "not ghosted"
+        os.spawnv(os.P_WAIT,exePath.s,exeArgs)
+        if reghost:
+            print "reghosting"
+            bosh.modInfos.autoGhost(True)
+        cwd.setcwd()
 
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
@@ -9867,6 +10261,54 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_RepairFactions())
     SaveList.itemMenu.append(Save_RepairHair())
 
+def InitBSALinks():
+    """Initialize save tab menus."""
+    #--BSAList: Column Links
+    if True: #--Sort
+        sortMenu = MenuLink(_("Sort by"))
+        sortMenu.links.append(Files_SortBy('File'))
+        sortMenu.links.append(Files_SortBy('Modified'))
+        sortMenu.links.append(Files_SortBy('Size'))
+        BSAList.mainMenu.append(sortMenu)
+    BSAList.mainMenu.append(SeparatorLink())
+    BSAList.mainMenu.append(Files_Open())
+    BSAList.mainMenu.append(Files_Unhide('save'))
+
+    #--BSAList: Item Links
+    if True: #--File
+        fileMenu = MenuLink(_("File")) #>>
+        fileMenu.links.append(File_Backup())
+        fileMenu.links.append(File_Duplicate())
+        #fileMenu.links.append(File_Snapshot())
+        fileMenu.links.append(SeparatorLink())
+        fileMenu.links.append(File_Delete())
+        fileMenu.links.append(File_Hide())
+        fileMenu.links.append(SeparatorLink())
+        fileMenu.links.append(File_RevertToBackup())
+        #fileMenu.links.append(File_RevertToSnapshot())
+        BSAList.itemMenu.append(fileMenu)
+    #--------------------------------------------
+    BSAList.itemMenu.append(SeparatorLink())
+    BSAList.itemMenu.append(Save_LoadMasters())
+    BSAList.itemMenu.append(File_ListMasters())
+    BSAList.itemMenu.append(Save_DiffMasters())
+    BSAList.itemMenu.append(Save_Stats())
+    #--------------------------------------------
+    BSAList.itemMenu.append(SeparatorLink())
+    BSAList.itemMenu.append(Save_EditPCSpells())
+    BSAList.itemMenu.append(Save_ImportFace())
+    BSAList.itemMenu.append(Save_EditCreated('ENCH'))
+    BSAList.itemMenu.append(Save_EditCreated('ALCH'))
+    BSAList.itemMenu.append(Save_EditCreated('SPEL'))
+    BSAList.itemMenu.append(Save_ReweighPotions())
+    BSAList.itemMenu.append(Save_UpdateNPCLevels())
+    #--------------------------------------------
+    BSAList.itemMenu.append(SeparatorLink())
+    BSAList.itemMenu.append(Save_Unbloat())
+    BSAList.itemMenu.append(Save_RepairAbomb())
+    BSAList.itemMenu.append(Save_RepairFactions())
+    BSAList.itemMenu.append(Save_RepairHair())
+
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--SaveList: Column Links
@@ -9912,6 +10354,7 @@ def InitLinks():
     InitScreenLinks()
     InitMessageLinks()
     InitPeopleLinks()
+    InitBSALinks()
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
