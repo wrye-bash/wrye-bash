@@ -4885,6 +4885,8 @@ class Files_Unhide(Link):
             wildcard = 'Oblivion Mod Files (*.esp;*.esm)|*.esp;*.esm'
         elif self.type == 'save':
             wildcard = 'Oblivion Save files (*.ess)|*.ess'
+        elif self.type == 'installer':
+            wildcard = 'Oblivion Mod Archives (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
         else:
             wildcard = '*.*'
         #--File dialog
@@ -9656,11 +9658,9 @@ class App_BOSS(App_Button):
         statusBar.SetStatusText(' '.join(exeArgs),1)
         cwd = bolt.Path.getcwd()
         exePath.head.setcwd()
-        modsdir = bosh.dirs['mods'].s
         if settings.get('bash.mods.autoGhost'):
-            reghost = True
             ghosted = []
-            for root, dirs, files in os.walk(modsdir):
+            for root, dirs, files in os.walk(bosh.dirs['mods'].s):
                 for name in files:
                     fileLower = name.lower()
                     if fileLower[-10:] == '.esp.ghost' or fileLower[-10:] == '.esm.ghost':
@@ -9670,15 +9670,6 @@ class App_BOSS(App_Button):
                             newName = bosh.dirs['mods'].join(name[:-6])
                             file.moveTo(newName)
         os.spawnv(os.P_WAIT,exePath.s,exeArgs)
-        if reghost:
-            for root, dirs, files in os.walk(modsdir):
-                for name in files:
-                    fileLower = name.lower()
-                    if fileLower.join('.ghost') in ghosted:
-                        file = bosh.dirs['mods'].join(name)
-                        newName = bosh.dirs['mods'].join(name+'.ghost')
-                        file.moveTo(newName)
-            reghost = False #just to reset this.
         cwd.setcwd()
 
 #------------------------------------------------------------------------------
@@ -10007,7 +9998,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AnnealAll())
-    InstallersPanel.mainMenu.append(Files_Unhide('mod'))
+    InstallersPanel.mainMenu.append(Files_Unhide('installer'))
     #--Behavior
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
@@ -10031,6 +10022,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Duplicate())
     InstallersPanel.itemMenu.append(Installer_Delete())
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
+    InstallersPanel.itemMenu.append(File_Hide())
     #--Install, uninstall, etc.
     InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_Refresh())
