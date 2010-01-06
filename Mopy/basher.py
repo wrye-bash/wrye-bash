@@ -2774,12 +2774,7 @@ class BSADetails(wx.Window):
         self.file.SetMaxLength(256)
         wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
         wx.EVT_TEXT(self.file,id,self.OnTextEdit)
-        #--Modified
-        id = self.modifiedId = wx.NewId()
-        self.modified = wx.TextCtrl(self,id,"",size=(textWidth,-1))
-        self.modified.SetMaxLength(32)
-        wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
-        wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
+        
         #--BSA Info
         self.gInfo = wx.TextCtrl(self,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
         self.gInfo.SetMaxLength(2048)
@@ -2884,26 +2879,6 @@ class BSADetails(wx.Window):
             self.fileStr = fileStr
             self.SetEdited()
 
-    def OnEditModified(self,event):
-        if not self.BSAInfo: return
-        modifiedStr = self.modified.GetValue()
-        if modifiedStr == self.modifiedStr: return
-        try:
-            newTimeTup = bosh.unformatDate(modifiedStr,'%c')
-            time.mktime(newTimeTup)
-        except ValueError:
-            balt.showError(self,_('Unrecognized date: ')+modifiedStr)
-            self.modified.SetValue(self.modifiedStr)
-            return
-        except OverflowError:
-            balt.showError(self,_('Bash cannot handle files dates greater than January 19, 2038.)'))
-            self.modified.SetValue(self.modifiedStr)
-            return
-        #--Normalize format
-        modifiedStr = time.strftime('%c',newTimeTup)
-        self.modifiedStr = modifiedStr
-        self.modified.SetValue(modifiedStr) #--Normalize format
-        self.SetEdited()
     def DoSave(self,event):
         """Event: Clicked Save button."""
         BSAInfo = self.BSAInfo
@@ -9681,18 +9656,29 @@ class App_BOSS(App_Button):
         statusBar.SetStatusText(' '.join(exeArgs),1)
         cwd = bolt.Path.getcwd()
         exePath.head.setcwd()
+        modsdir = bosh.dirs['mods'].s
         if settings.get('bash.mods.autoGhost'):
-            print "ghosted -- deghosting to run BOSS"
             reghost = True
-           # Mods_AutoGhost.Execute
-            bosh.modInfos.autoGhost(False)
-        else:
-            reghost = False
-            print "not ghosted"
+            ghosted = []
+            for root, dirs, files in os.walk(modsdir):
+                for name in files:
+                    fileLower = name.lower()
+                    if fileLower[-10:] == '.esp.ghost' or fileLower[-10:] == '.esm.ghost':
+                        if not name[:-6] in files:
+                            file = bosh.dirs['mods'].join(name)
+                            ghosted.append(fileLower)
+                            newName = bosh.dirs['mods'].join(name[:-6])
+                            file.moveTo(newName)
         os.spawnv(os.P_WAIT,exePath.s,exeArgs)
         if reghost:
-            print "reghosting"
-            bosh.modInfos.autoGhost(True)
+            for root, dirs, files in os.walk(modsdir):
+                for name in files:
+                    fileLower = name.lower()
+                    if fileLower.join('.ghost') in ghosted:
+                        file = bosh.dirs['mods'].join(name)
+                        newName = bosh.dirs['mods'].join(name+'.ghost')
+                        file.moveTo(newName)
+            reghost = False #just to reset this.
         cwd.setcwd()
 
 #------------------------------------------------------------------------------
@@ -10021,6 +10007,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AnnealAll())
+    InstallersPanel.mainMenu.append(Files_Unhide('mod'))
     #--Behavior
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
