@@ -7058,28 +7058,38 @@ class BSAInfo(FileInfo):
         return BSAInfos
 
     def getStatus(self):
-        #status = FileInfo.getStatus(self)
+        status = FileInfo.getStatus(self)
         #masterOrder = self.masterOrder
         #--File size?
-        #if status > 0 or len(masterOrder) > len(modInfos.ordered):
-        #    return status
+     #   if status > 0 or len(masterOrder) > len(modInfos.ordered):
+      #      return status
         #--Current ordering?
-        #if masterOrder != modInfos.ordered[:len(masterOrder)]:
+       # if masterOrder != modInfos.ordered[:len(masterOrder)]:
         #    return status
         #elif masterOrder == modInfos.ordered:
         #    return -20
         #else:
-        return 10
-
+        #    return -10
+        return 20
+        
     def getHeader(self):
         """Read header for file."""
+        
         try:
-            self.header = BSAHeader(self.getPath())
+            self.header = SaveHeader(self.getPath())
             #--Master Names/Order
-            #self.masterNames = tuple(self.header.masters)
-            #self.masterOrder = tuple() #--Reset to empty for now
+            self.masterNames = tuple(self.header.masters)
+            self.masterOrder = tuple() #--Reset to empty for now
         except struct.error, rex:
-            raise BSAFileError(self.name,_('Struct.error: ')+`rex`)
+            raise SaveFileError(self.name,_('Struct.error: ')+`rex`)
+
+    def coCopy(self,oldPath,newPath):
+        """Copies co files corresponding to oldPath to newPath."""
+        CoSaves(oldPath).copy(newPath)
+
+    def coSaves(self):
+        """Returns CoSaves instance corresponding to self."""
+        return CoSaves(self.getPath())
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
@@ -8185,7 +8195,7 @@ class SaveInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
-    """BSAInfo collection. Represents bsa directory and related info."""
+    """SaveInfo collection. Represents save directory and related info."""
     #--Init
     def __init__(self):
         self.iniMTime = 0
@@ -8198,63 +8208,84 @@ class BSAInfos(FileInfos):
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
-        """Bool: File is a bsa."""
+        """Bool: File is a mod."""
         return reBSAExt.search(fileName.s)
 
     def refresh(self):
-        #if self.refreshLocalSave():
-        self.data.clear()
-        self.table.save()
-        self.table = bolt.Table(PickleDict(
-            self.bashDir.join('Table.dat'),
-            self.bashDir.join('Table.pkl')))
+        if self.refreshLocalSave():
+            self.data.clear()
+            self.table.save()
+            self.table = bolt.Table(PickleDict(
+                self.bashDir.join('Table.dat'),
+                self.bashDir.join('Table.pkl')))
         return FileInfos.refresh(self)
-       #     def refresh(self):
-       # """Refresh list of screenshots."""
-       # self.dir = dirs['mods']
-        #ssBase = GPath(oblivionIni.getSetting('Display','SScreenShotBaseName','ScreenShot'))
-        #if ssBase.head:
-        #    self.dir = self.dir.join(ssBase.head)
-       # newData = {}
-       # reImageExt = re.compile(r'\.(bmp|jpg)$',re.I)
-       # #--Loop over files in directory
-       # for fileName in self.dir.list():
-       #     filePath = self.dir.join(fileName)
-       #     maImageExt = reImageExt.search(fileName.s)
-       #     if maImageExt and filePath.isfile():
-       #         newData[fileName] = (maImageExt.group(1).lower(),filePath.mtime)
-       # changed = (self.data != newData)
-       # self.data = newData
-       # return changed
 
     def delete(self,fileName):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self,fileName)
+        CoSaves(self.dir,fileName).delete()
 
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         FileInfos.rename(self,oldName,newName)
+        CoSaves(self.dir,oldName).move(self.dir,newName)
 
     def copy(self,fileName,destDir,destName=None,mtime=False):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy(self,fileName,destDir,destName,mtime)
+        CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir. Will overwrite!"""
         FileInfos.move(self,fileName,destDir,doRefresh)
+        CoSaves(self.dir,fileName).move(destDir,fileName)
+
+    #--Local Saves ------------------------------------------------------------
+    def getLocalSaveDirs(self):
+        """Returns a list of possible local save directories, NOT including the base directory."""
+        baseSaves = dirs['saveBase'].join('Saves')
+        if baseSaves.exists():
+            localSaveDirs = [x for x in baseSaves.list() if (x != 'Bash' and baseSaves.join(x).isdir())]
+        else:
+            localSaveDirs = []
+        localSaveDirs.sort()
+        return localSaveDirs
+
+    def refreshLocalSave(self):
+        """Refreshes self.localSave and self.dir."""
+        #--self.localSave is NOT a Path object.
+    #    self.localSave = getattr(self,'localSave','Saves\\')
+        self.dir = dirs['mods']
+        self.bashDir = self.getBashDir()
+    #    if oblivionIni.path.exists() and (oblivionIni.path.mtime != self.iniMTime):
+    #        self.localSave = oblivionIni.getSetting('General','SLocalSavePath','Saves\\')
+    #        self.iniMTime = oblivionIni.path.mtime
+    #    else:
+    #        return False
+        return True
+
+    def setLocalSave(self,localSave):
+        """Sets SLocalSavePath in Oblivion.ini."""
+        self.table.save()
+        self.localSave = localSave
+        oblivionIni.saveSetting('General','SLocalSavePath',localSave)
+        self.iniMTime = oblivionIni.path.mtime
+        bashDir = dirs['saveBase'].join(localSave,'Bash')
+        self.table = bolt.Table(PickleDict(bashDir.join('Table.dat')))
+        self.refresh()
 
     #--Enabled ----------------------------------------------------------------
     def isEnabled(self,fileName):
         """True if fileName is enabled)."""
-        return (fileName.cext == '.bsa')
+        return (fileName.cext == '.ess')
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
         isEnabled = self.isEnabled(fileName)
-        if isEnabled or value == isEnabled:
+        if isEnabled or value == isEnabled or re.match('(autosave|quicksave)',fileName.s,re.I):
             return fileName
         (root,ext) = fileName.rootExt
-        newName = root + ((value and '.bsa') or '.bsa.ghost')
+        newName = root + ((value and '.ess') or '.esr')
         self.rename(fileName,newName)
         return newName
 
