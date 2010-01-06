@@ -11776,7 +11776,7 @@ class ScriptText:
                 changed = changed + self.writeToMod(modInfo,eid,scriptText)
         return changed
 
-    def writeToText(self,textPath):
+    def writeToText(self,textPath,skip):
         """Writes stats to specified text file."""
         def getSortedIds(ScriptTexts):
             longids = ScriptTexts.keys()
@@ -11784,12 +11784,14 @@ class ScriptText:
             longids.sort(key=itemgetter(0))
             return longids
         scriptTexts = self.type_stats['SCPT']
+        x = len(skip)
         for longid in getSortedIds(scriptTexts):
-            outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
-            out = outpath.open('w')
-            formid = '0x%06X' %(longid[1])
-            out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
-            out.close
+            if skip.lower() != scriptTexts[longid][0][:x].lower():
+                outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
+                out = outpath.open('w')
+                formid = '0x%06X' %(longid[1])
+                out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
+                out.close
 
 class SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""

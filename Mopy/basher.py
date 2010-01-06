@@ -8194,12 +8194,14 @@ class Mod_Scripts_Export(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
+        skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
+            _('Skip Prefix?'),'')
         #--Export
         progress = balt.Progress(_("Export Scripts"))
         try:
             ScriptText = bosh.ScriptText()
             ScriptText.readFromMod(fileInfo)
-            ScriptText.writeToText(fileInfo)
+            ScriptText.writeToText(fileInfo,skip)
         finally:
             progress = progress.Destroy()
 #------------------------------------------------------------------------------
