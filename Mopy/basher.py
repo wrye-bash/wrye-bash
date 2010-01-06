@@ -9367,6 +9367,42 @@ class Screen_Rename(Link):
             numStr = '0'*(numLen-len(numStr))+numStr
         bosh.screensData.refresh()
         self.window.RefreshUI()
+        
+class Installer_Rename(Link):
+    """Renames files by pattern."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) > 0)
+
+    def Execute(self,event):
+        #--File Info
+        rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+        fileName0 = self.data[0]
+        pattern = balt.askText(self.window,_("Enter new name. E.g. VASE.7z"),
+            _("Rename Files"),fileName0.s)
+        if not pattern: return
+        maPattern = rePattern.match(pattern)
+        if not maPattern:
+            balt.showError(self.window,_("Bad extension or file root: ")+pattern)
+            return
+        root,numStr,ext = maPattern.groups()[:3]
+        numLen = len(numStr)
+        num = int(numStr or 0)
+        installersDir = bosh.dirs['installers']
+        for oldName in map(GPath,self.data):
+            newName = GPath(root)+numStr+oldName.ext
+            if newName != oldName:
+                oldPath = installersDir.join(oldName)
+                newPath = installersDir.join(newName)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+            num += 1
+            numStr = `num`
+            numStr = '0'*(numLen-len(numStr))+numStr
+        #bosh.screensData.refresh()
+        self.window.RefreshUI()
 
 # Messages Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -9658,7 +9694,9 @@ class App_BOSS(App_Button):
         statusBar.SetStatusText(' '.join(exeArgs),1)
         cwd = bolt.Path.getcwd()
         exePath.head.setcwd()
+        progress = balt.Progress(_("Executing BOSS"))
         if settings.get('bash.mods.autoGhost'):
+            progress(0.05,_("Processing... deghosting mods"))
             ghosted = []
             for root, dirs, files in os.walk(bosh.dirs['mods'].s):
                 for name in files:
@@ -9669,7 +9707,9 @@ class App_BOSS(App_Button):
                             ghosted.append(fileLower)
                             newName = bosh.dirs['mods'].join(name[:-6])
                             file.moveTo(newName)
+        progress(0.55,_("Processing... launching BOSS."))
         os.spawnv(os.P_WAIT,exePath.s,exeArgs)
+        if progress: progress.Destroy()
         cwd.setcwd()
 
 #------------------------------------------------------------------------------
@@ -10023,6 +10063,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Delete())
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
     InstallersPanel.itemMenu.append(File_Hide())
+    InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.
     InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_Refresh())
