@@ -11727,20 +11727,26 @@ class ScriptText:
             }
         self.aliases = aliases or {} #--For aliasing mod names
 
-    def readFromMod(self,modInfo):
+    def readFromMod(self,modInfo,file):
         """Reads stats from specified mod."""
         loadFactory= LoadFactory(False,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
+        progress = balt.Progress(_("Export Scripts"))
         for type in self.type_stats:
+            y = len(getattr(modFile,type).getActiveRecords())
+            z = 0
             ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
             for record in getattr(modFile,type).getActiveRecords():
+                z +=1
+                progress((0.5/y*z),_("reading scripts in %s.")%(file))
                 longid = mapper(record.fid)
                 recordGetAttr = record.__getattribute__
                 ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
                 #return stats
-
+        progress = progress.Destroy()
+                
     def writeToMod(self,modInfo,eid,newScriptText):
         """Writes scripts to specified mod."""
         loadFactory = LoadFactory(True,MreScpt)
@@ -11765,8 +11771,13 @@ class ScriptText:
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         aliases = self.aliases
         changed = 0
+        progress = balt.Progress(_("Import Scripts"))
         for root, dirs, files in os.walk(textPath):
+            y = len(files)
+            z = 0
             for name in files:
+                z += 1
+                progress((1/y*z),_("reading file %s.") % (name))
                 text = open(os.path.join(root, name),"r")
                 lines = text.readlines()
                 modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]
@@ -11774,7 +11785,8 @@ class ScriptText:
                 for line in lines[3:]:
                     scriptText = (scriptText+line)
                 text.close()
-                changed = changed + self.writeToMod(modInfo,eid,scriptText)
+                changed += self.writeToMod(modInfo,eid,scriptText)
+        progress = progress.Destroy()
         return changed
 
     def writeToText(self,textPath,skip,folder):
@@ -11787,19 +11799,26 @@ class ScriptText:
             return longids
         scriptTexts = self.type_stats['SCPT']
         x = len(skip)
-        exportedScripts = []
+        exportedScripts = ''
+        y = len(getSortedIds(scriptTexts))
+        z = 0
+        num = 0
         for longid in getSortedIds(scriptTexts):
-            progress(0.3,_("Reading script %s.") % (scriptTexts[longid][0]))
+            z += 1
+            progress((0.5+0.5/y*z),_("exporting script %s.") % (scriptTexts[longid][0]))
             if x == 0 or skip.lower() != scriptTexts[longid][0][:x].lower():
+                num += 1
                 outpath = dirs['patches'].join(folder+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
-                out = outpath.open('w')
+                out = outpath.open('wb')
                 formid = '0x%06X' %(longid[1])
-                out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
+                out.write(longid[0].s+'\r\n'+formid+'\r\n'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
                 out.close
-                exportedScripts.append(scriptTexts[longid][0])
+                exportedScripts += scriptTexts[longid][0]+'\r\n'
+        exportedScripts = 'exported %d scripts from %s:'%(num,folder)+exportedScripts
         progress = progress.Destroy()
-        print ('exported %d scripts:\n%s'%(len(exportedScripts),exportedScripts))
+        return exportedScripts
 
+#------------------------------------------------------------------------------
 class SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
 
@@ -12171,7 +12190,7 @@ class PCFaces:
         """Safely finds position of name within save ACHR data."""
         namePos = data.find(pcName)
         if namePos == -1:
-            raise SaveFileError(saveName,_('Failed to find pcName in PC ACRH record.'))
+            raise SaveFileError(saveName,_('Failed to find pcName in PC ACHR record.'))
         namePos2 = data.find(pcName,namePos+1)
         if namePos2 != -1:
             raise SaveFileError(saveName,_(

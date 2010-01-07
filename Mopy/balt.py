@@ -336,7 +336,7 @@ def askDirectory(parent,message=_('Choose a directory.'),defaultPath=''):
         dialog.Destroy()
         return None
     else:
-        path = dialog.GetPath()
+        path = GPath(dialog.GetPath())
         dialog.Destroy()
         return path
 
@@ -462,11 +462,12 @@ def showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
-def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=None):
+def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=None,size=True):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
-    size = _settings.get('balt.LogMessage.size',(400,400))
+    if size:
+        size = _settings.get('balt.LogMessage.size',(400,400))
     #--Dialog or Frame
     if asDialog:
         window = wx.Dialog(parent,defId,title,pos=pos,size=size,
