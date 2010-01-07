@@ -8197,13 +8197,13 @@ class Mod_Scripts_Export(Link):
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
         #--Export
-        progress = balt.Progress(_("Export Scripts"))
         try:
             ScriptText = bosh.ScriptText()
             ScriptText.readFromMod(fileInfo)
-            ScriptText.writeToText(fileInfo,skip)
-        finally:
-            progress = progress.Destroy()
+            ScriptText.writeToText(fileInfo,skip,fileName.s)
+        finally: log = 'log'
+        #    progress = progress.Destroy()
+            #log...
 #------------------------------------------------------------------------------
 class Mod_Scripts_Import(Link):
     """Import scripts from text file or other mod."""
@@ -8220,12 +8220,12 @@ class Mod_Scripts_Import(Link):
             return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textDir = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
+        textDir = balt.askDirectory(self.window,
+            _('Choose directory to import scripts from'),_('Choose Directory'),bosh.dirs[patches].join(fileName.s+' Exported Scripts'))
         progress = balt.Progress(_("Import Scripts"))
         changed = None
         try:
             ScriptText = bosh.ScriptText()
-            progress(0.1,_("Reading scripts for %s.") % (fileName.s,))
             changed=ScriptText.readFromText(str(textDir.s),fileInfo)
             progress(1.0,_("Done."))
         finally:
