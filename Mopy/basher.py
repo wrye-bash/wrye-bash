@@ -8197,13 +8197,13 @@ class Mod_Scripts_Export(Link):
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
         #--Export
-        try:
-            ScriptText = bosh.ScriptText()
-            ScriptText.readFromMod(fileInfo)
-            ScriptText.writeToText(fileInfo,skip,fileName.s)
-        finally: log = 'log'
-        #    progress = progress.Destroy()
-            #log...
+        #try:
+        ScriptText = bosh.ScriptText()
+        ScriptText.readFromMod(fileInfo,fileName.s)
+        exportedScripts = ScriptText.writeToText(fileInfo,skip,fileName.s)
+        #finally:
+        balt.showLog(self.window,exportedScripts,_('Export Scripts'),icons=bashBlue)
+
 #------------------------------------------------------------------------------
 class Mod_Scripts_Import(Link):
     """Import scripts from text file or other mod."""
@@ -8221,12 +8221,12 @@ class Mod_Scripts_Import(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         textDir = balt.askDirectory(self.window,
-            _('Choose directory to import scripts from'),_('Choose Directory'),bosh.dirs[patches].join(fileName.s+' Exported Scripts'))
+            _('Choose directory to import scripts from'),bosh.dirs['patches'].join(fileName.s+' Exported Scripts'))
         progress = balt.Progress(_("Import Scripts"))
         changed = None
         try:
             ScriptText = bosh.ScriptText()
-            changed=ScriptText.readFromText(str(textDir.s),fileInfo)
+            changed=ScriptText.readFromText(str(textDir.s),fileInfo,fileName.s)
             progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
@@ -8234,7 +8234,7 @@ class Mod_Scripts_Import(Link):
         if changed == 0:
             balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
         else:
-            balt.showLog(self.window,_('changed %d scripts in %s'%(changed,fileName.s)),_('Import Scripts'),icons=bashBlue)
+            balt.showLog(self.window,_('changed %d scripts in %s:'%(changed,fileName.s)),_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
@@ -9655,6 +9655,32 @@ class App_Tes4Gecko(App_Button):
                 self.javaArg = bashIni.get('Tool Options','sTes4GeckoJavaArg').strip()
             if bashIni.has_option('Tool Options','sTes4GeckoPath'):
                 self.jar = GPath(bashIni.get('Tool Options','sTes4GeckoPath').strip())
+                if not self.jar.isabs():
+                    self.jar = bosh.dirs['app'].join(self.jar)
+
+    def IsPresent(self):
+        return self.java.exists() and self.jar.exists()
+
+    def Execute(self,event):
+        """Handle menu selection."""
+        cwd = bolt.Path.getcwd()
+        self.jar.head.setcwd()
+        os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,self.javaArg,'-jar',self.jar.stail))
+        cwd.setcwd()
+#------------------------------------------------------------------------------
+class App_OblivionBookCreator(App_Button):
+    """Start OBlivion Book Creator."""
+    def __init__(self,exePathArgs,image,tip):
+        """Initialize"""
+        App_Button.__init__(self,exePathArgs,image,tip)
+        self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
+        self.jar = bosh.dirs['mods'].join('OblivionBookCreator.jar')
+        self.javaArg = '-Xmx1024m'
+        if GPath('bash.ini').exists():
+            bashIni = ConfigParser.ConfigParser()
+            bashIni.read('bash.ini')
+            if bashIni.has_option('Tool Options','sOblivionBookCreatorPath'):
+                self.jar = GPath(bashIni.get('Tool Options','sOblivionBookCreatorPath').strip())
                 if not self.jar.isabs():
                     self.jar = bosh.dirs['app'].join(self.jar)
 
