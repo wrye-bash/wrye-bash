@@ -71,6 +71,7 @@ from types import *
 from operator import attrgetter,itemgetter
 
 #--Local
+import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
@@ -11776,8 +11777,9 @@ class ScriptText:
                 changed = changed + self.writeToMod(modInfo,eid,scriptText)
         return changed
 
-    def writeToText(self,textPath,skip):
+    def writeToText(self,textPath,skip,folder):
         """Writes stats to specified text file."""
+        progress = balt.Progress(_("Export Scripts"))
         def getSortedIds(ScriptTexts):
             longids = ScriptTexts.keys()
             longids.sort(key=lambda a: ScriptTexts[a][0])
@@ -11785,13 +11787,18 @@ class ScriptText:
             return longids
         scriptTexts = self.type_stats['SCPT']
         x = len(skip)
+        exportedScripts = []
         for longid in getSortedIds(scriptTexts):
-            if skip.lower() != scriptTexts[longid][0][:x].lower():
-                outpath = dirs['patches'].join(longid[0]+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
+            progress(0.3,_("Reading script %s.") % (scriptTexts[longid][0]))
+            if x == 0 or skip.lower() != scriptTexts[longid][0][:x].lower():
+                outpath = dirs['patches'].join(folder+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
                 out = outpath.open('w')
                 formid = '0x%06X' %(longid[1])
                 out.write(longid[0].s+'\n'+formid+'\n'+scriptTexts[longid][0]+'\n'+scriptTexts[longid][1])
                 out.close
+                exportedScripts.append(scriptTexts[longid][0])
+        progress = progress.Destroy()
+        print ('exported %d scripts:\n%s'%(len(exportedScripts),exportedScripts))
 
 class SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
