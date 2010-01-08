@@ -4775,6 +4775,8 @@ class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
 
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 
+class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
+
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
@@ -4808,6 +4810,7 @@ PatchDialog.patchers.extend((
     CoblExhaustion(),
     CellImporter(),
     ClothesTweaker(),
+    GlobalsTweaker(),
     GmstTweaker(),
     GraphicsPatcher(),
     ImportFactions(),
@@ -8229,7 +8232,6 @@ class Mod_Scripts_Import(Link):
         try:
             ScriptText = bosh.ScriptText()
             importedScripts=ScriptText.readFromText(textDir.s,fileInfo)
-            progress(1.0,_("Done."))
         finally:
         #--Log
             if not importedScripts:

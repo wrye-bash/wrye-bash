@@ -15882,6 +15882,71 @@ class AssortedTweaker(MultiTweaker):
             tweak.buildPatch(log,progress,self.patchFile)
 
 #------------------------------------------------------------------------------
+class GlobalsTweak(MultiTweakItem):
+    """set a global to specified value"""
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,patchFile,keep,log):
+        """Build patch."""
+        tweakCount = 0
+        value = self.choiceValues[self.chosen][0]
+        for record in patchFile.GLOB.records:
+            if record.eid.lower() == self.label.lower():
+                record.value = value
+                keep(record.fid)
+                tweakCount += 1
+        log('* %s set to: %0.1f' % (self.label,value))
+
+#------------------------------------------------------------------------------
+class GlobalsTweaker(MultiTweaker):
+    """Select values to set various globals to."""
+    scanOrder = 29
+    editOrder = 29
+    name = _('Globals')
+    text = _("Set globals to various values")
+    tweaks = sorted([
+        GlobalsTweak(_("Timescale"),
+            _("Timescale will be set to:"),
+            'timescale',
+            (_('0.0'),0),
+            (_('1'),1),
+            (_('2'),2),
+            (_('5'),5),
+            ),
+        ],key=lambda a: a.label.lower())
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (None,(MreGlob,))[self.isActive]
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (None,(MreGlob,))[self.isActive]
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive or 'GLOB' not in modFile.tops: return
+        mapper = modFile.getLongMapper()
+        patchRecords = self.patchFile.GLOB
+        id_records = patchRecords.id_records
+        for record in modFile.GLOB.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            for tweak in self.enabledTweaks:
+                if record.eid.lower() == tweak.label.lower():
+                    record = record.getTypeCopy(mapper)
+                    patchRecords.setRecord(record)
+                    break
+
+    def buildPatch(self,log,progress):
+        """Applies individual clothes tweaks."""
+        if not self.isActive: return
+        keep = self.patchFile.getKeeper()
+        log.setHeader('= '+self.__class__.name)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(self.patchFile,keep,log)
+
+#------------------------------------------------------------------------------
 class ClothesTweak(MultiTweakItem):
     flags = {
         'hoods':   1<<1,
@@ -16040,21 +16105,6 @@ class GmstTweak(MultiTweakItem):
             gmst.eid,gmst.value,gmst.longFids = eid,value,True
             fid = gmst.fid = keep(gmst.getOblivionFid())
             patchFile.GMST.setRecord(gmst)
-        if len(self.choiceLabels) > 1:
-            log('* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
-        else:
-            log('* ' + self.label)
-
-class GlobalTweak(MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
-        for eid,value in zip(eids,self.choiceValues[self.chosen]):
-            glob = MreGlob(('GLOB',0,0,0,0))
-            glob.eid,glob.value,glob.longFids = eid,value,True
-            fid = glob.fid = MreGlob.eid
-            patchFile.GLOB.setRecord(glob)
         if len(self.choiceLabels) > 1:
             log('* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
         else:
