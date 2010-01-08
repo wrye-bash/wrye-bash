@@ -8222,19 +8222,20 @@ class Mod_Scripts_Import(Link):
         fileInfo = bosh.modInfos[fileName]
         textDir = balt.askDirectory(self.window,
             _('Choose directory to import scripts from'),bosh.dirs['patches'].join(fileName.s+' Exported Scripts'))
-        progress = balt.Progress(_("Import Scripts"))
-        changed = None
+        if textDir == None:
+            balt.showError(self.window,_('Source folder must be selected.'))
+            return
+        changed = 0
         try:
             ScriptText = bosh.ScriptText()
-            changed=ScriptText.readFromText(str(textDir.s),fileInfo,fileName.s)
+            importedScripts=ScriptText.readFromText(textDir.s,fileInfo)
             progress(1.0,_("Done."))
         finally:
-            progress = progress.Destroy()
         #--Log
-        if changed == 0:
-            balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
-        else:
-            balt.showLog(self.window,_('changed %d scripts in %s:'%(changed,fileName.s)),_('Import Scripts'),icons=bashBlue)
+            if not importedScripts:
+                balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
+            else:
+                balt.showLog(self.window,importedScripts,_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
@@ -9938,7 +9939,6 @@ def InitImages():
 def InitStatusBar():
     """Initialize status bar links."""
     #--Bash Status/LinkBar
-    #BashStatusBar.buttons.append(App_Oblivion())
     BashStatusBar.buttons.append(Obse_Button())
     BashStatusBar.buttons.append(AutoQuit_Button())
     BashStatusBar.buttons.append(
@@ -9960,6 +9960,30 @@ def InitStatusBar():
             bosh.dirs['app'].join('OblivionModManager.exe'),
             Image(r'images/database_connect.png'),
             _("Launch OBMM")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['ISOBL'],
+            Image(r'images/brick.png'),
+            _("Launch InsanitySorrow's Oblivion Launcher"))) 
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['ISRMG'],
+            Image(r'images/brick.png'),
+            _("Launch InsanitySorrow's Readme Generator"))) 
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['ISRNG'],
+            Image(r'images/brick.png'),
+            _("Launch InsanitySorrow's Random Name Generator")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['ISRNPCG'],
+            Image(r'images/brick.png'),
+            _("Launch InsanitySorrow's Random NPC Generator"))) 
+    BashStatusBar.buttons.append(
+        App_OblivionBookCreator(None,
+            Image(r'images/cog.png'),
+            _("Launch Oblivion Book Creator")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['TES4FilesPath'],
@@ -10006,14 +10030,14 @@ def InitStatusBar():
             _("Launch Blender")))
     BashStatusBar.buttons.append(
         App_Button(
+            bosh.dirs['GIMP'],
+            Image(r'images/gimp.png'),
+            _("Launch GIMP")))
+    BashStatusBar.buttons.append(
+        App_Button(
             bosh.dirs['GmaxPath'],
             Image(r'images/gmax.png'),
             _("Launch Gmax")))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['MaxPath'],
-            Image(r'images/max.png'),
-            _("Launch 3dsMax")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['MayaPath'],
@@ -10021,9 +10045,19 @@ def InitStatusBar():
             _("Launch Maya")))
     BashStatusBar.buttons.append(
         App_Button(
+            bosh.dirs['MaxPath'],
+            Image(r'images/max.png'),
+            _("Launch 3dsMax")))
+    BashStatusBar.buttons.append(
+        App_Button(
             bosh.dirs['NifskopePath'],
             Image(r'images/nifskope.png'),
             _("Launch Nifskope")))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['Photoshop'],
+            Image(r'images/photoshop.png'),
+            _("Launch Photoshop")))  
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())

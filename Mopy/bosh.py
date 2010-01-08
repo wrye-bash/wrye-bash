@@ -11761,16 +11761,17 @@ class ScriptText:
                         record.scriptText = newScriptText
                         record.setChanged()
                         modFile.safeSave()
-                        return 1
+                        return True
                     else:
-                        return 0
+                        return False
             print "eid %s doesn't match any record." %(eid)
-            return 0
+            return False
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         aliases = self.aliases
-        changed = 0
+        changedScripts = ''
+        num = 0
         progress = balt.Progress(_("Import Scripts"))
         for root, dirs, files in os.walk(textPath):
             y = len(files)
@@ -11785,9 +11786,15 @@ class ScriptText:
                 for line in lines[3:]:
                     scriptText = (scriptText+line)
                 text.close()
-                changed += self.writeToMod(modInfo,eid,scriptText)
+                changed = self.writeToMod(modInfo,eid,scriptText)
+                if changed:
+                    num += 1
+                    changedScripts += eid+'\r\n'
         progress = progress.Destroy()
-        return changed
+        if num == 0:
+            return False
+        changedScripts = 'Imported %d changed scripts from %s:\n'%(num,textPath)+changedScripts     
+        return changedScripts
 
     def writeToText(self,textPath,skip,folder):
         """Writes stats to specified text file."""
@@ -11814,7 +11821,7 @@ class ScriptText:
                 out.write(longid[0].s+'\r\n'+formid+'\r\n'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
                 out.close
                 exportedScripts += scriptTexts[longid][0]+'\r\n'
-        exportedScripts = 'exported %d scripts from %s:'%(num,folder)+exportedScripts
+        exportedScripts = 'Exported %d scripts from %s:\n'%(num,folder)+exportedScripts
         progress = progress.Destroy()
         return exportedScripts
 
@@ -18237,6 +18244,12 @@ def initDirs(personal='',localAppData=''):
     dirs['GmaxPath'] = GPath('C:\GMAX\gmax.exe')
     dirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
     dirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
+    dirs['Photoshop'] = GPath('C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
+    dirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
+    dirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
+    dirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
+    dirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
+    dirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
     # Then if bash.ini exists set from the settings in there:
     if bashIni:
         if bashIni.has_option('Tool Options','sTes4FilesPath'):
@@ -18278,6 +18291,36 @@ def initDirs(personal='',localAppData=''):
             dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
             if not dirs['MayaPath'].isabs():
                 dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
+            
+        if bashIni.has_option('Tool Options','sPhotoshopPath'):
+            dirs['Photoshop'] = GPath(bashIni.get('Tool Options','sPhotoshopPath').strip())
+            if not dirs['Photoshop'].isabs():
+                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])
+            
+        if bashIni.has_option('Tool Options','sGIMP'):
+            dirs['GIMP'] = GPath(bashIni.get('Tool Options','sGIMP').strip())
+            if not dirs['GIMP'].isabs():
+                dirs['GIMP'] = dirs['app'].join(dirs['GIMP'])
+            
+        if bashIni.has_option('Tool Options','sISOBL'):
+            dirs['ISOBL'] = GPath(bashIni.get('Tool Options','sISOBL').strip())
+            if not dirs['ISOBL'].isabs():
+                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])
+            
+        if bashIni.has_option('Tool Options','sISRMG'):
+            dirs['ISRMG'] = GPath(bashIni.get('Tool Options','sISRMG').strip())
+            if not dirs['ISRMG'].isabs():
+                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])
+            
+        if bashIni.has_option('Tool Options','sISRNG'):
+            dirs['ISRNG'] = GPath(bashIni.get('Tool Options','sISRNG').strip())
+            if not dirs['ISRNG'].isabs():
+                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])
+            
+        if bashIni.has_option('Tool Options','sISRNPCG'):
+            dirs['ISRNPCG'] = GPath(bashIni.get('Tool Options','sISRNPCG').strip())
+            if not dirs['ISRNPCG'].isabs():
+                dirs['ISRNPCG'] = dirs['app'].join(dirs['ISRNPCG'])
             
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
@@ -18322,10 +18365,11 @@ def initDirs(personal='',localAppData=''):
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
 
     if inisettings['keepLog'] == 0:
-        os.remove(inisettings['logFile'])
+        if inisettings['logFile'].exists():
+            os.remove(inisettings['logFile'].s)
     else:
         log = inisettings['logFile'].open("a")
-        log.write('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\n'%(datetime.datetime.now(),inisettings['keepLog']))
+        log.write('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n'%(datetime.datetime.now(),inisettings['keepLog']))
         log.close()
 
 def initSettings(readOnly=False):
