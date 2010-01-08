@@ -3326,7 +3326,7 @@ class BashNotebook(wx.Notebook):
             self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
-        self.AddPage(BSAPanel(self),_("BSAs"))
+        #self.AddPage(BSAPanel(self),_("BSAs"))
         self.AddPage(SavePanel(self),_("Saves"))
         self.AddPage(ScreensPanel(self),_("Screenshots"))
         if re.match('win',sys.platform):
@@ -4881,17 +4881,20 @@ class Files_Unhide(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
-        destDir = self.window.data.dir
-        srcDir = self.window.data.bashDir.join('Hidden')
-        isSave = (destDir == bosh.saveInfos.dir)
+        srcDir = bosh.dirs['modsBash'].join('Hidden')
         if self.type == 'mod':
             wildcard = 'Oblivion Mod Files (*.esp;*.esm)|*.esp;*.esm'
+            destDir = self.window.data.dir
         elif self.type == 'save':
             wildcard = 'Oblivion Save files (*.ess)|*.ess'
+            srcDir = self.window.data.bashDir.join('Hidden')
+            destDir = self.window.data.dir
         elif self.type == 'installer':
             wildcard = 'Oblivion Mod Archives (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
+            destDir = bosh.dirs['installers']
         else:
             wildcard = '*.*'
+        isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
         srcPaths = balt.askOpenMulti(self.window,_('Unhide files:'),srcDir, '', wildcard)
@@ -5608,7 +5611,7 @@ class Installer_Delete(balt.Tank_Delete):
 
 #------------------------------------------------------------------------------
 class Installer_Duplicate(InstallerLink):
-    """Uninstall selected Installers."""
+    """Duplicate selected Installers."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _('Duplicate...')
@@ -5647,6 +5650,37 @@ class Installer_Duplicate(InstallerLink):
         try:
             wx.BeginBusyCursor()
             self.data.copy(curName,newName)
+        finally:
+            wx.EndBusyCursor()
+        self.data.refresh(what='N')
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installer_Hide(InstallerLink):
+    """Hide selected Installers."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        self.title = _('Hide...')
+        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menu.AppendItem(menuItem)
+        menuItem.Enable(self.isSingle())
+
+    def Execute(self,event):
+        """Handle selection."""
+        message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
+        if not balt.askYes(self.gTank,message,_('Hide Files')): return
+        curName = self.selected[0]
+        destDir = bosh.dirs['modsBash'].join('Hidden')
+        newName = destDir.join(curName)
+        if newName.exists():
+            message = (_('A file named %s already exists in the hidden files directory. Overwrite it?')
+                % (fileName.s,))
+            if not balt.askYes(self.gTank,message,_('Hide Files')): return
+        #Move
+        try:
+            wx.BeginBusyCursor()
+            file = bosh.dirs['installers'].join(curName)
+            file.moveTo(newName)
         finally:
             wx.EndBusyCursor()
         self.data.refresh(what='N')
@@ -5795,10 +5829,10 @@ class Installer_OpenTESA(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        message = _("Attempt to open this as a mod at TesNexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesNexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesNexus.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TesNexus')):
+        message = _("Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance.")
+        if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(1)
-            os.startfile('http://tesnexus.com/downloads/file.php?id='+id)           
+            os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)           
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
     """Rescans selected Installers."""
@@ -9415,9 +9449,9 @@ class Installer_Rename(Link):
     def Execute(self,event):
         #--File Info
         rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
-        fileName0 = self.data[0]
+        fileName = self.selected[0]
         pattern = balt.askText(self.window,_("Enter new name. E.g. VASE.7z"),
-            _("Rename Files"),fileName0.s)
+            _("Rename Files"),fileName.s)
         if not pattern: return
         maPattern = rePattern.match(pattern)
         if not maPattern:
@@ -9437,8 +9471,8 @@ class Installer_Rename(Link):
             num += 1
             numStr = `num`
             numStr = '0'*(numLen-len(numStr))+numStr
-        #bosh.screensData.refresh()
-        self.window.RefreshUI()
+        self.data.refresh(what='N')
+        self.gTank.RefreshUI()
 
 # Messages Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -10157,7 +10191,8 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Duplicate())
     InstallersPanel.itemMenu.append(Installer_Delete())
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
-    InstallersPanel.itemMenu.append(File_Hide())
+    InstallersPanel.itemMenu.append(Installer_OpenTESA())
+    InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.
     InstallersPanel.itemMenu.append(SeparatorLink())
@@ -10470,7 +10505,7 @@ def InitLinks():
     InitScreenLinks()
     InitMessageLinks()
     InitPeopleLinks()
-    InitBSALinks()
+    #InitBSALinks()
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
