@@ -15887,13 +15887,11 @@ class GlobalsTweak(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
-        tweakCount = 0
         value = self.choiceValues[self.chosen][0]
         for record in patchFile.GLOB.records:
-            if record.eid.lower() == self.label.lower():
+            if record.eid.lower() == self.key:
                 record.value = value
                 keep(record.fid)
-                tweakCount += 1
         log('* %s set to: %0.1f' % (self.label,value))
 
 #------------------------------------------------------------------------------
@@ -15907,10 +15905,47 @@ class GlobalsTweaker(MultiTweaker):
         GlobalsTweak(_("Timescale"),
             _("Timescale will be set to:"),
             'timescale',
-            (_('0.0'),0),
             (_('1'),1),
-            (_('2'),2),
-            (_('5'),5),
+            (_('18'),18),
+            (_('24'),24),
+            (_('[30]'),30),
+            (_('40'),40),
+            ),
+        GlobalsTweak(_("Thieves Guild: Quest Stealing Penalty"),
+            _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            'tgpricesteal',
+            (_('100'),100),
+            (_('150'),150),
+            (_('[200]'),200),
+            (_('300'),300),
+            (_('400'),400),
+            ),
+        GlobalsTweak(_("Thieves Guild: Quest Killing Penalty"),
+            _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            'tgpriceperkill',
+            (_('250'),250),
+            (_('500'),500),
+            (_('[1000]'),1000),
+            (_('1500'),1500),
+            (_('2000'),2000),
+            ),
+        GlobalsTweak(_("Thieves Guild: Quest Attacking Penalty"),
+            _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            'tgpriceattack',
+            (_('100'),100),
+            (_('250'),250),
+            (_('[500]'),500),
+            (_('750'),750),
+            (_('1000'),1000),
+            ),
+        GlobalsTweak(_("Crime: Force Jail"),
+            _("The amount of Bounty at which a jail sentence is mandatory"),
+            'crimeforcejail',
+            (_('1000'),1000),
+            (_('2500'),2500),
+            (_('[5000]'),5000),
+            (_('7500'),7500),
+            (_('10000'),10000),
             ),
         ],key=lambda a: a.label.lower())
 
@@ -15933,7 +15968,7 @@ class GlobalsTweaker(MultiTweaker):
         for record in modFile.GLOB.getActiveRecords():
             if mapper(record.fid) in id_records: continue
             for tweak in self.enabledTweaks:
-                if record.eid.lower() == tweak.label.lower():
+                if record.eid.lower() == tweak.key:
                     record = record.getTypeCopy(mapper)
                     patchRecords.setRecord(record)
                     break
