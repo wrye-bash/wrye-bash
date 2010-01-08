@@ -9112,7 +9112,7 @@ class Save_ReweighPotions(Link):
         finally:
             if progress: progress.Destroy()
 
-##------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class Save_Stats(Link):
     """Show savefile statistics."""
     def AppendToMenu(self,menu,window,data):
@@ -9137,6 +9137,37 @@ class Save_Stats(Link):
         finally:
             progress.Destroy()
 
+#------------------------------------------------------------------------------
+class Save_StatObse(Link):
+    """Dump .obse records."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('.obse Statistics'))
+        menu.AppendItem(menuItem)
+        if len(data) != 1: 
+            menuItem.Enable(False)
+        else:
+            fileName = GPath(self.data[0])
+            fileInfo = self.window.data[fileName]
+            fileName = fileInfo.getPath().root+'.obse'
+            menuItem.Enable(fileName.exists())
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = self.window.data[fileName]
+        saveFile = bosh.SaveFile(fileInfo)
+        progress = balt.Progress(_(".obse"))
+        try:
+            saveFile.load(SubProgress(progress,0,0.9))
+            log = bolt.LogFile(cStringIO.StringIO())
+            progress(0.9,_("Calculating statistics."))
+            saveFile.logStatObse(log)
+            progress.Destroy()
+            text = log.out.getvalue()
+            balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
+        finally:
+            progress.Destroy()
+            
 #------------------------------------------------------------------------------
 class Save_Unbloat(Link):
     """Unbloats savegame."""
@@ -10329,6 +10360,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(File_ListMasters())
     SaveList.itemMenu.append(Save_DiffMasters())
     SaveList.itemMenu.append(Save_Stats())
+    SaveList.itemMenu.append(Save_StatObse())
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_EditPCSpells())
