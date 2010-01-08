@@ -1774,10 +1774,23 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 277 [01/08/2010] [PacificMorrowind,Haama,Badhair]
+* fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
+* a new Bashed Patch section added: Globals
+* 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
+* added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
+* added an Export/Import script function to the right click menu of mod files
+* added an obse/pluggy statistics viewer (contributed by Badhair/Haama)
+* Automatically deghost and reghost when using the link to BOSS
+* BAIN: hide/unhide installers
+
+
+
 === 276 [12/28/2009] [PacificMorrowind & Raziel23x]
 * bugfix: fixed potion weight deselection error
 * paths for external tools (TES4edit/view/trans, TES4LodGen, TES4Gecko, TES4Files) settable via the ini for better organization/fun
 * tweaked game settings
+* added support for launching of TES4Files
 
 === 275 [11/06/2009] [PacificMorrowind]
 * Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
