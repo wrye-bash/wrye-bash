@@ -38,6 +38,7 @@ has its own data store)."""
 #..Handled by bosh, so import that.
 import bush,bosh
 import bolt
+import belt     #BAIN scripting
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 from bolt import _, LString,GPath, SubProgress, deprint, delist
@@ -78,6 +79,7 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
 # Singletons ------------------------------------------------------------------
 statusBar = None
 modList = None
+iniList = None
 modDetails = None
 saveList = None
 saveDetails = None
@@ -101,7 +103,7 @@ settingDefaults = {
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     #--BSA Redirection
-    'bash.BSARedirection':False,
+    'bash.bsaRedirection':False,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {
         'Bethesda ESMs': [
@@ -136,6 +138,7 @@ settingDefaults = {
         'Day': _('Day'),
         'File': _('File'),
         'Group': _('Group'),
+        'Installer':_('Installer'),
         'Load Order': _('Load Order'),
         'Modified': _('Modified'),
         'Num': _('MI'),
@@ -170,6 +173,7 @@ settingDefaults = {
     'bash.installers.page':0,
     'bash.installers.enabled': True,
     'bash.installers.autoAnneal': True,
+    'bash.installers.autoWizard':False,
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshProjects': True,
     'bash.installers.removeEmptyDirs':True,
@@ -182,8 +186,17 @@ settingDefaults = {
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
+    #--Wrye Bash: INI Tweaks
+    'bash.ini.cols': ['File', 'Installer'],
+    'bash.ini.sort': 'File',
+    'bash.ini.colReverse': {},
+    'bash.ini.colWidths': {
+        'File':200,
+        'Installer':100,
+        },
+    'bash.ini.colAligns': {},
     #--Wrye Bash: Mods
-    'bash.mods.cols': ['File','Load Order','Rating','Group','Modified','Size','Author'],
+    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'File',
@@ -192,6 +205,7 @@ settingDefaults = {
         'Author':100,
         'File':200,
         'Group':20,
+        'Installer':100,
         'Load Order':20,
         'Modified':150,
         'Rating':20,
@@ -857,6 +871,8 @@ class MasterList(List):
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',''))
         elif col == 'Group':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',''))
+        elif col == 'Installer':
+             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',''))
         elif col == 'Modified':
             self.items.sort(key=lambda a: data[a].mtime)
         elif col == 'Save Order':
@@ -960,6 +976,103 @@ class MasterList(List):
         return [self.data[item].name for item in self.fileOrderItems]
 
 #------------------------------------------------------------------------------
+class INIList(List):
+    mainMenu = Links()  #--Column menu
+    itemMenu = Links()  #--Single item menu
+    
+    def __init__(self,parent):
+        #--Columns
+        self.cols = settings['bash.ini.cols']
+        self.colAligns = settings['bash.ini.colAligns']
+        self.colNames = settings['bash.colNames']
+        self.colReverse = settings.getChanged('bash.ini.colReverse')
+        self.colWidths = settings['bash.ini.colWidths']
+        #--Data/Items
+        self.data = bosh.iniInfos
+        #--Links
+        self.mainMenu = INIList.mainMenu
+        self.itemMenu = INIList.itemMenu
+        #--Parent init
+        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT))
+        #--Image List
+        checkboxesIL = colorChecks.GetImageList()
+        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
+        #--Events
+        #--ScrollPos
+        
+    def RefreshUI(self,files='ALL',detail='SAME'):
+        """Refreshes UI for specified files."""
+        #--Details
+        if detail == 'SAME':
+            selected = set(self.GetSelected())
+        else:
+            selected = set([detail])
+        #--Populate
+        if files == 'ALL':
+            self.PopulateItems(selected=selected)
+        elif isinstance(files,bolt.Path):
+            self.PopulateItem(files,selected=selected)
+        else: #--Iterable
+            for file in files:
+                self.PopulateItem(file,selected=selected)
+        bashFrame.SetStatusCount()
+
+    def PopulateItem(self,itemDex,mode=0,selected=set()):
+        #--String name of item?
+        if not isinstance(itemDex,int):
+            itemDex = self.items.index(itemDex)
+        fileName = GPath(self.items[itemDex])
+        fileInfo = self.data[fileName]
+        cols = self.cols
+        settings = bosh.oblivionIni.getSettings()
+        for colDex in range(self.numCols):
+            col = cols[colDex]
+            if col == 'File':
+                value = fileName.s
+            elif col == 'Installer':
+                value = self.data.table.getItem(fileName.s, 'installer', '')
+            if mode and colDex == 0:
+                self.list.InsertStringItem(itemDex, value)
+            else:
+                self.list.SetStringItem(itemDex, colDex, value)
+        status = fileInfo.getStatus()
+        #--Image
+        checkMark = status > 0
+        icon = 0
+        if status == 10:
+            icon = 10
+        elif status == -10:
+            icon = 20
+        self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
+        #--Font/BG Color
+        item = self.list.GetItem(itemDex)
+        item.SetTextColour(wx.BLACK)
+        item.SetBackgroundColour(wx.WHITE)
+        if status < 0:
+            item.SetBackgroundColour(colors['bash.installers.outOfOrder'])
+        self.list.SetItem(item)
+        if fileName in selected:
+            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+        else:
+            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+
+    def SortItems(self,col=None,reverse=-2):
+        #(col, reverse) = self.GetSortSettings(col,reverse)
+        #settings['bash.mods.sort'] = col
+        #selected = bosh.iniInfos.ordered
+        data = self.data
+        #--Start with sort by name
+        self.items.sort()
+        self.items.sort(key = attrgetter('cext'))
+        if col == 'File' or not col:
+            pass #--Done by default
+        elif col == 'Installer':
+            self.items.sort(key=lambda a: bosh.iniInfos.table.getItem(a,'installer',''))
+        else:
+            raise BashError(_('Unrecognized sort key: ')+col)
+        #--Ascending
+        if reverse: self.items.reverse()
+#------------------------------------------------------------------------------
 class ModList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
@@ -1036,6 +1149,8 @@ class ModList(List):
                 value = bosh.modInfos.table.getItem(fileName,'rating','')
             elif col == 'Group':
                 value = bosh.modInfos.table.getItem(fileName,'group','')
+            elif col == 'Installer':
+                value = bosh.modInfos.table.getItem(fileName,'installer', '')
             elif col == 'Modified':
                 value = formatDate(fileInfo.mtime)
             elif col == 'Size':
@@ -1124,6 +1239,8 @@ class ModList(List):
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',''))
         elif col == 'Group':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',''))
+        elif col == 'Installer':
+            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',''))
         elif col == 'Load Order':
             self.items = bosh.modInfos.getOrdered(self.items,False)
         elif col == 'Modified':
@@ -1440,9 +1557,9 @@ class ModDetails(wx.Window):
         if changeName and (hasBsa or hasVoices):
             modName = modInfo.name.s
             if hasBsa and hasVoices:
-                message = _("This mod has an associated archive (%s.BSA) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.") % (modName[:-4],modName,modName)
+                message = _("This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.") % (modName[:-4],modName,modName)
             elif hasBsa:
-                message = _("This mod has an associated archive (%s.BSA), which will become detached when the mod is renamed.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.") % (modName[:-4],modName)
+                message = _("This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.") % (modName[:-4],modName)
             else: #hasVoices
                 message = _("This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed.") % (modName,)
             if not balt.askOk(self,message):
@@ -1539,6 +1656,25 @@ class ModDetails(wx.Window):
         self.modInfo.setBashTags(modTags)
         modList.RefreshUI(self.modInfo.name)
 
+#------------------------------------------------------------------------------
+class INIPanel(NotebookPanel):
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        global iniList
+        iniList = INIList(self)
+        wx.EVT_SIZE(self,self.OnSize)
+        sizer = hSizer(
+            (iniList,1,wx.GROW))
+        self.SetSizer(sizer)
+
+    def OnSize(self,event):
+        wx.Window.Layout(self)
+        iniList.Layout()
+
+    def OnCloseWindow(self):
+        """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
+        bosh.iniInfos.table.save()
+        
 #------------------------------------------------------------------------------
 class ModPanel(NotebookPanel):
     def __init__(self,parent):
@@ -2106,6 +2242,8 @@ class InstallersPanel(SashTankPanel):
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
+        if bosh.iniInfos.refresh():
+            iniList.RefreshUI('ALL')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
@@ -2449,7 +2587,7 @@ class ReplacersPanel(NotebookPanel):
 
     def ContinueEdit(self):
         """Continuation warning for Invalidate and Reset."""
-        message = _("Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.BSA file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source.")
+        message = _("Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source.")
         return balt.askContinue(self,message,'bash.replacers.editBSAs.continue',_('Textures BSA'))
 
     def OnAutomatic(self,event=None):
@@ -2464,10 +2602,10 @@ class ReplacersPanel(NotebookPanel):
     def OnInvalidateTextures(self,event):
         """Invalid."""
         if not self.ContinueEdit(): return
-        BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
-        BSAFile = bosh.BsaFile(BSAPath)
-        BSAFile.scan()
-        result = BSAFile.invalidate()
+        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
+        bsaFile = bosh.BsaFile(bsaPath)
+        bsaFile.scan()
+        result = bsaFile.invalidate()
         balt.showOk(self,
             _("BSA Hashes reset: %d\nBSA Hashes Invalidated: %d.\nAIText entries: %d.") %
             tuple(map(len,result)))
@@ -2475,10 +2613,10 @@ class ReplacersPanel(NotebookPanel):
     def OnResetTextures(self,event):
         """Invalid."""
         if not self.ContinueEdit(): return
-        BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
-        BSAFile = bosh.BsaFile(BSAPath)
-        BSAFile.scan()
-        resetCount = BSAFile.reset()
+        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
+        bsaFile = bosh.BsaFile(bsaPath)
+        bsaFile.scan()
+        resetCount = bsaFile.reset()
         balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
 
 #------------------------------------------------------------------------------
@@ -3324,6 +3462,7 @@ class BashNotebook(wx.Notebook):
         iInstallers = self.GetPageCount()-1
         if settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list():
             self.AddPage(ReplacersPanel(self),_("Replacers"))
+        self.AddPage(INIPanel(self),_("INI Edits"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
         #self.AddPage(BSAPanel(self),_("BSAs"))
@@ -3449,7 +3588,7 @@ class BashFrame(wx.Frame):
         if event and not event.GetActive() or self.inRefreshData: return
         #--UPDATES-----------------------------------------
         self.inRefreshData = True
-        popMods = popSaves = None
+        popMods = popSaves = popInis = None
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
@@ -3474,11 +3613,16 @@ class BashFrame(wx.Frame):
         #--Check savegames directory...
         if bosh.saveInfos.refresh():
             popSaves = 'ALL'
+        #--Check INI Tweaks...
+        if bosh.iniInfos.refresh():
+            popInis = 'ALL'
         #--Repopulate
         if popMods:
             modList.RefreshUI(popMods) #--Will repop saves too.
         elif popSaves:
             saveList.RefreshUI(popSaves)
+        if popInis:
+            iniList.RefreshUI(popInis)
         #--Current notebook panel
         if gInstallers: gInstallers.frameActivated = True
         self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
@@ -4041,6 +4185,9 @@ class BashApp(wx.App):
         progress.Update(30,_("Initializing SaveInfos"))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
+        progress.Update(40,_("Initializing IniInfos"))
+        bosh.iniInfos = bosh.INIInfos()
+        bosh.iniInfos.refresh()
         progress.Update(55,_("Initializing BSAInfos"))
         bosh.BSAInfos = bosh.BSAInfos()
         bosh.BSAInfos.refresh()
@@ -4956,14 +5103,14 @@ class File_Duplicate(Link):
             fileInfos = self.window.data
             fileInfo = fileInfos[fileName]
             #--Mod with resources?
-            #--Warn on rename if file has BSA and/or dialog
+            #--Warn on rename if file has bsa and/or dialog
             if fileInfo.isMod() and tuple(fileInfo.hasResources()) != (False,False):
                 hasBsa, hasVoices = fileInfo.hasResources()
                 modName = fileInfo.name
                 if hasBsa and hasVoices:
-                    message = _("This mod has an associated archive (%s.BSA) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s,modName.s)
+                    message = _("This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.\n\nNote that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s,modName.s)
                 elif hasBsa:
-                    message = _("This mod has an associated archive (%s.BSA), which will not be attached to the duplicate mod.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s)
+                    message = _("This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.\n\nNote that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.") % (modName.sroot,modName.s)
                 else: #hasVoices
                     message = _("This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod.") % (modName.s,)
                 if not balt.askWarning(self.window,message,_("Duplicate ")+fileName.s):
@@ -5301,6 +5448,19 @@ class Installers_AutoAnneal(Link):
         settings['bash.installers.autoAnneal'] ^= True
 
 #------------------------------------------------------------------------------
+class Installers_AutoWizard(Link):
+    """Toggle auto-anneal/auto-install wizards"""
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        menuItem = wx.MenuItem(menu, self.id, _('Auto-Anneal/Install Wizards'), kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.autoWizard'])
+
+    def Execute(self, event):
+        """Handle selection."""
+        settings['bash.installers.autoWizard'] ^= True
+        
+#------------------------------------------------------------------------------
 class Installers_AutoRefreshProjects(Link):
     """Toggle autoRefreshProjects setting and update."""
     def AppendToMenu(self,menu,window,data):
@@ -5343,18 +5503,18 @@ class Installers_BsaRedirection(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('BSA Redirection'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.BSARedirection'])
+        menuItem.Check(settings['bash.bsaRedirection'])
 
     def Execute(self,event):
         """Handle selection."""
-        settings['bash.BSARedirection'] ^= True
-        if settings['bash.BSARedirection']:
-            BSAPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.BSA')
-            BSAFile = bosh.BsaFile(BSAPath)
-            BSAFile.scan()
-            resetCount = BSAFile.reset()
+        settings['bash.bsaRedirection'] ^= True
+        if settings['bash.bsaRedirection']:
+            bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
+            bsaFile = bosh.BsaFile(bsaPath)
+            bsaFile.scan()
+            resetCount = bsaFile.reset()
             #balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
-        bosh.oblivionIni.setBsaRedirection(settings['bash.BSARedirection'])
+        bosh.oblivionIni.setBsaRedirection(settings['bash.bsaRedirection'])
 
 #------------------------------------------------------------------------------
 class Installers_ConflictsReportShowsInactive(Link):
@@ -5584,6 +5744,92 @@ class InstallerLink(Link):
         if not len(self.selected) == 1: return False
         return self.getProjectPath().exists()
 
+#------------------------------------------------------------------------------
+class Installer_EditWizard(InstallerLink):
+    """Edit the wizard.txt associated with this project"""
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        menuItem = wx.MenuItem(menu, self.id, _('Edit Wizard...'))
+        menu.AppendItem(menuItem)
+        if self.isSingleProject():
+            menuItem.Enable(self.data[self.selected[0]].hasWizard)
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self, event):
+        path = self.selected[0]
+        dir = self.data.dir
+        dir.join(path.s, 'wizard.txt').start()
+
+                
+class Installer_Wizard(InstallerLink):
+    """Runs the install wizard to select subpackages and esp/m filtering"""
+    parentWindow = ''
+
+    def __init__(self, bAuto):
+        InstallerLink.__init__(self)
+        self.bAuto = bAuto
+    
+    def AppendToMenu(self, menu, window, data):
+        parentWindow = window
+        Link.AppendToMenu(self, menu, window, data)
+        if not self.bAuto:
+            menuItem = wx.MenuItem(menu, self.id, _('Wizard'))
+        else:
+            menuItem = wx.MenuItem(menu, self.id, _('Auto Wizard'))
+        menu.AppendItem(menuItem)
+        if self.isSingle():
+            installer = self.data[self.selected[0]]
+            menuItem.Enable(installer.hasWizard)
+        else:
+            menuItem.Enable(False)
+        
+    def Execute(self, event):
+        installer = self.data[self.selected[0]]
+        subs = []
+        for index in range(gInstallers.gSubList.GetCount()):
+            subs.append(gInstallers.gSubList.GetString(index))
+        wizard = belt.InstallerWizard(self, subs)
+        ret = wizard.Run()
+        if ret.Canceled: return
+        #Check the sub-packages that were selected by the wizard
+        for index in range(gInstallers.gSubList.GetCount()):
+            select = installer.subNames[index + 1] in ret.SelectSubPackages
+            gInstallers.gSubList.Check(index, select)
+            installer.subActives[index + 1] = select
+        gInstallers.refreshCurrent(installer)
+        #Check the espms that were selected by the wizard
+        espms = gInstallers.gEspmList.GetStrings()
+        for index, espm in enumerate(gInstallers.espms):
+            if espms[index] in ret.SelectEspms:
+                gInstallers.gEspmList.Check(index, True)
+                installer.espmNots.discard(espm)
+            else:
+                gInstallers.gEspmList.Check(index, False)
+                installer.espmNots.add(espm)
+        gInstallers.refreshCurrent(installer)
+        #Install if necessary
+        if settings['bash.installers.autoWizard']:
+            #If it's currently installed, anneal
+            if self.data[self.selected[0]].isActive:
+                #Anneal
+                progress = balt.Progress(_('Annealing...'), '\n'+' '*60)
+                try:
+                    self.data.anneal(self.selected, progress)
+                finally:
+                    progress.Destroy()
+                    self.data.refresh(what='NS')
+                    gInstallers.RefreshUIMods()
+            else:
+                #Install, if it's not installed
+                progress = balt.Progress(_("Installing..."),'\n'+' '*60)
+                try:
+                    self.data.install(self.selected, progress)
+                finally:
+                    progress.Destroy()
+                    self.data.refresh(what='N')
+                    gInstallers.RefreshUIMods()
+   
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
     """Anneal all packages."""
@@ -6511,6 +6757,36 @@ class Mods_LoadList:
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
+class INI_Apply(Link):
+    """Apply an INI Tweak."""
+    def __init__(self,prefix=''):
+        Link.__init__(self)
+        self.prefix = prefix
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,self.prefix+_('Apply'))
+        menu.AppendItem(menuItem)
+        bEnable = True
+        for i in data:
+            fileInfo = bosh.iniInfos[i]
+            if fileInfo.getStatus() < 0:
+                bEnable = False
+                break
+        menuItem.Enable(bEnable)
+
+    def Execute(self,event):
+        """Handle applying INI Tweaks."""
+        window = getattr(self,'gTank',None) or self.window
+        message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
+        if not balt.askContinue(window,message,'bash.iniTweaks.continue',_("INI Tweaks")):
+            return
+        dir = self.window.data.dir
+        for item in self.data:
+            file = dir.join(item)
+            bosh.oblivionIni.applyTweakFile(file)
+            iniList.RefreshUI()
+#------------------------------------------------------------------------------
 class Mods_EsmsFirst(Link):
     """Sort esms to the top."""
     def __init__(self,prefix=''):
@@ -6648,29 +6924,6 @@ class Mods_DumpTranslator(Link):
         balt.showOk(self.window,
             '%d translation keys written to Mopy\\Data\\%s.' % (keyCount,outPath.stail),
             _('Dump Translator')+': '+outPath.stail)
-
-#------------------------------------------------------------------------------
-class Mods_IniTweaks(Link):
-    """Applies ini tweaks to Oblivion.ini."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('INI Tweaks...'))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        """Handle menu selection."""
-        window = getattr(self,'gTank',None) or self.window
-        #--Continue Query
-        message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
-        if not balt.askContinue(window,message,'bash.iniTweaks.continue',_("INI Tweaks")):
-            return
-        #--File dialog
-        tweakDir = bosh.modInfos.dir.join("INI Tweaks")
-        tweakDir.makedirs()
-        tweakPath = balt.askOpen(window,_('INI Tweaks'),tweakDir,'', '*.ini')
-        if not tweakPath: return
-        bosh.oblivionIni.applyTweakFile(tweakPath)
-        balt.showInfo(window,tweakPath.stail+_(' applied.'),_('INI Tweaks'))
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(Link):
@@ -10146,6 +10399,7 @@ def InitMasterLinks():
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Author'))
         sortMenu.links.append(Files_SortBy('Group'))
+        sortMenu.links.append(Files_SortBy('Installer'))
         sortMenu.links.append(Files_SortBy('Load Order'))
         sortMenu.links.append(Files_SortBy('Modified'))
         sortMenu.links.append(Files_SortBy('Save Order'))
@@ -10168,7 +10422,6 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(balt.Tanks_Open())
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
-    InstallersPanel.mainMenu.append(Mods_IniTweaks())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())
@@ -10181,6 +10434,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_ShowReplacers())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AutoAnneal())
+    InstallersPanel.mainMenu.append(Installers_AutoWizard())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersPanel.mainMenu.append(Installers_BsaRedirection())
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
@@ -10209,6 +10463,10 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_HasExtraData())
     InstallersPanel.itemMenu.append(Installer_SkipVoices())
     InstallersPanel.itemMenu.append(SeparatorLink())
+    InstallersPanel.itemMenu.append(Installer_Wizard(False)),
+    InstallersPanel.itemMenu.append(Installer_Wizard(True)),
+    InstallersPanel.itemMenu.append(Installer_EditWizard()),
+    InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_Anneal())
     InstallersPanel.itemMenu.append(Installer_Install())
     InstallersPanel.itemMenu.append(Installer_Install('LAST'))
@@ -10234,6 +10492,17 @@ def InitReplacerLinks():
     #--Item links
     ReplacersList.itemMenu.append(File_Open())
 
+def InitINILinks():
+    """Initialize INI Edits tab menus."""
+    #--Column Links
+    INIList.mainMenu.append(Mods_OblivionIni())
+
+    #--Item menu
+    INIList.itemMenu.append(INI_Apply())
+    INIList.itemMenu.append(SeparatorLink())
+    INIList.itemMenu.append(File_Open())
+    INIList.itemMenu.append(File_Delete())
+
 def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
@@ -10249,6 +10518,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Author'))
         sortMenu.links.append(Files_SortBy('Group'))
+        sortMenu.links.append(Files_SortBy('Installer'))
         sortMenu.links.append(Files_SortBy('Load Order'))
         sortMenu.links.append(Files_SortBy('Modified'))
         sortMenu.links.append(Files_SortBy('Rating'))
@@ -10264,9 +10534,6 @@ def InitModLinks():
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Files_Open())
     ModList.mainMenu.append(Files_Unhide('mod'))
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Mods_OblivionIni())
-    ModList.mainMenu.append(Mods_IniTweaks())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(SeparatorLink())
@@ -10506,6 +10773,7 @@ def InitLinks():
     InitStatusBar()
     InitMasterLinks()
     InitInstallerLinks()
+    InitINILinks()
     InitModLinks()
     InitReplacerLinks()
     InitSaveLinks()
