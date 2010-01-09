@@ -8237,11 +8237,13 @@ class Mod_Scripts_Export(Link):
         fileInfo = bosh.modInfos[fileName]
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
+        deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
+            _('Remove Prefix from file names?'),'')
         #--Export
         #try:
         ScriptText = bosh.ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = ScriptText.writeToText(fileInfo,skip,fileName.s)
+        exportedScripts = ScriptText.writeToText(fileInfo,skip,fileName.s,deprefix)
         #finally:
         balt.showLog(self.window,exportedScripts,_('Export Scripts'),icons=bashBlue)
 

@@ -12132,7 +12132,7 @@ class ScriptText:
         changedScripts = 'Imported %d changed scripts from %s:\n'%(num,textPath)+changedScripts     
         return changedScripts
 
-    def writeToText(self,textPath,skip,folder):
+    def writeToText(self,textPath,skip,folder,deprefix):
         """Writes stats to specified text file."""
         progress = balt.Progress(_("Export Scripts"))
         def getSortedIds(ScriptTexts):
@@ -12146,12 +12146,16 @@ class ScriptText:
         y = len(getSortedIds(scriptTexts))
         z = 0
         num = 0
+        r = len(deprefix)    
         for longid in getSortedIds(scriptTexts):
             z += 1
             progress((0.5+0.5/y*z),_("exporting script %s.") % (scriptTexts[longid][0]))
             if x == 0 or skip.lower() != scriptTexts[longid][0][:x].lower():
+                name = scriptTexts[longid][0]
+                if r >= 1 and deprefix == name[:r]:
+                    name = name[r:]
                 num += 1
-                outpath = dirs['patches'].join(folder+' Exported Scripts').join(scriptTexts[longid][0]+inisettings['scriptFileExt'])
+                outpath = dirs['patches'].join(folder+' Exported Scripts').join(name+inisettings['scriptFileExt'])
                 out = outpath.open('wb')
                 formid = '0x%06X' %(longid[1])
                 out.write(longid[0].s+'\r\n'+formid+'\r\n'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
