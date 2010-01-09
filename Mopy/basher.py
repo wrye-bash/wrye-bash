@@ -4892,7 +4892,7 @@ class Files_Unhide(Link):
         elif self.type == 'installer':
             wildcard = 'Oblivion Mod Archives (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
-            srcPaths = balt.askOpenMulti(self,_('Unhide files:'),srcDir, '', wildcard)
+            srcPaths = balt.askOpenMulti(self.gTank,_('Unhide files:'),srcDir, '', wildcard)
         else:
             wildcard = '*.*'
         isSave = (destDir == bosh.saveInfos.dir)
@@ -5818,7 +5818,9 @@ class Installer_OpenSearch(InstallerLink):
         message = _("Open a search for this on Google?")
         if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open at search')):
             #fileName = bosh.reBaseName(self.selected[0].s).group(1)
-            filename = 'Wrye Bash'
+            #filename = 'Wrye Bash'
+            filename = bosh.reSplitOnNonAlphaNumeric.split(self.selected[0].s)
+            print filename+len(filename)
             os.startfile('http://www.google.com/search?hl=en&q='+filename+'aq=f&oq=&aqi=')
 
 class Installer_OpenTESA(InstallerLink):
@@ -5827,7 +5829,7 @@ class Installer_OpenTESA(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Open at TesAlliance'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTesNexus.search(data[0].s)))
+        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTESA.search(data[0].s)))
 
     def Execute(self,event):
         """Handle selection."""
@@ -9452,7 +9454,7 @@ class Installer_Rename(Link):
         #--File Info
         rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
         fileName = self.selected[0]
-        pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
+        pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
             _("Rename Files"),fileName.s)
         if not pattern: return
         maPattern = rePattern.match(pattern)
@@ -9463,7 +9465,7 @@ class Installer_Rename(Link):
         numLen = len(numStr)
         num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
-        for oldName in map(GPath,self.data):
+        for oldName in map(GPath,self.selected):
             newName = GPath(root)+numStr+oldName.ext
             if newName != oldName:
                 oldPath = installersDir.join(oldName)
@@ -10193,6 +10195,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Duplicate())
     InstallersPanel.itemMenu.append(Installer_Delete())
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
+    #InstallersPanel.itemMenu.append(Installer_OpenSearch())
     InstallersPanel.itemMenu.append(Installer_OpenTESA())
     InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
