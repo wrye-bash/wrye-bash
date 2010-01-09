@@ -292,6 +292,7 @@ reQuoted  = re.compile(r'^"(.*)"$')
 reGroupHeader = re.compile(r'^(\+\+|==)')
 reTesNexus = re.compile(r'-(\d{4,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
 reTESA = re.compile(r'-(\d{1,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
+reSplitOnNonAlphaNumeric = re.compile(r'\W+')
 
 
 # Util Functions --------------------------------------------------------------
@@ -6222,10 +6223,15 @@ class SaveFile:
                             log(_('    Pluggy ESPs'))
                             log(_('    EID   ID    Name'))
                             while (ins.tell() < len(chunkBuff)):
-                                espId,modId,modNameLen, = unpack('=BBI',6)
-                                modName = ins.read(modNameLen)
-                                log(_('    %02X    %02X    %s') % (espId,modId,modName))
-                                espMap[modId] = modName # was [espId]
+                                if chunkVersion == 2:
+                                    espId,modId, = unpack('=BB', 2)
+                                    log(_('    %02X    %02X') % (espId,modId))
+                                    espMap[modId] = espId
+                                else: #elif chunkVersion == 1"
+                                    espId,modId,modNameLen, = unpack('=BBI',6)
+                                    modName = ins.read(modNameLen)
+                                    log(_('    %02X    %02X    %s') % (espId,modId,modName))
+                                    espMap[modId] = modName # was [espId]
                         elif (chunkTypeNum == 2):
                             #--Pluggy TypeSTR
                             log(_('    Pluggy String'))
