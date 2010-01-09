@@ -86,6 +86,7 @@ oiMask = 0xFFFFFFL
 oblivionIni = None
 modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
+iniInfos = None #--INIInfos singleton
 BSAInfos = None #--BSAInfos singleton
 screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
@@ -288,6 +289,7 @@ reBSAExt  = re.compile(r'\.bsa(.ghost)?$',re.I)
 reEssExt  = re.compile(r'\.ess$',re.I)
 reSaveExt = re.compile(r'(quicksave(\.bak)+|autosave(\.bak)+|\.es[rs])$',re.I)
 reCsvExt  = re.compile(r'\.csv$',re.I)
+reINIExt  = re.compile(r'\.ini$',re.I)
 reQuoted  = re.compile(r'^"(.*)"$')
 reGroupHeader = re.compile(r'^(\+\+|==)')
 reTesNexus = re.compile(r'-(\d{4,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
@@ -6720,6 +6722,30 @@ class OblivionIni:
         iniFile.close()
         return settings
 
+    def getTweakFileSettings(self,tweakPath):
+        """Gets settings in a tweak file."""
+        reComment = re.compile(';.*')
+        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
+        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        #--Read ini file
+        settings = {}
+        if not tweakPath.exists() or tweakPath.isdir():
+            return settings
+        iniFile = tweakPath.open('r')
+        sectionSettings = None
+        for line in iniFile:
+            stripped = reComment.sub('',line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            if maSection:
+                sectionSettings = settings[LString(maSection.group(1))] = {}
+            elif maSetting:
+                if sectionSettings == None:
+                    sectionSettings = settings.setdefault(LString('General'),{})
+                sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
+        iniFile.close()
+        return settings
+
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
         settings = {section:{key:value}}
@@ -7351,6 +7377,40 @@ class ModInfo(FileInfo):
             self.writeAuthor(author+' [wb]')
 
 #------------------------------------------------------------------------------
+class INIInfo(FileInfo):
+    def getFileInfos(self):
+        return iniInfos
+
+    def getHeader(self):
+        pass
+
+    def getStatus(self):
+        """Returns status of the ini tweak:
+        20: installed (green)
+        10: mismatches (yellow)
+        0: not installed (white)
+        -10: invalid tweak file (red)."""
+        path = self.getPath()
+        tweak = oblivionIni.getTweakFileSettings(path)
+        settings = oblivionIni.getSettings()
+        status = 20
+        if len(tweak) == 0: status = -10
+        for key in tweak:
+            if key not in settings:
+                status = -10
+                break
+            for item in tweak[key]:
+                if item not in settings[key]:
+                    status = -10
+                    break
+                if tweak[key][item] != settings[key][item]:
+                    if status == 20:
+                        status = 0
+                else:
+                    if status == 0:
+                        status = 10
+        return status
+        
 class SaveInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -7736,6 +7796,18 @@ class ResourceReplacer:
             bsaPath = dirs['mods'].join(bsaFile)
             bsaPath.mtime = mtime
 
+#------------------------------------------------------------------------------
+class INIInfos(FileInfos):
+    def __init__(self):
+        FileInfos.__init__(self, dirs['mods'].join('INI Tweaks'),INIInfo)
+
+    def rightFileType(self,fileName):
+        """Bool: File is a mod."""
+        return reINIExt.search(fileName.s)
+
+    def getBashDir(self):
+        """Return directory to save info."""
+        return dirs['modsBash'].join('INI Data')
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
@@ -9345,7 +9417,6 @@ class ScreensData(DataDict):
         del self.data[fileName]
 
 #------------------------------------------------------------------------------
-
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -9356,7 +9427,7 @@ class Installer(object):
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
         'skipVoices','espmNots','isSolid')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides')
+        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
@@ -9364,8 +9435,8 @@ class Installer(object):
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
     dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts'))
     dataDirsMinus = set(('bash','obse','replacers')) #--Will be skipped even if hasExtraData == True.
-    reDataFile = re.compile(r'(masterlist.txt|\.(esp|esm|bsa))$',re.I)
-    reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|docx|odt|mht|pdf|css|xls)$',re.I)
+    reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa))$',re.I)
+    reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
     skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db'))
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
@@ -9525,6 +9596,8 @@ class Installer(object):
         #--Volatiles: directory specific
         self.refreshed = False
         #--Volatile: set by refreshDataSizeCrc
+        self.hasWizard = False
+        self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
         self.data_sizeCrc = {}
         self.skipExtFiles = set()
@@ -9603,6 +9676,7 @@ class Installer(object):
             allSubs = set(self.subNames[1:])
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         #--Init to empty
+        self.hasWizard = False
         self.readMe = self.packageDoc = self.packagePic = None
         for attr in ('skipExtFiles','skipDirFiles','espms'):
             object.__getattribute__(self,attr).clear()
@@ -9619,6 +9693,8 @@ class Installer(object):
             fileLower = file.lower()
             if full[:2] == '--' or fileLower[:20] == 'omod conversion data':
                 continue
+            sub = ''
+            bSkip = False
             if type == 2: #--Complex archive
                 subFile = full.split('\\',1)
                 if len(subFile) == 2:
@@ -9626,8 +9702,10 @@ class Installer(object):
                     if sub not in activeSubs:
                         if sub not in allSubs:
                             skipDirFiles.add(file)
-                        continue
+                        bSkip = True
                     fileLower = file.lower()
+            if sub not in self.espmMap:
+                self.espmMap[sub] = []
             rootPos = file.find('\\')
             extPos = file.rfind('.')
             fileLower = file.lower()
@@ -9635,13 +9713,15 @@ class Installer(object):
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
             #--Silent skips
             if fileLower[-9:] == 'thumbs.db' or fileLower[-11:] == 'desktop.ini':
-                continue 
+                continue #--Silent skip
             elif skipDistantLOD and fileLower[:10] == 'distantlod':
-                skipDirFiles.add(full)
                 continue
-            elif skipVoices and fileLower[:11].lower == 'sound\\voice':
+            elif skipVoices and fileLower[:11] == 'sound\\voice':
                 continue
             elif skipScreenshots and fileLower[:11] == 'screenshots':
+                continue
+            elif fileLower == 'wizard.txt':
+                self.hasWizard = True
                 continue
             elif skipImages :
                 if fileExt in imageExts :
@@ -9653,22 +9733,26 @@ class Installer(object):
                 continue
             #--Noisy skips
             elif file in bethFiles:
-                skipDirFiles.add(full)
+                if not bSkip: skipDirFiles.add(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                skipDirFiles.add(full)
+                if not bSkip: skipDirFiles.add(full)
                 continue
             elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                skipDirFiles.add(full)
+                if not bSkip: skipDirFiles.add(full)
                 continue
             elif fileExt in skipExts:
-                skipExtFiles.add(full)
+                if not bSkip: skipExtFiles.add(full)
                 continue
             #--Esps
             if not rootLower and reModExt.match(fileExt):
+                if file not in self.espmMap[sub]:
+                    self.espmMap[sub].append(file)
+                if bSkip: continue
                 pFile = GPath(file)
                 espms.add(pFile)
                 if pFile in espmNots: continue
+            elif bSkip: continue
             if skipEspmVoices and fileLower[:12] == 'sound\\voice\\':
                 farPos = file.find('\\',12)
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
@@ -9679,7 +9763,7 @@ class Installer(object):
                 dest = 'Docs\\'+file[rootPos+1:]
             elif not rootLower:
                 maReadMe = reReadMe.match(file)
-                if file.lower() == 'masterlist.txt':
+                if fileLower == 'masterlist.txt' or fileLower == 'dlclist.txt':
                     pass
                 elif maReadMe:
                     if not (maReadMe.group(1) or maReadMe.group(3)):
@@ -10996,6 +11080,14 @@ class InstallersData(bolt.TankData, DataDict):
             data[archive].order = index
         self.setChanged()
 
+    @staticmethod
+    def updateTable(destFiles, value):
+        for i in destFiles:
+            if reModExt.match(i.cext):
+                modInfos.table.setItem(i, 'installer', value)
+            elif i.head.cs == 'ini tweaks':
+                iniInfos.table.setItem(i.tail, 'installer', value)
+
     def install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
         what:
@@ -11023,6 +11115,7 @@ class InstallersData(bolt.TankData, DataDict):
                 destFiles &= installer.missingFiles
             if destFiles:
                 installer.install(archive,destFiles,self.data_sizeCrcDate,SubProgress(progress,index,index+1))
+                InstallersData.updateTable(destFiles, archive.s)
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         self.refreshStatus()
@@ -11065,6 +11158,7 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
+        InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
             path.remove()
@@ -11089,6 +11183,7 @@ class InstallersData(bolt.TankData, DataDict):
                 if destFiles:
                     installer.install(archive,destFiles,data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
+                    InstallersData.updateTable(destFiles, archive.s)
         #--Done
         self.refreshStatus()
 
@@ -11126,6 +11221,7 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
+        InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
             path.remove()
@@ -11147,6 +11243,7 @@ class InstallersData(bolt.TankData, DataDict):
                 if destFiles:
                     installer.install(package,destFiles,data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
+                    InstallersData.updateTable(destFiles, package.s)
 
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
@@ -18647,7 +18744,6 @@ def initDirs(personal='',localAppData=''):
             return GPath(path)
         personal = getShellPath('Personal')
         localAppData = getShellPath('Local AppData')
-        #programfiles = getShellPath 'Program Files'
         errorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
 
     #--User sub folders
