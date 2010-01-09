@@ -291,6 +291,8 @@ reCsvExt  = re.compile(r'\.csv$',re.I)
 reQuoted  = re.compile(r'^"(.*)"$')
 reGroupHeader = re.compile(r'^(\+\+|==)')
 reTesNexus = re.compile(r'-(\d{4,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
+reTESA = re.compile(r'-(\d{1,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
+
 
 # Util Functions --------------------------------------------------------------
 # .Net strings
@@ -12106,7 +12108,7 @@ class ScriptText:
             z = 0
             for name in files:
                 z += 1
-                progress((1/y*z),_("reading file %s.") % (name))
+                progress(((1/y)*z),_("reading file %s.") % (name))
                 text = open(os.path.join(root, name),"r")
                 lines = text.readlines()
                 modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]

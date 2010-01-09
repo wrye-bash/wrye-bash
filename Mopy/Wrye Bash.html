@@ -27,9 +27,9 @@
 <h3><a name='GettingStarted'>Getting Started:</a></h3>
 <p class=list-1>&bull;&nbsp; <B><a href="#Installation">Installation</a></B>
 <p class=list-1>&bull;&nbsp; <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash">How To's and FAQs</a>
-<p class=list-1>&bull;&nbsp; <a href="http://www.bethsoft.com/bgsforums/index.php?showtopic=1053068">RELZ Topic</a>
+<p class=list-1>&bull;&nbsp; <a href="http://www.bethsoft.com/bgsforums/index.php?showtopic=1029359">RELZ Topic</a>
 <p class=list-1>&bull;&nbsp; Download: 
-  <p class=list-2>&bull;&nbsp; <a href="https://sourceforge.net/projects/oblivionworks/files/">Source Forge</a>
+  <p class=list-2>&bull;&nbsp; <a href="http://wrye.ufrealms.net">UFRealms</a>
   <p class=list-2>&bull;&nbsp; <a href="http://tesnexus.com/downloads/file.php?id=22368">TesNexus</a> 
 <p class=list-1>&bull;&nbsp; <a href="#Versions">Change Log</a>
 <p class=empty>&nbsp;</p>
@@ -86,6 +86,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportNPCLevels">Export/Import NPC Levels</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportRelations">Export Relations</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportStats">Export/Import Stats</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ExportImportScripts">Export/Import Scripts</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportSpellStats">Export/Import Spell Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#Details">Details</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ListMasters">List Masters</a></p>
@@ -119,18 +120,17 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportRelations">Import Relations</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportRoads">Import Roads</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportScripts">Import Scripts</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#ImportScript Contents">Import Script Contents</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportSound">Import Sound</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportStats">Import Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakAssorted">Tweak Assorted</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakClothes">Tweak Clothes</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#Globals">Globals</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakNames">Tweak Names</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakSettings">Tweak Settings</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CoblExhaustion">Cobl Exhaustion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ContentChecker">Content Checker</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#LeveledLists">Leveled Lists</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#MAOpatcher">Mayu's Animation Overhaul Patcher</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#MorphFactions">Morph Factions</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#PowerExhaustion">Power Exhaustion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#RaceRecords">Race Records</a></p>
@@ -160,6 +160,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ListMasters">List Masters</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#DiffMasters">Diff Masters</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#Statistics">Statistics</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#OBSEStatistics">.OBSE Statistics</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#DeleteSpells">Delete Spells</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportFace">Import Face</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportNPCLevels">Import NPC Levels</a></p>
@@ -226,7 +227,6 @@
   <p class=list-2>&bull;&nbsp; Ralgor: Cell support and Import Cells.
   <p class=list-2>&bull;&nbsp; Pacific Morrowind: New imports, exports, tweaks, etc.
   <p class=list-2>&bull;&nbsp; Breeze582000: Bashmon
-  <p class=list-2>&bull;&nbsp; Raziel23x: New imports, exports, tweaks, etc.
   <p class=empty>&nbsp;</p>
 <h3><a name='AdditionalCredits'>Additional Credits</a></h3>
 <p class=list-1>&bull;&nbsp; <B><I>Translators:</I></B>
@@ -290,14 +290,14 @@
 <p class=empty>&nbsp;</p>
 <h2><a name='Installation'>Installation</a></h2>
 <h3><a name='GetandInstall'>Get and Install</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Download and run <a href="http://www.tesnexus.com/downloads/download.php?id=37334">Wrye Python</a></B>
+<p class=list-1>&bull;&nbsp; <B>Download and run <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44">Wrye Python</a></B>
   <p class=list-2>&bull;&nbsp; Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer. 
   <p class=list-2>&bull;&nbsp; <B>Note:</B> This is not part of Wrye Bash itself &#150 rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se <a href="#PythonComponents">Python Components</a>.
-<p class=list-1>&bull;&nbsp; <B>Download and Unzip Wrye Bash XXX.Zip from either <a href="https://sourceforge.net/projects/oblivionworks/files/">Source Forge</a> or <a href="http://www.tesnexus.com/downloads/file.php?id=22368">TES Nexus</a></B> 
+<p class=list-1>&bull;&nbsp; <B>Download and Unzip <a href="http://wrye.ufrealms.net/#WryeBash">Wrye Bash XXX.zip</a></B> 
   <p class=list-2>&bull;&nbsp; Unzip the files <I>into your Oblivion installation directory.</I> If you've done this correctly, you'll find bash.py and other bash files under Oblivion\Mopy.
   <p class=list-2>&bull;&nbsp; Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 <p class=list-1>&bull;&nbsp; <B>Upgrading</B>
-  <p class=list-2>&bull;&nbsp; If you're upgrading from an older version of Wrye bash, then just get the last Wrye Bash XXX.Zip file from source forge or TES Nexus and unzip to Oblivion directory. There's no need to remove anything or reinstall any python components.
+  <p class=list-2>&bull;&nbsp; If you're upgrading from an older version of Wrye bash, then just get the last Wrye Bash XXX.Zip file from Wrye Musings and unzip to Oblivion directory. There's no need to remove anything or reinstall any python components.
   <p class=empty>&nbsp;</p>
 <h3><a name='WindowsVista'>Windows Vista</a></h3>
 <p class=list-1>&bull;&nbsp; On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against write by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
@@ -388,19 +388,32 @@
   <p class=empty>&nbsp;</p>
 <h3><a name='ApplicationButtons'>Application Buttons</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview:</B>
-  <p class=list-2>&bull;&nbsp; Each of the application buttons will be present if the corresponding application is present in the Bethesda Softworks directory.
-  <p class=list-2>&bull;&nbsp; Tes4Gecko will be available if the javaw.exe is present in Windows\System32 and if the \Tes4 Gecko\Tes4Gecko.jar file is present in the Bethesda Softworks directory.
-  <p class=list-2>&bull;&nbsp; Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if \Tes4Edit\Tes4Edit.exe is available in the Bethesda Softworks directory.
+  <p class=list-2>&bull;&nbsp; Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory or in the directory specified in the bash.ini.
+  <p class=list-2>&bull;&nbsp; Tes4Gecko & Oblivon Book Creater will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory.
+  <p class=list-2>&bull;&nbsp; Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
+  <p class=list-2>&bull;&nbsp; Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
 <p class=list-1>&bull;&nbsp; <B>Applications:</B>
   <p class=list-2>&bull;&nbsp; Oblivion (Main Oblivion executable, not the launcher.)
   <p class=list-2>&bull;&nbsp; Oblivion Mod Manager
+  <p class=list-2>&bull;&nbsp; Oblivion Book Creator
   <p class=list-2>&bull;&nbsp; TES Construction Set
+  <p class=list-2>&bull;&nbsp; Insanity Sorrow's Oblivion Launcher
+  <p class=list-2>&bull;&nbsp; Insanity Sorrow's Readme Generator
+  <p class=list-2>&bull;&nbsp; Insanity Sorrow's Random Name Generator
+  <p class=list-2>&bull;&nbsp; Insanity Sorrow's Random NPC Generator
   <p class=list-2>&bull;&nbsp; Tes4Gecko
   <p class=list-2>&bull;&nbsp; Tes4View
   <p class=list-2>&bull;&nbsp; Tes4Edit
   <p class=list-2>&bull;&nbsp; Tes4Trans
   <p class=list-2>&bull;&nbsp; BOSS
   <p class=list-2>&bull;&nbsp; Tes4LodGen
+  <p class=list-2>&bull;&nbsp; Tes4Files
+  <p class=list-2>&bull;&nbsp; Blender
+  <p class=list-2>&bull;&nbsp; GIMP
+  <p class=list-2>&bull;&nbsp; GMax
+  <p class=list-2>&bull;&nbsp; Maya
+  <p class=list-2>&bull;&nbsp; Max
+  <p class=list-2>&bull;&nbsp; Photoshop
   <p class=empty>&nbsp;</p>
 <h3><a name='BashOptionButtons'>Bash Option Buttons</a></h3>
 <p class=list-1>&bull;&nbsp; OBSE
@@ -575,10 +588,16 @@
 <p class=list-1>&bull;&nbsp; <B>File</B>
   <p class=list-2>&bull;&nbsp; <B>Open:</B> Open package(s) in the file system.
   <p class=list-2>&bull;&nbsp; <B>Duplicate:</B> Duplicate package.
-  <p class=list-2>&bull;&nbsp; <B>Delete:</B> Delete the pacakge(s).
+  <p class=list-2>&bull;&nbsp; <B>Delete:</B> Delete the package(s).
   <p class=list-2>&bull;&nbsp; <B>Open at TesNexus:</B> Attempts to open the TesNexus page for the selected package.
     <p class=list-3>&bull;&nbsp; <B><I>This command may fail!</I></B> The function works by assuming that the trailing 4-5 digits in the archives name are a package id at TesNexus. 
-    <p class=list-3>&bull;&nbsp; If the assumption is wrong, then then some random TesNexus page will be selected.
+    <p class=list-3>&bull;&nbsp; If the assumption is wrong, then then some random TesNexus page will be selected or an error page.
+  <p class=list-2>&bull;&nbsp; <B>Open at TesAlliance:</B> Attempts to open the TesAlliance page for the selected package.
+    <p class=list-3>&bull;&nbsp; <B><I>This command may fail!</I></B> The function works by assuming that the trailing 1-5 digits in the archives name are a package id at TesAlliance. 
+    <p class=list-3>&bull;&nbsp; If the assumption is wrong, then then some random TesAlliance page will be selected or an error page.
+  <p class=list-2>&bull;&nbsp; <B>Open Search:</B> attempts to open a Google search page for selected package name less any digits.
+  <p class=list-2>&bull;&nbsp; <B>Hide:</B> Hide the package by moving it to Oblivion Mods/Bash Mod Data/Hidden.
+  <p class=list-2>&bull;&nbsp; <B>Rename:</B> Renames the package to the entered text.
 <p class=list-1>&bull;&nbsp; <B>Archive Info</B>
   <p class=list-2>&bull;&nbsp; <B>Refresh:</B> Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.
   <p class=list-2>&bull;&nbsp; <B>Move To...</B> Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.
@@ -613,6 +632,7 @@
   <p class=list-2>&bull;&nbsp; <B>INI Tweaks:</B> This brings up a list of INI tweaks that can be applied. For use after installing/uninstalling a mod that needs to tweak INI settings.
   <p class=list-2>&bull;&nbsp; <B>List Packages:</B> Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help. 
   <p class=list-2>&bull;&nbsp; <B>Anneal All:</B> This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
+  <p class=list-2>&bull;&nbsp; <B>Unhide:</B> Unhides hidden packages.
 <p class=list-1>&bull;&nbsp; <B>Availability</B>
   <p class=list-2>&bull;&nbsp; <B>Avoid at Startup:</B> Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you'll should Enable this.
   <p class=list-2>&bull;&nbsp; <B>Enabled:</B> This enables/disables Bain itself. Preferred setting: Enabled (checked).
@@ -936,6 +956,13 @@
   <p class=list-2>&bull;&nbsp; The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
   <p class=list-2>&bull;&nbsp; Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
   <p class=empty>&nbsp;</p>
+<h3><a name='ExportImportScripts'>Export/Import Scripts</a></h3>
+<p class=list-1>&bull;&nbsp; These paired functions allow you to export scripts to a series of text files, edit the file(s) and then reimport the script text. 
+<p class=list-1>&bull;&nbsp; <B>Uses/Use</B>
+  <p class=list-2>&bull;&nbsp; Using an external editor with better editing capabilities
+  <p class=list-2>&bull;&nbsp; The scripts are each individually written/read as a text file (using default extention of .txt, but settable via Bash's Ini). Do not change the first three lines unless you know what you're doing. Change the rest of it however you want.
+  <p class=list-2>&bull;&nbsp; After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
+  <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportSpellStats'>Export/Import Spell Stats</a></h3>
 <p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the <a href="#ImportSpellStats">Import Spell Stats</a>. 
 <p class=list-1>&bull;&nbsp; <B>Uses</B>
@@ -1141,7 +1168,6 @@
   <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceInfo">Race Info</a>).
   <p class=list-2>&bull;&nbsp; Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).
-  <p class=list-2>&bull;&nbsp; ScriptContents: Mod modifies the contents of a script (result script, quest stage script or object/mgef script) (<a href="#ImportScriptContents">Import Script Contents</a></p>
   <p class=list-2>&bull;&nbsp; Sound: Mod is a sound replacer (<a href="#ImportSound">Import Sound</a>).
   <p class=list-2>&bull;&nbsp; SpellStats: Mod modifies spell stats (<a href="#ImportSpellStats">Import Spell Stats</a>).
   <p class=list-2>&bull;&nbsp; Stats: Mod modifies item stats (<a href="#ImportStats">Import Stats</a>).
@@ -1307,14 +1333,6 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
   <p class=list-2>&bull;&nbsp; all editor object except spells and quests
   <p class=empty>&nbsp;</p>
-  <h3><a name='ImportScriptContents'>Import Script Contents</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Overview</B>
-  <p class=list-2>&bull;&nbsp; There are a some mods that change the script contents importantly and they often got blocked by the overhauls or non-important changes and so cause problems. This fixes it so the script content changes get brought forward but not other conflicting data. 
-<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
-  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>ScriptContents</code> <a href="#BashTags">tag</a> in the mod description. 
-<p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
-  <p class=list-2>&bull;&nbsp; The contents of Object, Magic Effect scripts. Hopefully Dialogue, Quest, and Quest Stage scripts will get figure out and added soon - was the initial point of this tag, but they are not yet working.
-  <p class=empty>&nbsp;</p>
 <h3><a name='ImportSound'>Import Sound</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; There are not many mods that modify the sounds of existing records, but there are a few mods that tweak the sounds of magic effects (e.g. to silence them). Since magic effect records tend to modified for other reasons as well, other changes to the same records will wipe out the changes to sounds. This patcher component allows you to make sure that changes to the sounds of spells are included in the final version of the record.
@@ -1381,6 +1399,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Unlimited Amulets:</B>  Allows you to wear an unlimited number of amulets. <I>Not recommended</I> because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
 <p class=list-1>&bull;&nbsp; <B>Unlimited Rings:</B>  Same thing for rings. 
 <p class=empty>&nbsp;</p>
+<h2><a name='Globals'>Globals</a></h2>
+<p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
+<p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
+<p class=list-1>&bull;&nbsp; <B>Thieves Guild: Quest Misdemeanor Penalty:</B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
+<p class=list-1>&bull;&nbsp; <B>Timescale:</B> Oblivion's timescale.
+<p class=empty>&nbsp;</p>
 <h3><a name='TweakNames'>Tweak Names</a></h3>
 <p class=list-1>&bull;&nbsp; Tweaks names of items and spells to make them sort more easily in inventory. For each type of item you can select the format to be used. 
 <p class=list-1>&bull;&nbsp; <B>Body Part Codes:</B> This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. 
@@ -1405,17 +1429,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Attack:</B> The Bounty for attacking a "good" npc when observed.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Horse Theft:</B> The Bounty for horse stealing.
-<p class=list-1>&bull;&nbsp; <B>Bounty: Theft:</B> The bounty for stealing an object in fraction of object price.
 <p class=list-1>&bull;&nbsp; <B>Camera: Chase Distance:</B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150 but also a little bit uber for that reason.
 <p class=list-1>&bull;&nbsp; <B>Camera: Chase Tightness:</B> Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
 <p class=list-1>&bull;&nbsp; <B>Camera: PC Death Time:</B> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
 <p class=list-1>&bull;&nbsp; <B>Cell Respawn Time:</B> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
-<p class=list-1>&bull;&nbsp; <B>Combat: Alchemy:</B> Toggle whether you can or can't do Alchemy while in combat.
-<p class=list-1>&bull;&nbsp; <B>Combat: Max Actors:</B> The maximum number of actors that the engine will process in combat. 
-<p class=list-1>&bull;&nbsp; <B>Combat: Maximum Armor Rating:</B> The maximum armor rating that Oblivion will apply.
+<p class=list-1>&bull;&nbsp; <B>Combat: Max Actors:</B> the maximum number of actors that the engine will process in combat. 
 <p class=list-1>&bull;&nbsp; <B>Combat: Recharge Weapons:</B> By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.
-<p class=list-1>&bull;&nbsp; <B>Combat: Repair:</B> Toggle whether you can or can't do Repairing while in combat.
-<p class=list-1>&bull;&nbsp; <B>Companions: Max Number:</B> The maximum number of actors that can follow the player.
 <p class=list-1>&bull;&nbsp; <B>Compass: Disable XXX:</B> Disables POI's (Points of Interest), Quest Markers, or both on the compass. 
   <p class=list-2>&bull;&nbsp; Warning: Some quests may be hard to complete when quest markers are turned off (e.g., an early stage of Knights of the Nine).
   <p class=list-2>&bull;&nbsp; Note: While this works with the vanilla interface, it appears to not work with some modifications of the UI. Problem might be changes to the marker icons, or it might be due to the POI recognition tweak.
@@ -1431,15 +1450,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Horse Turning Speed:</B> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
 <p class=list-1>&bull;&nbsp; <B>Jump Higher:</B> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)
 <p class=list-1>&bull;&nbsp; <B>Magic: Bolt Speed:</B> Speed at which at which magic bolts (projectiles) travel.
-<p class=list-1>&bull;&nbsp; <B>Magic: Max Player Summons</B> Maximum number of creatures the Player can summon.
-<p class=list-1>&bull;&nbsp; <B>Magic: Max NPC Summons:</B> Maximum number of creatures NPC's are allowed to summon.
 <p class=list-1>&bull;&nbsp; <B>Magic: Chameleon Refraction:</B> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
 <p class=list-1>&bull;&nbsp; <B>Master of Mercantile Extra Gold Amount:</B> The extra barter gold all vendor's have for a master of mercantile.
 <p class=list-1>&bull;&nbsp; <B>Msg: Equip Misc. Item:</B> sets the message on equiping a misc item to blank or either "." or "Hmm..."
-<p class=list-1>&bull;&nbsp; <B>Training Max:</B> the maximum number of training sessions the player can take per level.
 <p class=empty>&nbsp;</p>
 <hr>
-<p><B>Special</B> patch components don't fit into the categories above. Five of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>), <a href="#MAOpatcher">MAO Patcher</a>, <a href="#MorphFactions">Morph Factions</a>, and <a href="#CoblExhaustion">COBL Exhaustion</a> are for use with specific mods. The remaining components, <a href="#LeveledLists">Leveled Lists</a> and <a href='#ContentChecker'>Content Checker</a>are for general use.
+<p><B>Special</B> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
 <p class=empty>&nbsp;</p>
 <h3><a name='AlchemicalCatalogs'>Alchemical Catalogs</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
@@ -1480,9 +1496,6 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Lists occasionally contain empty sublists, which will cause the list to produce nothing when it selects the sublist.
   <p class=list-2>&bull;&nbsp; As of Bash v 183, the leveled list merger will now remove any empty sublists from a leveled list.
   <p class=empty>&nbsp;</p>
-<h3><a name="MAOpatcher">Mayu's Animation Overhaul Patcher</a></p>
-<p class=list-1>&bull;&nbsp; This is only for users of Mayu's Animation Overhaul.
-<p class=empty>&nbsp;</p>
 <h3><a name='MorphFactions'>Morph Factions</a></h3>
 <p class=list-1>&bull;&nbsp; This is only for users of the Wrye Morph mod 0.05 or higher. It requires Cobl 1.28 or higher.
 <p class=empty>&nbsp;</p>
@@ -1709,7 +1722,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Formid beginning with FF is reference to an object defined by the savegame.
     <p class=list-3>&bull;&nbsp; Otherwise, the formid will map back to a mod. The first two digits are the modindex, and can be matched to a mod through the "MI" column in the list of savegame masters.
     <p class=empty>&nbsp;</p>
+<h3><a name='OBSEStatistics'>.OBSE Statistics</a></h3>
+<p class=list-1>&bull;&nbsp; Reports various statistics for cosave files (savename.pluggy and savename.obse). Probably too technical for most people. Feel free to skip this section...
+<p class=list-1>&bull;&nbsp; to be properly documented
+<p class=empty>&nbsp;</p>
 <hr>
+<p class=empty>&nbsp;</p>
 <h3><a name='DeleteSpells'>Delete Spells</a></h3>
 <p class=list-1>&bull;&nbsp; This allows you to remove unused spells from your spell list.
 <p class=list-1>&bull;&nbsp; <B><I>Warning:</I></B> Spells once removed cannot be re-added. While most spells can be repurchased, and custom spells can be recreated, quest and other spells may require use of the console to re-add. 
@@ -1978,25 +1996,45 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-  <h3><a name='27511062009PacificMorrowind'>275 [11/06/2009] [PacificMorrowind]</a></h3>
-    <p class=list-1>&bull;&nbsp; Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
-	<p class=list-1>&bull;&nbsp; Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
-	<p class=list-1>&bull;&nbsp; Added 2 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
-   <p class=empty>&nbsp;</p>
-  <h3><a name='27411052009PacificMorrowind'>274 [11/05/2009] [PacificMorrowind]</a></h3>
-    <p class=list-1>&bull;&nbsp; BAIN: Couple changes to speed up prescanning if skipping file types.
-	<p class=list-1>&bull;&nbsp; Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
-	<p class=list-1>&bull;&nbsp; Bashed Patch: Added Import Script Contents (at last & only partially unfortunately); see details up above.
-	<p class=list-1>&bull;&nbsp; Added 4 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
-   <p class=empty>&nbsp;</p>
-  <h3><a name='27311022009'>273 [11/02/2009] [Raziel23x]</a></h3>
-    <p class=list-1>&bull;&nbsp; Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
-    <p class=list-1>&bull;&nbsp; Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
-   <p class=empty>&nbsp;</p>
-  <h3><a name='27211012009'>272 [11/01/2009] [Raziel23x]</a></h3>
-    <p class=list-1>&bull;&nbsp; Added two new gaming settings
-  <p class=empty>&nbsp;</p>
-  <h3><a name='2718282009'>271 [8/28/2009]</a></h3>
+<h3><a name='27701082010PacificMorrowindHaamaBadhair'>277 [01/08/2010] [PacificMorrowind,Haama,Badhair]</a></h3>
+<p class=list-1>&bull;&nbsp; fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
+<p class=list-1>&bull;&nbsp; a new Bashed Patch section added: Globals
+<p class=list-1>&bull;&nbsp; 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
+<p class=list-1>&bull;&nbsp; added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
+<p class=list-1>&bull;&nbsp; added an Export/Import script function to the right click menu of mod files
+<p class=list-1>&bull;&nbsp; added an obse/pluggy statistics viewer (contributed by Badhair/Haama)
+<p class=list-1>&bull;&nbsp; Automatically deghost and reghost when using the link to BOSS
+<p class=list-1>&bull;&nbsp; BAIN: 
+    <p class=list-3>&bull;&nbsp; Hide/Unhide package
+    <p class=list-3>&bull;&nbsp; Open at TesAlliance
+    <p class=list-3>&bull;&nbsp; Open Google Search for mod name
+    <p class=list-3>&bull;&nbsp; Rename package
+    <p class=empty>&nbsp;</p>
+<h3><a name='27612282009PacificMorrowindRaziel23x'>276 [12/28/2009] [PacificMorrowind & Raziel23x]</a></h3>
+<p class=list-1>&bull;&nbsp; bugfix: fixed potion weight deselection error
+<p class=list-1>&bull;&nbsp; paths for external tools (TES4edit/view/trans, TES4LodGen, TES4Gecko, TES4Files) settable via the ini for better organization/fun
+<p class=list-1>&bull;&nbsp; tweaked game settings
+<p class=list-1>&bull;&nbsp; added support for launching of TES4Files
+<p class=empty>&nbsp;</p>
+<h3><a name='27511062009PacificMorrowind'>275 [11/06/2009] [PacificMorrowind]</a></h3>
+<p class=list-1>&bull;&nbsp; Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
+<p class=list-1>&bull;&nbsp; Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
+<p class=list-1>&bull;&nbsp; Added 2 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
+<p class=empty>&nbsp;</p>
+<h3><a name='27411052009PacificMorrowind'>274 [11/05/2009] [PacificMorrowind]</a></h3>
+<p class=list-1>&bull;&nbsp; BAIN: Couple changes to speed up prescanning if skipping file types.
+<p class=list-1>&bull;&nbsp; Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
+<p class=list-1>&bull;&nbsp; Bashed Patch: Added Import Script Contents (at last & only partially unfortunately); see details up above.
+<p class=list-1>&bull;&nbsp; Added 4 new game settings tweaks, updated docs
+<p class=empty>&nbsp;</p>
+<h3><a name='27311022009Raziel23x'>273 [11/02/2009] [Raziel23x]</a></h3>
+<p class=list-1>&bull;&nbsp; Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
+<p class=list-1>&bull;&nbsp; Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
+<p class=empty>&nbsp;</p>
+<h3><a name='27211012009Raziel23x'>272 [11/01/2009] [Raziel23x]</a></h3>
+<p class=list-1>&bull;&nbsp; Added two new gaming settings
+<p class=empty>&nbsp;</p>
+<h3><a name='2718282009'>271 [8/28/2009]</a></h3>
 <p class=list-1>&bull;&nbsp; Revert autorecognize Data\ini. Already standardized as Data\Scripts.
 <p class=list-1>&bull;&nbsp; Minor change to errlog deletion to support Python 2.6 (hopefully).
 <p class=empty>&nbsp;</p>
@@ -3541,7 +3579,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=empty>&nbsp;</p>
 <h3><a name='0014132006'>0.01 [4/13/2006]</a></h3>
 <p class=list-1>&bull;&nbsp; <B><I>First Release!</I></B>
-<p class=empty>&nbsp;</p>
 <p class=empty>&nbsp;</p>
 </body>
 </html>

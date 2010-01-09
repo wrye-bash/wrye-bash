@@ -4871,7 +4871,7 @@ class Files_SortBy(Link):
 #------------------------------------------------------------------------------
 class Files_Unhide(Link):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
-    def __init__(self,type='mod'):
+    def __init__(self,type):
         Link.__init__(self)
         self.type = type
 
@@ -4892,12 +4892,14 @@ class Files_Unhide(Link):
         elif self.type == 'installer':
             wildcard = 'Oblivion Mod Archives (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
+            srcPaths = balt.askOpenMulti(self,_('Unhide files:'),srcDir, '', wildcard)
         else:
             wildcard = '*.*'
         isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
-        srcPaths = balt.askOpenMulti(self.window,_('Unhide files:'),srcDir, '', wildcard)
+        if not self.type == 'installer':
+            srcPaths = balt.askOpenMulti(self.window,_('Unhide files:'),srcDir, '', wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         for srcPath in srcPaths:
@@ -5831,7 +5833,7 @@ class Installer_OpenTESA(InstallerLink):
         """Handle selection."""
         message = _("Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
-            id = bosh.reTesNexus.search(self.selected[0].s).group(1)
+            id = bosh.reTESA.search(self.selected[0].s).group(1)
             os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)           
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
@@ -9450,7 +9452,7 @@ class Installer_Rename(Link):
         #--File Info
         rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
         fileName = self.selected[0]
-        pattern = balt.askText(self.window,_("Enter new name. E.g. VASE.7z"),
+        pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
             _("Rename Files"),fileName.s)
         if not pattern: return
         maPattern = rePattern.match(pattern)

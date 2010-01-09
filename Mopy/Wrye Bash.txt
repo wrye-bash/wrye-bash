@@ -203,19 +203,32 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
 
 === Application Buttons
 * __Overview:__
-  * Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory.
-  * Tes4Gecko will be available if the javaw.exe is present in Windows\System32 and if the Tes4Gecko.jar file is present in the Oblivion install directory.
+  * Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory or in the directory specified in the bash.ini.
+  * Tes4Gecko & Oblivon Book Creater will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory.
   * Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
+  * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
 * __Applications:__
   * Oblivion (Main Oblivion executable, not the launcher.)
   * Oblivion Mod Manager
+  * Oblivion Book Creator
   * TES Construction Set
+  * Insanity Sorrow's Oblivion Launcher
+  * Insanity Sorrow's Readme Generator
+  * Insanity Sorrow's Random Name Generator
+  * Insanity Sorrow's Random NPC Generator
   * Tes4Gecko
   * Tes4View
   * Tes4Edit
   * Tes4Trans
   * BOSS
   * Tes4LodGen
+  * Tes4Files
+  * Blender
+  * GIMP
+  * GMax
+  * Maya
+  * Max
+  * Photoshop
 
 === Bash Option Buttons
 * OBSE
@@ -390,10 +403,16 @@ The following commands are available from context menu of packages.
 * __File__
   * __Open:__ Open package(s) in the file system.
   * __Duplicate:__ Duplicate package.
-  * __Delete:__ Delete the pacakge(s).
+  * __Delete:__ Delete the package(s).
   * __Open at TesNexus:__ Attempts to open the TesNexus page for the selected package.
     * **This command may fail!** The function works by assuming that the trailing 4-5 digits in the archives name are a package id at TesNexus. 
-    * If the assumption is wrong, then then some random TesNexus page will be selected.
+    * If the assumption is wrong, then then some random TesNexus page will be selected or an error page.
+  * __Open at TesAlliance:__ Attempts to open the TesAlliance page for the selected package.
+    * **This command may fail!** The function works by assuming that the trailing 1-5 digits in the archives name are a package id at TesAlliance. 
+    * If the assumption is wrong, then then some random TesAlliance page will be selected or an error page.
+  * __Open Search:__ attempts to open a Google search page for selected package name less any digits.
+  * __Hide:__ Hide the package by moving it to Oblivion Mods/Bash Mod Data/Hidden.
+  * __Rename:__ Renames the package to the entered text.
 * __Archive Info__
   * __Refresh:__ Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.
   * __Move To...__ Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.
@@ -428,6 +447,7 @@ The following commands are available by right clicking on the column header of t
   * __INI Tweaks:__ This brings up a list of INI tweaks that can be applied. For use after installing/uninstalling a mod that needs to tweak INI settings.
   * __List Packages:__ Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help. 
   * __Anneal All:__ This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
+  * __Unhide:__ Unhides hidden packages.
 * __Availability__
   * __Avoid at Startup:__ Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you'll should Enable this.
   * __Enabled:__ This enables/disables Bain itself. Preferred setting: Enabled (checked).
@@ -751,6 +771,13 @@ These are the commands found on context menu for mods...
   * The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
   * Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
 
+=== Export/Import Scripts
+* These paired functions allow you to export scripts to a series of text files, edit the file(s) and then reimport the script text. 
+* __Uses/Use__
+  * Using an external editor with better editing capabilities
+  * The scripts are each individually written/read as a text file (using default extention of .txt, but settable via Bash's Ini). Do not change the first three lines unless you know what you're doing. Change the rest of it however you want.
+  * After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
+  
 === Export/Import Spell Stats
 * These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]]. 
 * __Uses__
@@ -1187,6 +1214,12 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Unlimited Amulets:__  Allows you to wear an unlimited number of amulets. ~~Not recommended~~ because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
 * __Unlimited Rings:__  Same thing for rings. 
 
+== Globals
+* Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
+* __Crime: Force Jail:__ The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
+* __Thieves Guild: Quest Misdemeanor Penalty:__ Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
+* __Timescale:__ Oblivion's timescale.
+
 === Tweak Names
 * Tweaks names of items and spells to make them sort more easily in inventory. For each type of item you can select the format to be used. 
 * __Body Part Codes:__ This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. 
@@ -1504,7 +1537,12 @@ These are the commands found on context menu for saves...
     * Formid beginning with FF is reference to an object defined by the savegame.
     * Otherwise, the formid will map back to a mod. The first two digits are the modindex, and can be matched to a mod through the "MI" column in the list of savegame masters.
 
+=== .OBSE Statistics
+* Reports various statistics for cosave files (savename.pluggy and savename.obse). Probably too technical for most people. Feel free to skip this section...
+* to be properly documented
+
 -------------------------------------------------------------------------------
+
 === Delete Spells
 * This allows you to remove unused spells from your spell list.
 * **Warning:** Spells once removed cannot be re-added. While most spells can be repurchased, and custom spells can be recreated, quest and other spells may require use of the console to re-add. 
@@ -1782,9 +1820,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * added an Export/Import script function to the right click menu of mod files
 * added an obse/pluggy statistics viewer (contributed by Badhair/Haama)
 * Automatically deghost and reghost when using the link to BOSS
-* BAIN: hide/unhide installers
-
-
+* BAIN: 
+    * Hide/Unhide package
+    * Open at TesAlliance
+    * Open Google Search for mod name
+    * Rename package
 
 === 276 [12/28/2009] [PacificMorrowind & Raziel23x]
 * bugfix: fixed potion weight deselection error
