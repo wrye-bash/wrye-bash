@@ -6191,7 +6191,10 @@ class SaveFile:
                                     log('    Refs:')
                                     for x in range(numRefs):
                                         refModID, = unpack('=B',1)
-                                        log(_('      %02X (%s)') % (refModID, self.masters[refModID].s))
+                                        if refModID == 255:
+                                            log(_('      %02X (Save File)') % (refModID))
+                                        else:
+                                            log(_('      %02X (%s)') % (refModID, self.masters[refModID].s))
                             numElements, = unpack('=I',4)
                             log(_('    Size:  %u') % numElements)
                             for i in range(numElements):
@@ -6310,7 +6313,7 @@ class SaveFile:
                             hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale,hudWidth,hudHeight,hudFormat, = unpack('=ffBBBIIB',20)
                             hudFontNameLen, = unpack('=I',4)
                             hudFontName = ins.read(hudFontNameLen)
-                            hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = ins.read('=IIhBBBB',14)
+                            hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
                             hudText = ins.read(len(chunkBuff) - ins.tell())
                             log(_('      HudTID : %u') % (hudTid,))
                             log(_('      ModID  : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
