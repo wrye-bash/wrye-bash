@@ -296,7 +296,7 @@ def diffScripts(oldFile,newFile):
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)
         scripts.update(dict((record.eid, record.scriptText) for record in modFile.SCPT.records))
-    oldDump,newDump = [(GPath(fileName).root()+'.mws').open('w') for fileName in (oldFile,newFile)]
+    oldDump,newDump = ((GPath(fileName)+'.mws').open('w') for fileName in (oldFile,newFile))
     for eid in sorted(oldScripts):
         if eid in newScripts and oldScripts[eid] != newScripts[eid]:
             print 'Modified:',eid
@@ -306,6 +306,29 @@ def diffScripts(oldFile,newFile):
             newDump.write(newScripts[eid]+'\n\n')
     oldDump.close()
     newDump.close()
+    newScriptKeys = set(newScripts) - set(oldScripts)
+#------------------------------------------------------------------------------
+@mainfunc
+def diffScripts2(oldFile,newFile):
+    """As diffScripts, however returns lists of changes between the old version and new.
+    Creates two text files in ..\Mopy\ - "oldFile" to "newFile" - Modified/Added.txt"""
+    init(3)
+    oldScripts, newScripts = {},{}
+    for scripts,fileName in ((oldScripts,oldFile),(newScripts,newFile)):
+        loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+        modInfo = bosh.modInfos[GPath(fileName)]
+        modFile = bosh.ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        scripts.update(dict((record.eid, record.scriptText) for record in modFile.SCPT.records))
+    modDump = (GPath(oldFile)+' to '+GPath(newFile)+' - Modified Scripts'+'.txt').open('w')
+    addDump = (GPath(oldFile)+' to '+GPath(newFile)+' - Added Scripts'+'.txt').open('w')
+    for eid in sorted(newScripts):
+        if eid in oldScripts and newScripts[eid] != oldScripts[eid]:
+            modDump.write('%s\n' %( eid))
+        elif not (eid in oldScripts):
+            addDump.write('%s\n' %( eid))
+    modDump.close()
+    addDump.close()
     newScriptKeys = set(newScripts) - set(oldScripts)
 
 #------------------------------------------------------------------------------
