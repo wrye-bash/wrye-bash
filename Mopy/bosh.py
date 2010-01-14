@@ -6174,7 +6174,10 @@ class SaveFile:
                         elif chunkType == 'RVRA':
                             #--OBSE Array                        
                             modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
-                            log(_('    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
+                            if modIndex == 255:
+                                log(_('    Mod :  %02X (Save File)') % (modIndex))
+                            else:
+                                log(_('    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
                             log(_('    ID  :  %u') % arrayID)
                             if keyType == 1: #Numeric
                                 if isPacked:
