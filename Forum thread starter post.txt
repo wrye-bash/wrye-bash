@@ -44,7 +44,7 @@ Installation: First time installation is still a little difficult, but later upd
 
 Linking: If you'd like to link to Bash from somewhere else, please do! But be sure to link to either Wrye Musings or the Bash Readme. Don't link to the actual Bash zip file, since that changes fairly frequently.
 
-[quote name=dev_akm time="Apr 2 2007, 03:22 PM"]
+[quote name='dev_akm' date='Apr 2 2007, 03:22 PM']
 You should add a few more things to that list, Wrye. Almost none of the items from my list of the most compelling features in Wrye Bash are on your list:
 
 For everyone:
