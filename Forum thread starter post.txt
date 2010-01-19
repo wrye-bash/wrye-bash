@@ -81,4 +81,4 @@ and just to repeat the link and news:
 Wrye4Fallout3. TheLORDofDOOM of has taken on making a FO3 version... and here's the first little bit of it (not all translated to account for FO3 but it's showing promise). 
 
 and a bit more news:
-There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over here: 
+There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.
