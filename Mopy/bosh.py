@@ -15745,7 +15745,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
             model = record.model.modPath
-            if model == r'Characters\_Male\skeleton.nif':
+            if model.lower() == r'characters\_male\skeleton.nif':
                 patchRecords.setRecord(record)
                 
     def buildPatch(self,log,progress,patchFile):
@@ -16349,6 +16349,9 @@ class GlobalsTweaker(MultiTweaker):
             _("Timescale will be set to:"),
             'timescale',
             (_('1'),1),
+            (_('8'),8),
+            (_('10'),10),
+            (_('12'),12),
             (_('18'),18),
             (_('24'),24),
             (_('[30]'),30),
@@ -18380,7 +18383,7 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             model = record.model.modPath
-            if model == r'Characters\_Male\skeletonSESheogorath.nif':
+            if model.lower() == r'characters\_male\skeletonsesheogorath.nif':
                 record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
                 keep(record.fid)
                 srcMod = record.fid[0]
