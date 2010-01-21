@@ -16685,6 +16685,8 @@ class GmstTweaker(MultiTweaker):
             (_('20 Seconds'),20),
             (_('30 Seconds'),30),
             (_('1 Minute'),60),
+            (_('1 1/2 Minutes'),1.5*60),
+            (_('2 Minutes'),2*60),
             (_('3 Minutes'),3*60),
             (_('5 Minutes'),5*60),
             ),
