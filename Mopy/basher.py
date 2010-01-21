@@ -3704,7 +3704,7 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
-        if not self.IsIconized() and not self.IsMaximized():
+        if not self.IsIconized():
             settings['bash.framePos'] = self.GetPositionTuple()
             settings['bash.frameSize'] = self.GetSizeTuple()
         settings['bash.page'] = self.notebook.GetSelection()
