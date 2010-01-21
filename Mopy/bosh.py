@@ -8029,6 +8029,11 @@ class ModInfos(FileInfos):
         for name in self.data:
             modInfo = self[name]
             size,canMerge = name_mergeInfo.get(name,(None,None))
+            # Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+            descTags = modInfo.getBashTagsDesc()
+            if descTags and 'NoMerge' in descTags: continue
+            bashTags = modInfo.getBashTags()
+            if bashTags and 'NoMerge' in bashTags: continue
             if size == modInfo.size:
                 if canMerge: self.mergeable.add(name)
             elif reEsmExt.search(name.s):
