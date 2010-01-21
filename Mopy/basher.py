@@ -1392,7 +1392,6 @@ class ModDetails(wx.Window):
         self.cancel.Disable()
         #--Bash tags
         self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads'))
-        #allTags = sorted(('R.BodyF', 'R.BodyM', 'C.Climate', 'C.Light', 'C.Owner', 'C.Water', 'L.Delev', 'R.Eyes', 'A.Factions', 'F.Relations', '+Filter', 'A.Graphics', 'R.Hair', '+IIM', 'A.Invent', 'A.Names', '+NoMerge', 'N.Faces', 'R.Relations', 'L.Relev', 'A.Sound', 'A.Stats', 'R.VoiceF', 'R.VoiceM','-Cells', 'NPC.Attr'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -10616,6 +10615,10 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_CleanMod())
     ModList.itemMenu.append(Mod_SetVersion())
     ModList.itemMenu.append(Mod_UndeleteRefs())
+#    if bosh.inisettings['showadvanced'] == 1:
+#        advmenu = MenuLink(_("Advanced Scripts"))
+#        advmenu.links.append(Mod_DiffScripts())
+        #advmenu.links.append(())
 
 def InitSaveLinks():
     """Initialize save tab menus."""
