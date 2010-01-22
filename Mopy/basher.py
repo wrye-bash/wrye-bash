@@ -1391,7 +1391,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads','Actors.Anims'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads', 'Actors.Anims', 'Actors.DeathItem'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -4889,6 +4889,8 @@ class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 
 class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
 
+class ActorDeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
+
 class CellImporter(bosh.CellImporter,ListPatcher): pass
 
 class ImportFactions(bosh.ImportFactions,ListPatcher): pass
@@ -4956,6 +4958,7 @@ PatchDialog.patchers.extend((
     PatchMerger(),
     AlchemicalCatalogs(),
     ActorAnimPatcher(),
+    ActorDeathItemPatcher(),
     CoblExhaustion(),
     CellImporter(),
     ClothesTweaker(),
