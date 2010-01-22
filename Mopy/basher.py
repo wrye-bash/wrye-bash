@@ -8585,6 +8585,95 @@ class Mod_Stats_Import(Link):
             balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_ItemData_Export(Link):
+    """Export pretty much complete item data from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Item Data...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_ItemData.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export item data to:'),
+            textDir, textName, '*ItemData.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Item Data"))
+        try:
+            itemStats = bosh.CompleteItemData()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                itemStats.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            itemStats.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+
+#------------------------------------------------------------------------------
+class Mod_ItemData_Import(Link):
+    """Import stats from text file or other mod."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Item Data...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)==1)
+
+    def Execute(self,event):
+        message = (_("Import pretty much complete item data from a text file. This will replace existing data and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.itemdata.import.continue',
+            _('Import Item Data')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_ItemData.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import item data from:'),
+            textDir, textName, '*ItemData.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext != '.csv':
+            balt.showError(self.window,_('Source file must be a ItemData.csv file.'))
+            return
+        #--Export
+        progress = balt.Progress(_('Import Item Data'))
+        changed = None
+        try:
+            itemStats = bosh.CompleteItemData()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            if ext == '.csv':
+                itemStats.readFromText(textPath)
+            else:
+                srcInfo = bosh.ModInfo(textDir,textName)
+                itemStats.readFromMod(srcInfo)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = itemStats.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant data to import."),_("Import Item Data"))
+        else:
+            buff = cStringIO.StringIO()
+            for modName in sorted(changed):
+                buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+            balt.showLog(self.window,buff.getvalue(),_('Import Item Data'),icons=bashBlue)
+
+#------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
     """Undeletes refs in cells."""
     def AppendToMenu(self,menu,window,data):
@@ -10593,6 +10682,7 @@ def InitModLinks():
         exportMenu.links.append(Mod_ActorLevels_Export())
         exportMenu.links.append(Mod_FactionRelations_Export())
         exportMenu.links.append(Mod_Stats_Export())
+        exportMenu.links.append(Mod_ItemData_Export())
         exportMenu.links.append(Mod_Scripts_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
@@ -10604,6 +10694,7 @@ def InitModLinks():
         importMenu.links.append(Mod_Groups_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
         importMenu.links.append(Mod_Stats_Import())
+        importMenu.links.append(Mod_ItemData_Import())
         importMenu.links.append(Mod_Scripts_Import())
         ModList.itemMenu.append(importMenu)
     ModList.itemMenu.append(Mod_AddMaster())
