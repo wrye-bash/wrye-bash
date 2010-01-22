@@ -12161,6 +12161,231 @@ class ItemStats:
         out.close()
 
 #------------------------------------------------------------------------------
+class CompleteItemData:
+    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+        self.type_attrs = {
+            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath'),
+            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath'),
+            'APPA':('eid', 'full', 'weight', 'value', 'quality', 'iconPath'),
+            'ARMO':('eid', 'full', 'weight', 'value', 'health', 'strength', 'maleIconPath', 'femaleIconPath'),
+            'BOOK':('eid', 'full', 'weight', 'value', 'enchantPoints', 'iconPath'),
+            'CLOT':('eid', 'full', 'weight', 'value', 'enchantPoints', 'maleIconPath', 'femaleIconPath'),
+            'INGR':('eid', 'full', 'weight', 'value', 'iconPath'),
+            'KEYM':('eid', 'full', 'weight', 'value', 'iconPath'),
+            'LIGH':('eid', 'full', 'weight', 'value', 'duration', 'iconPath'),
+            'MISC':('eid', 'full', 'weight', 'value', 'iconPath'),
+            'SGST':('eid', 'full', 'weight', 'value', 'uses', 'iconPath'),
+            'SLGM':('eid', 'full', 'weight', 'value', 'iconPath'),
+            'WEAP':('eid', 'full', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints', 'iconPath'),
+            }
+        self.aliases = aliases or {} #--For aliasing mod fulls
+        self.model = {}
+        self.Mmodel = {}
+        self.Fmodel = {}
+        self.MGndmodel = {}
+        self.FGndmodel = {}
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                recordGetAttr = record.__getattribute__
+                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                if type == 'ALCH' or type == 'AMMO' or type == 'APPA' or type == 'BOOK' or type == 'INGR' or type == 'KEYM' or type == 'LIGH' or type == 'MISC' or type == 'SGST' or type == 'SLGM' or type == 'WEAP':
+                    if record.model:
+                        self.model[longid] = record.model.modPath
+                elif type == 'CLOT' or type == 'ARMO':
+                    if record.maleBody:
+                        self.Mmodel[longid] = record.maleBody.modPath
+                    else:
+                        self.Mmodel[longid] = 'NONE'
+                    if record.maleWorld:
+                        self.MGndmodel[longid] = record.maleWorld.modPath
+                    else:
+                        self.MGndmodel[longid] = 'NONE'
+                    if record.femaleBody:
+                        self.Fmodel[longid] = record.femaleBody.modPath
+                    else:
+                        self.Fmodel[longid] = 'NONE'
+                    if record.femaleWorld:
+                        self.FGndmodel[longid] = record.femaleWorld.modPath  
+                    else:
+                        self.FGndmodel[longid] = 'NONE'
+                        
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = {} #--changed[modName] = numChanged
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                itemStats = stats.get(longid,None)
+                if not itemStats: continue
+                map(record.__setattr__,attrs,itemStats)
+                record.setChanged()
+                changed[longid[0]] = 1 + changed.get(longid[0],0)
+        if changed: modFile.safeSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        alch, ammo, appa, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
+        for fields in ins:
+            if len(fields) < 3 or fields[2][:2] != '0x': continue
+            type,modName,objectStr,eid = fields[0:4]
+            modName = GPath(modName)
+            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+            if type == 'ALCH':
+                alch[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((str,sfloat,int,str),fields[4:8]))
+            elif type == 'AMMO':
+                ammo[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, damage, speed, enchantPoints)
+                    zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
+            elif type == 'ARMO':
+                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, health, strength)
+                    zip((str,sfloat,int,int,int,str,str),fields[4:10]))
+            elif type == 'BOOK':
+               books[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, echantPoints)
+                    zip((str,sfloat,int,int,str),fields[4:9]))
+            elif type == 'CLOT':
+                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, echantPoints)
+                    zip((str,sfloat,int,int,str,str),fields[4:10]))
+            elif type == 'INGR':
+                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((str,sfloat,int,str),fields[4:8]))
+            elif type == 'KEYM':
+                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((str,sfloat,int,str),fields[4:8]))
+            elif type == 'LIGH':
+               books[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, duration)
+                    zip((str,sfloat,int,int,str),fields[4:9]))
+            elif type == 'MISC':
+                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((str,sfloat,int,str),fields[4:8]))
+            elif type == 'SGST':
+               books[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, uses)
+                    zip((str,sfloat,int,int,str),fields[4:9]))
+            elif type == 'SLGM':
+                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((str,sfloat,int),fields[4:8]))
+            elif type == 'WEAP':
+                weapons[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, health, damage, speed, reach, epoints)
+                    zip((str,sfloat,int,int,int,sfloat,sfloat,int,str),fields[4:13]))
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        out = textPath.open('w')
+        def getSortedIds(stats):
+            longids = stats.keys()
+            longids.sort(key=lambda a: stats[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        for type,format,header in (
+            #--Alch
+            ('ALCH', bolt.csvFormat('ssfiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+            #Ammo
+            ('AMMO', bolt.csvFormat('ssfiifiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+            #--Armor
+            ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
+                _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+            #Books
+            ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+            #Clothing
+            ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
+                _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+            #Ingredients
+            ('INGR', bolt.csvFormat('ssfiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+            #--Keys
+            ('KEYM', bolt.csvFormat('ssfiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+            #Lights
+            ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
+            #--Misc
+            ('MISC', bolt.csvFormat('ssfiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+            #Sigilstones
+            ('SGST', bolt.csvFormat('ssfiiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
+            #Soulgems
+            ('SLGM', bolt.csvFormat('ssfiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+            #--Weapons
+            ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
+                _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+            ):
+            stats = self.type_stats[type]
+            if not stats: continue
+            out.write('\n'+header)
+            for longid in getSortedIds(stats):
+                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                if type == 'ARMO' or type == 'CLOT':
+                    tempstats = list(stats[longid])
+                    tempstats.append(self.Mmodel[longid])
+                    tempstats.append(self.Fmodel[longid])
+                    tempstats.append(self.MGndmodel[longid])
+                    tempstats.append(self.FGndmodel[longid])
+                    finalstats = tuple(tempstats)
+                else:
+                    tempstats = list(stats[longid])
+                    tempstats.append(self.model[longid])
+                    finalstats = tuple(tempstats)
+                out.write(format % finalstats)
+        out.close()
+
+#------------------------------------------------------------------------------
 class ScriptText:
     """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
     def __init__(self,types=None,aliases=None):
