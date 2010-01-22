@@ -8674,6 +8674,42 @@ class Mod_ItemData_Import(Link):
             balt.showLog(self.window,buff.getvalue(),_('Import Item Data'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_Prices_Export(Link):
+    """Export armor and weapon stats from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_prices.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export prices to:'),
+            textDir, textName, '*prices.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Prices"))
+        try:
+            itemStats = bosh.ItemPrices()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                itemStats.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            itemStats.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+
+#------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
     """Undeletes refs in cells."""
     def AppendToMenu(self,menu,window,data):
@@ -10684,6 +10720,7 @@ def InitModLinks():
         exportMenu.links.append(Mod_Stats_Export())
         exportMenu.links.append(Mod_ItemData_Export())
         exportMenu.links.append(Mod_Scripts_Export())
+        exportMenu.links.append(Mod_Prices_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
         importMenu = MenuLink(_("Import"))
