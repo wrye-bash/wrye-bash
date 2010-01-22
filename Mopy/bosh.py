@@ -12161,6 +12161,133 @@ class ItemStats:
         out.close()
 
 #------------------------------------------------------------------------------
+class ItemPrices:
+    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        #--type_stats[type] = ...
+        #--AMMO: (eid, weight, value, damage, speed, epoints)
+        #--ARMO: (eid, weight, value, health, strength)
+        #--WEAP: (eid, weight, value, health, damage, speed, reach, epoints)
+        self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+        self.type_attrs = {
+            'ALCH':('value', 'eid', 'full'),
+            'AMMO':('value', 'eid', 'full'),
+            'APPA':('value', 'eid', 'full'),
+            'ARMO':('value', 'eid', 'full'),
+            'BOOK':('value', 'eid', 'full'),
+            'CLOT':('value', 'eid', 'full'),
+            'INGR':('value', 'eid', 'full'),
+            'KEYM':('value', 'eid', 'full'),
+            'LIGH':('value', 'eid', 'full'),
+            'MISC':('value', 'eid', 'full'),
+            'SGST':('value', 'eid', 'full'),
+            'SLGM':('value', 'eid', 'full'),
+            'WEAP':('value', 'eid', 'full'),
+            }
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                recordGetAttr = record.__getattribute__
+                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = {} #--changed[modName] = numChanged
+        for type in self.type_stats:
+            stats, attrs = self.type_stats[type], self.type_attrs[type]
+            for record in getattr(modFile,type).getActiveRecords():
+                longid = mapper(record.fid)
+                itemStats = stats.get(longid,None)
+                if not itemStats: continue
+                map(record.__setattr__,attrs,itemStats)
+                record.setChanged()
+                changed[longid[0]] = 1 + changed.get(longid[0],0)
+        if changed: modFile.safeSave()
+        return changed
+
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        out = textPath.open('w')
+        def getSortedIds(stats):
+            longids = stats.keys()
+            longids.sort(key=lambda a: stats[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        for type,format,header in (
+            #--Alch
+            ('ALCH', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Ammo
+            ('AMMO', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #--Armor
+            ('ARMO', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Books
+            ('BOOK', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Clothing
+            ('CLOT', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Ingredients
+            ('INGR', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #--Keys
+            ('KEYM', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Lights
+            ('LIGH', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #--Misc
+            ('MISC', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Sigilstones
+            ('SGST', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #Soulgems
+            ('SLGM', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #--Weapons
+            ('WEAP', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            ):
+            stats = self.type_stats[type]
+            if not stats: continue
+            out.write(header)
+            for longid in getSortedIds(stats):
+                out.write('"%s","0x%06X",' % (longid[0].s,longid[1]))
+                out.write(format % stats[longid])
+        out.close()
+
+#------------------------------------------------------------------------------
 class CompleteItemData:
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
 
