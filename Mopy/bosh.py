@@ -12371,17 +12371,15 @@ class CompleteItemData:
             out.write('\n'+header)
             for longid in getSortedIds(stats):
                 out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                tempstats = list(stats[longid])
                 if type == 'ARMO' or type == 'CLOT':
-                    tempstats = list(stats[longid])
                     tempstats.append(self.Mmodel[longid])
                     tempstats.append(self.Fmodel[longid])
                     tempstats.append(self.MGndmodel[longid])
                     tempstats.append(self.FGndmodel[longid])
-                    finalstats = tuple(tempstats)
                 else:
-                    tempstats = list(stats[longid])
                     tempstats.append(self.model[longid])
-                    finalstats = tuple(tempstats)
+                finalstats = tuple(tempstats)
                 out.write(format % finalstats)
         out.close()
 
