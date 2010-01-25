@@ -53,24 +53,26 @@ import sys
 if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
-import bosh, basher
+import bosh
+#--Parse arguments
+optlist,args = getopt.getopt(sys.argv[1:],'u:p:l:d')
+#--Initialize Directories and some settings
+#  required before the rest has imported
+opts = dict(optlist)
+if '-u' in opts:
+    drive,path = os.path.splitdrive(opts['-u'])
+    os.environ['HOMEDRIVE'] = drive
+    os.environ['HOMEPATH'] = path
+personal = opts.get('-p')
+localAppData = opts.get('-l')
+bosh.initDirs(personal,localAppData)
+import basher
 import bolt
 
 # Main ------------------------------------------------------------------------
 def main():
     #import warnings
     #warnings.filterwarnings('error')
-    #--Parse arguments
-    optlist,args = getopt.getopt(sys.argv[1:],'u:p:l:d')
-    #--Initialize Directories
-    opts = dict(optlist)
-    if '-u' in opts:
-        drive,path = os.path.splitdrive(opts['-u'])
-        os.environ['HOMEDRIVE'] = drive
-        os.environ['HOMEPATH'] = path
-    personal = opts.get('-p')
-    localAppData = opts.get('-l')
-    bosh.initDirs(personal,localAppData)
     #--More Initialization
     basher.InitSettings()
     basher.InitLinks()

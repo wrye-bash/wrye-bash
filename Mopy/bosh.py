@@ -19465,6 +19465,7 @@ def initDirs(personal='',localAppData=''):
     inisettings['scriptFileExt']='.txt'
     inisettings['keepLog'] = 0
     inisettings['logFile'] = dirs['app'].join('Mopy').join('bash.log')
+    inisettings['enablewizard'] = 0
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
             inisettings['scriptFileExt'] = str(bashIni.get('Settings','sScriptFileExt').strip())
@@ -19474,6 +19475,8 @@ def initDirs(personal='',localAppData=''):
             inisettings['logFile'] = GPath(bashIni.get('Settings','sLogFile').strip())
             if not inisettings['logFile'].isabs():
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
+        if bashIni.has_option('Settings','iEnableWizard'):
+            inisettings['enablewizard'] = int(bashIni.get('Settings','iEnableWizard').strip())
 
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
