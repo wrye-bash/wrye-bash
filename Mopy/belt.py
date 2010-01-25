@@ -11,6 +11,7 @@ import win32api
 #---------------------------------------------------
 gDialogSize = (600,440)
 #---------------------------------------------------
+
 def replaceShader(sdpFileName, shaderName, shaderFileName):
     temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
     sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
