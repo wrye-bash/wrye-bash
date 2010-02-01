@@ -8566,15 +8566,24 @@ class Mod_Scripts_Export(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
+        defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
         deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
             _('Remove Prefix from file names?'),'')
+        if not defaultPath.exists():
+            defaultPath.makedirs()
+        textDir = balt.askDirectory(self.window,
+            _('Choose directory to import scripts from'),defaultPath)
+        if not textDir == defaultPath:
+            for asDir,sDirs,sFiles in os.walk(defaultPath.s):
+                if not (sDirs or sFiles):
+                    defaultPath.removedirs()
         #--Export
         #try:
         ScriptText = bosh.ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = ScriptText.writeToText(fileInfo,skip,fileName.s,deprefix)
+        exportedScripts = ScriptText.writeToText(fileInfo,skip,textDir,deprefix,fileName.s)
         #finally:
         balt.showLog(self.window,exportedScripts,_('Export Scripts'),icons=bashBlue)
 
