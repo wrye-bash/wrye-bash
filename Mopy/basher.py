@@ -3502,7 +3502,9 @@ class BashStatusBar(wx.StatusBar):
         for link in buttons:
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
             if gButton: self.buttons.append(gButton)
-        self.SetStatusWidths([18*len(self.buttons),-1, 120])
+        self.SetStatusWidths([34*len(self.buttons),-1, 120])
+        self.SetSize((-1, 34))
+        self.GetParent().SendSizeEvent() 
         self.OnSize() #--Position buttons
         wx.EVT_SIZE(self,self.OnSize)
         #--Bind events
@@ -3514,7 +3516,7 @@ class BashStatusBar(wx.StatusBar):
         (xPos,yPos) = (rect.x+1,rect.y+1)
         for button in self.buttons:
             button.SetPosition((xPos,yPos))
-            xPos += 18
+            xPos += 34
         if event: event.Skip()
 
     def SetText(self,text="",timeout=5):
@@ -10173,7 +10175,6 @@ class App_Button(Link):
         statusBar.SetStatusText(' '.join(exeArgs),1)
         cwd = bolt.Path.getcwd()
         exePath.head.setcwd()
-        print 'exeArgs:'+str(self.exeArgs)
         os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
         cwd.setcwd()
 
@@ -10553,12 +10554,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(
         App_BOSS(
             bosh.dirs['app'].join('Data\\BOSS.bat'),
-            Image(r'images/Boss1.png'),
-            _("Launch BOSS")))
-    BashStatusBar.buttons.append(
-        App_BOSS(
-            bosh.dirs['app'].join('Data\\BOSS.bat'),
-            Image(r'images/boss2.png'),
+            Image(r'images/Boss.png'),
             _("Launch BOSS")))
     BashStatusBar.buttons.append(
         App_Button(
