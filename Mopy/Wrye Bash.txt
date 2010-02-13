@@ -1811,7 +1811,34 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 277 [01/08/2010] [PacificMorrowind,Haama,Badhair]
+=== 278 [??/02/2010] [PacificMorrowind, Haama, ?]
+* NoMerge tag now correctly makes mods not show up as mergeable in the main window
+* New export/import options; Item Data, Prices
+* Bashed patch changes:
+    * New patchers:
+        * Actors.Death Items
+        * Actors.Animations
+========* Actors.
+========* Actors.
+    * Changes:
+========* Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record
+        * Timescale tweaked
+* Tool Launchers:
+    * Artweaver
+    * Audacity
+    * DDSConverter
+    * Fraps
+    * Notepad++
+    * Paint.NET
+    * Custom 1, 2, 3, 4
+    * All icons resized to 32*32 (instead of 16*16)
+    * Options to show/hide some of them added to the INI
+* NEW! Wizard based install system (contributed by: )
+* Updated 7z dll & exe to latest version
+*
+    
+
+=== 277 [01/08/2010] [PacificMorrowind, Haama, Badhair]
 * fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
 * a new Bashed Patch section added: Globals
 * 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
