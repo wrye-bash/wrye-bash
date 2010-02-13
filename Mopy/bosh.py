@@ -14963,7 +14963,7 @@ class ImportScripts(ImportPatcher):
         self.longTypes = set(('WEAP','ACTI','ALCH','APPA','ARMO','BOOK','CLOT','CONT','CREA','DOOR','FLOR','FURN','INGR','KEYM','LIGH','MISC','NPC_','QUST','SGST','SLGM'))
 
     def initData(self,progress):
-        """Get graphics from source files."""
+        """Get script links from source files."""
         if not self.isActive: return
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
@@ -14972,8 +14972,15 @@ class ImportScripts(ImportPatcher):
         progress.setFull(len(self.sourceMods))
         for index,srcMod in enumerate(self.sourceMods):
             if srcMod not in modInfos: continue
+            self.masters = []
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            self.masters = srcInfo.header.masters
+            print 'for esp %s the header info is:' % srcInfo
+            print srcInfo.header
+            if len(self.masters) > 1:
+                for master in self.masters:
+                    print '%s: next master is %s' %(srcInfo, master)
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14981,6 +14988,8 @@ class ImportScripts(ImportPatcher):
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    #for master in self.masters:
+                    #    
                     fid = mapper(record.fid)
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
@@ -19350,88 +19359,125 @@ def initDirs(personal='',localAppData=''):
     dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
     dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
     dirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
-    dirs['NifskopePath'] = GPath('C:\Program Files\NifTools\NifSkope\Nifskope.exe')
+    dirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
     dirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
-    dirs['GmaxPath'] = GPath('C:\GMAX\gmax.exe')
+    dirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
     dirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
     dirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
-    dirs['Photoshop'] = GPath('C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
+    dirs['Photoshop'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
     dirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
     dirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
     dirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
     dirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
     dirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
+    dirs['NPP'] = GPath(r'C:\Program Files\Notepad++\notepad++.exe')
+    dirs['Fraps'] = GPath(r'C:\Fraps\Fraps.exe')
+    dirs['Audacity'] = GPath(r'C:\Audacity\Audacity.exe')
+    dirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
+    dirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
+    dirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\Paint.NET.exe')
+    dirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom4'] = GPath(r'C:\not\a\valid\path.exe')
     # Then if bash.ini exists set from the settings in there:
     if bashIni:
         if bashIni.has_option('Tool Options','sTes4FilesPath'):
             dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
             if not dirs['TES4FilesPath'].isabs():
                 dirs['TES4FilesPath'] = dirs['app'].join(dirs['TES4FilesPath'])
-
         if bashIni.has_option('Tool Options','sTes4EditPath'):
             dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
             if not dirs['TES4EditPath'].isabs():
-                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
-            
+                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])           
         if bashIni.has_option('Tool Options','sTes4LodGenPath'):
             dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
             if not dirs['TES4LodGenPath'].isabs():
                 dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
-
         if bashIni.has_option('Tool Options','sNifskopePath'):
             dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
             if not dirs['NifskopePath'].isabs():
-                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
-                
+                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])                
         if bashIni.has_option('Tool Options','sBlenderPath'):
             dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
             if not dirs['BlenderPath'].isabs():
                 dirs['BlenderPath'] = dirs['app'].join(dirs['BlenderPath'])
-
         if bashIni.has_option('Tool Options','sGmaxPath'):
             dirs['GmaxPath'] = GPath(bashIni.get('Tool Options','sGmaxPath').strip())
             if not dirs['GmaxPath'].isabs():
                 dirs['GmaxPath'] = dirs['app'].join(dirs['GmaxPath'])
-
         if bashIni.has_option('Tool Options','sMaxPath'):
             dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
             if not dirs['MaxPath'].isabs():
-                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
-                
+                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])                
         if bashIni.has_option('Tool Options','sMayaPath'):
             dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
             if not dirs['MayaPath'].isabs():
-                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
-            
+                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])            
         if bashIni.has_option('Tool Options','sPhotoshopPath'):
             dirs['Photoshop'] = GPath(bashIni.get('Tool Options','sPhotoshopPath').strip())
             if not dirs['Photoshop'].isabs():
-                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])
-            
+                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])            
         if bashIni.has_option('Tool Options','sGIMP'):
             dirs['GIMP'] = GPath(bashIni.get('Tool Options','sGIMP').strip())
             if not dirs['GIMP'].isabs():
                 dirs['GIMP'] = dirs['app'].join(dirs['GIMP'])
-            
         if bashIni.has_option('Tool Options','sISOBL'):
             dirs['ISOBL'] = GPath(bashIni.get('Tool Options','sISOBL').strip())
             if not dirs['ISOBL'].isabs():
-                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])
-            
+                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])            
         if bashIni.has_option('Tool Options','sISRMG'):
             dirs['ISRMG'] = GPath(bashIni.get('Tool Options','sISRMG').strip())
             if not dirs['ISRMG'].isabs():
-                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])
-            
+                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])           
         if bashIni.has_option('Tool Options','sISRNG'):
             dirs['ISRNG'] = GPath(bashIni.get('Tool Options','sISRNG').strip())
             if not dirs['ISRNG'].isabs():
-                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])
-            
+                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])            
         if bashIni.has_option('Tool Options','sISRNPCG'):
             dirs['ISRNPCG'] = GPath(bashIni.get('Tool Options','sISRNPCG').strip())
             if not dirs['ISRNPCG'].isabs():
                 dirs['ISRNPCG'] = dirs['app'].join(dirs['ISRNPCG'])
+        if bashIni.has_option('Tool Options','sNPP'):
+            dirs['NPP'] = GPath(bashIni.get('Tool Options','sNPP').strip())
+            if not dirs['NPP'].isabs():
+                dirs['NPP'] = dirs['app'].join(dirs['NPP'])
+        if bashIni.has_option('Tool Options','sFraps'):
+            dirs['Fraps'] = GPath(bashIni.get('Tool Options','sFraps').strip())
+            if not dirs['Fraps'].isabs():
+                dirs['Fraps'] = dirs['app'].join(dirs['Fraps'])
+        if bashIni.has_option('Tool Options','sAudacity'):
+            dirs['Audacity'] = GPath(bashIni.get('Tool Options','sAudacity').strip())
+            if not dirs['Audacity'].isabs():
+                dirs['Audacity'] = dirs['app'].join(dirs['Audacity'])
+        if bashIni.has_option('Tool Options','sArtweaver'):
+            dirs['Artweaver'] = GPath(bashIni.get('Tool Options','sArtweaver').strip())
+            if not dirs['Artweaver'].isabs():
+                dirs['Artweaver'] = dirs['app'].join(dirs['Artweaver'])
+        if bashIni.has_option('Tool Options','sDDSConverter'):
+            dirs['DDSConverter'] = GPath(bashIni.get('Tool Options','sDDSConverter').strip())
+            if not dirs['DDSConverter'].isabs():
+                dirs['DDSConverter'] = dirs['app'].join(dirs['DDSConverter'])
+        if bashIni.has_option('Tool Options','sCustom1'):
+            dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
+            if not dirs['Custom1'].isabs():
+                dirs['Custom1'] = dirs['app'].join(dirs['Custom1'])
+        if bashIni.has_option('Tool Options','sCustom2'):
+            dirs['Custom2'] = GPath(bashIni.get('Tool Options','sCustom2').strip())
+            if not dirs['Custom2'].isabs():
+                dirs['Custom2'] = dirs['app'].join(dirs['Custom2'])
+        if bashIni.has_option('Tool Options','sCustom3'):
+            dirs['Custom3'] = GPath(bashIni.get('Tool Options','sCustom3').strip())
+            if not dirs['Custom3'].isabs():
+                dirs['Custom3'] = dirs['app'].join(dirs['Custom3'])
+        if bashIni.has_option('Tool Options','sCustom4'):
+            dirs['Custom4'] = GPath(bashIni.get('Tool Options','sCustom4').strip())
+            if not dirs['Custom4'].isabs():
+                dirs['Custom4'] = dirs['app'].join(dirs['Custom4'])
+        if bashIni.has_option('Tool Options','sPaintNET'):
+            dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
+            if not dirs['PaintNET'].isabs():
+                dirs['PaintNET'] = dirs['app'].join(dirs['PaintNET'])
             
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
@@ -19466,6 +19512,14 @@ def initDirs(personal='',localAppData=''):
     inisettings['keepLog'] = 0
     inisettings['logFile'] = dirs['app'].join('Mopy').join('bash.log')
     inisettings['enablewizard'] = 0
+    inisettings['showtexturetoollaunchers'] = 1
+    inisettings['showmodelingtoollaunchers'] = 1
+    inisettings['showaudiotoollaunchers'] = 1
+    inisettings['custom1txt'] = 'Not Set in INI'
+    inisettings['custom2txt'] = 'Not Set in INI'
+    inisettings['custom3txt'] = 'Not Set in INI'
+    inisettings['custom4txt'] = 'Not Set in INI'
+    #inisettings['show?toollaunchers'] = True
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
             inisettings['scriptFileExt'] = str(bashIni.get('Settings','sScriptFileExt').strip())
@@ -19475,8 +19529,22 @@ def initDirs(personal='',localAppData=''):
             inisettings['logFile'] = GPath(bashIni.get('Settings','sLogFile').strip())
             if not inisettings['logFile'].isabs():
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
-        if bashIni.has_option('Settings','iEnableWizard'):
-            inisettings['enablewizard'] = int(bashIni.get('Settings','iEnableWizard').strip())
+        if bashIni.has_option('Settings','bEnableWizard'):
+            inisettings['enablewizard'] = int(bashIni.get('Settings','bEnableWizard').strip())
+        if bashIni.has_option('Tool Options','bshowtexturetoollaunchers'):
+            inisettings['showtexturetoollaunchers'] = bashIni.get('Tool Options','bshowtexturetoollaunchers').strip()
+        if bashIni.has_option('Tool Options','bshowmodelingtoollaunchers'):
+            inisettings['showmodelingtoollaunchers'] = bashIni.get('Tool Options','bshowmodelingtoollaunchers').strip()
+        if bashIni.has_option('Tool Options','bshowaudiotoollaunchers'):
+            inisettings['showaudiotoollaunchers'] = bashIni.get('Tool Options','bshowaudiotoollaunchers').strip()
+        if bashIni.has_option('Tool Options','sCustom1txt'):
+            inisettings['Custom1txt'] = bashIni.get('Tool Options','sCustom1txt').strip()
+        if bashIni.has_option('Tool Options','sCustom2txt'):
+            inisettings['Custom2txt'] = bashIni.get('Tool Options','sCustom2txt').strip()
+        if bashIni.has_option('Tool Options','sCustom3txt'):
+            inisettings['Custom3txt'] = bashIni.get('Tool Options','sCustom3txt').strip()
+        if bashIni.has_option('Tool Options','sCustom4txt'):
+            inisettings['Custom4txt'] = bashIni.get('Tool Options','sCustom4txt').strip()
 
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
