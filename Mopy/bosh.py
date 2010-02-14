@@ -18882,7 +18882,6 @@ class RedguardNPCPatcher(MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-                break
         #--Log
         log.setHeader(_('===MAO Skeleton Setter'))
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
