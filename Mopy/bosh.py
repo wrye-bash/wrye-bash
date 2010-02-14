@@ -14170,7 +14170,7 @@ class CellImporter(ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner')
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name')
     defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -14182,6 +14182,7 @@ class CellImporter(ImportPatcher):
         self.isActive = bool(self.sourceMods)
         self.recAttrs = {
             'C.Climate': ('climate',),
+            'C.Name': ('full',),
             'C.Owner': ('ownership',),
             'C.Water': ('water','waterHeight'),
             'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
@@ -14192,6 +14193,7 @@ class CellImporter(ImportPatcher):
             }
         self.recFlags = {
             'C.Climate': 'behaveLikeExterior',
+            'C.Name': '',
             'C.Owner': 'publicPlace',
             'C.Water': 'hasWater',
             'C.Light': '',
@@ -14956,6 +14958,7 @@ class ImportScripts(ImportPatcher):
         self.srcClasses = set() #--Record classes actually provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
+        self.goodrecord = {}
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreWeap,MreActi,MreAlch,MreAppa,MreArmo,MreBook,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreFurn,MreIngr,MreKeym,MreLigh,MreMisc,MreNpc,MreQust,MreSgst,MreSlgm,):
@@ -14967,20 +14970,15 @@ class ImportScripts(ImportPatcher):
         if not self.isActive: return
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        loadFactory1 = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
         for index,srcMod in enumerate(self.sourceMods):
             if srcMod not in modInfos: continue
             self.masters = []
             srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile = ModFile(srcInfo,loadFactory1)
             self.masters = srcInfo.header.masters
-            print 'for esp %s the header info is:' % srcInfo
-            print srcInfo.header
-            if len(self.masters) > 1:
-                for master in self.masters:
-                    print '%s: next master is %s' %(srcInfo, master)
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14988,13 +14986,42 @@ class ImportScripts(ImportPatcher):
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    #for master in self.masters:
-                    #    
                     fid = mapper(record.fid)
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    for master in self.masters:
+                        print master
+                        masterInfo = modInfos[master]
+                        loadFactory2 = LoadFactory(False,*recAttrs_class.keys())
+                        masterFile = ModFile(masterInfo,loadFactory2)
+                        masterFile.load(True)
+                        masterFile.convertToLongFids(longTypes)
+                        if recClass.classType not in masterFile.tops: continue
+                        if recClass.classType == 'QUST': continue
+                        if record not in masterFile.tops[recClass.classType].getActiveRecords():
+                            print '%d not in %s' % (fid[1], master.s)
+                            continue
+                        #for record2 in masterFile.tops[recClass.classType].getActiveRecords():
+                            #print recClass.classType
+                            #if record2.fid == record.fid:
+                                #fid2 = mapper(record2.fid)
+                                #print fid2
+                            #    self.goodrecord[fid] = True
+                       # if fid in id_data:
+                       #     junk = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                        #   print 'tuple item 1:'
+                         #   print junk[0]
+                          #  print size %len(junk)
+                        #    print id_data[fid]
+                         #   if junk == id_data[fid]:
+                          #      self.goodrecord[fid] = False
+                           # else:
+                            #    self.goodrecord[fid] = False
+                            #continue # No need to keep checking this master for this record
             progress.plus()
+            print 15018
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
+        print 15021
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -15008,6 +15035,7 @@ class ImportScripts(ImportPatcher):
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
+        print '15033'
         if not self.isActive: return
         id_data = self.id_data
         modName = modFile.fileInfo.name
@@ -15022,6 +15050,10 @@ class ImportScripts(ImportPatcher):
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
+                if self.goodrecord[fid] == False:
+                    print 'record skipped'
+                    print record.fid
+                    continue
                 for attr,value in id_data[fid].iteritems():
                     if record.__getattribute__(attr) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
@@ -15614,131 +15646,6 @@ class NpcFacePatcher(ImportPatcher):
             log("* " +mod.s)
         log(_("\n=== Faces Patched: %d") % count)
 
-#------------------------------------------------------------------------------
-class NpcRedguardPatcher(Patcher):
-    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
-    group = _('Tweakers')
-    name = _('Redguard Patcher')
-    text = _("Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.")
-
-    #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod, 
-        but won't alter it."""
-        if not self.isActive: return
-        #modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        modFile.convertToLongFids(('NPC_'))
-        patchBlock = self.patchFile.NPC_
-        id_records = patchBlock.id_records
-        for record in modFile.NPC_.getActiveRecords():
-            #race = record.race
-            #if race in (0x000D43,): 
-            patchBlock.setRecord(record.getTypeCopy(mapper))
-                
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        race = {}
-        count = {}
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.NPC_.records:
-            #race = race[npc.fid]
-            #fgts_p = npc.fgts_p
-            #if race == 0x000D43 :
-            for attr in ('fgts_p',):
-                setattr(self,'fgts_p','00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00')
-                #fgts_p = '\x00'*4*50
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* %d Redquard NPCs Tweaked') % (sum(count.values()),))
-        for srcMod in sorted(count.keys()):
-            log('  * %3d %s' % (count[srcMod],srcMod))
-#------------------------------------------------------------------------------
-class NpcSkeletonChecker(Patcher):
-    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
-    group = _('Tweakers')
-    name = _('NPCSkeletonChecker')
-    text = _("Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.")
-
-    #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod, 
-        but won't alter it."""
-        if not self.isActive: return
-        #modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        modFile.convertToLongFids(('NPC_'))
-        patchBlock = self.patchFile.NPC_
-        id_records = patchBlock.id_records
-        for record in modFile.NPC_.getActiveRecords():
-            GetAttr = record.__getattribute__
-            race = record.race
-            model = record.model
-            if model.modPath != 'Characters\_male\SkeletonBeast.nif':
-                if (race in (0x3cdc,) or
-                    race in (0x5b54,)
-                    ):
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-            elif model.modPath == 'Characters\_male\SkeletonBeast.nif':
-                if race in (0x224fc,0x191c1,0x19204,0x00907,0x224fd,0x00d43,0x00019,0x223c8):
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-                
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        count = {}
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.NPC_.records:
-            race = record.race
-            model = record.model
-            if (model.modPath != 'Characters\_male\SkeletonBeast.nif' and
-                   model.modPath != 'Characters\_male\SkeletonBeast.NIF'
-                    ):
-                if (race == 0x3cdc or
-                    race == 0x5b54
-                    ):
-                    model.modPath = 'Characters\_male\SkeletonBeast.nif'
-                    model.modb_p = None #??
-                    model.modt_p = None #??
-            elif record.model.modPath == 'Characters\_male\SkeletonBeast.nif':
-                if race in (0x224fc,0x191c1,0x19204,0x00907,0x224fd,0x00d43,0x00019,0x223c8):
-                    model.modPath = 'Characters\_male\Skeleton.nif'
-                    model.modb_p = None #??
-                    model.modt_p = None #??             
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
-        for srcMod in sorted(count.keys()):
-            log('  * %3d %s' % (count[srcMod],srcMod))
 #------------------------------------------------------------------------------
 class RoadImporter(ImportPatcher):
     """Imports roads."""
@@ -18936,6 +18843,52 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             for srcMod in sorted(mod_npcsFixed):
                 log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
 #------------------------------------------------------------------------------
+class RedguardNPCPatcher(MultiTweakItem):
+    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Redguard FGTS Patcher"),
+            _('redguard blablabla'),
+            'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod, 
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.NPC_
+        for record in modFile.NPC_.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+                
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            if record.race[1] == 0x00d43:
+                record.fgts_p = '\x00'*200
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+                break
+        #--Log
+        log.setHeader(_('===MAO Skeleton Setter'))
+        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
 class MAONPCSkeletonPatcher(MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
 
@@ -19078,12 +19031,13 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class SkelTweaker(MultiTweaker):
-    """Sets NPC Skeletons or animations to better work with mods or avoid bugs."""
-    name = _('Set NPC Skeletons and animations.')
+    """Sets NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
+    name = _('NPC Skeletons, Animations, Etc.')
     text = _("Set NPC Skeletons and animations.")
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
+        RedguardNPCPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -19109,7 +19063,7 @@ class SkelTweaker(MultiTweaker):
             tweak.scanModFile(modFile,progress,self.patchFile)
 
     def buildPatch(self,log,progress):
-        """Applies individual clothes tweaks."""
+        """Applies individual tweaks."""
         if not self.isActive: return
         log.setHeader('= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
