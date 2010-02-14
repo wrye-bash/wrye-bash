@@ -18849,8 +18849,8 @@ class RedguardNPCPatcher(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_("Redguard FGTS Patcher"),
-            _('redguard blablabla'),
-            'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.',
+            _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
+            'RedguardFGTSPatcher',
             ('1.0',  '1.0'),
             )
 
