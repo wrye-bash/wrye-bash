@@ -13071,12 +13071,10 @@ class PCFaces:
             face.level = npc.acbs.level
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-            #deprint('level,baseSpell,fatigue:',face.level,face.baseSpell,face.fatigue)
         for attr in ('attributes','skills','health','unused2'):
             value = getattr(npc,attr)
             if value != None:
                 setattr(face,attr,value)
-                #deprint(attr,value)
         #--Iref >> fid
         getFid = saveFile.getFid
         face.spells = [getFid(x) for x in (npc.spells or [])]
@@ -13177,7 +13175,6 @@ class PCFaces:
         if changeRecord == None: return
         fid,recType,recFlags,version,data = changeRecord
         npc = SreNPC(recFlags,data)
-        #deprint(SreNPC.flags(recFlags).getTrueAttrs())
         if not npc.acbs: npc.acbs = npc.getDefault('acbs')
         npc.acbs.flags.female = face.gender
         npc.acbs.level = face.level
@@ -13196,7 +13193,6 @@ class PCFaces:
     def save_setPlayerFace(saveFile,face,flags=0L,morphFacts=None):
         """Write a pcFace to a save file."""
         flags = PCFaces.flags(flags)
-        #deprint(flags.getTrueAttrs())
         #--Update masters
         for fid in (face.race, face.eye, face.hair, face.iclass):
             if not fid: continue
@@ -13764,7 +13760,7 @@ class PatchFile(ModFile):
                 for patcher in sorted(self.patchers,key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,_("%s\n%s") % (modName.s,patcher.name))
-                    patcher.scanModFile(modFile,nullProgress)#was modFile,nullProgress
+                    patcher.scanModFile(modFile,nullProgress)
                 self.tes4.version = max(modFile.tes4.version, self.tes4.version)
             except:
                 print _("MERGE/SCAN ERROR:"),modName.s
@@ -14480,7 +14476,6 @@ class GraphicsPatcher(ImportPatcher):
             type = recClass.classType
             if type not in modFile.tops: continue
             type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
             for record in modFile.tops[type].records:
                 fid = record.fid
                 if fid not in id_data: continue
@@ -14592,7 +14587,6 @@ class KFFZPatcher(ImportPatcher):
             type = recClass.classType
             if type not in modFile.tops: continue
             type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
             for record in modFile.tops[type].records:
                 fid = record.fid
                 if fid not in id_data: continue
@@ -14704,7 +14698,6 @@ class DeathItemPatcher(ImportPatcher):
             type = recClass.classType
             if type not in modFile.tops: continue
             type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
             for record in modFile.tops[type].records:
                 fid = record.fid
                 if fid not in id_data: continue
@@ -14948,7 +14941,7 @@ class ImportScripts(ImportPatcher):
     text = _("Import Scripts on containers, plants, misc, weapons etc. from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Scripts'
+    autoKey = ('Scripts', 'Scripts-F')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14958,7 +14951,7 @@ class ImportScripts(ImportPatcher):
         self.srcClasses = set() #--Record classes actually provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
-        self.goodrecord = {}
+        self.masters = {}
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreWeap,MreActi,MreAlch,MreAppa,MreArmo,MreBook,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreFurn,MreIngr,MreKeym,MreLigh,MreMisc,MreNpc,MreQust,MreSgst,MreSlgm,):
@@ -14970,15 +14963,15 @@ class ImportScripts(ImportPatcher):
         if not self.isActive: return
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
-        loadFactory1 = LoadFactory(False,*recAttrs_class.keys())
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
         for index,srcMod in enumerate(self.sourceMods):
             if srcMod not in modInfos: continue
-            self.masters = []
             srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory1)
-            self.masters = srcInfo.header.masters
+            srcFile = ModFile(srcInfo,loadFactory)
+            bashTags = srcFile.fileInfo.getBashTags()
+            masters = self.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14987,41 +14980,15 @@ class ImportScripts(ImportPatcher):
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-                    for master in self.masters:
-                        print master
-                        masterInfo = modInfos[master]
-                        loadFactory2 = LoadFactory(False,*recAttrs_class.keys())
-                        masterFile = ModFile(masterInfo,loadFactory2)
-                        masterFile.load(True)
-                        masterFile.convertToLongFids(longTypes)
-                        if recClass.classType not in masterFile.tops: continue
-                        if recClass.classType == 'QUST': continue
-                        if record not in masterFile.tops[recClass.classType].getActiveRecords():
-                            print '%d not in %s' % (fid[1], master.s)
-                            continue
-                        #for record2 in masterFile.tops[recClass.classType].getActiveRecords():
-                            #print recClass.classType
-                            #if record2.fid == record.fid:
-                                #fid2 = mapper(record2.fid)
-                                #print fid2
-                            #    self.goodrecord[fid] = True
-                       # if fid in id_data:
-                       #     junk = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-                        #   print 'tuple item 1:'
-                         #   print junk[0]
-                          #  print size %len(junk)
-                        #    print id_data[fid]
-                         #   if junk == id_data[fid]:
-                          #      self.goodrecord[fid] = False
-                           # else:
-                            #    self.goodrecord[fid] = False
-                            #continue # No need to keep checking this master for this record
+                    masters[fid] = srcInfo.header.masters
+                    if 'Scripts-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
             progress.plus()
-            print 15018
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
-        print 15021
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -15035,7 +15002,6 @@ class ImportScripts(ImportPatcher):
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
-        print '15033'
         if not self.isActive: return
         id_data = self.id_data
         modName = modFile.fileInfo.name
@@ -15050,11 +15016,12 @@ class ImportScripts(ImportPatcher):
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
-                if self.goodrecord[fid] == False:
-                    print 'record skipped'
-                    print record.fid
-                    continue
                 for attr,value in id_data[fid].iteritems():
+                    if value == None: continue
+                    if modName in self.masters[fid]:
+                        if record.__getattribute__(attr) == value:
+                            value = None
+                            #print 'identical value (%s) in record (fid:0x%06X) to master record in %s, value skipped.' %(attr, fid[1], modName)
                     if record.__getattribute__(attr) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
@@ -15070,7 +15037,6 @@ class ImportScripts(ImportPatcher):
             type = recClass.classType
             if type not in modFile.tops: continue
             type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
             for record in modFile.tops[type].records:
                 fid = record.fid
                 if fid not in id_data: continue
@@ -15080,7 +15046,8 @@ class ImportScripts(ImportPatcher):
                 else:
                     continue
                 for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
+                    if value != None:
+                        record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
         log.setHeader('= '+self.__class__.name)
