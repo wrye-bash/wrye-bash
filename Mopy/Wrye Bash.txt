@@ -1820,9 +1820,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
         * Actors.Animations
 ========* Actors.
 ========* Actors.
+        * Redguard FGTS nuller
     * Changes:
 ========* Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record
         * Timescale tweaked
+        * Cell Names importer (C.Name) added to to Import Cells
 * Tool Launchers:
     * Artweaver
     * Audacity
