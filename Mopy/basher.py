@@ -1394,7 +1394,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads', 'Actors.Anims', 'Actors.DeathItem'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'Scripts-F', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads', 'Actors.Anims', 'Actors.DeathItem'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -3498,12 +3498,13 @@ class BashStatusBar(wx.StatusBar):
         statusBar = self
         self.SetFieldsCount(3)
         buttons = BashStatusBar.buttons
+        self.size = (int(bosh.inisettings['iconSize'])+3)
         self.buttons = []
         for link in buttons:
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
             if gButton: self.buttons.append(gButton)
-        self.SetStatusWidths([34*len(self.buttons),-1, 120])
-        self.SetSize((-1, 34))
+        self.SetStatusWidths([self.size*len(self.buttons),-1, 120])
+        self.SetSize((-1, self.size))
         self.GetParent().SendSizeEvent() 
         self.OnSize() #--Position buttons
         wx.EVT_SIZE(self,self.OnSize)
@@ -3516,7 +3517,7 @@ class BashStatusBar(wx.StatusBar):
         (xPos,yPos) = (rect.x+1,rect.y+1)
         for button in self.buttons:
             button.SetPosition((xPos,yPos))
-            xPos += 34
+            xPos += self.size
         if event: event.Skip()
 
     def SetText(self,text="",timeout=5):
@@ -8571,8 +8572,10 @@ class Mod_Scripts_Export(Link):
         defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
+        if not skip: return
         deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
             _('Remove Prefix from file names?'),'')
+        if not deprefix: return
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = balt.askDirectory(self.window,
@@ -8581,6 +8584,7 @@ class Mod_Scripts_Export(Link):
             for asDir,sDirs,sFiles in os.walk(defaultPath.s):
                 if not (sDirs or sFiles):
                     defaultPath.removedirs()
+        if not textDir: return
         #--Export
         #try:
         ScriptText = bosh.ScriptText()
@@ -8610,7 +8614,6 @@ class Mod_Scripts_Import(Link):
         if textDir == None:
             balt.showError(self.window,_('Source folder must be selected.'))
             return
-        changed = 0
         try:
             ScriptText = bosh.ScriptText()
             importedScripts=ScriptText.readFromText(textDir.s,fileInfo)
@@ -10449,11 +10452,11 @@ def InitImages():
     images['save.off'] = Image(r'images/save_off.png',wx.BITMAP_TYPE_PNG)
     #--Misc
     #images['oblivion'] = Image(r'images/oblivion.png',wx.BITMAP_TYPE_PNG)
-    images['help'] = Image(r'images/help.png',wx.BITMAP_TYPE_PNG)
+    images['help'] = Image(r'images/help'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--Tools
-    images['doc.on'] = Image(r'images/page_find.png',wx.BITMAP_TYPE_PNG)
-    images['bashmon'] = Image(r'images/group_gear.png',wx.BITMAP_TYPE_PNG)
-    images['modChecker'] = Image(r'images/table_error.png',wx.BITMAP_TYPE_PNG)
+    images['doc.on'] = Image(r'images/page_find'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['bashmon'] = Image(r'images/group_gear'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['modChecker'] = Image(r'images/table_error'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--ColorChecks
     images['checkbox.red.x'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
     images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
@@ -10482,148 +10485,148 @@ def InitStatusBar():
     BashStatusBar.buttons.append(
         Oblivion_Button(
             bosh.dirs['app'].join('Oblivion.exe'),
-            Image(r'images/oblivion.png'),
+            Image(r'images/oblivion'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Oblivion"),
             _("Launch Oblivion + OBSE"),
             ''))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
-            Image(r'images/tescs.png'),
+            Image(r'images/tescs'+bosh.inisettings['iconSize']+'.png'),
             _("Launch TESCS"),
             _("Launch TESCS + OBSE"),
             '-editor'))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['app'].join('OblivionModManager.exe'),
-            Image(r'images/database_connect.png'),
+            Image(r'images/database_connect'+bosh.inisettings['iconSize']+'.png'),
             _("Launch OBMM")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISOBL'],
-            Image(r'images/brick.png'),
+            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Oblivion Launcher"))) 
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISRMG'],
-            Image(r'images/brick.png'),
+            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Readme Generator"))) 
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISRNG'],
-            Image(r'images/brick.png'),
+            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Random Name Generator")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISRNPCG'],
-            Image(r'images/brick.png'),
+            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Random NPC Generator"))) 
     BashStatusBar.buttons.append(
         App_OblivionBookCreator(None,
-            Image(r'images/cog.png'),
+            Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Oblivion Book Creator")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['TES4FilesPath'],
-            Image(r'images/tes4files.png'),
+            Image(r'images/tes4files'+bosh.inisettings['iconSize']+'.png'),
             _("Launch TES4Files")))           
     BashStatusBar.buttons.append(
         App_Tes4Gecko(None,
-            Image(r'images/cog.png'),
+            Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Gecko")))
     BashStatusBar.buttons.append(
         App_Tes4View(
             (bosh.dirs['TES4EditPath'], '-view'),
-            Image(r'images/brick.png'),
+            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4View")))
     BashStatusBar.buttons.append(
         App_Tes4View(
             (bosh.dirs['TES4EditPath'], '-edit'), #in case using tes4view as main apppath
-            Image(r'images/brick_edit.png'),
+            Image(r'images/brick_edit'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Edit")))
     BashStatusBar.buttons.append(
         App_Tes4View(
             (bosh.dirs['TES4EditPath'], '-translate'),
-            Image(r'images/brick_error.png'),
+            Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Trans")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['TES4LodGenPath'],
-            Image(r'images/brick_go.png'),
+            Image(r'images/brick_go'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4LODGen")))
     BashStatusBar.buttons.append(
         App_BOSS(
             bosh.dirs['app'].join('Data\\BOSS.bat'),
-            Image(r'images/Boss.png'),
+            Image(r'images/Boss'+bosh.inisettings['iconSize']+'.png'),
             _("Launch BOSS")))
     if bosh.inisettings['showmodelingtoollaunchers']:
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['BlenderPath'],
-                Image(r'images/blender.png'),
+                Image(r'images/blender'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Blender")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['GmaxPath'],
-                Image(r'images/gmax.png'),
+                Image(r'images/gmax'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Gmax")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['MayaPath'],
-                Image(r'images/maya.png'),
+                Image(r'images/maya'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Maya")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['MaxPath'],
-                Image(r'images/max.png'),
+                Image(r'images/max'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch 3dsMax")))
     if bosh.inisettings['showmodelingtoollaunchers'] or bosh.inisettings['showtexturetoollaunchers']:
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['NifskopePath'],
-                Image(r'images/nifskope.png'),
+                Image(r'images/nifskope'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Nifskope")))
     if bosh.inisettings['showtexturetoollaunchers']:
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['GIMP'],
-                Image(r'images/gimp.png'),
+                Image(r'images/gimp'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch GIMP")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['Photoshop'],
-                Image(r'images/photoshop.png'),
+                Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Photoshop")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['Artweaver'],
-                Image(r'images/artweaver.png'),
+                Image(r'images/artweaver'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Artweaver")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['PaintNET'],
-                Image(r'images/paint.net.png'),
+                Image(r'images/paint.net'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Paint.NET")))
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['DDSConverter'],
-                Image(r'images/ddsconverter.png'),
+                Image(r'images/ddsconverter'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch DDSConverter")))
     if bosh.inisettings['showaudiotoollaunchers']:
         BashStatusBar.buttons.append(
             App_Button(
                 bosh.dirs['Audacity'],
-                Image(r'images/audacity.png'),
+                Image(r'images/audacity'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Audacity")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Fraps'],
-            Image(r'images/fraps.png'),
+            Image(r'images/fraps'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Fraps")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['NPP'],
-            Image(r'images/notepad++.png'),
+            Image(r'images/notepad++'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Notepad++")))
     BashStatusBar.buttons.append(
         App_Button(

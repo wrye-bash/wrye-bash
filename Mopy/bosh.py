@@ -19439,12 +19439,15 @@ def initDirs(personal='',localAppData=''):
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
     inisettings['custom4txt'] = 'Not Set in INI'
+    inisettings['iconSize'] = '16'
     #inisettings['show?toollaunchers'] = True
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
             inisettings['scriptFileExt'] = str(bashIni.get('Settings','sScriptFileExt').strip())
         if bashIni.has_option('Settings','iKeepLog'):
             inisettings['keepLog'] = int(bashIni.get('Settings','iKeepLog').strip())
+        if bashIni.has_option('Settings','iIconSize'):
+            inisettings['iconSize'] = str(bashIni.get('Settings','iIconSize').strip())
         if bashIni.has_option('Settings','sLogFile'):
             inisettings['logFile'] = GPath(bashIni.get('Settings','sLogFile').strip())
             if not inisettings['logFile'].isabs():
