@@ -1813,6 +1813,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 278 [??/02/2010] [PacificMorrowind, Haama, ?]
 * NoMerge tag now correctly makes mods not show up as mergeable in the main window
+* The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
 * New export/import options; Item Data, Prices
 * Bashed patch changes:
     * New patchers:

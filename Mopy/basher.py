@@ -7713,7 +7713,7 @@ class Mod_MarkMergeable(Link):
             if canMerge == True:
                 yes.append(fileName)
             else:
-                no.append("%s (%s)" % (fileName.s,canMerge))
+                no.append("%s:\n. %s" % (fileName.s,canMerge))
         message = ''
         if yes:
             message += _('=== Mergeable\n* ') + '\n* '.join(x.s for x in yes)

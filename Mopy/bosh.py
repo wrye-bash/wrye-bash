@@ -5109,7 +5109,7 @@ class ModFile:
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
         if not hasChanged: return
         fileName = self.fileInfo.name
-        if re.match(r'\s*[yY]',raw_input('\nSave changes to '+fileName.s+' [y/n]?: ')):
+        if re.match(r'\s*[yY]',raw_input('\nSave changes to '+fileName.s+' [y\n]?: ')):
             self.safeSave()
             print fileName.s,'saved.'
         else:
@@ -8029,11 +8029,6 @@ class ModInfos(FileInfos):
         for name in self.data:
             modInfo = self[name]
             size,canMerge = name_mergeInfo.get(name,(None,None))
-            # Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-            descTags = modInfo.getBashTagsDesc()
-            if descTags and 'NoMerge' in descTags: continue
-            bashTags = modInfo.getBashTags()
-            if bashTags and 'NoMerge' in bashTags: continue
             if size == modInfo.size:
                 if canMerge: self.mergeable.add(name)
             elif reEsmExt.search(name.s):
@@ -13617,36 +13612,48 @@ class PatchFile(ModFile):
     @staticmethod
     def modIsMergeable(modInfo,progress=None):
         """Returns True or error message indicating whether specified mod is mergeable."""
+        reasons = ''
         if reEsmExt.search(modInfo.name.s):
-            return _("Is esm.")
+            reasons += "    Is esm.\n."
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
-            return _("Is Bashed Patch.")
+            reasons += "    Is Bashed Patch.\n."
         #--Bsa?
         reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
         for file in modInfos.dir.list():
             if reBsa.match(file.s):
-                return _("Has BSA archive.")
+                reasons += "    Has BSA archive.\n."
+        #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+        try:
+            descTags = modInfo.getBashTagsDesc()
+            if descTags and 'NoMerge' in descTags: reasons += "    Has 'NoMerge' tag.\n."
+            bashTags = modInfo.getBashTags()
+            if bashTags and 'NoMerge' in bashTags and "Has 'NoMerge' tag" not in reasons: reasons += "    Has 'NoMerge' tag.\n."
+        except: merge = '?'
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
         try:
             modFile.load(True)
         except ModError, error:
-            return str(error)
+            reasons += '    ' + str(error) + '\n.'
         #--Skipped over types?
         if modFile.topsSkipped:
-            return _("Unsupported types: ") + ', '.join(sorted(modFile.topsSkipped))
+            reasons += "    Unsupported types: " + ', '.join(sorted(modFile.topsSkipped)) + '.\n.'
         #--Empty mod
         if not modFile.tops:
-            return _("Empty mod.")
+            reasons += "    Empty mod.\n."
         #--New record
         lenMasters = len(modFile.tes4.masters)
+        newblocks = []
         for type,block in modFile.tops.iteritems():
             for record in block.getActiveRecords():
                 if record.fid >> 24 >= lenMasters:
-                    return _("New record %08X in block %s.") % (record.fid,type)
+                    newblocks.append(type)
+                    break
+        if newblocks: reasons += "    New record(s) in block(s): " + ', '.join(sorted(newblocks)) + '.\n'
         #--Else
+        if reasons: return reasons
         return True
 
     #--Instance
@@ -14151,7 +14158,7 @@ class ImportPatcher(ListPatcher):
     group = _('Importers')
     scanOrder = 20
     editOrder = 20
-    self.masters = {}
+    masters = {}
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -15742,7 +15749,7 @@ class SoundPatcher(ImportPatcher):
     text = _("Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Sound'
+    autoKey = ('Sound','Sound-F')
     defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -15782,13 +15789,22 @@ class SoundPatcher(ImportPatcher):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
+            bashTags = srcFile.fileInfo.getBashTags()
+            masters = self.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.items():
+            for recClass,recAttrs in recAttrs_class.iteritems():
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    masters[fid] = srcInfo.header.masters
+                    if 'Sound-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -15820,6 +15836,11 @@ class SoundPatcher(ImportPatcher):
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].items():
+                    if value == None: continue
+                    if modName in self.masters[fid]:
+                        if record.__getattribute__(attr) == value:
+                            value = None
+                            #print 'identical value (%s) in record (fid:0x%06X) to master record in %s, value skipped.' %(attr, fid[1], modName)
                     if record.__getattribute__(attr) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
@@ -15845,7 +15866,8 @@ class SoundPatcher(ImportPatcher):
                 else:
                     continue
                 for attr,value in id_data[fid].items():
-                    record.__setattr__(attr,value)
+                    if value != None:
+                        record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
         log.setHeader('= '+self.__class__.name)
