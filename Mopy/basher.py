@@ -1394,7 +1394,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'Scripts-F', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads', 'Actors.Anims', 'Actors.DeathItem'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Graphics-F', 'Hair', 'IIM', 'Invent', 'NPC.Ai', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'Scripts-F', 'ScriptContents', 'ScriptContents-F', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M','R.Teeth','R.Mouth','Roads', 'Actors.Anims', 'Actors.DeathItem'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
