@@ -1817,15 +1817,16 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * New export/import options; Item Data, Prices
 * Bashed patch changes:
     * New patchers:
-        * Actors.Death Items
+        * Actors.DeathItems
         * Actors.Animations
 ========* Actors.
 ========* Actors.
         * Redguard FGTS nuller
+        * Cell Names importer (C.Name) (added to to Import Cells)
     * Changes:
-========* Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record
+        * Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record
+        * Import Graphics, Sound, ScriptContents also changed like Import Scripts.
         * Timescale tweaked
-        * Cell Names importer (C.Name) added to to Import Cells
 * Tool Launchers:
     * Artweaver
     * Audacity
