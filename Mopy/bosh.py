@@ -8075,7 +8075,7 @@ class ModInfos(FileInfos):
                 bashGroups.append(offGroup)
         deleted = added = 0
         #--Remove invalid group headers
-        for offGroup,mod in group_header.items():
+        for offGroup,mod in group_header.iteritems():
             if offGroup not in offGroup_mtime:
                 del group_header[offGroup]
                 self.delete(mod,False)
@@ -9892,7 +9892,7 @@ class Installer(object):
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for file,sizeCrc in dirty_sizeCrc.items():
+        for file,sizeCrc in dirty_sizeCrc.iteritems():
             sizeCrcDate = data_sizeCrcDate.get(file)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(file)
@@ -13614,21 +13614,21 @@ class PatchFile(ModFile):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
         if reEsmExt.search(modInfo.name.s):
-            reasons += "    Is esm.\n."
+            reasons += "\n.    Is esm."
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
-            reasons += "    Is Bashed Patch.\n."
+            reasons += "\n.    Is Bashed Patch."
         #--Bsa?
         reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
         for file in modInfos.dir.list():
             if reBsa.match(file.s):
-                reasons += "    Has BSA archive.\n."
+                reasons += "\n.    Has BSA archive."
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         try:
             descTags = modInfo.getBashTagsDesc()
-            if descTags and 'NoMerge' in descTags: reasons += "    Has 'NoMerge' tag.\n."
+            if descTags and 'NoMerge' in descTags: reasons += "\n.    Has 'NoMerge' tag."
             bashTags = modInfo.getBashTags()
-            if bashTags and 'NoMerge' in bashTags and "Has 'NoMerge' tag" not in reasons: reasons += "    Has 'NoMerge' tag.\n."
+            if bashTags and 'NoMerge' in bashTags and "Has 'NoMerge' tag" not in reasons: reasons += "\n.    Has 'NoMerge' tag."
         except: merge = '?'
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
@@ -13636,13 +13636,13 @@ class PatchFile(ModFile):
         try:
             modFile.load(True)
         except ModError, error:
-            reasons += '    ' + str(error) + '\n.'
+            reasons += '\n.    ' + str(error)+'.'
         #--Skipped over types?
         if modFile.topsSkipped:
-            reasons += "    Unsupported types: " + ', '.join(sorted(modFile.topsSkipped)) + '.\n.'
+            reasons += "\n.    Unsupported types: " + ', '.join(sorted(modFile.topsSkipped))+'.'
         #--Empty mod
         if not modFile.tops:
-            reasons += "    Empty mod.\n."
+            reasons += "\n.    Empty mod."
         #--New record
         lenMasters = len(modFile.tes4.masters)
         newblocks = []
@@ -13651,8 +13651,7 @@ class PatchFile(ModFile):
                 if record.fid >> 24 >= lenMasters:
                     newblocks.append(type)
                     break
-        if newblocks: reasons += "    New record(s) in block(s): " + ', '.join(sorted(newblocks)) + '.\n'
-        #--Else
+        if newblocks: reasons += "\n.    New record(s) in block(s): " + ', '.join(sorted(newblocks))+'.'
         if reasons: return reasons
         return True
 
@@ -14789,10 +14788,10 @@ class ImportFactions(ImportPatcher):
             progress.plus()
         #--Finish
         id_factions= self.id_factions
-        for type,aFid_factions in actorFactions.type_id_factions.items():
+        for type,aFid_factions in actorFactions.type_id_factions.iteritems():
             if type not in ('CREA','NPC_'): continue
             self.activeTypes.append(type)
-            for longid,factions in aFid_factions.items():
+            for longid,factions in aFid_factions.iteritems():
                 self.id_factions[longid] = factions
         self.isActive = bool(self.activeTypes)
 
@@ -15835,7 +15834,7 @@ class SoundPatcher(ImportPatcher):
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
-                for attr,value in id_data[fid].items():
+                for attr,value in id_data[fid].iteritems():
                     if value == None: continue
                     if modName in self.masters[fid]:
                         if record.__getattribute__(attr) == value:
@@ -15860,12 +15859,12 @@ class SoundPatcher(ImportPatcher):
             for record in modFile.tops[type].records:
                 fid = record.fid
                 if fid not in id_data: continue
-                for attr,value in id_data[fid].items():
+                for attr,value in id_data[fid].iteritems():
                     if record.__getattribute__(attr) != value:
                         break
                 else:
                     continue
-                for attr,value in id_data[fid].items():
+                for attr,value in id_data[fid].iteritems():
                     if value != None:
                         record.__setattr__(attr,value)
                 keep(fid)
