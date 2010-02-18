@@ -14151,6 +14151,7 @@ class ImportPatcher(ListPatcher):
     group = _('Importers')
     scanOrder = 20
     editOrder = 20
+    self.masters = {}
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -14380,7 +14381,7 @@ class GraphicsPatcher(ImportPatcher):
     text = _("Import graphics (models, icons, etc.) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Graphics'
+    autoKey = ('Graphics','Graphics-F')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14421,6 +14422,8 @@ class GraphicsPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            bashTags = srcFile.fileInfo.getBashTags()
+            masters = self.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14429,6 +14432,12 @@ class GraphicsPatcher(ImportPatcher):
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
+                    id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    masters[fid] = srcInfo.header.masters
+                    if 'Graphics-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14461,6 +14470,11 @@ class GraphicsPatcher(ImportPatcher):
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
+                    if value == None: continue
+                    if modName in self.masters[fid]:
+                        if record.__getattribute__(attr) == value:
+                            value = None
+                            #print 'identical value (%s) in record (fid:0x%06X) to master record in %s, value skipped.' %(attr, fid[1], modName)
                     if record.__getattribute__(attr) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
@@ -14485,7 +14499,8 @@ class GraphicsPatcher(ImportPatcher):
                 else:
                     continue
                 for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
+                    if value != None:
+                        record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
         log.setHeader('= '+self.__class__.name)
@@ -14532,6 +14547,7 @@ class KFFZPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            masters = self.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14540,6 +14556,12 @@ class KFFZPatcher(ImportPatcher):
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
+                    id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    masters[fid] = srcInfo.header.masters
+                    if 'Scripts-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14643,6 +14665,7 @@ class DeathItemPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            masters = self.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14651,6 +14674,12 @@ class DeathItemPatcher(ImportPatcher):
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
+                    id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    masters[fid] = srcInfo.header.masters
+                    if 'Scripts-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14951,7 +14980,7 @@ class ImportScripts(ImportPatcher):
         self.srcClasses = set() #--Record classes actually provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
-        self.masters = {}
+     #   self.masters = {}
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreWeap,MreActi,MreAlch,MreAppa,MreArmo,MreBook,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreFurn,MreIngr,MreKeym,MreLigh,MreMisc,MreNpc,MreQust,MreSgst,MreSlgm,):
@@ -15064,7 +15093,7 @@ class ImportScriptContents(ImportPatcher):
     text = _("Import the actual contents of scripts scripts.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'ScriptContents'
+    autoKey = ('ScriptContents','ScriptContents-F')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15108,6 +15137,8 @@ class ImportScriptContents(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            bashTags = srcFile.fileInfo.getBashTags()
+            masters = self.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -15116,7 +15147,12 @@ class ImportScriptContents(ImportPatcher):
                 self.srcClasses.add(recClass)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
+                    if fid in masters:
+                        if masters[fid] == ['None']: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    masters[fid] = srcInfo.header.masters
+                    if 'ScriptContents-F' in bashTags:
+                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -15148,6 +15184,11 @@ class ImportScriptContents(ImportPatcher):
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
+                    if value == None: continue
+                    if modName in self.masters[fid]:
+                        if record.__getattribute__(attr) == value:
+                            value = None
+                            #print 'identical value (%s) in record (fid:0x%06X) to master record in %s, value skipped.' %(attr, fid[1], modName)
                     if record.__getattribute__(attr) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
@@ -15173,7 +15214,8 @@ class ImportScriptContents(ImportPatcher):
                 else:
                     continue
                 for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
+                    if value != None:
+                        record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
         log.setHeader('= '+self.__class__.name)
