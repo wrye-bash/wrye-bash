@@ -3498,7 +3498,9 @@ class BashStatusBar(wx.StatusBar):
         statusBar = self
         self.SetFieldsCount(3)
         buttons = BashStatusBar.buttons
-        self.size = (int(bosh.inisettings['iconSize'])+3)
+        size = int(bosh.inisettings['iconSize'])
+        size += 4
+        self.size = size
         self.buttons = []
         for link in buttons:
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
