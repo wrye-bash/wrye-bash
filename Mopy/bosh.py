@@ -14816,7 +14816,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.aiPackages[:]
-                        print id_entries[record.fid]
         #--Source mod?
         if modName in self.srcMods:
             id_entries = {}
@@ -14850,13 +14849,12 @@ class NPCAIPackagePatcher(ImportPatcher):
         mod_count = {}
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
-                print record.full
                 changed = False
                 deltas = id_deltas.get(record.fid)
                 if not deltas: continue
-                removable = set(x for x in record.aiPackages)
                 for removeaiPackages,addEntries in reversed(deltas):
                     if removeaiPackages:
+                        removable = set(x for x in record.aiPackages)
                         #--Skip if some aiPackage to be removed have already been removed
                         if not removeaiPackages.issubset(removable): continue
                         record.aiPackages = [x for x in record.aiPackages if x not in removeaiPackages]
