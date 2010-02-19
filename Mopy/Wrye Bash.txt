@@ -1811,22 +1811,24 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 278 [??/02/2010] [PacificMorrowind, Haama, ?]
+=== 278 [??/02/2010] [PacificMorrowind, Haama, Lojack] (In Development)
 * NoMerge tag now correctly makes mods not show up as mergeable in the main window
 * The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
 * New export/import options; Item Data, Prices
+* INI Tweaks tab instead of Ini tweaks menu, showing status of the tweak etc. (contributed by Lojack)
 * Bashed patch changes:
     * New patchers:
         * Actors.DeathItems
         * Actors.Animations
-========* Actors.
+========* Actors.AIPackages
 ========* Actors.
         * Redguard FGTS nuller
         * Cell Names importer (C.Name) (added to to Import Cells)
     * Changes:
-        * Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record
-        * Import Graphics, Sound, ScriptContents also changed like Import Scripts.
+        * Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record. Also added Scripts-F tag to Import Scripts
+        * Import Graphics, Sound, ScriptContents also changed like Import Scripts, including x-F tags
         * Timescale tweaked
+* All items() calls changed to iteritems() since iteritems() is (slighty) faster.
 * Tool Launchers:
     * Artweaver
     * Audacity
@@ -1835,11 +1837,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Notepad++
     * Paint.NET
     * Custom 1, 2, 3, 4
-    * All icons resized to 32*32 (instead of 16*16)
+    * All icons now are in either 32*32 or 16*16 - defaults to 16*16, change if desired in the ini ofc.
     * Options to show/hide some of them added to the INI
-* NEW! Wizard based install system (contributed by: )
+* NEW! Wizard based install system (contributed by: Lojack)
 * Updated 7z dll & exe to latest version
-*
+* Various small fixes and code cleanups
     
 
 === 277 [01/08/2010] [PacificMorrowind, Haama, Badhair]
