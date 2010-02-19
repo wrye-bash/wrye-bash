@@ -14439,11 +14439,11 @@ class GraphicsPatcher(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'Graphics-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14563,11 +14563,11 @@ class KFFZPatcher(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'Scripts-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14681,11 +14681,11 @@ class DeathItemPatcher(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'Scripts-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -15141,11 +15141,11 @@ class ImportScripts(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'Scripts-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -15279,11 +15279,11 @@ class ImportScriptContents(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'ScriptContents-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -15924,11 +15924,11 @@ class SoundPatcher(ImportPatcher):
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in masters:
-                        if masters[fid] == ['None']: continue 
+                        if not masters[fid]: continue 
                     id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                     masters[fid] = srcInfo.header.masters
                     if 'Sound-F' in bashTags:
-                        masters[fid] = ['None'] # Sorta funky but to have it iterable later...
+                        masters[fid] = [] # Sorta funky but to have it iterable later...
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
