@@ -204,6 +204,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
 === Application Buttons
 * __Overview:__
   * Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory or in the directory specified in the bash.ini.
+  * You can also control if some of them show up or not through the bash.ini - by settings the sections for Modeling or texturing or audio tools to 0.
   * Tes4Gecko & Oblivon Book Creater will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory.
   * Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
   * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
@@ -229,6 +230,13 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Maya
   * Max
   * Photoshop
+  * Artweaver
+  * Audacity
+  * DDSConverter
+  * Fraps
+  * Notepad++
+  * Paint.NET
+  * 4 Custom buttons
 
 === Bash Option Buttons
 * OBSE
@@ -802,7 +810,8 @@ These are the commands found on context menu for mods...
 * __Note: Changes as of Bash v217__
   * Use of the command is now optional. (Previous to v217, Bash did not autoscan for mergeability.)
   * <code>Merge</code> [[#BashTags|Bash tag]] is no longer used. Instead Bash remembers internally whether a given mod is mergeable or not.
-  * The <code>NoMerge</code> will no longer prevent a mod from being marked as Mergeable. However, mods marked NoMerge will still be excluded from the Bashed Patch's MergePatches list.
+* __Note: Changes as of Bash v278__
+  * The <code>NoMerge</code> will prevent a mod from being marked as Mergeable, make the mod text be black and be excluded from the Bashed Patch's MergePatches list, however the NoMerge tag will be listed in the mark mergeable dialogue as the reason it is not mergeable.
 
 === Nvidia Fog Fix
 * Systems with Nvidia cards can suffer a black screen bug when the player enters interior cells where near fog, far fog and fog clipping distance are all equal to 0. To avoid this, this function scans the mod and sets near fog to 0.001 in problem cells.
@@ -957,10 +966,16 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 === Bash Tags
 * Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.
 * __{{A:Current Tags}}:__
+  * Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
+  * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
+  * Actors.Animations: Mod modifies Creature or NPC special Animations list ([[#|Import Actors]]).
+  * Actors.DeathItems: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
+  * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
   * Body-F: Mod modifies female body definition ([[#|Race Info]]).
   * Body-M: Mod modifies male body definition ([[#|Race Info]]).
   * C.Climate: Mod changes cell climate ([[#|Import Cells]]).
   * C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
+  * C.Name: Mod changes cell names ([[#|Import Cells]])
   * C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
   * Delev: Mod deletes items from ([[#|Leveled Lists]]).
@@ -1820,13 +1835,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * New patchers:
         * Actors.DeathItems
         * Actors.Animations
-========* Actors.AIPackages
-========* Actors.
+        * Actors.AIData
+        * Actors.AIPackages
+        * Actors.Stats
         * Redguard FGTS nuller
         * Cell Names importer (C.Name) (added to to Import Cells)
     * Changes:
-        * Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record. Also added Scripts-F tag to Import Scripts
-        * Import Graphics, Sound, ScriptContents also changed like Import Scripts, including x-F tags
+        * Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record for that particular importing mod.
+        * Import Graphics, Sound, ScriptContents, (Actors.X all built to follow that new system) also changed like Import Scripts (Import Inventory, Relations, Factions already doing a merge rather than straight import so don't need changing)
         * Timescale tweaked
 * All items() calls changed to iteritems() since iteritems() is (slighty) faster.
 * Tool Launchers:
@@ -1842,7 +1858,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * NEW! Wizard based install system (contributed by: Lojack)
 * Updated 7z dll & exe to latest version
 * Various small fixes and code cleanups
-    
+* A few memory usage optimizations when building the bashed patch
+* Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
+*     
 
 === 277 [01/08/2010] [PacificMorrowind, Haama, Badhair]
 * fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
