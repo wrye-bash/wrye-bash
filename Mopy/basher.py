@@ -1394,7 +1394,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Graphics-F', 'Hair', 'IIM', 'Invent', 'NPC.Stats', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'Scripts-F', 'ScriptContents', 'ScriptContents-F', 'Sound', 'Sound-F', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'Roads', 'Actors.Anims', 'Actors.DeathItem', 'Actors.AIPackages'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.Stats'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -3464,9 +3464,9 @@ class BashNotebook(wx.Notebook):
         iInstallers = self.GetPageCount()-1
         if settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list():
             self.AddPage(ReplacersPanel(self),_("Replacers"))
-        self.AddPage(INIPanel(self),_("INI Edits"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
+        self.AddPage(INIPanel(self),_("INI Edits"))
         #self.AddPage(BSAPanel(self),_("BSAs"))
         self.AddPage(SavePanel(self),_("Saves"))
         self.AddPage(ScreensPanel(self),_("Screenshots"))
@@ -3498,9 +3498,8 @@ class BashStatusBar(wx.StatusBar):
         statusBar = self
         self.SetFieldsCount(3)
         buttons = BashStatusBar.buttons
-        size = int(bosh.inisettings['iconSize'])
-        size += 4
-        self.size = size
+        self.size = int(bosh.inisettings['iconSize'])
+        self.size += 8
         self.buttons = []
         for link in buttons:
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
@@ -4897,9 +4896,13 @@ class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 
 class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
 
+class ActorStatsPatcher(bosh.ActorStatsPatcher,ListPatcher): pass
+
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 
 class ActorDeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
+
+class ActorAIDataPatcher(bosh.ActorAIDataPatcher,ListPatcher): pass
 
 class CellImporter(bosh.CellImporter,ListPatcher): pass
 
@@ -4968,7 +4971,9 @@ PatchDialog.patchers.extend((
     PatchMerger(),
     AlchemicalCatalogs(),
     ActorAnimPatcher(),
+    ActorAIDataPatcher(),
     ActorDeathItemPatcher(),
+    ActorStatsPatcher(),
     NPCAIPackagePatcher(),
     CoblExhaustion(),
     CellImporter(),
