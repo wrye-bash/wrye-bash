@@ -13962,7 +13962,7 @@ class ListPatcher(Patcher):
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    defaultItemCheck = True #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
     autoKey = None
@@ -14142,7 +14142,7 @@ class PatchMerger(ListPatcher):
     text = _("Merge patch mods into Bashed Patch.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Merge'
-    defaultItemCheck = True #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -14185,7 +14185,7 @@ class CellImporter(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name')
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14324,7 +14324,7 @@ class MapImporter(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('W.Maps',)
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15224,7 +15224,7 @@ class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _('Import Factions')
     text = _("Import factions from source mods/files.")
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoKey = 'Factions'
 
     #--Patch Phase ------------------------------------------------------------
@@ -15338,7 +15338,7 @@ class ImportRelations(ImportPatcher):
     """Import faction relations to factions."""
     name = _('Import Relations')
     text = _("Import relations from source mods/files.")
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoKey = 'Relations'
 
     #--Patch Phase ------------------------------------------------------------
@@ -15733,7 +15733,7 @@ class ImportInventory(ImportPatcher):
     name = _('Import Inventory')
     text = _("Merges changes to NPC, creature and container inventories.")
     autoKey = ('Invent','InventOnly')
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Patch Phase ------------------------------------------------------------
@@ -15862,7 +15862,7 @@ class ImportSpells(ImportPatcher):
     name = _('Import Spells')
     text = _("Merges changes to NPC, creature spell lists.")
     autoKey = ('Spells','spellsOnly')
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     siMode = True
 
     #--Patch Phase ------------------------------------------------------------
@@ -15990,7 +15990,7 @@ class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _('Import Names')
     text = _("Import names from source mods/files.")
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^Oblivion.esm$",re.I)
     autoKey = 'Names'
 
@@ -16165,7 +16165,7 @@ class RoadImporter(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Roads'
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -16245,7 +16245,7 @@ class SoundPatcher(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Sound'
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -16392,7 +16392,7 @@ class StatsPatcher(ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _('Import Stats')
     text = _("Import stats from any pickupable items from source mods/files.")
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Stats'
 
@@ -16504,7 +16504,7 @@ class SpellsPatcher(ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _('Import Spell Stats')
     text = _("Import stats from any spells from source mods/files.")
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Spells'
 
@@ -18572,7 +18572,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
     name = _('Cobl Exhaustion')
     text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
     autoKey = 'Exhaust'
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -20011,6 +20011,7 @@ def initDirs(personal='',localAppData=''):
     inisettings['custom3txt'] = 'Not Set in INI'
     inisettings['custom4txt'] = 'Not Set in INI'
     inisettings['iconSize'] = '16'
+    inisettings['AutoItemCheck'] = False
     #inisettings['show?toollaunchers'] = True
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
@@ -20025,6 +20026,8 @@ def initDirs(personal='',localAppData=''):
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
         if bashIni.has_option('Settings','bEnableWizard'):
             inisettings['enablewizard'] = int(bashIni.get('Settings','bEnableWizard').strip())
+        if bashIni.has_option('Settings','sAutoItemCheck'):
+            inisettings['AutoItemCheck'] = bashIni.get('Settings','sAutoItemCheck').strip()
         if bashIni.has_option('Tool Options','bshowtexturetoollaunchers'):
             inisettings['showtexturetoollaunchers'] = bashIni.get('Tool Options','bshowtexturetoollaunchers').strip()
         if bashIni.has_option('Tool Options','bshowmodelingtoollaunchers'):
