@@ -1860,7 +1860,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Various small fixes and code cleanups
 * A few memory usage optimizations when building the bashed patch
 * Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
-*     
+* A new ini setting to determine whether or not to autocheck new items in the bashed patch dialogue (previously was determined per patcher in the code). 
 
 === 277 [01/08/2010] [PacificMorrowind, Haama, Badhair]
 * fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
