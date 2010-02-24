@@ -1,0 +1,2048 @@
+\ Taglist for Wrye Bash; derived from BOSS Masterlist revision 677.
+\ Leading symbol code:
+\
+\ \ A silent comment - will be ignored by the program.
+\ % A Bashed Patch suggestion for the mod above.
+
+Qarls_Harvest.esm
+% {{BASH:Scripts}} and no need for OOO patch.
+Oscuro's_Oblivion_Overhaul.esm
+% {{BASH:Invent,Scripts,Stats,Relations}}
+Mart's Monster Mod.esm
+% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+SoVvM.esm
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Chocolate Elves.esm
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+p2p'sAshDraconian.esm
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Skillbookssave.esp
+% {{BASH:Scripts}}
+? If not using Wrye Bash load this later (though then it will override somethings)
+OBSE Save Skill Books For Later DV.esp
+% {{BASH:Scripts}}
+? If not using Wrye Bash load this later (though then it will override somethings)
+DBBAM.esp
+Book Jackets Oblivion - SSBFL.esp
+? don't use togeter with 'Save Skill Books for Later' as this version includes it.
+% {{BASH:Graphics,Scripts}}
+on - BP - SSBFL.esp
+% {{BASH:Graphics,Scripts}}
+!Oblivion_PL.esp
+% {{BASH:Names}}
+\EndGroup\\
+
+xeoex.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+TNR - THE REDGUARDS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE DUNMER.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE IMPERIALS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE BRETONS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE ALTMER.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE BOSMER.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE NORDS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE ORCS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE KHAJIIT.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - THE ARGONIANS.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - all.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR- All Races.esp
+? Not need if use Cobl Races TNR.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR ALL RACES FINAL.esp
+? Not need if use Cobl Races TNR.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - ALL RACES FINAL.esp
+? Not need if use Cobl Races TNR.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR ALL RACES FINAL Vwalk.esp
+TNR - All Races for OOO.esp
+? Use this instead TNR ALL RACES esps for OOO
+? Not need if use Cobl Races TNR.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - ShiveringIsles.esp
+? Not need if use Cobl Races TNR SI.esp
+% {{BASH:NpcFaces,Invent,NoMerge}} and deactivate.
+TNR - ShiveringIsles no helms.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TNR - ShiveringIsles no helms Vwalk.esp
+Tamriel NPCs Revamped.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Oblivion_SI Vwalk Full TNR.esp
+TweakedGenericFaces.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+TweakedGenericFaces-LITE.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Better-Horse-Eyes.esp
+% {{BASH:Graphics,NoMerge}} and deactivate.
+Younger Hotter NPC's v1.0.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Younger Hotter NPC's v1.0 Vwalk.esp
+Beautiful_Women_NiceOnly.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Beautiful_Women_DB_Addon.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Beautiful_Women_SI.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Beautiful_Women_Vampires.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Beautiful_Women_Vampires_50.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_Addon.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_DB_Addon.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_SI.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_Vampires.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_Vampires_50.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Handsome_Gents_Bonus.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+emperorface.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+Absolutely_Sexy_MarketDistrict.esp
+% {{BASH:NpcFaces,Invent,NoMerge}} and deactivate.
+YoungerNPCs.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+LD_Patrick_Stewart_Sean_Bean.esp
+% {{BASH:NpcFaces}}
+Colourwheels Sexy Female NPCs.esp
+% {{BASH:NpcFaces}}
+Colourwheels Sexy Female NPCs Vwalk.esp
+Specular_Fix_1.1.esp
+% {{BASH:Graphics}}
+
+AdventurersItemMod.esp
+? If not using Bash this must be loaded after UOP but then you will lose a lot of fixes from UOP.
+% {{BASH:Invent,Relations}} needed so that it will work before UOP and still have the inventory changes from this.
+Self-Preservation v1.0.esp
+? If not using Bash this must be loaded after UOP/OOO/MMM/FCOM/any NPC editing mod but you'll lose their NPC edits
+% {{BASH:Scripts}}
+Traduccion Mejorada Oblivion Clan DLAN.esp
+% {{BASH:Names}} or without Bash load it later.
+Unofficial Oblivion Patch.esp
+? Recommend installing UOP hotfix for additional fixes: http://www.tesnexus.com/downloads/file.php?id=27710
+% {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Scripts,Stats,Relations}} and remove the C.Water tag (only exist in older version).
+Unofficial Oblivion Patch DV.esp
+% {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Stats,Relations}} and remove the C.Water tag.
+Correctif.esp
+Unofficial Oblivion Patch-mobs.esp
+% {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Stats,Relations}} and remove the C.Water tag.
+Unofficial Oblivion Patch-mobs.esp
+% {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Stats,Relations}} and remove the C.Water tag.
+Obl-IM.esp
+%{{BASH:Names,Stats,Relev,Delev,Invent,Sound,Factions,Graphics}}
+Traduccion Mejorada S.I.esp
+% {{BASH:Names}} or without Bash load it later.
+Unofficial Shivering Isles Patch.esp
+? Remember to use the 'MOBS' version when using Francesco's and FCOM.
+? Newest MOBS and non-MOBS versions have the same name.
+% {{BASH:C.Light,C.Owner,Invent,Names,Relations,Stats,Delev}}
+MOBS.esp
+% {{BASH:Stats}}
+MOBS SI.esp
+% {{BASH:Stats}}
+>Francesco's Dark Seducer Weapons Patch.esp
+>% {{BASH:Delev, Relev}}
+>FranDarkSeducerWeapFix.esp
+>% {{BASH:Delev, Relev}}
+>Fran Armor Add-on.esp
+>% {{BASH:Invent}}
+OMOBS_FRAN.esp
+% {{BASH:Stats}}
+Atmospheric Loading Screens.esp
+% {{BASH:Graphics}}
+? Move after Race Balancing Project if using that.
+Atmospheric Loading Screens - Original Text.esp
+% {{BASH:Graphics}}
+? Move after Race Balancing Project if using that.
+Atmospheric Loading Screens - Random Quotes.esp
+% {{BASH:Graphics}}
+Loading Screens.esp
+% {{BASH:Graphics,NoMerge}}
+LoadingScreens.esp
+% {{BASH:Graphics,NoMerge}}
+LoadingScreensSI.esp
+% {{BASH:Graphics,NoMerge}}
+Loading Screens - Vanilla No Text.esp
+% {{BASH:Graphics,NoMerge}}
+Natural Selection.esp
+BlackLoadNoTip.esp
+% {{BASH:Graphics}}
+Zira's Horse Theme Loadscreens.esp
+% {{BASH:Graphics}}
+Natural Interiors.esp
+% {{BASH:C.Climate}}
+SnakeLightningSpeed.esp
+% {{BASH:Graphics}}
+archrobe.esp
+% {{BASH:Graphics}}
+Ayleid Loot EXtension.esp
+% {{BASH:Invent}}
+Book Jackets Oblivion.esp
+% {{BASH:Graphics}} and deactivate.
+Book Jackets Oblivion - BP.esp
+% {{BASH:Graphics}} and deactivate.
+OBG - Bchermod - Bilder - BP.esp
+% {{BASH:Graphics}}
+bgShaderStandAloneEV.esp
+% {{BASH:Graphics}}
+? Requires Wrye Bash if using spell mods.
+Bosmer Meat Mandate.esp
+% {{BASH:Invent}}
+BPMerchantStorage.esp
+% {{BASH:Invent}}
+Cobl Bookjackets.esp
+% {{BASH:Graphics}}
+Complete Names.esp
+% {{BASH:Names}}
+Rational Names, 2.esp
+% {{BASH:Names}}
+
+CNRP Brumav02.esp
+% {{BASH:Invent}}
+? With FCOM/OOO use 'CNRP Bruma4OOO.esp' instead.
+CNRP Bruma4OOO.esp
+% {{BASH:Invent}}
+CNRP Cheydinhal.esp
+% {{BASH:Invent}}
+? With FCOM/OOO use 'CNRP Cheydinhall4OOO.esp' instead.
+CNRP Cheydinhal4OOO.esp
+% {{BASH:Invent}}
+CNRP Chorrol.esp
+% {{BASH:Invent}}
+? With FCOM/OOO use 'CNRP Chorrol4OOO.esp' instead.
+CNRP Chorrol4OOO.esp
+% {{BASH:Invent}}
+CNRP FightersGuild.esp
+? With FCOM/OOO use 'CNRP FightersGuild4OOO.esp' instead.
+% {{BASH:Invent}}
+CNRP FightersGuild4OOO.esp
+% {{BASH:Invent}}
+CNRP DB.esp
+% {{BASH:Invent}}
+? With FCOM/OOO use 'CNPR DB for OOO.esp' instead.
+CNPR DB for OOO.esp
+% {{BASH:Invent}}
+/looks like a mispelling but listed on the mod page as such so maybe?
+CNRP DB for OOO.esp
+% {{BASH:Invent}}
+CNRP FB for OOO.esp
+% {{BASH:Invent}}
+
+SNR Fighter Guild UFF.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Fighter Guild.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Mage Guild UFF.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Mage Guild.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Citizens UFF.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Citizens.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Villains UFF.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Villains.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Guards.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Thieves Guild UFF.esp[
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Thieves Guild.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Dark brotherhood.esp
+% {{BASH:Hair,Eyes,Invent}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Dremorae UFF.esp
+% {{BASH:Hair,Eyes,Invent,Body-F,Voice-F}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Dremorae.esp
+% {{BASH:Hair,Eyes,Invent,Body-F,Voice-F}}
+? Make sure to install the additional mods (listed in the readme).
+SNR Crowded Roads UFF.esp
+? Make sure to install the additional mods (listed in the readme).
+SNR Crowded Roads 2.1.esp
+? Make sure to install the additional mods (listed in the readme).
+CM_Better Wine.esp
+% {{BASH:Graphics}} and deactivated
+Cryptic Festive Ayleid Dining Set.esp
+% {{BASH:Names,Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? remove unnecessary cell edit to aleswell dummy cell to make mergeable into bashed patch.
+? Only use one Cryptic's X X X Dining set esp
+Cryptic Frosted Ayleid Dining Set.esp
+% {{BASH:Names, Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? Only use one Cryptic's X X X Dining set esp
+Cryptic Blue Blood Ayleid Dining Set.esp
+% {{BASH:Names, Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? Only use one Cryptic's X X X Dining set esp
+Cryptic Lake View Ayleid Dining Set.esp
+% {{BASH:Names, Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? Only use one Cryptic's X X X Dining set esp
+Cryptic Snowy Oak Ayleid Dining Set.esp
+% {{BASH:Names, Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? Only use one Cryptic's X X X Dining set esp
+Cryptic White Rose Ayleid Dining Set.esp
+% {{BASH:Names, Graphics}}
+? also Bash tag Stats if you want the values from this to overide overhaul values (ie. OOO)
+? remove unnecessary cell edit to testing hall to make mergeable into bashed patch.
+? Only use one Cryptic's X X X Dining set esp
+Cryptic's Buyable Ayleid Dining Sets.esp
+% {{BASH:Invent}}
+? can be used with ONE of Cryptic's XXX Dining set.esp
+Buyable Ayldeid Dishes.esp
+% {{BASH:Invent}}
+? Don't use with Cryptic's Buyable Ayleid Dining Sets.esp
+Cyrodilic Brandy.esp
+% {{BASH:Graphics}} and deactivate.
+ChallangingThieveryFull.esp
+% {{BASH:Invent}}
+? Only use one ChallangingThievery*.esp.
+ChallangingThieveryNoHouseAdditions.esp
+% {{BASH:Invent}}
+? Only use one ChallangingThievery*.esp.
+Oblivion_Deutsch_v3_1.esp
+% {{BASH:Names}}
+FrbitPotionReplacer.esp
+% {{BASH:Graphics,Names}}
+Grand Potions.esp
+? May need Wrye Bashed Patch to work with overhaul mods.
+% {{BASH:Delev,Relev}} ??? Untested.
+Lyn-StoriesFromTheSeaMod.esp
+% {{BASH:Invent}}
+New Potions.esp
+%{{BASH:Graphics,NoMerge}}
+RealitySpectre'sBetterPotions.esp
+%{{Bash:Graphics}}, if not using Wrye Bash this may have to be moved down after any overhauls to take proper effect.
+REBetterLCB.esp
+%{{Bash:Graphics}} and deactivate.
+Sexual_SpiderDaedra.esp
+% {{BASH:Graphics}} and deactivate.
+? Obselete get Oblivion Sexualized Monsters.esm and OSM-All Genders.esp instead.
+OSM-All Genders.esp
+ % {{BASH:Graphics,Invent}} and deactivate. This is just an educated guess - needs confirming by someone who uses this.
+ Oblivion Sexualized Monsters-exclu TRM.esm
+  % {{BASH:Graphics,Invent}} and deactivate. This is just an educated guess - needs confirming by someone who uses this.
+Shadow's Merged Value Fixesv1.1.esp
+Shads Coffee.esp
+Shads Hunting & Fauna.esp
+? MMM users are probably better to use MMM Farm Animals plugin.
+% {{BASH:Invent}}
+SPARTAN VIs Diverse City Guards v1 2.esp
+% {{BASH:Invent}}
+Guard Torches.esp
+% {{BASH:Invent}}
+Teleport Arrows.esp
+%{{BASH:Invent}}
+VA_BetterGold.esp
+% {{BASH:Graphics}}
+VAs Better Gold with no Menu Icon.esp
+% {{BASH:Graphics}}
+Vampire Alchemy V1.1.esp
+% {{BASH:Invent}} or you really won't get much of the effects of this if you use any overhauls.
+wd purse of wonders.esp
+% {{BASH:Scripts}}
+C&C - The Blackwood Company.esp
+% {{BASH:C.Owner,Relations}}
+Lair_mobs.esp
+% {{BASH:Stats}}
+Mehrunes_mobs.esp
+% {{BASH:Stats}}
+DLCSpellTomes.esp
+% {{BASH:Relev}}
+DLCSpellTomes - Unofficial Patch.esp
+? Not compatible with 'CDM-CGO Compatibility plugins'.
+Correctif SpellTomes.esp
+Book Jackets DLC.esp
+% {{BASH:Graphics,NoMerge}} and deactivate.
+GrimbotsSpellTomes.esp
+% {{BASH:Graphics}} and deactivate.
+EyeCandy Compilation.esp
+% {{BASH:Graphics,NpcFaces,Hair,Eyes}}
+Bab.esp
+% {{BASH:Graphics}}
+MaleBodyReplacerV3.esp
+% {{BASH:Body-M,Graphics}}
+Male Body Replacer v 3.esp
+% {{BASH:Body-M,Graphics}}
+MaleBodyReplacerV4.esp
+% {{BASH:Body-M,Graphics}}
+Male Body Replacer.esp
+% {{BASH:Body-M,Graphics}}
+MaleBodyReplacer.esp
+% {{BASH:Body-M,Graphics}}
+NordFemaleMuscles.esp
+% {{BASH:Body-F,Graphics}}
+EVE_StockEquipmentReplacer.esp
+% {{Bash:Graphics}}
+? For Vanilla, do not use with OOO/MMM/FCOM, use that version instead.
+HGEC_special_armor_repl.esp
+% {{Bash:Graphics}}
+Bonemold_Helmet.esp
+% {{BASH:NoMerge}} when using 'Unoffical Fran's Armor' mod ('Fran Armor Add-on.esp').
+? Deactivate or delete this ESP file when using 'Unofficial Fran's Armor' (mesh and texture files are required, however).
+Cryos Ordinator Lite.esp
+% {{BASH:NoMerge}} when using 'Unoffical Fran's Armor' mod ('Fran Armor Add-on.esp').
+? Deactivate or delete this ESP file when using 'Unofficial Fran's Armor' (mesh and texture files are required, however).
+01_SenTinel's Katanas.esp
+% {{BASH:Invent}}
+AC Stock Armor.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Akavirdownloadpack1.1.esp
+% {{BASH:Invent}}
+ArenaEyeCandyArmor.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Armblade.esp
+% {{BASH:Invent}}
+armored coats.esp
+% {{BASH:Invent}}
+ArmorOfTheWhiteFox.esp
+% {{BASH:Invent}}
+AyleidGlass.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
+Bamboo Armor.esp
+% {{BASH:Invent}}
+Battle_Tattoos_v1.esp
+% {{BASH:Invent}}
+BlackGlovesEng.esp
+% {{BASH:Invent}}
+? Only Use one BlackGlovesX.esp, this one does NPC changes
+BlackGlovesEng_noNPCchanges.esp
+% {{BASH:Invent}}
+? Only Use one BlackGlovesX.esp, this one does not do any NPC changes
+BlackGlovesRus.esp
+% {{BASH:Invent}}
+BladeofWoe.esp
+% {{BASH:Graphics}}
+javbs_mod.esp
+% {{BASH:Graphics,Invent}}
+Blades Ceremonial Armour.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Brigand's Gear.esp
+% {{BASH:Invent}}
+ClothGloves.esp
+% {{BASH:Invent}}
+CSR - Fine Iron.esp
+% {{BASH:Graphics}}
+CSR - Golden Saint.esp
+% {{BASH:Graphics}}
+crusadercg.esp
+% {{BASH:Invent}}
+daedric sky armor.esp
+% {{BASH:Invent}}
+Dark BrotherHood Hood Replacer V1.2.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+Dark Crusader Armor.esp
+% {{BASH:Invent}}
+Darkgreen Glass Armour.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+DarkLeatherArmor.esp
+% {{BASH:Invent}}
+Dark Mithril Armour.esp
+% {{BASH:Invent}}
+dwr.esp
+% {{BASH:Invent}}
+dragon weapons.esp
+% {{BASH:Invent}}
+doofdillas_potions_recolored_unsorted_v0_2_1.esp
+% {{BASH:Graphics,Names}}
+? Old, update to version 0.3.1+.
+doofdillas_potions_recolored_sorted_v0_3_1.esp
+% {{BASH:Graphics,Names}}
+Emperor's Heavy War Armor.esp
+% {{BASH:Invent}}
+FalxMod.esp
+% {{BASH:Invent}}
+Fantasy Mod.esp
+% {{BASH:Hair,Eyes}}
+FineWeapons.esp
+% {{BASH:Graphics,NoMerge}}
+Garak's Staff Replacer Artefacts.esp
+% {{BASH:Graphics}}
+Garak's Staff Replacer Blood&Lightning.esp
+% {{BASH:Graphics}}
+Garak's Staff Replacer Fire&Ice.esp
+% {{BASH:Graphics}}
+Hemingweys NPC Capes.esp
+% {{BASH:Invent}}
+HiddenSkulls.esp
+% {{BASH:Invent}}
+JCapesBonus.esp
+% {{BASH:Invent}}
+JG Elven.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+LootableLichHelm_Lt.esp
+% {{BASH:Invent}}
+LootableLichHelm_Hvy.esp
+% {{BASH:Invent}}
+LSBSkullWeapons.1.esp
+% {{BASH:Invent}}
+M&BAxes.esp
+% {{BASH:Invent}}
+? make sure to load an overhaul or something after or manually rename the cells that this edits.
+M&BShields.esp
+% {{BASH:Invent}}
+? make sure to load an overhaul or something after or manually rename the cells that this edits.
+MandBSwords.esp
+% {{BASH:Invent}}
+Obsidian armor.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+Oddbasket Glass Replace NoEnch.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+Oddbasket Glass Replace.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+Oddbasket Glass Replace NoEnch ALT.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+Oddbasket Glass Replace ALT.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (e.g OOO).
+PinkGlassArmor.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
+RTFemaleReplacerV12.esp
+% {{BASH:Graphics}} - De-activate
+Saint Hiryu's Artifacts.esp
+% {{BASH:Invent}}
+Shrouded Armor X.esp
+% {{BASH:Graphics}}
+Sin's Expanded Light Armor Kit [Chest].esp
+? Not compatible with OOO - armors already included - so deactivate when using OOO.
+% {{BASH:Invent}}
+talon.esp
+% {{BASH:Invent}}
+The Little Weapon Pack OB.esp
+% {{BASH:Invent}}
+The SilverDragonArmorQuest.esp
+% {{BASH:Invent}}
+mz_Shields.esp
+% {{BASH:Graphics}} and deactivate when using overhaul mods.
+mz_Shields_SI.esp
+% {{BASH:Graphics,NoMerge}} and deactivate when using overhaul mods.
+RealSwords - Argonian HI-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Argonian HI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Argonian LO-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Argonian LO.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Bosmer HI-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Bosmer HI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Bosmer LO.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Bosmer LO-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Breton LO-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Breton LO.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Breton HI-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Breton HI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Goblin.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Combined.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Khajiit HI-NPC v1.3.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Khajiit LO-NPC v1.3.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Khajiit LO v1.3.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Khajiit HI v1.3.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Nord HI-NPC SI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord HI-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord HI-SI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord HI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord LO-NPC SI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord LO-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord LO-SI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Nord LO.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Orc HI_NPC v1.0.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Orc HI v1.0.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Orc LO v1.0.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Orc LO-NPC v1.0.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+
+RealSwords - Redguard HI-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Redguard LO-NPC.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Redguard HI.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+RealSwords - Redguard LO.esp
+* Delete. Use FCOM_RealSwords instead.
+? Requires Wrye Bash for compatibility with overhaul mods like OOO/MMM/Fran's.
+% {{BASH:Invent}} if using overhaul mods (except FCOM).
+StockClothingArmor-forExnems.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+StockClothingArmorBBBHGEC_Standard_ECupLBotPPN.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+LC-Compilation-Exnem.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+New Exnem Compatible Armors.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+DMAC Armor.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+DMRA Stock Armor Skimpy.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+DMRA Stock Clothing Skimpy.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+DMRA Stock Robe Skimpy Replacer.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+HGEC Glass Replacement.esp
+% {{BASH:Graphics,NoMerge}} if using overhaul mods.
+Babarized DiverseImperialArmor.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized CompleteMagePack.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized GlassArmorPack.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized AleanneGlass.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized Loths.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized Loths2.esp
+% {{BASH:Graphics}} if using overhaul mods.
+Babarized RegionalLegionSoldiers.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_Armor_Base.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_Clothing_Base.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_FantasyFigures_Clothing_Base.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_FantasyFigures_Clothing_SI.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_Clothing_SI.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_Armor_OOO.esp
+% {{BASH:Graphics}}
+TFF_FantasyFigures_Armour_RealGlass.esp
+% {{BASH:Graphics}} if using overhaul mods.
+TFF_FantasyFigures_Armour_Fantasy.esp
+% {{BASH:Graphics}} if using overhaul mods.
+UFF Amazon Armor.esp
+% {{BASH:Graphics}} if using overhaul mods.
+StockClothingArmorHGECFighterD.esp
+% {{BASH:Graphics}}
+HGEC_Rogue01.esp
+% {{BASH:Graphics}}
+HGEC_AmazonArmor.esp
+% {{BASH:Graphics}}
+Armamentium female.esp
+% {{BASH:Graphics,NoMerge}} and deactivate
+Roberts Armamentium female.esp
+% {{BASH:Graphics}}
+Imperial Armor Replace.esp
+% {{BASH:Graphics}}
+Imperial_Palace_Armor-2474.esp
+% {{BASH:Graphics}}
+Chrome Amazon Armor.esp
+% {{BASH:Grpahics}}
+Slof's Brighter Arena Raiments.esp
+% {{BASH:Graphics}}
+Colourwheels Sexy Stock Armor & Clothing Replacer.esp
+% {{BASH:Graphics}}
+Colourwheels Sexy SI Armor & Clothing Replacer.esp
+% {{BASH:Graphics}}
+tona_simple_dress-armor_ver3.esp
+% {{BASH:Relev}} if using Not For Free mod.
+tona_whitesquall-armor.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Gloria Armor.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Argent Iron Armor.esp
+% {{BASH:Relev}} if using Not For Free mod.
+DianoArmor2.esp
+% {{BASH:Relev}} if using Not For Free mod.
+CrimsonHGEC.esp
+% {{BASH:Relev}} if using Not For Free mod.
+The Sexy BeastV1.2.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Hentai_LovelySuits.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Dark_Mistress.esp
+% {{BASH:Relev}} if using Not For Free mod.
+HGEC Rogue Mage & Scoundrel.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Hentai_AthenaArmour.esp
+% {{BASH:Relev}} if using Not For Free mod.
+DM-Butterfly Widow.esp
+% {{BASH:Relev}} if using Not For Free mod.
+HGEC_Snow Robe, Century Corset.esp
+% {{BASH:Relev}} if using Not For Free mod.
+HaydoxRapier.esp
+% {{BASH:Relev}} if using Not For Free mod.
+GizmodianSorceress.esp
+% {{BASH:Relev}} if using Not For Free mod.
+Slof's Horses Base.esp
+% {{BASH:Graphics}}
+Slof's Horses Essential.esp
+% {{BASH:Graphics}}
+Slof's Horses HA Essential.esp
+% {{BASH:Graphics}}
+Slof's Extra Horses.esp
+% {{BASH:Graphics}}
+Slof's Black Unicorn.esp
+% {{BASH:Graphics}}
+Tyler's Horses.esp
+HRMHorseArmor.esp
+% {{BASH:Graphics}}
+HRMHorseArmorSlofsHorsesPatch.esp
+% {{BASH:Graphics}}
+HRMHorseArmorSlofsHorsesPatch20.esp
+% {{BASH:Graphics}}
+DappleClydesdaleupdate.esp
+% {{BASH:Graphics}}
+greyclydesdale.esp
+% {{BASH:Graphics}}
+brownclydesdale.esp
+% {{BASH:Graphics}}
+DLCHorseArmor_SlofBase.esp
+% {{BASH:Graphics}}
+DLCHorseArmor_SlofNightmare.esp
+% {{BASH:Graphics}}
+DLCHorseArmor_SlofEssential.esp
+% {{BASH:Graphics}}
+DLCHorseArmor_SlofNightmareEssential.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+Qarl'sHarvest+ArmoredImperialHorses.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+Qarl'sHarvest+Slof'sBase+Accessories.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+SBLite+QarlsHarvest.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+SBLite.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+HorseCommands.esp
+DLCHorseArmor+HorseCommandsSI.esp
+DLCHorseArmor+Slof'sBase+Accessories.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+ArmoredImperialSlofsHorses.esp
+% {{BASH:Graphics}}
+DLCHorseArmor+Accessories.esp
+% {{BASH:Graphics}}
+Shadow Steed.esp
+? Not compatible with DLC Horse Armour.
+TJ_HorseNames.esp
+% May need {{BASH:Names}} . Untested.
+NV Imperial Guard Horse Armour.esp
+% {{BASH:Graphics}}
+Legion's Horses Armored With Slof's Horse Bases.esp
+% {{BASH:Graphics}} untested.
+Goblin Realswords+Tribal Shields.esp
+% {{BASH:Graphics}}
+? Only use this or Goblin Realswords.esp (or FCOM)
+Mart's Monster Mod - Hemingweys NPC and Guard Capes.esp
+% {{BASH:Invent}}
+Ranokoas Organized Potions.esp
+% {{BASH:Names}}, deactivate. If not using Wrye Bash load with overrides but then incompatible with most overhauls etc.
+Thievesden_mobs.esp
+% {{BASH:Stats}}
+<Fran Armor Add-on.esp
+<% {{BASH:Invent}}
+Francesco's Optional Files.esp
+* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
+% {{BASH:Delev,Relev}}
+Francesco's Optional Files 1.esp
+* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
+% {{BASH:Delev,Relev}}
+Francesco's Optional Files 2.esp
+* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
+% {{BASH:Delev,Relev}}
+Francesco's Optional Files 3.esp
+* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
+% {{BASH:Delev,Relev}}
+Francesco's Optional Files 4.esp
+* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
+% {{BASH:Delev,Relev}}
+Oscuro's_Oblivion_Overhaul.esp
+% {{BASH:Delev,Invent,Names,Relations,Relev,Stats,Scripts}}
+OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
+% {{BASH:Stats}}
+OMOBS.esp
+% {{BASH:Stats}}
+OMOBS_SI.esp
+% {{BASH:Stats}}
+>FCOM_Convergence.esp
+% {{BASH:Invent,Relations,Delev,Factions,Stats,Relev}}
+>Mart's Monster Mod - Diverse Runeskulls.esp
+>? Replaces both 'FCOM_ExnemRuneskulls.esp' and 'ExnemRuneskulls.esp'.
+>% {{BASH:Delev,Relev}}
+>Mart's Monster Mod - Hunting & Crafting.esp
+>% {{BASH:Scripts}}
+>MMM - Playable Undead Armors.esp
+>% {{BASH:Invent}}
+>MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+>% {{BASH:Invent}}
+Mart's Monster Mod.esp
+% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+<Mart's Monster Mod for Fran.esp
+>* Delete. Not needed with FCOM.
+<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+<Mart's Monster Mod for Francescos.esp
+<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+<Mart's Monster Mod for OOO.esp
+>* Delete. Not needed with FCOM.
+<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+<Mart's Monster Mod - Diverse Runeskulls.esp
+<? Do not use Exnem's original Runeskulls mod - Diverse Runeskulls replaces it.
+<% {{BASH:Delev,Relev}}
+<MMM - Playable Undead Armors.esp
+<% {{BASH:Invent}}
+<MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+<% {{BASH:Invent}}
+Mart's Monster Mod - Diverse RuneSkull Loot.esp
+? Not compatible with MMM Gems & Gem Dust or MMMforOOO
+% {{BASH:Delev}}
+Mart's Monster Mod - Diverse Runeskulls Loot.esp
+? Not compatible with MMM Gems & Gem Dust or MMMforOOO
+% {{BASH:Delev}}
+Mart's Monster Mod - Diverse RuneSkull MMM Loot.esp
+? Requires MMM and MMM Gems & Gem Dust
+% {{BASH:Delev}}
+Mart's Monster Mod - Diverse Runeskulls Loot G&GD.esp
+? Requires MMM and MMM Gems & Gem Dust
+% {{BASH:Delev}}
+Mart's Monster Mod - Diverse RuneSkull OOO Loot.esp
+? Requires OOO.esm
+? Requires MMMforOOO or FCOM.
+? Not compatible with MMM Gems & Gem Dust.
+% {{BASH:Delev}}
+Mart's Monster Mod - Diverse Runeskulls Loot OOO.esp
+? Requires OOO.esm
+? Requires MMMforOOO or FCOM.
+? Not compatible with MMM Gems & Gem Dust.
+% {{BASH:Delev}}
+OMOBS_MMM.esp
+% {{BASH:Stats}}
+OMOBS_MMM_H&C_Ammo.esp
+TamrielTravellersItemsNPC.esp
+% {{BASH:Filter,Delev,Relev}} and deactivate.
+TamrielTravellersItemsCobl.esp
+? Requires COBL.
+TamrielTravellersItemsVendor.esp
+% {{BASH:Filter,Delev,Relev}} and deactivate.
+ShiveringIsleTravellers.esp
+% {{BASH:Factions,Relations}}
+TamrielTravellersHorseTextures.esp
+% {{BASH:NoMerge,Graphics}} and deactivate.
+FCOM_Archery.esp
+% {{BASH:Stats}}
+FCOM_ArcheryArmamentarium.esp
+? Requires the Armamentarium Complete mod.
+% {{BASH:Stats}}
+FCOM_Archery_Armamentarium.esp
+% {{BASH:Stats}}
+FCOM_Archery_Artifacts.esp
+% {{BASH:Stats}}
+FCOM_ArcheryRealSwords.esp
+? Requires 'FCOM_Realswords.esp'.
+% {{BASH:Stats}}
+FCOM_Archery_RealSwords.esp
+? Requires 'FCOM_Realswords.esp'
+% {{BASH:Stats}}
+FCOM_ArcheryHunting&Crafting.esp
+? Requires 'Mart's Monster Mod - Hunting & Crafting.esp'.
+% {{BASH:Stats}}
+FCOM_Archery_MMM_H&C.esp
+? Requires 'Mart's Monster Mod - Hunting & Crafting.esp'.
+% {{BASH:Stats}}
+FCOM_Archery_Deadly.esp
+% {{BASH:Stats}}
+FCOM_Archery_Deadly_Armamentarium.esp
+? Requires the Armamentarium Complete mod.
+% {{BASH:Stats}}
+FCOM_Archery_Deadly_RealSwords.esp
+? Requires 'FCOM_Realswords.esp'
+% {{BASH:Stats}}
+FCOM_Archery_Deadly_Artifacts.esp
+? Requires the Artifacts mod.
+% {{BASH:Stats}}
+FCOM_FriendlierFactions.esp
+% {{BASH:Relations}}
+TIE.esp
+% {{BASH:Delev,NpcFaces,Relations,Relev}}
+>Mart's Monster Mod - Shivering Isles.esp
+>% {{BASH:Relev,Delev}}
+LoadingScreens-OOO.esp
+% {{BASH:Graphics,NoMerge}}
+RustyItems for OOO.esp
+% {{BASH:Graphics,NoMerge}}
+FCOM_Archery_4_Arma_Complete_patch.esp
+% {{BASH:Stats}}
+C&C - The Blackwood Company - OOO.esp
+% {{BASH:C.Owner, Names, Relations}
+MMM-Cobl.esp
+% {{BASH:Delev,Invent}}
+dangerous wilderness.esp
+% {{BASH:Delev,Relev}}
+Daggerfall NPCs.esp
+%{{BASH:Delev}} - not yet tested.
+EnchantedGems_Geomancy.esp
+% {{BASH:Scripts}}
+? Similar to OOO and MMM Gems and Gem Dust- is almost certainly incompatible with those. Untested.
+geomancy.esp
+? Similar to OOO and MMM Gems and Gem Dust- is almost certainly incompatible with those. Untested.
+TUR_GemDust.esp
+% {{BASH:Scripts}}
+? Similar to OOO and MMM Gems and Gem Dust - is almost certainly incompatible with those. Untested.
+IABaneOils Wimpy.esp
+% {{BASH:Factions}
+? Has minor incompatibility with OOO - changes Meridia quest & script back to level 10
+? Only use one IABane Oils X.esp
+IABaneOils 1000.esp
+% {{BASH:Factions}
+? Has minor incompatibility with OOO - changes Meridia quest & script back to level 10
+? Only use one IABane Oils X.esp
+IABaneOils 500.esp
+% {{BASH:Factions}
+? Has minor incompatibility with OOO - changes Meridia quest & script back to level 10
+? Only use one IABane Oils X.esp
+IABaneOils 250.esp
+% {{BASH:Factions}
+? Has minor incompatibility with OOO - changes Meridia quest & script back to level 10
+? Only use one IABane Oils X.esp
+IABaneOils 100.esp
+% {{BASH:Factions}
+? Has minor incompatibility with OOO - changes Meridia quest & script back to level 10
+Enhanced Quest Roleplaying.esp
+% {{BASH:Factions}}
+ArtifactsFemaleArmor
+% {{BASH:Graphics}}
+CDEP-UnderpallCave.esp
+% {{BASH:C.Light, C.Water}}
+HauntedHouse v1.3.esp
+% {{BASH:Invent}}
+? Version 1.5 is available.
+HauntedHouse v1.4.esp
+% {{BASH:Invent}}
+? Version 1.5 is available.
+Haunted_House_v1.5.esp
+% {{BASH:Invent}}
+Hentai Mania.esp
+% {{BASH:Hair}}
+HeartoftheDead.esp
+% {{BASH:Hair}}
+Legion Faction Mod.esp
+% {{BASH:Relations}}
+Ruins of Tarnesia.esp
+% {{BASH:NpcFaces}}
+The forgotten Castle.esp
+% {{BASH:Hair}}
+TR_Stirk.esp
+% {{BASH:Graphics}}
+treasure maps v1.esp
+% {{BASH:Invent}}
+Arena_BattlesV1.1.esp
+% {{BASH:Relations}}
+? Old, update to version 1.2+.
+Arena_BattlesV1.2EV.esp
+% {{BASH:Relations}}
+Battlehorn_mobs.esp
+% {{BASH:Stats}}
+DLCFrostcrag.esp
+% {{BASH:C.Owner}}
+Ulrim's Horses - LegionArmor.esp
+? Obsolete. Check for newer version.
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - OOO+LegionArmor.esp
+? Obsolete. Check for newer version.
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses for OOO.esp
+? Check for newer version.
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - DLCHorseArmor+OOO.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - DLCHorseArmor.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - HRMHorseArmor+OOO.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - HRMHorseArmor.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - OOO.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Ulrim's Horses - Vanilla.esp
+% {{BASH:Graphics}} for Slof's Horses compatibility.
+Knights - Book Jackets.esp
+% {{BASH:Graphics, NoMerge}} and deactivate
+Traduccion mejorada KoT9.esp
+% {{BASH:Names}} or without Bash load it later.
+Knights - Unofficial Patch.esp
+% {{BASH:C.Light,Invent,Names,Relev,Stats}}
+EVE_KnightsoftheNine.esp
+% {{BASH:Graphics}}
+MOBS_Knights.esp
+% {{BASH:Stats}}
+MOBS Knights.esp
+% {{BASH:Stats}}
+Mart's Monster Mod - Knights of the Nine Patch.esp
+* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
+% {{BASH:Delev}}
+Mart's Monster Mod - Knights.esp
+* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
+% {{BASH:Delev}}
+Mart's Monster Mod for OOO - Knights .esp
+* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
+% {{BASH:Delev}}
+DLC_MOBS.esp
+? Don't use Battlehorn_mobs.esp, Lair_mobs.esp, Mehrunes_mobs.esp, or Thievesden_mobs.esp if using this as this includes all those.
+? Use version 1.01 'http://tesnexus.com/downloads/download.php?id=29355' for Bashed Patch
+% {{BASH:Stats}}
+MOBS DLCs.esp
+% {{BASH:Stats}}
+Blood&Mud.esp
+% {{BASH:Hair, NpcFaces}}
+HoarfrostCastle.esp
+% {{BASH:Hair}}
+MannimarcoRevisitedOOO.esp
+% {{BASH:NpcFaces}}
+FCOM_Knights.esp
+% {{BASH:Delev,Relev}}
+ElsweyrAnequinaNoSpiders.esp
+% {{BASH:Delev}}
+Faregyl.esp
+% {{BASH:Relations}}
+Fort Akatosh.esp
+% {{BASH:Relations}}
+FortAkatosh.esp
+% {{BASH:Relations}}
+Fort Akatosh Redux.esp
+% {{BASH:Relations}}
+Moriarcis.esp
+% {{BASH:Hair}}
+Duke Patricks Sickness Alarm.esp
+% {{BASH:Sound}}
+Duke Patrick's Health Alarm.esp
+? Only use one 'Health Alarm' mod. Choose.
+% {{BASH:Sound}}
+Duke Patrick's Health Alarm RED DEATH with heartbeat NO human yells.esp
+? Only use one 'Health Alarm' mod. Choose.
+% {{BASH:Sound}}
+Duke Patrick's Health Alarm with Fadeout.esp
+? Only use one 'Health Alarm' mod. Choose.
+% {{BASH:Sound}}
+Duke Patrick's Health Alarm with RED DEATH.esp
+? Only use one 'Health Alarm' mod. Choose.
+% {{BASH:Sound}}
+Duke Patricks - Health Alarm RED DEATH with heartbeat.esp
+? Only use one 'Health Alarm' mod. Choose.
+% {{BASH:Sound}}
+JQ-Fighters_Guild_United.esp
+% {{BASH:Invent}}
+Harvest [Flora].esp
+NoHFailure_HFlora.esp
+Harvest [Flora] - Shivering Isles.esp
+NoHFailure_HFlora_SE.esp
+Harvest [Flora] - DLCVileLair.esp
+Harvest [Flora] - DLCFrostcrag.esp
+Birthsigns Expanded.esp
+% {{BASH:Names}}
+BloodSpray.esp
+% {{BASH:Graphics}}
+BMC Chrome Ebony.esp
+% May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
+Bow Damage Balanced.esp
+% {{BASH:Stats}} and deactivate.
+Brandon's Misc Rebalance.esp
+% {{BASH:Stats}} and deactivate.
+Cliff_BetterLetters.esp
+% {{BASH:Names}}
+Curseman's Anti Extinction Mod.esp
+% {{BASH:Delev,Relev}}
+CUO_UnLeveledPotions.esp
+% {{BASH:Delev,Relev}}
+CUO_BadGuy_Specific_Loot_DIRTY.esp
+% {{BASH:Delev,Relev}}
+CUO_UnleveledNpcs&Creatures.esp
+% {{BASH:Delev,Relev}}
+fadingtorches v2.2b.esp
+% {{BASH:Names}}
+FG_Merchant Inventory Realism V 1_5.esp
+% {{BASH:Invent}}
+GuilesNameReplace-Scrolls.esp
+% {{BASH:Names}} - deactivate.
+M.O.E. - Realistic Prices, Realistic Weights, No Quest Items.esp
+? May cause unexpected results with Living Economy, Fran's, OOO, MMM and/or FCOM.
+? May cause some quest items to revert to vanilla stats when using overhaul mods. Will not remove quest status from non-vanilla quests.
+% {{BASH:Stats}} and deactivate if you don't care about the No Quest Items feature.
+Better and realistic prices.esp
+% {{BASH:Stats}} and deactivate.
+RedBag - Items Repriced v2.esp
+% {{BASH:Stats}} and deactivate.
+Fixed_Repriced_Clutter_11_by_Carpmalenko_POD-9319.esp
+% {{BASH:Stats}} and deactivate.
+Shadow's Balance Price Fixv2.0.esp
+% {{BASH:Stats}} and deactivate.
+Shadow's Merged Value FixesNOBLOODPOTv2.0.esp
+% {{BASH:Stats}} and deactivate.
+Shadow's Merged Value Fixesv2.0.esp
+% {{BASH:Stats}} and deactivate.
+NameReplacer-Clothing.esp
+% {{BASH:Names}} - deactivate.
+newsheogorath.esp
+%{{BASH:NpcFaces}} and deactivate.
+ShinySeptims_Septimus.esp
+% {{BASH:Graphics}}
+ShinySeptims_Trajanus.esp
+% {{BASH:Graphics}}
+Side's Backpacks.esp
+%{{BASH:Invent}}
+Side's Backpacks (COBL).esp
+%{{BASH:Invent}}
+vendorfreedom.esp
+% {{BASH:relev}}
+Feudal Empire 300.esp
+% {{BASH:Invent,Graphics}}
+? Use instead of 300_White Stallion 4.esp
+300 Feudal Empire.esp
+% {{BASH:Invent,Graphics}}
+Alternative Start by Robert Evrae.esp
+% {{BASH:Relations}}
+MHE v2 Tail.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+MHE v2.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+MHE v2 - UFF&Robert Tail.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+MHE v2 - UFF&Robert.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+MHE v2 - Exnem&Robert Tail.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+MHE v2 - Exnem&Robert.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use only one MHE v2 esp
+Duke Patricks Nosferatu Vampires.esp
+? Old. Upgrade to latest version.
+% {{BASH:Sound}}
+Duke Patricks - Nosferatu Class Vampires.esp
+% {{BASH:Sound}}
+AgarMoreVariedSpellEffects.esp
+% {{BASH:Sound}} and deactivate.
+cidnothumpMMversion.esp
+% {{BASH:Sound}}
+AgarVariedSpellSounds_SupremeMagicka.esp
+% {{BASH:Sound}} and deactivate.
+SupremeMagicka.esp
+% {{BASH:Names,Graphics}}
+mighty_bows_full.esp
+% {{BASH:Stats}}
+mighty_bows_damage_bonus.esp
+% {{BASH:Stats}}
+Immersive Caves.esp
+% {{BASH:Names}}
+Immersive Caves Auto.esp
+% {{BASH:Names}}
+immersive_caves_auto.esp
+% {{BASH:Names}}
+immersive_caves_manual.esp
+Dark Dungeons.esp
+% {{BASH:C.Light}} and deactivate.
+Dark Dungeons -  SI.esp
+% {{BASH:C.Light}}
+Darker Dungeons.esp
+% {{BASH:C.Light}}
+_darker dungeons.esp
+% {{BASH:C.Light}} and deactivate.
+_darker_dungeons.esp
+% {{BASH:C.Light}} and deactivate.
+Let There Be Darkness.esp
+? Obsolete. Upgrade to version 1.2+.
+% {{BASH:C.Light}}
+Let There Be Darkness - Shivering Isles.esp
+? Requires Shivering Isles.
+? Obsolete. Upgrade to version 1.2+.
+% {{BASH:C.Light}}
+Let There Be Darkness - Cyrodiil.esp
+% {{BASH:C.Light}}
+Let There Be Darkness - Cyrodiil + SI.esp
+? Requires Shivering Isles.
+% {{BASH:C.Light}}
+Let There Be Darkness - Knights.esp
+? Requires Knights of the Nine.
+% {{BASH:C.Light}}
+Let There Be Darkness - Mehrunes Razor.esp
+? Requires Mehrunes Razor DLC
+% {{BASH:C.Light}}
+Let there be Darkness All Merge.esp
+? Merge requiring KOTN, Shivering Isles and Mehrunes Razor.
+% {{BASH:C.Light}}
+Let There Be Darkness - Thieves Den.esp
+? Requires Thieves Den.
+% {{BASH:C.Light}}
+Let There Be Darkness - OOO.esp
+? Requires Oscuro's Oblivion Overhaul.
+% {{BASH:C.Light}}
+Let There Be Darkness - Kvatch Rebuilt.esp
+? Requires Kvatch Rebuilt.
+% {{BASH:C.Light}}
+Let There Be Darkness - Curse of Hircine.esp
+? Requires Curse of Hircine.
+% {{BASH:C.Light}}
+Let There Be Darkness - Glenvar Castle.esp
+? Requires Glenvar Castle.
+% {{BASH:C.Light}}
+Let There Be Darkness - The Elder Council.esp
+? Requires The Elder Council.
+% {{BASH:C.Light}}
+Let There Be Darkness - Thievery.esp
+? Requires Thievery in the Imperial City.
+% {{BASH:C.Light}}
+Let There Be Darkness - VH Bloodlines.esp
+? Requires Verona House Bloodlines.
+% {{BASH:C.Light}}
+Let There Be Darkness - Lost Spires.esp
+? Requires The Lost Spires.
+% {{BASH:C.Light}}
+Let There Be Darkness - Elsweyr.esp
+? Requires Elsweyr Deserts of Anequina.
+% {{BASH:C.Light}}
+Let There Be Darkness - UL Colovian Highlands.esp
+? Requires UL Colovian Highlands.
+% {{BASH:C.Light}}
+Let There Be Darkness - UL Lost Coast.esp
+? Requires UL Lost Coast.
+% {{BASH:C.Light}}
+Let There Be Darkness - UL Brena.esp
+? Requires Ul Brena River Ravine.
+% {{BASH:C.Light}}
+Let There Be Darkness - UL Blackwood Forest.esp
+? Requires UL Blackwood Forest.esp
+% {{BASH:C.Light}}
+Let There Be Darkness All.esp
+? Merge, please ensure all masters are present. Masters can be checked using Wrye Bash.
+% {{BASH:C.Light}}
+Atmospheric Loading Screens - No Text.esp
+% {{BASH:Graphics}}
+BulkyNord.esp
+% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch and deactivate.
+BulkyOrcs.esp
+% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch and deactivate.
+Mart's Monster Mod - Resized Races.esp
+% {{BASH:Body-M,Body-F,R.Relations}} make sure to merge into the bashed patch and deactivate.
+Bigger_Dremora.esp
+% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch and deactivate.
+Slof's Oblivion Better Beasts.esp
+% {{BASH:NpcFaces,R.Teeth,Graphics}} make sure to merge into the bashed patch and deactivate.
+JJR'sWhiskers and Eyebrow.esp
+% {{BASH:NpcFaces,R.Teeth,Graphics}} make sure to merge into the bashed patch and deactivate.
+EyelashesVanillaRaces.esp
+% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch and deactivate.
+EyelashesVannilaRaces.esp
+% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch and deactivate.
+EyelashesForVanillaRaces1.0.esp
+% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch and deactivate.
+Jjiinx_MorrowindStyleArgonians.esp
+% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch and deactivate.
+Better Redguard v2.esp
+% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch and deactivate.
+BigDunmerEars.esp
+% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch and deactivate.
+Smaller Elf ears.esp
+% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch and deactivate.
+Jjiinx_Long Ears.esp
+% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch and deactivate.
+Head06 Replacer.esp
+% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch and deactivate.
+WhiskersAll.esp
+% {{BASH:R.Teeth,Graphics}} make sure to merge into the bashed patch and deactivate. 
+Custom Hairs for Vanilla Race.esp
+% {{BASH:Hair}}
+M.O.E. - Unlocked Hairstyles.esp
+Bald_Hairstyle.esp
+% {{BASH:Hair}} and deactivate.
+tkHairPack01.esp
+% {{BASH:Hair}} and deactivate.
+babehair_EV.esp
+% {{BASH:Hair}} and deactivate.
+soya_04hair.esp
+% {{BASH:Hair}} and deactivate.
+Soya 4 Hair Pack.esp
+% {{BASH:Hair}} and deactivate.
+Soya 4 Hair Pack - English.esp
+% {{BASH:Hair}} and deactivate.
+BWs Argonian Hair.esp
+% {{BASH:Graphics,Hair}} and deactivate.
+CT-Argonian Headstyles.esp
+% {{BASH:Graphics,Hair}} and deactivate.
+Corean_hair_for_Original_race.esp
+% {{BASH:Hair}} and deactivate.
+_Ren_BeautyPack_onlyhairs.esp
+% {{BASH:Hair}} and deactivate.
+KDshorthair.esp
+% {{BASH:Hair}} and deactivate.
+Saram_Corean_NPC_Hair_1_0.esp
+% {{BASH:Hair}} and deactivate.
+ZBRE.esp
+% {{BASH:Hair}} and deactivate.
+ZelsHairfixRenshairV1_5.esp
+% {{BASH:Hair}} and deactivate.
+ElaborateEyes.esp
+% {{BASH:Eyes}} and deactivate.
+Ethereal - Eyes.esp
+% {{BASH:Eyes}} and deactivate.
+DaMage's_Eye_Pack.esp
+% {{BASH:Eyes}} and deactivate.
+PHVanillaEyesAddon.esp
+% {{BASH:Eyes}} and deactivate.
+elveons realistic eyes.esp
+% {{BASH:Eyes}} and deactivate.
+Cernasite - DragonEyes.esp
+% {{BASH:Eyes}} and deactivate.
+JCPeepers.esp
+% {{BASH:Eyes}} and deactivate.
+Koldorns Eye Mod.esp
+% {{BASH:Eyes}} and deactivate.
+Cat_eyes.esp
+% {{BASH:Eyes}} and deactivate.
+Cat_eyes_add.esp
+% {{BASH:Eyes}} and deactivate.
+DesuChan's Anime Eyes (Vanilla).esp
+% {{BASH:Eyes}} and deactivate.
+All_hair_and_eyes-1841.esp
+% {{BASH:Hair,Eyes}} and deactivate.
+BP-Cosmetic_Compilation-Alternative.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Cosmetic Compilation.esp
+% {{BASH:NpcFaces,Hair,Eyes}} and deactivate.
+Cosmetic Compilation XXL DV.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Cosmetic Compilation - No NPC Changes.esp
+% {{BASH:NpcFaces,Hair,Eyes}} and deactivate.
+Cosmetic Compilation - No JPeepers or NPC Changes.esp
+% {{BASH:NpcFaces,Hair,Eyes}} and deactivate.
+EE-Cosmetic Compilation.esp
+% {{BASH:NpcFaces,Hair,Eyes}} and deactivate
+CCR - EE.esp 
+% {{BASH:NpcFaces,Hair,Eyes}} and deactivate
+CCR - Capucine.esp
+Capucine'sEyeSelection+NewHair.esp
+% {{BASH:Hair,Eyes}} and deactivate.
+Comprehensive Style Collection RM.esp
+% {{BASH:Hair,Eyes}} and deactivate.
+ElaborateEyes-RensBeautyPackFull.esp
+% {{BASH:Hair,Eyes}} and deactivate.
+ElaborateEyes-RensBeautyPackHairsOnly.esp
+% {{BASH:Hair,Eyes}} and deactivate.
+CT-Argonian Headstyles-EE.esp
+% {{BASH:Graphics,Hair,Eyes}} and deactivate.
+CT-Argonian Headstyles-MM.esp
+% {{BASH:Graphics,Hair,Eyes}} and deactivate.
+CT-Argonian Headstyles-EE+MM.esp
+% {{BASH:Graphics,Hair,Eyes}} and deactivate.
+MD_Natural_Faces_DV.esp
+% {{BASH:Graphics,Hair,Eyes}}
+King_O_POPver2
+% {{BASH:Graphics,Hair,Eyes}}
+Naruto's_Eyes_bY_Van_Groud.esp
+% {{BASH:Graphics,Hair,Eyes}}
+idkrrr_sarameyesNhairs4originalrace.esp
+% {{BASH:Graphics,Hair,Eyes}}
+4 New Races for Rens-Beautiful People.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Avariel.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+PlayableSheogorathMod.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+PlayableSheogorathModOptionalIcon.esp
+MUIA.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+MW Style Dremora.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Ayleid.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Half-Devil.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+YX33A_batch_of_stuff.esp
+Nec Mystic High Elf-Remake.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Nec - Extra Mystic Elf Face.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Nec-Character_Clair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Nec-Character_Sonnet_Mature.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Nec Mystic Dark Elf-Remake.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Capucine's Aquamer Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Capucines Character Expansion.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Capucines Character Expansion - No NPC Change.esp
+% {{BASH:Hair,Eyes,Graphics}}
+CuteElf11.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+CuteElfBody.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+_Ren_BeautyPack_full.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Ice Elves and Wolf Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,R.Relations}}
+Exnem1 Moonwell and Mystic Night Elf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Slof's Playable Xivilai.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Not compatible with OOO, MMM or FCOM: Xivilai won't appear. Patch planned.
+Slof's Clouded Leopard.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Teeth,R.Relations}}
+Slof's Snow Leopard Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Teeth,R.Relations}}
+Slof's Devil.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Teeth,R.Relations}}
+Stars_elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Teeth,R.Relations}}
+AinmhiRace.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Dark_Seducer_and_Golden_Saint_Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+DemonRace.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Dremora.esp
+% {{BASH:NpcFaces}}
+M.O.E. - Playable Dremora and Custom Race Fix.esp
+Luchaire's Dryad Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Use 'for MMM' version if using MMM/FCOM.
+The Southlanders.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Tabaxi_Race_Default.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Tabaxi Race 2.0.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Lineage II Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Elves Of Lineage II.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+TFF_Races_Base.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-F,Graphics}}
+Beautiful People.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Capucines_Beautiful People.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+LattamerV3_P-rrtyCure_Hair_Module.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+
+Beautiful People 2ch-Ed Disable AGS Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable BandBlindMask.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Corean Hair + Saram Hair + AGS Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Corean Hair + Saram Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Corean Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Glow Eyes + Odd Eyes + One Eyed.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Glow Eyes + Odd Eyes.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Glow Eyes.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Odd Eyes + One Eyed.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Odd Eyes.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable One Eyed + Glow Eyes.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable One Eyed.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Disable Saram Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Sheogorath Eye.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Vanilla Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Merged Hair Modules.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Sheogorath Eye.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Beautiful People 2ch-Ed Merged Eye Modules.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+x117race.esp
+
+IDKRRR_C_race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+IDKRRR_C_race_closed_mouth_version.esp
+idkrrr_sarams_race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+IDKRRR_KFME4rev.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+IDKRRR_Moira_race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+ChimerofLight_Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+Energy - Beautiful Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+DesuChan's Persocoms RELOADED.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+DesuChan's Kawa-Khajiits.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Riddick.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Riddick Saber Claws.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Han1.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+ShadowElf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Shadow Hunter Races v1.1.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Spartan Race v1.5.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Moon Elven Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Ka Po White.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Ka Po.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Lilmothiit.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Icthylean_Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+MGothic Breton Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Lattamer.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Chocolate Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+IceElfRace.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+LittleElf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Sun_&_Night_Elves.esp 
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Vexend Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Sheo Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Soqui Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Half Devil.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Altair_Race.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+
+Assassins Creed - Altair's Gear.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Choose only one 'Assassins Creed' ESP.
+Assassins Creed - Altair's Gear - Light Armor.esp
+? Choose only one 'Assassins Creed' ESP.
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Assassins Creed - Altair's Gear- HeavyArmor.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Choose only one 'Assassins Creed' ESP.
+Assassins Creed - Altair's Gear - ThrowingKnives.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Choose only one 'Assassins Creed' ESP.
+Assassins Creed - Altair's Gear - Heavy Armor.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Choose only one 'Assassins Creed' ESP.
+Assassins Creed - Altair's Gear - HeavyArmor+ThrowingKnives.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+? Choose only one 'Assassins Creed' ESP.
+Raven Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+AsharasSirensAndTritons.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Ahtata_Khabaxi.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+ahtata dremora.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Arabian Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Ash Elves.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Ancient Elven Sorceress - EV.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+CapsAdmin.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Moogles.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Sharingan and Uchiha Clan.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+X.Nature.Elf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+X.Moon.Elf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+X.Night.Elf.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+X.Vampire.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+X.Races.Comp.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Luchaire's Dryad Race for MMM.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Tabaxi_Race_Robert.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics,R.Relations}}
+Tabaxi_Race_BAB.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-F,Graphics,R.Relations}}
+Tabaxi_Race_BAB_Robert.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-F,Body-M,Graphics,R.Relations}}
+Mystic Dark Elf and Mystic Dunmer for MM.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,Body-F,Body-M,R.Relations}}
+Ren_Soya_KD's.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+BP Cosmetic Compilation.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+soyaenbp.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Beautiful PeopleV22 - MaleReplacerV4.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics}}
+BP + Robert's + BR + Hair Packs.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics}}
+Beautiful People Robert - Hair merged.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics}}
+BP_Roberts_BR_Hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics}}
+_Ren_BeautyPack_full + Soya's hair.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+BP-Cosmetic Compilation-MaleBodyReplacer.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Graphics}}
+Additional Cosmetics for BP.esp
+TFF ROBERT Cosmetic Compilation.esp
+% {{BASH:NpcFaces,Graphics,Hair,Eyes,Body-M,Body-F,Graphics}}.
+TFF & ROBERT & Slof's Better Beasts.esp
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Body-F,R.Teeth,Graphics,NoMerge}} and deactivate.
+BeautifulPeople2.2+TweakedGenericFacesLITE.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+BeautifulPeople2.2+TweakedGenericFaces.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+EC-RM White Tabaxi.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
+BP-Cosmetic Compilation.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Ren + Exnem.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+BP_and_Soya.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Elaborate HGEBetter Beauty Soya Expansion.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+Diverse NPCs.esp
+? Requires TNR, Ren's Hair, Elaborate Eyes.
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,NoMerge}}
+Corean Hairs and Elaborate Eyes Merged.esp
+% {{BASH:NpcFaces,Hair,Eyes}}
+CM Partners Special NPCs.esp
+% {{BASH:Hair,Eyes}}
+CM Partners NPC.esp
+% {{BASH:Hair,Eyes}}
+CM Partners NPC NE.esp
+% {{BASH:Hair,Eyes}}
+CM Partners More NPCs.esp
+% {{BASH:Hair,Eyes}}
+CM Partners More NPCs NE.esp
+% {{BASH:Hair,Eyes}}
+CM Partners Marker NPCs.esp
+% {{BASH:Hair,Eyes}}
+CM Partners Extra NPCs.esp
+% {{BASH:Hair,Eyes}}
+CM_LoreleiU.esp
+% {{BASH:Hair,Eyes}}
+Colourwheels Sexy Tifa.esp
+% {{BASH:NpcFaces}}
+AmidalaSaramHair.esp
+% {{BASH:Hair,Eyes}}
+AsharasCMPartners.esp
+% {{BASH:Hair,Eyes}}
+Terimer.esp
+% {{BASH:Hair,Eyes}}
+Arwen companion.esp
+% {{BASH:Hair,Eyes}}
+Companion Neeshka.esp
+% {{BASH:Hair}} for the Mystic Elf version.
+companion_nightelves.esp
+% {{BASH:Hair,Eyes}}
+DremoraCompanion.esp
+% {{BASH:Hair,Eyes}}
+Eluna.esp
+% {{BASH:Hair,Eyes}}
+DAEluna.esp
+% {{BASH:Hair,Eyes}}
+DAJadeTabaxi.esp
+% {{BASH:Hair,Eyes}}
+GG_Valeria_Revived.esp
+% {{BASH:Hair,Eyes}}
+GG_Vincente.esp
+% {{BASH:Hair,Eyes}}
+Haowen.esp
+% {{BASH:Hair,Eyes}}
+KendoGirl_Final.esp
+% {{BASH:Hair,Eyes}}
+Kyra Partner.esp
+MarcAntony.esp
+% {{BASH:Hair,Eyes}}
+Nec-Character_Eva.esp
+% {{BASH:Hair,Eyes}}
+Olga.esp
+% {{BASH:Hair,Eyes}}
+PetsOfChorrol.esp
+% {{BASH:Hair,Eyes}}
+Ramy Enfant.esp
+% {{BASH:Hair,Eyes}}
+Rhianna.esp
+% {{BASH:Hair,Eyes}}
+Rhianna Vwalk.esp
+RhiannaII.esp
+% {{BASH:Hair,Eyes}}
+Rinn.esp
+% {{BASH:Hair,Eyes}}
+Saerileth.esp
+% {{BASH:Hair,Eyes}}
+sexycompanion.esp
+% {{BASH:Hair,Eyes}}
+SnowAndHarukoCMPartners.esp
+% {{BASH:Hair,Eyes}}
+Sonia.esp
+% {{BASH:Hair,Eyes}}
+Tamara.esp
+% {{BASH:Hair,Eyes}}
+RhiannaII-essential.esp
+% {{BASH:Hair,Eyes}}
+DAAanila.esp
+% {{BASH:Hair,Eyes}}
+DAAltair.esp
+% {{BASH:Hair,Eyes}}
+DAJynx.esp
+? Requires OBSE.
+% {{BASH:Hair,Eyes}}
+DAClair.esp
+% {{BASH:Hair,Eyes}}
+DAEva.esp
+% {{BASH:Hair,Eyes}}
+DAGimli.esp
+% {{BASH:Hair,Eyes}}
+DAValeriaCuteElf.esp
+% {{BASH:Hair,Eyes}}
+DARaewyn.esp
+% {{BASH:Hair,Eyes}}
+DASakura.esp
+% {{BASH:Hair,Eyes}}
+DATalitha.esp
+% {{BASH:Hair,Eyes}}
+DAFeria.esp
+% {{BASH:Hair,Eyes}}
+DADemons.esp
+% {{BASH:Hair,Eyes}}
+DAJackSparrow.esp
+% {{BASH:Hair,Eyes}}
+DAKaleahSuccubus.esp
+% {{BASH:Hair,Eyes}}
+DAKaleah.esp
+% {{BASH:Hair,Eyes}}
+Nec-Elf_Kaleah.esp
+% {{BASH:Hair,Eyes}}
+Kaleah.esp
+% {{BASH:Hair,Eyes}}
+DAXivilai.esp
+% {{BASH:Hair,Eyes}}
+DAWerewolf.esp
+% {{BASH:Hair,Eyes}}
+DALeonidas.esp
+% {{BASH:Hair,Eyes}}
+DAMeridiaKatrina.esp
+% {{BASH:Hair,Eyes}}
+DASephirothCompanion.esp
+% {{BASH:Hair,Eyes}}
+DATiamsGirls.esp
+% {{BASH:Hair,Eyes}}
+Merina.esp
+% {{BASH:Hair,Eyes}}
+Isrithr.esp
+% {{BASH:Hair,Eyes}}
+Midas CDM partners Beasts.esp
+DADark Seducers.esp
+% {{BASH:Hair,Eyes}}
+DAGolden Saint.esp
+% {{BASH:Hair,Eyes}}
+DALineage2Elves.esp
+% {{BASH:Hair,Eyes}}
+DAMerpeople.esp
+% {{BASH:Hair,Eyes}}
+DAAlien.esp
+% {{BASH:Hair,Eyes}}
+DASatyr.esp
+% {{BASH:Hair,Eyes}}
+AMB.esp
+% {{BASH:Body-M}}
+AMD.esp
+% {{BASH:Body-M}}
+Cobl Races.esp
+% {{BASH: Eyes, Hair, R.Relations, Voice-M, Voice-F}}
+Cobl Races TNR.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+? Requires the Cobl Cosmetics Res 01 files installed.
+Cobl Races TNR SI.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
+? Requires the Cobl Cosmetics Res 01 files installed.
+Cobl - NPCDiversity - TNR Merge.esp
+% {{BASH: NpcFaces,Invent,NoMerge}} and deactivate.
+bgMagicDV.esp
+% {{BASH:Names,Delev,Relev}}
+? German version
+bgMagicEV.esp
+% {{BASH:Names,Delev,Relev}} if you are running more than one magic overhaul and want to use LAME spell names.
+cidnothump.esp
+% {{BASH:Sound}}
+PMSneakySummonCompatibility.esp
+? Requires BASH for proper use
+% {{Bash:IIM,Filter,Invent}} and deactivate
+bgBalancingEVOptionalNPCDiversity, Beautification Better Redguards.esp
+? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
+? Use only one 'OptionalNPCDiversity' plugin.
+%{{BASH: NpcFaces,Invent,NoMerge}} and deactivate
+bgBalancingEVOptionalNPCDiversity, for Wrye Bash Better Redguards.esp
+? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
+? Use only one 'OptionalNPCDiversity' plugin.
+%{{BASH: NpcFaces,Invent,NoMerge}} and deactivate
+bgBalancingEVOptionalNPCDiversity, for Wrye Bash Better Redguards.esp
+? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
+? Use only one 'OptionalNPCDiversity' plugin.
+%{{BASH: NpcFaces,Invent,NoMerge}} and deactivate
+bgBalancingEVOptionalNPCDiversity, TNR Merge Better Redguards.esp
+? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
+? Use only one 'OptionalNPCDiversity' plugin.
+%{{BASH: NpcFaces,Invent,NoMerge}} and deactivate
+bgBalancingDVOptionalNPCDiversity, TNR Merge Better Redguards.esp
+? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
+? Use only one 'OptionalNPCDiversity' plugin.
+%{{BASH: NpcFaces,Invent,NoMerge}} and deactivate
+bgIntegrationEV.esp
+? Requires LAME, Shivering Isles and Race Balancing Project.
+bgIntegrationEV - Alternative NPC Faces by LazyMonk.esp
+% {{BASH:NPCFaces}} and deactivate
+Cobl Races - Balanced.esp
+% {{BASH:Body-F,Body-M,Eyes,Hair,R.Relations}}
+Cobl Balanced Races - MMR Patch.esp
+Diverse Races.esp
+% {{BASH:Body-F,Body-M}}
+Better_Berserk-2177.esp
+Willful Resistance.esp
+? Only use one willpower equals magicka resistance/weakness type mod at once.
+DBWBMR.esp
+? Only use one willpower equals magicka resistance/weakness type mod at once.
+ArgonianFeets.esp
+% {{BASH:Invent}}
+Jake's Water.esp
+% {{BASH:Graphics}}
+Advanced_Water_Modification.esp
+% {{BASH:Graphics}}
+Real Lava 1.3.esp
+% {{BASH:Graphics}} and deactivate.
+Real Lava.esp
+? Update to 1.3 or later.
+% {{BASH:Graphics}} and deactivate.
+Real Lava v1.1.esp
+? Update to 1.3 or later.
+% {{BASH:Graphics}} and deactivate.
+Real Lava 1.2.esp
+? Update to 1.3 or later.
+% {{BASH:Graphics}} and deactivate.
+Real Lava v1.2.esp
+? Update to 1.3 or later.
+% {{BASH:Graphics}} and deactivate.
+Improved Lava.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Damage and Absorb with Particles.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Drains 1.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Drains.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Fire 1.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Fire 2.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Fire 3.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Fire.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Frost 1.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Frost 2.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Frost 3.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Frost.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Shock 1.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Shock 2.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Shock 3.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted Shock.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted SoulTrap 1.esp
+% {{BASH:Graphics}} and deactivate.
+Visually Enchanted SoulTrap.esp
+% {{BASH:Graphics}} and deactivate.
+Duke Patrick's magic you can believe in 4p5.esp
+? Old. Upgrade to latest version.
+% {{BASH:Sound}}
+Duke Patrick's magic you can believe in 5.esp
+? Old. Upgrade to latest version.
+% {{BASH:Sound}}
+Duke Patricks - Magic you can believe in.esp
+% {{BASH:Sound}}
+Shining Creatures.esp
+% {{BASH:Invent}}
+Shining Creatures_AtronachFlame.esp
+% {{BASH:Invent}}
+Shining Creatures_AtronachFrost.esp
+% {{BASH:Invent}}
+Shining Creatures_WillOWisp.esp
+% {{BASH:Invent}}
+Shining Creatures_DLCFrostcrag.esp
+% {{BASH:Invent}}
+CoreRandmonClothing4Npcs.esp
+% {{BASH:Filter,Invent,IIM}}
+All Natural - Indoor Weather Filter For Mods.esp
+% {{BASH:Filter,C.Climate}}
+? Do not activate. Must be merged into Bashed Patch using Import Cells.
+Duke Patricks - SCA Shield Tricks.esp
+\% {{BASH:Sound}}
+Duke Patricks - Combat Magic.esp
+\% {{BASH:Sound}}
+OOO-Magic_Script_Effect_Fix.esp
+% {{BASH:Sound}}
+Duke Patricks Script Effect Silencer.esp
+? Old. Upgrade to latest version.
+\% {{BASH:Sound}}
+Duke Patricks Script Effect Silencer Rev 2.esp
+? Old. Upgrade to latest version.
+\% {{BASH:Sound}}
+Duke Patricks Script Effect Silencer Silver Edition.esp
+? Old. Upgrade to latest version.
+\% {{BASH:Sound}}
+Duke Patricks Script Effect Silencer Gold Edition.esp
+? Old. Upgrade to latest version.
+\% {{BASH:Sound}}
+Duke Patricks - BASIC Script Effect Silencer.esp
+\% {{BASH:Sound}}
+Duke Patricks - BASIC Script Effect Silencer BETA.esp
+? Old. Upgrade to latest version.
+\% {{BASH:Sound}}
