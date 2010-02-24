@@ -19386,7 +19386,7 @@ class RedguardNPCPatcher(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Redguard FGTS Patcher"),
+        MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
             _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
             'RedguardFGTSPatcher',
             ('1.0',  '1.0'),
@@ -19569,8 +19569,8 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
 #------------------------------------------------------------------------------
 class SkelTweaker(MultiTweaker):
     """Sets NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _('NPC Skeletons, Animations, Etc.')
-    text = _("Set NPC Skeletons and animations.")
+    name = _('NPC Tweaker')
+    text = _("Tweak NPC Records in specified ways")
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
@@ -19866,7 +19866,7 @@ def initDirs(personal='',localAppData=''):
     dirs['Audacity'] = GPath(r'C:\Audacity\Audacity.exe')
     dirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
     dirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
-    dirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\Paint.NET.exe')
+    dirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
     dirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')

@@ -5539,23 +5539,22 @@ class Installers_EnableWizard(Link):
                 lines = file.readlines()
                 file.close
                 if "iEnableWizard=0" in lines:
-                    pos = lins.index("iEnableWizard=1\n")
+                    pos = lines.index("iEnableWizard=1\n")
                 lines[pos] = "iEnableWizard=0\n"
                 file = bosh.dirs['app'].join(r'mopy\bash.ini').open("w")
                 for line in lines:
                     file.write(line)
                 file.close
-            else:
-                file = bosh.dirs['app'].join(r'mopy\bosh.py').open("r")
-                lines = file.readlines()
-                file.close
-                if "    inisettings['enablewizard'] = 1\n" in lines:
-                    pos = lines.index("    inisettings['enablewizard'] = 1\n")
-                    lines[pos] = "    inisettings['enablewizard'] = 0\n"
-                file = bosh.dirs['app'].join(r'mopy\bosh.py').open("w")
-                for line in lines:
-                    file.write(line)
-                file.close
+            file = bosh.dirs['app'].join(r'mopy\bosh.py').open("r")
+            lines = file.readlines()
+            file.close
+            if "    inisettings['enablewizard'] = 1\n" in lines:
+                pos = lines.index("    inisettings['enablewizard'] = 1\n")
+                lines[pos] = "    inisettings['enablewizard'] = 0\n"
+            file = bosh.dirs['app'].join(r'mopy\bosh.py').open("w")
+            for line in lines:
+                file.write(line)
+            file.close
         else:
             message = (_("Enable wizard install system?\nThis will close and reopen Wrye Bash and will require the Python win32api to be installed or Bash will not start!\nYou can reset it by changing the line in the Bash ini as per the readme. Do you want to continue?"))
             if not balt.askContinue(self.gTank,message,'bash.enablewiz.continue',
