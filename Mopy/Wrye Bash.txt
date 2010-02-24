@@ -23,7 +23,7 @@ In particular, see:
 == Quick Tour
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
 
-* At the top are the main tabs: [[#ReplacersTab|Replacers]], [[#ModsTab|Mods]], [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
+* At the top are the main tabs: [[#Installers Tab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#|INI Tweaks Tab|INI Tweaks]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
 * The file details for the currently selected savegame are shown to the right. File name, stats and savegame preview image are all shown. 
 * The __masters list__ for the savegame is shown at the bottom of the details. The masters for the savegame are just the mods (esps and esms) that the savegame depends on. 
@@ -426,6 +426,10 @@ The following commands are available from context menu of packages.
 * __Configuration__
   * __Has Special Directories:__ Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory -- and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
   * __Skip Voices:__ If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension ([[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=4269|PES]], [[http://www.tesnexus.com/downloads/file.php?id=16622|TesNexus]]) to prevent dialog subtitles from fading too rapidly.
+* __Wizard Install Options:__ Only Available if Wizard Install system is active (see WizardDocs.txt in the mopy folder for more info on the wizard install system)
+  * __Wizard:__ Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).
+  * __Auto Wizard:__ Runs the wizard but selects the default options (only available if wizard.txt exists in the archive).
+  * __Edit Wizard:__ Opens the wizard.txt for editing (only available for projects and if wizard.txt exists in the project).
 * __Install__
   * __Anneal:__ Will "anneal" the selected file(s). This will install any missing files and correct any install order errors (aka "underrides").
   * __Install:__ Will do an "in-order" install. I.e. it will fully install the package except for files that are masked by by higher order packages.
@@ -460,6 +464,8 @@ The following commands are available by right clicking on the column header of t
   * __Enabled:__ This enables/disables Bain itself. Preferred setting: Enabled (checked).
   * __Show Replacers Tab:__ If checked, will cause the Replacers tab to appear.
   * __Auto-Anneal:__ Toggles the auto-anneal process on/off. Preferred setting: enabled.
+  * __Auto-Wizard:__ Toggles whether or not to auto-install/anneal when finished with a wizard. (Available only if Wizard Instally system is active)
+  * __Enable Wizard Install:__ Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
 * __Behavior__
   * __BSA Redirection:__ Uses Quarn's [[http://devnull.devakm.googlepages.com/archiveinvalidation|BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
@@ -595,9 +601,7 @@ These are the commands for the context menu for the mods list. (You'll get this 
 * This opens the Oblivion.ini file in your preferred editor.
 
 === INI Tweaks
-* This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
-* **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
-* **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
+* This feature has been deprecated and instead has a tab all to itself. (see [[#|INI Tweaks Tab]
 
 === List Mods
 * Displays list of currently active mods and copies that same list to the clipboard. Useful for posting your list of mods to forums for load debugging help.
@@ -712,7 +716,7 @@ These are the commands found on context menu for mods...
   * Once the dependencies are set, just use the Import: Formids command on the mod with the desired Formids.csv file. You'll get a report afterwards.
     * It's probably a good idea to create a copy of the original file and make the changes on it. That way you can use Tes4View to do a before/after comparison to check the changes. (You'll want to use Tes4View's Compare To... command.)
 * __Removing Dependencies__
-  * If you've completely swapped from one base mod to another, then you may want to remove the old dependency. You can use that using Tes4Edit (Clean Masters command) or Tes4Gecko (Edit Master List). Note that Tes4Edit will only remove masters that you're not using at all. Tes4Gecko will remove used masters (with appropriate cleanup), and is a bit more manual -- i.e. it will only remove masters that you specify.
+  * If you've completely swapped from one base mod to another, then you may want to remove the old dependency. You can do that using Tes4Edit (Clean Masters command) or Tes4Gecko (Edit Master List). Note that Tes4Edit will only remove masters that you're not using at all. Tes4Gecko will remove used masters (with appropriate cleanup), and is a bit more manual -- i.e. it will only remove masters that you specify.
 
 === Export/Import Editor Ids
 * Export and import editor ids. This is for advanced modders only. It allows you to export editor ids to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the editor ids of a lot of items at once.
@@ -732,6 +736,17 @@ These are the commands found on context menu for mods...
 === Export/Import Groups
 * Exports/Imports groups for selected mods to/from a xxx_Group.csv file.
 * For use with [[#|Balo]].
+
+=== Export/Import Item Data
+* (IN DEVELOPMENT - export is almost 100%, import is only partialy done)
+* Export Item Data exports almost complete object information from the mod to a tab delimited spreadsheet file. You can then edit this file and re-import it (only partially competed), import the file to another mod or use it with the [[#|Import Names]].
+* Import Names imports object names from either another mod or a spreadsheet file created by Export Object Names.
+* __Notes__
+  * Exporting/importing is done on the basis of type (ARMO, BOOK, etc.) and formids.
+  * All records in the TESCS "Objects Window" with names are supported. Cells and dialog are not.
+  * On import, only the objects that already exist in the mod are affected.
+* __Uses__
+  * Systematic fast item manipulation for mass changing items in mods. 
 
 === Export/Import Names
 * Export Names exports object names from the mod to a tab delimited spreadsheet file. You can then edit this file and re-import it, import the file to another mod or use it with the [[#|Import Names]].
@@ -769,6 +784,12 @@ These are the commands found on context menu for mods...
 * To be used in conjunction with [[#|Import Relations]].
 * Note: This does not export race relations.
 
+=== Export/Import Prices
+* These paired functions allow you to export pries to a csv files, edit the file and then reimport the prices data. Mainly actually devoloped for use by Economy Overhaul.
+* __Uses/Use__
+  * Using an external editor with better editing capabilities.
+  * Editing in a systematic manner all the prices for items.
+  
 === Export/Import Stats
 * These paired functions allow you to export ammo, apparatus, armor, book, clothing, ingredient, key, light, misc object, sigil stone, soulgem  and weapon stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Stats]]. 
 * __Uses__
@@ -1007,10 +1028,11 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * If you have edited tags but want to revert to automatic tagging, just right click and choose "Automatic". 
   * Modders may want to copy their tags to the Description field before releasing their mod (this will make your tag settings automatic for users of your mod). Again, right click and choose "Copy to Description".
 * __Automatic Tagging__
-  * If the bash tags field is set to "Automatic" for a given mod (which is by default), then Bash will attempt to automatically tag the mod according to one of several sources. These sources are, in order of priority:
+  * If the bash tags field is set to "Automatic" for a given mod (which is by default), then Bash will attempt to automatically tag the mod according to all available of several sources. These sources are:
     * The description field. 
     * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder.
     * Bash Patches\Leveled Lists.csv file. This file has a very small list and is largely surpassed by BOSS. (But is useful for people who don't have BOSS installed.)
+    * Bash Patches\taglist.txt (if the masterlit.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist
   * Keep in mind that there is no guarantee that all mods will be correctly tagged. However, between the description field and BOSS, most important tags are covered. 
 
 -------------------------------------------------------------------------------
@@ -1058,17 +1080,33 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 -------------------------------------------------------------------------------
 __Importers__ are components that import specific information from selected mods and/or text files and incorporate that into the patch file. 
 
+=== Import Actors
+* Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. Currently split between a few seperate patchers.
+* __Configuration
+  * Source mods ~~must~~ contain one (or more) of the following tags (each of which links to its own patcher in the patch dialogue).
+    * Actors.DeathItems
+    * Actors.Animations
+      * (note: direct import rather than merge - this will hopefully be fixed next version (279))
+    * Actors.AIData
+    * Actors.AIPackages 
+      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 279)
+    * Actors.Stats
+* __Usage__
+  * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
+  * In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
+
 === Import Cells
 * Allows certain changes to cell to be imported from source mods.
 * __Configuration__
   * Source mods ~~must~~ contain one or more of the following bash [[#BashTags|tags]]. 
     * C.Climate: Mod changes cell climate.
     * C.Light: Mod changes cell lighting and/or fog.
+    * C.Name: Mod changes cell names.
     * C.Owner: Mod changes cell ownership.
     * C.Water: Mod changes cell water type/level.
 * __Usage__
   * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
-  * In case two source mods modify the same cell in the same way, then the later loading source mod will win. If they modify the same cel in different ways (e.g. one changes water, the other changes ownership), then both changes will be included in the patch.
+  * In case two source mods modify the same cell in the same way, then the later loading source mod will win. If they modify the same cell in different ways (e.g. one changes water, the other changes ownership), then both changes will be included in the patch.
 
 === Import Factions
 * Allows factions to be imported from source mods and/or source csv files.
@@ -1156,12 +1194,20 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Scripts
 * __Overview__
-  * There are a fair number of mods that change the scripts on items and they often got blocked by the overhauls or cause compatibility problems. This fixes it so only the script change gets brought forward (and non-conflicting data)
+  * There are a fair number of mods that change the scripts on items and they often got blocked by the overhauls or cause compatibility problems. This fixes it so only the script change gets brought forward (and non-conflicting data). As of Wrye Bash version 278 no longer bringing script records forward if they are identical to the master record.
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>Scripts</code> [[#BashTags|tag]] in the mod description. 
 * __Script/Records Handled:__
   * all editor object except spells and quests
   
+=== Import ScriptsContents
+* __Overview__
+  * Designed really to import the script subrecord of Dialogue records but not working for that yet, works fine for regular scripts currently. As of Wrye Bash version 278 no longer bringing script records forward if they are identical to the master record.
+* __Configuration:__ 
+  * Source mods are automatically recognized if they have a <code>ScriptContents</code> [[#BashTags|tag]] in the mod description. 
+* __Script/Records Handled:__
+  * all script TopGroup records - but not the script segments of dialogues/quest stages (yet).
+
 === Import Sound
 * __Overview__
   * There are not many mods that modify the sounds of existing records, but there are a few mods that tweak the sounds of magic effects (e.g. to silence them). Since magic effect records tend to modified for other reasons as well, other changes to the same records will wipe out the changes to sounds. This patcher component allows you to make sure that changes to the sounds of spells are included in the final version of the record.
@@ -1186,6 +1232,17 @@ __Importers__ are components that import specific information from selected mods
 
 -------------------------------------------------------------------------------
 __Tweakers__ tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
+=== Globals
+* Change specified globals to specified values.
+
+=== NPC Tweaker
+* Changes to NPC record subrecords; such as skeleton.
+* __Mayu's Animation Overhaul Skeleton Tweaker__
+  * Sets NPC skeletons paths to match that required for MAO to work.
+* __Redguard FGTS Nuller__
+  * Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
+* __Vanilla Beast Skelton Tweaker__
+  * Sets any NPCs using the vanilla non-beast skeleton path (skeleton.nif) to use the beast skeleton patch (skeletonbeast.nif). This avoids bugs when a mod changes the race of an NPC to a beast race without setting the skeleton path to the beast path, in which case the tail will appear to extend forever and weird stuff like that.
 
 === Tweak Assorted
 * Assorted Tweaks...
@@ -1449,6 +1506,18 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
 * Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
 * For more info on ruleset syntax, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker|UESP: Wrye Bash Mod Checker]].
+
+== INI Tweaks Tab ==================================================================
+* This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
+* **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
+* **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
+* __Checkbox Colors__ 
+  <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
+  <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
+    * Checkbox colors indicate the status of the ini tweak
+  * Orange: Invalid; some or all variables set in the INI do not exist in Oblivion.ini
+  * Green: Valid; all values exist in the oblivion.ini. But not 'Active' - as in not all changes in the tweak are applied.
+  * Green with Check: Valid and Active.
 
 == Saves Tab ==================================================================
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
@@ -1826,7 +1895,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 278 [??/02/2010] [PacificMorrowind, Haama, Lojack] (In Development)
+=== 278 [23/02/2010] [PacificMorrowind, Haama, Lojack]
 * NoMerge tag now correctly makes mods not show up as mergeable in the main window
 * The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
 * New export/import options; Item Data, Prices
