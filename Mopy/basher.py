@@ -72,8 +72,13 @@ from balt import spacer, hSizer, vSizer, hsbSizer, vsbSizer
 from balt import colors, images, Image
 from balt import Links, Link, SeparatorLink, MenuLink
 
-if bosh.inisettings['enablewizard']:
-    import belt     #BAIN scripting
+try:
+    if bosh.inisettings['enablewizard']:
+        import belt     #BAIN scripting
+except KeyError:
+    bosh.initDirs()
+    if bosh.inisettings['enablewizard']:
+        import belt     #BAIN scripting
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):

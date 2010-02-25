@@ -96,6 +96,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 #--Settings
 dirs = {} #--app, user, mods, saves, userApp
 inisettings = {}
+inisettings['AutoItemCheck'] = False
 defaultExt = '.7z'
 writeExts = dict({'.7z':'7z','.zip':'zip'})
 readExts = set(('.rar',))
@@ -7284,16 +7285,17 @@ class ModInfo(FileInfo):
     def getBashTags(self):
         """Returns any Bash flag keys."""
         tags = self.getRow().get('bashTags')
-        if tags is None: tags = set()
-        tagstemp = self.getBashTagsDesc()
-        if tagstemp:
-            for tag in tagstemp:
-                tags.add(tag)
-        tagstemp = configHelpers.getBashTags(self.name)
-        if tagstemp:
-            for tag in tagstemp:
-                tags.add(tag)
-        #--Filter and return
+        if tags is None:
+            tags = set()
+            tagstemp = self.getBashTagsDesc()
+            if tagstemp:
+                for tag in tagstemp:
+                    tags.add(tag)
+            tagstemp = configHelpers.getBashTags(self.name)
+            if tagstemp:
+                for tag in tagstemp:
+                    tags.add(tag)
+            #--Filter and return
         tags.discard('Merge')
         return tags
 
@@ -8960,8 +8962,10 @@ class ConfigHelpers:
         tags = set()
         if modName in self.bossMasterTags:
             tags = set(self.bossMasterTags[modName])
+            print tags
         if modName in self.patchesLLTags:
-            for tag in self.patchesLLTag:
+            for tag in self.patchesLLTags[modName]:
+                print tag
                 tags.add(tag)
         return tags
 

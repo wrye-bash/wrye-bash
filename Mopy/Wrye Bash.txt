@@ -1895,6 +1895,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 278c [24/02/2010] [PacificMorrowind]
+* Fixed a bug in autotagging (reported by Arthmoor)
+
+=== 278b [24/02/2010] [PacificMorrowind]
+* Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
+* Fixed a fatal bug with with new autocheck inisettings(reported by Gabba)
+* Fixed a bug in autotagging (reported by Gabba)
+
 === 278 [23/02/2010] [PacificMorrowind, Haama, Lojack]
 * NoMerge tag now correctly makes mods not show up as mergeable in the main window
 * The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
