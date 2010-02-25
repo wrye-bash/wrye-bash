@@ -1,0 +1,74 @@
+Wizard Install System Beta Docs:
+~~~~~~~~~~
+Image files:
+ Cancel.jpg - Example page that is shown when the 'Cancel' keyword is used
+ Finish.jpg - Example of what the final page looks like when the script is finished
+ SelectMany.jpg - Example of what using a 'SelectMany' keyword looks like
+ SelectOne.jpg - Example of what using a 'SelectOne' keyword looks like
+ Versions.jpg - Example of using the 'RequireVersions' keyword, and some versions are not met
+  
+Supports variables (numbers only, no strings), math, and is fairly easy to add new keywords/functions.
+Strings can be surrounded by single quotes (') or double quotes (").
+Ending a line with a backslash (\) will make the parser treat it as a run-on line (the code for that line continues on the next line).
+Comments are denoted with a semi-colon (;)
+Arguments for functions can be seperated by a comma (,) or any whitespace
+To declare a variable just use it in an assignment operation
+
+Some UI elements added to support this are 3 new right click options for installers:
+ - 'Wizard' - runs the wizard for the installer, if it exists (wizard.txt)
+ - 'Auto Wizard' - runs the wizard, but for SelectOne/SelectManys uses the default options
+ - 'Edit Wizard' - opens the wizard.txt file for editing (Projects only)
+Also 1 new right click options for BAIN in general:
+ - 'Auto-Anneal/Install Wizards' - if enabled, after a wizard is run, BAIN will install/anneal
+      installer as applicable.  Otherwise, it will just check the boxes for 'sub-packages' and
+      'esp/m filter', without installing
+
+Internally, objects are split up into a few types:
+ - Operators (like the assignment or boolean operators)
+ - Functions: these are used in the format of:
+     functionName(arguments)
+     It requires opening and closing parenthesis, and returns a value
+ - Keywords: similar to a function, but no parenthesis, no value is returned
+     Example: Note 'Don\'t forget to install OBSE!'
+ - In general the difference between a function and a keyword is, functions return a value to
+   be used in a calculation or If statement, while keywords do not return a value, and usually
+   are used to create a prompt, cause some sort of flow control, or make an action happen
+
+ - Function List:
+     CompareOblivionVersion('version string') - return -1,0,1 if installed version
+                    is less than,equal, or greater than the given version string
+     CompareOBSEVersion('version string') - same but for OBSE
+     CompareOBGEVersion('version string') - same but for OBGE
+     !(value) - the NOT operator.  It was easier to code this way, so you must use parenthesis
+     DataFileExists('filename') - return True if the file exists, False otherwise.  Path is
+                    relative to the Data directory
+ - Keyword List:
+     SelectSubPackage 'subpackage' - mark a subpackage and all its esps/esms for installation
+     DeSelectSubPackage 'subpackage'
+     SelectEspm 'esp/esm' - mark a specific esp or esm for install
+     DeSelectEspm
+     SelectAll - mark all subpackages and esps/esms for install
+     DeSelectAll
+     SelectAllEspms - mark all esps/esms for install
+     DeSelectAllEspms
+     Note 'message' - Add a message to the 'Notes' section on the 'Finish' page
+     If-Elif-Else-EndIf   - Your basic If control statement
+     SelectOne 'Main description', '|option1', 'description1', 'image1' ...
+         - 'Main Description' - text displayed at the top of the page
+         - option1 - option in the list box.  A '|' denotes a default option
+         - description1 - Description to be displayed when option1 is selected
+         - image1 - Image to display with option1 is selected
+     SelectMany - Same as SelectOne, but multiple options may be selected
+     Case/Default/Break/EndSelect - Use with SelectOne/Many, just like in OBMM
+     Return - Signals the completion of installation.  Jumps to the 'Finish' page
+     Cancel 'message' - Cancels installation, giving a message why
+     RequireVersions 'oblivion version', 'obse version', 'obge version'
+         - checks the installed versions against the given versions, if you don't meet the
+           requirements, shows a page telling why.  If any versions string is given as '0' or '',
+           it is treated as a 'None' requirement
+  - Predefined constants:
+     True
+     False
+
+*NOTES*
+ *the NOT operator '!' is coded as a function rather than an operator.  This was easier to code.  That means to use it you must enclose whatever you are 'NOT-ing' in parenthesis
