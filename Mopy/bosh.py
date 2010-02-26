@@ -8962,10 +8962,8 @@ class ConfigHelpers:
         tags = set()
         if modName in self.bossMasterTags:
             tags = set(self.bossMasterTags[modName])
-            print tags
         if modName in self.patchesLLTags:
             for tag in self.patchesLLTags[modName]:
-                print tag
                 tags.add(tag)
         return tags
 
@@ -12043,7 +12041,7 @@ class ItemStats:
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        alch, ammo, appa, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        potions, ammo, apparatus, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         pack,unpack = struct.pack,struct.unpack
@@ -12120,6 +12118,10 @@ class ItemStats:
             ('AMMO', bolt.csvFormat('sfiifi')+'\n',
                 ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
                 _('Editor Id'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'))) + '"\n')),
+            #--Apparatus
+            ('APPA', bolt.csvFormat('sfii')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Quality'))) + '"\n')),
             #--Armor
             ('ARMO', bolt.csvFormat('sfiii')+'\n',
                 ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
@@ -12246,6 +12248,10 @@ class ItemPrices:
                 _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
             #Ammo
             ('AMMO', bolt.csvFormat('iss')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
+            #--Apparatus
+            ('APPA', bolt.csvFormat('iss')+'\n',
                 ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
                 _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
             #--Armor
@@ -14188,7 +14194,7 @@ class CellImporter(ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name')
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -14208,6 +14214,7 @@ class CellImporter(ImportPatcher):
             'fogRed','fogGreen','fogBlue','unused3',
             'fogNear','fogFar','directionalXY','directionalZ',
             'directionalFade','fogClip'),
+            'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
             }
         self.recFlags = {
             'C.Climate': 'behaveLikeExterior',
@@ -14215,6 +14222,7 @@ class CellImporter(ImportPatcher):
             'C.Owner': 'publicPlace',
             'C.Water': 'hasWater',
             'C.Light': '',
+            'C.RecordFlags': '',
             }
 
     def getReadClasses(self):
