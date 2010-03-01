@@ -3694,7 +3694,7 @@ class BashFrame(wx.Frame):
         testFile = GPath(bosh.dirs['app']).join('Data','Docs','wtxt_teal.css')
         if not self.incompleteInstallError and not testFile.exists():
             self.incompleteInstallError = True
-            message = _("Installation appears incomplete. Please re-unzip bash to Oblivion directory so that ALL files are installed.\n\nCorrect installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblvion\\Data\\INI Tweaks directories.")
+            message = _("Installation appears incomplete. Please re-unzip bash to Oblivion directory so that ALL files are installed.\n\nCorrect installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblivion\\Data\\INI Tweaks directories.")
             balt.showWarning(self,message,_("Incomplete Installation"))
         #--Merge info
         oldMergeable = set(bosh.modInfos.mergeable)
@@ -10638,22 +10638,22 @@ def InitStatusBar():
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom1'],
-            Image(r'images/custom1.png'),
+            Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
             _(bosh.inisettings['custom1txt'])))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom2'],
-            Image(r'images/custom2.png'),
+            Image(r'images/custom2'+bosh.inisettings['iconSize']+'.png'),
             _(bosh.inisettings['custom2txt'])))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom3'],
-            Image(r'images/custom3.png'),
+            Image(r'images/custom3'+bosh.inisettings['iconSize']+'.png'),
             _(bosh.inisettings['custom3txt'])))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom4'],
-            Image(r'images/custom4.png'),
+            Image(r'images/custom4'+bosh.inisettings['iconSize']+'.png'),
             _(bosh.inisettings['custom4txt'])))
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())

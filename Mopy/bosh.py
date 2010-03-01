@@ -19770,13 +19770,13 @@ def initDirs(personal='',localAppData=''):
         if bashIni.has_option('Tool Options','bshowaudiotoollaunchers'):
             inisettings['showaudiotoollaunchers'] = bashIni.get('Tool Options','bshowaudiotoollaunchers').strip()
         if bashIni.has_option('Tool Options','sCustom1txt'):
-            inisettings['Custom1txt'] = bashIni.get('Tool Options','sCustom1txt').strip()
+            inisettings['custom1txt'] = str(bashIni.get('Tool Options','sCustom1txt')).strip()
         if bashIni.has_option('Tool Options','sCustom2txt'):
-            inisettings['Custom2txt'] = bashIni.get('Tool Options','sCustom2txt').strip()
+            inisettings['custom2txt'] = str(bashIni.get('Tool Options','sCustom2txt')).strip()
         if bashIni.has_option('Tool Options','sCustom3txt'):
-            inisettings['Custom3txt'] = bashIni.get('Tool Options','sCustom3txt').strip()
+            inisettings['custom3txt'] = str(bashIni.get('Tool Options','sCustom3txt')).strip()
         if bashIni.has_option('Tool Options','sCustom4txt'):
-            inisettings['Custom4txt'] = bashIni.get('Tool Options','sCustom4txt').strip()
+            inisettings['custom4txt'] = str(bashIni.get('Tool Options','sCustom4txt')).strip()
 
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
