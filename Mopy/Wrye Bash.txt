@@ -987,9 +987,11 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 === Bash Tags
 * Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.
 * __{{A:Current Tags}}:__
+  * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) ([[#|Import Actors]])
   * Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
   * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
   * Actors.Animations: Mod modifies Creature or NPC special Animations list ([[#|Import Actors]]).
+  * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles ([[#|Import Actors]]). 
   * Actors.DeathItems: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
   * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
   * Body-F: Mod modifies female body definition ([[#|Race Info]]).
@@ -1000,6 +1002,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
   * C.RecordFlags: Mod changes the offlimits/dangerous flag ([[#|Import Cells]]).
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
+  * Creatures.Blood: Mod changes the creature blood subrecords ([[#|Import Actors]]).
   * Delev: Mod deletes items from ([[#|Leveled Lists]]).
   * Eyes: Mod contributes eyes ([[#|Race Info]]).
   * Relations: Mod changes faction relationships ([[#|Import Relations]]).
@@ -1013,6 +1016,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Merge: Obsolete. Ignored.
   * Names: Mod is a renamer ([[#|Import Names]]).
   * NoMerge: Mod should not be merged even though they're technically mergeable.
+  * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
   * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
   * R.Mouth: Mod changes mouth/tongue ([[#|Race Info]]).
   * R.Relations: Mod changes race relationships ([[#|Race Info]]).
@@ -1082,16 +1086,21 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 __Importers__ are components that import specific information from selected mods and/or text files and incorporate that into the patch file. 
 
 === Import Actors
-* Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. Currently split between a few seperate patchers.
+* Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
 * __Configuration
-  * Source mods ~~must~~ contain one (or more) of the following tags (each of which links to its own patcher in the patch dialogue).
-    * Actors.DeathItems
-    * Actors.Animations
+  * Source mods for the main patcher ~~must~~ contain one (or more) of the following tags:
+    * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
+    * Actors.AIData: Mod modifies Creature or NPC AI Data.
+    * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
+    * Actors.DeathItems: Mod modifies Creature or NPC Death Item.
+    * Actors.Stats: Mod modifies Creature or NPC stats.
+    * Creatures.Blood: Mod changes the creature blood subrecords.
+    * NPC.Class: Mod changes the designated classes of NPCs.
+  * There are also two secondary patchers:
+    * Actors.Animations: Mod changes the KFFZ subrecord of NPCs or Creatures.
       * (note: direct import rather than merge - this will hopefully be fixed next version (279))
-    * Actors.AIData
     * Actors.AIPackages 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 279)
-    * Actors.Stats
+      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
 * __Usage__
   * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
   * In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
@@ -1910,6 +1919,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
         * Creatures.Blood (added to Import Actors)
     * Changes:
         * Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
+* Taglist updated to Masterlist version 694 and other enhancements
+* LeveledList.csv removed and only using Taglist/Masterlist to get tags.
+* Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
 
 === 278.1 [24/02/2010] [PacificMorrowind]
 * Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
