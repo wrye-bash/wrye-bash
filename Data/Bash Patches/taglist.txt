@@ -1,15 +1,21 @@
-\ Taglist for Wrye Bash; derived from BOSS Masterlist revision 677.
+\ Taglist for Wrye Bash; derived from BOSS Masterlist revision 694.
 \ Leading symbol code:
 \
 \ \ A silent comment - will be ignored by the program.
 \ % A Bashed Patch suggestion for the mod above.
 
+Francesco's Leveled Creatures-Items Mod.esm
+% {{BASH:Invent, Delev, Relev, Actors.AIData,Actors.Stats, Stats}}
 Qarls_Harvest.esm
 % {{BASH:Scripts}} and no need for OOO patch.
 Oscuro's_Oblivion_Overhaul.esm
 % {{BASH:Invent,Scripts,Stats,Relations}}
 Mart's Monster Mod.esm
-% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+Mart's Monster Mod for OOO.esm
+% {{BASH:Delev,Factions,Relations,Relev}}
+FCOM_Convergence.esm
+% {{BASH:Delev,Factions,Relations,Relev}}
 SoVvM.esm
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Chocolate Elves.esm
@@ -30,7 +36,6 @@ on - BP - SSBFL.esp
 % {{BASH:Graphics,Scripts}}
 !Oblivion_PL.esp
 % {{BASH:Names}}
-\EndGroup\\
 
 xeoex.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics}}
@@ -126,16 +131,13 @@ Specular_Fix_1.1.esp
 % {{BASH:Graphics}}
 
 AdventurersItemMod.esp
-? If not using Bash this must be loaded after UOP but then you will lose a lot of fixes from UOP.
 % {{BASH:Invent,Relations}} needed so that it will work before UOP and still have the inventory changes from this.
 Self-Preservation v1.0.esp
-? If not using Bash this must be loaded after UOP/OOO/MMM/FCOM/any NPC editing mod but you'll lose their NPC edits
 % {{BASH:Scripts}}
 Traduccion Mejorada Oblivion Clan DLAN.esp
 % {{BASH:Names}} or without Bash load it later.
 Unofficial Oblivion Patch.esp
-? Recommend installing UOP hotfix for additional fixes: http://www.tesnexus.com/downloads/file.php?id=27710
-% {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Scripts,Stats,Relations}} and remove the C.Water tag (only exist in older version).
+%{{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Scripts,Stats,Relations}} and remove the C.Water tag (only exist in older version).
 Unofficial Oblivion Patch DV.esp
 % {{BASH:C.Climate,C.Light,C.Owner,Delev,Invent,Names,Relev,Stats,Relations}} and remove the C.Water tag.
 Correctif.esp
@@ -150,17 +152,17 @@ Traduccion Mejorada S.I.esp
 Unofficial Shivering Isles Patch.esp
 ? Remember to use the 'MOBS' version when using Francesco's and FCOM.
 ? Newest MOBS and non-MOBS versions have the same name.
-% {{BASH:C.Light,C.Owner,Invent,Names,Relations,Stats,Delev}}
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,C.Light,C.Owner,Invent,Names,Relations,Stats,Delev}}
 MOBS.esp
 % {{BASH:Stats}}
 MOBS SI.esp
 % {{BASH:Stats}}
->Francesco's Dark Seducer Weapons Patch.esp
->% {{BASH:Delev, Relev}}
->FranDarkSeducerWeapFix.esp
->% {{BASH:Delev, Relev}}
->Fran Armor Add-on.esp
->% {{BASH:Invent}}
+Francesco's Dark Seducer Weapons Patch.esp
+% {{BASH:Delev, Relev}}
+FranDarkSeducerWeapFix.esp
+% {{BASH:Delev, Relev}}
+Fran Armor Add-on.esp
+% {{BASH:Invent}}
 OMOBS_FRAN.esp
 % {{BASH:Stats}}
 Atmospheric Loading Screens.esp
@@ -184,6 +186,12 @@ BlackLoadNoTip.esp
 % {{BASH:Graphics}}
 Zira's Horse Theme Loadscreens.esp
 % {{BASH:Graphics}}
+All Natural - Real Lights.esp
+% {{BASH:C.Light}}
+? Do not use with original Real Lights mod.
+All Natural.esp
+? Required for All Natural.
+% {{BASH:C.Climate}}
 Natural Interiors.esp
 % {{BASH:C.Climate}}
 SnakeLightningSpeed.esp
@@ -815,6 +823,10 @@ greyclydesdale.esp
 % {{BASH:Graphics}}
 brownclydesdale.esp
 % {{BASH:Graphics}}
+Marts Monster Mod - DLCHorseArmor+Slof.esp
+% {{BASH:Graphics}}
+Mart's Monster Mod - DLCHorseArmor+Slofs .esp
+% {{BASH:Graphics}}
 DLCHorseArmor_SlofBase.esp
 % {{BASH:Graphics}}
 DLCHorseArmor_SlofNightmare.esp
@@ -831,8 +843,6 @@ DLCHorseArmor+SBLite+QarlsHarvest.esp
 % {{BASH:Graphics}}
 DLCHorseArmor+SBLite.esp
 % {{BASH:Graphics}}
-DLCHorseArmor+HorseCommands.esp
-DLCHorseArmor+HorseCommandsSI.esp
 DLCHorseArmor+Slof'sBase+Accessories.esp
 % {{BASH:Graphics}}
 DLCHorseArmor+ArmoredImperialSlofsHorses.esp
@@ -854,10 +864,12 @@ Mart's Monster Mod - Hemingweys NPC and Guard Capes.esp
 % {{BASH:Invent}}
 Ranokoas Organized Potions.esp
 % {{BASH:Names}}, deactivate. If not using Wrye Bash load with overrides but then incompatible with most overhauls etc.
+DLCThievesDen.esp
+% {{BASH:C.Name,C.Light}}
 Thievesden_mobs.esp
 % {{BASH:Stats}}
-<Fran Armor Add-on.esp
-<% {{BASH:Invent}}
+Fran Armor Add-on.esp
+% {{BASH:Invent}}
 Francesco's Optional Files.esp
 * Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
@@ -874,41 +886,40 @@ Francesco's Optional Files 4.esp
 * Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
 Oscuro's_Oblivion_Overhaul.esp
-% {{BASH:Delev,Invent,Names,Relations,Relev,Stats,Scripts}}
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
 OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
 % {{BASH:Stats}}
 OMOBS.esp
 % {{BASH:Stats}}
 OMOBS_SI.esp
 % {{BASH:Stats}}
->FCOM_Convergence.esp
-% {{BASH:Invent,Relations,Delev,Factions,Stats,Relev}}
->Mart's Monster Mod - Diverse Runeskulls.esp
->? Replaces both 'FCOM_ExnemRuneskulls.esp' and 'ExnemRuneskulls.esp'.
->% {{BASH:Delev,Relev}}
->Mart's Monster Mod - Hunting & Crafting.esp
->% {{BASH:Scripts}}
->MMM - Playable Undead Armors.esp
->% {{BASH:Invent}}
->MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
->% {{BASH:Invent}}
+FCOM_Convergence.esp
+% {{BASH:Actors.AIData,Actors.AIPackages, Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+Mart's Monster Mod - Diverse Runeskulls.esp
+? Replaces both 'FCOM_ExnemRuneskulls.esp' and 'ExnemRuneskulls.esp'.
+% {{BASH:Delev,Relev}}
+Mart's Monster Mod - Hunting & Crafting.esp
+% {{BASH:Scripts}}
+MMM - Playable Undead Armors.esp
+% {{BASH:Invent}}
+MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+% {{BASH:Invent}}
 Mart's Monster Mod.esp
-% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
-<Mart's Monster Mod for Fran.esp
->* Delete. Not needed with FCOM.
+{%{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+Mart's Monster Mod for Fran.esp
+%{{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
 <% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
-<Mart's Monster Mod for Francescos.esp
-<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
-<Mart's Monster Mod for OOO.esp
->* Delete. Not needed with FCOM.
-<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
-<Mart's Monster Mod - Diverse Runeskulls.esp
-<? Do not use Exnem's original Runeskulls mod - Diverse Runeskulls replaces it.
-<% {{BASH:Delev,Relev}}
-<MMM - Playable Undead Armors.esp
-<% {{BASH:Invent}}
-<MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
-<% {{BASH:Invent}}
+Mart's Monster Mod for OOO.esp
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+Mart's Monster Mod - Shivering Isles.esp
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+Mart's Monster Mod - Diverse Runeskulls.esp
+? Do not use Exnem's original Runeskulls mod - Diverse Runeskulls replaces it.
+% {{BASH:Delev,Relev}}
+MMM - Playable Undead Armors.esp
+% {{BASH:Invent}}
+MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+% {{BASH:Invent}}
 Mart's Monster Mod - Diverse RuneSkull Loot.esp
 ? Not compatible with MMM Gems & Gem Dust or MMMforOOO
 % {{BASH:Delev}}
@@ -980,8 +991,8 @@ FCOM_FriendlierFactions.esp
 % {{BASH:Relations}}
 TIE.esp
 % {{BASH:Delev,NpcFaces,Relations,Relev}}
->Mart's Monster Mod - Shivering Isles.esp
->% {{BASH:Relev,Delev}}
+Mart's Monster Mod - Shivering Isles.esp
+% {{BASH:Relev,Delev}}
 LoadingScreens-OOO.esp
 % {{BASH:Graphics,NoMerge}}
 RustyItems for OOO.esp
@@ -1027,6 +1038,8 @@ Enhanced Quest Roleplaying.esp
 % {{BASH:Factions}}
 ArtifactsFemaleArmor
 % {{BASH:Graphics}}
+BrotherhoodRenewed.esp
+% {{BASH:Actors.AIPackages}}
 CDEP-UnderpallCave.esp
 % {{BASH:C.Light, C.Water}}
 HauntedHouse v1.3.esp
@@ -1059,7 +1072,9 @@ Arena_BattlesV1.2EV.esp
 Battlehorn_mobs.esp
 % {{BASH:Stats}}
 DLCFrostcrag.esp
-% {{BASH:C.Owner}}
+% {{BASH:C.Name,C.Owner}}
+DLCFrostcrag - Unofficial Patch.esp
+% {{BASH:C.Name,C.Owner}} and remove the C.Climate tag
 Ulrim's Horses - LegionArmor.esp
 ? Obsolete. Check for newer version.
 % {{BASH:Graphics}} for Slof's Horses compatibility.
@@ -1096,14 +1111,11 @@ MOBS_Knights.esp
 MOBS Knights.esp
 % {{BASH:Stats}}
 Mart's Monster Mod - Knights of the Nine Patch.esp
-* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
-% {{BASH:Delev}}
+% {{BASH:Actors.AIData,Actors.AIPackages, Actors.Stats,Delev,Relev,Stats}}
 Mart's Monster Mod - Knights.esp
-* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
-% {{BASH:Delev}}
+% {{BASH:Actors.AIData,Actors.AIPackages, Actors.Stats,Delev,Relev,Stats}}
 Mart's Monster Mod for OOO - Knights .esp
-* Delete. Not FCOM compatible. Use FCOM_knights.esp instead.
-% {{BASH:Delev}}
+% {{BASH:Actors.AIData,Actors.AIPackages, Actors.Stats,Delev,Relev,Stats}}
 DLC_MOBS.esp
 ? Don't use Battlehorn_mobs.esp, Lair_mobs.esp, Mehrunes_mobs.esp, or Thievesden_mobs.esp if using this as this includes all those.
 ? Use version 1.01 'http://tesnexus.com/downloads/download.php?id=29355' for Bashed Patch
@@ -1121,7 +1133,7 @@ FCOM_Knights.esp
 ElsweyrAnequinaNoSpiders.esp
 % {{BASH:Delev}}
 Faregyl.esp
-% {{BASH:Relations}}
+% {{BASH:Factions,Relations}}
 Fort Akatosh.esp
 % {{BASH:Relations}}
 FortAkatosh.esp
@@ -1811,8 +1823,6 @@ RhiannaII.esp
 Rinn.esp
 % {{BASH:Hair,Eyes}}
 Saerileth.esp
-% {{BASH:Hair,Eyes}}
-sexycompanion.esp
 % {{BASH:Hair,Eyes}}
 SnowAndHarukoCMPartners.esp
 % {{BASH:Hair,Eyes}}
