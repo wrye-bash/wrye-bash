@@ -1399,7 +1399,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.Stats'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -3471,9 +3471,9 @@ class BashNotebook(wx.Notebook):
             self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
-        self.AddPage(INIPanel(self),_("INI Edits"))
         #self.AddPage(BSAPanel(self),_("BSAs"))
         self.AddPage(SavePanel(self),_("Saves"))
+        self.AddPage(INIPanel(self),_("INI Edits"))
         self.AddPage(ScreensPanel(self),_("Screenshots"))
         if re.match('win',sys.platform):
             self.AddPage(MessagePanel(self),_("PM Archive"))
@@ -4901,13 +4901,9 @@ class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 
 class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
 
-class ActorStatsPatcher(bosh.ActorStatsPatcher,ListPatcher): pass
-
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 
-class ActorDeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
-
-class ActorAIDataPatcher(bosh.ActorAIDataPatcher,ListPatcher): pass
+class ActorImporter(bosh.ActorImporter,ListPatcher): pass
 
 class CellImporter(bosh.CellImporter,ListPatcher): pass
 
@@ -4976,9 +4972,7 @@ PatchDialog.patchers.extend((
     PatchMerger(),
     AlchemicalCatalogs(),
     ActorAnimPatcher(),
-    ActorAIDataPatcher(),
-    ActorDeathItemPatcher(),
-    ActorStatsPatcher(),
+    ActorImporter(),
     NPCAIPackagePatcher(),
     CoblExhaustion(),
     CellImporter(),

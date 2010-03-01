@@ -8907,11 +8907,7 @@ class ConfigHelpers:
 
     def __init__(self):
         """Initialialize."""
-        #--Bash Patches\Leveled Lists.csv
-        self.patchesLLPath = dirs['patches'].join('Leveled Lists.csv')
-        self.patchesLLTime = 0
-        self.patchesLLTags = {}
-        #--Boss Master List
+        #--Boss Master List or if that doesn't exist use the taglist
         self.bossMasterPath = dirs['mods'].join('masterlist.txt')
         if not self.bossMasterPath.exists():
             self.bossMasterPath = dirs['patches'].join('taglist.txt')
@@ -8922,18 +8918,7 @@ class ConfigHelpers:
 
     def refresh(self):
         """Reloads tag info if file dates have changed."""
-        #--Bash Patches\Leveled Lists.csv
-        path,mtime,tags = (self.patchesLLPath, self.patchesLLTime, self.patchesLLTags,)
-        if path.exists() and path.mtime != mtime:
-            tags.clear()
-            mapper = {'D':'Delev','R':'Relev'}
-            reader = bolt.CsvReader(path)
-            for fields in reader:
-                if len(fields) >= 2 and fields[0] and fields[1] in ('DR','R','D','RD',''):
-                    tags[GPath(fields[0])] = tuple(mapper[x] for x in fields[1])
-            reader.close()
-            self.patchesLLTime = path.mtime
-        #--Boss Master List
+        #--Boss Master List or Taglist
         path,mtime,tags = (self.bossMasterPath, self.bossMasterTime, self.bossMasterTags,)
         if path.exists() and path.mtime != mtime:
             tags.clear()
@@ -8959,13 +8944,10 @@ class ConfigHelpers:
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
-        tags = set()
         if modName in self.bossMasterTags:
             tags = set(self.bossMasterTags[modName])
-        if modName in self.patchesLLTags:
-            for tag in self.patchesLLTags[modName]:
-                tags.add(tag)
-        return tags
+            return tags
+        else: return None
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
@@ -14554,6 +14536,163 @@ class GraphicsPatcher(ImportPatcher):
             if count: log("* %s: %d" % (type,count))
 
 #------------------------------------------------------------------------------
+class ActorImporter(ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Import Actors')
+    text = _("Import Actor components from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Actors.DeathItem', 'Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood')
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        self.actorClasses = (MreNpc,MreCrea)
+        for recClass in (MreNpc,):
+            self.recAttrs_class[recClass] = {
+                'Actors.DeathItem': ('deathItem',),
+                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                'Actors.Stats': ('skills','health','attributes'),
+                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                'NPC.Class': ('iclass',),
+                'Actors.CombatStyle': ('combatStyle',),
+                'Creatures.Blood': (),
+                }
+        for recClass in (MreCrea,):
+            self.recAttrs_class[recClass] = {
+                'Actors.DeathItem': ('deathItem',),
+                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
+                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                'NPC.Class': (),
+                'Actors.CombatStyle': ('combatStyle',),
+                'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                }
+        #--Needs Longs
+        self.longTypes = set(('CREA','NPC_'))
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,MreNpc,MreCrea)
+        longTypes = self.longTypes & set(x.classType for x in self.actorClasses)
+        progress.setFull(len(self.sourceMods))
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in modInfos: continue
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            bashTags = srcFile.fileInfo.getBashTags()
+            masters = modInfos[srcMod].header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for actorClass in self.actorClasses:
+                if actorClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(actorClass)
+                self.classestemp.add(actorClass)
+                attrs = set(reduce(operator.add, (self.recAttrs_class[actorClass][bashKey] for bashKey in srcInfo.getBashTags() if bashKey in self.recAttrs_class[actorClass])))
+                for record in srcFile.tops[actorClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in attrs)
+            for master in masters:
+                masterInfo = modInfos[master]
+                masterFile = ModFile(masterInfo,loadFactory)
+                masterFile.load(True)
+                masterFile.convertToLongFids(longTypes)
+                mapper = masterFile.getLongMapper()
+                for actorClass in self.actorClasses:
+                    if actorClass.classType not in masterFile.tops: continue
+                    if actorClass not in self.classestemp: continue
+                    for record in masterFile.tops[actorClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else: 
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)      
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log("* %s: %d" % (type,count))
+
+#------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _('Import Actors: Animations')
@@ -14578,422 +14717,6 @@ class KFFZPatcher(ImportPatcher):
         #--Needs Longs
         self.longTypes = set(('CREA','NPC_'))
 
-    def initData(self,progress):
-        """Get graphics from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-            for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else: 
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
-        for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
-
-#------------------------------------------------------------------------------
-class DeathItemPatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
-    name = _('Import Actors: Death Items')
-    text = _("Import Actor death items from source mods.")
-    tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.DeathItem'
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
-        self.classestemp = set()
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreCrea,MreNpc):
-            recAttrs_class[recClass] = ('deathItem',)
-        #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
-
-    def initData(self,progress):
-        """Get graphics from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-            for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else: 
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
-        for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
-
-#------------------------------------------------------------------------------
-
-class ActorAIDataPatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
-    name = _('Import Actors: AI Data')
-    text = _("Import Actor AI Data from source mods.")
-    tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.AIData'
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
-        self.classestemp = set()
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreNpc,MreCrea):
-            recAttrs_class[recClass] = ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel')
-        #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))         
-                  
-    def initData(self,progress):
-        """Get graphics from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-            for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else: 
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched Actor AI data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
-        for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
-
-#------------------------------------------------------------------------------
-class ActorStatsPatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
-    name = _('Import Actors: Stats')
-    text = _("Import Actor stats from source mods.")
-    tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.Stats'
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
-        self.classestemp = set()
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        #we'll start with creature's since they are simpler
-        for recClass in (MreCrea,):
-            recAttrs_class[recClass] = ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck')
-        for recClass in (MreNpc,):
-            recAttrs_class[recClass] = ('skills','health','attributes')
-        #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
-        #MelNpcData('DATA','',('skills',[0]*21),'health',('unused2',null2),('attributes',[0]*8)),          
-                  
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return

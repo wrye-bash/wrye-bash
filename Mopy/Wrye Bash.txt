@@ -998,6 +998,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
   * C.Name: Mod changes cell names ([[#|Import Cells]])
   * C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
+  * C.RecordFlags: Mod changes the offlimits/dangerous flag ([[#|Import Cells]]).
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
   * Delev: Mod deletes items from ([[#|Leveled Lists]]).
   * Eyes: Mod contributes eyes ([[#|Race Info]]).
@@ -1103,6 +1104,7 @@ __Importers__ are components that import specific information from selected mods
     * C.Light: Mod changes cell lighting and/or fog.
     * C.Name: Mod changes cell names.
     * C.Owner: Mod changes cell ownership.
+    * C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
     * C.Water: Mod changes cell water type/level.
 * __Usage__
   * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
@@ -1895,10 +1897,21 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 278c [24/02/2010] [PacificMorrowind]
-* Fixed a bug in autotagging (reported by Arthmoor)
+=== 279 [26/02/2010] [PacificMorrowind]
+* Fixed *two* bugs in autotagging (reported by Arthmoor)
+* Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
+* Images for wizard docs added (reported by Surazel)
+* Bashed Patch changes:
+    * New patchers:
+        * Cell RecordFlags import (C.RecordFlags) added to Cells Patcher
+        * Actors.ACBS (added to Import Actors)
+        * NPC.Class (added to Import Actors)
+        * Actors.CombatStyle (added to Import Actors)
+        * Creatures.Blood (added to Import Actors)
+    * Changes:
+        * Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
 
-=== 278b [24/02/2010] [PacificMorrowind]
+=== 278.1 [24/02/2010] [PacificMorrowind]
 * Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
 * Fixed a fatal bug with with new autocheck inisettings(reported by Gabba)
 * Fixed a bug in autotagging (reported by Gabba)
@@ -1935,6 +1948,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * NEW! Wizard based install system (contributed by: Lojack)
 * Updated 7z dll & exe to latest version
 * Various small fixes and code cleanups
+* Fixes to 
 * A few memory usage optimizations when building the bashed patch
 * Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
 * A new ini setting to determine whether or not to autocheck new items in the bashed patch dialogue (previously was determined per patcher in the code). 
