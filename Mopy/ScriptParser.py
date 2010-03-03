@@ -575,6 +575,7 @@ class Parser(object):
                     parens = 1
                     line.pop(0)     #throw out next '(', it's for the function
                     params = []
+                    newexpr = []
                     while parens > 0:
                         j = line.pop(0)
                         if j == '(':
@@ -606,9 +607,13 @@ class Parser(object):
                         newexpr.append(i)
                     else:
                         newline.append(self._EvalStep2(newexpr))
+                        newexpr = []
                 #Not a parenthesis or function, so just add it on to the line
                 else:
-                    newline.append(i)
+                    if parens > 0:
+                        newexpr.append(i)
+                    else:
+                        newline.append(i)
             line = newline
             newline = []
         return self._EvalStep3(line)
