@@ -527,6 +527,7 @@ class WryeParser(ScriptParser.Parser):
         self.AddBooleanOperator('|', self.Or)
         self.AddBooleanOperator('&', self.And)
         self.AddFunction('!', self.Not)
+        self.operators.append('!')
         self.AddFunction('CompareOblivionVersion', self.FunctionCompareOblivionVersion)
         self.AddFunction('CompareOBSEVersion', self.FunctionCompareOBSEVersion)
         self.AddFunction('CompareOBGEVersion', self.FunctionCompareOBGEVersion)
