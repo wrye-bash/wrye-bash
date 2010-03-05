@@ -14221,14 +14221,28 @@ class CellImporter(ImportPatcher):
         def importCellBlockData(cellBlock):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
+                if fid not in tempCellData:
+                    tempCellData[fid] = {}
+                    tempCellData[fid+('flags',)] = {}
+                for attr in attrs:
+                    tempCellData[fid][attr] = cellBlock.cell.__getattribute__(attr)
+                for flag in flags:
+                    tempCellData[fid+('flags',)][flag] = cellBlock.cell.flags.__getattr__(flag)
+        def checkMasterCellBlockData(cellBlock):
+            if not cellBlock.cell.flags1.ignored:
+                fid = cellBlock.cell.fid
+                if fid not in tempCellData: return
                 if fid not in cellData:
                     cellData[fid] = {}
                     cellData[fid+('flags',)] = {}
                 for attr in attrs:
-                    cellData[fid][attr] = cellBlock.cell.__getattribute__(attr)
+                    if tempCellData[fid][attr] != cellBlock.cell.__getattribute__(attr):
+                        cellData[fid][attr] = tempCellData[fid][attr]
                 for flag in flags:
-                    cellData[fid+('flags',)][flag] = cellBlock.cell.flags.__getattr__(flag)
+                    if tempCellData[fid+('flags',)][flag] != cellBlock.cell.flags.__getattr__(flag):
+                        cellData[fid+('flags',)][flag] = tempCellData[fid+('flags',)][flag]
         cellData = self.cellData
+        tempCellData = {}
         loadFactory = LoadFactory(False,MreCell,MreWrld)
         progress.setFull(len(self.sourceMods))
         for srcMod in self.sourceMods:
@@ -14237,7 +14251,9 @@ class CellImporter(ImportPatcher):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
-            attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in srcInfo.getBashTags() if bashKey in self.recAttrs)))
+            masters = modInfos[srcMod].header.masters
+            attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in srcInfo.getBashTags() if
+                bashKey in self.recAttrs)))
             flags = tuple(self.recFlags[bashKey] for bashKey in srcInfo.getBashTags() if
                 bashKey in self.recAttrs and self.recFlags[bashKey] != '')
             if 'CELL' in srcFile.tops:
@@ -14247,6 +14263,20 @@ class CellImporter(ImportPatcher):
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
+            for master in masters:
+                masterInfo = modInfos[master]
+                masterFile = ModFile(masterInfo,loadFactory)
+                masterFile.load(True)
+                masterFile.convertToLongFids(('CELL','WRLD'))
+                #mapper = masterFile.getLongMapper()
+                if 'CELL' in srcFile.tops:
+                    for cellBlock in masterFile.CELL.cellBlocks:
+                        checkMasterCellBlockData(cellBlock)
+                if 'WRLD' in srcFile.tops:
+                    for worldBlock in masterFile.WRLD.worldBlocks:
+                        for cellBlock in worldBlock.cellBlocks:
+                            checkMasterCellBlockData(cellBlock)
+            tempCellData = {}
             progress.plus()
 
     def scanModFile(self, modFile, progress):
