@@ -8579,10 +8579,10 @@ class Mod_Scripts_Export(Link):
         defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
         skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
             _('Skip Prefix?'),'')
-        if not skip: return
+        if skip == None: return
         deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
             _('Remove Prefix from file names?'),'')
-        if not deprefix: return
+        if deprefix == None: return
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = balt.askDirectory(self.window,
