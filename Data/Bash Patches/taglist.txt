@@ -871,20 +871,19 @@ Thievesden_mobs.esp
 Fran Armor Add-on.esp
 % {{BASH:Invent}}
 Francesco's Optional Files.esp
-* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
 Francesco's Optional Files 1.esp
-* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
 Francesco's Optional Files 2.esp
-* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
 Francesco's Optional Files 3.esp
-* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
 Francesco's Optional Files 4.esp
-* Should not be used. Delete. Reinstall Fran's and select "Separate Files" when the option is presented.
 % {{BASH:Delev,Relev}}
+Oblivion WarCry.esp
+% {{BASH:Actors.ACBS,Actors.DeathItem,Actors.Stats,Delev,Graphics,Invent,Relev,Stats}}
+Oblivion WarCry EV.esp
+% {{BASH:Actors.ACBS,Actors.DeathItem,Actors.Stats,Delev,Graphics,Invent,Relev,Stats}}
 Oscuro's_Oblivion_Overhaul.esp
 % {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
 OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
@@ -905,10 +904,9 @@ MMM - Playable Undead Armors.esp
 MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
 % {{BASH:Invent}}
 Mart's Monster Mod.esp
-{%{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
 Mart's Monster Mod for Fran.esp
 %{{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
-<% {{BASH:Invent,Relations,Delev,Factions,Graphics,Relev,Scripts}}
 Mart's Monster Mod for OOO.esp
 % {{BASH:Actors.AIData,Actors.AIPackages,Actors.Stats,Delev,Factions,Graphics,Invent,Names,Relations,Relev,Scripts,Stats}}
 Mart's Monster Mod - Shivering Isles.esp
