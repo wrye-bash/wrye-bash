@@ -1912,6 +1912,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 280 [12/12/2012] [haama]
+* Allow Java apps (.jar) to be used from Custom application buttons (see .ini)
+
 === 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
 * Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)

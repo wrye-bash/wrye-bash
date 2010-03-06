@@ -10151,13 +10151,26 @@ class App_Button(Link):
             self.exeArgs = tuple()
         self.image = image
         self.tip = tip
+        #--Java stuff
+        #--exePath actually looks like: bolt.Path('C:\\Path\\exe.exe')
+        if (str(GPath(self.exePath))[-6:-2]) == '.jar':
+            self.isJava = True
+            self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
+            self.jar = self.exePath
+            self.javaArgs = ''.join(self.exeArgs)
+        #add test to make sure we're not using OBSE and .jar
+        else:
+            self.isJava = False
         #--OBSE stuff
         self.obseTip = obseTip
         self.obseArg = obseArg
         exeObse = bosh.dirs['app'].join('obse_loader.exe')
 
     def IsPresent(self):
-        return self.exePath.exists()
+        if self.isJava:
+            return self.java.exists() and self.jar.exists()
+        else:
+            return self.exePath.exists()
 
     def GetBitmapButton(self,window,style=0):
         if self.IsPresent():
@@ -10173,21 +10186,26 @@ class App_Button(Link):
             return None
 
     def Execute(self,event,extraArgs=None):
-        exeObse = bosh.dirs['app'].join('obse_loader.exe')
-        exeArgs = self.exeArgs
-        if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
-            exePath = exeObse
-            if self.obseArg != '': exeArgs += (self.obseArg,)
+        if self.isJava:
+            cwd = bolt.Path.getcwd()
+            self.jar.head.setcwd()
+            os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,self.javaArgs,'-jar',self.jar.stail))
+            cwd.setcwd()
         else:
-            exePath = self.exePath
-        exeArgs = (exePath.stail,)+exeArgs
-        if extraArgs: exeArgs += extraArgs
-        statusBar.SetStatusText(' '.join(exeArgs),1)
-        cwd = bolt.Path.getcwd()
-        exePath.head.setcwd()
-        os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
-        cwd.setcwd()
-
+            exeObse = bosh.dirs['app'].join('obse_loader.exe')
+            exeArgs = self.exeArgs
+            if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
+                exePath = exeObse
+                if self.obseArg != '': exeArgs += (self.obseArg,)
+            else:
+                exePath = self.exePath
+            exeArgs = (exePath.stail,)+exeArgs
+            if extraArgs: exeArgs += extraArgs
+            statusBar.SetStatusText(' '.join(exeArgs),1)
+            cwd = bolt.Path.getcwd()
+            exePath.head.setcwd()
+            os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
+            cwd.setcwd()
 #------------------------------------------------------------------------------
 class App_Tes4Gecko(App_Button):
     """Start Tes4Gecko."""
