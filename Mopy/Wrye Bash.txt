@@ -1912,10 +1912,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 279 [01/03/2010] [PacificMorrowind, haama]
+=== 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
 * Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
-* Images for wizard docs added (reported by Surazel)
+* Images for wizard docs added (reported by Surazal)
 * Bashed Patch changes:
     * New patchers:
         * Cell RecordFlags import (C.RecordFlags) added to Cells Patcher
@@ -1925,14 +1925,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
         * Creatures.Blood (added to Import Actors)
     * Changes:
         * Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
-        * Import Cells (all tags) now only imports the value for each attribute if different than the master(s).
-* Taglist updated to Masterlist version 694 and other readablity enhancements/fixes
+        * Import Cells (all tags) now only imports the value for each attribute only if different than the master(s).
+* Taglist updated to Masterlist version 714 and other readablity enhancements/fixes/upgrades
 * LeveledList.csv removed and only using Taglist/Masterlist to get tags.
 * Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
+* Fixed some operators/function in the Wizard Install System
+* Fixed export scripts (reported by Foxbrian)
+* reverted to older 7z dll & exe (will upgrade later but will require some significant installer changes)
+* various typo fixes
+* optimization for master record checking (contributed by Badhair)
 * Added -o argument at Command Prompt
   * Use to specify the location of Oblivion directory (with Oblivion.exe).
   * Allows users to install \Mopy\ folder outside of Oblivion directory.
-* 
+
 
 === 278.1 [24/02/2010] [PacificMorrowind]
 * Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
