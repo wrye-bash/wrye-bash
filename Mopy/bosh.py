@@ -14245,6 +14245,7 @@ class CellImporter(ImportPatcher):
         tempCellData = {}
         loadFactory = LoadFactory(False,MreCell,MreWrld)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for srcMod in self.sourceMods:
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
@@ -14264,11 +14265,15 @@ class CellImporter(ImportPatcher):
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(('CELL','WRLD'))
-                #mapper = masterFile.getLongMapper()
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(('CELL','WRLD'))
+                    cachedMasters[master] = masterFile
                 if 'CELL' in srcFile.tops:
                     for cellBlock in masterFile.CELL.cellBlocks:
                         checkMasterCellBlockData(cellBlock)
@@ -14460,6 +14465,7 @@ class GraphicsPatcher(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -14478,10 +14484,15 @@ class GraphicsPatcher(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
@@ -14617,6 +14628,7 @@ class ActorImporter(ImportPatcher):
         loadFactory = LoadFactory(False,MreNpc,MreCrea)
         longTypes = self.longTypes & set(x.classType for x in self.actorClasses)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -14636,10 +14648,15 @@ class ActorImporter(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in attrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for actorClass in self.actorClasses:
                     if actorClass.classType not in masterFile.tops: continue
@@ -14755,6 +14772,7 @@ class KFFZPatcher(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -14773,10 +14791,15 @@ class KFFZPatcher(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
@@ -15233,6 +15256,7 @@ class ImportScripts(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -15251,10 +15275,15 @@ class ImportScripts(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
@@ -15387,6 +15416,7 @@ class ImportScriptContents(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -15405,10 +15435,15 @@ class ImportScriptContents(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
@@ -16044,6 +16079,7 @@ class SoundPatcher(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -16062,10 +16098,15 @@ class SoundPatcher(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
-                masterInfo = modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
