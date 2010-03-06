@@ -22,24 +22,37 @@
 """This module starts the Wrye Bash application. Basically, it runs some
 initialization functions, and then starts the main application loop.
 
-bash [-u userPath] [-p personalPath] [-l localAppDataPath] [0]
-User directory arguments (-u, -p and -l).
-These arguments allow you to specify your user directory in several ways. These
+bash [-o OblivionPath] [-u userPath] [-p personalPath] [-l localAppDataPath] [-d] [0]
+----
+For all arguments:
+Note that Python reads the backslash "\" as an escape character,
+(that is, the backslash itself is ignored and the following character is read literally)
+so for any paths you'll want to either use two backslashes (C:\\Folder\\)
+or a forwardslash (C:/Folder/).
+----
+Oblivion directory argument (-o).
+-o OblivionPath: Specify Oblivion directory (containing Oblivion.exe).
+Use this argument if Bash is located outside of the Oblivion directory.
+Example: -o "C:\\Games\\Oblivion\\"
+----
+User directory arguments (-u, -p, and -l).
+These arguments allow you to specify your user directories in several ways. These
 are only useful if the regular procedure for getting the user directory fails.
-And even in that case, the user is probably bettr off installing win32com.
+And even in that case, the user is probably better off installing win32com.
 However, the arguments are:
 
 -u userPath: Specify the user profile path. May help if HOMEDRIVE and/or HOMEPATH
-are missing from the user's environgment. Example: -u "C:\Documents and Settings\Wrye"
+are missing from the user's environgment.
+Example: -u "C:\\Documents and Settings\\Wrye"
 
--p personalPath: Specify the user's personal directory. Must be used in
-conjunction with -l option.
-Example: -p "c:\documents and settings\Wrye\My Documents"
+-p personalPath: Specify the user's personal directory. Must be used
+in conjunction with the -l argument.
+Example: -p "c:\\documents and settings\\Wrye\\My Documents"
 
--l localAppDataPath: Specify the user's local application data directory. Must be used in
-conjunction with -l option.
-Example: -p "c:\documents and settings\Wrye\Local Settings\Application Data"
-
+-l localAppDataPath: Specify the user's local application data directory.  Must be used
+in conjunction with the -p argument.
+Example: -l "c:\\documents and settings\\Wrye\\Local Settings\\Application Data"
+----
 Debug argument:
 -d Send debug text to the console rather than to a newly created debug window.
 Useful if bash is crashing on startup or if you want to print a lot of
@@ -55,17 +68,18 @@ if sys.version[:3] == '2.4':
     wxversion.select("2.5.3.1")
 import bosh
 #--Parse arguments
-optlist,args = getopt.getopt(sys.argv[1:],'u:p:l:d')
+optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:d')
 #--Initialize Directories and some settings
 #  required before the rest has imported
 opts = dict(optlist)
+oblivionPath = opts.get('-o')
 if '-u' in opts:
     drive,path = os.path.splitdrive(opts['-u'])
     os.environ['HOMEDRIVE'] = drive
     os.environ['HOMEPATH'] = path
 personal = opts.get('-p')
 localAppData = opts.get('-l')
-bosh.initDirs(personal,localAppData)
+bosh.initDirs(personal,localAppData,oblivionPath)
 import basher
 import bolt
 

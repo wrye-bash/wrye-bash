@@ -19547,7 +19547,7 @@ class ContentsChecker(SpecialPatcher,Patcher):
                             log('  . %s: %06X' % (mod.s,index))
 
 # Initialization --------------------------------------------------------------
-def initDirs(personal='',localAppData=''):
+def initDirs(personal='',localAppData='',oblivionPath=''):
     try:
         from win32com.shell import shell, shellcon
     except ImportError:
@@ -19605,8 +19605,9 @@ def initDirs(personal='',localAppData=''):
     dirs['saveBase'] = personal.join(r'My Games','Oblivion')
     dirs['userApp'] = localAppData.join('Oblivion')
 
-    #--App Directories... Assume bash is in right place.
-    dirs['app'] = bolt.Path.getcwd().head
+    #--App Directories... Default = Assume bash is in right place (\Oblviion\Mopy\).
+    if oblivionPath: dirs['app'] = GPath(oblivionPath)
+    else: dirs['app'] = bolt.Path.getcwd().head
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')

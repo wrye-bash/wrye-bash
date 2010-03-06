@@ -124,6 +124,12 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * Launching from another location:
   * You can drag "Wrye Bash Launcher" to your Quick Launch toolbar. OR...
   * In Explorer, copy "Wrye Bash Launcher", then go to the other location and use "Paste Shortcut". 
+* Advanced:
+  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to use the -o argument.
+    * __Type:__ <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code>
+    * Note that Python treats the back-slash <code>\</code> as an escape character... even from the command prompt.
+  * This will probably only be useful for Bash developers (latest release in Oblivion directory + development version outside = my life is easier).
+  * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
 
 === <font color=red>If Bash Won't Start</font>
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
@@ -1906,7 +1912,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 279 [01/03/2010] [PacificMorrowind]
+=== 279 [01/03/2010] [PacificMorrowind, haama]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
 * Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
 * Images for wizard docs added (reported by Surazel)
@@ -1923,6 +1929,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Taglist updated to Masterlist version 694 and other readablity enhancements/fixes
 * LeveledList.csv removed and only using Taglist/Masterlist to get tags.
 * Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
+* Added -o argument at Command Prompt
+  * Use to specify the location of Oblivion directory (with Oblivion.exe).
+  * Allows users to install \Mopy\ folder outside of Oblivion directory.
 * 
 
 === 278.1 [24/02/2010] [PacificMorrowind]
