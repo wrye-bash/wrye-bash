@@ -19810,9 +19810,9 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['keepLog'] = 0
     inisettings['logFile'] = dirs['app'].join('Mopy').join('bash.log')
     inisettings['enablewizard'] = 0
-    inisettings['showtexturetoollaunchers'] = 1
-    inisettings['showmodelingtoollaunchers'] = 1
-    inisettings['showaudiotoollaunchers'] = 1
+    inisettings['showtexturetoollaunchers'] = True
+    inisettings['showmodelingtoollaunchers'] = True
+    inisettings['showaudiotoollaunchers'] = True
     inisettings['ShowTes4View']=True
     inisettings['ShowTes4Edit']=True
     inisettings['ShowTes4Trans']=True
@@ -19840,23 +19840,21 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
         if bashIni.has_option('Settings','bEnableWizard'):
             inisettings['enablewizard'] = int(bashIni.get('Settings','bEnableWizard').strip())
-        if bashIni.has_option('Settings','sAutoItemCheck'):
-            inisettings['AutoItemCheck'] = bashIni.get('Settings','sAutoItemCheck').strip()
+        if bashIni.has_option('Settings','bAutoItemCheck') or bashIni.has_option('Settings','sAutoItemCheck'): #Check "s..." for backwards compatibility
+            if bashIni.has_option('Settings','bAutoItemCheck'): inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','bAutoItemCheck')
+            else: inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','sAutoItemCheck')
         if bashIni.has_option('Tool Options','bshowtexturetoollaunchers'):
-            inisettings['showtexturetoollaunchers'] = bashIni.get('Tool Options','bshowtexturetoollaunchers').strip()
+            inisettings['showtexturetoollaunchers'] = bashIni.getboolean('Tool Options','bshowtexturetoollaunchers')
         if bashIni.has_option('Tool Options','bshowmodelingtoollaunchers'):
-            inisettings['showmodelingtoollaunchers'] = bashIni.get('Tool Options','bshowmodelingtoollaunchers').strip()
+            inisettings['showmodelingtoollaunchers'] = bashIni.getboolean('Tool Options','bshowmodelingtoollaunchers')
         if bashIni.has_option('Tool Options','bshowaudiotoollaunchers'):
-            inisettings['showaudiotoollaunchers'] = bashIni.get('Tool Options','bshowaudiotoollaunchers').strip()
+            inisettings['showaudiotoollaunchers'] = bashIni.getboolean('Tool Options','bshowaudiotoollaunchers')
         if bashIni.has_option('Tool Options','bShowTes4View'):
             inisettings['ShowTes4View'] = bashIni.getboolean('Tool Options','bShowTes4View')
-            #if bashIni.get('Tool Options','bShowTes4View').strip() == 0:  inisettings['ShowTes4View'] = ''
         if bashIni.has_option('Tool Options','bShowTes4Edit'):
             inisettings['ShowTes4Edit'] = bashIni.getboolean('Tool Options','bShowTes4Edit')
-            # if bashIni.get('Tool Options','bShowTes4Edit').strip() == 0:  inisettings['ShowTes4Edit'] = ''
         if bashIni.has_option('Tool Options','bShowTes4Trans'):
             inisettings['ShowTes4Trans'] = bashIni.getboolean('Tool Options','bShowTes4Trans')
-            # if bashIni.get('Tool Options','bShowTes4Trans').strip() == 0:  inisettings['ShowTes4Trans'] = ''
         if bashIni.has_option('Tool Options','sCustom1txt'):
             inisettings['custom1txt'] = str(bashIni.get('Tool Options','sCustom1txt')).strip()
         if bashIni.has_option('Tool Options','sCustom2txt'):
