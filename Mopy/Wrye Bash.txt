@@ -1914,6 +1914,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 280 [12/12/2012] [haama]
 * Tool Button Changes (see .ini)
+  * Bugfix: Boolean options were ignored (show---tool, AutoItemCheck)
   * Tes4Edit - Options to show/hide View/Edit/Trans
   * Custom
     * Allow Java apps (.jar) to be used
