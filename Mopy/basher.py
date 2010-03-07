@@ -10161,10 +10161,9 @@ class App_Button(Link):
         else:
             self.isJava = False
         #--OBSE stuff
-        if obseTip or obseArg:
-            self.obseTip = obseTip
-            self.obseArg = obseArg
-            exeObse = bosh.dirs['app'].join('obse_loader.exe')
+        self.obseTip = obseTip
+        self.obseArg = obseArg
+        exeObse = bosh.dirs['app'].join('obse_loader.exe')
 
     def IsPresent(self):
         if self.isJava:
@@ -10653,18 +10652,11 @@ def InitStatusBar():
             bosh.dirs['NPP'],
             Image(r'images/notepad++'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Notepad++")))
-    if bosh.inisettings['custom1opt']:
-        BashStatusBar.buttons.append(
-            App_Button(
-                (bosh.dirs['Custom1'], bosh.inisettings['custom1opt']),
-                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
-                (bosh.inisettings['custom1txt'])))
-    else:
-        BashStatusBar.buttons.append(
-            App_Button(
-                bosh.dirs['Custom1'],
-                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
-                (bosh.inisettings['custom1txt'])))
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['Custom1'],
+            Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
+            _(bosh.inisettings['custom1txt'])))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom2'],
