@@ -1185,9 +1185,11 @@
 <h3><a name='BashTags'>Bash Tags</a></h3>
 <p class=list-1>&bull;&nbsp; Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.
 <p class=list-1>&bull;&nbsp; <B><a name='CurrentTags'>Current Tags</a>:</B>
+  <p class=list-2>&bull;&nbsp; Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)
   <p class=list-2>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Animations: Mod modifies Creature or NPC special Animations list (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles (<a href="#ImportActors">Import Actors</a>). 
   <p class=list-2>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Body-F: Mod modifies female body definition (<a href="#RaceInfo">Race Info</a>).
@@ -1196,7 +1198,9 @@
   <p class=list-2>&bull;&nbsp; C.Light: Mod changes cell lighting and/or fog (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Name: Mod changes cell names (<a href="#ImportCells">Import Cells</a>)
   <p class=list-2>&bull;&nbsp; C.Owner: Mod changes cell ownership (<a href="#ImportCells">Import Cells</a>).
+  <p class=list-2>&bull;&nbsp; C.RecordFlags: Mod changes the offlimits/dangerous flag (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).
+  <p class=list-2>&bull;&nbsp; Creatures.Blood: Mod changes the creature blood subrecords (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Delev: Mod deletes items from (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Eyes: Mod contributes eyes (<a href="#RaceInfo">Race Info</a>).
   <p class=list-2>&bull;&nbsp; Relations: Mod changes faction relationships (<a href="#ImportRelations">Import Relations</a>).
@@ -1210,6 +1214,7 @@
   <p class=list-2>&bull;&nbsp; Merge: Obsolete. Ignored.
   <p class=list-2>&bull;&nbsp; Names: Mod is a renamer (<a href="#ImportNames">Import Names</a>).
   <p class=list-2>&bull;&nbsp; NoMerge: Mod should not be merged even though they're technically mergeable.
+  <p class=list-2>&bull;&nbsp; NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).
   <p class=list-2>&bull;&nbsp; NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).
   <p class=list-2>&bull;&nbsp; R.Mouth: Mod changes mouth/tongue (<a href="#RaceInfo">Race Info</a>).
   <p class=list-2>&bull;&nbsp; R.Relations: Mod changes race relationships (<a href="#RaceInfo">Race Info</a>).
@@ -1279,16 +1284,21 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p><B>Importers</B> are components that import specific information from selected mods and/or text files and incorporate that into the patch file. 
 <p class=empty>&nbsp;</p>
 <h3><a name='ImportActors'>Import Actors</a></h3>
-<p class=list-1>&bull;&nbsp; Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. Currently split between a few seperate patchers.
+<p class=list-1>&bull;&nbsp; Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
 <p class=list-1>&bull;&nbsp; <B>Configuration
-  <p class=list-2>&bull;&nbsp; Source mods <I>must</I> contain one (or more) of the following tags (each of which links to its own patcher in the patch dialogue).
-    <p class=list-3>&bull;&nbsp; Actors.DeathItems
-    <p class=list-3>&bull;&nbsp; Actors.Animations
+  <p class=list-2>&bull;&nbsp; Source mods for the main patcher <I>must</I> contain one (or more) of the following tags:
+    <p class=list-3>&bull;&nbsp; Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
+    <p class=list-3>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data.
+    <p class=list-3>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
+    <p class=list-3>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item.
+    <p class=list-3>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats.
+    <p class=list-3>&bull;&nbsp; Creatures.Blood: Mod changes the creature blood subrecords.
+    <p class=list-3>&bull;&nbsp; NPC.Class: Mod changes the designated classes of NPCs.
+  <p class=list-2>&bull;&nbsp; There are also two secondary patchers:
+    <p class=list-3>&bull;&nbsp; Actors.Animations: Mod changes the KFFZ subrecord of NPCs or Creatures.
       <p class=list-4>&bull;&nbsp; (note: direct import rather than merge - this will hopefully be fixed next version (279))
-    <p class=list-3>&bull;&nbsp; Actors.AIData
     <p class=list-3>&bull;&nbsp; Actors.AIPackages 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 279)
-    <p class=list-3>&bull;&nbsp; Actors.Stats
+      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
 <p class=list-1>&bull;&nbsp; </B>Usage<B>
   <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
   <p class=list-2>&bull;&nbsp; In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
@@ -1301,6 +1311,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; C.Light: Mod changes cell lighting and/or fog.
     <p class=list-3>&bull;&nbsp; C.Name: Mod changes cell names.
     <p class=list-3>&bull;&nbsp; C.Owner: Mod changes cell ownership.
+    <p class=list-3>&bull;&nbsp; C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
     <p class=list-3>&bull;&nbsp; C.Water: Mod changes cell water type/level.
 <p class=list-1>&bull;&nbsp; </B>Usage<B>
   <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
@@ -2092,6 +2103,38 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h3><a name='27905032010PacificMorrowindhaamaLojackBadhair'>279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]</a></h3>
+<p class=list-1>&bull;&nbsp; Fixed *two* bugs in autotagging (reported by Arthmoor)
+<p class=list-1>&bull;&nbsp; Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
+<p class=list-1>&bull;&nbsp; Images for wizard docs added (reported by Surazal)
+<p class=list-1>&bull;&nbsp; Bashed Patch changes:
+    <p class=list-3>&bull;&nbsp; New patchers:
+        <p class=list-5>&bull;&nbsp; Cell RecordFlags import (C.RecordFlags) added to Cells Patcher
+        <p class=list-5>&bull;&nbsp; Actors.ACBS (added to Import Actors)
+        <p class=list-5>&bull;&nbsp; NPC.Class (added to Import Actors)
+        <p class=list-5>&bull;&nbsp; Actors.CombatStyle (added to Import Actors)
+        <p class=list-5>&bull;&nbsp; Creatures.Blood (added to Import Actors)
+    <p class=list-3>&bull;&nbsp; Changes:
+        <p class=list-5>&bull;&nbsp; Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
+        <p class=list-5>&bull;&nbsp; Import Cells (all tags) now only imports the value for each attribute only if different than the master(s).
+<p class=list-1>&bull;&nbsp; Taglist updated to Masterlist version 714 and other readablity enhancements/fixes/upgrades
+<p class=list-1>&bull;&nbsp; LeveledList.csv removed and only using Taglist/Masterlist to get tags.
+<p class=list-1>&bull;&nbsp; Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
+<p class=list-1>&bull;&nbsp; Fixed some operators/function in the Wizard Install System
+<p class=list-1>&bull;&nbsp; Fixed export scripts (reported by Foxbrian)
+<p class=list-1>&bull;&nbsp; reverted to older 7z dll & exe (will upgrade later but will require some significant installer changes)
+<p class=list-1>&bull;&nbsp; various typo fixes
+<p class=list-1>&bull;&nbsp; optimization for master record checking (contributed by Badhair)
+<p class=list-1>&bull;&nbsp; Added -o argument at Command Prompt
+  <p class=list-2>&bull;&nbsp; Use to specify the location of Oblivion directory (with Oblivion.exe).
+  <p class=list-2>&bull;&nbsp; Allows users to install \Mopy\ folder outside of Oblivion directory.
+  <p class=empty>&nbsp;</p>
+  <p class=empty>&nbsp;</p>
+<h3><a name='278124022010PacificMorrowind'>278.1 [24/02/2010] [PacificMorrowind]</a></h3>
+<p class=list-1>&bull;&nbsp; Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
+<p class=list-1>&bull;&nbsp; Fixed a fatal bug with with new autocheck inisettings(reported by Gabba)
+<p class=list-1>&bull;&nbsp; Fixed a bug in autotagging (reported by Gabba)
+<p class=empty>&nbsp;</p>
 <h3><a name='27823022010PacificMorrowindHaamaLojack'>278 [23/02/2010] [PacificMorrowind, Haama, Lojack]</a></h3>
 <p class=list-1>&bull;&nbsp; NoMerge tag now correctly makes mods not show up as mergeable in the main window
 <p class=list-1>&bull;&nbsp; The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
@@ -2124,6 +2167,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; NEW! Wizard based install system (contributed by: Lojack)
 <p class=list-1>&bull;&nbsp; Updated 7z dll & exe to latest version
 <p class=list-1>&bull;&nbsp; Various small fixes and code cleanups
+<p class=list-1>&bull;&nbsp; Fixes to 
 <p class=list-1>&bull;&nbsp; A few memory usage optimizations when building the bashed patch
 <p class=list-1>&bull;&nbsp; Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
 <p class=list-1>&bull;&nbsp; A new ini setting to determine whether or not to autocheck new items in the bashed patch dialogue (previously was determined per patcher in the code). 
