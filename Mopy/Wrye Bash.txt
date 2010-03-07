@@ -1913,9 +1913,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 280 [12/12/2012] [haama]
-* Custom Tool Buttons (see .ini)
-  * Allow Java apps (.jar) to be used
-  * Allow Option Switches to be used
+* Tool Button Changes (see .ini)
+  * Tes4Edit - Options to show/hide View/Edit/Trans
+  * Custom
+    * Allow Java apps (.jar) to be used
+    * Allow Option Switches to be used
 
 === 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
