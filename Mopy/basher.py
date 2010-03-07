@@ -10157,14 +10157,14 @@ class App_Button(Link):
             self.isJava = True
             self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
             self.jar = self.exePath
-            self.javaArgs = ''.join(self.exeArgs)
-        #add test to make sure we're not using OBSE and .jar
+            self.appArgs = ''.join(self.exeArgs)
         else:
             self.isJava = False
         #--OBSE stuff
-        self.obseTip = obseTip
-        self.obseArg = obseArg
-        exeObse = bosh.dirs['app'].join('obse_loader.exe')
+        if obseTip or obseArg:
+            self.obseTip = obseTip
+            self.obseArg = obseArg
+            exeObse = bosh.dirs['app'].join('obse_loader.exe')
 
     def IsPresent(self):
         if self.isJava:
@@ -10189,7 +10189,7 @@ class App_Button(Link):
         if self.isJava:
             cwd = bolt.Path.getcwd()
             self.jar.head.setcwd()
-            os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,self.javaArgs,'-jar',self.jar.stail))
+            os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,'-jar',self.jar.stail,self.appArgs))
             cwd.setcwd()
         else:
             exeObse = bosh.dirs['app'].join('obse_loader.exe')
@@ -10653,11 +10653,18 @@ def InitStatusBar():
             bosh.dirs['NPP'],
             Image(r'images/notepad++'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Notepad++")))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['Custom1'],
-            Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
-            _(bosh.inisettings['custom1txt'])))
+    if bosh.inisettings['custom1opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom1'], bosh.inisettings['custom1opt']),
+                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom1txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom1'],
+                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom1txt'])))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['Custom2'],
