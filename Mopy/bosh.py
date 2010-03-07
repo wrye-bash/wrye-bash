@@ -19817,6 +19817,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
     inisettings['custom4txt'] = 'Not Set in INI'
+    inisettings['custom1opt']=''
+    inisettings['custom2opt']=''
+    inisettings['custom3opt']=''
+    inisettings['custom4opt']=''
     inisettings['iconSize'] = '16'
     inisettings['AutoItemCheck'] = False
     #inisettings['show?toollaunchers'] = True
@@ -19849,6 +19853,14 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             inisettings['custom3txt'] = str(bashIni.get('Tool Options','sCustom3txt')).strip()
         if bashIni.has_option('Tool Options','sCustom4txt'):
             inisettings['custom4txt'] = str(bashIni.get('Tool Options','sCustom4txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom1opt'):
+            if not str(bashIni.get('Tool Options','sCustom1opt')).strip() == '-Option(s)' : inisettings['custom1opt'] = str(bashIni.get('Tool Options','sCustom1opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom2opt'):
+            if not str(bashIni.get('Tool Options','sCustom2opt')).strip() == '-Option(s)' : inisettings['custom2opt'] = str(bashIni.get('Tool Options','sCustom2opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom3opt'):
+            if not str(bashIni.get('Tool Options','sCustom3opt')).strip() == '-Option(s)' : inisettings['custom3opt'] = str(bashIni.get('Tool Options','sCustom3opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom4opt'):
+            if not str(bashIni.get('Tool Options','sCustom4opt')).strip() == '-Option(s)' : inisettings['custom4opt'] = str(bashIni.get('Tool Options','sCustom4opt')).strip()
 
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
