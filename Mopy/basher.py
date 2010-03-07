@@ -10559,7 +10559,6 @@ def InitStatusBar():
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Gecko")))
     if bosh.inisettings['ShowTes4View']:
-        print bosh.inisettings['ShowTes4View']
         BashStatusBar.buttons.append(
             App_Tes4View(
                 (bosh.dirs['TES4EditPath'], '-view'),
