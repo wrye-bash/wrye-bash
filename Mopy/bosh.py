@@ -19813,6 +19813,9 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['showtexturetoollaunchers'] = 1
     inisettings['showmodelingtoollaunchers'] = 1
     inisettings['showaudiotoollaunchers'] = 1
+    inisettings['ShowTes4View']=True
+    inisettings['ShowTes4Edit']=True
+    inisettings['ShowTes4Trans']=True
     inisettings['custom1txt'] = 'Not Set in INI'
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
@@ -19845,6 +19848,15 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             inisettings['showmodelingtoollaunchers'] = bashIni.get('Tool Options','bshowmodelingtoollaunchers').strip()
         if bashIni.has_option('Tool Options','bshowaudiotoollaunchers'):
             inisettings['showaudiotoollaunchers'] = bashIni.get('Tool Options','bshowaudiotoollaunchers').strip()
+        if bashIni.has_option('Tool Options','bShowTes4View'):
+            inisettings['ShowTes4View'] = bashIni.getboolean('Tool Options','bShowTes4View')
+            #if bashIni.get('Tool Options','bShowTes4View').strip() == 0:  inisettings['ShowTes4View'] = ''
+        if bashIni.has_option('Tool Options','bShowTes4Edit'):
+            inisettings['ShowTes4Edit'] = bashIni.getboolean('Tool Options','bShowTes4Edit')
+            # if bashIni.get('Tool Options','bShowTes4Edit').strip() == 0:  inisettings['ShowTes4Edit'] = ''
+        if bashIni.has_option('Tool Options','bShowTes4Trans'):
+            inisettings['ShowTes4Trans'] = bashIni.getboolean('Tool Options','bShowTes4Trans')
+            # if bashIni.get('Tool Options','bShowTes4Trans').strip() == 0:  inisettings['ShowTes4Trans'] = ''
         if bashIni.has_option('Tool Options','sCustom1txt'):
             inisettings['custom1txt'] = str(bashIni.get('Tool Options','sCustom1txt')).strip()
         if bashIni.has_option('Tool Options','sCustom2txt'):

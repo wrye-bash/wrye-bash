@@ -10558,21 +10558,25 @@ def InitStatusBar():
         App_Tes4Gecko(None,
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Gecko")))
-    BashStatusBar.buttons.append(
-        App_Tes4View(
-            (bosh.dirs['TES4EditPath'], '-view'),
-            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch Tes4View")))
-    BashStatusBar.buttons.append(
-        App_Tes4View(
-            (bosh.dirs['TES4EditPath'], '-edit'), #in case using tes4view as main apppath
-            Image(r'images/brick_edit'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch Tes4Edit")))
-    BashStatusBar.buttons.append(
-        App_Tes4View(
-            (bosh.dirs['TES4EditPath'], '-translate'),
-            Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch Tes4Trans")))
+    if bosh.inisettings['ShowTes4View']:
+        print bosh.inisettings['ShowTes4View']
+        BashStatusBar.buttons.append(
+            App_Tes4View(
+                (bosh.dirs['TES4EditPath'], '-view'),
+                Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Tes4View")))
+    if bosh.inisettings['ShowTes4Edit']:
+        BashStatusBar.buttons.append(
+            App_Tes4View(
+                (bosh.dirs['TES4EditPath'], '-edit'), #in case using tes4view as main apppath
+                Image(r'images/brick_edit'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Tes4Edit")))
+    if bosh.inisettings['ShowTes4Trans']:
+        BashStatusBar.buttons.append(
+            App_Tes4View(
+                (bosh.dirs['TES4EditPath'], '-translate'),
+                Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Tes4Trans")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['TES4LodGenPath'],
