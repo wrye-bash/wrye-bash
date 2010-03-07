@@ -10652,26 +10652,54 @@ def InitStatusBar():
             bosh.dirs['NPP'],
             Image(r'images/notepad++'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Notepad++")))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['Custom1'],
-            Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
-            _(bosh.inisettings['custom1txt'])))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['Custom2'],
-            Image(r'images/custom2'+bosh.inisettings['iconSize']+'.png'),
-            _(bosh.inisettings['custom2txt'])))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['Custom3'],
-            Image(r'images/custom3'+bosh.inisettings['iconSize']+'.png'),
-            _(bosh.inisettings['custom3txt'])))
-    BashStatusBar.buttons.append(
-        App_Button(
-            bosh.dirs['Custom4'],
-            Image(r'images/custom4'+bosh.inisettings['iconSize']+'.png'),
-            _(bosh.inisettings['custom4txt'])))
+    if bosh.inisettings['custom1opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom1'], bosh.inisettings['custom1opt']),
+                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom1txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom1'],
+                Image(r'images/custom1'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom1txt'])))
+    if bosh.inisettings['custom2opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom2'], bosh.inisettings['custom2opt']),
+                Image(r'images/custom2'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom2txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom2'],
+                Image(r'images/custom2'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom2txt'])))
+    if bosh.inisettings['custom3opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom3'], bosh.inisettings['custom3opt']),
+                Image(r'images/custom3'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom3txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom3'],
+                Image(r'images/custom3'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom3txt'])))
+    if bosh.inisettings['custom4opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom4'], bosh.inisettings['custom4opt']),
+                Image(r'images/custom4'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom4txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom4'],
+                Image(r'images/custom4'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom4txt'])))
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
