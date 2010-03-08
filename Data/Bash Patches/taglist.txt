@@ -38,6 +38,8 @@ TRoN 0-59-1b Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 TRoN Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+Not A valid esp (for testing, ignore me!).esp
+% {{BASH:Actors.Anims,NoMerge}} and deactivate
 !Oblivion_PL.esp
 % {{BASH:Names}}
 
@@ -159,7 +161,8 @@ Self-Preservation v1.0.esp
 % {{BASH:Scripts}}
 Traduccion Mejorada Oblivion Clan DLAN.esp
 % {{BASH:Names}} or without Bash load it later.
-Unofficial Oblivion Patch.esp% {{BASH:Actors.AIData,Actors.AIPackages,Actors.CombatStyle,Actors.DeathItem,Actors.Stats,C.Climate,C.Light,C.Name,C.Owner,Creatures.Blood,Delev,Factions,Invent,Names,Relations,Relev,Scripts,Stats}} and remove the C.Water tag (only exist in older version).
+Unofficial Oblivion Patch.esp
+% {{BASH:Actors.AIData,Actors.AIPackages,Actors.CombatStyle,Actors.DeathItem,Actors.Stats,C.Climate,C.Light,C.Name,C.Owner,Creatures.Blood,Delev,Factions,Invent,Names,Relations,Relev,Scripts,Stats}} and remove the C.Water tag (only exist in older version).
 Unofficial Oblivion Patch DV.esp
 % {{BASH:Actors.AIData,Actors.AIPackages,Actors.CombatStyle,Actors.DeathItem,Actors.Stats,C.Climate,C.Light,C.Name,C.Owner,Creatures.Blood,Delev,Factions,Invent,Names,Relations,Relev,Scripts,Stats}} and remove the C.Water tag.
 Unofficial Oblivion Patch-mobs.esp
