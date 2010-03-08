@@ -9887,7 +9887,7 @@ class Installer(object):
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for file,sizeCrc in dirty_sizeCrc.iteritems():
+        for file,sizeCrc in dirty_sizeCrc.items():
             sizeCrcDate = data_sizeCrcDate.get(file)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(file)
