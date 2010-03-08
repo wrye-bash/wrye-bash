@@ -459,7 +459,7 @@ class ModReader:
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
         return self.read(size,recType).rstrip(null1).split(null1)
-    
+
     def unpack(self,format,size,recType='----'):
         """Read file and unpack according to struct format."""
         endPos = self.ins.tell() + size
@@ -1149,7 +1149,7 @@ class MelStructs(MelStruct):
         if not record.__getattribute__(self.attr): return
         for target in record.__getattribute__(self.attr):
             melMap(self,target,function,save)
-            
+
     def getDelta(self,newRecord,oldRecord):
         if getattr(newRecord,self.attr,None) is None and getattr(oldRecord,self.attr,None) is None:
             return None
@@ -1230,7 +1230,7 @@ class MelStructA(MelStructs):
             for x in record.__getattribute__(self.attr):
                 data += struct.pack(format, *[getattr(x,item) for item in attrs])
             out.packSub(self.subType,data)
-            
+
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is true, then fid is set
         to result of function."""
@@ -3469,7 +3469,7 @@ class MreRefr(MelRecord):
                 (type,size) = insUnpack('4sH',6,readId+'.FULL')
             ins.seek(pos)
             if self._debug: print ' ',record.flags,record.full,record.markerType
-            
+
         def dumpData(self,record,out):
             if (record.flags,record.full,record.markerType,record.unused5) != self.defaults[1:]:
                 record.hasXmrk = True
@@ -3550,7 +3550,7 @@ class MreRegn(MelRecord):
                 MelStructA.loadData(self,record,ins,type,size,readId)
             elif record.entryType == 7 and self.subType == 'RDSD':
                 MelStructA.loadData(self,record,ins,type,size,readId)
-                
+
         def dumpData(self,record,out):
             """Conditionally dumps data."""
             if record.entryType == 2 and self.subType == 'RDOT':
@@ -3569,7 +3569,7 @@ class MreRegn(MelRecord):
                 MelString.loadData(self,record,ins,type,size,readId)
             elif record.entryType == 5 and self.subType == 'ICON':
                 MelString.loadData(self,record,ins,type,size,readId)
-                
+
         def dumpData(self,record,out):
             """Conditionally dumps data."""
             if record.entryType == 4 and self.subType == 'RDMP':
@@ -3582,7 +3582,7 @@ class MreRegn(MelRecord):
         def loadData(self,record,ins,type,size,readId):
             if record.entryType == 7 and self.subType == 'RDMD':
                 MelOptStruct.loadData(self,record,ins,type,size,readId)
-        
+
         def dumpData(self,record,out):
             """Conditionally dumps data."""
             if record.entryType == 7 and self.subType == 'RDMD':
@@ -3619,7 +3619,7 @@ class MreRoad(MelRecord):
     ####but little point since it is too complex to manipulate
     classType = 'ROAD'
     melSet = MelSet(
-        MelBase('PGRP','points_p'), 
+        MelBase('PGRP','points_p'),
         MelBase('PGRR','connections_p'),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -5228,7 +5228,7 @@ class SaveFileError(FileError):
 class BSAFileError(FileError):
     """TES4 BSA File Error: File is corrupted."""
     pass
-    
+
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
@@ -5528,7 +5528,7 @@ class ObseFile:
             opcodeBase,numChunks,pluginLength, = unpack('III',12)
             pluginBuff = ins.read(pluginLength)
             pluginIns = cStringIO.StringIO(pluginBuff)
-            chunks = []            
+            chunks = []
             for y in range(numChunks):
                 chunkType = pluginIns.read(4)
                 chunkVersion,chunkLength, = struct.unpack('II',pluginIns.read(8))
@@ -5615,7 +5615,7 @@ class ObseFile:
         """Save data to file safely."""
         self.save(self.path.temp,self.path.mtime)
         self.path.untemp()
-        
+
 #------------------------------------------------------------------------------
 class SaveHeader:
     """Represents selected info from a Tes4SaveGame file."""
@@ -6173,7 +6173,7 @@ class SaveFile:
                             log(_('    ID  :  %u') % stringID)
                             log(_('    Data:  %s') % stringData)
                         elif chunkType == 'RVRA':
-                            #--OBSE Array                        
+                            #--OBSE Array
                             modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
                             if modIndex == 255:
                                 log(_('    Mod :  %02X (Save File)') % (modIndex))
@@ -6340,7 +6340,7 @@ class SaveFile:
                             log(_('      FRGB   : %u,%u,%u') % (hudFontR,hudFontG,hudFontB,))
                             log(_('      FText  : %s') % (hudText,))
                     ins.close()
-                    
+
     def findBloating(self,progress=None):
         """Analyzes file for bloating. Returns (createdCounts,nullRefCount)."""
         nullRefCount = 0
@@ -7424,7 +7424,7 @@ class INIInfo(FileInfo):
                     if status == 0:
                         status = 10
         return status
-        
+
 class SaveInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -7482,10 +7482,10 @@ class BSAInfo(FileInfo):
         #else:
         #    return -10
         return 20
-        
+
     def getHeader(self):
         """Read header for file."""
-        
+
         try:
             self.header = SaveHeader(self.getPath())
             #--Master Names/Order
@@ -9507,13 +9507,13 @@ class Installer(object):
                 if settings['bash.installers.skipDistantLOD']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots'] 
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
                 if inisettings['keepLog'] >= 1:
                     log = inisettings['logFile'].open("a")
                     log.write('(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
-                    log.close()                    
+                    log.close()
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_("%s: Scanning...") % rootName)
@@ -9729,7 +9729,7 @@ class Installer(object):
                     continue
             elif skipDocs :
                 if fileExt in docExts :
-                    continue            
+                    continue
             elif file[:2] == '--':
                 continue
             #--Noisy skips
@@ -9935,7 +9935,7 @@ class InstallerConverter(object):
             self.load()
             self.crc = self.fullPath.crc
         #--Else is loading from Converters.dat, called by __setstate__
-        
+
     def __getstate__(self):
         """Used by pickler to save object state. Used for Converters.dat"""
         getter = object.__getattribute__
@@ -10009,7 +10009,7 @@ class InstallerConverter(object):
         self.pack(self.tempDir.join("BCF-Temp"), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
         #--Lastly, apply the settings.
         #--That is done by the calling code, since it requires an InstallerArchive object to work on
-        
+
     def applySettings(self,destInstaller):
         """Applies the saved settings to an Installer"""
         setter = object.__setattr__
@@ -10047,9 +10047,9 @@ class InstallerConverter(object):
                 dupes[crcValue] = numDupes - 1
                 srcFile.copyTo(destFile)
             else:
-                progress(index,_("Moving file...\n%s") % destFile.stail)                
+                progress(index,_("Moving file...\n%s") % destFile.stail)
                 srcFile.moveTo(destFile)
-                
+
     def build(self, srcArchives, data, destArchive, BCFArchive,progress=None):
         """Builds and packages a BCF"""
         progress = progress or bolt.Progress()
@@ -10211,7 +10211,7 @@ class InstallerConverter(object):
         #--Finalize the file, and cleanup
         outFile.untemp()
         self.clearTemp()
-        
+
     def unpack(self,srcInstaller,fileNames,progress=None):
         """Recursive function: completely extracts the source installer to subTempDir.
         It does NOT clear the temp folder.  This should be done prior to calling the function.
@@ -10317,7 +10317,7 @@ class InstallerArchive(Installer):
                 if key == 'Solid': self.isSolid = (value[0] == '+')
                 elif key == 'Path':
                     #--Should be able to twist 7z to export names in UTF-8, but can't (at
-                    #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead, 
+                    #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
                     #--Hopefully this will mostly resolve problem with german umlauts, etc.
                     #  It won't solve problems with non-european characters though.
@@ -10633,7 +10633,7 @@ class InstallersData(bolt.TankData, DataDict):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath('==Last==')
-        
+
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
         self.hasChanged = hasChanged
@@ -10890,7 +10890,7 @@ class InstallersData(bolt.TankData, DataDict):
             return installers != set(x for x,y in self.data.iteritems() if not isinstance(y,InstallerMarker))
         else:
             return installers != set(x for x,y in self.data.iteritems() if isinstance(y,InstallerArchive))
-    
+
     def refreshConvertersNeeded(self):
         """Returns true if refreshConverters is necessary. (Point is to skip use
         of progress dialog when possible."""
@@ -10910,7 +10910,7 @@ class InstallersData(bolt.TankData, DataDict):
                 archivesAdd(apath)
         #--Added/removed packages?
         return archives != set(self.bcfPath_sizeCrcDate)
-    
+
     def refreshOrder(self):
         """Refresh installer status."""
         changed = False
@@ -12343,10 +12343,10 @@ class CompleteItemData:
                     else:
                         self.Fmodel[longid] = 'NONE'
                     if record.femaleWorld:
-                        self.FGndmodel[longid] = record.femaleWorld.modPath  
+                        self.FGndmodel[longid] = record.femaleWorld.modPath
                     else:
                         self.FGndmodel[longid] = 'NONE'
-                        
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
@@ -12538,7 +12538,7 @@ class ScriptText:
                 ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
                 #return stats
         progress = progress.Destroy()
-                
+
     def writeToMod(self,modInfo,eid,newScriptText):
         """Writes scripts to specified mod."""
         loadFactory = LoadFactory(True,MreScpt)
@@ -12585,7 +12585,7 @@ class ScriptText:
         progress = progress.Destroy()
         if num == 0:
             return False
-        changedScripts = 'Imported %d changed scripts from %s:\n'%(num,textPath)+changedScripts     
+        changedScripts = 'Imported %d changed scripts from %s:\n'%(num,textPath)+changedScripts
         return changedScripts
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
@@ -12602,7 +12602,7 @@ class ScriptText:
         y = len(getSortedIds(scriptTexts))
         z = 0
         num = 0
-        r = len(deprefix)    
+        r = len(deprefix)
         for longid in getSortedIds(scriptTexts):
             z += 1
             progress((0.5+0.5/y*z),_("exporting script %s.") % (scriptTexts[longid][0]))
@@ -14404,7 +14404,7 @@ class MapImporter(ImportPatcher):
         if 'WRLD' in modFile.tops:
             for worldBlock in modFile.WRLD.worldBlocks:
                 patchWorlds.setWorld(worldBlock.world)
-                
+
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
@@ -14502,12 +14502,12 @@ class GraphicsPatcher(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14666,12 +14666,12 @@ class ActorImporter(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -14809,12 +14809,12 @@ class KFFZPatcher(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -15293,12 +15293,12 @@ class ImportScripts(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -15359,7 +15359,7 @@ class ImportScripts(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         #cleanup to save memory
-        id_data = None 
+        id_data = None
         #logging
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
@@ -15389,11 +15389,11 @@ class ImportScriptContents(ImportPatcher):
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreScpt,):
-            recAttrs_class[recClass] = ('numRefs','lastIndex','compiledSize','scriptType','compiled_p','scriptText','vars','references',) # invalid attributes for plain script: SCHR, 4s4I,SCDA,'SLSD','I12sB7s','index', 'SCVR', 'name', 
+            recAttrs_class[recClass] = ('numRefs','lastIndex','compiledSize','scriptType','compiled_p','scriptText','vars','references',) # invalid attributes for plain script: SCHR, 4s4I,SCDA,'SLSD','I12sB7s','index', 'SCVR', 'name',
 #        for recClass in (MreInfo,):
  #           recAttrs_class[recClass] = ('SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
         for recClass in (MreQust,):
-            recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)          
+            recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
         self.longTypes = set(('SCPT','QUST','DIAL','INFO'))
 #        MelGroups('stages',
 #            MelStruct('INDX','h','stage'),
@@ -15407,7 +15407,7 @@ class ImportScriptContents(ImportPatcher):
 #                MelScrxen('SCRV/SCRO','references')
 #                ),
 
-        
+
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return
@@ -15453,12 +15453,12 @@ class ImportScriptContents(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -16116,12 +16116,12 @@ class SoundPatcher(ImportPatcher):
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
-                            else: 
+                            else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
-                                    id_data[fid].setdefault(attr,value)      
+                                    id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -16577,7 +16577,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         return (MreNpc,)
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod, 
+        """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
@@ -16586,7 +16586,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
             model = record.model.modPath
             if model.lower() == r'characters\_male\skeleton.nif':
                 patchRecords.setRecord(record)
-                
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -17708,7 +17708,7 @@ class GmstTweaker(MultiTweaker):
             ('8',8),
             ('10',10),
             ('15',15),
-            ),          
+            ),
         GmstTweak(_('Bounty: Attack'),
             _("Bounty for attacking a 'good' npc."),
             'iCrimeGoldAttackMin',
@@ -19208,14 +19208,14 @@ class RedguardNPCPatcher(MultiTweakItem):
         return (MreNpc,)
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod, 
+        """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
-                
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -19253,14 +19253,14 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
         return (MreNpc,)
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod, 
+        """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
-                
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -19304,14 +19304,14 @@ class RWALKNPCAnimationPatcher(MultiTweakItem):
         return (MreNpc,)
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod, 
+        """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
-                
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -19349,14 +19349,14 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
         return (MreNpc,)
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod, 
+        """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
-                
+
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -19483,7 +19483,7 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
                 patched.append(record.eid)
         log.setHeader('= '+self.__class__.name)
         log(_('===Quests Patched: %d') % (len(patched),))
-        
+
 #------------------------------------------------------------------------------
 class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
@@ -19523,7 +19523,7 @@ class ContentsChecker(SpecialPatcher,Patcher):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        if not self.isActive: return 
+        if not self.isActive: return
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         #--Remember types (only when first defined)
@@ -19544,7 +19544,7 @@ class ContentsChecker(SpecialPatcher,Patcher):
             patchBlock = getattr(self.patchFile,type)
             id_records = patchBlock.id_records
             for record in modFile.tops[type].getActiveRecords():
-                if record.fid not in id_records: 
+                if record.fid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
@@ -19652,7 +19652,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')
-    #-- Other tool directories 
+    #-- Other tool directories
     #   First to default path
     dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
     dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
@@ -19687,7 +19687,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sTes4EditPath'):
             dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
             if not dirs['TES4EditPath'].isabs():
-                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])           
+                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
         if bashIni.has_option('Tool Options','sTes4LodGenPath'):
             dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
             if not dirs['TES4LodGenPath'].isabs():
@@ -19695,7 +19695,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sNifskopePath'):
             dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
             if not dirs['NifskopePath'].isabs():
-                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])                
+                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
         if bashIni.has_option('Tool Options','sBlenderPath'):
             dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
             if not dirs['BlenderPath'].isabs():
@@ -19707,15 +19707,15 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sMaxPath'):
             dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
             if not dirs['MaxPath'].isabs():
-                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])                
+                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
         if bashIni.has_option('Tool Options','sMayaPath'):
             dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
             if not dirs['MayaPath'].isabs():
-                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])            
+                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
         if bashIni.has_option('Tool Options','sPhotoshopPath'):
             dirs['Photoshop'] = GPath(bashIni.get('Tool Options','sPhotoshopPath').strip())
             if not dirs['Photoshop'].isabs():
-                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])            
+                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])
         if bashIni.has_option('Tool Options','sGIMP'):
             dirs['GIMP'] = GPath(bashIni.get('Tool Options','sGIMP').strip())
             if not dirs['GIMP'].isabs():
@@ -19723,15 +19723,15 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sISOBL'):
             dirs['ISOBL'] = GPath(bashIni.get('Tool Options','sISOBL').strip())
             if not dirs['ISOBL'].isabs():
-                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])            
+                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])
         if bashIni.has_option('Tool Options','sISRMG'):
             dirs['ISRMG'] = GPath(bashIni.get('Tool Options','sISRMG').strip())
             if not dirs['ISRMG'].isabs():
-                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])           
+                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])
         if bashIni.has_option('Tool Options','sISRNG'):
             dirs['ISRNG'] = GPath(bashIni.get('Tool Options','sISRNG').strip())
             if not dirs['ISRNG'].isabs():
-                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])            
+                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])
         if bashIni.has_option('Tool Options','sISRNPCG'):
             dirs['ISRNPCG'] = GPath(bashIni.get('Tool Options','sISRNPCG').strip())
             if not dirs['ISRNPCG'].isabs():
@@ -19776,7 +19776,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
             if not dirs['PaintNET'].isabs():
                 dirs['PaintNET'] = dirs['app'].join(dirs['PaintNET'])
-            
+
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         oblivionMods = GPath(bashIni.get('General','sOblivionMods').strip())
@@ -19804,7 +19804,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     if not dirs['app'].join('Oblivion.exe').exists():
         print dirs['app'].join('Oblivion.exe')
         raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % dirs['app'])
-        
+
     #other settings from the INI:
     inisettings['scriptFileExt']='.txt'
     inisettings['keepLog'] = 0
@@ -19813,17 +19813,17 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['showtexturetoollaunchers'] = True
     inisettings['showmodelingtoollaunchers'] = True
     inisettings['showaudiotoollaunchers'] = True
-    inisettings['ShowTes4View']=True
-    inisettings['ShowTes4Edit']=True
-    inisettings['ShowTes4Trans']=True
+    inisettings['ShowTes4View'] = True
+    inisettings['ShowTes4Edit'] = True
+    inisettings['ShowTes4Trans'] = True
     inisettings['custom1txt'] = 'Not Set in INI'
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
     inisettings['custom4txt'] = 'Not Set in INI'
-    inisettings['custom1opt']=''
-    inisettings['custom2opt']=''
-    inisettings['custom3opt']=''
-    inisettings['custom4opt']=''
+    inisettings['custom1opt'] = ''
+    inisettings['custom2opt'] = ''
+    inisettings['custom3opt'] = ''
+    inisettings['custom4opt'] = ''
     inisettings['iconSize'] = '16'
     inisettings['AutoItemCheck'] = False
     #inisettings['show?toollaunchers'] = True
@@ -19864,13 +19864,17 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sCustom4txt'):
             inisettings['custom4txt'] = str(bashIni.get('Tool Options','sCustom4txt')).strip()
         if bashIni.has_option('Tool Options','sCustom1opt'):
-            if not str(bashIni.get('Tool Options','sCustom1opt')).strip() == '-Option(s)' : inisettings['custom1opt'] = str(bashIni.get('Tool Options','sCustom1opt')).strip()
+            if not str(bashIni.get('Tool Options','sCustom1opt')).strip() == '-Option(s)':
+                inisettings['custom1opt'] = str(bashIni.get('Tool Options','sCustom1opt')).strip()
         if bashIni.has_option('Tool Options','sCustom2opt'):
-            if not str(bashIni.get('Tool Options','sCustom2opt')).strip() == '-Option(s)' : inisettings['custom2opt'] = str(bashIni.get('Tool Options','sCustom2opt')).strip()
+            if not str(bashIni.get('Tool Options','sCustom2opt')).strip() == '-Option(s)':
+                inisettings['custom2opt'] = str(bashIni.get('Tool Options','sCustom2opt')).strip()
         if bashIni.has_option('Tool Options','sCustom3opt'):
-            if not str(bashIni.get('Tool Options','sCustom3opt')).strip() == '-Option(s)' : inisettings['custom3opt'] = str(bashIni.get('Tool Options','sCustom3opt')).strip()
+            if not str(bashIni.get('Tool Options','sCustom3opt')).strip() == '-Option(s)':
+                inisettings['custom3opt'] = str(bashIni.get('Tool Options','sCustom3opt')).strip()
         if bashIni.has_option('Tool Options','sCustom4opt'):
-            if not str(bashIni.get('Tool Options','sCustom4opt')).strip() == '-Option(s)' : inisettings['custom4opt'] = str(bashIni.get('Tool Options','sCustom4opt')).strip()
+            if not str(bashIni.get('Tool Options','sCustom4opt')).strip() == '-Option(s)':
+                inisettings['custom4opt'] = str(bashIni.get('Tool Options','sCustom4opt')).strip()
 
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
