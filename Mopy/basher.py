@@ -187,7 +187,7 @@ settingDefaults = {
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
     'bash.installers.skipImages':False,
-    'bash.installers.skipDocs':False,   
+    'bash.installers.skipDocs':False,
     'bash.installers.skipDistantLOD':False,
     'bash.installers.sortProjects':True,
     'bash.installers.sortActive':False,
@@ -600,7 +600,7 @@ class List(wx.Panel):
                 for item in items:
                     self.data.delete(item)
                 self.RefreshUI()
-                
+
     def checkUncheckMod(self, *mods):
         removed = []
         for item in mods:
@@ -987,7 +987,7 @@ class MasterList(List):
 class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
-    
+
     def __init__(self,parent):
         #--Columns
         self.cols = settings['bash.ini.cols']
@@ -1007,7 +1007,7 @@ class INIList(List):
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         #--Events
         #--ScrollPos
-        
+
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
         #--Details
@@ -1328,7 +1328,7 @@ class ModList(List):
             else:
                 #--Check all that aren't
                 self.checkUncheckMod(*toActivate)
-                
+
     def OnColumnResize(self,event):
         """Column resize: Stored modified column widths."""
         colDex = event.GetColumn()
@@ -1681,7 +1681,7 @@ class INIPanel(NotebookPanel):
     def OnCloseWindow(self):
         """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
         bosh.iniInfos.table.save()
-        
+
 #------------------------------------------------------------------------------
 class ModPanel(NotebookPanel):
     def __init__(self,parent):
@@ -2088,7 +2088,7 @@ class InstallersList(balt.Tank):
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
             details,id,style)
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
-        
+
     def OnChar(self,event):
         """Char event: Reorder."""
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
@@ -2176,7 +2176,7 @@ class InstallersPanel(SashTankPanel):
             (self.gComments,1,wx.GROW|wx.TOP,4),
             ))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-        
+
     def OnShow(self):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
@@ -2919,7 +2919,7 @@ class BSADetails(wx.Window):
         self.file.SetMaxLength(256)
         wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
         wx.EVT_TEXT(self.file,id,self.OnTextEdit)
-        
+
         #--BSA Info
         self.gInfo = wx.TextCtrl(self,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
         self.gInfo.SetMaxLength(2048)
@@ -3095,7 +3095,7 @@ class BSAPanel(NotebookPanel):
         table.save()
         bosh.BSAInfos.profiles.save()
         settings['bash.BSAs.scrollPos'] = BSAList.vScrollPos
-        
+
 #------------------------------------------------------------------------------
 class MessageList(List):
     #--Class Data
@@ -3511,7 +3511,7 @@ class BashStatusBar(wx.StatusBar):
             if gButton: self.buttons.append(gButton)
         self.SetStatusWidths([self.size*len(self.buttons),-1, 120])
         self.SetSize((-1, self.size))
-        self.GetParent().SendSizeEvent() 
+        self.GetParent().SendSizeEvent()
         self.OnSize() #--Position buttons
         wx.EVT_SIZE(self,self.OnSize)
         #--Bind events
@@ -5478,7 +5478,7 @@ class Installers_AutoWizard(Link):
     def Execute(self, event):
         """Handle selection."""
         settings['bash.installers.autoWizard'] ^= True
-        
+
 #------------------------------------------------------------------------------
 class Installers_AutoRefreshProjects(Link):
     """Toggle autoRefreshProjects setting and update."""
@@ -5491,7 +5491,7 @@ class Installers_AutoRefreshProjects(Link):
     def Execute(self,event):
         """Handle selection."""
         settings['bash.installers.autoRefreshProjects'] ^= True
-        
+
 class Installers_Enabled(Link):
     """Flips installer state."""
     def AppendToMenu(self,menu,window,data):
@@ -5583,7 +5583,7 @@ class Installers_EnableWizard(Link):
                 file.close
         os.startfile(path)
         bashFrame.Close()
-            
+    
 #------------------------------------------------------------------------------
 class Installers_BsaRedirection(Link):
     """Toggle BSA Redirection."""
@@ -5849,7 +5849,7 @@ class Installer_EditWizard(InstallerLink):
         dir = self.data.dir
         dir.join(path.s, 'wizard.txt').start()
 
-                
+        
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
@@ -5857,7 +5857,7 @@ class Installer_Wizard(InstallerLink):
     def __init__(self, bAuto):
         InstallerLink.__init__(self)
         self.bAuto = bAuto
-    
+
     def AppendToMenu(self, menu, window, data):
         parentWindow = window
         Link.AppendToMenu(self, menu, window, data)
@@ -5871,7 +5871,7 @@ class Installer_Wizard(InstallerLink):
             menuItem.Enable(installer.hasWizard)
         else:
             menuItem.Enable(False)
-        
+
     def Execute(self, event):
         installer = self.data[self.selected[0]]
         subs = []
@@ -5917,7 +5917,7 @@ class Installer_Wizard(InstallerLink):
                     progress.Destroy()
                     self.data.refresh(what='N')
                     gInstallers.RefreshUIMods()
-   
+
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
     """Anneal all packages."""
@@ -6170,7 +6170,7 @@ class Installer_OpenTESA(InstallerLink):
         message = _("Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(1)
-            os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)           
+            os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)   
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
     """Rescans selected Installers."""
@@ -6242,7 +6242,7 @@ class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleArchive():            
+        if self.isSingleArchive():    
             self.title = _('Unpack to Project...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -6432,7 +6432,7 @@ class InstallerProject_Pack(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         #--Pack is appended whenever Unpack isn't, and vice-versa
-        if self.isSingleProject():            
+        if self.isSingleProject():    
             self.title = _('Pack to Archive...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -6543,7 +6543,7 @@ class InstallerProject_ReleasePack(InstallerLink):
             self.gTank.RefreshUI()
         finally:
             progress.Destroy()
- 
+
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(InstallerLink):
     """Apply a Bain Conversion File."""
@@ -7474,8 +7474,8 @@ class Mod_AllowAllGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Allow Ghosting"))
-        menu.AppendItem(menuItem) 
-        
+        menu.AppendItem(menuItem)
+
     def Execute(self,event):
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
@@ -7491,8 +7491,8 @@ class Mod_AllowNoGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Disallow Ghosting"))
-        menu.AppendItem(menuItem)   
-        
+        menu.AppendItem(menuItem)
+
     def Execute(self,event):
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
@@ -7502,14 +7502,14 @@ class Mod_AllowNoGhosting(Link):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 self.window.RefreshUI(fileName)
-                
+        
 #------------------------------------------------------------------------------
 class Mod_AllowInvertGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Invert Ghosting"))
-        menu.AppendItem(menuItem)        
-        
+        menu.AppendItem(menuItem)
+
     def Execute(self,event):
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
@@ -7519,7 +7519,7 @@ class Mod_AllowInvertGhosting(Link):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 self.window.RefreshUI(fileName)
-                
+        
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(Link):
     """Toggles Ghostability."""
@@ -9661,7 +9661,7 @@ class Save_StatObse(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('.obse Statistics'))
         menu.AppendItem(menuItem)
-        if len(data) != 1: 
+        if len(data) != 1:
             menuItem.Enable(False)
         else:
             fileName = GPath(self.data[0])
@@ -9684,7 +9684,7 @@ class Save_StatObse(Link):
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
         finally:
             progress.Destroy()
-            
+    
 #------------------------------------------------------------------------------
 class Save_Unbloat(Link):
     """Unbloats savegame."""
@@ -9920,7 +9920,7 @@ class Screen_Rename(Link):
             numStr = '0'*(numLen-len(numStr))+numStr
         bosh.screensData.refresh()
         self.window.RefreshUI()
-        
+
 class Installer_Rename(Link):
     """Renames files by pattern."""
     def AppendToMenu(self,menu,window,data):
@@ -10529,12 +10529,12 @@ def InitStatusBar():
         App_Button(
             bosh.dirs['ISOBL'],
             Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch InsanitySorrow's Oblivion Launcher"))) 
+            _("Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISRMG'],
             Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch InsanitySorrow's Readme Generator"))) 
+            _("Launch InsanitySorrow's Readme Generator")))
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['ISRNG'],
@@ -10544,7 +10544,7 @@ def InitStatusBar():
         App_Button(
             bosh.dirs['ISRNPCG'],
             Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch InsanitySorrow's Random NPC Generator"))) 
+            _("Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append(
         App_OblivionBookCreator(None,
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
@@ -10553,7 +10553,7 @@ def InitStatusBar():
         App_Button(
             bosh.dirs['TES4FilesPath'],
             Image(r'images/tes4files'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch TES4Files")))           
+            _("Launch TES4Files")))   
     BashStatusBar.buttons.append(
         App_Tes4Gecko(None,
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
@@ -10763,7 +10763,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
     InstallersPanel.mainMenu.append(Installers_SkipScreenshots())
     InstallersPanel.mainMenu.append(Installers_SkipImages())
-    InstallersPanel.mainMenu.append(Installers_SkipDocs())  
+    InstallersPanel.mainMenu.append(Installers_SkipDocs())
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
 
     #--Item links
@@ -11115,7 +11115,7 @@ def InitLinks():
 if __name__ == '__main__':
     print _('Compiled')
     #Testing re.compile function...
-    
+
 def funkychicken():
         text = raw_input ('input relative path')
 #result = #re.search (r'(?<=\\)[^\\][?=\.]',text,re.I)
