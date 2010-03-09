@@ -19776,7 +19776,16 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
             if not dirs['PaintNET'].isabs():
                 dirs['PaintNET'] = dirs['app'].join(dirs['PaintNET'])
-
+    # Tes4View/Trans check - might be separate .exe (for later versions)
+    if ((dirs['TES4EditPath'].head).join('Tes4View.exe')).exists:
+        dirs['TES4ViewPath'] = (dirs['TES4EditPath'].head).join('Tes4View.exe')
+    else:
+        dirs['TES4ViewPath'] = dirs['TES4EditPath']
+    if ((dirs['TES4EditPath'].head).join('Tes4Trans.exe')).exists:
+        dirs['TES4TransPath'] = (dirs['TES4EditPath'].head).join('Tes4Trans.exe')
+    else:
+        dirs['TES4TransPath'] = dirs['TES4EditPath']
+    
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         oblivionMods = GPath(bashIni.get('General','sOblivionMods').strip())

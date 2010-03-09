@@ -10561,7 +10561,7 @@ def InitStatusBar():
     if bosh.inisettings['ShowTes4View']:
         BashStatusBar.buttons.append(
             App_Tes4View(
-                (bosh.dirs['TES4EditPath'], '-view'),
+                (bosh.dirs['TES4ViewPath'], '-view'),
                 Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Tes4View")))
     if bosh.inisettings['ShowTes4Edit']:
@@ -10573,7 +10573,7 @@ def InitStatusBar():
     if bosh.inisettings['ShowTes4Trans']:
         BashStatusBar.buttons.append(
             App_Tes4View(
-                (bosh.dirs['TES4EditPath'], '-translate'),
+                (bosh.dirs['TES4TransPath'], '-translate'),
                 Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Tes4Trans")))
     BashStatusBar.buttons.append(
