@@ -10152,8 +10152,7 @@ class App_Button(Link):
         self.image = image
         self.tip = tip
         #--Java stuff
-        #--exePath actually looks like: bolt.Path('C:\\Path\\exe.exe')
-        if (str(GPath(self.exePath))[-6:-2]) == '.jar':
+        if self.exePath and str((self.exePath).ext) == '.jar': #Sometimes exePath is "None"
             self.isJava = True
             self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
             self.jar = self.exePath
