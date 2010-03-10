@@ -10578,7 +10578,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['TES4LodGenPath'],
-            Image(r'images/brick_go'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/Tes4LODGen'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4LODGen")))
     BashStatusBar.buttons.append(
         App_BOSS(

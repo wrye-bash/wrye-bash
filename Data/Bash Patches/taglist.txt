@@ -1,4 +1,4 @@
-\ Taglist for Wrye Bash; derived from BOSS Masterlist revision 694.
+\ Taglist for Wrye Bash; derived from BOSS Masterlist revision 714.
 \ Leading symbol code:
 \
 \ \ A silent comment - will be ignored by the program.
