@@ -40,6 +40,10 @@ In particular, see:
   * Waruddar: Extensive additions/improvements/fixes.
   * Ralgor: Cell support and Import Cells.
   * Pacific Morrowind: New imports, exports, tweaks, etc.
+  * Raziel23x: new tweaks etc.
+  * Lojack: Wizard based install system, Ini tab etc.
+  * Haama: OBSE cofile definitions, various fixes, improvements etc
+  * Badhair: OBSE cofile reading code, various optimizations etc.
   * Breeze582000: Bashmon
 
 === Additional Credits
@@ -66,9 +70,11 @@ In particular, see:
   * Veritas_Secreto: Tamriel NPCs Revamped
 * **Additional Thanks**
   * ElminsterEU: Bug catching, technical suggestions.
+  * Metallicow: Shiny new tool launcher icons.
   * Tom Suprgan: Several well researched suggestions.
   * Sativarg: Proofreading
   * Kmacg94: Additional power exhaustion coverage.
+  * To the testers/bug finders/helpful people on the forum when others have trouble (hopefully not missing too many people): Arthmoor, Corepc, Daemondarque, TommyH, Surazal, many others
 * **Misc. Resources**
   * [[http://www.famfamfam.com/lab/icons/silk/|FamFamFam icons]]
 
