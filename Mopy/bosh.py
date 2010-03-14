@@ -10185,7 +10185,7 @@ class InstallerConverter(object):
             archiveType = writeExts.get(destArchive.cext)
         outFile = outDir.join(destArchive)
         solid = ('off','on')[self.isSolid]
-        command = '7z.exe a "%s" -t"%s" -ms="%s" -y -r -o"%s" "%s"' % ("%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['app'].join("Mopy",srcFolder).s)
+        command = '7z.exe a "%s" -t"%s" -ms="%s" -y -r -o"%s" "%s"' % ("%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
@@ -19646,12 +19646,13 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['saveBase'] = personal.join(r'My Games','Oblivion')
     dirs['userApp'] = localAppData.join('Oblivion')
 
-    #--App Directories... Default = Assume bash is in right place (\Oblviion\Mopy\).
+    #--App Directories.
     if oblivionPath: dirs['app'] = GPath(oblivionPath)
-    else: dirs['app'] = bolt.Path.getcwd().head
+    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblviion\Mopy\).
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')
+    dirs['mopy'] = bolt.Path.getcwd().root
     #-- Other tool directories
     #   First to default path
     dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
@@ -19817,7 +19818,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     #other settings from the INI:
     inisettings['scriptFileExt']='.txt'
     inisettings['keepLog'] = 0
-    inisettings['logFile'] = dirs['app'].join('Mopy').join('bash.log')
+    inisettings['logFile'] = dirs['mopy'].join('bash.log')
     inisettings['enablewizard'] = 0
     inisettings['showtexturetoollaunchers'] = True
     inisettings['showmodelingtoollaunchers'] = True

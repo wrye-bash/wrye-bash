@@ -16,7 +16,7 @@ def replaceShader(sdpFileName, shaderName, shaderFileName):
     temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
     sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
     sNew = bosh.dirs['mods'].join('Shaders', shaderFileName)
-    sBak = bosh.dirs['app'].join('Mopy', 'Data', 'Shaders Backup', sdpFileName, shaderName)
+    sBak = bosh.dirs['mopy'].join('Data', 'Shaders Backup', sdpFileName, shaderName)
 
     if not sdp.exists() and not sdp.isfile(): return
     if not sNew.exists() and not sNew.isfile(): return
@@ -36,7 +36,7 @@ def replaceShader(sdpFileName, shaderName, shaderFileName):
 def restoreShader(sdpFileName, shaderName):
     temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
     sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
-    dBackup = bosh.dirs['app'].join('Mopy', 'Data', 'Shaders Backup', sdpFileName)
+    dBackup = bosh.dirs['mopy'].join('Data', 'Shaders Backup', sdpFileName)
     sNew = dBackup.join(shaderName)
 
     if not sdp.exists() and not sdp.isfile(): return
@@ -409,8 +409,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bObOk, obHave, obNeed, bOBSEOk, obseHave, obseNeed, bOBGEOk, obgeHave, obgeNeed):
         PageInstaller.__init__(self, parent)
 
-        bmpGood = wx.Bitmap(bosh.dirs['app'].join('Mopy', 'images', 'check.png').s)
-        bmpBad = wx.Bitmap(bosh.dirs['app'].join('Mopy', 'images', 'x.png').s)
+        bmpGood = wx.Bitmap(bosh.dirs['mopy'].join('images', 'check.png').s)
+        bmpBad = wx.Bitmap(bosh.dirs['mopy'].join('images', 'x.png').s)
         
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
