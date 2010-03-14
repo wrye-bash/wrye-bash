@@ -4241,7 +4241,7 @@ class BashApp(wx.App):
         #--Current Version
         settings['bash.version'] = 43
         #--Version from readme
-        readme = bosh.dirs['app'].join('Mopy','Wrye Bash.txt')
+        readme = bosh.dirs['mopy'].join('Wrye Bash.txt')
         if readme.exists() and readme.mtime != settings['bash.readme'][0]:
             reVersion = re.compile("^=== ([\.\d]+) \[")
             for line in readme.open():
@@ -5525,7 +5525,7 @@ class Installers_EnableWizard(Link):
 
     def Execute(self,event):
         """Handle selection."""
-        path = bosh.dirs['app'].join('Mopy\\Wrye Bash Launcher.pyw')
+        path = bosh.dirs['mopy'].join('Wrye Bash Launcher.pyw')
         path = path.s
         path = path.replace('\\',os.sep)
         if bosh.inisettings['enablewizard']:
@@ -5534,23 +5534,23 @@ class Installers_EnableWizard(Link):
                 _('Disable Wizard Install System?')):
                 return
             if GPath('bash.ini').exists():
-                file = bosh.dirs['app'].join(r'mopy\bash.ini').open("r")
+                file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
                 lines = file.readlines()
                 file.close
                 if "iEnableWizard=0" in lines:
                     pos = lines.index("iEnableWizard=1\n")
                 lines[pos] = "iEnableWizard=0\n"
-                file = bosh.dirs['app'].join(r'mopy\bash.ini').open("w")
+                file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
                 for line in lines:
                     file.write(line)
                 file.close
-            file = bosh.dirs['app'].join(r'mopy\bosh.py').open("r")
+            file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
             lines = file.readlines()
             file.close
             if "    inisettings['enablewizard'] = 1\n" in lines:
                 pos = lines.index("    inisettings['enablewizard'] = 1\n")
                 lines[pos] = "    inisettings['enablewizard'] = 0\n"
-            file = bosh.dirs['app'].join(r'mopy\bosh.py').open("w")
+            file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
             for line in lines:
                 file.write(line)
             file.close
@@ -5560,24 +5560,24 @@ class Installers_EnableWizard(Link):
                 _('Enable Wizard Install System?')):
                 return
             if GPath('bash.ini').exists():
-                file = bosh.dirs['app'].join(r'mopy\bash.ini').open("r")
+                file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
                 lines = file.readlines()
                 file.close
                 if "iEnableWizard=0" in lines:
                     pos = lins.index("iEnableWizard=0\n")
                 lines[pos] = "iEnableWizard=1\n"
-                file = bosh.dirs['app'].join(r'mopy\bash.ini').open("w")
+                file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
                 for line in lines:
                     file.write(line)
                 file.close
             else:
-                file = bosh.dirs['app'].join(r'mopy\bosh.py').open("r")
+                file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
                 lines = file.readlines()
                 file.close
                 if "    inisettings['enablewizard'] = 0\n" in lines:
                     pos = lines.index("    inisettings['enablewizard'] = 0\n")
                 lines[pos] = "    inisettings['enablewizard'] = 1\n"
-                file = bosh.dirs['app'].join(r'mopy\bosh.py').open("w")
+                file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
                 for line in lines:
                     file.write(line)
                 file.close
@@ -6985,7 +6985,7 @@ class Mods_DumpTranslator(Link):
             return
         import locale
         language = locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['app'].join('Mopy','Data','NEW%s.txt' % (language,))
+        outPath = bosh.dirs['mopy'].join('Data','NEW%s.txt' % (language,))
         outFile = outPath.open('w')
         #--Scan for keys and dump to
         keyCount = 0
