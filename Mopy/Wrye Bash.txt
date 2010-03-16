@@ -1929,6 +1929,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Allow Option Switches to be used
 * Taglist fix (reported by Surazal)
 * Installer fix (reported by half of everyone on bethsoft)
+* Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
 
 === 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
