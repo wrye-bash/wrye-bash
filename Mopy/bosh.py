@@ -19819,7 +19819,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['scriptFileExt']='.txt'
     inisettings['keepLog'] = 0
     inisettings['logFile'] = dirs['mopy'].join('bash.log')
-    inisettings['enablewizard'] = 0
+    inisettings['enablewizard'] = False
     inisettings['showtexturetoollaunchers'] = True
     inisettings['showmodelingtoollaunchers'] = True
     inisettings['showaudiotoollaunchers'] = True
@@ -19849,7 +19849,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             if not inisettings['logFile'].isabs():
                 inisettings['logFile'] = dirs['app'].join(inisettings['logFile'])
         if bashIni.has_option('Settings','bEnableWizard'):
-            inisettings['enablewizard'] = int(bashIni.get('Settings','bEnableWizard').strip())
+            inisettings['enablewizard'] = bashIni.getboolean('Settings','bEnableWizard')
         if bashIni.has_option('Settings','bAutoItemCheck') or bashIni.has_option('Settings','sAutoItemCheck'): #Check "s..." for backwards compatibility
             if bashIni.has_option('Settings','bAutoItemCheck'): inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','bAutoItemCheck')
             else: inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','sAutoItemCheck')
