@@ -5533,71 +5533,59 @@ class Installers_EnableWizard(Link):
             if not balt.askContinue(self.gTank,message,'bash.disablewiz.continue',
                 _('Disable Wizard Install System?')):
                 return
-            if GPath('bash.ini').exists():
-                file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
+            if not GPath('bash.ini').exists(): #Not possible >= v280, but older versions modified bosh.py to enable the wizard
+                shutil.copyfile( 'bash_default.ini', 'bash.ini')
+                file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
                 lines = file.readlines()
-                file.close       
+                file.close
+                if "    inisettings['enablewizard'] = 1\n" in lines:
+                    pos = lines.index("    inisettings['enablewizard'] = 1\n")
+                    lines[pos] = "    inisettings['enablewizard'] = False\n"
+                file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
+                file.writelines(lines)
+                file.close
+            file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
+            lines = file.readlines()
+            file.close       
+            for i, line in enumerate(lines):
+                if line.lstrip().startswith('bEnableWizard='):
+                    lines[i] = "bEnableWizard=False\n"
+                    file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
+                    file.writelines(lines)
+                    file.close
+                    break
+            else:
                 for i, line in enumerate(lines):
-                    if line.lstrip().startswith('bEnableWizard='):
-                        lines[i] = "bEnableWizard=False\n"
+                    if line.lstrip().startswith('[Settings]'):
+                        lines.insert(i+1, "bEnableWizard=False\n")
                         file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
                         file.writelines(lines)
                         file.close
                         break
-                else:
-                    for i, line in enumerate(lines):
-                        if line.lstrip().startswith('[Settings]'):
-                            lines.insert(i+1, "bEnableWizard=False\n")
-                            file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                            file.writelines(lines)
-                            file.close
-                            break
-            else:
-                file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
-                lines = file.readlines()
-                file.close
-                if "    inisettings['enablewizard'] = True\n" in lines:
-                    pos = lines.index("    inisettings['enablewizard'] = True\n")
-                    lines[pos] = "    inisettings['enablewizard'] = False\n"
-                    file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
-                    for line in lines:
-                        file.write(line)
-                    file.close
         else:
             message = (_("Enable wizard install system?\nThis will close and reopen Wrye Bash and will require the Python win32api to be installed or Bash will not start!\nYou can reset it by changing the line in the Bash ini as per the readme. Do you want to continue?"))
             if not balt.askContinue(self.gTank,message,'bash.enablewiz.continue',
                 _('Enable Wizard Install System?')):
                 return
-            if GPath('bash.ini').exists():
-                file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
-                lines = file.readlines()
-                file.close       
+            if not GPath('bash.ini').exists(): shutil.copyfile('bash_default.ini', 'bash.ini')
+            file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
+            lines = file.readlines()
+            file.close       
+            for i, line in enumerate(lines):
+                if line.lstrip().startswith('bEnableWizard='):
+                    lines[i] = "bEnableWizard=True\n"
+                    file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
+                    file.writelines(lines)
+                    file.close
+                    break
+            else:
                 for i, line in enumerate(lines):
-                    if line.lstrip().startswith('bEnableWizard='):
-                        lines[i] = "bEnableWizard=True\n"
+                    if line.lstrip().startswith('[Settings]'):
+                        lines.insert(i+1, "bEnableWizard=True\n")
                         file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
                         file.writelines(lines)
                         file.close
                         break
-                else:
-                    for i, line in enumerate(lines):
-                        if line.lstrip().startswith('[Settings]'):
-                            lines.insert(i+1, "bEnableWizard=True\n")
-                            file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                            file.writelines(lines)
-                            file.close
-                            break
-            else:
-                file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
-                lines = file.readlines()
-                file.close
-                if "    inisettings['enablewizard'] = False\n" in lines:
-                    pos = lines.index("    inisettings['enablewizard'] = False\n")
-                    lines[pos] = "    inisettings['enablewizard'] = True\n"
-                file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
-                for line in lines:
-                    file.write(line)
-                file.close
         os.startfile(path)
         bashFrame.Close()
     
