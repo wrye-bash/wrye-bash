@@ -10156,6 +10156,11 @@ class App_Button(Link):
             self.exeArgs = tuple()
         self.image = image
         self.tip = tip
+        #--Exe stuff
+        if self.exePath and str((self.exePath).ext) == '.exe': #Sometimes exePath is "None"
+            self.isExe = True
+        else:
+            self.isExe = False
         #--Java stuff
         if self.exePath and str((self.exePath).ext) == '.jar': #Sometimes exePath is "None"
             self.isJava = True
@@ -10194,7 +10199,7 @@ class App_Button(Link):
             self.jar.head.setcwd()
             os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,'-jar',self.jar.stail,self.appArgs))
             cwd.setcwd()
-        else:
+        elif self.isExe:
             exeObse = bosh.dirs['app'].join('obse_loader.exe')
             exeArgs = self.exeArgs
             if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
@@ -10209,6 +10214,9 @@ class App_Button(Link):
             exePath.head.setcwd()
             os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
             cwd.setcwd()
+        else:
+            os.startfile(self.exePath.s, (str(self.exeArgs))[2:-3])
+
 #------------------------------------------------------------------------------
 class App_Tes4Gecko(App_Button):
     """Start Tes4Gecko."""
