@@ -19588,37 +19588,46 @@ class ContentsChecker(SpecialPatcher,Patcher):
                             log('  . %s: %06X' % (mod.s,index))
 
 # Initialization --------------------------------------------------------------
-def initDirs(personal='',localAppData='',oblivionPath=''):
-    try:
-        from win32com.shell import shell, shellcon
-    except ImportError:
-        shell = shellcon = None
+def initDirs(personal='',localAppData='',oblivionPath=''):      
     #--Bash Ini
     bashIni = None
     if GPath('bash.ini').exists():
         bashIni = ConfigParser.ConfigParser()
         bashIni.read('bash.ini')
-    #--Specified on command line.
-    if personal or localAppData:
-        if not personal: raise BoltError(_("-p command line argument is missing."))
-        if not localAppData: raise BoltError(_("-l command line argument is missing."))
-        personal = GPath(personal)
-        localAppData = GPath(localAppData)
-        for optKey,dirPath in (('-p',personal),('-l',localAppData)):
-            if not dirPath.exists():
-                raise BoltError(_("Error in %s argument: Non-existent directory:\n>> %s") % (optKey,dirPath))
-        errorInfo = _("Folder paths specified on command line.")
-    #--Try to use win32com module.
-    elif shell and shellcon:
+        
+    #--Mopy directories
+    dirs['mopy'] = bolt.Path.getcwd().root
+    dirs['mopyData'] = dirs['mopy'].join('Data')
+    dirs['mopyExtras'] = dirs['mopy'].join('Extras')
+    dirs['mopyImages'] = dirs['mopy'].join('Images')
+    
+    #--Oblivion (Application) Directories
+    if oblivionPath: dirs['app'] = GPath(oblivionPath)
+    elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
+        dirs['app'] = GPath(bashIni.get('General', 'sOblivionPath').strip())
+    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblviion\Mopy\)
+    #--If path is relative, make absolute
+    if not dirs['app'].isabs():
+        dirs['app'] = dirs['mopy'].join(dirs['app'])
+    #--Error check
+    if not dirs['app'].join('Oblivion.exe').exists():
+        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % dirs['app'])
+    #--Subdirectories
+    dirs['mods'] = dirs['app'].join('Data')
+    dirs['builds'] = dirs['app'].join('Builds')
+    dirs['patches'] = dirs['mods'].join('Bash Patches')
+        
+    #--Determine User folders from Personal and Local Application Data directories
+    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
+    #  Import win32com, in case it's necessary
+    try:
+        from win32com.shell import shell, shellcon
         def getShellPath(shellKey):
             path = shell.SHGetFolderPath (0, shellKey, None, 0)
             path = path.encode(locale.getpreferredencoding())
             return GPath(path)
-        personal = getShellPath(shellcon.CSIDL_PERSONAL)
-        localAppData = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
-        errorInfo = _("Folder paths extracted from win32com.shell.")
-    #--Otherwise try to read from registry.
-    else:
+    except ImportError:
+        shell = shellcon = None
         reEnv = re.compile('%(\w+)%')
         envDefs = os.environ
         def subEnv(match):
@@ -19638,21 +19647,49 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             path = path.encode(locale.getpreferredencoding())
             path = reEnv.sub(subEnv,path)
             return GPath(path)
+    #  Personal
+    if personal:
+        personal = GPath(personal)
+        pErrorInfo = _("Folder path specified on command line (-p)")
+    elif bashIni and bashIni.has_option('General', 'sPersonalPath') and not bashIni.get('General', 'sPersonalPath') == '.':
+        personal = GPath(bashIni.get('General', 'sPersonalPath').strip())
+        pErrorInfo = _("Folder path specified  in bash.ini (sPersonalPath)")
+    elif shell and shellcon:
+        personal = getShellPath(shellcon.CSIDL_PERSONAL)
+        pErrorInfo = _("Folder paths extracted from win32com.shell.")
+    else:
         personal = getShellPath('Personal')
+        pErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+    #  Local Application Data
+    if localAppData:
+        localAppData = GPath(localAppData)
+        lErrorInfo = _("Folder path specified on command line (-l)")
+    elif bashIni and bashIni.has_option('General', 'sLocalAppDataPath') and not bashIni.get('General', 'sLocalAppDataPath') == '.':
+        localAppData = GPath(bashIni.get('General', 'sLocalAppDataPath').strip())
+        lErrorInfo = _("Folder path specified  in bash.ini (sLocalAppDataPath)")
+    elif shell and shellcon:
+        localAppData = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
+        lErrorInfo = _("Folder path extracted from win32com.shell.")
+    else:
         localAppData = getShellPath('Local AppData')
-        errorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
-
-    #--User sub folders
+        lErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+    #  If path is relative, make absolute
+    #    Not likely to be used, but guaranteed in Ini instructions
+    if not personal.isabs():
+        personal = dirs['app'].join(personal)
+    if not localAppData.isabs():
+        localAppData = dirs['app'].join(localAppData)
+    #  Error checks
+    if not personal.exists():
+        raise BoltError(_("Personal folder does not exist\nPersonal folder: %s\nAdditional info:\n%s")
+            % (personal.s,pErrorInfo))
+    if not localAppData.exists():
+        raise BoltError(_("Local app data folder does not exist.\nLocal app data folder: %s\nAdditional info:\n%s")
+            % (localAppData.s, lErrorInfo))
+    #  User sub folders
     dirs['saveBase'] = personal.join(r'My Games','Oblivion')
     dirs['userApp'] = localAppData.join('Oblivion')
-
-    #--App Directories.
-    if oblivionPath: dirs['app'] = GPath(oblivionPath)
-    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblviion\Mopy\).
-    dirs['mods'] = dirs['app'].join('Data')
-    dirs['builds'] = dirs['app'].join('Builds')
-    dirs['patches'] = dirs['mods'].join('Bash Patches')
-    dirs['mopy'] = bolt.Path.getcwd().root
+    
     #-- Other tool directories
     #   First to default path
     dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
@@ -19777,7 +19814,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
             if not dirs['PaintNET'].isabs():
                 dirs['PaintNET'] = dirs['app'].join(dirs['PaintNET'])
-    # Tes4View/Trans check - might be separate .exe (for later versions)
+    # Tes4View/Trans check - might be separate .exe (for later versions of Tes4Edit)
     if ((dirs['TES4EditPath'].head).join('Tes4View.exe')).exists:
         dirs['TES4ViewPath'] = (dirs['TES4EditPath'].head).join('Tes4View.exe')
     else:
@@ -19804,16 +19841,6 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['converters'].makedirs()
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
     dirs['dupeBCFs'].makedirs()
-    #--Error checks
-    if not personal.exists():
-        raise BoltError(_("Personal folder does not exist\nPersonal folder: %s\nAdditional info:\n%s")
-            % (personal.s,errorInfo))
-    if not localAppData.exists():
-        raise BoltError(_("Local app data folder does not exist.\nLocal app data folder: %s\nAdditional info:\n%s")
-            % (localAppData.s, errorInfo))
-    if not dirs['app'].join('Oblivion.exe').exists():
-        print dirs['app'].join('Oblivion.exe')
-        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % dirs['app'])
 
     #other settings from the INI:
     inisettings['scriptFileExt']='.txt'
