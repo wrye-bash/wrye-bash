@@ -1010,7 +1010,8 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Body-M: Mod modifies male body definition ([[#|Race Info]]).
   * C.Climate: Mod changes cell climate ([[#|Import Cells]]).
   * C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
-  * C.Name: Mod changes cell names ([[#|Import Cells]])
+  * C.Music: Mod changes cell music type ([[#|Import Cells]]).
+  * C.Name: Mod changes cell names ([[#|Import Cells]]).
   * C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
   * C.RecordFlags: Mod changes the offlimits/dangerous flag ([[#|Import Cells]]).
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
@@ -1099,7 +1100,7 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Actors
 * Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
-* __Configuration
+* __Configuration__
   * Source mods for the main patcher ~~must~~ contain one (or more) of the following tags:
     * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     * Actors.AIData: Mod modifies Creature or NPC AI Data.
@@ -1123,6 +1124,7 @@ __Importers__ are components that import specific information from selected mods
   * Source mods ~~must~~ contain one or more of the following bash [[#BashTags|tags]]. 
     * C.Climate: Mod changes cell climate.
     * C.Light: Mod changes cell lighting and/or fog.
+    * C.Music: Mod changes cell music type.
     * C.Name: Mod changes cell names.
     * C.Owner: Mod changes cell ownership.
     * C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
@@ -1918,7 +1920,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 280 [12/12/2012] [haama,PacificMorrowind]
+=== 280 [12/12/2012] [haama,PacificMorrowind,Metallicow]
 * Ini changes
   * Can set options (-o, -p, -l, -u) from ini
   * Tool Button Changes
@@ -1931,7 +1933,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
 * Taglist fix (reported by Surazal)
+* Taglist updated to Masterlist version 730
 * Installer fix (reported by half of everyone on bethsoft)
+* Way nicer icons for most of the tool launchers (contributed by Metallicow)
+* Bugfix: Readme weirdo bold formatting reversal (reported by myk002)
+* Bash Patch Changes:
+  * New Patchers:
+    * C.Music (added to Import Cells)
+  * Changes:
+    * Race Patcher now also ignores identical to master records.
 * Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
 
 === 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
