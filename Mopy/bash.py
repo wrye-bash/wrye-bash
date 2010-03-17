@@ -29,6 +29,11 @@ Note that Python reads the backslash "\" as an escape character,
 (that is, the backslash itself is ignored and the following character is read literally)
 so for any paths you'll want to either use two backslashes (C:\\Folder\\)
 or a forwardslash (C:/Folder/).
+
+All arguments except the -d Debug can be set in the .ini file.
+Arguments have precedence over ini settings.
+You can use a mix of arguments and ini settings.
+Ini settings don't require a double backslash and can have relative paths.
 ----
 Oblivion directory argument (-o).
 -o OblivionPath: Specify Oblivion directory (containing Oblivion.exe).
@@ -45,13 +50,13 @@ However, the arguments are:
 are missing from the user's environgment.
 Example: -u "C:\\Documents and Settings\\Wrye"
 
--p personalPath: Specify the user's personal directory. Must be used
-in conjunction with the -l argument.
-Example: -p "c:\\documents and settings\\Wrye\\My Documents"
+-p personalPath: Specify the user's personal directory.
+If you need to set this then you probably need to set -l too.
+Example: -p "C:\\Documents and Settings\\Wrye\\My Documents"
 
--l localAppDataPath: Specify the user's local application data directory.  Must be used
-in conjunction with the -p argument.
-Example: -l "c:\\documents and settings\\Wrye\\Local Settings\\Application Data"
+-l localAppDataPath: Specify the user's local application data directory. 
+If you need to set this then you probably need to set -p too.
+Example: -l "C:\\Documents and Settings\\Wrye\\Local Settings\\Application Data"
 ----
 Debug argument:
 -d Send debug text to the console rather than to a newly created debug window.
@@ -77,6 +82,14 @@ if '-u' in opts:
     drive,path = os.path.splitdrive(opts['-u'])
     os.environ['HOMEDRIVE'] = drive
     os.environ['HOMEPATH'] = path
+elif os.path.exists('bash.ini'):
+    import ConfigParser
+    bashIni = ConfigParser.ConfigParser()
+    bashIni.read('bash.ini')
+    if bashIni.has_option('General', 'sUserPath') and not bashIni.get('General', 'sUserPath') == '.':
+        drive,path = os.path.splitdrive(bashIni.get('General', 'sUserPath'))
+        os.environ['HOMEDRIVE'] = drive
+        os.environ['HOMEPATH'] = path
 personal = opts.get('-p')
 localAppData = opts.get('-l')
 bosh.initDirs(personal,localAppData,oblivionPath)

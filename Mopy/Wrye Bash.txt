@@ -1919,14 +1919,16 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 280 [12/12/2012] [haama,PacificMorrowind]
-* Tool Button Changes (see .ini)
-  * Bugfix: Boolean options were ignored (show---tool, AutoItemCheck)
-  * Tes4Edit
-    * Bugfix for later Tes4Edits: Now correctly launches Tes4View and Tes4Trans
-    * Options to show/hide View/Edit/Trans
-  * Custom
-    * Allow Java apps (.jar) to be used
-    * Allow Option Switches to be used
+* Ini changes
+  * Can set options (-o, -p, -l, -u) from ini
+  * Tool Button Changes
+    * Bugfix: Boolean options were ignored (show---tool, AutoItemCheck)
+    * Tes4Edit
+      * Bugfix for later Tes4Edits: Now correctly launches Tes4View and Tes4Trans
+      * Options to show/hide View/Edit/Trans
+    * Custom
+      * Allow Java apps (.jar) to be used
+      * Allow Option Switches to be used
 * Taglist fix (reported by Surazal)
 * Installer fix (reported by half of everyone on bethsoft)
 * Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
