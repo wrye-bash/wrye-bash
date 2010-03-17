@@ -10527,7 +10527,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(
         App_Button(
             bosh.dirs['app'].join('OblivionModManager.exe'),
-            Image(r'images/database_connect'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/obmm'+bosh.inisettings['iconSize']+'.png'),
             _("Launch OBMM")))
     BashStatusBar.buttons.append(
         App_Button(
@@ -10566,7 +10566,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append(
             App_Tes4View(
                 (bosh.dirs['TES4ViewPath'], '-view'),
-                Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/tes4view'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Tes4View")))
     if bosh.inisettings['ShowTes4Edit']:
         BashStatusBar.buttons.append(
