@@ -1202,7 +1202,8 @@
   <p class=list-2>&bull;&nbsp; Body-M: Mod modifies male body definition (<a href="#RaceInfo">Race Info</a>).
   <p class=list-2>&bull;&nbsp; C.Climate: Mod changes cell climate (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Light: Mod changes cell lighting and/or fog (<a href="#ImportCells">Import Cells</a>).
-  <p class=list-2>&bull;&nbsp; C.Name: Mod changes cell names (<a href="#ImportCells">Import Cells</a>)
+  <p class=list-2>&bull;&nbsp; C.Music: Mod changes cell music type (<a href="#ImportCells">Import Cells</a>).
+  <p class=list-2>&bull;&nbsp; C.Name: Mod changes cell names (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Owner: Mod changes cell ownership (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.RecordFlags: Mod changes the offlimits/dangerous flag (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).
@@ -1291,7 +1292,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='ImportActors'>Import Actors</a></h3>
 <p class=list-1>&bull;&nbsp; Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
-<p class=list-1>&bull;&nbsp; <B>Configuration
+<p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Source mods for the main patcher <I>must</I> contain one (or more) of the following tags:
     <p class=list-3>&bull;&nbsp; Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     <p class=list-3>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data.
@@ -1305,43 +1306,44 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
       <p class=list-4>&bull;&nbsp; (note: direct import rather than merge - this will hopefully be fixed next version (279))
     <p class=list-3>&bull;&nbsp; Actors.AIPackages 
       *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
-<p class=list-1>&bull;&nbsp; </B>Usage<B>
+<p class=list-1>&bull;&nbsp; <B>Usage</B>
   <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
   <p class=list-2>&bull;&nbsp; In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportCells'>Import Cells</a></h3>
 <p class=list-1>&bull;&nbsp; Allows certain changes to cell to be imported from source mods.
-<p class=list-1>&bull;&nbsp; </B>Configuration<B>
+<p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Source mods <I>must</I> contain one or more of the following bash <a href="#BashTags">tags</a>. 
     <p class=list-3>&bull;&nbsp; C.Climate: Mod changes cell climate.
     <p class=list-3>&bull;&nbsp; C.Light: Mod changes cell lighting and/or fog.
+    <p class=list-3>&bull;&nbsp; C.Music: Mod changes cell music type.
     <p class=list-3>&bull;&nbsp; C.Name: Mod changes cell names.
     <p class=list-3>&bull;&nbsp; C.Owner: Mod changes cell ownership.
     <p class=list-3>&bull;&nbsp; C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
     <p class=list-3>&bull;&nbsp; C.Water: Mod changes cell water type/level.
-<p class=list-1>&bull;&nbsp; </B>Usage<B>
+<p class=list-1>&bull;&nbsp; <B>Usage</B>
   <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
   <p class=list-2>&bull;&nbsp; In case two source mods modify the same cell in the same way, then the later loading source mod will win. If they modify the same cell in different ways (e.g. one changes water, the other changes ownership), then both changes will be included in the patch.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportFactions'>Import Factions</a></h3>
 <p class=list-1>&bull;&nbsp; Allows factions to be imported from source mods and/or source csv files.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Factions</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the <a href="#ExportFactions">Export Factions</a> command will export files in this format.
-<p class=list-1>&bull;&nbsp; </B>Source CSV Files<B>
+<p class=list-1>&bull;&nbsp; <B>Source CSV Files</B>
   <p class=list-2>&bull;&nbsp; To get source csv files, export factions from an existing mod. This can then be edited as desired.
   <p class=list-2>&bull;&nbsp; Editor ids are shown for convenience only. Internally, its the mod/object index pair that determines both the actor and the faction.
   <p class=list-2>&bull;&nbsp; Faction lists do not need to be complete for each actor. I.e. you only need to list the actor/faction pairs that you wish to add/change. If a mod has has an actor assigned to some faction, but the imported data doesn't address that rank, then the actor will retain that rank.
   <p class=list-2>&bull;&nbsp; To remove an actor from a faction, set their rank to -1. (You can only do this in a spreadsheet.)
-<p class=list-1>&bull;&nbsp; </B>Limitation<B>
+<p class=list-1>&bull;&nbsp; <B>Limitation</B>
   <p class=list-2>&bull;&nbsp; It should be kept in mind that changes to NPC factions will <B><I>not</I></B> have an effect in game for any NPCs that have had their faction ranks changed during gameplay. (This is typically fairly limited &#150 usually only for some quest characters.)
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportGraphics'>Import Graphics</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's <a href="http://www.tesnexus.com/files/file.php?id=5570">Book Jackets</a> mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Graphics</code> <a href="#BashTags">tag</a> in the mod description. 
-<p class=list-1>&bull;&nbsp; </B>Graphics/Records Handled:<B>
+<p class=list-1>&bull;&nbsp; <B>Graphics/Records Handled:</B>
 <p class=list-1>&nbsp;&nbsp; Only the following types of records are handled. Other types do not commonly require patching, or are not yet supported by Bash.
   <p class=list-2>&bull;&nbsp; Icons only: birthsigns, loadscreens, region, land texture (probably actually the texture)
   <p class=list-2>&bull;&nbsp; Models only: activators, doors, plants, furniture, grass, statics.
@@ -1351,29 +1353,29 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Effect Shaders: particle texture, fill texture
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportNames'>Import Names</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; This component is intended to merge changes from a renamer mod (e.g., <a href="http://wrye.ufrealms.net/Rational%20Names%202.html">Rational Names</a>) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is <a href="http://wrye.ufrealms.net/Rational%20Names%202.html">Rational Names</a>.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Names</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Names.csv</code>. Note that the <a href="#ExportImportNames">Export/Import Names</a> command will export files in this format.
-<p class=list-1>&bull;&nbsp; </B>Limitations:<B>
+<p class=list-1>&bull;&nbsp; <B>Limitations:</B>
   <p class=list-2>&bull;&nbsp; Handles most named objects types (except lights). Does <B><I>not</I></B> handle GMSTs, cells, landmarks or dialogs. If source mods is fully covered (no GMSTs, cells, etc.) then it does not need to be loaded after merging.
-<p class=list-1>&bull;&nbsp; </B>Guard Names<B>
+<p class=list-1>&bull;&nbsp; <B>Guard Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
   <p class=list-2>&bull;&nbsp; This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
-<p class=list-1>&bull;&nbsp; </B>Rational Names<B>
+<p class=list-1>&bull;&nbsp; <B>Rational Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   <p class=list-2>&bull;&nbsp; Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportInventory'>Import Inventory</a></h3>
 <p class=list-1>&bull;&nbsp; This option will merge changes to npc, container and creature inventories from the selected mods. Only mods marked with the <code>Invent</code> or <code>InventOnly</code> <a href="#BashTags">tag</a> will appear in the list.
-<p class=list-1>&bull;&nbsp; </B>Invent vs. InventOnly<B>
+<p class=list-1>&bull;&nbsp; <B>Invent vs. InventOnly</B>
   <p class=list-2>&bull;&nbsp; "InventOnly" is a hack &#150 i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack &#150 where it would still be hack, but at least a more clearly labeled hack.
   <p class=list-2>&bull;&nbsp; InventOnly basically does Invent, but also does
   <p class=list-2>&bull;&nbsp; Invent
   <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the inventory of an actor or container. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150 especially when you can't rely on the overhauls being present. 
   <p class=list-2>&bull;&nbsp; For a mod to override only the inventory, the mod must be tagged with <code>InventOnly</code> and must be merged into the patch (i.e. the mod must <I>not</I> be active when the patch is being built.) 
-<p class=list-1>&bull;&nbsp; </B>Notes<B>
+<p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; This feature is primarily concerned with removing, replacing and adding completely new items to inventories. If a mod only changes the number of items in an inventory, then this feature will ignore that change.
   <p class=list-2>&bull;&nbsp; Generally later loading source mods will dominate.
     <p class=list-3>&bull;&nbsp; If an early source adds two daedric arrows, while a later source adds three daedric arrows, then the patch will contain three daedric arrows.
@@ -1381,54 +1383,54 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; If a source tries to remove anything, but fails because that item is already present or a later mod has already removed it, then none of the changes from the source will be applied.
     <p class=empty>&nbsp;</p>
 <h3><a name='ImportNPCFaces'>Import NPC Faces</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the <a href="http://www.tesnexus.com/files/author.php?id=60210">Tamriel NPCs Revamped mods</a>), and add it to the patch, merging it over any changes to those same NPCs from other mods.
-<p class=list-1>&bull;&nbsp; </B>Configuration<B>
-  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if their mod name starts with </B>TNR <B> or the mod has a <code>NpcFaces</code> <a href="#BashTags">tag</a> in the mod description. 
+<p class=list-1>&bull;&nbsp; <B>Configuration</B>
+  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if their mod name starts with <B>TNR </B> or the mod has a <code>NpcFaces</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Note that since there is a now a <a href="http://www.tesnexus.com/files/file.php?id=9971">TNR All Races</a> mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
-<p class=list-1>&bull;&nbsp; </B>Source Mods<B>
+<p class=list-1>&bull;&nbsp; <B>Source Mods</B>
   <p class=list-2>&bull;&nbsp; Since TNR contains <I>only</I> face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods &#150 but <I>do</I> keep them in your data directory, since Bash will need to find them when updating the patch.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportRelations'>Import Relations</a></h3>
 <p class=list-1>&bull;&nbsp; Allows faction relation(ship)s to be imported from source mods and/or source csv files.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Relations</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the <a href="#ExportRelations">Export Relations</a> command will export files in this format.
-<p class=list-1>&bull;&nbsp; </B>Source CSV Files<B>
+<p class=list-1>&bull;&nbsp; <B>Source CSV Files</B>
   <p class=list-2>&bull;&nbsp; To get source csv files, export relations from an existing mod. This can then be edited as desired.
   <p class=list-2>&bull;&nbsp; Editor ids are shown for convenience only. Internally, its the mod/object index pair that determines both the actor and the faction.
   <p class=list-2>&bull;&nbsp; Relation lists do not need to be complete for each faction. I.e. you only need to list the main/other pairs that you wish to add/change.
-<p class=list-1>&bull;&nbsp; </B>Limitation<B>
+<p class=list-1>&bull;&nbsp; <B>Limitation</B>
   <p class=list-2>&bull;&nbsp; It should be kept in mind that changes to faction relationships will <B><I>not</I></B> have an effect in game for any factions that have had any of their relations changed during game play (through either the modFactionReaction or setFactionReaction command.) However, most factions are not altered in this way.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportRoads'>Import Roads</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; Road records are used by some world spaces (e.g. Tamriel) to help guide NPCs who are traveling for long distances through that world. Very few mods modify road records, but if it is desired for the road from an earlier loading mod to override the road from a later loading mod, Import Roads can make that happen.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Roads</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportScripts'>Import Scripts</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; There are a fair number of mods that change the scripts on items and they often got blocked by the overhauls or cause compatibility problems. This fixes it so only the script change gets brought forward (and non-conflicting data). As of Wrye Bash version 278 no longer bringing script records forward if they are identical to the master record.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Scripts</code> <a href="#BashTags">tag</a> in the mod description. 
-<p class=list-1>&bull;&nbsp; </B>Script/Records Handled:<B>
+<p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
   <p class=list-2>&bull;&nbsp; all editor object except spells and quests
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportScriptsContents'>Import ScriptsContents</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; Designed really to import the script subrecord of Dialogue records but not working for that yet, works fine for regular scripts currently. As of Wrye Bash version 278 no longer bringing script records forward if they are identical to the master record.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>ScriptContents</code> <a href="#BashTags">tag</a> in the mod description. 
-<p class=list-1>&bull;&nbsp; </B>Script/Records Handled:<B>
+<p class=list-1>&bull;&nbsp; <B>Script/Records Handled:</B>
   <p class=list-2>&bull;&nbsp; all script TopGroup records - but not the script segments of dialogues/quest stages (yet).
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportSound'>Import Sound</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; There are not many mods that modify the sounds of existing records, but there are a few mods that tweak the sounds of magic effects (e.g. to silence them). Since magic effect records tend to modified for other reasons as well, other changes to the same records will wipe out the changes to sounds. This patcher component allows you to make sure that changes to the sounds of spells are included in the final version of the record.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Sound</code> <a href="#BashTags">tag</a> in the mod description. 
-<p class=list-1>&bull;&nbsp; </B>Sound/Records Handled:<B>
+<p class=list-1>&bull;&nbsp; <B>Sound/Records Handled:</B>
 <p class=list-1>&nbsp;&nbsp; Only the following types of records are handled.
   <p class=list-2>&bull;&nbsp; Magic Effects: casting, bolt, area and hit sounds.
   <p class=list-2>&bull;&nbsp; Activators, Lights, Weather: sounds
@@ -1436,38 +1438,38 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Doors: Open, close and loop sounds.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportStats'>Import Stats</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
   <p class=list-2>&bull;&nbsp; This patcher can be used to modify ammo, apparatus, armor, book, clothing, ingredient, key, light, misc object, sigil stone, soulgem  and weapon stats according to specified mods and/or spreadsheet files. 
   <p class=list-2>&bull;&nbsp; One use for this is to make sure that weapon stats from one early loading mod are not overridden by a layer loading mod. 
   <p class=list-2>&bull;&nbsp; Another use is patch random armor and weapon mods to fit the equipment balancing system specified by one of the overhaul mods. For this use the best approach is to supply a single spreadsheet which rebalances weapons of many mods to fit a given overhaul. When using such a file, Bash will only apply stats for mods that are currently active and ignore the rest.
   <p class=list-2>&bull;&nbsp; Source spreadsheets can be generated by using the <a href="#ExportImportStats">Export/Import Stats</a> command.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> 
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Stats</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Stats.csv</code>. Note that the <a href="#ExportImportStats">Export/Import Stats</a> command will export files in this format.
   <p class=empty>&nbsp;</p>
 <hr>
-<p></B>Tweakers<B> tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
+<p><B>Tweakers</B> tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
 <h3><a name='Globals'>Globals</a></h3>
 <p class=list-1>&bull;&nbsp; Change specified globals to specified values.
 <p class=empty>&nbsp;</p>
 <h3><a name='NPCTweaker'>NPC Tweaker</a></h3>
 <p class=list-1>&bull;&nbsp; Changes to NPC record subrecords; such as skeleton.
-<p class=list-1>&bull;&nbsp; </B>Mayu's Animation Overhaul Skeleton Tweaker<B>
+<p class=list-1>&bull;&nbsp; <B>Mayu's Animation Overhaul Skeleton Tweaker</B>
   <p class=list-2>&bull;&nbsp; Sets NPC skeletons paths to match that required for MAO to work.
-<p class=list-1>&bull;&nbsp; </B>Redguard FGTS Nuller<B>
+<p class=list-1>&bull;&nbsp; <B>Redguard FGTS Nuller</B>
   <p class=list-2>&bull;&nbsp; Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
-<p class=list-1>&bull;&nbsp; </B>Vanilla Beast Skelton Tweaker<B>
+<p class=list-1>&bull;&nbsp; <B>Vanilla Beast Skelton Tweaker</B>
   <p class=list-2>&bull;&nbsp; Sets any NPCs using the vanilla non-beast skeleton path (skeleton.nif) to use the beast skeleton patch (skeletonbeast.nif). This avoids bugs when a mod changes the race of an NPC to a beast race without setting the skeleton path to the beast path, in which case the tail will appear to extend forever and weird stuff like that.
   <p class=empty>&nbsp;</p>
 <h3><a name='TweakAssorted'>Tweak Assorted</a></h3>
 <p class=list-1>&bull;&nbsp; Assorted Tweaks...
-<p class=list-1>&bull;&nbsp; </B>Armor Shows Amulets/Rings<B>
+<p class=list-1>&bull;&nbsp; <B>Armor Shows Amulets/Rings</B>
   <p class=list-2>&bull;&nbsp; Modifies playable armor to prevent hiding of amulets/rings.
-<p class=list-1>&bull;&nbsp; </B>Clothing Shows Amulets/Rings<B>
+<p class=list-1>&bull;&nbsp; <B>Clothing Shows Amulets/Rings</B>
   <p class=list-2>&bull;&nbsp; Modifies clothing to prevent hiding of amulets/rings.
-<p class=list-1>&bull;&nbsp; </B>Bow Reach Fix<B>
+<p class=list-1>&bull;&nbsp; <B>Bow Reach Fix</B>
   <p class=list-2>&bull;&nbsp; Some of the bows in Oblivion (and a few in user mods) have a reach of zero. Due to a bug in the Oblivion engine, if these bows are equipped by an NPC, the game will crash. This patch changes bows with zero reach to have reach == 1. (Note this is also fixed for vanilla Oblivion by the Unofficial Oblivion Patch. However, Shivering Isles introduces more bows with the same problem.)
-<p class=list-1>&bull;&nbsp; </B>Darnified Books<B>
+<p class=list-1>&bull;&nbsp; <B>Darnified Books</B>
   <p class=list-2>&bull;&nbsp; Tweak book coloring and font for use with Darnified UI.
   <p class=list-2>&bull;&nbsp; Wtxt formatting (applied if first line looks like <code>== title ==</code>
     <p class=list-3>&bull;&nbsp; << or ^^ or >> at beginning of line generates a div align=xxx tag. (<<: left, ^^: center and >> right).
@@ -1475,92 +1477,92 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; <code>=== Text</code>: Generates a level 3 header.
     <p class=list-3>&bull;&nbsp; Double undescores generates emphasized (strong color) text.
     <p class=list-3>&bull;&nbsp; Double asterisks, double tildes have same effect as double underscores.
-<p class=list-1>&bull;&nbsp; </B>Max Weight Potions<B>
+<p class=list-1>&bull;&nbsp; <B>Max Weight Potions</B>
   <p class=list-2>&bull;&nbsp; Potions in Oblivion are rather heavy by default. This changes the weight of potions to a specified value (0.1 up to 0.8). Note: this does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins.
   <p class=list-2>&nbsp;&nbsp; Note that this is similar, but not the same as the <a href="#ReweighPotions">Reweigh Potions</a> command for savegames, which reweighs <I>user created</I> potions rather than mod created potions.
-<p class=list-1>&bull;&nbsp; </B>Max Weight Staffs<B>
+<p class=list-1>&bull;&nbsp; <B>Max Weight Staffs</B>
   <p class=list-2>&bull;&nbsp; Like Max Weight Potions, but caps the weight of staffs.
-<p class=list-1>&bull;&nbsp; </B>Min Weight Potions<B>
+<p class=list-1>&bull;&nbsp; <B>Min Weight Potions</B>
   <p class=list-2>&bull;&nbsp; Reweighs potions to a minimum weight.
-<p class=list-1>&bull;&nbsp; </B>No Light Flicker<B>
+<p class=list-1>&bull;&nbsp; <B>No Light Flicker</B>
   <p class=list-2>&bull;&nbsp; Turns off flickering effects for lights. May help on machines with low end graphic cards.
-<p class=list-1>&bull;&nbsp; </B>Nvidia Fog Fix<B>
+<p class=list-1>&bull;&nbsp; <B>Nvidia Fog Fix</B>
   <p class=list-2>&bull;&nbsp; Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen.
   <p class=list-2>&bull;&nbsp; This feature is based on Quarn's <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&id=2859">Nvidia Black Screen Fix</a>.
-<p class=list-1>&bull;&nbsp; </B>Right Hand Rings<B>
+<p class=list-1>&bull;&nbsp; <B>Right Hand Rings</B>
   <p class=list-2>&bull;&nbsp; Makes rings behave more consistently by making all rings prefer to be on the right hand. 
   <p class=list-2>&bull;&nbsp; With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to <B><I>make one ring permanently equipped</I></B> &#150 just equip it to the left hand and it will stay on until you specifically unequip it.
   <p class=empty>&nbsp;</p>
 <h3><a name='TweakClothes'>Tweak Clothes</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview:<B> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150 however your tastes may vary.
-<p class=list-1>&bull;&nbsp; </B>Max Weight XXX:<B> Many clothes items are too heavy in Oblivion. These options force them to lower weights (as specified). Right click on item to choose maximum weight allowed.
-<p class=list-1>&bull;&nbsp; </B>Gloves Show Rings:<B> Prevents gloves from hiding rings. 
-<p class=list-1>&bull;&nbsp; </B>Robes Show Amulets:<B>  Forces all robes to show amulets. Not totally realistic, but looks cooler!
-<p class=list-1>&bull;&nbsp; </B>Robes Show Pants:<B>  Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. <I>Not recommended</I> because graphics clipping is common.
-<p class=list-1>&bull;&nbsp; </B>Unlimited Amulets:<B>  Allows you to wear an unlimited number of amulets. <I>Not recommended</I> because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
-<p class=list-1>&bull;&nbsp; </B>Unlimited Rings:<B>  Same thing for rings. 
+<p class=list-1>&bull;&nbsp; <B>Overview:</B> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150 however your tastes may vary.
+<p class=list-1>&bull;&nbsp; <B>Max Weight XXX:</B> Many clothes items are too heavy in Oblivion. These options force them to lower weights (as specified). Right click on item to choose maximum weight allowed.
+<p class=list-1>&bull;&nbsp; <B>Gloves Show Rings:</B> Prevents gloves from hiding rings. 
+<p class=list-1>&bull;&nbsp; <B>Robes Show Amulets:</B>  Forces all robes to show amulets. Not totally realistic, but looks cooler!
+<p class=list-1>&bull;&nbsp; <B>Robes Show Pants:</B>  Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. <I>Not recommended</I> because graphics clipping is common.
+<p class=list-1>&bull;&nbsp; <B>Unlimited Amulets:</B>  Allows you to wear an unlimited number of amulets. <I>Not recommended</I> because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
+<p class=list-1>&bull;&nbsp; <B>Unlimited Rings:</B>  Same thing for rings. 
 <p class=empty>&nbsp;</p>
 <h2><a name='Globals'>Globals</a></h2>
 <p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
-<p class=list-1>&bull;&nbsp; </B>Crime: Force Jail:<B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
-<p class=list-1>&bull;&nbsp; </B>Thieves Guild: Quest Misdemeanor Penalty:<B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
-<p class=list-1>&bull;&nbsp; </B>Timescale:<B> Oblivion's timescale.
+<p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
+<p class=list-1>&bull;&nbsp; <B>Thieves Guild: Quest Misdemeanor Penalty:</B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
+<p class=list-1>&bull;&nbsp; <B>Timescale:</B> Oblivion's timescale.
 <p class=empty>&nbsp;</p>
 <h3><a name='TweakNames'>Tweak Names</a></h3>
 <p class=list-1>&bull;&nbsp; Tweaks names of items and spells to make them sort more easily in inventory. For each type of item you can select the format to be used. 
-<p class=list-1>&bull;&nbsp; </B>Body Part Codes:<B> This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. 
+<p class=list-1>&bull;&nbsp; <B>Body Part Codes:</B> This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. 
   <p class=list-2>&bull;&nbsp; Each code letter is assigned in order to: Amulets, Rings, Gloves, Helmets, Tail items, Robes (upper+lower body), Chest, Pants/Greaves, Boots/Shoes, Shields.
   <p class=list-2>&bull;&nbsp; ARGHTCCPBS: Assigns codes to match part covered.
   <p class=list-2>&bull;&nbsp; ABGHINOPSL: Assigns codes to sort more usefully. Amulets, then Rings, etc.
-<p class=list-1>&bull;&nbsp; </B>Armor:<B> Choose format and whether you want armor rating to be shown.
-<p class=list-1>&bull;&nbsp; </B>Clothes:<B> Choose format.
-<p class=list-1>&bull;&nbsp; </B>Notes and Scrolls:<B> Choose format and whether you want enchanted scrolls at top (~) or botton (.) of list. (Note that "~" will not display in inventory.)
-<p class=list-1>&bull;&nbsp; </B>Potions:<B> Choose format.
-<p class=list-1>&bull;&nbsp; </B>Spells:<B> Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
+<p class=list-1>&bull;&nbsp; <B>Armor:</B> Choose format and whether you want armor rating to be shown.
+<p class=list-1>&bull;&nbsp; <B>Clothes:</B> Choose format.
+<p class=list-1>&bull;&nbsp; <B>Notes and Scrolls:</B> Choose format and whether you want enchanted scrolls at top (~) or botton (.) of list. (Note that "~" will not display in inventory.)
+<p class=list-1>&bull;&nbsp; <B>Potions:</B> Choose format.
+<p class=list-1>&bull;&nbsp; <B>Spells:</B> Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
   <p class=list-2>&bull;&nbsp; If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.
   <p class=list-2>&bull;&nbsp; If you only want to remove existing labels, then use the No Label option ("Fire Ball").
-<p class=list-1>&bull;&nbsp; </B>Weapons:<B> Choose format and whether you want damage to be shown.
-<p class=list-1>&bull;&nbsp; </B>Spells<B> will show school and level (0/Novice &#150 4/Master). 
+<p class=list-1>&bull;&nbsp; <B>Weapons:</B> Choose format and whether you want damage to be shown.
+<p class=list-1>&bull;&nbsp; <B>Spells</B> will show school and level (0/Novice &#150 4/Master). 
 <p class=empty>&nbsp;</p>
 <h3><a name='TweakSettings'>Tweak Settings</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
-<p class=list-1>&bull;&nbsp; </B>Arrow: Litter Count/Time:<B> Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
-<p class=list-1>&bull;&nbsp; </B>Arrow: Recovery from Actor:<B> Your chance of recovering an arrow shot into an actor (including arrows shot into player). 
-<p class=list-1>&bull;&nbsp; </B>Arrow Speed:<B> Speed at which a full power arrow travels.
-<p class=list-1>&bull;&nbsp; </B>Bounty: Attack:<B> The Bounty for attacking a "good" npc when observed.
-<p class=list-1>&bull;&nbsp; </B>Bounty: Horse Theft:<B> The Bounty for horse stealing.
-<p class=list-1>&bull;&nbsp; </B>Camera: Chase Distance:<B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150 but also a little bit uber for that reason.
-<p class=list-1>&bull;&nbsp; </B>Camera: Chase Tightness:<B> Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
-<p class=list-1>&bull;&nbsp; </B>Camera: PC Death Time:<B> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
-<p class=list-1>&bull;&nbsp; </B>Cell Respawn Time:<B> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
-<p class=list-1>&bull;&nbsp; </B>Combat: Max Actors:<B> the maximum number of actors that the engine will process in combat. 
-<p class=list-1>&bull;&nbsp; </B>Combat: Recharge Weapons:<B> By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.
-<p class=list-1>&bull;&nbsp; </B>Compass: Disable XXX:<B> Disables POI's (Points of Interest), Quest Markers, or both on the compass. 
+<p class=list-1>&bull;&nbsp; <B>Arrow: Litter Count/Time:</B> Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
+<p class=list-1>&bull;&nbsp; <B>Arrow: Recovery from Actor:</B> Your chance of recovering an arrow shot into an actor (including arrows shot into player). 
+<p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
+<p class=list-1>&bull;&nbsp; <B>Bounty: Attack:</B> The Bounty for attacking a "good" npc when observed.
+<p class=list-1>&bull;&nbsp; <B>Bounty: Horse Theft:</B> The Bounty for horse stealing.
+<p class=list-1>&bull;&nbsp; <B>Camera: Chase Distance:</B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150 but also a little bit uber for that reason.
+<p class=list-1>&bull;&nbsp; <B>Camera: Chase Tightness:</B> Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
+<p class=list-1>&bull;&nbsp; <B>Camera: PC Death Time:</B> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
+<p class=list-1>&bull;&nbsp; <B>Cell Respawn Time:</B> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
+<p class=list-1>&bull;&nbsp; <B>Combat: Max Actors:</B> the maximum number of actors that the engine will process in combat. 
+<p class=list-1>&bull;&nbsp; <B>Combat: Recharge Weapons:</B> By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.
+<p class=list-1>&bull;&nbsp; <B>Compass: Disable XXX:</B> Disables POI's (Points of Interest), Quest Markers, or both on the compass. 
   <p class=list-2>&bull;&nbsp; Warning: Some quests may be hard to complete when quest markers are turned off (e.g., an early stage of Knights of the Nine).
   <p class=list-2>&bull;&nbsp; Note: While this works with the vanilla interface, it appears to not work with some modifications of the UI. Problem might be changes to the marker icons, or it might be due to the POI recognition tweak.
-<p class=list-1>&bull;&nbsp; </B>Compass: POI Recognition:<B> Distance at which Points of Interest become visible on the compass. Default is 12,000 units. Lowest setting (x 0.25) is just a little farther than unvisited locations will be "found." I.e., about a rock's throw. (No affect if POI visibility is turned off.)
-<p class=list-1>&bull;&nbsp; </B>Cost Multiplier: Enchantment:<B> The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
-<p class=list-1>&bull;&nbsp; </B>Cost Multiplier: Recharge:<B> The cost multiplier factor for recharging.
-<p class=list-1>&bull;&nbsp; </B>Cost Multiplier: Repair:<B> The cost multiplier factor for repairing.
-<p class=list-1>&bull;&nbsp; </B>Cost Multiplier: Spellmaking:<B> The cost multiplier factor for spellmaking.
-<p class=list-1>&bull;&nbsp; </B>Crime Alarm Distance:<B> the distance from the player that NPCs will be alerted to crimes
-<p class=list-1>&bull;&nbsp; </B>Essential NPC Unconsciousness:<B> Time for which an essential NPC stays unconscious after being knocked out.
-<p class=list-1>&bull;&nbsp; </B>Fatigue from Running/Encumbrance:<B> Fatigue cost multiplier for running or encumbrance
-<p class=list-1>&bull;&nbsp; </B>Greeting Distance:<B> Distance at which NPCs will great the player.
-<p class=list-1>&bull;&nbsp; </B>Horse Turning Speed:<B> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
-<p class=list-1>&bull;&nbsp; </B>Jump Higher:<B> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)
-<p class=list-1>&bull;&nbsp; </B>Magic: Bolt Speed:<B> Speed at which at which magic bolts (projectiles) travel.
-<p class=list-1>&bull;&nbsp; </B>Magic: Chameleon Refraction:<B> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
-<p class=list-1>&bull;&nbsp; </B>Master of Mercantile Extra Gold Amount:<B> The extra barter gold all vendor's have for a master of mercantile.
-<p class=list-1>&bull;&nbsp; </B>Msg: Equip Misc. Item:<B> sets the message on equiping a misc item to blank or either "." or "Hmm..."
+<p class=list-1>&bull;&nbsp; <B>Compass: POI Recognition:</B> Distance at which Points of Interest become visible on the compass. Default is 12,000 units. Lowest setting (x 0.25) is just a little farther than unvisited locations will be "found." I.e., about a rock's throw. (No affect if POI visibility is turned off.)
+<p class=list-1>&bull;&nbsp; <B>Cost Multiplier: Enchantment:</B> The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
+<p class=list-1>&bull;&nbsp; <B>Cost Multiplier: Recharge:</B> The cost multiplier factor for recharging.
+<p class=list-1>&bull;&nbsp; <B>Cost Multiplier: Repair:</B> The cost multiplier factor for repairing.
+<p class=list-1>&bull;&nbsp; <B>Cost Multiplier: Spellmaking:</B> The cost multiplier factor for spellmaking.
+<p class=list-1>&bull;&nbsp; <B>Crime Alarm Distance:</B> the distance from the player that NPCs will be alerted to crimes
+<p class=list-1>&bull;&nbsp; <B>Essential NPC Unconsciousness:</B> Time for which an essential NPC stays unconscious after being knocked out.
+<p class=list-1>&bull;&nbsp; <B>Fatigue from Running/Encumbrance:</B> Fatigue cost multiplier for running or encumbrance
+<p class=list-1>&bull;&nbsp; <B>Greeting Distance:</B> Distance at which NPCs will great the player.
+<p class=list-1>&bull;&nbsp; <B>Horse Turning Speed:</B> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
+<p class=list-1>&bull;&nbsp; <B>Jump Higher:</B> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)
+<p class=list-1>&bull;&nbsp; <B>Magic: Bolt Speed:</B> Speed at which at which magic bolts (projectiles) travel.
+<p class=list-1>&bull;&nbsp; <B>Magic: Chameleon Refraction:</B> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
+<p class=list-1>&bull;&nbsp; <B>Master of Mercantile Extra Gold Amount:</B> The extra barter gold all vendor's have for a master of mercantile.
+<p class=list-1>&bull;&nbsp; <B>Msg: Equip Misc. Item:</B> sets the message on equiping a misc item to blank or either "." or "Hmm..."
 <p class=empty>&nbsp;</p>
 <hr>
-<p></B>Special<B> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
+<p><B>Special</B> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
 <p class=empty>&nbsp;</p>
 <h3><a name='AlchemicalCatalogs'>Alchemical Catalogs</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
-<p class=list-1>&nbsp;&nbsp; This patcher component will update the alchemical catalogs found in the <a href="http://wrye.ufrealms.net/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless </B>Cobl Main.esm<B> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://wrye.ufrealms.net/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
+<p class=list-1>&nbsp;&nbsp; This patcher component will update the alchemical catalogs found in the <a href="http://wrye.ufrealms.net/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless <B>Cobl Main.esm</B> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://wrye.ufrealms.net/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.
 <p class=empty>&nbsp;</p>
 <h3><a name='CoblExhaustion'>Cobl Exhaustion</a></h3>
 <p class=list-1>&bull;&nbsp; Requires Cobl 1.66 or higher.
@@ -1572,28 +1574,28 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; If items/entries of incorrect type are found, then they are removed from the container/list. The patch report will list any containers/lists modified and what was removed from them.
 <p class=empty>&nbsp;</p>
 <h3><a name='LeveledLists'>Leveled Lists</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Background<B> 
+<p class=list-1>&bull;&nbsp; <B>Background</B> 
   <p class=list-2>&bull;&nbsp; When different mods alter the same leveled list, the last mod to load will "win" overriding any changes made by earlier loading mods. This is particularly a problem with creature and the various releveling mods which alter so many lists. 
   <p class=list-2>&bull;&nbsp; To overcome this, it is necessary to merge the changes to the various leveled lists into a new "merged list" mod, and ensure that this new mod loads after all the mods whose lists it merges.
-<p class=list-1>&bull;&nbsp; </B>List Merging<B>
+<p class=list-1>&bull;&nbsp; <B>List Merging</B>
   <p class=list-2>&bull;&nbsp; During the scan process of the patch building, the list merger extracts leveled lists and merges them together. If mods only added items to leveled lists, this process would be simple. However, since mods often want to delete items from lists and/or relevel items in lists, it's often necessary to specify how the lister merger will handle changes from specific mods. This specification is done through <a href="#BashTags">Bash Tags</a> and/or manually configuring mods in the list merger dialog.
   <p class=list-2>&bull;&nbsp; <B><I>Untagged Mods:</I></B> Mods that have no bash tags can only add new items to leveled lists. If a given item (e.g. an Iron Battle Axe is already present in the list (at any level or count), then no new entries for that item will be added. Also, if another mod has already marked that item as <I>removed</I> from the list, it will not be added.
   <p class=list-2>&bull;&nbsp; <B><I>Delev Mods:</I></B> Mods that are tagged or configured as <I>Delev</I> mods can remove items from lists. Bash will figure out what to remove by comparing items in the mods version of the list to items added by it's masters (Oblivion.esm, etc.). Any items that are present in the masters, but <I>not</I> in the Delev's list are marked as removed. Items marked this way will be removed from the list, and the removal will be remembered so that later mods won't re-add the item.
   <p class=list-2>&bull;&nbsp; <B><I>Relev Mods:</I></B> Mods that are tagged or configured as <I>Relev</I> mods can break the previous rules. They can relevel an item that already exists in the list ("relevel" means change the levels and/or counts for the item in the list). Relev mods can also overrule a previous deletion. (However, delevs that run <I>after</I> the Relev will overrule the relev mod for the items they delete.
   <p class=list-2>&bull;&nbsp; <B><I>Delev+Relev Mods:</I></B> A mod can be tagged/configured as both Delev and Relev. Doing this just combines the effects of the two separate tags.
-<p class=list-1>&bull;&nbsp; </B>Simple Guide to Tagging<B>
+<p class=list-1>&bull;&nbsp; <B>Simple Guide to Tagging</B>
   <p class=list-2>&bull;&nbsp; Generally, if a mod only <I>adds</I> items, then it should not be tagged.
   <p class=list-2>&bull;&nbsp; If a mod needs to delete items from the original list, then it should be tagged as a <I>Delev</I> mod.
   <p class=list-2>&bull;&nbsp; If a mod needs to change the levels of items that already exist in the list or reverse a previous deletion, then it should be tagged as a <I>Relev</I> mod.
   <p class=list-2>&bull;&nbsp; To tag a mod, right click in the "Bash Tags" field at the bottom right of the Mods tab and check/uncheck tags as necessary. For more info, see <a href="#BashTags">Bash Tags</a>.
-<p class=list-1>&bull;&nbsp; </B>Configuration<B>
+<p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Generally it's best to set the bash tags correctly and leave the configuration on auto. However, it's also possible to manually configure delevelers/relevelers.
   <p class=list-2>&bull;&nbsp; To add/remove mods from the list, uncheck Automatic and use the Add/Remove buttons.
   <p class=list-2>&bull;&nbsp; To manually override the Delev/Relev tags for a given mod, right click on the mod name and check/uncheck states as necessary. To return to automatic setting, choose the "Auto" option instead.
-<p class=list-1>&bull;&nbsp; </B><a href="http://devnull.devakm.googlepages.com/convergence">FCOM</a><B>
+<p class=list-1>&bull;&nbsp; <B><a href="http://devnull.devakm.googlepages.com/convergence">FCOM</a></B>
   <p class=list-2>&bull;&nbsp; FCOM (aka Kaboom, aka FraBOOOMMM) is a mod by dev_akm and others that attempts to merge the changes from various major mods. While this might seem to be competitive with Bash's List Merger, it's actually complementary, since it's able to intelligently merge complicated list structures as well as correct and merge faction information.
   <p class=list-2>&bull;&nbsp; For further information on using FCOM with Bash, see the FCOM release notes/topics.
-<p class=list-1>&bull;&nbsp; </B>Empty Sublist Cleaning<B>
+<p class=list-1>&bull;&nbsp; <B>Empty Sublist Cleaning</B>
   <p class=list-2>&bull;&nbsp; Lists occasionally contain empty sublists, which will cause the list to produce nothing when it selects the sublist.
   <p class=list-2>&bull;&nbsp; As of Bash v 183, the leveled list merger will now remove any empty sublists from a leveled list.
   <p class=empty>&nbsp;</p>
@@ -1601,16 +1603,16 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; This is only for users of the Wrye Morph mod 0.05 or higher. It requires Cobl 1.28 or higher.
 <p class=empty>&nbsp;</p>
 <h3><a name='PowerExhaustion'>Power Exhaustion</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview:<B>
+<p class=list-1>&bull;&nbsp; <B>Overview:</B>
 <p class=list-1>&bull;&nbsp; My <a href="http://wrye.ufrealms.net/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
 <p class=list-1>&bull;&nbsp; Assorted_Exhaust.csv: This patcher extends coverage to the Orrery and Shivering Isles powers.
 <p class=list-1>&bull;&nbsp; Kmacg94_Exhaust.csv: This patcher (by Kmagc94) extends coverage to several more mods (bgBalancingEVCore, Consequences, Kenhanimal's Awsome Vampire Mod, Oblivion War Cry EV, Oscuro's Oblivion Overhaul, StartX Vanilla Vampires Revised, Vampire Hunter Tools, Vows and Covenants).
 <p class=empty>&nbsp;</p>
 <a name="ImportRaceInfo">
 <h3><a name='RaceRecords'>Race Records</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Overview<B>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; This patcher component will extract the eyes and hair from the loaded source mods and, if necessary, merge that data over changes from later loading mods that change the same races. (Note that if the source mods are <B><I>not</I></B> in the load list, they will not be used.)
-<p class=list-1>&bull;&nbsp; </B>Configuration<B>
+<p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Source mods <I>must</I> contain one or more of the following bash <a href="#BashTags">tags</a>. 
     <p class=list-3>&bull;&nbsp; Body-M: If specifying male body textures, height, or weight.
     <p class=list-3>&bull;&nbsp; Body-F: If specifying female body textures, height, or weight.
@@ -1628,7 +1630,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Eyes: All eyes will first be merged, then filtered by eye mesh to avoid googly eyes (see below).
   <p class=list-2>&bull;&nbsp; Relations: All relations will be merged into final record. Procedure is pretty much the same as for <a href="#ImportRelations">importing faction relations</a>.
   <p class=list-2>&bull;&nbsp; Voice: The last mod tagged with Voice-M (Voice-F) will win for males (females). This tag is useful for (the very few) mods which replace/change default voices.
-<p class=list-1>&bull;&nbsp; </B>Avoiding Googly Eyes<B>
+<p class=list-1>&bull;&nbsp; <B>Avoiding Googly Eyes</B>
   <p class=list-2>&bull;&nbsp; "Googly eyes" happens when an eye texture built for one eye mesh is used in combination with a different eye mesh. In vanilla Oblivion, this never happens because all races use the same eye meshes. However, several of the cosmetics mods change the meshes for various races. When different cosmetics mods are mixed or (sometimes) when custom races are used, this can result in at least some eyes for a given race being mismatched to the eye mesh for that race.
   <p class=list-2>&bull;&nbsp; As of version 104, Bash will try to prevent this sort of eye texture/mesh mis-matching. Unfortunately, Bash cannot guarantee success in all cases.
   <p class=list-2>&bull;&nbsp; Some suggestions for modders:
@@ -1638,7 +1640,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=empty>&nbsp;</p>
 <h3><a name='SEWorldTests'>SEWorld Tests</a></h3>
 <p class=list-1>&bull;&nbsp; Suspends Cyrodiil quests while in Shivering Isles.
-<p class=list-1>&bull;&nbsp; </B>Overview:<B>
+<p class=list-1>&bull;&nbsp; <B>Overview:</B>
   <p class=list-2>&bull;&nbsp; Shivering Isle modifies almost all existing quests in Oblivion.esm to add an additional test: GetPlayerInSEWorld == 0. The effect of this test is to suspend almost all Cyrodiilian quests while the player is in Shivering Isles.
   <p class=list-2>&bull;&nbsp; Unfortunately mods that are built on top of the original Oblivion.esm do not include this test. This can sometimes result  in strange behavior: SI residents talking about Cyrodiilian topics, etc.
   <p class=list-2>&bull;&nbsp; This feature simply reinstates those tests where mods have removed them.
@@ -1668,10 +1670,10 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Click "Open Doc..."
   <p class=empty>&nbsp;</p>
 <h3><a name='WikiTextFormat'>Wiki Text Format</a></h3>
-<p class=list-1>&bull;&nbsp; If the mod's doc file is a </B>.txt<B> file in Wrye wiki text format, an html version of it will be automatically generated as needed, and this html version will be shown when the doc Browser is not in edit mode.
+<p class=list-1>&bull;&nbsp; If the mod's doc file is a <B>.txt</B> file in Wrye wiki text format, an html version of it will be automatically generated as needed, and this html version will be shown when the doc Browser is not in edit mode.
 <p class=list-1>&bull;&nbsp; <B><I>Format Documentation and Template:</I></B>
-  <p class=list-2>&bull;&nbsp; The wiki text format is documented in </B>Data\Docs\Bash Readme Template.txt<B>. 
-  <p class=list-2>&bull;&nbsp; When you create a new readme document (by using "Set Doc..." to a file that doesn't exist yet), you'll be given a template wiki text file. The template used will either be the template above, or </B>Data Files\Docs\My Readme Template.txt<B> if it exists. 
+  <p class=list-2>&bull;&nbsp; The wiki text format is documented in <B>Data\Docs\Bash Readme Template.txt</B>. 
+  <p class=list-2>&bull;&nbsp; When you create a new readme document (by using "Set Doc..." to a file that doesn't exist yet), you'll be given a template wiki text file. The template used will either be the template above, or <B>Data Files\Docs\My Readme Template.txt</B> if it exists. 
   <p class=empty>&nbsp;</p>
 <h3><a name='Notes'>Notes</a></h3>
 <p class=list-1>&bull;&nbsp; If you rename a mod in the mods tab, Bash will move the document association to the new name.
@@ -1687,8 +1689,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='GenericInformation'>Generic Information</a></h3>
 <p>At the top of the report are generic warnings.
-<p class=list-1>&bull;&nbsp; </B>Missing Master:<B> A note like this indicates that an active mod has a master that should be active, but is not. This sort of problem will result in an immediate CTD while trying to launch the game.
-<p class=list-1>&bull;&nbsp; </B>Delinquent Master:<B> This warning indicates that a mod depends on a master that is set to load <I>after</I> the mod itself. This won't necessarily result in a problem, but it's best to fix it anyway (by reordering mods).
+<p class=list-1>&bull;&nbsp; <B>Missing Master:</B> A note like this indicates that an active mod has a master that should be active, but is not. This sort of problem will result in an immediate CTD while trying to launch the game.
+<p class=list-1>&bull;&nbsp; <B>Delinquent Master:</B> This warning indicates that a mod depends on a master that is set to load <I>after</I> the mod itself. This won't necessarily result in a problem, but it's best to fix it anyway (by reordering mods).
 <p class=empty>&nbsp;</p>
 <h3><a name='RulesetInformation'>Ruleset Information</a></h3>
 <p>The rest of the report is divided into rulesets reports. Rulesets are text files provided by modders and other modders and other players. They basically tell Bash's mod checker which things to look out for and what to say about them in the Mod Checker report. 
@@ -1698,24 +1700,24 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='ModGroupInfo'>Mod Group Info</a></h3>
 <p>The rest of the report is divided into mod groups, where "mod groups" are sets of one or more active/merged mods. Each such group can have several subsections: 
-<p class=list-1>&bull;&nbsp; </B>Notes:<B>
+<p class=list-1>&bull;&nbsp; <B>Notes:</B>
   <p class=list-2>&bull;&nbsp; Various notes for the mod group.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B>
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B>
   <p class=list-2>&bull;&nbsp; This is just a recap of the configuration of a mod group. 
   <p class=list-2>&bull;&nbsp; You'll typically see this for large mods with many separate esp files. It just provides an easy way to review what you do and don't have active.
   <p class=list-2>&bull;&nbsp; Legend: x: active; +: merged; *: imported; -: inactive/unmerged.
-<p class=list-1>&bull;&nbsp; </B>Suggestions:<B>
+<p class=list-1>&bull;&nbsp; <B>Suggestions:</B>
   <p class=list-2>&bull;&nbsp; This will be followed by specific suggestions for the mod group. Typically these will involved activating or deactivating existing mods (and possibly replacing them with different mods).
-<p class=list-1>&bull;&nbsp; </B>Warning:<B>
+<p class=list-1>&bull;&nbsp; <B>Warning:</B>
   <p class=list-2>&bull;&nbsp; This has same format as suggestions. Problem mods will be listed along with instructions to activate them or deactivate them as need be.
   <p class=empty>&nbsp;</p>
 <h3><a name='ModCheckerOptions'>Mod Checker Options</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Mod List:<B> Toggles mod list in the report. 
-<p class=list-1>&bull;&nbsp; </B>Notes:<B> Toggles inclusion of mod group notes.
-<p class=list-1>&bull;&nbsp; </B>Configuration:<B> Toggles inclusion of mod group configuration info.
-<p class=list-1>&bull;&nbsp; </B>Suggestions:<B> Toggles inclusion of mod group suggestions.
-<p class=list-1>&bull;&nbsp; </B>Copy Text:<B> Copies text of report to clipboard. (Useful for forum postings.)
-<p class=list-1>&bull;&nbsp; </B>Update:<B> The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
+<p class=list-1>&bull;&nbsp; <B>Mod List:</B> Toggles mod list in the report. 
+<p class=list-1>&bull;&nbsp; <B>Notes:</B> Toggles inclusion of mod group notes.
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> Toggles inclusion of mod group configuration info.
+<p class=list-1>&bull;&nbsp; <B>Suggestions:</B> Toggles inclusion of mod group suggestions.
+<p class=list-1>&bull;&nbsp; <B>Copy Text:</B> Copies text of report to clipboard. (Useful for forum postings.)
+<p class=list-1>&bull;&nbsp; <B>Update:</B> The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 <p class=empty>&nbsp;</p>
 <h3><a name='RulesetInformation'>Ruleset Information</a></h3>
 <p class=list-1>&bull;&nbsp; Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
@@ -1726,7 +1728,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain <I>only</I> the section/key settings that are to be changed.
 <p class=list-1>&bull;&nbsp; <B><I>Warning:</I></B> Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 <p class=list-1>&bull;&nbsp; <B><I>Note:</I></B> The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
-<p class=list-1>&bull;&nbsp; </B>Checkbox Colors<B> 
+<p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
   <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
     <p class=list-3>&bull;&nbsp; Checkbox colors indicate the status of the ini tweak
@@ -1738,7 +1740,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
   <p class=empty>&nbsp;</p>
 <h3><a name='SavesList'>Saves List</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Checkbox Colors<B> 
+<p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_purple_on.png" width="16" height="16" border="0" alt="Purple">
   <img src="images/checkbox_blue_on.png" width="16" height="16" border="0" alt="Blue">
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
@@ -1757,22 +1759,22 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='SaveDetails'>Save Details</a></h3>
 <p class=list-1>&bull;&nbsp; Make changes to the file in the details view. 
-<p class=list-1>&bull;&nbsp; </B>File Name:<B> Change the file name.
-<p class=list-1>&bull;&nbsp; </B>Notes:<B> 
+<p class=list-1>&bull;&nbsp; <B>File Name:</B> Change the file name.
+<p class=list-1>&bull;&nbsp; <B>Notes:</B> 
   <p class=list-2>&bull;&nbsp; Enter some info about the save.
   <p class=list-2>&bull;&nbsp; This fields is useful for keeping track of what "Landmark" saves are about/for. E.g. a save just before or after making a major change in your load list or before/after completing some quest.
-<p class=list-1>&bull;&nbsp; </B>Masters List:<B> 
+<p class=list-1>&bull;&nbsp; <B>Masters List:</B> 
   <p class=list-2>&bull;&nbsp; The masters list show the esm files that the current mod depends on, and the load order (modIndex) of that master.
   <p class=list-2>&bull;&nbsp; <B><I>Renaming Masters:</I></B> If a master has been renamed, you can adjust for that here by renaming the master. Either left-click the name and edit it in the column display, or right-click the name, select <I>Change To...</I> and then select the desired replacement esp/esm from the mods directory. 
     <p class=list-3>&bull;&nbsp; Note that you should <I>only</I> do this if the new name is a new version of the same mod. Replacing a mod with an unrelated mod will cause file corruption.
   <p class=list-2>&bull;&nbsp; <B><I>Disabling Masters:</I></B> If you want to remove a mod from active use, you can usually just start playing without the mod loaded. However, this won't work if the mod is an esm. You can get around this by right clicking on the name and selecting <I>Disable</I>. This will rename the master to a non-existent esp. Note that you still may run into logical errors which prevent the esm from being removed. But at least this way the game will <I>try</I> to run without the master.
-<p class=list-1>&bull;&nbsp; </B>O/P Flags<B>
+<p class=list-1>&bull;&nbsp; <B>O/P Flags</B>
   <p class=list-2>&bull;&nbsp; These two flags may appear to the right of the player info. If present, they indicate that the corresponding CoSave file exists (O: .obse; P: .pluggy). CoSave files are extra files created by OBSE and Pluggy for storing addition information related to the savegame.
   <p class=empty>&nbsp;</p>
 <h2><a name='SaveProfiles'>Save Profiles</a></h2>
 <p>Save Profiles are "play enviroments", where the environment consists of a set of savegames plus the active set of mods. Typically, save profiles are used to allow easy and safe switching between different characters. Or they might be used for switching between different stages of a characters life. (E.g. you might use different profiles for before and after a major overhaul is a installed.) 
   <p class=empty>&nbsp;</p>
-<p></B>Notes:<B> 
+<p><B>Notes:</B> 
 <p class=list-1>&bull;&nbsp; Save Profiles make use of the <code>SLocalSavePath</code> setting in Oblivion.ini, which allows you to specify which directory savegames are found in. This means that once you've set the profile, you don't have to do anything special with Bash. I.e. the regular Oblivion launcher will recognize the selected profile.
 <p class=list-1>&bull;&nbsp; You can also associate different versions of Oblivion.esm with different save profiles, which means that when you switch profiles, you can automatically turn Shivering Isles content on or off. See <a href="#OblivionesmSwapping">Oblivion.esm Swapping</a> for more info.
 <p class=empty>&nbsp;</p>
@@ -1788,7 +1790,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Go to context menu and select "Open...".
   <p class=empty>&nbsp;</p>
 <h3><a name='MovingSavegames'>Moving Savegames</a></h3>
-<p>After creating a savegame, you may want to move some of your existing files to it. To do this, just select the files, right click and select </B>Move To:[destination profile]<B>. Note that this function will also move any cofiles (.pluggy) files associated with the savegame files.
+<p>After creating a savegame, you may want to move some of your existing files to it. To do this, just select the files, right click and select <B>Move To:[destination profile]</B>. Note that this function will also move any cofiles (.pluggy) files associated with the savegame files.
   <p class=empty>&nbsp;</p>
 <h2><a name='SaveFileCommands'>Save File Commands</a></h2>
 <p>These are the commands found on context menu for saves...
@@ -1869,20 +1871,20 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Suggested value: 0.1 to 0.3
   <p class=empty>&nbsp;</p>
 <h3><a name='UpdateNPCLevels'>Update NPC Levels</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Background<B>
+<p class=list-1>&bull;&nbsp; <B>Background</B>
   <p class=list-2>&bull;&nbsp; NPC levels determine how NPCs rank relative to the player, and are frequently tweaked by rebalancing mods (e.g. Oscuro's Oblivion Overhaul). However, because of the way the game engine stores level information for NPCs, such tweaks will not affect games that were started before the tweak mod was added to the load list. This command compensates for this by importing the tweaked NPC levels into the savegame.
-<p class=list-1>&bull;&nbsp; </B>Usage<B>
+<p class=list-1>&bull;&nbsp; <B>Usage</B>
   <p class=list-2>&bull;&nbsp; Make sure that mods that you want to play with are active, then select one or more save files and run the command. NPC level info will be read from all active mods and applied to all selected save files.
-<p class=list-1>&bull;&nbsp; </B>Notes<B>
+<p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; This replaces the previous Import NPC Levels command. It's simpler to use, and can be applied to multiple save files at once.
   <p class=empty>&nbsp;</p>
 <hr>
 <h3><a name='RemoveBloat'>Remove Bloat</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Background:<B> The Oblivion game engine keeps savegame file size down by <B><I>garbage collecting</I></B> various types of objects. Arrows shot into the game world will be removed after several minutes of gameplay, while most other types of objects dropped in cells will be removed if the cell is not visited for a period of three days. However, certain scripting approaches in mods can result in large number of objects being created in such a way that they are not garbage collected.
-<p class=list-1>&bull;&nbsp; </B>Excess Created Objects:<B> A few older mods use scripting approaches that resulted in the duplication of existing objects as new "created in game" objects. (The major problem has been due to early companion sharing mods.) Prolonged use of such mods can result in 10's of thousands of newly created objects. 
-<p class=list-1>&bull;&nbsp; </B>Null Refs:<B> Null refs are one source of savegame bloating that is relatively easy to identify. Null refs are items dropped or placed in the game world that are instances of objects from a mod that has since been removed. (E.g. "Mega Awesome.esp" might add "Mega Awesome Swords" to bandits. If one of those is lying on the ground in some dungeon and then "Mega Awesome.esp" is removed, then the sword lying on the ground becomes a null ref.) 
-<p class=list-1>&bull;&nbsp; </B>Usage:<B>
-  <p class=list-2>&bull;&nbsp; Run the </B>Remove Bloat<B> command. This will either report that there's no bloating or will report suspected bloating numbers, and prompt you to continue to remove the bloating.
+<p class=list-1>&bull;&nbsp; <B>Background:</B> The Oblivion game engine keeps savegame file size down by <B><I>garbage collecting</I></B> various types of objects. Arrows shot into the game world will be removed after several minutes of gameplay, while most other types of objects dropped in cells will be removed if the cell is not visited for a period of three days. However, certain scripting approaches in mods can result in large number of objects being created in such a way that they are not garbage collected.
+<p class=list-1>&bull;&nbsp; <B>Excess Created Objects:</B> A few older mods use scripting approaches that resulted in the duplication of existing objects as new "created in game" objects. (The major problem has been due to early companion sharing mods.) Prolonged use of such mods can result in 10's of thousands of newly created objects. 
+<p class=list-1>&bull;&nbsp; <B>Null Refs:</B> Null refs are one source of savegame bloating that is relatively easy to identify. Null refs are items dropped or placed in the game world that are instances of objects from a mod that has since been removed. (E.g. "Mega Awesome.esp" might add "Mega Awesome Swords" to bandits. If one of those is lying on the ground in some dungeon and then "Mega Awesome.esp" is removed, then the sword lying on the ground becomes a null ref.) 
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; Run the <B>Remove Bloat</B> command. This will either report that there's no bloating or will report suspected bloating numbers, and prompt you to continue to remove the bloating.
   <p class=list-2>&bull;&nbsp; If you have bloating, then:
     <p class=list-3>&bull;&nbsp; If the numbers are small (roughly under 200), then probably the best thing to do is to decline to remove bloating. Removing it won't make that much difference.
     <p class=list-3>&bull;&nbsp; Figure out <I>why</I> you have bloating. Null Refs are fairly common if you've removed mods. However, large numbers of created objects indicates a problem with one of your installed mods (probably a companion and/or companions sharing mod). Such mods should be updated or removed.
@@ -1899,11 +1901,11 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='RepairFactions'>Repair Factions</a></h3>
 <p class=list-1>&bull;&nbsp; (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new <a href="#UpdateLevels">Update Levels</a> function. 
 <p class=list-1>&bull;&nbsp; Also (optionally) updates NPC factions to reflect faction changes in mods.
-<p class=list-1>&bull;&nbsp; </B>Background<B>
+<p class=list-1>&bull;&nbsp; <B>Background</B>
   <p class=list-2>&bull;&nbsp; The v105 bug caused some NPCs in the savegame to be marked as having no factions and no spells. The most notable effect of this was faction infighting, however, another major effect (for people importing faces at the start of the game) was the removal of the player from the playerfaction (very bad!). A few other rare effects might happen &#150 e.g. the inhabitants of Alsewell might become invisible sooner than they should.
   <p class=list-2>&bull;&nbsp; Unfortunately, it's not possible to remove the effects of the bug with total safety &#150 sometimes, NPCs should <I>need</I> to have zeroed spells and/or factions. (E.g., Aleswell again. If citizens have empty spell arrays removed <I>after</I> the quest has been completed, they'll disappear when they shouldn't.)
   <p class=list-2>&bull;&nbsp; Aside from my bug, there are related problems with mods that are changed so as to <I>add</I> factions to NPCs after that NPC is already in play <I>and</I> has had its factions modified in-game. E.g. CM Partners that have been upgraded from v 1.4 to v 1.5.
-<p class=list-1>&bull;&nbsp; </B>Advice<B>
+<p class=list-1>&bull;&nbsp; <B>Advice</B>
   <p class=list-2>&bull;&nbsp; Do not use this function unless you have to! In general, <B><I>if you have a recent save that you can revert to, I'd advise you to use that instead!</I></B>
   <p class=list-2>&bull;&nbsp; Check the log when you're done. If the results make your nervous, then do a File: Revert to Backup to return to pre-repair state.
   <p class=empty>&nbsp;</p>
@@ -1918,14 +1920,14 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <img src="images/WryeBash_03.png" width="667" height="499" border="0" alt="Face Import from Esp">
 <p class=empty>&nbsp;</p>
 <h3><a name='ImporttoSave'>Import to Save</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Procedure<B>
+<p class=list-1>&bull;&nbsp; <B>Procedure</B>
   <p class=list-2>&bull;&nbsp; Right click on savegame and select Import Face. This will result in a file dialog where you can select either another save, or a mod file. When you select a file, you'll get a dialog listing all characters whose face you can import.
     <p class=list-3>&bull;&nbsp; For mod files, all NPCs in the mod will be listed.
     <p class=list-3>&bull;&nbsp; For save files, the player character will always be at the top of the list. In addition some clones of the player (e.g. for statue in Bruma) and other npcs may also be listed. Usually, you'll want the player character.
   <p class=list-2>&bull;&nbsp; Click on a face in the list to display its details (Name, Race, Gender, Stats). If the face has an image associated with it, the image will be displayed.
   <p class=list-2>&bull;&nbsp; Use checkboxes to import additional characteristics.
   <p class=list-2>&bull;&nbsp; Click the import button. 
-<p class=list-1>&bull;&nbsp; </B><a name='StatsImport'>Stats Import</a><B>
+<p class=list-1>&bull;&nbsp; <B><a name='StatsImport'>Stats Import</a></B>
   <p class=list-2>&bull;&nbsp; When importing a face from a mod, you can choose to import the stats. <I>Use this with care and be aware of the limitations!</I>
   <p class=list-2>&bull;&nbsp; The stats seen in-game are combination of base npc stats for the pc plus magical modifiers plus scripted modifications. This command <I>only</I> affects the base npc stats, hence what you may see in game may be notably different. In particular:
     <p class=list-3>&bull;&nbsp; Health = npcBaseHealth + gmstFactor*currentEndurance
@@ -1934,7 +1936,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; It's possible that the change in base stats, combined with the scripted changes to stats will render your PCs stats in some areas negative or bizarrely high.
   <p class=list-2>&bull;&nbsp; Changing stats like this is likely to confuse releveling mods. You may want to disable such mods before importing stats. It may be necessary to remove them (which may require some in-game preparation), then load the leveling mod, then resave, then re-add the mod in order to make the leveling mod adjust to your modified stats.
   <p class=list-2>&bull;&nbsp; To tweak the stats of an existing character, try importing the character to a mod file, editing the character there and then importing the edited character to your game.
-<p class=list-1>&bull;&nbsp; </B>Notes<B>
+<p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; <B><I>Race Import is incomplete.</I></B> Importing race will change the physical appearance and identification of your character, but <B><I>will not</I></B> change racial powers. E.g., you'll look like a Wood Elf, but have the powers of an Imperial.
   <p class=list-2>&bull;&nbsp; If you want to <B><I>associate an image with a face,</I></B> then:
     <p class=list-3>&bull;&nbsp; Save the image to <code>Data\Docs\Images\[EditorId].jpg</code>
@@ -1943,13 +1945,13 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=empty>&nbsp;</p>
 <h3><a name='ImporttoMod'>Import to Mod</a></h3>
 <p class=list-1>&bull;&nbsp; To import a face into a mod, select the mod, right click and select "Import Face". 
-<p class=list-1>&bull;&nbsp; </B>Best Practice<B>
+<p class=list-1>&bull;&nbsp; <B>Best Practice</B>
   <p class=list-2>&bull;&nbsp; Start by creating an empty "PC Faces.esp" mod. You can easily do this by using the construction set, or you can copy "Blank.esp" from Mopy\Extras.
   <p class=list-2>&bull;&nbsp; Use this single mod as your face "library". Import any interesting faces from saves, then use TESCS to further edit "PC Faces.esp".
-<p class=list-1>&bull;&nbsp; </B>Notes/Warnings<B>
+<p class=list-1>&bull;&nbsp; <B>Notes/Warnings</B>
   <p class=list-2>&bull;&nbsp; It's strongly suggested that you import only to a mod that contains nothing but npcs.
   <p class=list-2>&bull;&nbsp; Face Import does not check for unique editor ids. If this is a danger, edit the file in TESCS. TESCS will auto-rename any duplicated editor ids, but you'll probably want to rename manually (since DUPLICATE0000 is not so informative!)
-<p class=list-1>&bull;&nbsp; </B>Importing Non-standard Eyes/Hair<B>
+<p class=list-1>&bull;&nbsp; <B>Importing Non-standard Eyes/Hair</B>
   <p class=list-2>&bull;&nbsp; Ordinarily, bash will only import eyes and hair that come from Oblivion.esm or the mod itself. However, it is possible to access eyes and hair from other mods with a little work.
   <p class=list-2>&bull;&nbsp; First, convert the source cosmetic esp to an esm. (On the mods tab of Bash, use the "Copy to Esm" function.)
   <p class=list-2>&bull;&nbsp; Now, open your face library esp in the construction set, but be sure to also load the new cosmetic esm. Then save (this will add the cosmetic esm to the master list of the face library esp).
@@ -1963,15 +1965,15 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=empty>&nbsp;</p>
 <h3><a name='ScreenshotsCommands'>Screenshots Commands</a></h3>
 <p>Right click on the column header to see these:
-<p class=list-1>&bull;&nbsp; </B>Explorer:<B> View the screenshot directory in Windows Explorer.
-<p class=list-1>&bull;&nbsp; </B>Next Shot:<B> Set the name/number of the next screenshot.
+<p class=list-1>&bull;&nbsp; <B>Explorer:</B> View the screenshot directory in Windows Explorer.
+<p class=list-1>&bull;&nbsp; <B>Next Shot:</B> Set the name/number of the next screenshot.
 <p class=empty>&nbsp;</p>
 <h3><a name='ScreenshotCommands'>Screenshot Commands</a></h3>
 <p>Right click on a screenshot to see these:
-<p class=list-1>&bull;&nbsp; </B>Delete:<B> Deletes selected files.
-<p class=list-1>&bull;&nbsp; </B>Convert to jpg:<B> Converts selected files to jpg format.
+<p class=list-1>&bull;&nbsp; <B>Delete:</B> Deletes selected files.
+<p class=list-1>&bull;&nbsp; <B>Convert to jpg:</B> Converts selected files to jpg format.
   <p class=list-2>&bull;&nbsp; If file by name new name already exists, then conversion will be skipped (for that file).
-<p class=list-1>&bull;&nbsp; </B>Rename:<B> Renames selected files according to format. 
+<p class=list-1>&bull;&nbsp; <B>Rename:</B> Renames selected files according to format. 
   <p class=list-2>&bull;&nbsp; If multiple files are selected, they'll be numbered sequentially after the first.
   <p class=list-2>&bull;&nbsp; If file by new name already exists, then rename for that file will be skipped.
   <p class=empty>&nbsp;</p>
@@ -1980,15 +1982,15 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p>Archive, view, search PM's from the official forum. <B><I>Note:</I></B> This is fairly new and a bit experimental at this time (11/6/2007). It should be fairly safe, but I suggest that you keep a backup of any messages that you enter into this.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportArchives'>Import Archives</a></h3>
-<p class=list-1>&bull;&nbsp; </B>What's Importable<B>
+<p class=list-1>&bull;&nbsp; <B>What's Importable</B>
   <p class=list-2>&bull;&nbsp; Only html format archives are archivable. Excel format archives are ''not'' archivable. 
   <p class=list-2>&bull;&nbsp; PMs from other forums that use the same software as the bethsoft forums <I>may</I> also be importable &#150 but this has not been tested yet.
-<p class=list-1>&bull;&nbsp; </B>Setup<B>
+<p class=list-1>&bull;&nbsp; <B>Setup</B>
   <p class=list-2>&bull;&nbsp; Typically you'll have your archives as attachments to mail messages. You'll need to save these to disk. When you save, it's best to name the file like "07.11.06 archive.html" or "2007.11.06 archive.html" (where the leading digits are year, month, date) &#150 <B><I>using the date the archive was created!</I></B>
     <p class=list-3>&bull;&nbsp; It's important to get the archive date correct, since Bash will use it to figure out the date of PMs dated as "Today" or "Yesterday".
     <p class=list-3>&bull;&nbsp; Note: The rest of the name doesn't matter &#150 it's just the date that counts.
   <p class=list-2>&bull;&nbsp; It's usually simplest to save a bunch (all) of your archives to disk at once in a special folder.
-<p class=list-1>&bull;&nbsp; </B>Importing<B>
+<p class=list-1>&bull;&nbsp; <B>Importing</B>
   <p class=list-2>&bull;&nbsp; Once you've got the archives saved as files...
   <p class=list-2>&bull;&nbsp; Go to "PM Archives" tab, right click on column header at the top of the window and select "Import Archives..." Use the dialog to select the archives that you want to import.
   <p class=empty>&nbsp;</p>
@@ -2039,7 +2041,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Use this command to assign Karma to a person.
 <p class=empty>&nbsp;</p>
 <h2><a name='OblivionesmSwapping'>Oblivion.esm Swapping</a></h2>
-<p><I>Note that this features does not yet work with non-English versions of Oblivion! Nor does it work for pre-1.1 copies of Oblivion. It also requires some preparation </B>before<B> installing Shivering Isles!</I>
+<p><I>Note that this features does not yet work with non-English versions of Oblivion! Nor does it work for pre-1.1 copies of Oblivion. It also requires some preparation <B>before</B> installing Shivering Isles!</I>
 <p class=empty>&nbsp;</p>
 <p>The release of the Shivering Isles (SI) expansion has complicated life for modders. The problem is that the expansion is placed not in a new esm or esp, but rather directly into the existing Oblivion.esm. (There is a DLCShiveringIsles.esp that comes with the expansion, but it is empty and apparently is only use to trigger SI bsa archive loading). 
 <p class=empty>&nbsp;</p>
@@ -2065,7 +2067,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; The title of the main Bash window. You'll see either [1.1] or [SI] at the end of the title.
 <p class=empty>&nbsp;</p>
 <h3><a name='ModTabSwapping'>Mod Tab Swapping</a></h3>
-<p class=list-1>&bull;&nbsp; Two swap versions on the mod tab, right click anywhere on the column header and got to the Oblivion.esm </B>menu item<B>. The currently available and selected versions will popup in a submenu where you can select them.
+<p class=list-1>&bull;&nbsp; Two swap versions on the mod tab, right click anywhere on the column header and got to the Oblivion.esm <B>menu item</B>. The currently available and selected versions will popup in a submenu where you can select them.
 <p class=list-1>&bull;&nbsp; Selecting a different version will swap names around &#150 you should see the change reflected immediately in the <a href="#VersionIndicators">Version Indicators</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='SaveTabSwapping'>Save Tab Swapping</a></h3>
@@ -2109,7 +2111,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='28012122012haamaPacificMorrowind'>280 [12/12/2012] [haama,PacificMorrowind]</a></h3>
+<h3><a name='28012122012haamaPacificMorrowindMetallicow'>280 [12/12/2012] [haama,PacificMorrowind,Metallicow]</a></h3>
 <p class=list-1>&bull;&nbsp; Ini changes
   <p class=list-2>&bull;&nbsp; Can set options (-o, -p, -l, -u) from ini
   <p class=list-2>&bull;&nbsp; Tool Button Changes
@@ -2122,7 +2124,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       <p class=list-4>&bull;&nbsp; Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       <p class=list-4>&bull;&nbsp; Allow Option Switches to be used
 <p class=list-1>&bull;&nbsp; Taglist fix (reported by Surazal)
+<p class=list-1>&bull;&nbsp; Taglist updated to Masterlist version 730
 <p class=list-1>&bull;&nbsp; Installer fix (reported by half of everyone on bethsoft)
+<p class=list-1>&bull;&nbsp; Way nicer icons for most of the tool launchers (contributed by Metallicow)
+<p class=list-1>&bull;&nbsp; Bugfix: Readme weirdo bold formatting reversal (reported by myk002)
+<p class=list-1>&bull;&nbsp; Bash Patch Changes:
+  <p class=list-2>&bull;&nbsp; New Patchers:
+    <p class=list-3>&bull;&nbsp; C.Music (added to Import Cells)
+  <p class=list-2>&bull;&nbsp; Changes:
+    <p class=list-3>&bull;&nbsp; Race Patcher now also ignores identical to master records.
 <p class=list-1>&bull;&nbsp; Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
 <p class=empty>&nbsp;</p>
 <h3><a name='27905032010PacificMorrowindhaamaLojackBadhair'>279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]</a></h3>
@@ -2305,7 +2315,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; <a href="#ModsTab">Mods Tab</a>:
   <p class=list-2>&bull;&nbsp; <a href="#ActivatingMods">Activating Mods</a>: Mods may now be activated/deactivated with the space bar
   <p class=list-2>&bull;&nbsp; Many context menu choices now work with multiple selections:
-    <p class=list-3>&bull;&nbsp; </B>Note:<B> Most multiple selection choices will skip/ignore "Oblivion.esm" and "Oblivion_1.1.esm"
+    <p class=list-3>&bull;&nbsp; <B>Note:</B> Most multiple selection choices will skip/ignore "Oblivion.esm" and "Oblivion_1.1.esm"
     <p class=list-3>&bull;&nbsp; <a href="#AutoGhost">Don't Ghost</a>
     <p class=list-3>&bull;&nbsp; <a href="#Backup">Backup</a>
     <p class=list-3>&bull;&nbsp; <a href="#Duplicate">Duplicate</a>
@@ -3736,10 +3746,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Fixed some bugs with description contents and snapshots. 
   <p class=empty>&nbsp;</p>
 <h3><a name='0094302006'>0.09 [4/30/2006]</a></h3>
-<p class=list-1>&bull;&nbsp; </B>Face Export/Import<B> <B><I>[BETA!]</I></B>
+<p class=list-1>&bull;&nbsp; <B>Face Export/Import</B> <B><I>[BETA!]</I></B>
   <p class=list-2>&bull;&nbsp; Import now imports face, eyes, hair, haircolor, hairlength and gender.
     <p class=list-3>&bull;&nbsp; Race is not imported because it would require tweaking additional records (player's powers, etc.)
-  <p class=list-2>&bull;&nbsp; </B>Note:<B> Old code rewritten &#150 it's possible that new bugs have been introduced.
+  <p class=list-2>&bull;&nbsp; <B>Note:</B> Old code rewritten &#150 it's possible that new bugs have been introduced.
 <p class=list-1>&bull;&nbsp; New/Improved
   <p class=list-2>&bull;&nbsp; Internal: Mod and save game parsing fleshed out significantly.
   <p class=empty>&nbsp;</p>
