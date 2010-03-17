@@ -107,7 +107,6 @@ Beautiful_Women_NiceOnly.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
 Beautiful_Women_DB_Addon.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
-% {{BASH:NpcFaces,NoMerge}} and deactivate.
 Beautiful_Women_SI.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
 Beautiful_Women_Vampires.esp
@@ -118,6 +117,8 @@ Beautiful_Women_DB_Addon Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 Beautiful_Women_NiceOnly Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+Beautiful_Women_NotSoNice_Bonus.esp
+% {{BASH:NpcFaces,NoMerge}} and deactivate.
 Beautiful_Women_NotSoNice_Bonus Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 Beautiful_Women_SI Vwalk.esp
@@ -152,6 +153,9 @@ Colourwheels Sexy Female NPCs.esp
 % {{BASH:NpcFaces}}
 Colourwheels Sexy Female NPCs Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+beardy.esp
+% {{BASH:NpcFaces}}
+
 Specular_Fix_1.1.esp
 % {{BASH:Graphics}}
 
@@ -179,6 +183,8 @@ DLCShiveringIsles Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 DLCShiveringIsles Vwalk DG_DS.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+SI Public Music.esp
+% {{BASH:C.Music}}
 MOBS.esp
 % {{BASH:Stats}}
 MOBS SI.esp
@@ -251,6 +257,8 @@ All Natural.esp
 % {{BASH:C.Climate}}
 Natural Interiors.esp
 % {{BASH:C.Climate}}
+Atmospheric Oblivion.esp
+% {{BASH:Scripts}}
 SnakeLightningSpeed.esp
 % {{BASH:Graphics}}
 archrobe.esp
@@ -448,6 +456,8 @@ Crowded Roads 7 Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 Crowded Roads 15 Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+Oblivion Alive Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge}}
 Crowded Cities 30 Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 Crowded Roads 23 Vwalk.esp
@@ -576,7 +586,7 @@ FalxMod.esp
 Fantasy Mod.esp
 % {{BASH:Hair,Eyes}}
 FineWeapons.esp
-% {{BASH:Graphics,NoMerge}}
+% {{BASH:Graphics}}
 Garak's Staff Replacer Artefacts.esp
 % {{BASH:Graphics}}
 Garak's Staff Replacer Blood&Lightning.esp
@@ -619,6 +629,8 @@ PinkGlassArmor.esp
 % May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
 RTFemaleReplacerV12.esp
 % {{BASH:Graphics}} - De-activate
+RustyItems.esp
+% {{BASH:Graphics}}
 Saint Hiryu's Artifacts.esp
 % {{BASH:Invent}}
 Shrouded Armor X.esp
@@ -976,6 +988,8 @@ OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
 % {{BASH:Stats}}
 Oscuro's_Oblivion_Overhaul Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+RealitySpectreStars2HeavenBetterPotionsOOOEffects.esp
+% {{BASH:Graphics}}
 OMOBS.esp
 % {{BASH:Stats}}
 OMOBS_SI.esp
@@ -1031,6 +1045,11 @@ Mart's Monster Mod - Diverse Runeskulls Loot OOO.esp
 OMOBS_MMM.esp
 % {{BASH:Stats}}
 OMOBS_MMM_H&C_Ammo.esp
+WACESM_MiscItemsRebal.esp
+% {{BASH:Stats}}
+WACESM_Ingredients_Rebalance.esp
+% {{BASH:Stats}}
+WAC-OOO.esp
 TamrielTravellers Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 TamrielTravellers4MMM Vwalk.esp
@@ -1306,6 +1325,12 @@ Fort Akatosh.esp
 % {{BASH:Relations}}
 FortAkatosh.esp
 % {{BASH:Relations}}
+Valhalla Asgardia Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge}} and deactivate (requires WB version 278+ otherwise merge but may run into facial errors).
+MTCThievesGrottoV4.1 Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge}} and deactivate (requires WB version 278+ otherwise merge but may run into facial errors).
+Castle_Tirith Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge}}
 xulbravilbarrowfields Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 xulRollingHills_EV Vwalk.esp
@@ -1346,11 +1371,7 @@ Duke Patricks - Health Alarm RED DEATH with heartbeat.esp
 JQ-Fighters_Guild_United.esp
 % {{BASH:Invent}}
 Harvest [Flora].esp
-NoHFailure_HFlora.esp
-Harvest [Flora] - Shivering Isles.esp
-NoHFailure_HFlora_SE.esp
-Harvest [Flora] - DLCVileLair.esp
-Harvest [Flora] - DLCFrostcrag.esp
+% {{BASH:Scripts}}
 Birthsigns Expanded.esp
 % {{BASH:Names}}
 BloodSpray.esp
@@ -1571,7 +1592,11 @@ Jjiinx_Long Ears.esp
 Head06 Replacer.esp
 % {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch and deactivate.
 WhiskersAll.esp
-% {{BASH:R.Teeth,Graphics}} make sure to merge into the bashed patch and deactivate. 
+% {{BASH:R.Teeth,Graphics}} make sure to merge into the bashed patch and deactivate.
+MergedMouth.esp
+% {{BASH:R.Mouth}} make sure to merge into the bashed patch and deactivate.
+JoinedJaws.esp
+% {{BASH:R.Teeth}}
 Custom Hairs for Vanilla Race.esp
 % {{BASH:Hair}}
 M.O.E. - Unlocked Hairstyles.esp
@@ -1987,6 +2012,8 @@ CM Partners Extra NPCs.esp
 % {{BASH:Hair,Eyes}}
 CM Partners Extra NPCs Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
+CMPartner_Xenia Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge}} and deactivate
 Xenia_CMPartner Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}} and deactivate
 CM_LoreleiU.esp
@@ -2273,6 +2300,8 @@ ViconiaChapterTwo Vwalk.esp
 Bashed Delayers - MERGE ONLY.esp
 % {BASH:Filter}}
 Bashed Delayers E - MERGE ONLY.esp
+% {BASH:Filter}}
+Bashed Delayers NE - MERGE ONLY.esp
 % {BASH:Filter}}
 CoreRandmonClothing4Npcs.esp
 % {{BASH:Filter,Invent,IIM}}
