@@ -5452,6 +5452,7 @@ class Installers_AnnealAll(Link):
             progress.Destroy()
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(Link):
@@ -5922,6 +5923,7 @@ class Installer_Wizard(InstallerLink):
                     progress.Destroy()
                     self.data.refresh(what='N')
                     gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
@@ -5940,6 +5942,7 @@ class Installer_Anneal(InstallerLink):
             progress.Destroy()
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
 class Installer_Delete(balt.Tank_Delete):
@@ -6076,6 +6079,7 @@ class Installer_Install(InstallerLink):
             progress.Destroy()
             self.data.refresh(what='N')
             gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
 class Installer_ListPackages(InstallerLink):
@@ -6240,6 +6244,7 @@ class Installer_Uninstall(InstallerLink):
             progress.Destroy()
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
 
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
