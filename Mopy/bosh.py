@@ -14176,7 +14176,7 @@ class CellImporter(ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags')
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -14188,6 +14188,7 @@ class CellImporter(ImportPatcher):
         self.isActive = bool(self.sourceMods)
         self.recAttrs = {
             'C.Climate': ('climate',),
+            'C.Music': ('music',),
             'C.Name': ('full',),
             'C.Owner': ('ownership',),
             'C.Water': ('water','waterHeight'),
@@ -14200,6 +14201,7 @@ class CellImporter(ImportPatcher):
             }
         self.recFlags = {
             'C.Climate': 'behaveLikeExterior',
+            'C.Music': '',
             'C.Name': '',
             'C.Owner': 'publicPlace',
             'C.Water': 'hasWater',
