@@ -14254,7 +14254,7 @@ class CellImporter(ImportPatcher):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in srcInfo.getBashTags() if
                 bashKey in self.recAttrs)))
             flags = tuple(self.recFlags[bashKey] for bashKey in srcInfo.getBashTags() if
@@ -14474,7 +14474,7 @@ class GraphicsPatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14637,7 +14637,7 @@ class ActorImporter(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -14781,7 +14781,7 @@ class KFFZPatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -15265,7 +15265,7 @@ class ImportScripts(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -15425,7 +15425,7 @@ class ImportScriptContents(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -16088,7 +16088,7 @@ class SoundPatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             bashTags = srcFile.fileInfo.getBashTags()
-            masters = modInfos[srcMod].header.masters
+            masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -18886,6 +18886,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.raceData = {} #--Race eye meshes, hair,eyes
+        self.tempRaceData = {}
         #--Restrict srcMods to active/merged mods.
         self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
         self.isActive = True #--Always enabled to support eye filtering
@@ -18901,46 +18902,89 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         if not self.isActive or not self.srcMods: return
         loadFactory = LoadFactory(False,MreRace)
         progress.setFull(len(self.srcMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.srcMods):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
+            masters = srcInfo.header.masters
             bashTags = srcInfo.getBashTags()
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
             for race in srcFile.RACE.getActiveRecords():
+                tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
                 if 'Hair' in bashTags:
                     raceHair = raceData.setdefault('hairs',[])
                     for hair in race.hairs:
                         if hair not in raceHair: raceHair.append(hair)
                 if self.eyeKeys & bashTags:
-                    raceData['rightEye'] = race.rightEye
-                    raceData['leftEye'] = race.leftEye
+                    tempRaceData['rightEye'] = race.rightEye
+                    tempRaceData['leftEye'] = race.leftEye
                     raceEyes = raceData.setdefault('eyes',[])
                     for eye in race.eyes:
                         if eye not in raceEyes: raceEyes.append(eye)
                 if 'Voice-M' in bashTags:
-                    raceData['maleVoice'] = race.maleVoice
+                    tempRaceData['maleVoice'] = race.maleVoice
                 if 'Voice-F' in bashTags:
-                    raceData['femaleVoice'] = race.femaleVoice
+                    tempRaceData['femaleVoice'] = race.femaleVoice
                 if 'Body-M' in bashTags:
                     for key in ['male'+key for key in self.bodyKeys]:
-                        raceData[key] = getattr(race,key)
+                        tempRaceData[key] = getattr(race,key)
                 if 'Body-F' in bashTags:
                     for key in ['female'+key for key in self.bodyKeys]:
-                        raceData[key] = getattr(race,key)
+                        tempRaceData[key] = getattr(race,key)
                 if 'R.Teeth' in bashTags:
                     for key in ('teethLower','teethUpper'):
-                        raceData[key] = getattr(race,key)
+                        tempRaceData[key] = getattr(race,key)
                 if 'R.Mouth' in bashTags:
                     for key in ('mouth','tongue'):
-                        raceData[key] = getattr(race,key)
+                        tempRaceData[key] = getattr(race,key)
                 if 'R.Relations' in bashTags:
                     relations = raceData.setdefault('relations',{})
                     for x in race.relations:
                         relations[x.faction] = x.mod
+            for master in masters:
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    if 'RACE' not in masterFile.tops: continue
+                    masterFile.convertToLongFids(('RACE',))
+                    cachedMasters[master] = masterFile
+                for race in masterFile.RACE.getActiveRecords():
+                    if race not in tempRaceData: continue
+                    if self.eyeKeys & bashTags:
+                        if not tempRaceData[race.fid]['rightEye'] == race.rightEye:
+                            raceData['rightEye'] = tempRaceData[race.fid]['rightEye']
+                        if not tempRaceData[race.fid]['leftEye'] == race.leftEye:
+                            raceData[race.fid]['leftEye'] = tempRaceData[race.fid]['leftEye']
+                    if 'Voice-M' in bashTags:
+                        if not tempRaceData[race.fid]['maleVoice'] == race.maleVoice:
+                            raceData[race.fid]['maleVoice'] = tempRaceData[race.fid]['maleVoice']
+                    if 'Voice-F' in bashTags:
+                        if not tempRaceData[race.fid]['femaleVoice'] == race.femaleVoice:
+                            raceData[race.fid]['femaleVoice'] = tempRaceData[race.fid]['femaleVoice']
+                    if 'Body-M' in bashTags:
+                        for key in ['male'+key for key in self.bodyKeys]:
+                            if not tempRaceData[race.fid][key] == getattr(race,key):
+                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                    if 'Body-F' in bashTags:
+                        for key in ['female'+key for key in self.bodyKeys]:
+                            if not tempRaceData[race.fid][key] == getattr(race,key):
+                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                    if 'R.Teeth' in bashTags:
+                        for key in ('teethLower','teethUpper'):
+                            if not tempRaceData[race.fid][key] == getattr(race,key):
+                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                    if 'R.Mouth' in bashTags:
+                        for key in ('mouth','tongue'):
+                            if not tempRaceData[race.fid][key] == getattr(race,key):
+                                raceData[race.fid][key] = tempRaceData[race.fid][key]
             progress.plus()
 
     def getReadClasses(self):
@@ -19004,30 +19048,35 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
                 race.hairs = raceData['hairs']
                 raceChanged = True
-            if 'eyes' in raceData and (
-                race.rightEye.modPath != raceData['rightEye'].modPath or
-                race.leftEye.modPath  != raceData['leftEye'].modPath or
-                set(race.eyes) != set(raceData['eyes'])
-                ):
-                for attr in ('rightEye','leftEye','eyes'):
-                    setattr(race,attr,raceData[attr])
+            if 'rightEye' in raceData:
+                if race.rightEye.modPath != raceData['rightEye'].modPath:
+                    race.rightEye.modPath = raceData['rightEye'].modPath
+                    raceChanged = True
+            if 'leftEye' in raceData:
+                if race.rightEye.modPath != raceData['leftEye'].modPath:
+                    race.rightEye.modPath = raceData['leftEye'].modPath
+                    raceChanged = True
+            if set(race.eyes) != set(raceData['eyes']):
+                race.eyes = raceData['eyes']
                 raceChanged = True
             #--Teeth
-            if 'teethLower' in raceData and (
-                race.teethLower != raceData['teethLower'] or
-                race.teethUpper != raceData['teethUpper']
-                ):
-                race.teethLower = raceData['teethLower']
-                race.teethUpper = raceData['teethUpper']
-                raceChanged = True
+            if 'teethLower' in raceData:
+                if race.teethLower != raceData['teethLower']:
+                    race.teethLower = raceData['teethLower']
+                    raceChanged = True
+            if 'teethUpper' in raceData:
+                if race.teethUpper != raceData['teethUpper']:
+                    race.teethUpper = raceData['teethUpper']
+                    raceChanged = True
             #--Mouth
-            if 'mouth' in raceData and (
-                race.mouth != raceData['mouth'] or
-                race.tongue != raceData['tongue']
-                ):
-                race.mouth = raceData['mouth']
-                race.tongue = raceData['tongue']
-                raceChanged = True
+            if 'mouth' in raceData:
+                if race.mouth != raceData['mouth']:
+                    race.mouth = raceData['mouth']
+                    raceChanged = True
+            if 'tongue' in raceData:
+                if race.tongue != raceData['tongue']:
+                    race.tongue = raceData['tongue']
+                    raceChanged = True
             #--Gender info (voice, body data)
             for gender in ('male','female'):
                 voiceKey = gender+'Voice'
@@ -19036,8 +19085,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                         setattr(race,voiceKey,raceData[voiceKey])
                         raceChanged = True
                 bodyKeys = [gender+key for key in self.bodyKeys]
-                if gender+'FootPath' in raceData:
-                    for key in bodyKeys:
+                for key in bodyKeys:
+                    if key in raceData:
                         if getattr(race,key) != raceData[key]:
                             setattr(race,key,raceData[key])
                             raceChanged = True
