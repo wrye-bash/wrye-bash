@@ -10687,11 +10687,16 @@ def InitStatusBar():
                 Image(r'images/ddsconverter'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch DDSConverter")))
     if bosh.inisettings['showaudiotoollaunchers']:
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Audacity
             App_Button(
                 bosh.dirs['Audacity'],
                 Image(r'images/audacity'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Audacity")))
+        BashStatusBar.buttons.append( #ABCAmberAudioConverter
+            App_Button(
+                bosh.dirs['ABCAmberAudioConverter'],
+                Image(r'images/ABCAmberAudioConverter'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch ABC Amber Audio Converter")))
     BashStatusBar.buttons.append( #Fraps
         App_Button(
             bosh.dirs['Fraps'],

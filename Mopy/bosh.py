@@ -19770,7 +19770,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
     dirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
     dirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
@@ -19886,6 +19886,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['ArtOfIllusion'] = GPath(bashIni.get('Tool Options','sArtOfIllusion').strip())
             if not dirs['ArtOfIllusion'].isabs():
                 dirs['ArtOfIllusion'] = dirs['app'].join(dirs['ArtOfIllusion'])
+        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
+            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
+            if not dirs['ABCAmberAudioConverter'].isabs():
+                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
         if bashIni.has_option('Tool Options','sCustom1'):
             dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
             if not dirs['Custom1'].isabs():
