@@ -224,8 +224,8 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Oblivion (Main Oblivion executable, not the launcher.)
   * Oblivion Mod Manager
   * Oblivion Book Creator
-  * TES Construction Set
-  * Insanity Sorrow's Oblivion Launcher
+  * TES Construction Set]]
+  * Insanity Sorrow's Oblivion Launcher]]
   * Insanity Sorrow's Readme Generator
   * Insanity Sorrow's Random Name Generator
   * Insanity Sorrow's Random NPC Generator
@@ -236,13 +236,20 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * BOSS
   * Tes4LodGen
   * Tes4Files
-  * Blender
+  * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]]
+  * [[http://www.blender.org | Blender]]
   * GIMP
   * GMax
   * Maya
   * Max
-  * Photoshop
+  * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]]
+  * [[http://www.wings3d.com/ | Wings3D]]
+  * [[http://www.adobe.com/ | Photoshop]]
   * Artweaver
+  * [[http://www.artofillusion.org/ | Art of Illusion]]
   * Audacity
   * DDSConverter
   * Fraps
@@ -1932,11 +1939,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow Java apps (.jar) to be used
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
+    * 7 new launchers added (thanks to Metallicow for images and paths and suggestion :))
 * Taglist fix (reported by Surazal)
 * Taglist updated to Masterlist version 730
 * Installer fix (reported by half of everyone on bethsoft)
 * Way nicer icons for most of the tool launchers (contributed by Metallicow)
-* Bugfix: Readme weirdo bold formatting reversal (reported by myk002)
+* Bugfix: Readme weirdo bold formatting reversal (reported by myk002 & WalkerInShadows)
 * Bash Patch Changes:
   * New Patchers:
     * C.Music (added to Import Cells)

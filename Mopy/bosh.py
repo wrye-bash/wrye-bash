@@ -19763,6 +19763,19 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
     dirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
     dirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
+    dirs['Milkshape3DPath'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
+    dirs['Wings3DPath'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['MAP'] = dirs['app'].join(r'Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe')
+    dirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
+    dirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
+    dirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')    
     dirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
@@ -19845,6 +19858,34 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['DDSConverter'] = GPath(bashIni.get('Tool Options','sDDSConverter').strip())
             if not dirs['DDSConverter'].isabs():
                 dirs['DDSConverter'] = dirs['app'].join(dirs['DDSConverter'])
+        if bashIni.has_option('Tool Options','sWings3D'):
+            dirs['Wings3DPath'] = GPath(bashIni.get('Tool Options','sWings3D').strip())
+            if not dirs['Wings3DPath'].isabs():
+                dirs['Wings3DPath'] = dirs['app'].join(dirs['Wings3DPath'])
+        if bashIni.has_option('Tool Options','sMilkshape3D'):
+            dirs['Milkshape3DPath'] = GPath(bashIni.get('Tool Options','sMilkshape3D').strip())
+            if not dirs['Milkshape3DPath'].isabs():
+                dirs['Milkshape3DPath'] = dirs['app'].join(dirs['Milkshape3DPath'])
+        if bashIni.has_option('Tool Options','sBSACMD'):
+            dirs['BSACMD'] = GPath(bashIni.get('Tool Options','sBSACMD').strip())
+            if not dirs['BSACMD'].isabs():
+                dirs['BSACMD'] = dirs['app'].join(dirs['BSACMD'])
+        if bashIni.has_option('Tool Options','sMAP'):
+            dirs['MAP'] = GPath(bashIni.get('Tool Options','sMAP').strip())
+            if not dirs['MAP'].isabs():
+                dirs['MAP'] = dirs['app'].join(dirs['MAP'])
+        if bashIni.has_option('Tool Options','sOBMLG'):
+            dirs['OBMLG'] = GPath(bashIni.get('Tool Options','sOBMLG').strip())
+            if not dirs['OBMLG'].isabs():
+                dirs['OBMLG'] = dirs['app'].join(dirs['OBMLG'])
+        if bashIni.has_option('Tool Options','sOBFEL'):
+            dirs['OBFEL'] = GPath(bashIni.get('Tool Options','sOBFEL').strip())
+            if not dirs['OBFEL'].isabs():
+                dirs['OBFEL'] = dirs['app'].join(dirs['OBFEL'])
+        if bashIni.has_option('Tool Options','sArtOfIllusion'):
+            dirs['ArtOfIllusion'] = GPath(bashIni.get('Tool Options','sArtOfIllusion').strip())
+            if not dirs['ArtOfIllusion'].isabs():
+                dirs['ArtOfIllusion'] = dirs['app'].join(dirs['ArtOfIllusion'])
         if bashIni.has_option('Tool Options','sCustom1'):
             dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
             if not dirs['Custom1'].isabs():
