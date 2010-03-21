@@ -19044,10 +19044,13 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             raceData = self.raceData.get(race.fid,None)
             if not raceData: continue
             raceChanged = False
-            #--Hair, Eyes
-            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
-                race.hairs = raceData['hairs']
-                raceChanged = True
+            #-- Racial Hair and  Eye sets
+            for key in ('hair','eyes'):
+                if key in raceData:
+                    if set(getattr(race,key)) != set(raceData[key]):
+                        setattr(race,key,set(raceData[key]))
+                        raceChanged = True
+            #-- Eye paths:  
             if 'rightEye' in raceData:
                 if race.rightEye.modPath != raceData['rightEye'].modPath:
                     race.rightEye.modPath = raceData['rightEye'].modPath
@@ -19056,28 +19059,12 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if race.rightEye.modPath != raceData['leftEye'].modPath:
                     race.rightEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
-            if 'eyes' in raceData:
-                if set(race.eyes) != set(raceData['eyes']):
-                    race.eyes = raceData['eyes']
-                    raceChanged = True
-            #--Teeth
-            if 'teethLower' in raceData:
-                if race.teethLower != raceData['teethLower']:
-                    race.teethLower = raceData['teethLower']
-                    raceChanged = True
-            if 'teethUpper' in raceData:
-                if race.teethUpper != raceData['teethUpper']:
-                    race.teethUpper = raceData['teethUpper']
-                    raceChanged = True
-            #--Mouth
-            if 'mouth' in raceData:
-                if race.mouth != raceData['mouth']:
-                    race.mouth = raceData['mouth']
-                    raceChanged = True
-            if 'tongue' in raceData:
-                if race.tongue != raceData['tongue']:
-                    race.tongue = raceData['tongue']
-                    raceChanged = True
+            #--Teeth/Mouth
+            for key in ('teethLower','teethUpper','mouth','tongue'):
+                if key in raceData:
+                    if getattr(race,key) != raceData[key]:
+                        setattr(race,key,raceData[key])
+                        raceChanged = True
             #--Gender info (voice, body data)
             for gender in ('male','female'):
                 voiceKey = gender+'Voice'
