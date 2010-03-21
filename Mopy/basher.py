@@ -10545,7 +10545,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #ISOBL
         App_Button(
             bosh.dirs['ISOBL'],
-            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/ISOBL'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append( #ISRMG
         App_Button(
