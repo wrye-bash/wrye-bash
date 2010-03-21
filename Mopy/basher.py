@@ -5547,7 +5547,7 @@ class Installers_EnableWizard(Link):
                 file.close
             file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
             lines = file.readlines()
-            file.close       
+            file.close    
             for i, line in enumerate(lines):
                 if line.lstrip().startswith('bEnableWizard='):
                     lines[i] = "bEnableWizard=False\n"
@@ -5571,7 +5571,7 @@ class Installers_EnableWizard(Link):
             if not GPath('bash.ini').exists(): shutil.copyfile('bash_default.ini', 'bash.ini')
             file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
             lines = file.readlines()
-            file.close       
+            file.close    
             for i, line in enumerate(lines):
                 if line.lstrip().startswith('bEnableWizard='):
                     lines[i] = "bEnableWizard=True\n"
@@ -5589,7 +5589,7 @@ class Installers_EnableWizard(Link):
                         break
         os.startfile(path)
         bashFrame.Close()
-    
+ 
 #------------------------------------------------------------------------------
 class Installers_BsaRedirection(Link):
     """Toggle BSA Redirection."""
@@ -5855,7 +5855,7 @@ class Installer_EditWizard(InstallerLink):
         dir = self.data.dir
         dir.join(path.s, 'wizard.txt').start()
 
-        
+     
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
@@ -6179,7 +6179,7 @@ class Installer_OpenTESA(InstallerLink):
         message = _("Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(1)
-            os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)   
+            os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
     """Rescans selected Installers."""
@@ -6252,7 +6252,7 @@ class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleArchive():    
+        if self.isSingleArchive(): 
             self.title = _('Unpack to Project...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -6442,7 +6442,7 @@ class InstallerProject_Pack(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         #--Pack is appended whenever Unpack isn't, and vice-versa
-        if self.isSingleProject():    
+        if self.isSingleProject(): 
             self.title = _('Pack to Archive...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -7512,7 +7512,7 @@ class Mod_AllowNoGhosting(Link):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 self.window.RefreshUI(fileName)
-        
+     
 #------------------------------------------------------------------------------
 class Mod_AllowInvertGhosting(Link):
     def AppendToMenu(self,menu,window,data):
@@ -7529,7 +7529,7 @@ class Mod_AllowInvertGhosting(Link):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 self.window.RefreshUI(fileName)
-        
+     
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(Link):
     """Toggles Ghostability."""
@@ -9694,7 +9694,7 @@ class Save_StatObse(Link):
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
         finally:
             progress.Destroy()
-    
+ 
 #------------------------------------------------------------------------------
 class Save_Unbloat(Link):
     """Unbloats savegame."""
@@ -10496,7 +10496,7 @@ def InitImages():
     images['help'] = Image(r'images/help'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--Tools
     images['doc.on'] = Image(r'images/page_find'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
-    images['bashmon'] = Image(r'images/group_gear'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['bashmon'] = Image(r'images/bashmon'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     images['modChecker'] = Image(r'images/table_error'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--ColorChecks
     images['checkbox.red.x'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
@@ -10523,55 +10523,70 @@ def InitStatusBar():
     #--Bash Status/LinkBar
     BashStatusBar.buttons.append(Obse_Button())
     BashStatusBar.buttons.append(AutoQuit_Button())
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #OBLIVION
         Oblivion_Button(
             bosh.dirs['app'].join('Oblivion.exe'),
             Image(r'images/oblivion'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Oblivion"),
             _("Launch Oblivion + OBSE"),
             ''))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #TESCS
         App_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
             Image(r'images/tescs'+bosh.inisettings['iconSize']+'.png'),
             _("Launch TESCS"),
             _("Launch TESCS + OBSE"),
             '-editor'))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #OBMM
         App_Button(
             bosh.dirs['app'].join('OblivionModManager.exe'),
             Image(r'images/obmm'+bosh.inisettings['iconSize']+'.png'),
             _("Launch OBMM")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #ISOBL
         App_Button(
             bosh.dirs['ISOBL'],
             Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Oblivion Launcher")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #ISRMG
         App_Button(
             bosh.dirs['ISRMG'],
-            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+            Image(r"images/Insanity'sReadmeGenerator"+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Readme Generator")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #ISRNG
         App_Button(
             bosh.dirs['ISRNG'],
-            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+            Image(r"images/Insanity'sRNG"+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Random Name Generator")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #ISRNPCG
         App_Button(
             bosh.dirs['ISRNPCG'],
             Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Random NPC Generator")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #OBFEL
+        App_Button(
+            bosh.dirs['OBFEL'],
+            Image(r'images/OblivionFaceExchangerLite'+bosh.inisettings['iconSize']+'.png'),
+            _("Oblivion Face Exchange Lite")))
+    BashStatusBar.buttons.append( #OBMLG
+        App_Button(
+            bosh.dirs['OBMLG'],
+            Image(r'images/ModListGenerator'+bosh.inisettings['iconSize']+'.png'),
+            _("Oblivion Mod List Generator")))
+    BashStatusBar.buttons.append( #OblivionBookCreator
         App_OblivionBookCreator(None,
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Oblivion Book Creator")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #BSACommander
+        App_Button(
+            bosh.dirs['BSACMD'],
+            Image(r'images/BSACommander'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch BSA Commander")))  
+    BashStatusBar.buttons.append( #Tes4Files
         App_Button(
             bosh.dirs['TES4FilesPath'],
             Image(r'images/tes4files'+bosh.inisettings['iconSize']+'.png'),
-            _("Launch TES4Files")))   
-    BashStatusBar.buttons.append(
+            _("Launch TES4Files")))
+    BashStatusBar.buttons.append( #Tes4Gecko
         App_Tes4Gecko(None,
             Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Gecko")))
@@ -10593,65 +10608,80 @@ def InitStatusBar():
                 (bosh.dirs['TES4TransPath'], '-translate'),
                 Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Tes4Trans")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #Tes4LODGen
         App_Button(
             bosh.dirs['TES4LodGenPath'],
             Image(r'images/Tes4LODGen'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4LODGen")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #BOSS
         App_BOSS(
             bosh.dirs['app'].join('Data\\BOSS.bat'),
             Image(r'images/Boss'+bosh.inisettings['iconSize']+'.png'),
             _("Launch BOSS")))
     if bosh.inisettings['showmodelingtoollaunchers']:
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Blender
             App_Button(
                 bosh.dirs['BlenderPath'],
                 Image(r'images/blender'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Blender")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #GMax
             App_Button(
                 bosh.dirs['GmaxPath'],
                 Image(r'images/gmax'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Gmax")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Maya
             App_Button(
                 bosh.dirs['MayaPath'],
                 Image(r'images/maya'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Maya")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Max
             App_Button(
                 bosh.dirs['MaxPath'],
                 Image(r'images/max'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch 3dsMax")))
+        BashStatusBar.buttons.append( #Milkshape3D
+            App_Button(
+                bosh.dirs['Milkshape3DPath'],
+                Image(r'images/Milkshape3D'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Milkshape 3D")))
+        BashStatusBar.buttons.append( #Wings3D
+            App_Button(
+                bosh.dirs['Wings3DPath'],
+                Image(r'images/Wings3D'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Wings 3D")))
     if bosh.inisettings['showmodelingtoollaunchers'] or bosh.inisettings['showtexturetoollaunchers']:
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Nifskope
             App_Button(
                 bosh.dirs['NifskopePath'],
                 Image(r'images/nifskope'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Nifskope")))
     if bosh.inisettings['showtexturetoollaunchers']:
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #GIMP
             App_Button(
                 bosh.dirs['GIMP'],
                 Image(r'images/gimp'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch GIMP")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Photoshop
             App_Button(
                 bosh.dirs['Photoshop'],
                 Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Photoshop")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Art Of Illusion
+            App_Button(
+                bosh.dirs['ArtOfIllusion'],
+                Image(r'images/ArtOfIllusion'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Art Of Illusion")))
+        BashStatusBar.buttons.append( #Artweaver
             App_Button(
                 bosh.dirs['Artweaver'],
                 Image(r'images/artweaver'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Artweaver")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.dirs['PaintNET'],
                 Image(r'images/paint.net'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Paint.NET")))
-        BashStatusBar.buttons.append(
+        BashStatusBar.buttons.append( #DDSConverter
             App_Button(
                 bosh.dirs['DDSConverter'],
                 Image(r'images/ddsconverter'+bosh.inisettings['iconSize']+'.png'),
@@ -10662,12 +10692,17 @@ def InitStatusBar():
                 bosh.dirs['Audacity'],
                 Image(r'images/audacity'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Audacity")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #Fraps
         App_Button(
             bosh.dirs['Fraps'],
             Image(r'images/fraps'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Fraps")))
-    BashStatusBar.buttons.append(
+    BashStatusBar.buttons.append( #MAP
+        App_Button(
+            bosh.dirs['MAP'],
+            Image(r'images/ModListGenerator'+bosh.inisettings['iconSize']+'.png'),
+            _("Interactive Map of Cyrodiil and Shivering Isles")))
+    BashStatusBar.buttons.append( #NPP
         App_Button(
             bosh.dirs['NPP'],
             Image(r'images/notepad++'+bosh.inisettings['iconSize']+'.png'),
