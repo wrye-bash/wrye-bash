@@ -251,6 +251,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Artweaver
   * [[http://www.artofillusion.org/ | Art of Illusion]]
   * Audacity
+  * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]]
   * DDSConverter
   * Fraps
   * Notepad++
@@ -1939,7 +1940,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow Java apps (.jar) to be used
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
-    * 7 new launchers added (thanks to Metallicow for images and paths and suggestion :))
+    * 7 new launchers added (thanks to Metallicow for images and paths and suggestions :))
 * Taglist fix (reported by Surazal)
 * Taglist updated to Masterlist version 730
 * Installer fix (reported by half of everyone on bethsoft)
