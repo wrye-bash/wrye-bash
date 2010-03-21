@@ -19056,9 +19056,10 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if race.rightEye.modPath != raceData['leftEye'].modPath:
                     race.rightEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
-            if set(race.eyes) != set(raceData['eyes']):
-                race.eyes = raceData['eyes']
-                raceChanged = True
+            if 'eyes' in raceData:
+                if set(race.eyes) != set(raceData['eyes']):
+                    race.eyes = raceData['eyes']
+                    raceChanged = True
             #--Teeth
             if 'teethLower' in raceData:
                 if race.teethLower != raceData['teethLower']:
