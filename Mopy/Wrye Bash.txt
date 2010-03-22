@@ -1953,6 +1953,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Race Patcher now also ignores identical to master records.
 * Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
 * Bugfix: errors on clicking on an esp that you just installed via BAIN (reported by a few people since BAIN was developed - most recently by Aellis)
+* Unique icon for the Doc Browser (contributed by Metallicow)
 
 === 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
