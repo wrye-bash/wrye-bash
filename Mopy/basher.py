@@ -426,6 +426,7 @@ installercons.data.extend({
 #--Icon Bundles
 bashRed = None
 bashBlue = None
+bashDocBrowser = None
 
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -3777,7 +3778,7 @@ class DocBrowser(wx.Frame):
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
         #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
-        self.SetIcons(bashBlue)
+        self.SetIcons(bashDocBrowser)
         #--Set Doc
         self.setButton = button(self,_("Set Doc..."),onClick=self.DoSet)
         #--Forget Doc
@@ -4181,9 +4182,10 @@ class BashApp(wx.App):
 
     def InitResources(self):
         """Init application resources."""
-        global bashBlue, bashRed
+        global bashBlue, bashRed, bashDocBrowser
         bashRed = bashRed.GetIconBundle()
         bashBlue = bashBlue.GetIconBundle()
+        bashDocBrowser = bashDocBrowser.GetIconBundle()
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
@@ -10507,6 +10509,9 @@ def InitImages():
     images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
     images['bash.16.blue'] = Image(r'images/bash_16_blue.png',wx.BITMAP_TYPE_PNG)
     images['bash.32.blue'] = Image(r'images/bash_32_blue.png',wx.BITMAP_TYPE_PNG)
+    #--DocBrowser
+    images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
+    images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -10517,6 +10522,10 @@ def InitImages():
     bashBlue = balt.ImageBundle()
     bashBlue.Add(images['bash.16.blue'])
     bashBlue.Add(images['bash.32.blue'])
+    global bashDocBrowser
+    bashDocBrowser = balt.ImageBundle()
+    bashDocBrowser.Add(images['doc.16'])
+    bashDocBrowser.Add(images['doc.32'])
 
 def InitStatusBar():
     """Initialize status bar links."""
