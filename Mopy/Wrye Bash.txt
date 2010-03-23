@@ -119,7 +119,12 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Upgrading__
   * If you're upgrading from an older version of Wrye bash, then just get the last Wrye Bash XXX.Zip file from Wrye Musings and unzip to Oblivion directory. There's no need to remove anything or reinstall any python components.
-
+* __Advanced:__
+  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the [[#StartingWryeBash|OblivionPath]].
+    * This will probably only be useful for Bash developers (latest stable release in Oblivion directory + development version outside = my life is easier).
+    * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
+    * Remember when upgrading to install the "Data" folder to "\Oblivion\" and the "Mopy" folder to wherever you have it now
+  
 === Windows Vista
 * On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against write by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g, install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
@@ -130,12 +135,12 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * Launching from another location:
   * You can drag "Wrye Bash Launcher" to your Quick Launch toolbar. OR...
   * In Explorer, copy "Wrye Bash Launcher", then go to the other location and use "Paste Shortcut". 
-* Advanced:
-  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to use the -o argument.
+* Advanced: You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the OblivionPath through "bash.ini" or the -o argument.
+  * bash.ini:
+    * See "bash_default.ini" for full instructions - look for __sOblivionPath__ under __General__.
+  * -o Argument:
     * __Type:__ <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code>
     * Note that Python treats the back-slash <code>\</code> as an escape character... even from the command prompt.
-  * This will probably only be useful for Bash developers (latest release in Oblivion directory + development version outside = my life is easier).
-  * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
 
 === <font color=red>If Bash Won't Start</font>
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
@@ -219,6 +224,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * You can also control if some of them show up or not through the bash.ini - by settings the sections for Modeling or texturing or audio tools to 0.
   * Tes4Gecko & Oblivon Book Creater will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory.
   * Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
+    * You can also control if some of the modes show up or not through the bash.ini - by setting  __bShowTes4...__ under __[Tool Options]__
   * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
 * __Applications:__
   * Oblivion (Main Oblivion executable, not the launcher.)
@@ -257,6 +263,8 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Notepad++
   * Paint.NET
   * 4 Custom buttons
+    * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
+    * You can also set the arguments for any type of Custom button - see ini for full instructions.
 
 === Bash Option Buttons
 * OBSE
