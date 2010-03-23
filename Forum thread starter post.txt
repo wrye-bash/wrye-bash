@@ -2,7 +2,7 @@ Download: [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] 
 Readme: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (at time slightly outdated... most up to date readme in the download - the file named Wrye Bash.html in the mopy folder)
 Wrye Bash Wiki: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 Screenshots: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-Previous Topic: [url="http://www.bethsoft.com/bgsforums/index.php?showtopic=1064770"][RELZ] Wrye Bash #33[/url]
+Previous Topic: [url="http://forums.bethsoft.com/index.php?/topic/1079336-relzwrye-bash-thread-36/"][RELZ] Wrye Bash #36[/url]
 Requirements
 Python 2.5.4 and wxpython 2.8.7.1 ansi (the old "official" setup) - if using this best to just download the installer package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 or
@@ -64,21 +64,35 @@ For mod-makers:
 * Savegame profiles (so you can easily test with only your mod active, then easily switch back to playing with all your mods active)
 [/quote]
 
-Version 277 [01/08/2010] [PacificMorrowind,Haama,Badhair] (the most recent release)
-* fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
-* a new Bashed Patch section added: Globals
-* 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
-* added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
-* added an Export/Import script function to the right click menu of mod files
-* added an obse/pluggy statistics viewer (code contributed by Badhair, pluggy definitions by Haama)
-* Automatically deghost and reghost when using the link to BOSS
-* BAIN: 
-* Hide/Unhide package
-* Open at TesAlliance
-* Rename package
+=== 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
+* Fixed *two* bugs in autotagging (reported by Arthmoor)
+* Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
+* Images for wizard docs added (reported by Surazal)
+* Bashed Patch changes:
+    * New patchers:
+        * Cell RecordFlags import (C.RecordFlags) added to Cells Patcher
+        * Actors.ACBS (added to Import Actors)
+        * NPC.Class (added to Import Actors)
+        * Actors.CombatStyle (added to Import Actors)
+        * Creatures.Blood (added to Import Actors)
+    * Changes:
+        * Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
+        * Import Cells (all tags) now only imports the value for each attribute only if different than the master(s).
+* Taglist updated to Masterlist version 714 and other readablity enhancements/fixes/upgrades
+* LeveledList.csv removed and only using Taglist/Masterlist to get tags.
+* Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
+* Fixed some operators/function in the Wizard Install System
+* Fixed export scripts (reported by Foxbrian)
+* reverted to older 7z dll & exe (will upgrade later but will require some significant installer changes)
+* various typo fixes
+* optimization for master record checking (contributed by Badhair)
+* Added -o argument at Command Prompt
+  * Use to specify the location of Oblivion directory (with Oblivion.exe).
+  * Allows users to install \Mopy\ folder outside of Oblivion directory.
 
-and just to repeat the link and news:
-Wrye4Fallout3. TheLORDofDOOM of has taken on making a FO3 version... and here's the first little bit of it (not all translated to account for FO3 but it's showing promise). 
+and just to repeat some links and news:
+Wrye4Fallout3.
+TheLORDofDOOM of has taken on making a FO3 version... and here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [url="http://forums.bethsoft.com/index.php?/topic/1079607-relz-garybash/"]garybash[/url].
 
 and a bit more news:
 There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.
