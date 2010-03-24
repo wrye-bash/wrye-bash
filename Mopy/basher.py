@@ -10665,16 +10665,6 @@ def InitStatusBar():
                 Image(r'images/nifskope'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Nifskope")))
     if bosh.inisettings['showtexturetoollaunchers']:
-        BashStatusBar.buttons.append( #GIMP
-            App_Button(
-                bosh.dirs['GIMP'],
-                Image(r'images/gimp'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch GIMP")))
-        BashStatusBar.buttons.append( #Photoshop
-            App_Button(
-                bosh.dirs['Photoshop'],
-                Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch Photoshop")))
         BashStatusBar.buttons.append( #Art Of Illusion
             App_Button(
                 bosh.dirs['ArtOfIllusion'],
@@ -10685,16 +10675,31 @@ def InitStatusBar():
                 bosh.dirs['Artweaver'],
                 Image(r'images/artweaver'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Artweaver")))
-        BashStatusBar.buttons.append( #Paint.net
-            App_Button(
-                bosh.dirs['PaintNET'],
-                Image(r'images/paint.net'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch Paint.NET")))
         BashStatusBar.buttons.append( #DDSConverter
             App_Button(
                 bosh.dirs['DDSConverter'],
                 Image(r'images/ddsconverter'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch DDSConverter")))
+        BashStatusBar.buttons.append( #GIMP
+            App_Button(
+                bosh.dirs['GIMP'],
+                Image(r'images/gimp'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch GIMP")))
+        BashStatusBar.buttons.append( #GIMP Shop
+            App_Button(
+                bosh.dirs['GimpShop'],
+                Image(r'images/GIMPShop'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch GIMP Shop")))
+        BashStatusBar.buttons.append( #Paint.net
+            App_Button(
+                bosh.dirs['PaintNET'],
+                Image(r'images/paint.net'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Paint.NET")))
+        BashStatusBar.buttons.append( #Photoshop
+            App_Button(
+                bosh.dirs['Photoshop'],
+                Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Photoshop")))
     if bosh.inisettings['showaudiotoollaunchers']:
         BashStatusBar.buttons.append( #Audacity
             App_Button(
@@ -10769,6 +10774,174 @@ def InitStatusBar():
                 bosh.dirs['Custom4'],
                 Image(r'images/custom4'+bosh.inisettings['iconSize']+'.png'),
                 (bosh.inisettings['custom4txt'])))
+    if bosh.inisettings['custom5opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom5'], bosh.inisettings['custom5opt']),
+                Image(r'images/custom5'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom5txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom5'],
+                Image(r'images/custom5'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom5txt'])))
+    if bosh.inisettings['custom6opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom6'], bosh.inisettings['custom6opt']),
+                Image(r'images/custom6'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom6txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom6'],
+                Image(r'images/custom6'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom6txt'])))
+    if bosh.inisettings['custom7opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom7'], bosh.inisettings['custom7opt']),
+                Image(r'images/custom7'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom7txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom7'],
+                Image(r'images/custom7'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom7txt'])))
+    if bosh.inisettings['custom8opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom8'], bosh.inisettings['custom8opt']),
+                Image(r'images/custom8'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom8txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom8'],
+                Image(r'images/custom8'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom8txt'])))
+    if bosh.inisettings['custom9opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom9'], bosh.inisettings['custom9opt']),
+                Image(r'images/custom9'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom9txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom9'],
+                Image(r'images/custom9'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom9txt'])))
+    if bosh.inisettings['custom10opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom10'], bosh.inisettings['custom10opt']),
+                Image(r'images/custom10'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom10txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom10'],
+                Image(r'images/custom10'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom10txt'])))
+    if bosh.inisettings['custom11opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom11'], bosh.inisettings['custom11opt']),
+                Image(r'images/custom11'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom11txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom11'],
+                Image(r'images/custom11'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom11txt'])))
+    if bosh.inisettings['custom12opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom12'], bosh.inisettings['custom12opt']),
+                Image(r'images/custom12'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom12txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom12'],
+                Image(r'images/custom12'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom12txt'])))
+    if bosh.inisettings['custom13opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom13'], bosh.inisettings['custom13opt']),
+                Image(r'images/custom13'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom13txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom13'],
+                Image(r'images/custom13'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom13txt'])))
+    if bosh.inisettings['custom14opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom14'], bosh.inisettings['custom14opt']),
+                Image(r'images/custom14'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom14txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom14'],
+                Image(r'images/custom14'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom14txt'])))
+    if bosh.inisettings['custom15opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom15'], bosh.inisettings['custom15opt']),
+                Image(r'images/custom15'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom15txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom15'],
+                Image(r'images/custom15'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom15txt'])))
+    if bosh.inisettings['custom16opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom16'], bosh.inisettings['custom16opt']),
+                Image(r'images/custom16'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom16txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom16'],
+                Image(r'images/custom16'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom16txt'])))
+    if bosh.inisettings['custom17opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom17'], bosh.inisettings['custom17opt']),
+                Image(r'images/custom17'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom17txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom17'],
+                Image(r'images/custom17'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom17txt'])))
+    if bosh.inisettings['custom18opt']:
+        BashStatusBar.buttons.append(
+            App_Button(
+                (bosh.dirs['Custom18'], bosh.inisettings['custom18opt']),
+                Image(r'images/custom18'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom18txt'])))
+    else:
+        BashStatusBar.buttons.append(
+            App_Button(
+                bosh.dirs['Custom18'],
+                Image(r'images/custom18'+bosh.inisettings['iconSize']+'.png'),
+                (bosh.inisettings['custom18txt'])))
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
