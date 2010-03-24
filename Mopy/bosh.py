@@ -17107,6 +17107,8 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
+    scanOrder = 32
+    editOrder = 32
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
     tweaks = sorted([
@@ -19759,7 +19761,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
     dirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
     dirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    dirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
     dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
@@ -19768,6 +19770,20 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom4'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom5'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom6'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom7'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom8'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom9'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom10'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom11'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom12'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom13'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom14'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom15'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom16'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom17'] = GPath(r'C:\not\a\valid\path.exe')
+    dirs['Custom18'] = GPath(r'C:\not\a\valid\path.exe')
     # Then if bash.ini exists set from the settings in there:
     if bashIni:
         if bashIni.has_option('Tool Options','sTes4FilesPath'):
@@ -19878,6 +19894,26 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
             if not dirs['ABCAmberAudioConverter'].isabs():
                 dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
+        if bashIni.has_option('Tool Options','sGimpShop'):
+            dirs['GimpShop'] = GPath(bashIni.get('Tool Options','sGimpShop').strip())
+            if not dirs['GimpShop'].isabs():
+                dirs['GimpShop'] = dirs['app'].join(dirs['GimpShop'])
+        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
+            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
+            if not dirs['ABCAmberAudioConverter'].isabs():
+                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
+        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
+            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
+            if not dirs['ABCAmberAudioConverter'].isabs():
+                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
+        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
+            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
+            if not dirs['ABCAmberAudioConverter'].isabs():
+                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
+        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
+            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
+            if not dirs['ABCAmberAudioConverter'].isabs():
+                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
         if bashIni.has_option('Tool Options','sCustom1'):
             dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
             if not dirs['Custom1'].isabs():
@@ -19894,6 +19930,62 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['Custom4'] = GPath(bashIni.get('Tool Options','sCustom4').strip())
             if not dirs['Custom4'].isabs():
                 dirs['Custom4'] = dirs['app'].join(dirs['Custom4'])
+        if bashIni.has_option('Tool Options','sCustom5'):
+            dirs['Custom5'] = GPath(bashIni.get('Tool Options','sCustom5').strip())
+            if not dirs['Custom5'].isabs():
+                dirs['Custom5'] = dirs['app'].join(dirs['Custom5'])
+        if bashIni.has_option('Tool Options','sCustom6'):
+            dirs['Custom6'] = GPath(bashIni.get('Tool Options','sCustom6').strip())
+            if not dirs['Custom6'].isabs():
+                dirs['Custom6'] = dirs['app'].join(dirs['Custom6'])
+        if bashIni.has_option('Tool Options','sCustom7'):
+            dirs['Custom7'] = GPath(bashIni.get('Tool Options','sCustom7').strip())
+            if not dirs['Custom7'].isabs():
+                dirs['Custom7'] = dirs['app'].join(dirs['Custom7'])
+        if bashIni.has_option('Tool Options','sCustom8'):
+            dirs['Custom8'] = GPath(bashIni.get('Tool Options','sCustom8').strip())
+            if not dirs['Custom8'].isabs():
+                dirs['Custom8'] = dirs['app'].join(dirs['Custom8'])
+        if bashIni.has_option('Tool Options','sCustom9'):
+            dirs['Custom9'] = GPath(bashIni.get('Tool Options','sCustom9').strip())
+            if not dirs['Custom9'].isabs():
+                dirs['Custom9'] = dirs['app'].join(dirs['Custom9'])
+        if bashIni.has_option('Tool Options','sCustom10'):
+            dirs['Custom10'] = GPath(bashIni.get('Tool Options','sCustom10').strip())
+            if not dirs['Custom10'].isabs():
+                dirs['Custom10'] = dirs['app'].join(dirs['Custom10'])
+        if bashIni.has_option('Tool Options','sCustom11'):
+            dirs['Custom11'] = GPath(bashIni.get('Tool Options','sCustom11').strip())
+            if not dirs['Custom11'].isabs():
+                dirs['Custom11'] = dirs['app'].join(dirs['Custom11'])
+        if bashIni.has_option('Tool Options','sCustom12'):
+            dirs['Custom12'] = GPath(bashIni.get('Tool Options','sCustom12').strip())
+            if not dirs['Custom12'].isabs():
+                dirs['Custom12'] = dirs['app'].join(dirs['Custom2'])
+        if bashIni.has_option('Tool Options','sCustom13'):
+            dirs['Custom13'] = GPath(bashIni.get('Tool Options','sCustom13').strip())
+            if not dirs['Custom13'].isabs():
+                dirs['Custom13'] = dirs['app'].join(dirs['Custom13'])
+        if bashIni.has_option('Tool Options','sCustom14'):
+            dirs['Custom14'] = GPath(bashIni.get('Tool Options','sCustom14').strip())
+            if not dirs['Custom14'].isabs():
+                dirs['Custom14'] = dirs['app'].join(dirs['Custom14'])
+        if bashIni.has_option('Tool Options','sCustom15'):
+            dirs['Custom15'] = GPath(bashIni.get('Tool Options','sCustom15').strip())
+            if not dirs['Custom15'].isabs():
+                dirs['Custom15'] = dirs['app'].join(dirs['Custom15'])
+        if bashIni.has_option('Tool Options','sCustom16'):
+            dirs['Custom16'] = GPath(bashIni.get('Tool Options','sCustom16').strip())
+            if not dirs['Custom16'].isabs():
+                dirs['Custom16'] = dirs['app'].join(dirs['Custom16'])
+        if bashIni.has_option('Tool Options','sCustom17'):
+            dirs['Custom17'] = GPath(bashIni.get('Tool Options','sCustom17').strip())
+            if not dirs['Custom17'].isabs():
+                dirs['Custom17'] = dirs['app'].join(dirs['Custom17'])
+        if bashIni.has_option('Tool Options','sCustom18'):
+            dirs['Custom18'] = GPath(bashIni.get('Tool Options','sCustom18').strip())
+            if not dirs['Custom18'].isabs():
+                dirs['Custom18'] = dirs['app'].join(dirs['Custom18'])
         if bashIni.has_option('Tool Options','sPaintNET'):
             dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
             if not dirs['PaintNET'].isabs():
@@ -19941,10 +20033,38 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
     inisettings['custom4txt'] = 'Not Set in INI'
+    inisettings['custom5txt'] = 'Not Set in INI'
+    inisettings['custom6txt'] = 'Not Set in INI'
+    inisettings['custom7txt'] = 'Not Set in INI'
+    inisettings['custom8txt'] = 'Not Set in INI'
+    inisettings['custom9txt'] = 'Not Set in INI'
+    inisettings['custom10txt'] = 'Not Set in INI'
+    inisettings['custom11txt'] = 'Not Set in INI'
+    inisettings['custom12txt'] = 'Not Set in INI'
+    inisettings['custom13txt'] = 'Not Set in INI'
+    inisettings['custom14txt'] = 'Not Set in INI'
+    inisettings['custom15txt'] = 'Not Set in INI'
+    inisettings['custom16txt'] = 'Not Set in INI'
+    inisettings['custom17txt'] = 'Not Set in INI'
+    inisettings['custom18txt'] = 'Not Set in INI'
     inisettings['custom1opt'] = ''
     inisettings['custom2opt'] = ''
     inisettings['custom3opt'] = ''
     inisettings['custom4opt'] = ''
+    inisettings['custom5opt'] = ''
+    inisettings['custom6opt'] = ''
+    inisettings['custom7opt'] = ''
+    inisettings['custom8opt'] = ''
+    inisettings['custom9opt'] = ''
+    inisettings['custom10opt'] = ''
+    inisettings['custom11opt'] = ''
+    inisettings['custom12opt'] = ''
+    inisettings['custom13opt'] = ''
+    inisettings['custom14opt'] = ''
+    inisettings['custom15opt'] = ''
+    inisettings['custom16opt'] = ''
+    inisettings['custom17opt'] = ''
+    inisettings['custom18opt'] = ''
     inisettings['iconSize'] = '16'
     inisettings['AutoItemCheck'] = False
     #inisettings['show?toollaunchers'] = True
@@ -19984,6 +20104,34 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             inisettings['custom3txt'] = str(bashIni.get('Tool Options','sCustom3txt')).strip()
         if bashIni.has_option('Tool Options','sCustom4txt'):
             inisettings['custom4txt'] = str(bashIni.get('Tool Options','sCustom4txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom5txt'):
+            inisettings['custom5txt'] = str(bashIni.get('Tool Options','sCustom5txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom6txt'):
+            inisettings['custom6txt'] = str(bashIni.get('Tool Options','sCustom6txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom7txt'):
+            inisettings['custom7txt'] = str(bashIni.get('Tool Options','sCustom7txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom8txt'):
+            inisettings['custom8txt'] = str(bashIni.get('Tool Options','sCustom8txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom9txt'):
+            inisettings['custom9txt'] = str(bashIni.get('Tool Options','sCustom9txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom10txt'):
+            inisettings['custom10txt'] = str(bashIni.get('Tool Options','sCustom10txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom11txt'):
+            inisettings['custom11txt'] = str(bashIni.get('Tool Options','sCustom11txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom12txt'):
+            inisettings['custom12txt'] = str(bashIni.get('Tool Options','sCustom12txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom13txt'):
+            inisettings['custom13txt'] = str(bashIni.get('Tool Options','sCustom13txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom14txt'):
+            inisettings['custom14txt'] = str(bashIni.get('Tool Options','sCustom14txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom15txt'):
+            inisettings['custom15txt'] = str(bashIni.get('Tool Options','sCustom15txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom16txt'):
+            inisettings['custom16txt'] = str(bashIni.get('Tool Options','sCustom16txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom17txt'):
+            inisettings['custom17txt'] = str(bashIni.get('Tool Options','sCustom17txt')).strip()
+        if bashIni.has_option('Tool Options','sCustom18txt'):
+            inisettings['custom18txt'] = str(bashIni.get('Tool Options','sCustom18txt')).strip()
         if bashIni.has_option('Tool Options','sCustom1opt'):
             if not str(bashIni.get('Tool Options','sCustom1opt')).strip() == '-Option(s)':
                 inisettings['custom1opt'] = str(bashIni.get('Tool Options','sCustom1opt')).strip()
@@ -19996,7 +20144,48 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Tool Options','sCustom4opt'):
             if not str(bashIni.get('Tool Options','sCustom4opt')).strip() == '-Option(s)':
                 inisettings['custom4opt'] = str(bashIni.get('Tool Options','sCustom4opt')).strip()
-
+        if bashIni.has_option('Tool Options','sCustom5opt'):
+            if not str(bashIni.get('Tool Options','sCustom5opt')).strip() == '-Option(s)':
+                inisettings['custom5opt'] = str(bashIni.get('Tool Options','sCustom5opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom6opt'):
+            if not str(bashIni.get('Tool Options','sCustom6opt')).strip() == '-Option(s)':
+                inisettings['custom6opt'] = str(bashIni.get('Tool Options','sCustom6opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom7opt'):
+            if not str(bashIni.get('Tool Options','sCustom7opt')).strip() == '-Option(s)':
+                inisettings['custom7opt'] = str(bashIni.get('Tool Options','sCustom7opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom8opt'):
+            if not str(bashIni.get('Tool Options','sCustom1opt')).strip() == '-Option(s)':
+                inisettings['custom8opt'] = str(bashIni.get('Tool Options','sCustom8opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom9opt'):
+            if not str(bashIni.get('Tool Options','sCustom9opt')).strip() == '-Option(s)':
+                inisettings['custom9opt'] = str(bashIni.get('Tool Options','sCustom9opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom10opt'):
+            if not str(bashIni.get('Tool Options','sCustom10opt')).strip() == '-Option(s)':
+                inisettings['custom10opt'] = str(bashIni.get('Tool Options','sCustom10opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom11opt'):
+            if not str(bashIni.get('Tool Options','sCustom11opt')).strip() == '-Option(s)':
+                inisettings['custom11opt'] = str(bashIni.get('Tool Options','sCustom11opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom12opt'):
+            if not str(bashIni.get('Tool Options','sCustom1o2pt')).strip() == '-Option(s)':
+                inisettings['custom12opt'] = str(bashIni.get('Tool Options','sCustom12opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom13opt'):
+            if not str(bashIni.get('Tool Options','sCustom13opt')).strip() == '-Option(s)':
+                inisettings['custom13opt'] = str(bashIni.get('Tool Options','sCustom13opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom14opt'):
+            if not str(bashIni.get('Tool Options','sCustom14opt')).strip() == '-Option(s)':
+                inisettings['custom14opt'] = str(bashIni.get('Tool Options','sCustom14opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom15opt'):
+            if not str(bashIni.get('Tool Options','sCustom15opt')).strip() == '-Option(s)':
+                inisettings['custom15opt'] = str(bashIni.get('Tool Options','sCustom15opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom16opt'):
+            if not str(bashIni.get('Tool Options','sCustom16opt')).strip() == '-Option(s)':
+                inisettings['custom16opt'] = str(bashIni.get('Tool Options','sCustom16opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom17opt'):
+            if not str(bashIni.get('Tool Options','sCustom17opt')).strip() == '-Option(s)':
+                inisettings['custom17opt'] = str(bashIni.get('Tool Options','sCustom17opt')).strip()
+        if bashIni.has_option('Tool Options','sCustom18opt'):
+            if not str(bashIni.get('Tool Options','sCustom18opt')).strip() == '-Option(s)':
+                inisettings['custom18opt'] = str(bashIni.get('Tool Options','sCustom18opt')).strip()
     if inisettings['keepLog'] == 0:
         if inisettings['logFile'].exists():
             os.remove(inisettings['logFile'].s)

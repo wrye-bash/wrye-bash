@@ -239,7 +239,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Tes4View
   * Tes4Edit
   * Tes4Trans
-  * BOSS
+  * [[BOSS
   * Tes4LodGen
   * Tes4Files
   * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]]
@@ -248,14 +248,15 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]]
   * [[http://www.blender.org | Blender]]
   * GIMP
-  * GMax
+  * [[http://www.turbosquid.com | GMax]]
   * Maya
   * Max
   * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]]
   * [[http://www.wings3d.com/ | Wings3D]]
   * [[http://www.adobe.com/ | Photoshop]]
-  * Artweaver
+  * [[http://www.artweaver.de/ |Artweaver]]
   * [[http://www.artofillusion.org/ | Art of Illusion]]
+  * [[http://www.gimpshop.com/ | Gimp Shop]]
   * Audacity
   * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]]
   * DDSConverter
@@ -1948,7 +1949,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow Java apps (.jar) to be used
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
-    * 7 new launchers added (thanks to Metallicow for images and paths and suggestions :))
+    * 9 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
+    * number of custom launchers allowed to be defined in INI increased to 18! (also icons included which display custom <num> in nice script (contributed by Metallicow))
 * Taglist fix (reported by Surazal)
 * Taglist updated to Masterlist version 730
 * Installer fix (reported by half of everyone on bethsoft)
