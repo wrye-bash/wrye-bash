@@ -10633,6 +10633,11 @@ def InitStatusBar():
                 bosh.dirs['BlenderPath'],
                 Image(r'images/blender'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Blender")))
+        BashStatusBar.buttons.append( #Dogwaffle
+            App_Button(
+                bosh.dirs['Dogwaffle'],
+                Image(r'images/Dogwaffle'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Dogwaffle")))
         BashStatusBar.buttons.append( #GMax
             App_Button(
                 bosh.dirs['GmaxPath'],
@@ -10690,6 +10695,11 @@ def InitStatusBar():
                 bosh.dirs['GimpShop'],
                 Image(r'images/GIMPShop'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch GIMP Shop")))
+        BashStatusBar.buttons.append( #Inkscape
+            App_Button(
+                bosh.dirs['Inkscape'],
+                Image(r'images/Inkscape'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Inkscape")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.dirs['PaintNET'],
@@ -10700,6 +10710,16 @@ def InitStatusBar():
                 bosh.dirs['Photoshop'],
                 Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Photoshop")))
+        BashStatusBar.buttons.append( #Pixel Studio Pro
+            App_Button(
+                bosh.dirs['PixelStudio'],
+                Image(r'images/PixelStudioPro'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Pixel Studio Pro")))
+        BashStatusBar.buttons.append( #Twisted Brush
+            App_Button(
+                bosh.dirs['TwistedBrush'],
+                Image(r'images/TwistedBrush'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch TwistedBrush")))
     if bosh.inisettings['showaudiotoollaunchers']:
         BashStatusBar.buttons.append( #Audacity
             App_Button(

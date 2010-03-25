@@ -19762,10 +19762,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     dirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
     dirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
     dirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')    
+    dirs['PixelStudio'] = GPath(r'C:\Program Files\Pixel\Pixel.exe')
+    dirs['TwistedBrush'] = GPath(r'C:\Program Files\Pixarra\TwistedBrush Open Studio\tbrush_open_studio.exe')
+    dirs['Dogwaffle'] = GPath(r'C:\Program Files\project dogwaffle\dogwaffle.exe')
+    dirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')    
     dirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
     dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
@@ -19898,22 +19898,22 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             dirs['GimpShop'] = GPath(bashIni.get('Tool Options','sGimpShop').strip())
             if not dirs['GimpShop'].isabs():
                 dirs['GimpShop'] = dirs['app'].join(dirs['GimpShop'])
-        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
-            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
-            if not dirs['ABCAmberAudioConverter'].isabs():
-                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
-        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
-            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
-            if not dirs['ABCAmberAudioConverter'].isabs():
-                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
-        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
-            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
-            if not dirs['ABCAmberAudioConverter'].isabs():
-                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
-        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
-            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
-            if not dirs['ABCAmberAudioConverter'].isabs():
-                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
+        if bashIni.has_option('Tool Options','sPixelStudio'):
+            dirs['PixelStudio'] = GPath(bashIni.get('Tool Options','sPixelStudio').strip())
+            if not dirs['PixelStudio'].isabs():
+                dirs['PixelStudio'] = dirs['app'].join(dirs['PixelStudio'])
+        if bashIni.has_option('Tool Options','sTwistedBrush'):
+            dirs['TwistedBrush'] = GPath(bashIni.get('Tool Options','sTwistedBrush').strip())
+            if not dirs['TwistedBrush'].isabs():
+                dirs['TwistedBrush'] = dirs['app'].join(dirs['TwistedBrush'])
+        if bashIni.has_option('Tool Options','sDogwaffle'):
+            dirs['Dogwaffle'] = GPath(bashIni.get('Tool Options','sDogwaffle').strip())
+            if not dirs['Dogwaffle'].isabs():
+                dirs['Dogwaffle'] = dirs['app'].join(dirs['Dogwaffle'])
+        if bashIni.has_option('Tool Options','sInkscape'):
+            dirs['Inkscape'] = GPath(bashIni.get('Tool Options','sInkscape').strip())
+            if not dirs['Inkscape'].isabs():
+                dirs['Inkscape'] = dirs['app'].join(dirs['Inkscape'])
         if bashIni.has_option('Tool Options','sCustom1'):
             dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
             if not dirs['Custom1'].isabs():
