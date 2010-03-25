@@ -247,23 +247,27 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]]
   * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]]
   * [[http://www.blender.org | Blender]]
-  * GIMP
+  * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]]
   * [[http://www.turbosquid.com | GMax]]
   * Maya
   * Max
   * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]]
   * [[http://www.wings3d.com/ | Wings3D]]
-  * [[http://www.adobe.com/ | Photoshop]]
   * [[http://www.artweaver.de/ |Artweaver]]
   * [[http://www.artofillusion.org/ | Art of Illusion]]
+  * GIMP
   * [[http://www.gimpshop.com/ | Gimp Shop]]
+  * [[http://www.inkscape.org/ | Inkscape]]
+  * [[http://www.adobe.com/ | Photoshop]]
+  * [[http://pixelstudiopro.com/ | Pixel Studio Pro]]
+  * [[http://www.pixarra.com/ | Twisted Brush]]
   * Audacity
   * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]]
   * DDSConverter
   * Fraps
   * Notepad++
   * Paint.NET
-  * 4 Custom buttons
+  * 18 Custom buttons
     * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
     * You can also set the arguments for any type of Custom button - see ini for full instructions.
 
@@ -1949,7 +1953,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow Java apps (.jar) to be used
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
-    * 9 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
+    * 13 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
     * number of custom launchers allowed to be defined in INI increased to 18! (also icons included which display custom <num> in nice script (contributed by Metallicow))
 * Taglist fix (reported by Surazal)
 * Taglist updated to Masterlist version 730
