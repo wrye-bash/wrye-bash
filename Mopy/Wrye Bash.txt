@@ -228,45 +228,54 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
 * __Applications:__
   * Oblivion (Main Oblivion executable, not the launcher.)
-  * Oblivion Mod Manager
-  * Oblivion Book Creator
-  * TES Construction Set]]
-  * Insanity Sorrow's Oblivion Launcher]]
-  * Insanity Sorrow's Readme Generator
-  * Insanity Sorrow's Random Name Generator
-  * Insanity Sorrow's Random NPC Generator
-  * Tes4Gecko
-  * Tes4View
-  * Tes4Edit
-  * Tes4Trans
-  * [[BOSS
-  * Tes4LodGen
-  * Tes4Files
+  * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile=258 | Oblivion Book Creator]]
+  * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]]
+  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]]
+  * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]]
   * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]]
   * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]]
   * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]]
   * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]]
+  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]]
   * [[http://www.blender.org | Blender]]
   * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]]
-  * [[http://www.turbosquid.com | GMax]]
-  * Maya
-  * Max
+  * [[http://www.turbosquid.com/gmax | GMax]]
+  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13577897 | Maya]]
+  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13567410 | Max]]
   * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]]
   * [[http://www.wings3d.com/ | Wings3D]]
+  * [[http://icofx.ro/anifx/index.html | AniFX]]
   * [[http://www.artweaver.de/ |Artweaver]]
   * [[http://www.artofillusion.org/ | Art of Illusion]]
-  * GIMP
+  * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]]
+  * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]]
+  * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]]
+  * [[http://www.gimp.org/downloads/ | GIMP]]
   * [[http://www.gimpshop.com/ | Gimp Shop]]
+  * [[http://icofx.ro/index.html | IcoFX]]
   * [[http://www.inkscape.org/ | Inkscape]]
+  * [[http://www.irfanview.com/ | Irfan View]]
+  * [[http://www.getpaint.net/download.html | Paint.NET]]
   * [[http://www.adobe.com/ | Photoshop]]
   * [[http://pixelstudiopro.com/ | Pixel Studio Pro]]
   * [[http://www.pixarra.com/ | Twisted Brush]]
-  * Audacity
+  * [[http://audacity.sourceforge.net/ | Audacity]]
   * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]]
-  * DDSConverter
-  * Fraps
-  * Notepad++
-  * Paint.NET
+  * [[http://www.fraps.com/download.php | Fraps]]
+  * [[http://www.mediamonkey.com/ | Media Monkey]]
+  * [[http://notepad-plus.sourceforge.net/ | Notepad++]]
+  * [[http://winmerge.org/ | WinMerge]]
+  * [[http://www.logitech.com/index.cfm/434/285&cl=za | Logitech G11 Keyboard Profiler]]
   * 18 Custom buttons
     * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
     * You can also set the arguments for any type of Custom button - see ini for full instructions.
@@ -1941,7 +1950,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 280 [12/12/2012] [haama,PacificMorrowind,Metallicow]
+=== 280 [25/03/2012] [haama,PacificMorrowind,Metallicow]
 * Ini changes
   * Can set options (-o, -p, -l, -u) from ini
   * Tool Button Changes
@@ -1953,7 +1962,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Allow Java apps (.jar) to be used
       * Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
       * Allow Option Switches to be used
-    * 13 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
+    * 23 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
     * number of custom launchers allowed to be defined in INI increased to 18! (also icons included which display custom <num> in nice script (contributed by Metallicow))
 * Taglist fix (reported by Surazal)
 * Taglist updated to Masterlist version 730
