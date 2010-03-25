@@ -95,6 +95,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
 #--Settings
 dirs = {} #--app, user, mods, saves, userApp
+tooldirs = {}
 inisettings = {}
 inisettings['AutoItemCheck'] = False
 defaultExt = '.7z'
@@ -19733,272 +19734,84 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     
     #-- Other tool directories
     #   First to default path
-    dirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
-    dirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
-    dirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
-    dirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
-    dirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
-    dirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
-    dirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
-    dirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
-    dirs['Photoshop'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
-    dirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
-    dirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
-    dirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
-    dirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
-    dirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
-    dirs['NPP'] = GPath(r'C:\Program Files\Notepad++\notepad++.exe')
-    dirs['Fraps'] = GPath(r'C:\Fraps\Fraps.exe')
-    dirs['Audacity'] = GPath(r'C:\Audacity\Audacity.exe')
-    dirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
-    dirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
-    dirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
-    dirs['Milkshape3DPath'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
-    dirs['Wings3DPath'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
-    dirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
-    dirs['MAP'] = dirs['app'].join(r'Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe')
-    dirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
-    dirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
-    dirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
-    dirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
-    dirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
-    dirs['PixelStudio'] = GPath(r'C:\Program Files\Pixel\Pixel.exe')
-    dirs['TwistedBrush'] = GPath(r'C:\Program Files\Pixarra\TwistedBrush Open Studio\tbrush_open_studio.exe')
-    dirs['Dogwaffle'] = GPath(r'C:\Program Files\project dogwaffle\dogwaffle.exe')
-    dirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')    
-    dirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom4'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom5'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom6'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom7'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom8'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom9'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom10'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom11'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom12'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom13'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom14'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom15'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom16'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom17'] = GPath(r'C:\not\a\valid\path.exe')
-    dirs['Custom18'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
+    tooldirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
+    tooldirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
+    tooldirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
+    tooldirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
+    tooldirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
+    tooldirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
+    tooldirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
+    tooldirs['Photoshop'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
+    tooldirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
+    tooldirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
+    tooldirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
+    tooldirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
+    tooldirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
+    tooldirs['NPP'] = GPath(r'C:\Program Files\Notepad++\notepad++.exe')
+    tooldirs['Fraps'] = GPath(r'C:\Fraps\Fraps.exe')
+    tooldirs['Audacity'] = GPath(r'C:\Audacity\Audacity.exe')
+    tooldirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
+    tooldirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
+    tooldirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
+    tooldirs['Milkshape3DPath'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
+    tooldirs['Wings3DPath'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
+    tooldirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
+    tooldirs['MAP'] = dirs['app'].join(r'Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe')
+    tooldirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
+    tooldirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
+    tooldirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
+    tooldirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
+    tooldirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
+    tooldirs['PixelStudio'] = GPath(r'C:\Program Files\Pixel\Pixel.exe')
+    tooldirs['TwistedBrush'] = GPath(r'C:\Program Files\Pixarra\TwistedBrush Open Studio\tbrush_open_studio.exe')
+    tooldirs['Dogwaffle'] = GPath(r'C:\Program Files\project dogwaffle\dogwaffle.exe')
+    tooldirs['GeneticaViewer'] = GPath(r'C:\Program Files\Spiral Graphics\Genetica Viewer 3\Genetica Viewer 3.exe')
+    tooldirs['LogitechKeyboard'] = GPath(r'C:\Program Files\Logitech\GamePanel Software\G-series Software\LGDCore.exe')
+    tooldirs['AutoCad'] = GPath(r'C:\Program Files\Autodesk Architectural Desktop 3\acad.exe')
+    tooldirs['Genetica'] = GPath(r'CC:\Program Files\Spiral Graphics\Genetica 3.5\Genetica.exe')
+    tooldirs['IrfanView'] = GPath(r'C:\Program Files\IrfanView\i_view32.exe')
+    tooldirs['Steam'] = GPath(r'C:\Program Files\Steam\steam.exe')
+    tooldirs['IcoFX'] = GPath(r'C:\Program Files\AniFX 1.0\IcoFX.exe')
+    tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
+    tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
+    tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
+    tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')    
+    tooldirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom4'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom5'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom6'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom7'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom8'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom9'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom10'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom11'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom12'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom13'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom14'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom15'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom16'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom17'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Custom18'] = GPath(r'C:\not\a\valid\path.exe')
     # Then if bash.ini exists set from the settings in there:
     if bashIni:
-        if bashIni.has_option('Tool Options','sTes4FilesPath'):
-            dirs['TES4FilesPath'] = GPath(bashIni.get('Tool Options','sTes4FilesPath').strip())
-            if not dirs['TES4FilesPath'].isabs():
-                dirs['TES4FilesPath'] = dirs['app'].join(dirs['TES4FilesPath'])
-        if bashIni.has_option('Tool Options','sTes4EditPath'):
-            dirs['TES4EditPath'] = GPath(bashIni.get('Tool Options','sTes4EditPath').strip())
-            if not dirs['TES4EditPath'].isabs():
-                dirs['TES4EditPath'] = dirs['app'].join(dirs['TES4EditPath'])
-        if bashIni.has_option('Tool Options','sTes4LodGenPath'):
-            dirs['TES4LodGenPath'] = GPath(bashIni.get('Tool Options','sTes4LodGenPath').strip())
-            if not dirs['TES4LodGenPath'].isabs():
-                dirs['TES4LodGenPath'] = dirs['app'].join(dirs['TES4LodGenPath'])
-        if bashIni.has_option('Tool Options','sNifskopePath'):
-            dirs['NifskopePath'] = GPath(bashIni.get('Tool Options','sNifskopePath').strip())
-            if not dirs['NifskopePath'].isabs():
-                dirs['NifskopePath'] = dirs['app'].join(dirs['NifskopePath'])
-        if bashIni.has_option('Tool Options','sBlenderPath'):
-            dirs['BlenderPath'] = GPath(bashIni.get('Tool Options','sBlenderPath').strip())
-            if not dirs['BlenderPath'].isabs():
-                dirs['BlenderPath'] = dirs['app'].join(dirs['BlenderPath'])
-        if bashIni.has_option('Tool Options','sGmaxPath'):
-            dirs['GmaxPath'] = GPath(bashIni.get('Tool Options','sGmaxPath').strip())
-            if not dirs['GmaxPath'].isabs():
-                dirs['GmaxPath'] = dirs['app'].join(dirs['GmaxPath'])
-        if bashIni.has_option('Tool Options','sMaxPath'):
-            dirs['MaxPath'] = GPath(bashIni.get('Tool Options','sMaxPath').strip())
-            if not dirs['MaxPath'].isabs():
-                dirs['MaxPath'] = dirs['app'].join(dirs['MaxPath'])
-        if bashIni.has_option('Tool Options','sMayaPath'):
-            dirs['MayaPath'] = GPath(bashIni.get('Tool Options','sMayaPath').strip())
-            if not dirs['MayaPath'].isabs():
-                dirs['MayaPath'] = dirs['app'].join(dirs['MayaPath'])
-        if bashIni.has_option('Tool Options','sPhotoshopPath'):
-            dirs['Photoshop'] = GPath(bashIni.get('Tool Options','sPhotoshopPath').strip())
-            if not dirs['Photoshop'].isabs():
-                dirs['Photoshop'] = dirs['app'].join(dirs['Photoshop'])
-        if bashIni.has_option('Tool Options','sGIMP'):
-            dirs['GIMP'] = GPath(bashIni.get('Tool Options','sGIMP').strip())
-            if not dirs['GIMP'].isabs():
-                dirs['GIMP'] = dirs['app'].join(dirs['GIMP'])
-        if bashIni.has_option('Tool Options','sISOBL'):
-            dirs['ISOBL'] = GPath(bashIni.get('Tool Options','sISOBL').strip())
-            if not dirs['ISOBL'].isabs():
-                dirs['ISOBL'] = dirs['app'].join(dirs['ISOBL'])
-        if bashIni.has_option('Tool Options','sISRMG'):
-            dirs['ISRMG'] = GPath(bashIni.get('Tool Options','sISRMG').strip())
-            if not dirs['ISRMG'].isabs():
-                dirs['ISRMG'] = dirs['app'].join(dirs['ISRMG'])
-        if bashIni.has_option('Tool Options','sISRNG'):
-            dirs['ISRNG'] = GPath(bashIni.get('Tool Options','sISRNG').strip())
-            if not dirs['ISRNG'].isabs():
-                dirs['ISRNG'] = dirs['app'].join(dirs['ISRNG'])
-        if bashIni.has_option('Tool Options','sISRNPCG'):
-            dirs['ISRNPCG'] = GPath(bashIni.get('Tool Options','sISRNPCG').strip())
-            if not dirs['ISRNPCG'].isabs():
-                dirs['ISRNPCG'] = dirs['app'].join(dirs['ISRNPCG'])
-        if bashIni.has_option('Tool Options','sNPP'):
-            dirs['NPP'] = GPath(bashIni.get('Tool Options','sNPP').strip())
-            if not dirs['NPP'].isabs():
-                dirs['NPP'] = dirs['app'].join(dirs['NPP'])
-        if bashIni.has_option('Tool Options','sFraps'):
-            dirs['Fraps'] = GPath(bashIni.get('Tool Options','sFraps').strip())
-            if not dirs['Fraps'].isabs():
-                dirs['Fraps'] = dirs['app'].join(dirs['Fraps'])
-        if bashIni.has_option('Tool Options','sAudacity'):
-            dirs['Audacity'] = GPath(bashIni.get('Tool Options','sAudacity').strip())
-            if not dirs['Audacity'].isabs():
-                dirs['Audacity'] = dirs['app'].join(dirs['Audacity'])
-        if bashIni.has_option('Tool Options','sArtweaver'):
-            dirs['Artweaver'] = GPath(bashIni.get('Tool Options','sArtweaver').strip())
-            if not dirs['Artweaver'].isabs():
-                dirs['Artweaver'] = dirs['app'].join(dirs['Artweaver'])
-        if bashIni.has_option('Tool Options','sDDSConverter'):
-            dirs['DDSConverter'] = GPath(bashIni.get('Tool Options','sDDSConverter').strip())
-            if not dirs['DDSConverter'].isabs():
-                dirs['DDSConverter'] = dirs['app'].join(dirs['DDSConverter'])
-        if bashIni.has_option('Tool Options','sWings3D'):
-            dirs['Wings3DPath'] = GPath(bashIni.get('Tool Options','sWings3D').strip())
-            if not dirs['Wings3DPath'].isabs():
-                dirs['Wings3DPath'] = dirs['app'].join(dirs['Wings3DPath'])
-        if bashIni.has_option('Tool Options','sMilkshape3D'):
-            dirs['Milkshape3DPath'] = GPath(bashIni.get('Tool Options','sMilkshape3D').strip())
-            if not dirs['Milkshape3DPath'].isabs():
-                dirs['Milkshape3DPath'] = dirs['app'].join(dirs['Milkshape3DPath'])
-        if bashIni.has_option('Tool Options','sBSACMD'):
-            dirs['BSACMD'] = GPath(bashIni.get('Tool Options','sBSACMD').strip())
-            if not dirs['BSACMD'].isabs():
-                dirs['BSACMD'] = dirs['app'].join(dirs['BSACMD'])
-        if bashIni.has_option('Tool Options','sMAP'):
-            dirs['MAP'] = GPath(bashIni.get('Tool Options','sMAP').strip())
-            if not dirs['MAP'].isabs():
-                dirs['MAP'] = dirs['app'].join(dirs['MAP'])
-        if bashIni.has_option('Tool Options','sOBMLG'):
-            dirs['OBMLG'] = GPath(bashIni.get('Tool Options','sOBMLG').strip())
-            if not dirs['OBMLG'].isabs():
-                dirs['OBMLG'] = dirs['app'].join(dirs['OBMLG'])
-        if bashIni.has_option('Tool Options','sOBFEL'):
-            dirs['OBFEL'] = GPath(bashIni.get('Tool Options','sOBFEL').strip())
-            if not dirs['OBFEL'].isabs():
-                dirs['OBFEL'] = dirs['app'].join(dirs['OBFEL'])
-        if bashIni.has_option('Tool Options','sArtOfIllusion'):
-            dirs['ArtOfIllusion'] = GPath(bashIni.get('Tool Options','sArtOfIllusion').strip())
-            if not dirs['ArtOfIllusion'].isabs():
-                dirs['ArtOfIllusion'] = dirs['app'].join(dirs['ArtOfIllusion'])
-        if bashIni.has_option('Tool Options','sABCAmberAudioConverter'):
-            dirs['ABCAmberAudioConverter'] = GPath(bashIni.get('Tool Options','sABCAmberAudioConverter').strip())
-            if not dirs['ABCAmberAudioConverter'].isabs():
-                dirs['ABCAmberAudioConverter'] = dirs['app'].join(dirs['ABCAmberAudioConverter'])
-        if bashIni.has_option('Tool Options','sGimpShop'):
-            dirs['GimpShop'] = GPath(bashIni.get('Tool Options','sGimpShop').strip())
-            if not dirs['GimpShop'].isabs():
-                dirs['GimpShop'] = dirs['app'].join(dirs['GimpShop'])
-        if bashIni.has_option('Tool Options','sPixelStudio'):
-            dirs['PixelStudio'] = GPath(bashIni.get('Tool Options','sPixelStudio').strip())
-            if not dirs['PixelStudio'].isabs():
-                dirs['PixelStudio'] = dirs['app'].join(dirs['PixelStudio'])
-        if bashIni.has_option('Tool Options','sTwistedBrush'):
-            dirs['TwistedBrush'] = GPath(bashIni.get('Tool Options','sTwistedBrush').strip())
-            if not dirs['TwistedBrush'].isabs():
-                dirs['TwistedBrush'] = dirs['app'].join(dirs['TwistedBrush'])
-        if bashIni.has_option('Tool Options','sDogwaffle'):
-            dirs['Dogwaffle'] = GPath(bashIni.get('Tool Options','sDogwaffle').strip())
-            if not dirs['Dogwaffle'].isabs():
-                dirs['Dogwaffle'] = dirs['app'].join(dirs['Dogwaffle'])
-        if bashIni.has_option('Tool Options','sInkscape'):
-            dirs['Inkscape'] = GPath(bashIni.get('Tool Options','sInkscape').strip())
-            if not dirs['Inkscape'].isabs():
-                dirs['Inkscape'] = dirs['app'].join(dirs['Inkscape'])
-        if bashIni.has_option('Tool Options','sCustom1'):
-            dirs['Custom1'] = GPath(bashIni.get('Tool Options','sCustom1').strip())
-            if not dirs['Custom1'].isabs():
-                dirs['Custom1'] = dirs['app'].join(dirs['Custom1'])
-        if bashIni.has_option('Tool Options','sCustom2'):
-            dirs['Custom2'] = GPath(bashIni.get('Tool Options','sCustom2').strip())
-            if not dirs['Custom2'].isabs():
-                dirs['Custom2'] = dirs['app'].join(dirs['Custom2'])
-        if bashIni.has_option('Tool Options','sCustom3'):
-            dirs['Custom3'] = GPath(bashIni.get('Tool Options','sCustom3').strip())
-            if not dirs['Custom3'].isabs():
-                dirs['Custom3'] = dirs['app'].join(dirs['Custom3'])
-        if bashIni.has_option('Tool Options','sCustom4'):
-            dirs['Custom4'] = GPath(bashIni.get('Tool Options','sCustom4').strip())
-            if not dirs['Custom4'].isabs():
-                dirs['Custom4'] = dirs['app'].join(dirs['Custom4'])
-        if bashIni.has_option('Tool Options','sCustom5'):
-            dirs['Custom5'] = GPath(bashIni.get('Tool Options','sCustom5').strip())
-            if not dirs['Custom5'].isabs():
-                dirs['Custom5'] = dirs['app'].join(dirs['Custom5'])
-        if bashIni.has_option('Tool Options','sCustom6'):
-            dirs['Custom6'] = GPath(bashIni.get('Tool Options','sCustom6').strip())
-            if not dirs['Custom6'].isabs():
-                dirs['Custom6'] = dirs['app'].join(dirs['Custom6'])
-        if bashIni.has_option('Tool Options','sCustom7'):
-            dirs['Custom7'] = GPath(bashIni.get('Tool Options','sCustom7').strip())
-            if not dirs['Custom7'].isabs():
-                dirs['Custom7'] = dirs['app'].join(dirs['Custom7'])
-        if bashIni.has_option('Tool Options','sCustom8'):
-            dirs['Custom8'] = GPath(bashIni.get('Tool Options','sCustom8').strip())
-            if not dirs['Custom8'].isabs():
-                dirs['Custom8'] = dirs['app'].join(dirs['Custom8'])
-        if bashIni.has_option('Tool Options','sCustom9'):
-            dirs['Custom9'] = GPath(bashIni.get('Tool Options','sCustom9').strip())
-            if not dirs['Custom9'].isabs():
-                dirs['Custom9'] = dirs['app'].join(dirs['Custom9'])
-        if bashIni.has_option('Tool Options','sCustom10'):
-            dirs['Custom10'] = GPath(bashIni.get('Tool Options','sCustom10').strip())
-            if not dirs['Custom10'].isabs():
-                dirs['Custom10'] = dirs['app'].join(dirs['Custom10'])
-        if bashIni.has_option('Tool Options','sCustom11'):
-            dirs['Custom11'] = GPath(bashIni.get('Tool Options','sCustom11').strip())
-            if not dirs['Custom11'].isabs():
-                dirs['Custom11'] = dirs['app'].join(dirs['Custom11'])
-        if bashIni.has_option('Tool Options','sCustom12'):
-            dirs['Custom12'] = GPath(bashIni.get('Tool Options','sCustom12').strip())
-            if not dirs['Custom12'].isabs():
-                dirs['Custom12'] = dirs['app'].join(dirs['Custom2'])
-        if bashIni.has_option('Tool Options','sCustom13'):
-            dirs['Custom13'] = GPath(bashIni.get('Tool Options','sCustom13').strip())
-            if not dirs['Custom13'].isabs():
-                dirs['Custom13'] = dirs['app'].join(dirs['Custom13'])
-        if bashIni.has_option('Tool Options','sCustom14'):
-            dirs['Custom14'] = GPath(bashIni.get('Tool Options','sCustom14').strip())
-            if not dirs['Custom14'].isabs():
-                dirs['Custom14'] = dirs['app'].join(dirs['Custom14'])
-        if bashIni.has_option('Tool Options','sCustom15'):
-            dirs['Custom15'] = GPath(bashIni.get('Tool Options','sCustom15').strip())
-            if not dirs['Custom15'].isabs():
-                dirs['Custom15'] = dirs['app'].join(dirs['Custom15'])
-        if bashIni.has_option('Tool Options','sCustom16'):
-            dirs['Custom16'] = GPath(bashIni.get('Tool Options','sCustom16').strip())
-            if not dirs['Custom16'].isabs():
-                dirs['Custom16'] = dirs['app'].join(dirs['Custom16'])
-        if bashIni.has_option('Tool Options','sCustom17'):
-            dirs['Custom17'] = GPath(bashIni.get('Tool Options','sCustom17').strip())
-            if not dirs['Custom17'].isabs():
-                dirs['Custom17'] = dirs['app'].join(dirs['Custom17'])
-        if bashIni.has_option('Tool Options','sCustom18'):
-            dirs['Custom18'] = GPath(bashIni.get('Tool Options','sCustom18').strip())
-            if not dirs['Custom18'].isabs():
-                dirs['Custom18'] = dirs['app'].join(dirs['Custom18'])
-        if bashIni.has_option('Tool Options','sPaintNET'):
-            dirs['PaintNET'] = GPath(bashIni.get('Tool Options','sPaintNET').strip())
-            if not dirs['PaintNET'].isabs():
-                dirs['PaintNET'] = dirs['app'].join(dirs['PaintNET'])
+        for dir in tooldirs:
+            key = 's' + dir
+            if bashIni.has_option('Tool Options', key):
+                tooldirs[dir] = GPath(bashIni.get('Tool Options', key).strip())
+                if not tooldirs[dir].isabs():
+                    tooldirs[dir] = dirs['app'].join(tooldirs[dir])
     # Tes4View/Trans check - might be separate .exe (for later versions of Tes4Edit)
-    if ((dirs['TES4EditPath'].head).join('Tes4View.exe')).exists:
-        dirs['TES4ViewPath'] = (dirs['TES4EditPath'].head).join('Tes4View.exe')
+    if ((tooldirs['TES4EditPath'].head).join('Tes4View.exe')).exists:
+        tooldirs['TES4ViewPath'] = (tooldirs['TES4EditPath'].head).join('Tes4View.exe')
     else:
-        dirs['TES4ViewPath'] = dirs['TES4EditPath']
-    if ((dirs['TES4EditPath'].head).join('Tes4Trans.exe')).exists:
-        dirs['TES4TransPath'] = (dirs['TES4EditPath'].head).join('Tes4Trans.exe')
+        tooldirs['TES4ViewPath'] = tooldirs['TES4EditPath']
+    if ((tooldirs['TES4EditPath'].head).join('Tes4Trans.exe')).exists:
+        tooldirs['TES4TransPath'] = (tooldirs['TES4EditPath'].head).join('Tes4Trans.exe')
     else:
-        dirs['TES4TransPath'] = dirs['TES4EditPath']
+        tooldirs['TES4TransPath'] = tooldirs['TES4EditPath']
     
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
