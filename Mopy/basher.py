@@ -11012,19 +11012,6 @@ def InitStatusBar():
                 bosh.tooldirs['Custom18'],
                 Image(r'images/custom18'+bosh.inisettings['iconSize']+'.png'),
                 (bosh.inisettings['custom18txt'])))
-    for dir in bosh.tooldirs:
-        if dir.startswith('Custom'):
-            BashStatusBar.buttons.append(
-                App_Button(
-                    bosh.tooldirs[dir],
-                    Image(r'images/'+dir.lower()+bosh.inisettings['iconSize']+'.png'),
-                    ('Launch '+bosh.inisettings[dir.lower()+'txt'])))
-        else:
-            BashStatusBar.buttons.append(
-                App_Button(
-                    bosh.tooldirs[dir],
-                    Image(r'images/'+dir.lower()+bosh.inisettings['iconSize']+'.png'),
-                    ('Launch '+dir)))
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
