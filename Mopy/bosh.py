@@ -19979,7 +19979,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             if not str(bashIni.get('Tool Options','sCustom11opt')).strip() == '-Option(s)':
                 inisettings['custom11opt'] = str(bashIni.get('Tool Options','sCustom11opt')).strip()
         if bashIni.has_option('Tool Options','sCustom12opt'):
-            if not str(bashIni.get('Tool Options','sCustom1o2pt')).strip() == '-Option(s)':
+            if not str(bashIni.get('Tool Options','sCustom12opt')).strip() == '-Option(s)':
                 inisettings['custom12opt'] = str(bashIni.get('Tool Options','sCustom12opt')).strip()
         if bashIni.has_option('Tool Options','sCustom13opt'):
             if not str(bashIni.get('Tool Options','sCustom13opt')).strip() == '-Option(s)':
