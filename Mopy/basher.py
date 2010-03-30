@@ -6099,6 +6099,29 @@ class Installer_ListPackages(InstallerLink):
             wx.TheClipboard.Close()
         balt.showLog(self.gTank,text,_("BAIN Packages"),asDialog=False,fixedFont=False,icons=bashBlue)
 #------------------------------------------------------------------------------
+class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
+    """Copies folder structure of installer to clipboard."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        self.title = _("List Structure...")
+        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menu.AppendItem(menuItem)
+        if not self.isSingle or isinstance(self.data[self.selected[0]], bosh.InstallerMarker):
+            menuItem.Enable(False)
+        else:
+            menuItem.Enable(True)
+            
+    def Execute(self,event):
+        archive = self.selected[0]
+        installer = self.data[archive]
+        text = installer.listSource(archive)
+        
+        #--Get masters list
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.gTank,text,_("Package Structure"),asDialog=False,fixedFont=False,icons=bashBlue)    
+#------------------------------------------------------------------------------
 class Installer_Move(InstallerLink):
     """Moves selected installers to desired spot."""
     def AppendToMenu(self,menu,window,data):
@@ -11115,6 +11138,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(InstallerProject_ReleasePack())
     InstallersPanel.itemMenu.append(InstallerProject_Sync())
     InstallersPanel.itemMenu.append(InstallerProject_OmodConfig())
+    InstallersPanel.itemMenu.append(Installer_ListStructure())
 
 def InitReplacerLinks():
     """Initialize replacer tab menus."""
