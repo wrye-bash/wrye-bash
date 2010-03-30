@@ -9903,6 +9903,10 @@ class Installer(object):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
+    def listSource(self,archive):
+        """Lists the folder structure of the installer."""
+        raise AbstractError
+
 #------------------------------------------------------------------------------
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
@@ -10427,6 +10431,51 @@ class InstallerArchive(Installer):
         self.clearTemp()
         return count
 
+    def listSource(self, archive):
+        """Returns package structure as text."""
+        #--Setup
+        log = bolt.LogFile(cStringIO.StringIO())
+        log.out.write('[codebox]')
+        log.setHeader(_('Package Structure:'))
+
+        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
+        file = ''
+        isdir = False
+        apath = dirs['installers'].join(archive)
+        ins = os.popen('7z.exe l -slt "%s"' % apath.s,'rt')
+        text = []
+        for line in ins:
+            maList = reList.match(line)
+            if maList:
+                key,value = maList.groups()
+                if key == 'Path':
+                    #--Should be able to twist 7z to export names in UTF-8, but can't (at
+                    #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead, 
+                    #  assume file is encoded in cp437 and that we want to decode to cp1252.
+                    #--Hopefully this will mostly resolve problem with german umlauts, etc.
+                    #  It won't solve problems with non-european characters though.
+                    try: file = value.decode('cp437').encode('cp1252')
+                    except: pass
+                elif key == 'Attributes':
+                    isdir = (value[0] == 'D')
+                    text.append(('%s' % (file), isdir))
+                elif key == 'Method':
+                    file = ''
+                    isdir = False
+        result = ins.close()
+        if result:
+            raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
+        text.sort()
+        
+        for line in text:
+            dir = line[0]
+            isdir = line[1]
+            if isdir:
+                log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
+            else:
+                log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
+        log('[/codebox]')
+        return bolt.winNewLines(log.out.getvalue())   
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
@@ -10600,6 +10649,27 @@ class InstallerProject(Installer):
         out.close()
         configPath.untemp()
 
+    def listSource(self,archive):
+        """Returns package structure as text."""
+        def walkPath(dir, depth):
+         for file in os.listdir(dir):
+             path = os.path.join(dir, file)
+             if os.path.isdir(path):
+                 log(' ' * depth + file + '\\')
+                 depth += 2
+                 walkPath(path, depth)
+                 depth -= 2
+             else:
+                 log(' ' * depth + file)
+        #--Setup
+        log = bolt.LogFile(cStringIO.StringIO())
+        log.out.write('[codebox]')
+        log.setHeader(_('Package Structure:'))
+        apath = dirs['installers'].join(archive)
+        
+        walkPath(apath.s, 0)
+        log('[/codebox]')
+        return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
     """Installers tank data. This is the data source for """
