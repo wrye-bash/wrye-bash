@@ -9722,7 +9722,7 @@ class Save_StatObse(Link):
             saveFile.logStatObse(log)
             progress.Destroy()
             text = log.out.getvalue()
-            log.out.Close()
+            log.out.close()
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
         finally:
             progress.Destroy()
