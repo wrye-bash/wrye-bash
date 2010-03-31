@@ -8053,9 +8053,12 @@ class ModInfos(FileInfos):
             progress(index,name.s)
             modInfo = self[name]
             canMerge = PatchFile.modIsMergeable(modInfo) == True
-            name_mergeInfo[name] = (modInfo.size,canMerge)
-            if canMerge: self.mergeable.add(name)
-            else: self.mergeable.discard(name)
+            if canMerge in (True,"\n.    Has 'NoMerge' tag."):
+                self.mergeable.add(name)
+                name_mergeInfo[name] = (modInfo.size,True)
+            else:   
+                self.mergeable.discard(name)
+                name_mergeInfo[name] = (modInfo.size,False)
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
@@ -13698,12 +13701,7 @@ class PatchFile(ModFile):
             if reBsa.match(file.s):
                 reasons += "\n.    Has BSA archive."
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-        try:
-            descTags = modInfo.getBashTagsDesc()
-            if descTags and 'NoMerge' in descTags: reasons += "\n.    Has 'NoMerge' tag."
-            bashTags = modInfo.getBashTags()
-            if bashTags and 'NoMerge' in bashTags and "Has 'NoMerge' tag" not in reasons: reasons += "\n.    Has 'NoMerge' tag."
-        except: merge = '?'
+        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
@@ -19118,11 +19116,13 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if not raceData: continue
             raceChanged = False
             #-- Racial Hair and  Eye sets
-            for key in ('hair','eyes'):
-                if key in raceData:
-                    if set(getattr(race,key)) != set(raceData[key]):
-                        setattr(race,key,set(raceData[key]))
-                        raceChanged = True
+            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
+                race.hairs = raceData['hairs']
+                raceChanged = True
+            if 'eyes' in raceData:
+                if set(race.eyes) != set(raceData['eyes']):
+                    race.eyes = raceData['eyes']
+                    raceChanged = True
             #-- Eye paths:  
             if 'rightEye' in raceData:
                 if race.rightEye.modPath != raceData['rightEye'].modPath:

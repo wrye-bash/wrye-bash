@@ -1194,8 +1194,12 @@ class ModList(List):
             item.SetTextColour(wx.BLUE)
             mouseText = _("Master file.")
         elif fileName in bosh.modInfos.mergeable:
-            item.SetTextColour(colors['bash.mods.isMergeable'])
-            mouseText = _("Can be merged into Bashed Patch.")
+            if 'NoMerge' in bosh.modInfos[fileName].getBashTags():
+                item.SetTextColour(colors['bash.mods.isSemiMergeable'])
+                mouseText = _("Technically mergeable but has NoMerge tag.")
+            else:
+                item.SetTextColour(colors['bash.mods.isMergeable'])
+                mouseText = _("Can be merged into Bashed Patch.")
         else:
             item.SetTextColour(wx.BLACK)
         #--Image messages
@@ -7751,10 +7755,12 @@ class Mod_MarkMergeable(Link):
                 descTags.discard('Merge')
                 fileInfo.setBashTagsDesc(descTags)
             canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
-            mod_mergeInfo[fileName] = (fileInfo.size,canMerge == True)
             if canMerge == True:
+                mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
             else:
+                if canMerge == "\n.    Has 'NoMerge' tag.":
+                    mod_mergeInfo[fileName] = (fileInfo.size,True)
                 no.append("%s:%s" % (fileName.s,canMerge))
         message = ''
         if yes:
@@ -10508,6 +10514,7 @@ def InitImages():
     colors['bash.masters.remapped'] = (100,255,100)
     colors['bash.masters.changed'] = (220,255,220)
     colors['bash.mods.isMergeable'] = (0x00,0x99,0x00)
+    colors['bash.mods.isSemiMergeable'] = (153,0,153)
     colors['bash.mods.groupHeader'] = (0xD8,0xD8,0xD8)
     colors['bash.mods.isGhost'] = (0xe8,0xe8,0xe8)
     colors['bash.installers.skipped'] = (0xe0,0xe0,0xe0)
