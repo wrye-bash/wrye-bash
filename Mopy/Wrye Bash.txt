@@ -1950,13 +1950,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 281 [12/12/2010] [PacificMorrowind,DJ_Kovrik]
+=== 281 [12/12/2010] [PacificMorrowind,DJ_Kovrik, Waruddar]
 * bug fixes:
   * 2 tool launcher icon names fixed.
   * error in race pather eye section fixed.
   * error in INI read code
 * Updated Russian translation (contributed by DJ_Kovrik).
 * Russian version of the ini file (contributed by DJ_Kovrik).
+* List Structure printout for BAIN packages (contributed by Waruddar)
+  * It generates a tree-style report of the files and folders, which can be useful when comparing how packages are structured.
 * Mergeable mods with NoMerge tag are now colour coded (purple) in the mods tab instead of being green like fully mergeable mods or black like unmergeables (depending on version)
 
 === 280 [25/03/2010] [haama,PacificMorrowind,Metallicow]
