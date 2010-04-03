@@ -10270,10 +10270,10 @@ class InstallerConverter(object):
                     subArchives.append(self.tempDir.join("%08X" % installerCRC, extracted.s))
                 index += 1
         result = ins.close()
+        self.tempList.remove()
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
         #--Done
-        self.tempList.remove()
         #--Recursively unpack subArchives
         if len(subArchives):
             for archive in subArchives:
@@ -10376,10 +10376,10 @@ class InstallerArchive(Installer):
                 progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
                 index += 1
         result = ins.close()
+        self.tempList.remove()
         if result:
             raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
-        self.tempList.remove()
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
@@ -10599,11 +10599,12 @@ class InstallerProject(Installer):
                 progress(index,archive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
+        self.tempList.remove()
         if result:
             outFile.temp.remove()
             raise StateError(_("%s: Compression failed:\n%s") % (archive.s, "\n".join(errorLine)))
         outFile.untemp()
-        self.tempList.remove()
+
     #--Omod Config ------------------------------------------------------------
     class OmodConfig:
         """Tiny little omod config class."""
@@ -11074,7 +11075,6 @@ class InstallersData(bolt.TankData, DataDict):
         changed = bool(pending) or (len(newData) != len(bcfCRC_converter))
         #--New/update crcs?
         self.bcfCRC_converter = newData
-        self.srcCRC_converters
         if bool(pending):
             progress(0,_("Scanning Converters..."))
             progress.setFull(len(pending))

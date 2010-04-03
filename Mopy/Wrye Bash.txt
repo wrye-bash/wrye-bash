@@ -1950,11 +1950,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 281 [12/12/2010] [PacificMorrowind,DJ_Kovrik, Waruddar]
+=== 281 [02/04/2010] [PacificMorrowind,DJ_Kovrik, Waruddar]
 * bug fixes:
   * 2 tool launcher icon names fixed.
   * error in race pather eye section fixed.
   * error in INI read code
+  * error allowing a BCF to be applied without all source packages (contributed by Waruddar)
 * Updated Russian translation (contributed by DJ_Kovrik).
 * Russian version of the ini file (contributed by DJ_Kovrik).
 * List Structure printout for BAIN packages (contributed by Waruddar)
