@@ -6651,6 +6651,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selectedCRCs = set(window.data[archive].crc for archive in window.GetSelected())
+        crcInstallers = set(window.data.crc_installer)
         srcCRCs = set(window.data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
@@ -6659,7 +6660,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             #--Test every converter for every selected archive
             #--Only add a link to the converter if it uses all selected archives,
             #--and all of its required archives are available (but not necessarily selected)
-            linkSet = set([converter for installerCRC in selectedCRCs for converter in window.data.srcCRC_converters[installerCRC] if selectedCRCs <= converter.srcCRCs <= srcCRCs])
+            linkSet = set([converter for installerCRC in selectedCRCs for converter in window.data.srcCRC_converters[installerCRC] if selectedCRCs <= converter.srcCRCs <= crcInstallers])
 ##            for installerCRC in selectedCRCs:
 ##                for converter in window.data.srcCRC_converters[installerCRC]:
 ##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
