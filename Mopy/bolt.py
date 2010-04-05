@@ -673,7 +673,9 @@ class DataDict:
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
-        return self.data[key]
+        if self.has_key(key):
+            return self.data[key]
+        else: return "" # should work for all cases.
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
