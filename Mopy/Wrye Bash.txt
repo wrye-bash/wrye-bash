@@ -339,7 +339,7 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * Diamond: A [[#ProjectPackages|project]], i.e. a subdirectory in the Installers directory.
   * Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 * __Text Colors__
-  * Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
+  * Navy Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
   * Grey: This indicates that the package has a structure that Bain does not recognize, and so, cannot install. 
 * __Text Background__
   * Orange: Indicates that the install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running Anneal or Anneal All.
@@ -1949,6 +1949,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 == Versions ===================================================================
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
+
+=== 282 [05/04/2010] [Waruddar]
+* bug fixes:
+  * fix for when wrong color was occasionally used
+* Updated readme to reflect that the installer tab uses navy blue as a text color and not blue like the mods tab does
+* Cleaned out some old test code
 
 === 281 [05/04/2010] [DJ_Kovrik,haama,Lojack,PacificMorrowind,Waruddar]
 * bug fixes:
