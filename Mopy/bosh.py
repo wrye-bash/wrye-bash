@@ -8053,7 +8053,7 @@ class ModInfos(FileInfos):
             progress(index,name.s)
             modInfo = self[name]
             canMerge = PatchFile.modIsMergeable(modInfo) == True
-            if canMerge in (True,"\n.    Has 'NoMerge' tag."):
+            if canMerge:
                 self.mergeable.add(name)
                 name_mergeInfo[name] = (modInfo.size,True)
             else:   
