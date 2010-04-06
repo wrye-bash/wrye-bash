@@ -195,16 +195,6 @@ def readRecord(record, melSet=0, skipLabel=0):
         longest = 0
         print ''
 
-def readDiffs(newRecord, oldRecord, melSet=0, skipLabel=0):
-##    if oldRecord == None: return (newRecord, None, None)
-    differences = []
-    if hasattr(newRecord, 'melSet'):
-        melSet = newRecord.melSet.getSlotsUsed() + ['flags1','flags2']
-        if newRecord.recType == 'DIAL':
-            melSet += ['infoStamp','infos']
-    differences = [(attr, getattr(oldRecord,attr,None), getattr(newRecord,attr,None)) for attr in melSet if getattr(newRecord,attr,None) != getattr(oldRecord,attr,None)]
-    return differences
-
 # Common ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 @mainfunc
