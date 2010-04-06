@@ -694,10 +694,6 @@ class MelBase:
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
         raise AbstractError
-    def getDelta(self,newRecord,oldRecord):
-        if getattr(newRecord,self.attr,None) != getattr(oldRecord,self.attr,None):
-            return [(self.attr, getattr(oldRecord,self.attr,None), getattr(newRecord,self.attr,None))]
-        return None
 #------------------------------------------------------------------------------
 class MelFid(MelBase):
     """Represents a mod record fid element."""
@@ -895,56 +891,6 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
-    def getDelta(self,newRecord,oldRecord):
-        if getattr(newRecord,self.attr,None) is None and getattr(oldRecord,self.attr,None) is None:
-            return None
-        delta = []
-        def listCompare(self,newList,oldList):
-            if oldList is None:
-                added = newList
-                removed = []
-            elif newList is None:
-                added = []
-                removed = oldList
-            else:
-                added = bolt.listSubtract(newList,oldList)
-                removed = bolt.listSubtract(oldList,newList)
-            if len(added) == 0 and len(removed) == 0:
-                return [],[],[]
-            newValues = dict([(getattr(item,item.__slots__[0]), item) for item in added])
-            oldValues = dict([(getattr(item,item.__slots__[0]), item) for item in removed])
-            removed += added
-            added = []
-            changed = []
-            for item in newValues:
-                if item in oldValues:
-                    changed.append((oldValues[item],newValues[item]))
-                    removed.remove(newValues[item])
-                    removed.remove(oldValues[item])
-                else:
-                    added.append(newValues[item])
-                    removed.remove(newValues[item])
-            return added, removed, changed
-        added,removed,changed = listCompare(self,getattr(newRecord,self.attr,None),getattr(oldRecord,self.attr,None))
-        for item in added:
-            subDelta = []
-            for slot in item.__slots__:
-                subDelta.append((slot, None,getattr(item,slot,None)))
-            delta.append((self.attr,getattr(item,item.__slots__[0]),subDelta[:]))
-        for item in removed:
-            subDelta = []
-            for slot in item.__slots__:
-                subDelta.append((slot,getattr(item,slot,None), None))
-            delta.append((self.attr,getattr(item,item.__slots__[0]),subDelta[:]))
-        for item in changed:
-            subDelta = []
-            for slot in item[0].__slots__:
-                if getattr(item[0],slot,None) != getattr(item[1],slot,None):
-                    subDelta.append((slot, getattr(item[0],slot,None),getattr(item[1],slot,None)))
-            delta.append((self.attr,getattr(item[0],item[0].__slots__[0]),subDelta[:]))
-        if len(delta) > 0: return delta
-        return None
-
 #------------------------------------------------------------------------------
 class MelNull(MelBase):
     """Represents an obsolete record. Reads bytes from instream, but then
@@ -1094,13 +1040,6 @@ class MelStruct(MelBase):
         for attr in self.formAttrs:
             result = function(getter(attr))
             if save: setter(attr,result)
-    def getDelta(self,newRecord,oldRecord):
-        delta = []
-        for attr in self.attrs:
-            if getattr(newRecord,attr,None) != getattr(oldRecord,attr,None):
-                delta.append((attr, getattr(oldRecord,attr,None), getattr(newRecord,attr,None)))
-        if len(delta) > 0: return delta
-        return None
 #------------------------------------------------------------------------------
 class MelStructs(MelStruct):
     """Represents array of structured records."""
@@ -1151,58 +1090,6 @@ class MelStructs(MelStruct):
         for target in record.__getattribute__(self.attr):
             melMap(self,target,function,save)
 
-    def getDelta(self,newRecord,oldRecord):
-        if getattr(newRecord,self.attr,None) is None and getattr(oldRecord,self.attr,None) is None:
-            return None
-        delta = []
-        def listCompare(self,newList,oldList):
-            if oldList is None:
-                added = newList
-                removed = []
-            elif newList is None:
-                added = []
-                removed = oldList
-            else:
-                added = bolt.listSubtract(newList,oldList)
-                removed = bolt.listSubtract(oldList,newList)
-            if len(added) == 0 and len(removed) == 0:
-                return [],[],[]
-            newValues = dict([(getattr(item,self.attrs[0]), item) for item in added])
-            oldValues = dict([(getattr(item,self.attrs[0]), item) for item in removed])
-            removed += added
-            added = []
-            changed = []
-            for item in newValues:
-                if item in oldValues:
-                    changed.append((oldValues[item],newValues[item]))
-                    removed.remove(newValues[item])
-                    removed.remove(oldValues[item])
-                else:
-                    added.append(newValues[item])
-                    removed.remove(newValues[item])
-            return added, removed, changed
-        added,removed,changed = listCompare(self,getattr(newRecord,self.attr,None),getattr(oldRecord,self.attr,None))
-        for item in added:
-            subDelta = []
-            for slot in self.attrs:
-                subDelta.append((slot, None,getattr(item,slot,None)))
-            delta.append((self.attr,getattr(item,self.attrs[0]),subDelta[:]))
-        for item in removed:
-            subDelta = []
-            for slot in self.attrs:
-                subDelta.append((slot,getattr(item,slot,None), None))
-            delta.append((self.attr,getattr(item,self.attrs[0]),subDelta[:]))
-            print 'hrm'
-            print delta
-            sys.exit()
-        for item in changed:
-            subDelta = []
-            for slot in self.attrs:
-                if getattr(item[0],slot,None) != getattr(item[1],slot,None):
-                    subDelta.append((slot, getattr(item[0],slot,None),getattr(item[1],slot,None)))
-            delta.append((self.attr,getattr(item[0],self.attrs[0]),subDelta[:]))
-        if len(delta) > 0: return delta
-        return None
 #------------------------------------------------------------------------------
 class MelStructA(MelStructs):
     """Represents a record with an array of fixed size repeating structured elements."""
@@ -1595,12 +1482,6 @@ class MelSet:
         for element in self.elements:
             element.report(None,buff,'')
         return buff.getvalue()
-    def getDeltas(self,newRecord,oldRecord):
-        deltas = []
-        for element in self.elements:
-            delta = element.getDelta(newRecord,oldRecord)
-            if delta != None: deltas.extend(delta)
-        return deltas
 # Flags
 #------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
@@ -1919,13 +1800,6 @@ class MelRecord(MreRecord):
     def updateMasters(self,masters):
         """Updates set of master names according to masters actually used."""
         self.__class__.melSet.updateMasters(self,masters)
-    def getDelta(self, oldRecord):
-        if getattr(self,'flags1',None) != getattr(oldRecord,'flags1',None):
-            delta = [('flags1', getattr(oldRecord,'flags1',None), getattr(self,'flags1',None))]
-        else: delta = []
-        delta.extend(self.melSet.getDeltas(self,oldRecord))
-        return delta
-
 #------------------------------------------------------------------------------
 class MreActor(MelRecord):
     """Creatures and NPCs."""
