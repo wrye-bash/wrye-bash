@@ -19679,9 +19679,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     #-- Other tool directories
     #   First to default path
     tooldirs['Tes4FilesPath'] = dirs['app'].join('TES4Files.exe')
-    tooldirs['Tes4ViewPath'] = dirs['app'].join('TES4View.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join('TES4Edit.exe')
-    tooldirs['Tes4TransPath'] = dirs['app'].join('TES4Trans.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
     tooldirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
     tooldirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
@@ -19749,6 +19747,9 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
                 tooldirs[dir] = GPath(bashIni.get('Tool Options', key).strip())
                 if not tooldirs[dir].isabs():
                     tooldirs[dir] = dirs['app'].join(tooldirs[dir])
+    
+    tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join('TES4View.exe')
+    tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join('TES4Trans.exe')
     
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
