@@ -64,7 +64,8 @@ For mod-makers:
 * Savegame profiles (so you can easily test with only your mod active, then easily switch back to playing with all your mods active)
 [/quote]
 
-=== 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
+Latest Version:
+[code]=== 279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]
 * Fixed *two* bugs in autotagging (reported by Arthmoor)
 * Fixed Export Prices & Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
 * Images for wizard docs added (reported by Surazal)
@@ -88,7 +89,7 @@ For mod-makers:
 * optimization for master record checking (contributed by Badhair)
 * Added -o argument at Command Prompt
   * Use to specify the location of Oblivion directory (with Oblivion.exe).
-  * Allows users to install \Mopy\ folder outside of Oblivion directory.
+  * Allows users to install \Mopy\ folder outside of Oblivion directory.[/code]
 
 and just to repeat some links and news:
 Wrye4Fallout3.
