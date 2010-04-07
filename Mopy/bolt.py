@@ -676,8 +676,8 @@ class DataDict:
         if self.has_key(key):
             return self.data[key]
         else: 
-            if isinstance(key, bolt.Path):
-                return self.data[bolt.Path('Oblivion.esm')]
+            if isinstance(key, Path):
+                return self.data[Path('Oblivion.esm')]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
