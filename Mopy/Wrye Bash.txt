@@ -1950,9 +1950,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 282 [05/04/2010] [Waruddar]
+=== 282 [05/04/2010] [Waruddar,PacificMorrowind,Metallicow]
 * bug fixes:
+  * fix for AttributeError: 'str' object has no attribute 'get'
   * fix for when wrong color was occasionally used
+  * fixed various icons and launchers (reported by Metallicow)
+  * minor fix for List Structure. It wasn't disabled properly when multiple installers were selected.
+* Ctrl-A (select all) support added for all tabs except People.
 * Updated readme to reflect that the installer tab uses navy blue as a text color and not blue like the mods tab does
 * Cleaned out some old test code
 
