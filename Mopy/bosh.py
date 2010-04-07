@@ -8281,7 +8281,7 @@ class ModInfos(FileInfos):
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
         mtime = self[modName].mtime
-        mods = self.mtime_mods.get(mtime,tuple())
+        mods = self.mtime_mods.get(mtime,[])
         return len(mods) > 1
 
     def hasActiveTimeConflict(self,modName):
@@ -19699,7 +19699,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Audacity'] = GPath(r'C:\Audacity\Audacity.exe')
     tooldirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
     tooldirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
-    tooldirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
+    tooldirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDotNet.exe')
     tooldirs['Milkshape3D'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
     tooldirs['Wings3D'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
     tooldirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')

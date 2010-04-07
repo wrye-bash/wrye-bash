@@ -10562,7 +10562,7 @@ def InitImages():
     """Initialize color and image collections."""
     #--Colors
     colors['bash.esm'] = (220,220,255)
-    colors['bash.doubleTime.not'] = 'WHITE'
+    colors['bash.doubleTime.not'] = (255,255,255)
     colors['bash.doubleTime.exists'] = (255,220,220)
     colors['bash.doubleTime.load'] = (255,100,100)
     colors['bash.exOverLoaded'] = (0xFF,0x99,0)
