@@ -10379,7 +10379,7 @@ class Obse_Button(Link):
         elif state == -1: #--Invert
             state = not settings.get('bash.obse.on',False)
         settings['bash.obse.on'] = state
-        image = images[('checkbox.green.off','checkbox.green.on')[state]]
+        image = images[('checkbox.green.off.' + bosh.inisettings['iconSize'],'checkbox.green.on.' + bosh.inisettings['iconSize'])[state]]
         tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
@@ -10390,9 +10390,8 @@ class Obse_Button(Link):
     def GetBitmapButton(self,window,style=0):
         exeObse = bosh.dirs['app'].join('obse_loader.exe')
         if exeObse.exists():
-            bitmap = images['checkbox.green.off'].GetBitmap()
+            bitmap = images['checkbox.green.off.' + bosh.inisettings['iconSize']].GetBitmap()
             self.gButton = bitmapButton(window,bitmap,style=style,onClick=self.Execute)
-            self.gButton.SetSize((16,16))
             self.SetState()
             return self.gButton
         else:
@@ -10417,15 +10416,14 @@ class AutoQuit_Button(Link):
         elif state == -1: #--Invert
             state = not settings.get('bash.autoQuit.on',False)
         settings['bash.autoQuit.on'] = state
-        image = images[('checkbox.red.off','checkbox.red.x')[state]]
+        image = images[('checkbox.red.off.' + bosh.inisettings['iconSize'],'checkbox.red.x.' + bosh.inisettings['iconSize'])[state]]
         tip = (_("Auto-Quit Disabled"),_("Auto-Quit Enabled"))[state]
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
 
     def GetBitmapButton(self,window,style=0):
-        bitmap = images['checkbox.red.off'].GetBitmap()
+        bitmap = images['checkbox.red.off.' + bosh.inisettings['iconSize']].GetBitmap()
         self.gButton = bitmapButton(window,bitmap,style=style,onClick=self.Execute)
-        self.gButton.SetSize((16,16))
         self.SetState()
         return self.gButton
 
@@ -10451,7 +10449,8 @@ class App_DocBrowser(Link):
     """Show doc browser."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        gButton = bitmapButton(window,images['doc.on'].GetBitmap(),style=style,
+        
+        gButton = bitmapButton(window,Image(r'images/DocBrowser'+bosh.inisettings['iconSize']+'.png').GetBitmap(),style=style,
             onClick=self.Execute,tip=_("Doc Browser"))
         return gButton
 
@@ -10468,7 +10467,7 @@ class App_ModChecker(Link):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        gButton = bitmapButton(window,images['modChecker'].GetBitmap(),style=style,
+        gButton = bitmapButton(window,Image(r'images/ModChecker'+bosh.inisettings['iconSize']+'.png').GetBitmap(),style=style,
             onClick=self.Execute,tip=_("Mod Checker"))
         return gButton
 
@@ -10534,8 +10533,20 @@ def InitImages():
     images['modChecker'] = Image(r'images/table_error'+bosh.inisettings['iconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--ColorChecks
     images['checkbox.red.x'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.16'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.32'] = Image(r'images/checkbox_red_x_32.png',wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.off.16'] = (Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.off.32'] = (Image(r'images/checkbox_red_off_32.png',wx.BITMAP_TYPE_PNG))
+    
+    images['checkbox.green.on.16'] = (Image(r'images/checkbox_green_on.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.on.16'] = (Image(r'images/checkbox_blue_on.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.off.16'] = (Image(r'images/checkbox_blue_off.png',wx.BITMAP_TYPE_PNG))
+    
     images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.blue.on.32'] = (Image(r'images/checkbox_blue_on_32.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.32'] = (Image(r'images/checkbox_green_off_32.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.off.32'] = (Image(r'images/checkbox_blue_off_32.png',wx.BITMAP_TYPE_PNG))
     #--Bash
     images['bash.16'] = Image(r'images/bash_16.png',wx.BITMAP_TYPE_PNG)
     images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
@@ -10601,7 +10612,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #ISRNPCG
         App_Button(
             bosh.tooldirs['ISRNPCG'],
-            Image(r'images/brick'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/RandomNPC'+bosh.inisettings['iconSize']+'.png'),
             _("Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append( #OBFEL
         App_Button(
@@ -10624,34 +10635,31 @@ def InitStatusBar():
             _("Launch BSA Commander")))  
     BashStatusBar.buttons.append( #Tes4Files
         App_Button(
-            bosh.tooldirs['TES4FilesPath'],
+            bosh.tooldirs['Tes4FilesPath'],
             Image(r'images/tes4files'+bosh.inisettings['iconSize']+'.png'),
             _("Launch TES4Files")))
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Tes4Gecko(None,
-            Image(r'images/cog'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/TES4Gecko'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4Gecko")))
-    if bosh.inisettings['ShowTes4View']:
-        BashStatusBar.buttons.append(
-            App_Tes4View(
-                (bosh.tooldirs['TES4ViewPath'], '-view'),
-                Image(r'images/tes4view'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch Tes4View")))
-    if bosh.inisettings['ShowTes4Edit']:
-        BashStatusBar.buttons.append(
-            App_Tes4View(
-                (bosh.tooldirs['TES4EditPath'], '-edit'), #in case using tes4view as main apppath
-                Image(r'images/brick_edit'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch Tes4Edit")))
-    if bosh.inisettings['ShowTes4Trans']:
-        BashStatusBar.buttons.append(
-            App_Tes4View(
-                (bosh.tooldirs['TES4TransPath'], '-translate'),
-                Image(r'images/brick_error'+bosh.inisettings['iconSize']+'.png'),
-                _("Launch Tes4Trans")))
+    BashStatusBar.buttons.append( #Tes4View
+        App_Tes4View(
+            bosh.tooldirs['Tes4ViewPath'],
+            Image(r'images/tes4view'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch TES4View")))
+    BashStatusBar.buttons.append( #Tes4Edit
+        App_Tes4View(
+            bosh.tooldirs['Tes4EditPath'],
+            Image(r'images/TES4Edit'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch TES4Edit")))
+    BashStatusBar.buttons.append( #Tes4Trans
+        App_Tes4View(
+            bosh.tooldirs['Tes4TransPath'],
+            Image(r'images/TES4Trans'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch TES4Trans")))
     BashStatusBar.buttons.append( #Tes4LODGen
         App_Button(
-            bosh.tooldirs['TES4LodGenPath'],
+            bosh.tooldirs['Tes4LodGenPath'],
             Image(r'images/Tes4LODGen'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Tes4LODGen")))
     BashStatusBar.buttons.append( #BOSS
@@ -10668,7 +10676,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #Blender
             App_Button(
                 bosh.tooldirs['BlenderPath'],
-                Image(r'images/blender'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/Blender'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Blender")))
         BashStatusBar.buttons.append( #Dogwaffle
             App_Button(
@@ -10692,12 +10700,12 @@ def InitStatusBar():
                 _("Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
             App_Button(
-                bosh.tooldirs['Milkshape3DPath'],
+                bosh.tooldirs['Milkshape3D'],
                 Image(r'images/Milkshape3D'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Milkshape 3D")))
         BashStatusBar.buttons.append( #Wings3D
             App_Button(
-                bosh.tooldirs['Wings3DPath'],
+                bosh.tooldirs['Wings3D'],
                 Image(r'images/Wings3D'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Wings 3D")))
     if bosh.inisettings['showmodelingtoollaunchers'] or bosh.inisettings['showtexturetoollaunchers']:
@@ -10725,7 +10733,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #DDSConverter
             App_Button(
                 bosh.tooldirs['DDSConverter'],
-                Image(r'images/ddsconverter'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/DDSConverter'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch DDSConverter")))
         BashStatusBar.buttons.append( #Genetica
             App_Button(
@@ -10769,7 +10777,7 @@ def InitStatusBar():
                 _("Launch Paint.NET")))
         BashStatusBar.buttons.append( #Photoshop
             App_Button(
-                bosh.tooldirs['Photoshop'],
+                bosh.tooldirs['PhotoshopPath'],
                 Image(r'images/photoshop'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Photoshop")))
         BashStatusBar.buttons.append( #Pixel Studio Pro
@@ -10801,7 +10809,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #MAP
         App_Button(
             bosh.tooldirs['MAP'],
-            Image(r'images/ModListGenerator'+bosh.inisettings['iconSize']+'.png'),
+            Image(r'images/InteractiveMapofCyrodiil'+bosh.inisettings['iconSize']+'.png'),
             _("Interactive Map of Cyrodiil and Shivering Isles")))
     BashStatusBar.buttons.append( #LogitechKeyboard
         App_Button(

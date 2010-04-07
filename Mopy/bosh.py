@@ -19678,15 +19678,17 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     
     #-- Other tool directories
     #   First to default path
-    tooldirs['TES4FilesPath'] = dirs['app'].join('TES4Files.exe')
-    tooldirs['TES4EditPath'] = dirs['app'].join('TES4Edit.exe')
-    tooldirs['TES4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
+    tooldirs['Tes4FilesPath'] = dirs['app'].join('TES4Files.exe')
+    tooldirs['Tes4ViewPath'] = dirs['app'].join('TES4View.exe')
+    tooldirs['Tes4EditPath'] = dirs['app'].join('TES4Edit.exe')
+    tooldirs['Tes4TransPath'] = dirs['app'].join('TES4Trans.exe')
+    tooldirs['Tes4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
     tooldirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
     tooldirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
     tooldirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
     tooldirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
     tooldirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
-    tooldirs['Photoshop'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
+    tooldirs['PhotoshopPath'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
     tooldirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
     tooldirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
     tooldirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
@@ -19698,8 +19700,8 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
     tooldirs['DDSConverter'] = GPath(r'C:\Program Files\DDSConverter\DDSConverter.exe')
     tooldirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDOTnet.exe')
-    tooldirs['Milkshape3DPath'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
-    tooldirs['Wings3DPath'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
+    tooldirs['Milkshape3D'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
+    tooldirs['Wings3D'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
     tooldirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
     tooldirs['MAP'] = dirs['app'].join(r'Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe')
     tooldirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
@@ -19716,7 +19718,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Genetica'] = GPath(r'CC:\Program Files\Spiral Graphics\Genetica 3.5\Genetica.exe')
     tooldirs['IrfanView'] = GPath(r'C:\Program Files\IrfanView\i_view32.exe')
     tooldirs['Steam'] = GPath(r'C:\Program Files\Steam\steam.exe')
-    tooldirs['IcoFX'] = GPath(r'C:\Program Files\AniFX 1.0\IcoFX.exe')
+    tooldirs['IcoFX'] = GPath(r'C:\Program Files\IcoFX 1.6\IcoFX.exe')
     tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
     tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
     tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
@@ -19747,15 +19749,6 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
                 tooldirs[dir] = GPath(bashIni.get('Tool Options', key).strip())
                 if not tooldirs[dir].isabs():
                     tooldirs[dir] = dirs['app'].join(tooldirs[dir])
-    # Tes4View/Trans check - might be separate .exe (for later versions of Tes4Edit)
-    if ((tooldirs['TES4EditPath'].head).join('Tes4View.exe')).exists:
-        tooldirs['TES4ViewPath'] = (tooldirs['TES4EditPath'].head).join('Tes4View.exe')
-    else:
-        tooldirs['TES4ViewPath'] = tooldirs['TES4EditPath']
-    if ((tooldirs['TES4EditPath'].head).join('Tes4Trans.exe')).exists:
-        tooldirs['TES4TransPath'] = (tooldirs['TES4EditPath'].head).join('Tes4Trans.exe')
-    else:
-        tooldirs['TES4TransPath'] = tooldirs['TES4EditPath']
     
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
@@ -19783,9 +19776,6 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['showtexturetoollaunchers'] = True
     inisettings['showmodelingtoollaunchers'] = True
     inisettings['showaudiotoollaunchers'] = True
-    inisettings['ShowTes4View'] = True
-    inisettings['ShowTes4Edit'] = True
-    inisettings['ShowTes4Trans'] = True
     inisettings['custom1txt'] = 'Not Set in INI'
     inisettings['custom2txt'] = 'Not Set in INI'
     inisettings['custom3txt'] = 'Not Set in INI'
@@ -19847,12 +19837,6 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             inisettings['showmodelingtoollaunchers'] = bashIni.getboolean('Tool Options','bshowmodelingtoollaunchers')
         if bashIni.has_option('Tool Options','bshowaudiotoollaunchers'):
             inisettings['showaudiotoollaunchers'] = bashIni.getboolean('Tool Options','bshowaudiotoollaunchers')
-        if bashIni.has_option('Tool Options','bShowTes4View'):
-            inisettings['ShowTes4View'] = bashIni.getboolean('Tool Options','bShowTes4View')
-        if bashIni.has_option('Tool Options','bShowTes4Edit'):
-            inisettings['ShowTes4Edit'] = bashIni.getboolean('Tool Options','bShowTes4Edit')
-        if bashIni.has_option('Tool Options','bShowTes4Trans'):
-            inisettings['ShowTes4Trans'] = bashIni.getboolean('Tool Options','bShowTes4Trans')
         if bashIni.has_option('Tool Options','sCustom1txt'):
             inisettings['custom1txt'] = str(bashIni.get('Tool Options','sCustom1txt')).strip()
         if bashIni.has_option('Tool Options','sCustom2txt'):
