@@ -10593,14 +10593,9 @@ def InitImages():
     images['checkbox.red.off.32'] = (Image(r'images/checkbox_red_off_32.png',wx.BITMAP_TYPE_PNG))
     
     images['checkbox.green.on.16'] = (Image(r'images/checkbox_green_on.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.on.16'] = (Image(r'images/checkbox_blue_on.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.off.16'] = (Image(r'images/checkbox_blue_off.png',wx.BITMAP_TYPE_PNG))
-    
+    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))    
     images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.on.32'] = (Image(r'images/checkbox_blue_on_32.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.off.32'] = (Image(r'images/checkbox_green_off_32.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.off.32'] = (Image(r'images/checkbox_blue_off_32.png',wx.BITMAP_TYPE_PNG))
     #--Bash
     images['bash.16'] = Image(r'images/bash_16.png',wx.BITMAP_TYPE_PNG)
     images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
