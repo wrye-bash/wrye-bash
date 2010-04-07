@@ -576,6 +576,10 @@ class List(wx.Panel):
         for itemDex in range(self.list.GetItemCount()):
             self.list.SetItemState(itemDex, 0, wx.LIST_STATE_SELECTED)
 
+    def SelectAll(self):
+        for itemDex in range(self.list.GetItemCount()):
+            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
         #--No items?
@@ -1003,6 +1007,8 @@ class INIList(List):
         self.itemMenu = INIList.itemMenu
         #--Parent init
         List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT))
+        #--Events
+        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         #--Image List
         checkboxesIL = colorChecks.GetImageList()
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
@@ -1081,6 +1087,13 @@ class INIList(List):
             raise BashError(_('Unrecognized sort key: ')+col)
         #--Ascending
         if reverse: self.items.reverse()
+
+    def OnKeyUp(self,event):
+        """Char event: select all items"""
+        ##Ctrl+A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
 #------------------------------------------------------------------------------
 class ModList(List):
     #--Class Data
@@ -1298,8 +1311,10 @@ class ModList(List):
 
     def OnChar(self,event):
         """Char event: Delete, Reorder, Check/Uncheck."""
+        ##Delete
         if (event.GetKeyCode() == 127):
             self.DeleteSelected()
+        ##Ctrl+Up and Ctrl+Down
         elif ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
@@ -1323,7 +1338,10 @@ class ModList(List):
                         bosh.modInfos.refreshInfoLists()
                         self.RefreshUI()
         event.Skip()
+        
     def OnKeyUp(self,event):
+        """Char event: Activate selected items, select all items"""
+        ##Space
         if (event.GetKeyCode() == wx.WXK_SPACE):
             selected = self.GetSelected()
             toActivate = [item for item in selected if not self.data.isSelected(GPath(item))]
@@ -1333,6 +1351,10 @@ class ModList(List):
             else:
                 #--Check all that aren't
                 self.checkUncheckMod(*toActivate)
+        ##Ctrl+A
+        elif event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
 
     def OnColumnResize(self,event):
         """Column resize: Stored modified column widths."""
@@ -1748,6 +1770,7 @@ class SaveList(List):
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
+        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.saves.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
@@ -1849,6 +1872,12 @@ class SaveList(List):
         self.colWidths[colName] = self.list.GetColumnWidth(colDex)
         settings.setChanged('bash.saves.colWidths')
 
+    def OnKeyUp(self,event):
+        """Char event: select all items"""
+        ##Ctrl+A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
     #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
@@ -2093,7 +2122,10 @@ class InstallersList(balt.Tank):
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
             details,id,style)
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
-
+        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+    def SelectAll(self):
+        for itemDex in range(self.gList.GetItemCount()):
+            self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
     def OnChar(self,event):
         """Char event: Reorder."""
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
@@ -2106,6 +2138,13 @@ class InstallersList(balt.Tank):
                 self.data.moveArchives([thisFile],newPos)
             self.data.refresh(what='N')
             self.RefreshUI()
+        event.Skip()
+
+    def OnKeyUp(self,event):
+        """Char event: select all items"""
+        ##Ctrl+A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
         event.Skip()
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -2654,6 +2693,7 @@ class ScreensList(List):
         List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
+        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -2716,6 +2756,12 @@ class ScreensList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
+    def OnKeyUp(self,event):
+        """Char event: Activate selected items, select all items"""
+        ##Ctrl-A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
     #--Column Resize
     def OnColumnResize(self,event):
         colDex = event.GetColumn()
@@ -3128,6 +3174,7 @@ class MessageList(List):
         List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
+        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
     def GetItems(self):
         """Set and return self.items."""
@@ -3203,6 +3250,13 @@ class MessageList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
+    def OnKeyUp(self,event):
+        """Char event: Activate selected items, select all items"""
+        ##Ctrl-A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
+
     #--Column Resize
     def OnColumnResize(self,event):
         colDex = event.GetColumn()
@@ -6110,7 +6164,7 @@ class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
         self.title = _("List Structure...")
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
-        if not self.isSingle or isinstance(self.data[self.selected[0]], bosh.InstallerMarker):
+        if not self.isSingle() or isinstance(self.data[self.selected[0]], bosh.InstallerMarker):
             menuItem.Enable(False)
         else:
             menuItem.Enable(True)
