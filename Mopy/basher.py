@@ -1502,7 +1502,7 @@ class ModDetails(wx.Window):
         self.version.SetLabel(self.versionStr)
         self.masters.SetFileInfo(modInfo)
         self.gTags.SetValue(tagsStr)
-        if fileName and bosh.modInfos.table.getItem(fileName,'bashTags') != None:
+        if fileName and bosh.modInfos.table.getItem(fileName,'bashTags', None) != None:
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
@@ -1654,7 +1654,7 @@ class ModDetails(wx.Window):
         menu = wx.Menu()
         #--Revert to auto
         #--Separator
-        isAuto = self.modInfo.getRow().get('bashTags') is None
+        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'bashTags',None) is None
         menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_('Automatic'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(isAuto)
@@ -1671,7 +1671,7 @@ class ModDetails(wx.Window):
     def DoAutoBashTags(self,event):
         """Handle selection of automatic bash tags."""
         modInfo = self.modInfo
-        if modInfo.getRow().get('bashTags') is None:
+        if bosh.modInfos.table.getItem(modInfo.name,'bashTags',None) is None:
             modInfo.setBashTags(modInfo.getBashTags())
         else:
             bosh.modInfos.table.delItem(modInfo.name,'bashTags')

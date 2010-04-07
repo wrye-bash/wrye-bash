@@ -6890,10 +6890,6 @@ class FileInfo:
         """Returns modInfos or saveInfos depending on fileInfo type."""
         raise AbstractError
 
-    def getRow(self):
-        """Gets row of data regarding self from fileInfos."""
-        return self.getFileInfos().table[self.name]
-
     #--File type tests
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
@@ -7159,7 +7155,7 @@ class ModInfo(FileInfo):
 
     def getBashTags(self):
         """Returns any Bash flag keys."""
-        tags = self.getRow().get('bashTags')
+        tags = modInfos.table.getItem(self.name,'bashTags',None)
         if tags is None:
             tags = set()
             tagstemp = self.getBashTagsDesc()
@@ -7731,7 +7727,7 @@ class ModInfos(FileInfos):
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
-
+                
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']

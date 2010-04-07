@@ -673,9 +673,9 @@ class DataDict:
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
-        if self.has_key(key):
+        if self.data.has_key(key):
             return self.data[key]
-        else: 
+        else:
             if isinstance(key, Path):
                 return self.data[Path('Oblivion.esm')]
     def __setitem__(self,key,value):
