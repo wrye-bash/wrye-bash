@@ -6091,6 +6091,82 @@ class Installer_Hide(InstallerLink):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
+class Installer_Rename(InstallerLink):
+    """Renames files by pattern."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
+        menu.AppendItem(menuItem)
+        self.InstallerType = None
+        ##Only enable if all selected items are of the same type
+        ##and are not markers
+        firstItem = window.data[window.GetSelected()[0]]
+        if(isinstance(firstItem,bosh.InstallerMarker)):
+           menuItem.Enable(False)
+           return
+        elif(isinstance(firstItem,bosh.InstallerArchive)):
+           self.InstallerType = bosh.InstallerArchive
+        elif(isinstance(firstItem,bosh.InstallerProject)):
+           self.InstallerType = bosh.InstallerProject
+             
+        if(self.InstallerType):
+            for item in window.GetSelected():
+                if not isinstance(window.data[item],self.InstallerType):
+                    menuItem.Enable(False)
+                    return
+
+        menuItem.Enable(True)
+
+    def Execute(self,event):
+        #--File Info
+        fileName = self.selected[0]
+        
+        if(self.InstallerType == bosh.InstallerArchive):
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+            pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
+                _("Rename Files"),fileName.s)
+        else:
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)        
+            pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE"),
+                _("Rename Files"),fileName.s)    
+        if not pattern: return
+
+        maPattern = rePattern.match(pattern)
+        if not maPattern:
+            balt.showError(self.window,_("Bad extension or file root: ")+pattern)
+            return
+
+        if(self.InstallerType == bosh.InstallerArchive):
+            root,numStr,ext = maPattern.groups()[:3]
+        else:
+            ext = ''
+            root,numStr = maPattern.groups()[:2]
+
+        numLen = len(numStr)
+        num = int(numStr or 0)
+        installersDir = bosh.dirs['installers']
+        for archive in self.selected:
+            installer = self.data[archive]
+            newName = GPath(root)+numStr
+            if(self.InstallerType == bosh.InstallerArchive):
+                newName += archive.ext
+            if newName != archive:
+                oldPath = installersDir.join(archive)
+                newPath = installersDir.join(newName)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+                    self.data.pop(installer)
+                    installer.archive = newName.s
+                    #--Add the new archive to Bash
+                    self.data[newName] = installer
+            num += 1
+            numStr = `num`
+            numStr = '0'*(numLen-len(numStr))+numStr
+
+        #--Refresh UI
+        self.data.refresh(what='I')
+        self.gTank.RefreshUI()
+#------------------------------------------------------------------------------
 class Installer_HasExtraData(InstallerLink):
     """Toggle hasExtraData flag on installer."""
 
@@ -6330,6 +6406,7 @@ class Installer_Uninstall(InstallerLink):
             bashFrame.RefreshData()
 
 # InstallerArchive Links ------------------------------------------------------
+#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
@@ -10017,43 +10094,6 @@ class Screen_Rename(Link):
             numStr = '0'*(numLen-len(numStr))+numStr
         bosh.screensData.refresh()
         self.window.RefreshUI()
-
-class Installer_Rename(Link):
-    """Renames files by pattern."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) > 0)
-
-    def Execute(self,event):
-        #--File Info
-        rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
-        fileName = self.selected[0]
-        pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
-            _("Rename Files"),fileName.s)
-        if not pattern: return
-        maPattern = rePattern.match(pattern)
-        if not maPattern:
-            balt.showError(self.window,_("Bad extension or file root: ")+pattern)
-            return
-        root,numStr,ext = maPattern.groups()[:3]
-        numLen = len(numStr)
-        num = int(numStr or 0)
-        installersDir = bosh.dirs['installers']
-        for oldName in map(GPath,self.selected):
-            newName = GPath(root)+numStr+oldName.ext
-            if newName != oldName:
-                oldPath = installersDir.join(oldName)
-                newPath = installersDir.join(newName)
-                if not newPath.exists():
-                    oldPath.moveTo(newPath)
-            num += 1
-            numStr = `num`
-            numStr = '0'*(numLen-len(numStr))+numStr
-        self.data.refresh(what='N')
-        self.gTank.RefreshUI()
-
 # Messages Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Messages_Archive_Import(Link):
