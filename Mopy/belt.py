@@ -340,23 +340,15 @@ class PageFinish(PageInstaller):
         sizerLists = wx.FlexGridSizer(2, 2, 5, 5)
         sizerLists.Add(wx.StaticText(self, -1, 'Sub-Packages'))
         sizerLists.Add(wx.StaticText(self, -1, 'Esp/ms'))
-        self.listSubs = wx.CheckListBox(self, -1, choices=subs)
-        #self.listSubs.Enable(False)
-        #TODO: Figure way to still allow scrolling packages, but not checking the checkbox
-        #      I've 'enabled' the subpackage and esp/m list boxes, so that if there are
-        #      a lot of items, the scrollbar works, but this gives the illusion that the user
-        #      can select and deselect subpackages and esp/m's...which you can't from here
-        index = -1
-        for key in subs:
-            index += 1
+        self.listSubs = wx.CheckListBox(self, 666, choices=subs)
+        wx.EVT_CHECKLISTBOX(self, 666, self.OnSelectSubs)
+        for index,key in enumerate(subs):
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
-        self.listEspms = wx.CheckListBox(self, -1, choices=espms)
-        #self.listEspms.Enable(False)
-        index = -1
-        for key in espms:
-            index += 1
+        self.listEspms = wx.CheckListBox(self, 667, choices=espms)
+        wx.EVT_CHECKLISTBOX(self, 667, self.OnSelectEspms)
+        for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
                 self.parent.ret.SelectEspms.append(key)
@@ -397,6 +389,15 @@ class PageFinish(PageInstaller):
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkApply.IsChecked())
 
     def GetNext(self): return None
+
+    # Undo selecting/deselection of items for UI consistency
+    def OnSelectSubs(self, event):
+        index = event.GetSelection()
+        self.listSubs.Check(index, not self.listSubs.IsChecked(index))
+    def OnSelectEspms(self, event):
+        index = event.GetSelection()
+        self.listEspms.Check(index, not self.listEspms.IsChecked(index))
+    
 # End PageFinish -------------------------------------
 
 
