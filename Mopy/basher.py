@@ -2386,7 +2386,7 @@ class InstallersPanel(SashTankPanel):
                 else:
                     info += _("Structure: Complex\n")
             elif installer.type < 0:
-                 info += _("Structure: Corrupt/Incomplete\n")
+                info += _("Structure: Corrupt/Incomplete\n")
             else:
                 info += _("Structure: Unrecognized\n")
             nConfigured = len(installer.data_sizeCrc)
@@ -10807,7 +10807,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #IcoFX
             App_Button(
                 bosh.tooldirs['IcoFX'],
-                Image(r'images/AniFX'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/IcoFX'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch IcoFX")))
         BashStatusBar.buttons.append( #Inkscape
             App_Button(
