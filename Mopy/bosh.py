@@ -10206,7 +10206,7 @@ class InstallerArchive(Installer):
                 elif key == 'CRC' and value:
                     crc = int(value,16)
                 elif key == 'Method':
-                    if file and not isdir:
+                    if file and not isdir and file != archive.s:
                         fileSizeCrcs.append((file,size,crc))
                         cumCRC += crc
                     file = size = crc = isdir = 0
