@@ -2131,14 +2131,21 @@ class InstallersList(balt.Tank):
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
             orderKey = lambda x: self.data.data[x].order
             maxPos = max(self.data.data[x].order for x in self.data.data)
-            moveMod = (-1,1)[event.GetKeyCode() == wx.WXK_DOWN]
+            if(event.GetKeyCode() == wx.WXK_DOWN):
+                moveMod = 1
+                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[-1]) + 2
+            else:
+                moveMod = -1
+                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[0]) - 2
             for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=(moveMod != -1)):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
             self.data.refresh(what='N')
             self.RefreshUI()
-        event.Skip()
+            self.gList.EnsureVisible(visibleIndex)
+        else:
+            event.Skip()
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
