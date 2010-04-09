@@ -2142,7 +2142,9 @@ class InstallersList(balt.Tank):
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
             self.data.refresh(what='N')
-            self.RefreshUI()
+            self.SortItems()
+            if visibleIndex > maxPos: visibleIndex = maxPos
+            elif visibleIndex < 0: visibleIndex = 0
             self.gList.EnsureVisible(visibleIndex)
         else:
             event.Skip()
