@@ -65,19 +65,21 @@ For mod-makers:
 [/quote]
 
 Latest Version:
-[code]=== 281 [05/04/2010] [DJ_Kovrik,haama,Lojack,PacificMorrowind,Waruddar]
+[code]=== 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
 * bug fixes:
-  * 2 tool launcher icon names fixed.
-  * error in race pather eye section fixed.
-  * error in INI read code fixed.
-  * fix for when reading absolutely huge cosave (ie .obse) files.
-  * error allowing a BCF to be applied without all source packages (contributed by Waruddar)
-* Updated Russian translation (contributed by DJ_Kovrik).
-* Russian version of the ini file (contributed by DJ_Kovrik).
-* List Structure printout for BAIN packages (contributed by Waruddar)
-  * It generates a tree-style report of the files and folders, which can be useful when comparing how packages are structured.
-* Mergeable mods with NoMerge tag are now colour coded (purple) in the mods tab instead of being green like fully mergeable mods or black like unmergeables (depending on version)
-* taglist updated to Masterlist version 791[/code]
+  * fix for AttributeError: 'str' object has no attribute 'get'
+  * fix for when wrong color was occasionally used
+  * fixed various icons and launchers (reported by Metallicow)
+  * minor fix for List Structure. It wasn't disabled properly when multiple installers were selected.
+  * fix for bug causing archives to fail to 'Unpack to Project' and to apply BCF's, also caused the archive to show up in the list of skipped files.
+  * minor improvements to the BAIN wizards.
+  * fix for UI not refreshing on installer renames
+  * fix for renaming installer projects
+  * fix for renamed installers not retaining installed state
+  * fix for Ctrl-Up/Down on installer tab not scrolling
+* Ctrl-A (select all) support added for all tabs except People.
+* Updated readme to reflect that the installer tab uses navy blue as a text color and not blue like the mods tab does
+* Cleaned out some old test code[/code]
 
 and just to repeat some links and news:
 Wrye4Fallout3.
