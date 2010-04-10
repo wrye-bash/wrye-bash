@@ -10558,6 +10558,7 @@ class InstallersData(bolt.TankData, DataDict):
         bolt.TankData.__init__(self,settings)
         self.tankKey = 'bash.installers'
         self.tankColumns = ['Package','Order','Modified','Size','Files']
+        self.transColumns = [_('Package'),_('Order'),_('Modified'),_('Size'),_('Files')]
         self.title = _('Installers')
         #--Default Params
         self.defaultParam('columns',self.tankColumns)
