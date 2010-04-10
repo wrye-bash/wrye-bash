@@ -1628,7 +1628,7 @@ class WryeText:
                 line = spaces+'<p class=empty>&nbsp;</p>\n'
             #--Misc. Text changes --------------------
             line = reHr.sub('<hr>',line)
-            line = reMDash.sub(' &#150 ',line)
+            line = reMDash.sub(' &#150; ',line)
             #--Bold/Italic subs
             line = reBold.sub(subBold,line)
             line = reItalic.sub(subItalic,line)

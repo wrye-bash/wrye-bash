@@ -1,11 +1,11 @@
 = Wrye Bash ====================================================================
 <table><tr valign=top><tr valign=top><td  width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
-=== Getting Started: 
+=== Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://www.bethsoft.com/bgsforums/index.php?showtopic=1029359|RELZ Topic]]
+* [[http://forums.bethsoft.com/?showtopic=1029359|RELZ Topic]]
 * Download: 
-  * [[http://wrye.ufrealms.net|UFRealms]]
+  * [[http://www.wryemusings.com/|Wrye Musings]]
   * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]] 
 * [[#Versions|Change Log]]
 
@@ -23,7 +23,7 @@ In particular, see:
 == Quick Tour
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
 
-* At the top are the main tabs: [[#Installers Tab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#|INI Tweaks Tab|INI Tweaks]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
+* At the top are the main tabs: [[#InstallersTab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#INITweaksTab|INI Tweaks]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
 * The file details for the currently selected savegame are shown to the right. File name, stats and savegame preview image are all shown. 
 * The __masters list__ for the savegame is shown at the bottom of the details. The masters for the savegame are just the mods (esps and esms) that the savegame depends on. 
@@ -114,7 +114,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * __Download and run [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44| Wrye Python]]__
   * Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer. 
   * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se [[#|Python Components]].
-* __Download and Unzip [[http://wrye.ufrealms.net/#WryeBash|Wrye Bash XXX.zip]]__ 
+* __Download and Unzip [[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]__ 
   * Unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find bash.py and other bash files under Oblivion\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Upgrading__
@@ -191,7 +191,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe|wxPython 2.8.7.1 ANSI for python 2.5]]. 
   * __pyWin32__
     * PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-    * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
+    * Download link: [[http://sourceforge.net/projects/pywin32/files/latest|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
   * __ComTypes 0.5.2__ 
     * ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
   * __PIL 1.1.6__
@@ -287,7 +287,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
 * BashMon
   * This launches bashmon.py in a command shell window. This is for use with Breeze582000's Seducers/Succubi mod and Wrye's Morph mod. 
-  * For more info, see [[http://www.bethsoft.com/bgsforums/index.php?showtopic=746499 | [WIPZ] Succubi Race]].
+  * For more info, see [[http://forums.bethsoft.com/?showtopic=746499 | [WIPZ] Succubi Race]].
 * Help
   * Show this help file in the default web browser.
 * Doc Browser
@@ -301,7 +301,7 @@ The Installers tab provides a mod package installer facility. In general purpose
 === Getting Started
 Here's a brief getting started guide. You may have to read sections further down before this section makes full sense.
 * __Terminology: Package__
-  * A "package" is a collection of esps, esms and/or resource files. Everything listed under the Installers tab is a package. Packages can be either archive files in (zip, 7z or rar format) or directories (aka [[#ProjectPackages|Projects]]).
+  * A "package" is a collection of esps, esms and/or resource files. Everything listed under the Installers tab is a package. Packages can be either archive files in (zip, 7z or rar format) or directories (aka Projects).
 * __Terminology: [[#BainConversionFiles|Bain Conversion File]]__
   * A "Bain Conversion File" or "BCF" is a special archive that tells Bash how to convert a standard archive into a Bain-ready archive. It also contains any new files that weren't present in the original archive. BCF's allow mod users to easily share their custom Bain compilations.
 * __Initialization__
@@ -336,7 +336,7 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install. 
   * Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
 * __Icon Shape__
-  * Diamond: A [[#ProjectPackages|project]], i.e. a subdirectory in the Installers directory.
+  * Diamond: A project, i.e. a subdirectory in the Installers directory.
   * Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 * __Text Colors__
   * Navy Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
@@ -510,7 +510,7 @@ The following commands are available by right clicking on the column header of t
   * __Enable Wizard Install:__ Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
 * __Behavior__
-  * __BSA Redirection:__ Uses Quarn's [[http://devnull.devakm.googlepages.com/archiveinvalidation|BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+  * __BSA Redirection:__ Uses Quarn's [[http://devnull.sweetdanger.net/archiveinvalidation/|BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
   * __Clean Data Directory:__ If this is checked, then any empty subfolders of the Oblivion\Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves Oblivion.exe performance. 
   * __Show Inactive Conflicts:__ If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes its useful to review all conflicting packages.
   * __Show Lower Conflicts:__ If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
@@ -561,7 +561,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
     both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
 * __Checkbox Types__
   * Regular checkmark: mod is active.
-  * Plus sign (+) checkmark: mod is merged into an active [[#PatchMerger|Bashed Patch]] mod.
+  * Plus sign (+) checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
   * No checkmark: Mod is neither active nor merged.
 * __Checkbox Colors__ 
   <img src="images/checkbox_blue_on.png" width="16" height="16" border="0" alt="Blue">
@@ -630,7 +630,7 @@ These are the commands for the context menu for the mods list. (You'll get this 
       * __Disallow Ghosting__ - Checks "Don't Ghost" for every item. 
       * __Invert Ghosting__  - Checks "Don't Ghost" if it was unchecked, and unchecks "Don't Ghost" if it was checked. 
     * __OR__ Turn auto-ghosting off temporarily, then turn it back on.
-  * Bash however, ~~does~~ recognize ghosted files. So bashed patch merging, profile switching and Bain will work with ghosted esps.
+  * Bash however, ~~does~~ recognize ghosted files. So Bashed Patch merging, profile switching and Bain will work with ghosted esps.
 
 === Load Lists
 * Aside from using checkboxes to select and unselect mods, you can also use load lists. These are accessed through the column context menu, and work in the same way at the [[#|Load Masters]] command.
@@ -849,10 +849,10 @@ These are the commands found on context menu for mods...
   * After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
   
 === Export/Import Spell Stats
-* These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]]. 
+* These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
 * __Uses__
   * Systematically editing spell statistics to fit a spell quality paradigm etc. The spreadsheet makes it easy to view and edit the stats in a systematic way.
-  * Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
+  * Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
 * __Spreadsheet Format__
   * The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
   * Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.  
@@ -860,7 +860,7 @@ These are the commands found on context menu for mods...
 === Details
 * Displays list of records in mod, similar to Details view in TESCS.
 
-=== List Masters
+=== List Masters (Mod)
 * Displays list of masters for mod, and copies same list to the clipboard. 
 
 === Mark Levelers
@@ -890,7 +890,7 @@ These are the commands found on context menu for mods...
   * Some mods have a mild corruption in their file structure called "Orphaned World Groups". This happens when the world record that should be preceed all groups of exterior cells is missing from the mod.
   * The corruption seems to happen automatically due to a mild bug in the construction set. If a mod is edited in the CS; and the mod has an esp master; and the esp master has exterior world cells; then the children cells for that master are added to the mod being edited regardless of whether the dependent mod edits them or not. But the matching world record is not edited. Hence: orphaned world groups.
   * It's not really known if the orphaned world groups will cause any problem. At the least, they're unnecessary. Hence modders should probably remove them from their own mods.
-  * If you have orphaned world groups, it will be mentioned by bash when you're rebuilding the bashed patch. You an also see them while reviewing the mod in Tes4View -- you'll see a world group without a corresponding world record.
+  * If you have orphaned world groups, it will be mentioned by bash when you're rebuilding the Bashed Patch. You an also see them while reviewing the mod in Tes4View -- you'll see a world group without a corresponding world record.
   * This command simply removes the orphaned world groups from the mod. 
 
 === Undelete Refs
@@ -970,7 +970,7 @@ Balo provides a default "canonical" set of groups designed to reduce problems du
   * __Quest:__ Quest mods.
   * __NONE:__ Special group.
   * __Last:__ Mods that are supposed to load last(ish). 
-    * It's a good idea to reserve the base "Last" group to Bashed patches, and then use Last-1, Last+1 offset groups for other late loading mods.
+    * It's a good idea to reserve the base "Last" group to Bashed Patches, and then use Last-1, Last+1 offset groups for other late loading mods.
 
 === Semi-Balo
 * __Group Headers__
@@ -997,7 +997,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 === Patch Usage
 * __Select a Bashed Patch__ 
   * Probably Bash has automatically created one for you. If not, you can copy the blank one from Oblivion\Mopy\Extras to Oblivion\Data. 
-  * Note that the author of the mod must be set to __BASHED PATCH__. 
+  * Note that the author of the mod must be set to __Bashed Patch__. 
 * __Configure the Patch__
   * Right click on the Bashed Patch and select "Rebuild Patch..." This will bring up a dialog in which you can activate and configure various patcher components. 
   * To activate a component, just click its checkmark box.
@@ -1012,7 +1012,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 * __Load Order__
   * Bashed Patches should be last or nearly last in the load order. Only mods that load before the patch will be processed in the update process.
 * __Unloading a Patch Master__
-  * When you unload (remove from the load list) a mod that a bashed patch is dependent on, then the patch will also become unloaded. In this, case, you should **update the patch before reloading it.** 
+  * When you unload (remove from the load list) a mod that a Bashed Patch is dependent on, then the patch will also become unloaded. In this, case, you should **update the patch before reloading it.** 
   * If you reload the patch before updating, it will force reload of all its masters -- including the one you just unloaded!
 * __Replacing a Previous Patch__
   * If you're creating a new patch to replace an existing patch, **be sure that the older patch is unloaded!** 
@@ -1023,7 +1023,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Several of the patch components ([[#|Leveled Lists]], [[#|Import NPC Faces]]) have automatic lists. In these, the list is automatically generated based on Bash Tags. 
 * __Examining/Editing__
   * It's slightly difficult to view the contents of a Bashed Patch, since it uses esp-mastering (i.e., it has esps as well as esms as masters). 
-  * If you just want to examine the patch, you may want to use [[http://www.tesnexus.com/files/file.php?id=11536|Tes4View]] which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
+  * If you just want to examine the patch, you may want to use [[http://www.tesnexus.com/downloads/file.php?id=11536|Tes4View]] which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
   * However, if you would like to open/edit in TESCS, then you'll need to use the [[#|Espify/Esmify Masters]] command. (Be sure to Espify Masters before playing.)
 
 === Bash Tags
@@ -1036,8 +1036,8 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles ([[#|Import Actors]]). 
   * Actors.DeathItems: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
   * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
-  * Body-F: Mod modifies female body definition ([[#|Race Info]]).
-  * Body-M: Mod modifies male body definition ([[#|Race Info]]).
+  * Body-F: Mod modifies female body definition ([[#|Race Records]]).
+  * Body-M: Mod modifies male body definition ([[#|Race Records]]).
   * C.Climate: Mod changes cell climate ([[#|Import Cells]]).
   * C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
   * C.Music: Mod changes cell music type ([[#|Import Cells]]).
@@ -1047,12 +1047,12 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
   * Creatures.Blood: Mod changes the creature blood subrecords ([[#|Import Actors]]).
   * Delev: Mod deletes items from ([[#|Leveled Lists]]).
-  * Eyes: Mod contributes eyes ([[#|Race Info]]).
+  * Eyes: Mod contributes eyes ([[#|Race Records]]).
   * Relations: Mod changes faction relationships ([[#|Import Relations]]).
   * Factions: Import changes to factions of npcs and creatures. ([[#|Import Factions]]).
   * Filter: Filter a mergeable mod to currently active mods ([[#|Merge Filtering]]).
   * Graphics: Mod is a graphics replacer ([[#|Import Graphics]]).
-  * Hair: Mod contributes hair styles ([[#|Race Info]]).
+  * Hair: Mod contributes hair styles ([[#|Race Records]]).
   * IIM: Trigger [[#|Item Interchange Mode]]. 
   * Invent: Import changes to inventory. ([[#|Import Inventory]]).
   * InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.
@@ -1061,16 +1061,16 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * NoMerge: Mod should not be merged even though they're technically mergeable.
   * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
   * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
-  * R.Mouth: Mod changes mouth/tongue ([[#|Race Info]]).
-  * R.Relations: Mod changes race relationships ([[#|Race Info]]).
-  * R.Teeth: Mod changes upper/lower teeth ([[#|Race Info]]).
+  * R.Mouth: Mod changes mouth/tongue ([[#|Race Records]]).
+  * R.Relations: Mod changes race relationships ([[#|Race Records]]).
+  * R.Teeth: Mod changes upper/lower teeth ([[#|Race Records]]).
   * Relev: Mod relevels items in ([[#|Leveled Lists]]).
-  * Scripts: Mod modifies item, npc or object scripts ([[#| Import Scripts]]).
+  * Scripts: Mod modifies item, npc or object scripts ([[#|Import Scripts]]).
   * Sound: Mod is a sound replacer ([[#|Import Sound]]).
   * SpellStats: Mod modifies spell stats ([[#|Import Spell Stats]]).
   * Stats: Mod modifies item stats ([[#|Import Stats]]).
-  * Voice-F: Mod modifies female voice definition ([[#|Race Info]]).
-  * Voice-M: Mod modifies male voice definition ([[#|Race Info]]).
+  * Voice-F: Mod modifies female voice definition ([[#|Race Records]]).
+  * Voice-M: Mod modifies male voice definition ([[#|Race Records]]).
 * __Manual Tagging__
   * You can manually set the tags that are applied to any mod by right clicking in the Bash Tags field and checking and unchecking tags as you like. Manual tags are shared for all users on a given computer.
   * If you have edited tags but want to revert to automatic tagging, just right click and choose "Automatic". 
@@ -1094,7 +1094,7 @@ Oscuro's_Oblivion_Overhaul.esp >> OOO.esp
 Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 
 === Merge Patches
-* This component causes Bash to fully merge the content of specified patch files into the bashed patcher, thus allowing you to remove the patch mod from the load order.
+* This component causes Bash to fully merge the content of specified patch files into the Bashed Patcher, thus allowing you to remove the patch mod from the load order.
 * __Notes:__
   * Most mod files are **not** mergeable. To be mergeable by Bash, the mod must: 
     * Only contain record types that Bash recognizes (e.g., no game settings, cells, dialog, etc.) 
@@ -1111,7 +1111,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   * The mod being filtered must not be active at the time the patch is built.
   * Filtering is mostly limited to the top level. 
     * E.g., if MMM is not loaded, then changes to MMM specific records will be skipped.
-    * However, if a record has been changed so that it refers to a record from a mod that is not loaded -- then that reference will (usually) not be filtered out. Hence the bashed patch will end up dependent on that mod after all.
+    * However, if a record has been changed so that it refers to a record from a mod that is not loaded -- then that reference will (usually) not be filtered out. Hence the Bashed Patch will end up dependent on that mod after all.
   * Deep Filtering: 
     * Entries in leveled lists will be filtered. E.g. if a leveled list has items from MMM, but MMM is not active, then the MMM entries will be discarded.
     * For creatures and NPCs, spells, factions and items will be filtered.
@@ -1145,7 +1145,7 @@ __Importers__ are components that import specific information from selected mods
     * Actors.AIPackages 
       *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
 * __Usage__
-  * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
+  * For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
   * In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
 
 === Import Cells
@@ -1160,7 +1160,7 @@ __Importers__ are components that import specific information from selected mods
     * C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
     * C.Water: Mod changes cell water type/level.
 * __Usage__
-  * For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
+  * For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
   * In case two source mods modify the same cell in the same way, then the later loading source mod will win. If they modify the same cell in different ways (e.g. one changes water, the other changes ownership), then both changes will be included in the patch.
 
 === Import Factions
@@ -1178,7 +1178,7 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Graphics
 * __Overview__
-. Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's [[http://www.tesnexus.com/files/file.php?id=5570|Book Jackets]] mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
+. Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's [[http://www.tesnexus.com/downloads/file.php?id=5570|Book Jackets]] mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>Graphics</code> [[#BashTags|tag]] in the mod description. 
 * __Graphics/Records Handled:__
@@ -1192,7 +1192,7 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Names
 * __Overview__
-. This component is intended to merge changes from a renamer mod (e.g., [[http://wrye.ufrealms.net/Rational%20Names%202.html | Rational Names]]) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is [[http://wrye.ufrealms.net/Rational%20Names%202.html | Rational Names]].
+. This component is intended to merge changes from a renamer mod (e.g., [[http://www.wryemusings.com/Rational%20Names%202.html | Rational Names]]) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is [[http://www.wryemusings.com/Rational%20Names%202.html | Rational Names]].
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>Names</code> [[#BashTags|tag]] in the mod description. 
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Names.csv</code>. Note that the [[#|Export/Import Names]] command will export files in this format.
@@ -1222,10 +1222,10 @@ __Importers__ are components that import specific information from selected mods
 
 === Import NPC Faces
 * __Overview__
-. This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://www.tesnexus.com/files/author.php?id=60210|Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
+. This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://www.dreamingthepyramid.net/TNR-home.html|Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 * __Configuration__
   * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> [[#BashTags|tag]] in the mod description. 
-  * Note that since there is a now a [[http://www.tesnexus.com/files/file.php?id=9971|TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
+  * Note that since there is a now a [[http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip|TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
 * __Source Mods__
   * Since TNR contains ~~only~~ face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods -- but ~~do~~ keep them in your data directory, since Bash will need to find them when updating the patch.
 
@@ -1285,10 +1285,24 @@ __Importers__ are components that import specific information from selected mods
   * Source mods are automatically recognized if they have a <code>Stats</code> [[#BashTags|tag]] in the mod description. 
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Stats.csv</code>. Note that the [[#|Export/Import Stats]] command will export files in this format.
 
+=== Import Spell Stats
+* __Overview__
+  * This patcher can be used to modify spell stats according to specified mods and/or spreadsheet files. 
+  * One use for this is to make sure that spell stats from one early loading mod are not overridden by a layer loading mod. 
+  * Another use is patch random spell mods to fit the spell balancing system specified by one of the overhaul mods. For this use the best approach is to supply a single spreadsheet which rebalances spells of many mods to fit a given overhaul. When using such a file, Bash will only apply stats for mods that are currently active and ignore the rest.
+  * Source spreadsheets can be generated by using the [[#|Export/Import Spell Stats]] command.
+* __Configuration:__ 
+  * Source mods are automatically recognized if they have a <code>SpellStats</code> [[#BashTags|tag]] in the mod description. 
+  * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the [[#|Export/Import Spell Stats]] command will export files in this format.
+
 -------------------------------------------------------------------------------
 __Tweakers__ tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
-=== Globals
-* Change specified globals to specified values.
+
+== Globals
+* Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
+* __Crime: Force Jail:__ The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
+* __Thieves Guild: Quest Misdemeanor Penalty:__ Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
+* __Timescale:__ Oblivion's timescale.
 
 === NPC Tweaker
 * Changes to NPC record subrecords; such as skeleton.
@@ -1339,12 +1353,6 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Robes Show Pants:__  Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. ~~Not recommended~~ because graphics clipping is common.
 * __Unlimited Amulets:__  Allows you to wear an unlimited number of amulets. ~~Not recommended~~ because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
 * __Unlimited Rings:__  Same thing for rings. 
-
-== Globals
-* Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
-* __Crime: Force Jail:__ The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
-* __Thieves Guild: Quest Misdemeanor Penalty:__ Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
-* __Timescale:__ Oblivion's timescale.
 
 === Tweak Names
 * Tweaks names of items and spells to make them sort more easily in inventory. For each type of item you can select the format to be used. 
@@ -1400,12 +1408,12 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 
 === Alchemical Catalogs
 * __Overview__
-. This patcher component will update the alchemical catalogs found in the [[http://wrye.ufrealms.net/Cobl.html|Common Oblivion]]. No configuration is required and the catalogs will not be produced unless __Cobl Main.esm__ is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See [[http://wrye.ufrealms.net/Cobl.html| COBL docs]] for more information on how to acquire the catalogs.
+. This patcher component will update the alchemical catalogs found in the [[http://www.wryemusings.com/Cobl.html|Common Oblivion]]. No configuration is required and the catalogs will not be produced unless __Cobl Main.esm__ is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See [[http://www.wryemusings.com/Cobl.html| COBL docs]] for more information on how to acquire the catalogs.
 
 === Cobl Exhaustion
 * Requires Cobl 1.66 or higher.
 * Converts powers into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
-* Cobl's power exhaustion feature is intended as a replacment for my [[http://wrye.ufrealms.net/Power%20Exhaustion.html|Power Exhaustion]] mod. 
+* Cobl's power exhaustion feature is intended as a replacment for my [[http://www.wryemusings.com/Power%20Exhaustion.html|Power Exhaustion]] mod. 
 
 === Content Checker
 * When activated, this will check the inventory contents of containers, creatures and NPCs, and the entries of leveled lists to make sure that their entries are of valid types. E.g. it will try to ensure that leveled spell lists only contain spells and other leveled lists. 
@@ -1430,7 +1438,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
   * Generally it's best to set the bash tags correctly and leave the configuration on auto. However, it's also possible to manually configure delevelers/relevelers.
   * To add/remove mods from the list, uncheck Automatic and use the Add/Remove buttons.
   * To manually override the Delev/Relev tags for a given mod, right click on the mod name and check/uncheck states as necessary. To return to automatic setting, choose the "Auto" option instead.
-* __[[http://devnull.devakm.googlepages.com/convergence|FCOM]]__
+* __[[http://devnull.sweetdanger.net/convergence/|FCOM]]__
   * FCOM (aka Kaboom, aka FraBOOOMMM) is a mod by dev_akm and others that attempts to merge the changes from various major mods. While this might seem to be competitive with Bash's List Merger, it's actually complementary, since it's able to intelligently merge complicated list structures as well as correct and merge faction information.
   * For further information on using FCOM with Bash, see the FCOM release notes/topics.
 * __Empty Sublist Cleaning__
@@ -1442,7 +1450,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 
 === Power Exhaustion
 * __Overview:__
-* My [[http://wrye.ufrealms.net/Power%20Exhaustion.html|Power Exhaustion]] mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
+* My [[http://www.wryemusings.com/Power%20Exhaustion.html|Power Exhaustion]] mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
 * Assorted_Exhaust.csv: This patcher extends coverage to the Orrery and Shivering Isles powers.
 * Kmacg94_Exhaust.csv: This patcher (by Kmagc94) extends coverage to several more mods (bgBalancingEVCore, Consequences, Kenhanimal's Awsome Vampire Mod, Oblivion War Cry EV, Oscuro's Oblivion Overhaul, StartX Vanilla Vampires Revised, Vampire Hunter Tools, Vows and Covenants).
 
@@ -1532,6 +1540,9 @@ At the top of the report are generic warnings.
 
 === Ruleset Information
 The rest of the report is divided into rulesets reports. Rulesets are text files provided by modders and other modders and other players. They basically tell Bash's mod checker which things to look out for and what to say about them in the Mod Checker report. 
+* Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
+* Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
+* For more info on ruleset syntax, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker|UESP: Wrye Bash Mod Checker]].
 
 === Only One Warnings
 These warnings may appear the top of the ruleset report. Such warnings are followed by a list of active/merged esps. These are typically are conflicting mods that do almost the same thing. You can resolve this by deactivating all but one of the listed mods.
@@ -1556,11 +1567,6 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Suggestions:__ Toggles inclusion of mod group suggestions.
 * __Copy Text:__ Copies text of report to clipboard. (Useful for forum postings.)
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
-
-=== Ruleset Information
-* Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
-* Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
-* For more info on ruleset syntax, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker|UESP: Wrye Bash Mod Checker]].
 
 == INI Tweaks Tab ==================================================================
 * This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
@@ -1632,14 +1638,12 @@ After creating a savegame, you may want to move some of your existing files to i
 
 == Save File Commands =========================================================
 These are the commands found on context menu for saves...
-
-=== File Commands
 * Same as for [[#FileCommands|Mods Tab: File Commands]] above.
 
 === Load Masters
 * Synchronizes activated mods to savegame's masters.
 
-=== List Masters
+=== List Masters (Save)
 * Lists savegame masters in window **and** copies the list to the clipboard.
 . This is useful for forum postings where you want help debugging your load list, or just want to show off how many mods you have loaded!
 * Notes
@@ -1734,10 +1738,10 @@ These are the commands found on context menu for saves...
 * "Abomb Animation Slowing" is a slowing a of animations that typically appears around 225 hours into the game (though it may occur earlier or later). Effects are that many animations (spell effects, burning fires, opening/closing doors) have noticeably stop action effects, even while the rest of the scene is rendered normally. In fact the problem is ~~worse~~ in areas with high frame rates (e.g., simple interiors). This is presumably a bug with the game engine, probably something with thread prioritization for animations.
 * The trigger for animation slowing seems to be the last four bytes of the TesClass data chunk in the save file. These bytes apparently represent a float value, which increments steadily with game play (on my machine advancing at about 2/3 of game seconds played). When the counter crosses a certain threshold (0x49000000), the animation slowing kicks in suddenly. The fix seems to be to simply reset this counter to an early value (0.0 would probably work. I use 8.0 or 0x41000000).
 * There have been some reports of related problems with animations (dying wraiths not dropping properly) and physics collisions. Also, some have reported problems showing up before 0x49000000. However, there is clearly a substantial change as the counter crosses 0x490000, and the reported physics problems have been seen earlier in the game and so may be unrelated.
-* For more discussion see: [[http://www.bethsoft.com/bgsforums/index.php?showtopic=688265|ESForums: Slow/Frozen Doors]].
+* For more discussion see: [[http://forums.bethsoft.com/?showtopic=688265|ESForums: Slow/Frozen Doors]].
 
 === Repair Factions
-* (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new [[#|Update Levels]] function. 
+* (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new [[#|Update NPC Levels]] function. 
 * Also (optionally) updates NPC factions to reflect faction changes in mods.
 * __Background__
   * The v105 bug caused some NPCs in the savegame to be marked as having no factions and no spells. The most notable effect of this was faction infighting, however, another major effect (for people importing faces at the start of the game) was the removal of the player from the playerfaction (very bad!). A few other rare effects might happen -- e.g. the inhabitants of Alsewell might become invisible sooner than they should.
@@ -1917,8 +1921,8 @@ Bash now indicates the current version of Oblivion.esm in several places...
 === Internationalization
 Bash now supports localization for most? western languages (translation of program strings to local language). It still probably does not support non-roman character sets (Cyrillic, Arabic, Asian languages, etc.). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
 * **Custom Program Strings**
-  * Custom program strings are translated from lookup files that you'll find in the <code>Mopy\local</code>. E.g., for English, it would be <code>Mopy\locale\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)
-  * These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\locale\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this -- once someone does the txt files for a language, they can redistribute them to other people -- including me, so that I can include them in next Bash release.
+  * Custom program strings are translated from lookup files that you'll find in the <code>Mopy\Data</code>. E.g., for English, it would be <code>Mopy\Data\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)
+  * These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\Data\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this -- once someone does the txt files for a language, they can redistribute them to other people -- including me, so that I can include them in next Bash release.
 * **Generating the Translation**
 . To begin translating, or update an existing translation file...
   * Go to Mods tab, right click on **File** column header and select **Dump Translator** from the pop up menu.
@@ -2045,7 +2049,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
 * New export/import options; Item Data, Prices
 * INI Tweaks tab instead of Ini tweaks menu, showing status of the tweak etc. (contributed by Lojack)
-* Bashed patch changes:
+* Bashed Patch changes:
     * New patchers:
         * Actors.DeathItems
         * Actors.Animations
@@ -2073,12 +2077,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Updated 7z dll & exe to latest version
 * Various small fixes and code cleanups
 * Fixes to 
-* A few memory usage optimizations when building the bashed patch
+* A few memory usage optimizations when building the Bashed Patch
 * Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
-* A new ini setting to determine whether or not to autocheck new items in the bashed patch dialogue (previously was determined per patcher in the code). 
+* A new ini setting to determine whether or not to autocheck new items in the Bashed Patch dialogue (previously was determined per patcher in the code). 
 
 === 277 [01/08/2010] [PacificMorrowind, Haama, Badhair]
-* fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
+* fixes: a GMST error causing problems with rebuilding the Bashed Patch, a couple others, typo fixes.
 * a new Bashed Patch section added: Globals
 * 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
 * added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
@@ -2148,7 +2152,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Safety check on bolt.Path.moveTo to avoid accidental deletion.
   * Fix tooltip for Oblivion launcher to show "+ OBSE" correctly.
   * Fix a bug in handling final lines of ini tweak files that lack a trailing new line.
-  * Bashed patch rebuild will now auto-activate files as necessary.
+  * Bashed Patch rebuild will now auto-activate files as necessary.
 * Refactoring:
   * Change formid/formId to fid.
   * Removed "Id" from end of record fields.
@@ -2424,7 +2428,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added R.Teeth and R.Mouth tags.
   * Eyes and Hair for each race are now sorted by name.
 * New: [[#|Import Roads]].
-* Fix a bug in working with world records in bashed patch.
+* Fix a bug in working with world records in Bashed Patch.
 * Workaround for bug in time.strptime for Japanese locale.
 
 === 226 [12/14/2008]
@@ -2433,11 +2437,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * New [[#|Decompile All]].
 
 === 225 [12/13/2008]
-* Bashed patch now checks for "compile all" mods.
+* Bashed Patch now checks for "compile all" mods.
 
 === 224 [12/12/2008]
 * Updated Rational_Names.csv.
-* Bug fix for world orphan mod reporting in bashed patch.
+* Bug fix for world orphan mod reporting in Bashed Patch.
 
 === 223 [12/11/2008]
 * [[#|Mod Checker]]
@@ -2453,7 +2457,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 222 [12/6/2008] 
 * Fix an iteritems bug in Balo group setting.
 * Fix a rare bug with PM archiving dating for undated archives.
-* Bashed patch now gets magic school/name from active mods. 
+* Bashed Patch now gets magic school/name from active mods. 
 * bolt.Flags: add eq/ne operator handling.
 * Cell/World record review/update for fuller support of cell/world records.
 * New: [[#|Remove World Orphans]].
@@ -2464,19 +2468,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added Configuration, Suggestions and Copy Text buttons.
 
 === 221 [11/23/2008]
-* [[#|Check Mods]] 
+* [[#ModChecker|Check Mods]] 
   * Now checks for missing/delinquent masters.
   * Now supports merge only checking.
   * Now supports file existence checking.
 
 === 220 [11/23/2008]
-* [[#|Check Mods]] 
+* [[#ModChecker|Check Mods]] 
   * Now checks for mergeable, but active mods.
   * Now supports HEADER and ONEOF blocks.
   * Changed report format slightly.
 
 === 219 [11/22/2008]
-* New feature: [[#|Check Mods]].
+* New feature: [[#ModChecker|Check Mods]].
 
 === 218 [11/17/2008]
 * Fix bug with auto-updating after removing a mergeable file.
@@ -2486,7 +2490,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Mergeability is now determined automatically (see [[#|Mark Mergeable]] and [[#|Merge Patches]].)
 
 === 216 [11/14/2008]
-* [[#|Race Info]] add support for R.Relations.
+* [[#|Race Records]] add support for R.Relations.
 * [[#|Installation]] Simplified installation: Wrye Python, no shortcuts.
 * Fix translation so that 'German' locales map to 'DE'.
 * Maybe fix incompatibilities with very old config files.
@@ -2498,7 +2502,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 214 [10/29/2008]
 * [[#|Alchemical Catalogs]]: 
   * Changed to case insensitive sorting of ingredients in "Alchemical Effects" catalogs.
-* [[#|Export Relations]] and [[#|Import Relations]] bashed patch component.
+* [[#|Export Relations]] and [[#|Import Relations]] Bashed Patch component.
 
 === 213 [10/27/2008]
 * [[#|Alchemical Catalogs]]: 
@@ -2839,11 +2843,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Updated Portuguese (by Hadoki).
 
 === 138 [2/15/2008]
-* [[#|Auto Ordering]]: Tweak diff between mods from 60 seconds to 70 (for OBMM compatibility).
+* [[#Balo|Auto Ordering]]: Tweak diff between mods from 60 seconds to 70 (for OBMM compatibility).
 * Fix order of MGEF sub-records.
 * Disable ctrl-up/down for auto-sorted files.
 * Refactor saveFile.getRecord.
-* Upgraded [[#|List Masters]] to be like [[#|List Mods]].
+* Upgraded [[#|List Masters (Save)]] to be like [[#|List Mods]].
 * Bashed Patch: [[#|Morph Factions]].
 * Wrye Morph support: In progress.
 
@@ -2858,17 +2862,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 135 [2/2/2008]
 * Added Portuguese translation (by Hadoki).
 * Added [[#|SEWorld Tests]] to Bashed Patch.
-* Minor tweaks to [[#|Auto Ordering]].
+* Minor tweaks to [[#Balo|Auto Ordering]].
 
 === 134 [2/1/2008]
-* Fix: [[#|Auto Ordering]] to resort after redating anchor files.
+* Fix: [[#Balo|Auto Ordering]] to resort after redating anchor files.
 
 === 133 [2/1/2008]
-* New: [[#|Auto Ordering]] by group.
+* New: [[#Balo|Auto Ordering]] by group.
 * Group headers in mods lists.
 
 === 132 [1/31/2008]
-* Fix a bug with merging INGR records in bashed patch.
+* Fix a bug with merging INGR records in Bashed Patch.
 
 === 131 [1/31/2008]
 * Hack to get around bug with screens tab not showing up correctly.
@@ -2912,7 +2916,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 122 [12/23/2007]
 * Updated Russian translation (by DJ_Kovrik).
 * Better handling of deleted records.
-* Fix a problem with bashed patches not including recent additions.
+* Fix a problem with Bashed Patches not including recent additions.
 
 === 121 [12/16/2007]
 * [[#Details|Mod Details]] like TESCS Details view.
@@ -3106,8 +3110,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Mods marked as mergeable now marked with green text in main mods list.
 
 === 0.88 [8/2/2007]
-* New [[#|Patch Aliases]] handling.
-* New [[#|Merge Patches]] and [[#|Can Merge]] command.
+* New [[#AliasModNames|Patch Aliases]] handling.
+* New [[#|Merge Patches]] and [[#MarkMergeable|Can Merge]] command.
 * Fix minor bug with deleted quick/autosave backup files.
 * Add support for Ammo to [[#|Export/Import Stats]] and [[#|Import Stats]].
 * Added Rational_Names.csv for use with [[#|Import Names]].
@@ -3356,7 +3360,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * In progress: Bashed Patches
 
 === 0.52 [3/11/2007]
-* Tweaked [[#SaveImportfromMod|Face Import dialog]] (better layout, saves game screenshot as image).
+* Tweaked [[#FaceImport|Face Import dialog]] (better layout, saves game screenshot as image).
 * Added Load Order column to [[#|Mods Tab]].
 * Fix a bug that broke Replacers feature.
 * Better handling for savegame file errors.
@@ -3373,14 +3377,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 0.50 [2/27/2007]
 * Tweak Unicode encoding to fix with Cyrillic (and hopefully other languages).
-* Add [[#|Remove Null Refs]] command.
-* Add [[#|Import TNR Faces]] command.
+* Add [[#RemoveBloat|Remove Null Refs]] command.
+* Add [[#ImportNPCFaces|Import TNR Faces]] command.
 
 === 0.49 [2/19/2007]
-* Savegame [[#|statistics]] bugfix.
+* Savegame [[#|Statistics]] bugfix.
 
 === 0.48 [2/19/2007]
-* More savegame [[#|statistics]].
+* More savegame [[#|Statistics]].
 
 === 0.47 [2/18/2007]
 * List Merging: Html logging

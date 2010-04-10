@@ -24,12 +24,12 @@
     <BODY>
     <h1><a name='WryeBash'>Wrye Bash</a></h1>
 <table><tr valign=top><tr valign=top><td  width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
-<h3><a name='GettingStarted'>Getting Started:</a></h3>
+<h3><a name='QuickStart'>Quick Start</a></h3>
 <p class=list-1>&bull;&nbsp; <B><a href="#Installation">Installation</a></B>
 <p class=list-1>&bull;&nbsp; <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash">How To's and FAQs</a>
-<p class=list-1>&bull;&nbsp; <a href="http://www.bethsoft.com/bgsforums/index.php?showtopic=1029359">RELZ Topic</a>
+<p class=list-1>&bull;&nbsp; <a href="http://forums.bethsoft.com/?showtopic=1029359">RELZ Topic</a>
 <p class=list-1>&bull;&nbsp; Download: 
-  <p class=list-2>&bull;&nbsp; <a href="http://wrye.ufrealms.net">UFRealms</a>
+  <p class=list-2>&bull;&nbsp; <a href="http://www.wryemusings.com/">Wrye Musings</a>
   <p class=list-2>&bull;&nbsp; <a href="http://tesnexus.com/downloads/file.php?id=22368">TesNexus</a> 
 <p class=list-1>&bull;&nbsp; <a href="#Versions">Change Log</a>
 <p class=empty>&nbsp;</p>
@@ -91,7 +91,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportScripts">Export/Import Scripts</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportSpellStats">Export/Import Spell Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#Details">Details</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#ListMasters">List Masters</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ListMastersMod">List Masters (Mod)</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#MarkLevelers">Mark Levelers</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#MarkMergeable">Mark Mergeable</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#NvidiaFogFix">Nvidia Fog Fix</a></p>
@@ -126,11 +126,11 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportScriptsContents">Import ScriptsContents</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportSound">Import Sound</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportStats">Import Stats</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#Globals">Globals</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ImportSpellStats">Import Spell Stats</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#Globals">Globals</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#NPCTweaker">NPC Tweaker</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakAssorted">Tweak Assorted</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakClothes">Tweak Clothes</a></p>
-<p class=list-1>&bull;&nbsp; <a href="#Globals">Globals</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakNames">Tweak Names</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakSettings">Tweak Settings</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a></p>
@@ -152,7 +152,6 @@
 <p class=list-2>&bull;&nbsp; <a href="#OnlyOneWarnings">Only One Warnings</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ModGroupInfo">Mod Group Info</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ModCheckerOptions">Mod Checker Options</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#RulesetInformation">Ruleset Information</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#INITweaksTab">INI Tweaks Tab</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#SavesTab">Saves Tab</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#SavesList">Saves List</a></p>
@@ -162,9 +161,8 @@
 <p class=list-2>&bull;&nbsp; <a href="#CreateEditProfiles">Create/Edit Profiles</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#MovingSavegames">Moving Savegames</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#SaveFileCommands">Save File Commands</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#FileCommands">File Commands</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#LoadMasters">Load Masters</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#ListMasters">List Masters</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ListMastersSave">List Masters (Save)</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#DiffMasters">Diff Masters</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#Statistics">Statistics</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#OBSEStatistics">.OBSE Statistics</a></p>
@@ -216,8 +214,8 @@
 <h2><a name='QuickTour'>Quick Tour</a></h2>
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
 <p class=empty>&nbsp;</p>
-<p class=list-1>&bull;&nbsp; At the top are the main tabs: <a href="#Installers Tab">Installers</a>, <a href="#ReplacersTab">Replacers</a> (if enabled but superseded by Installers Tab), <a href="#ModsTab">Mods</a>, <a href="#INITweaksTabINITweaks">INI Tweaks Tab|INI Tweaks</a> <a href="#SavesTab">Saves</a> and <a href="#ScreenshotsTab">Screenshots</a>.
-<p class=list-1>&bull;&nbsp; The <B>savegame list</B> is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best &#150 totally safe to play. Red is worst &#150 meaning that one of the master mods files is missing.
+<p class=list-1>&bull;&nbsp; At the top are the main tabs: <a href="#InstallersTab">Installers</a>, <a href="#ReplacersTab">Replacers</a> (if enabled but superseded by Installers Tab), <a href="#ModsTab">Mods</a>, <a href="#INITweaksTab">INI Tweaks</a> <a href="#SavesTab">Saves</a> and <a href="#ScreenshotsTab">Screenshots</a>.
+<p class=list-1>&bull;&nbsp; The <B>savegame list</B> is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best &#150; totally safe to play. Red is worst &#150; meaning that one of the master mods files is missing.
 <p class=list-1>&bull;&nbsp; The file details for the currently selected savegame are shown to the right. File name, stats and savegame preview image are all shown. 
 <p class=list-1>&bull;&nbsp; The <B>masters list</B> for the savegame is shown at the bottom of the details. The masters for the savegame are just the mods (esps and esms) that the savegame depends on. 
 <p class=list-1>&bull;&nbsp; Most operations in Wrye Bash are accessed through <B>context menus.</B> In this case, I right clicked on a savegame, and so got the savegame menu. Here I'm selecting the <a href="#ReweighPotions">Reweigh Potions</a> command.
@@ -305,8 +303,8 @@
 <h3><a name='GetandInstall'>Get and Install</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Download and run <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44">Wrye Python</a></B>
   <p class=list-2>&bull;&nbsp; Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer. 
-  <p class=list-2>&bull;&nbsp; <B>Note:</B> This is not part of Wrye Bash itself &#150 rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se <a href="#PythonComponents">Python Components</a>.
-<p class=list-1>&bull;&nbsp; <B>Download and Unzip <a href="http://wrye.ufrealms.net/#WryeBash">Wrye Bash XXX.zip</a></B> 
+  <p class=list-2>&bull;&nbsp; <B>Note:</B> This is not part of Wrye Bash itself &#150; rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se <a href="#PythonComponents">Python Components</a>.
+<p class=list-1>&bull;&nbsp; <B>Download and Unzip <a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX.zip</a></B> 
   <p class=list-2>&bull;&nbsp; Unzip the files <I>into your Oblivion installation directory.</I> If you've done this correctly, you'll find bash.py and other bash files under Oblivion\Mopy.
   <p class=list-2>&bull;&nbsp; Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 <p class=list-1>&bull;&nbsp; <B>Upgrading</B>
@@ -320,7 +318,7 @@
 <h3><a name='WindowsVista'>Windows Vista</a></h3>
 <p class=list-1>&bull;&nbsp; On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against write by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 <p class=list-1>&bull;&nbsp; <B><I>Best Solution:</I></B> Install Oblivion to somewhere other than under the Program Files directory. (E.g, install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
-<p class=list-1>&bull;&nbsp; <B><I>Alternate Solutions:</I></B> Alternatively, you might always run as admin, or turn off UAC &#150 but both of those approaches are ill-advised. For more advice, see the <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help">Unofficial Help</a> page at UESP.
+<p class=list-1>&bull;&nbsp; <B><I>Alternate Solutions:</I></B> Alternatively, you might always run as admin, or turn off UAC &#150; but both of those approaches are ill-advised. For more advice, see the <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help">Unofficial Help</a> page at UESP.
 <p class=empty>&nbsp;</p>
 <h3><a name='StartingWryeBash'>Starting Wrye Bash</a></h3>
 <p class=list-1>&bull;&nbsp; <B><I>Double click</I></B> the "Wrye Bash Launcher.pyw" file.
@@ -349,7 +347,7 @@
     argument accordingly. 
   <p class=list-2>&bull;&nbsp; Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.
 <p class=list-1>&bull;&nbsp; <B>Dealing with Bugdump</B>
-  <p class=list-2>&bull;&nbsp; First, <B><I>look at it!</I></B> &#150 especially the last several lines &#150 this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own. 
+  <p class=list-2>&bull;&nbsp; First, <B><I>look at it!</I></B> &#150; especially the last several lines &#150; this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own. 
   <p class=list-2>&bull;&nbsp; Second, see following section for common problems and their solution.
   <p class=empty>&nbsp;</p>
 <h3><a name='CommonProblems'>Common Problems</a></h3>
@@ -379,11 +377,11 @@
     <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
     <p class=list-3>&bull;&nbsp; Download link: <a href="http://python.org/ftp/python/2.5.2/python-2.5.2.msi">Python 2.5.2</a>
   <p class=list-2>&bull;&nbsp; <B>wxPython 2.8.7.1 ANSI</B>  
-    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 &#150 later versions of wxPython 2.8 are not compatible with Psyco.
+    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 &#150; later versions of wxPython 2.8 are not compatible with Psyco.
     <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe">wxPython 2.8.7.1 ANSI for python 2.5</a>. 
   <p class=list-2>&bull;&nbsp; <B>pyWin32</B>
     <p class=list-3>&bull;&nbsp; PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/project/platformdownload.php?group_id=78018">SourceForge pywin32</a>. <B>Be sure to install the version that matches the version of python you installed!</B> E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/projects/pywin32/files/latest">SourceForge pywin32</a>. <B>Be sure to install the version that matches the version of python you installed!</B> E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
   <p class=list-2>&bull;&nbsp; <B>ComTypes 0.5.2</B> 
     <p class=list-3>&bull;&nbsp; ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
   <p class=list-2>&bull;&nbsp; <B>PIL 1.1.6</B>
@@ -479,7 +477,7 @@
   <p class=list-2>&bull;&nbsp; If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
 <p class=list-1>&bull;&nbsp; BashMon
   <p class=list-2>&bull;&nbsp; This launches bashmon.py in a command shell window. This is for use with Breeze582000's Seducers/Succubi mod and Wrye's Morph mod. 
-  <p class=list-2>&bull;&nbsp; For more info, see <a href="http://www.bethsoft.com/bgsforums/index.php?showtopic=746499">[WIPZ] Succubi Race</a>.
+  <p class=list-2>&bull;&nbsp; For more info, see <a href="http://forums.bethsoft.com/?showtopic=746499">[WIPZ] Succubi Race</a>.
 <p class=list-1>&bull;&nbsp; Help
   <p class=list-2>&bull;&nbsp; Show this help file in the default web browser.
 <p class=list-1>&bull;&nbsp; Doc Browser
@@ -493,7 +491,7 @@
 <h3><a name='GettingStarted'>Getting Started</a></h3>
 <p>Here's a brief getting started guide. You may have to read sections further down before this section makes full sense.
 <p class=list-1>&bull;&nbsp; <B>Terminology: Package</B>
-  <p class=list-2>&bull;&nbsp; A "package" is a collection of esps, esms and/or resource files. Everything listed under the Installers tab is a package. Packages can be either archive files in (zip, 7z or rar format) or directories (aka <a href="#ProjectPackages">Projects</a>).
+  <p class=list-2>&bull;&nbsp; A "package" is a collection of esps, esms and/or resource files. Everything listed under the Installers tab is a package. Packages can be either archive files in (zip, 7z or rar format) or directories (aka Projects).
 <p class=list-1>&bull;&nbsp; <B>Terminology: <a href="#BainConversionFiles">Bain Conversion File</a></B>
   <p class=list-2>&bull;&nbsp; A "Bain Conversion File" or "BCF" is a special archive that tells Bash how to convert a standard archive into a Bain-ready archive. It also contains any new files that weren't present in the original archive. BCF's allow mod users to easily share their custom Bain compilations.
 <p class=list-1>&bull;&nbsp; <B>Initialization</B>
@@ -520,7 +518,7 @@
   <p class=list-2>&bull;&nbsp; Installed packages will be marked with a "+".
 <p class=list-1>&bull;&nbsp; <B>Icon Colors</B>
 <p class=list-1>&nbsp;&nbsp; Icon colors indicate the degree to which the package is synchronized with the Oblivion\Data directory:
-  <p class=list-2>&bull;&nbsp; Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green &#150 since it too is fully synced with the data directory.
+  <p class=list-2>&bull;&nbsp; Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green &#150; since it too is fully synced with the data directory.
   <p class=list-2>&bull;&nbsp; Red: Some files in the package are missing from the data directory.
   <p class=list-2>&bull;&nbsp; Orange: All package files are present in the data directory, but some esps/esms are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
   <p class=list-2>&bull;&nbsp; Yellow: All package files are present in the data directory, but some resource files are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
@@ -528,7 +526,7 @@
   <p class=list-2>&bull;&nbsp; Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install. 
   <p class=list-2>&bull;&nbsp; Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
 <p class=list-1>&bull;&nbsp; <B>Icon Shape</B>
-  <p class=list-2>&bull;&nbsp; Diamond: A <a href="#ProjectPackages">project</a>, i.e. a subdirectory in the Installers directory.
+  <p class=list-2>&bull;&nbsp; Diamond: A project, i.e. a subdirectory in the Installers directory.
   <p class=list-2>&bull;&nbsp; Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 <p class=list-1>&bull;&nbsp; <B>Text Colors</B>
   <p class=list-2>&bull;&nbsp; Navy Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
@@ -542,7 +540,7 @@
 <p>Details for the currently selected package will be show on the right. There are (currently) three fields here:
 <p class=list-1>&bull;&nbsp; <B>Info Tabs</B>
 <p class=list-1>&nbsp;&nbsp; The tabs at the top display several types of information relevant to the current mod. Note that much of this information is dependent on the install status of the mod and sometimes it's order.
-  <p class=list-2>&bull;&nbsp; General: Shows summary info and the files to be installed &#150 as determined by sub-package, esp/m, voice filtering, etc.
+  <p class=list-2>&bull;&nbsp; General: Shows summary info and the files to be installed &#150; as determined by sub-package, esp/m, voice filtering, etc.
   <p class=list-2>&bull;&nbsp; Matched: Shows files which are identical to current data directory files.
   <p class=list-2>&bull;&nbsp; Missing: Files which are missing from the data directory.
   <p class=list-2>&bull;&nbsp; Mismatched: Files which are present in the data directory, but which aren't identical to the package's version of those files.
@@ -658,7 +656,7 @@
   <p class=list-2>&bull;&nbsp; <B>Refresh:</B> Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.
   <p class=list-2>&bull;&nbsp; <B>Move To...</B> Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.
 <p class=list-1>&bull;&nbsp; <B>Configuration</B>
-  <p class=list-2>&bull;&nbsp; <B>Has Special Directories:</B> Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory &#150 and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
+  <p class=list-2>&bull;&nbsp; <B>Has Special Directories:</B> Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory &#150; and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
   <p class=list-2>&bull;&nbsp; <B>Skip Voices:</B> If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension (<a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=4269">PES</a>, <a href="http://www.tesnexus.com/downloads/file.php?id=16622">TesNexus</a>) to prevent dialog subtitles from fading too rapidly.
 <p class=list-1>&bull;&nbsp; <B>Wizard Install Options:</B> Only Available if Wizard Install system is active (see WizardDocs.txt in the mopy folder for more info on the wizard install system)
   <p class=list-2>&bull;&nbsp; <B>Wizard:</B> Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).
@@ -667,7 +665,7 @@
 <p class=list-1>&bull;&nbsp; <B>Install</B>
   <p class=list-2>&bull;&nbsp; <B>Anneal:</B> Will "anneal" the selected file(s). This will install any missing files and correct any install order errors (aka "underrides").
   <p class=list-2>&bull;&nbsp; <B>Install:</B> Will do an "in-order" install. I.e. it will fully install the package except for files that are masked by by higher order packages.
-  <p class=list-2>&bull;&nbsp; <B>Install Missing:</B> The same as Install, except that it only installs missing files &#150 i.e. it will not override any currently existing files.
+  <p class=list-2>&bull;&nbsp; <B>Install Missing:</B> The same as Install, except that it only installs missing files &#150; i.e. it will not override any currently existing files.
   <p class=list-2>&bull;&nbsp; <B>Install Last:</B> Moves the package to to the end of the order list and installs it.
   <p class=list-2>&bull;&nbsp; <B>Uninstall:</B> Uninstalls the package. If Auto-Anneal is active, then files from lower order packages will automatically be restored as necessary.
 <p class=list-1>&bull;&nbsp; <B>Project</B>
@@ -702,7 +700,7 @@
   <p class=list-2>&bull;&nbsp; <B>Enable Wizard Install:</B> Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   <p class=list-2>&bull;&nbsp; <B>Auto-Refresh Projects:</B> Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
 <p class=list-1>&bull;&nbsp; <B>Behavior</B>
-  <p class=list-2>&bull;&nbsp; <B>BSA Redirection:</B> Uses Quarn's <a href="http://devnull.devakm.googlepages.com/archiveinvalidation">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+  <p class=list-2>&bull;&nbsp; <B>BSA Redirection:</B> Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
   <p class=list-2>&bull;&nbsp; <B>Clean Data Directory:</B> If this is checked, then any empty subfolders of the Oblivion\Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves Oblivion.exe performance. 
   <p class=list-2>&bull;&nbsp; <B>Show Inactive Conflicts:</B> If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes its useful to review all conflicting packages.
   <p class=list-2>&bull;&nbsp; <B>Show Lower Conflicts:</B> If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
@@ -729,7 +727,7 @@
     using the sort submenu of the column popup menu.
   <p class=list-2>&bull;&nbsp; Reverse a sort by redoing it. E.g., left click on the File column header
     twice in a row.
-    <p class=list-3>&bull;&nbsp; "Load Order" is the exception &#150 it will always appear in correct order.
+    <p class=list-3>&bull;&nbsp; "Load Order" is the exception &#150; it will always appear in correct order.
   <p class=list-2>&bull;&nbsp; Force ESMS to the top of the list by selecting "Sort by Type" from the 
     context menu.
   <p class=list-2>&bull;&nbsp; Force selected mods to the top of the list by selecting "Sort by Selection"
@@ -749,11 +747,11 @@
   <p class=list-2>&bull;&nbsp; <B><I>Pink:</I></B> A file that shares a modification date/time with another file.
     Not a problem unless they're both activated, in which case, the lines turn...
   <p class=list-2>&bull;&nbsp; <B><I>Orange:</I></B> Exclusion group violation. See <a href="#ExclusionGroups">Exclusion Groups</a> below. 
-  <p class=list-2>&bull;&nbsp; <B><I>Red:</I></B> A file that shares a modification date/time with another file &#150 with 
+  <p class=list-2>&bull;&nbsp; <B><I>Red:</I></B> A file that shares a modification date/time with another file &#150; with 
     both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Types</B>
   <p class=list-2>&bull;&nbsp; Regular checkmark: mod is active.
-  <p class=list-2>&bull;&nbsp; Plus sign (+) checkmark: mod is merged into an active <a href="#PatchMerger">Bashed Patch</a> mod.
+  <p class=list-2>&bull;&nbsp; Plus sign (+) checkmark: mod is merged into an active <a href="#BashedPatches">Bashed Patch</a> mod.
   <p class=list-2>&bull;&nbsp; No checkmark: Mod is neither active nor merged.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_blue_on.png" width="16" height="16" border="0" alt="Blue">
@@ -766,7 +764,7 @@
   <p class=list-2>&bull;&nbsp; Red: A master is missing. You should check to make sure that you have not inadvertently renamed or removed the mod.
 <p class=list-1>&bull;&nbsp; <B><a name='ExclusionGroups'>Exclusion Groups</a></B>
   <p class=list-2>&bull;&nbsp; Oftentimes users will have different versions of the same mod, or different mods which do the same sort of thing in an incompatible way. Exclusion groups can be used to help flag these mods so that you don't accidentally activate more than one at once. When an exclusion group is violated, all violating mods will be highlighted in orange.
-  <p class=list-2>&bull;&nbsp; Defining an exclusion group is easy &#150 just change the name of the mod to include a comma. The part of the name before the comma is the exclusion group.
+  <p class=list-2>&bull;&nbsp; Defining an exclusion group is easy &#150; just change the name of the mod to include a comma. The part of the name before the comma is the exclusion group.
   <p class=list-2>&bull;&nbsp; Example: 
     <p class=list-3>&bull;&nbsp; The "Drop Lit Torches in Combat" mod come in several variants with different messages and levels of brightness: plain, B (Brighter), NM (No messages) and BNM (Brighter, No Messages).
     <p class=list-3>&bull;&nbsp; Rename these to: "Combat Torch, A.esp" (plain), "Combat Torch B,esp", "Combat Torch, NM.esp" and "Combat Torch, BNM.esp"
@@ -797,7 +795,7 @@
 <p class=list-1>&bull;&nbsp; <B>Background</B>
   <p class=list-2>&bull;&nbsp; In case of conflicts between mods (e.g., two mods changing the same race), the last mod to load "wins", i.e., overwrites any changes made by any previous mod.
   <p class=list-2>&bull;&nbsp; Since load order is determined largely by modified date, load ordering utilities (including Bash) allow you to configure load order by setting the modified date of mods.
-  <p class=list-2>&bull;&nbsp; However, Bash goes further than load ordering &#150 it maintains the load order of mods by resetting their modified dates as needed.
+  <p class=list-2>&bull;&nbsp; However, Bash goes further than load ordering &#150; it maintains the load order of mods by resetting their modified dates as needed.
 <p class=list-1>&bull;&nbsp; <B>Changing Load Order</B>
   <p class=list-2>&bull;&nbsp; You can change the load order of any file by editing it's modified date in the details panel and saving the changes.
   <p class=list-2>&bull;&nbsp; You can alphabetically sort several mods at once by selecting them and then selecting "File: Sort" from the context menu.
@@ -822,7 +820,7 @@
       <p class=list-4>&bull;&nbsp; <B>Disallow Ghosting</B> - Checks "Don't Ghost" for every item. 
       <p class=list-4>&bull;&nbsp; <B>Invert Ghosting</B>  - Checks "Don't Ghost" if it was unchecked, and unchecks "Don't Ghost" if it was checked. 
     <p class=list-3>&bull;&nbsp; <B>OR</B> Turn auto-ghosting off temporarily, then turn it back on.
-  <p class=list-2>&bull;&nbsp; Bash however, <I>does</I> recognize ghosted files. So bashed patch merging, profile switching and Bain will work with ghosted esps.
+  <p class=list-2>&bull;&nbsp; Bash however, <I>does</I> recognize ghosted files. So Bashed Patch merging, profile switching and Bain will work with ghosted esps.
   <p class=empty>&nbsp;</p>
 <h3><a name='LoadLists'>Load Lists</a></h3>
 <p class=list-1>&bull;&nbsp; Aside from using checkboxes to select and unselect mods, you can also use load lists. These are accessed through the column context menu, and work in the same way at the <a href="#LoadMasters">Load Masters</a> command.
@@ -942,7 +940,7 @@
     <p class=list-3>&bull;&nbsp; When saving, be sure that the file name ends in <B>Formids.csv</B> and is a <B>csv format</B> file!
 <p class=list-1>&bull;&nbsp; <B>Using Tes4Edit</B>
   <p class=list-2>&bull;&nbsp; Start Tes4Edit with the mod loaded, then select "Batch Change Referencing Records", and the select the XXX_Formids.csv file that you just created. Tes4Edit will apply the changes to every record that uses that formid. 
-  <p class=list-2>&bull;&nbsp; <B><I>Warning</I></B> Tes4View changes <B><I>all</I></B> uses of the formid, including the definition of the object! E.g. if you edit OOO to get it to use Cobl's version of a lore book instead of OOO's version, then not only will the use of that book in leveled list be changed, so will the definition of the lore book in OOO! I.e. the original distinct record for the formid in OOO will be destroyed. Wrye Bash's Import Formids command is less aggressive in this way &#150 it only replaces <I>uses</I> of formids, not definitions of them.
+  <p class=list-2>&bull;&nbsp; <B><I>Warning</I></B> Tes4View changes <B><I>all</I></B> uses of the formid, including the definition of the object! E.g. if you edit OOO to get it to use Cobl's version of a lore book instead of OOO's version, then not only will the use of that book in leveled list be changed, so will the definition of the lore book in OOO! I.e. the original distinct record for the formid in OOO will be destroyed. Wrye Bash's Import Formids command is less aggressive in this way &#150; it only replaces <I>uses</I> of formids, not definitions of them.
 <p class=list-1>&bull;&nbsp; <B>Using Wrye Bash</B>
   <p class=list-2>&bull;&nbsp; If you're using Bash, the main considerations are:
     <p class=list-3>&bull;&nbsp; Complex records (cells, worldspaces, dialog, etc.) will not be updated.
@@ -950,7 +948,7 @@
   <p class=list-2>&bull;&nbsp; Once the dependencies are set, just use the Import: Formids command on the mod with the desired Formids.csv file. You'll get a report afterwards.
     <p class=list-3>&bull;&nbsp; It's probably a good idea to create a copy of the original file and make the changes on it. That way you can use Tes4View to do a before/after comparison to check the changes. (You'll want to use Tes4View's Compare To... command.)
 <p class=list-1>&bull;&nbsp; <B>Removing Dependencies</B>
-  <p class=list-2>&bull;&nbsp; If you've completely swapped from one base mod to another, then you may want to remove the old dependency. You can do that using Tes4Edit (Clean Masters command) or Tes4Gecko (Edit Master List). Note that Tes4Edit will only remove masters that you're not using at all. Tes4Gecko will remove used masters (with appropriate cleanup), and is a bit more manual &#150 i.e. it will only remove masters that you specify.
+  <p class=list-2>&bull;&nbsp; If you've completely swapped from one base mod to another, then you may want to remove the old dependency. You can do that using Tes4Edit (Clean Masters command) or Tes4Gecko (Edit Master List). Note that Tes4Edit will only remove masters that you're not using at all. Tes4Gecko will remove used masters (with appropriate cleanup), and is a bit more manual &#150; i.e. it will only remove masters that you specify.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportEditorIds'>Export/Import Editor Ids</a></h3>
 <p class=list-1>&bull;&nbsp; Export and import editor ids. This is for advanced modders only. It allows you to export editor ids to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the editor ids of a lot of items at once.
@@ -1003,11 +1001,11 @@
 <p class=list-1>&bull;&nbsp; <B><I>Export NPC Levels</I></B> exports the NPC level info from a mod to a tab separated spreadsheet file. This file can then be edited and re-imported using <B><I>Import NPC Levels.</I></B>
 <p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; This is an <B><I>advanced function</I></B> intended for modifying overhaul mods like <I>Oscuro's Oblivion Overhaul.</I> Editing the level files takes a bit of thought and work, but once done the level files can be posted for other players to use.
-  <p class=list-2>&bull;&nbsp; NPC leveling is only part of the leveling system. Leveled item lists also have a major impact, and there are creature levels as well &#150 neither of which is addressed by this feature.
+  <p class=list-2>&bull;&nbsp; NPC leveling is only part of the leveling system. Leveled item lists also have a major impact, and there are creature levels as well &#150; neither of which is addressed by this feature.
   <p class=list-2>&bull;&nbsp; NPC levels in existing saves will not be impacted by this, unless you then use the "Import NPC Levels" command on the save. <I>(Note that while mods import levels from a csv file, saves import their levels from a mod.)</I>
 <p class=list-1>&bull;&nbsp; <B>File Format</B>
-  <p class=list-2>&bull;&nbsp; The file format is pretty straightforward &#150 you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same tab separated format.
-  <p class=list-2>&bull;&nbsp; The first column is the formid &#150 <I>do not edit these!</I>
+  <p class=list-2>&bull;&nbsp; The file format is pretty straightforward &#150; you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same tab separated format.
+  <p class=list-2>&bull;&nbsp; The first column is the formid &#150; <I>do not edit these!</I>
   <p class=list-2>&bull;&nbsp; The second column is the editor id. This is for convenience only and is ignored on import.
   <p class=list-2>&bull;&nbsp; The next three columns are the leveling info
   <p class=list-2>&bull;&nbsp; The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
@@ -1041,10 +1039,10 @@
   <p class=list-2>&bull;&nbsp; After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportSpellStats'>Export/Import Spell Stats</a></h3>
-<p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the <a href="#ImportSpellStats">Import Spell Stats</a>. 
+<p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
 <p class=list-1>&bull;&nbsp; <B>Uses</B>
   <p class=list-2>&bull;&nbsp; Systematically editing spell statistics to fit a spell quality paradigm etc. The spreadsheet makes it easy to view and edit the stats in a systematic way.
-  <p class=list-2>&bull;&nbsp; Patching miscellaneous mods to fit a balance system through <a href="#ImportSpellStats">Import Spell Stats</a>. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
+  <p class=list-2>&bull;&nbsp; Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
 <p class=list-1>&bull;&nbsp; <B>Spreadsheet Format</B>
   <p class=list-2>&bull;&nbsp; The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
   <p class=list-2>&bull;&nbsp; Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.  
@@ -1052,7 +1050,7 @@
 <h3><a name='Details'>Details</a></h3>
 <p class=list-1>&bull;&nbsp; Displays list of records in mod, similar to Details view in TESCS.
 <p class=empty>&nbsp;</p>
-<h3><a name='ListMasters'>List Masters</a></h3>
+<h3><a name='ListMastersMod'>List Masters (Mod)</a></h3>
 <p class=list-1>&bull;&nbsp; Displays list of masters for mod, and copies same list to the clipboard. 
 <p class=empty>&nbsp;</p>
 <h3><a name='MarkLevelers'>Mark Levelers</a></h3>
@@ -1082,7 +1080,7 @@
   <p class=list-2>&bull;&nbsp; Some mods have a mild corruption in their file structure called "Orphaned World Groups". This happens when the world record that should be preceed all groups of exterior cells is missing from the mod.
   <p class=list-2>&bull;&nbsp; The corruption seems to happen automatically due to a mild bug in the construction set. If a mod is edited in the CS; and the mod has an esp master; and the esp master has exterior world cells; then the children cells for that master are added to the mod being edited regardless of whether the dependent mod edits them or not. But the matching world record is not edited. Hence: orphaned world groups.
   <p class=list-2>&bull;&nbsp; It's not really known if the orphaned world groups will cause any problem. At the least, they're unnecessary. Hence modders should probably remove them from their own mods.
-  <p class=list-2>&bull;&nbsp; If you have orphaned world groups, it will be mentioned by bash when you're rebuilding the bashed patch. You an also see them while reviewing the mod in Tes4View &#150 you'll see a world group without a corresponding world record.
+  <p class=list-2>&bull;&nbsp; If you have orphaned world groups, it will be mentioned by bash when you're rebuilding the Bashed Patch. You an also see them while reviewing the mod in Tes4View &#150; you'll see a world group without a corresponding world record.
   <p class=list-2>&bull;&nbsp; This command simply removes the orphaned world groups from the mod. 
   <p class=empty>&nbsp;</p>
 <h3><a name='UndeleteRefs'>Undelete Refs</a></h3>
@@ -1135,8 +1133,8 @@
   <p class=list-2>&bull;&nbsp; As soon as the group is assigned, the selected mods will immediately be resorted in alphabetical order under the group header for that group.
 <p class=list-1>&bull;&nbsp; <B>Automatic Grouping</B>
   <p class=list-2>&bull;&nbsp; Balo will automatically assign groups to mods the first time it encounters them. This will happen either when you turn Full Balo on, or when you add new mods to your mods directory and then return to Bash's screen.
-  <p class=list-2>&bull;&nbsp; If the mod is tagged with "Group: GroupName", then that mod will be assigned to group GroupName &#150 if that's a valid balo group.
-  <p class=list-2>&bull;&nbsp; If the mod is listed in Oblivion\Data\Bashed Patch\Bash_Groups.csv directory, then the group listed there will be used &#150 if it's a valid balo group. 
+  <p class=list-2>&bull;&nbsp; If the mod is tagged with "Group: GroupName", then that mod will be assigned to group GroupName &#150; if that's a valid balo group.
+  <p class=list-2>&bull;&nbsp; If the mod is listed in Oblivion\Data\Bashed Patch\Bash_Groups.csv directory, then the group listed there will be used &#150; if it's a valid balo group. 
   <p class=list-2>&bull;&nbsp; Otherwise the mod will be assigned to group NONE.
   <p class=list-2>&bull;&nbsp; To turn off automatic grouping. 
     <p class=list-3>&bull;&nbsp; Uncheck "Auto Groups" just above "Full Balo". 
@@ -1162,7 +1160,7 @@
   <p class=list-2>&bull;&nbsp; <B>Quest:</B> Quest mods.
   <p class=list-2>&bull;&nbsp; <B>NONE:</B> Special group.
   <p class=list-2>&bull;&nbsp; <B>Last:</B> Mods that are supposed to load last(ish). 
-    <p class=list-3>&bull;&nbsp; It's a good idea to reserve the base "Last" group to Bashed patches, and then use Last-1, Last+1 offset groups for other late loading mods.
+    <p class=list-3>&bull;&nbsp; It's a good idea to reserve the base "Last" group to Bashed Patches, and then use Last-1, Last+1 offset groups for other late loading mods.
     <p class=empty>&nbsp;</p>
 <h3><a name='SemiBalo'>Semi-Balo</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Group Headers</B>
@@ -1189,7 +1187,7 @@
 <h3><a name='PatchUsage'>Patch Usage</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Select a Bashed Patch</B> 
   <p class=list-2>&bull;&nbsp; Probably Bash has automatically created one for you. If not, you can copy the blank one from Oblivion\Mopy\Extras to Oblivion\Data. 
-  <p class=list-2>&bull;&nbsp; Note that the author of the mod must be set to <B>BASHED PATCH</B>. 
+  <p class=list-2>&bull;&nbsp; Note that the author of the mod must be set to <B>Bashed Patch</B>. 
 <p class=list-1>&bull;&nbsp; <B>Configure the Patch</B>
   <p class=list-2>&bull;&nbsp; Right click on the Bashed Patch and select "Rebuild Patch..." This will bring up a dialog in which you can activate and configure various patcher components. 
   <p class=list-2>&bull;&nbsp; To activate a component, just click its checkmark box.
@@ -1204,8 +1202,8 @@
 <p class=list-1>&bull;&nbsp; <B>Load Order</B>
   <p class=list-2>&bull;&nbsp; Bashed Patches should be last or nearly last in the load order. Only mods that load before the patch will be processed in the update process.
 <p class=list-1>&bull;&nbsp; <B>Unloading a Patch Master</B>
-  <p class=list-2>&bull;&nbsp; When you unload (remove from the load list) a mod that a bashed patch is dependent on, then the patch will also become unloaded. In this, case, you should <B><I>update the patch before reloading it.</I></B> 
-  <p class=list-2>&bull;&nbsp; If you reload the patch before updating, it will force reload of all its masters &#150 including the one you just unloaded!
+  <p class=list-2>&bull;&nbsp; When you unload (remove from the load list) a mod that a Bashed Patch is dependent on, then the patch will also become unloaded. In this, case, you should <B><I>update the patch before reloading it.</I></B> 
+  <p class=list-2>&bull;&nbsp; If you reload the patch before updating, it will force reload of all its masters &#150; including the one you just unloaded!
 <p class=list-1>&bull;&nbsp; <B>Replacing a Previous Patch</B>
   <p class=list-2>&bull;&nbsp; If you're creating a new patch to replace an existing patch, <B><I>be sure that the older patch is unloaded!</I></B> 
   <p class=list-2>&bull;&nbsp; Otherwise the older patch may interfere with building the newer patch.
@@ -1215,7 +1213,7 @@
   <p class=list-2>&bull;&nbsp; Several of the patch components (<a href="#LeveledLists">Leveled Lists</a>, <a href="#ImportNPCFaces">Import NPC Faces</a>) have automatic lists. In these, the list is automatically generated based on Bash Tags. 
 <p class=list-1>&bull;&nbsp; <B>Examining/Editing</B>
   <p class=list-2>&bull;&nbsp; It's slightly difficult to view the contents of a Bashed Patch, since it uses esp-mastering (i.e., it has esps as well as esms as masters). 
-  <p class=list-2>&bull;&nbsp; If you just want to examine the patch, you may want to use <a href="http://www.tesnexus.com/files/file.php?id=11536">Tes4View</a> which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
+  <p class=list-2>&bull;&nbsp; If you just want to examine the patch, you may want to use <a href="http://www.tesnexus.com/downloads/file.php?id=11536">Tes4View</a> which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
   <p class=list-2>&bull;&nbsp; However, if you would like to open/edit in TESCS, then you'll need to use the <a href="#EspifyEsmifyMasters">Espify/Esmify Masters</a> command. (Be sure to Espify Masters before playing.)
   <p class=empty>&nbsp;</p>
 <h3><a name='BashTags'>Bash Tags</a></h3>
@@ -1228,8 +1226,8 @@
   <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles (<a href="#ImportActors">Import Actors</a>). 
   <p class=list-2>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).
-  <p class=list-2>&bull;&nbsp; Body-F: Mod modifies female body definition (<a href="#RaceInfo">Race Info</a>).
-  <p class=list-2>&bull;&nbsp; Body-M: Mod modifies male body definition (<a href="#RaceInfo">Race Info</a>).
+  <p class=list-2>&bull;&nbsp; Body-F: Mod modifies female body definition (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; Body-M: Mod modifies male body definition (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; C.Climate: Mod changes cell climate (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Light: Mod changes cell lighting and/or fog (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Music: Mod changes cell music type (<a href="#ImportCells">Import Cells</a>).
@@ -1239,12 +1237,12 @@
   <p class=list-2>&bull;&nbsp; C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; Creatures.Blood: Mod changes the creature blood subrecords (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Delev: Mod deletes items from (<a href="#LeveledLists">Leveled Lists</a>).
-  <p class=list-2>&bull;&nbsp; Eyes: Mod contributes eyes (<a href="#RaceInfo">Race Info</a>).
+  <p class=list-2>&bull;&nbsp; Eyes: Mod contributes eyes (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Relations: Mod changes faction relationships (<a href="#ImportRelations">Import Relations</a>).
   <p class=list-2>&bull;&nbsp; Factions: Import changes to factions of npcs and creatures. (<a href="#ImportFactions">Import Factions</a>).
   <p class=list-2>&bull;&nbsp; Filter: Filter a mergeable mod to currently active mods (<a href="#MergeFiltering">Merge Filtering</a>).
   <p class=list-2>&bull;&nbsp; Graphics: Mod is a graphics replacer (<a href="#ImportGraphics">Import Graphics</a>).
-  <p class=list-2>&bull;&nbsp; Hair: Mod contributes hair styles (<a href="#RaceInfo">Race Info</a>).
+  <p class=list-2>&bull;&nbsp; Hair: Mod contributes hair styles (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; IIM: Trigger <a href="#ItemInterchangeMode">Item Interchange Mode</a>. 
   <p class=list-2>&bull;&nbsp; Invent: Import changes to inventory. (<a href="#ImportInventory">Import Inventory</a>).
   <p class=list-2>&bull;&nbsp; InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.
@@ -1253,16 +1251,16 @@
   <p class=list-2>&bull;&nbsp; NoMerge: Mod should not be merged even though they're technically mergeable.
   <p class=list-2>&bull;&nbsp; NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).
   <p class=list-2>&bull;&nbsp; NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).
-  <p class=list-2>&bull;&nbsp; R.Mouth: Mod changes mouth/tongue (<a href="#RaceInfo">Race Info</a>).
-  <p class=list-2>&bull;&nbsp; R.Relations: Mod changes race relationships (<a href="#RaceInfo">Race Info</a>).
-  <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceInfo">Race Info</a>).
+  <p class=list-2>&bull;&nbsp; R.Mouth: Mod changes mouth/tongue (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Relations: Mod changes race relationships (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).
   <p class=list-2>&bull;&nbsp; Sound: Mod is a sound replacer (<a href="#ImportSound">Import Sound</a>).
   <p class=list-2>&bull;&nbsp; SpellStats: Mod modifies spell stats (<a href="#ImportSpellStats">Import Spell Stats</a>).
   <p class=list-2>&bull;&nbsp; Stats: Mod modifies item stats (<a href="#ImportStats">Import Stats</a>).
-  <p class=list-2>&bull;&nbsp; Voice-F: Mod modifies female voice definition (<a href="#RaceInfo">Race Info</a>).
-  <p class=list-2>&bull;&nbsp; Voice-M: Mod modifies male voice definition (<a href="#RaceInfo">Race Info</a>).
+  <p class=list-2>&bull;&nbsp; Voice-F: Mod modifies female voice definition (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; Voice-M: Mod modifies male voice definition (<a href="#RaceRecords">Race Records</a>).
 <p class=list-1>&bull;&nbsp; <B>Manual Tagging</B>
   <p class=list-2>&bull;&nbsp; You can manually set the tags that are applied to any mod by right clicking in the Bash Tags field and checking and unchecking tags as you like. Manual tags are shared for all users on a given computer.
   <p class=list-2>&bull;&nbsp; If you have edited tags but want to revert to automatic tagging, just right click and choose "Automatic". 
@@ -1286,11 +1284,11 @@ Oscuro's_Oblivion_Overhaul.esp >> OOO.esp
 Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='MergePatches'>Merge Patches</a></h3>
-<p class=list-1>&bull;&nbsp; This component causes Bash to fully merge the content of specified patch files into the bashed patcher, thus allowing you to remove the patch mod from the load order.
+<p class=list-1>&bull;&nbsp; This component causes Bash to fully merge the content of specified patch files into the Bashed Patcher, thus allowing you to remove the patch mod from the load order.
 <p class=list-1>&bull;&nbsp; <B>Notes:</B>
   <p class=list-2>&bull;&nbsp; Most mod files are <B><I>not</I></B> mergeable. To be mergeable by Bash, the mod must: 
     <p class=list-3>&bull;&nbsp; Only contain record types that Bash recognizes (e.g., no game settings, cells, dialog, etc.) 
-    <p class=list-3>&bull;&nbsp; Not contain any new records &#150 i.e., it must only patch records that already exist. 
+    <p class=list-3>&bull;&nbsp; Not contain any new records &#150; i.e., it must only patch records that already exist. 
   <p class=list-2>&bull;&nbsp; Determination of whether a given mod is mergeable or not is done automatically by Bash. Mods that are mergeable are marked with green text in the main mod list. If a given mod is not mergeable and you would like to know why, run the <a href="#MarkMergeable">Mark Mergeable</a> command on it. (Note that the old "Merge" tag is now ignored.)
   <p class=list-2>&bull;&nbsp; If during construction of the patch, records in the mod are overridden by another mod that loads after it, then the later loading mod will win. In other words, the ordinary record shadowing rules are applied while merging. (Hence, it can be useful to think of a merged mod as being <B>virtually active</B>.)
   <p class=list-2>&bull;&nbsp; <B>Do not remove merged mods from your mods directory!</B> They need to be available for when you next rebuild the patch. (Every time you rebuild the patch, you rebuild it from scratch, hence the original mods need to be available to be re-merged.) 
@@ -1298,12 +1296,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='MergeFiltering'>Merge Filtering</a></h3>
 <p class=list-1>&bull;&nbsp; This is advanced option that allows records in a merged mod to be selectively filtered according to the current load list. E.g., suppose a patch mod modifies records from MMM and OOO. This feature can be used to discard the changes to MMM if MMM is not currently loaded. The advantage of this is that, rather than having two separate patch mods (one for MMM and one for OOO), it's possible to have just one patch mod for both.
 <p class=list-1>&bull;&nbsp; <B>Limitations</B>
-<p class=list-1>&nbsp;&nbsp; This is an advanced option that can be taken advantage of by advanced modders &#150 but beware, it can be a little confusing.
+<p class=list-1>&nbsp;&nbsp; This is an advanced option that can be taken advantage of by advanced modders &#150; but beware, it can be a little confusing.
   <p class=list-2>&bull;&nbsp; This will only work for mods that are mergeable and are tagged with <code>Filter</code>.
   <p class=list-2>&bull;&nbsp; The mod being filtered must not be active at the time the patch is built.
   <p class=list-2>&bull;&nbsp; Filtering is mostly limited to the top level. 
     <p class=list-3>&bull;&nbsp; E.g., if MMM is not loaded, then changes to MMM specific records will be skipped.
-    <p class=list-3>&bull;&nbsp; However, if a record has been changed so that it refers to a record from a mod that is not loaded &#150 then that reference will (usually) not be filtered out. Hence the bashed patch will end up dependent on that mod after all.
+    <p class=list-3>&bull;&nbsp; However, if a record has been changed so that it refers to a record from a mod that is not loaded &#150; then that reference will (usually) not be filtered out. Hence the Bashed Patch will end up dependent on that mod after all.
   <p class=list-2>&bull;&nbsp; Deep Filtering: 
     <p class=list-3>&bull;&nbsp; Entries in leveled lists will be filtered. E.g. if a leveled list has items from MMM, but MMM is not active, then the MMM entries will be discarded.
     <p class=list-3>&bull;&nbsp; For creatures and NPCs, spells, factions and items will be filtered.
@@ -1311,7 +1309,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=empty>&nbsp;</p>
 <h3><a name='ItemInterchangeMode'>Item Interchange Mode</a></h3>
 <p class=list-1>&bull;&nbsp; This is a hack designed to support Vacuity's Item Interachange Mode. It's a "hack" because it's horribly inelegant and is inconsistent with the rest of bash patching approach. But it works and its simpler than rewriting a bunch of code to support a special case.
-<p class=list-1>&bull;&nbsp; II Mode is triggered by the <code>IIM</code> tag &#150 but only when the mod is being patch merged in. Probably. In any case, you should only use it for mods that are being patch merged. Such modes should be <a href="#MergeFiltering">Filtered</a> as well. 
+<p class=list-1>&bull;&nbsp; II Mode is triggered by the <code>IIM</code> tag &#150; but only when the mod is being patch merged in. Probably. In any case, you should only use it for mods that are being patch merged. Such modes should be <a href="#MergeFiltering">Filtered</a> as well. 
 <p class=list-1>&bull;&nbsp; What it does:
   <p class=list-2>&bull;&nbsp; Prevents the records from the mod from being merged into the patch. I.e. although the patch is marked as "Merged" and is supposedly merged in, in fact it's not. Except for leveled list records. Those go in.
   <p class=list-2>&bull;&nbsp; Prevents all patch components except for the leveled list merger and the inventory importer from even looking at the mod. Leveled list merger treats the mod in the usual way. However, the inventory import mod treats the mod record specially, ignoring all changes except inventory changes. The point of this is to cause Inventory Import to import <I>only</I> inventory. Thus II mods can "load" after the mod that they change and yet be guaranteed to only modify inventory.
@@ -1337,7 +1335,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Actors.AIPackages 
       *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
 <p class=list-1>&bull;&nbsp; <B>Usage</B>
-  <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
+  <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
   <p class=list-2>&bull;&nbsp; In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportCells'>Import Cells</a></h3>
@@ -1352,7 +1350,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; C.RecordFlags: Mod changes the dangerous/off limits flag on the cell.
     <p class=list-3>&bull;&nbsp; C.Water: Mod changes cell water type/level.
 <p class=list-1>&bull;&nbsp; <B>Usage</B>
-  <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the bashed patch if necessary. 
+  <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
   <p class=list-2>&bull;&nbsp; In case two source mods modify the same cell in the same way, then the later loading source mod will win. If they modify the same cell in different ways (e.g. one changes water, the other changes ownership), then both changes will be included in the patch.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportFactions'>Import Factions</a></h3>
@@ -1366,11 +1364,11 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Faction lists do not need to be complete for each actor. I.e. you only need to list the actor/faction pairs that you wish to add/change. If a mod has has an actor assigned to some faction, but the imported data doesn't address that rank, then the actor will retain that rank.
   <p class=list-2>&bull;&nbsp; To remove an actor from a faction, set their rank to -1. (You can only do this in a spreadsheet.)
 <p class=list-1>&bull;&nbsp; <B>Limitation</B>
-  <p class=list-2>&bull;&nbsp; It should be kept in mind that changes to NPC factions will <B><I>not</I></B> have an effect in game for any NPCs that have had their faction ranks changed during gameplay. (This is typically fairly limited &#150 usually only for some quest characters.)
+  <p class=list-2>&bull;&nbsp; It should be kept in mind that changes to NPC factions will <B><I>not</I></B> have an effect in game for any NPCs that have had their faction ranks changed during gameplay. (This is typically fairly limited &#150; usually only for some quest characters.)
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportGraphics'>Import Graphics</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
-<p class=list-1>&nbsp;&nbsp; Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's <a href="http://www.tesnexus.com/files/file.php?id=5570">Book Jackets</a> mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
+<p class=list-1>&nbsp;&nbsp; Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's <a href="http://www.tesnexus.com/downloads/file.php?id=5570">Book Jackets</a> mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
 <p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Graphics</code> <a href="#BashTags">tag</a> in the mod description. 
 <p class=list-1>&bull;&nbsp; <B>Graphics/Records Handled:</B>
@@ -1384,7 +1382,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportNames'>Import Names</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
-<p class=list-1>&nbsp;&nbsp; This component is intended to merge changes from a renamer mod (e.g., <a href="http://wrye.ufrealms.net/Rational%20Names%202.html">Rational Names</a>) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is <a href="http://wrye.ufrealms.net/Rational%20Names%202.html">Rational Names</a>.
+<p class=list-1>&nbsp;&nbsp; This component is intended to merge changes from a renamer mod (e.g., <a href="http://www.wryemusings.com/Rational%20Names%202.html">Rational Names</a>) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is <a href="http://www.wryemusings.com/Rational%20Names%202.html">Rational Names</a>.
 <p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Names</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Names.csv</code>. Note that the <a href="#ExportImportNames">Export/Import Names</a> command will export files in this format.
@@ -1400,10 +1398,10 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='ImportInventory'>Import Inventory</a></h3>
 <p class=list-1>&bull;&nbsp; This option will merge changes to npc, container and creature inventories from the selected mods. Only mods marked with the <code>Invent</code> or <code>InventOnly</code> <a href="#BashTags">tag</a> will appear in the list.
 <p class=list-1>&bull;&nbsp; <B>Invent vs. InventOnly</B>
-  <p class=list-2>&bull;&nbsp; "InventOnly" is a hack &#150 i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack &#150 where it would still be hack, but at least a more clearly labeled hack.
+  <p class=list-2>&bull;&nbsp; "InventOnly" is a hack &#150; i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack &#150; where it would still be hack, but at least a more clearly labeled hack.
   <p class=list-2>&bull;&nbsp; InventOnly basically does Invent, but also does
   <p class=list-2>&bull;&nbsp; Invent
-  <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the inventory of an actor or container. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150 especially when you can't rely on the overhauls being present. 
+  <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the inventory of an actor or container. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150; especially when you can't rely on the overhauls being present. 
   <p class=list-2>&bull;&nbsp; For a mod to override only the inventory, the mod must be tagged with <code>InventOnly</code> and must be merged into the patch (i.e. the mod must <I>not</I> be active when the patch is being built.) 
 <p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; This feature is primarily concerned with removing, replacing and adding completely new items to inventories. If a mod only changes the number of items in an inventory, then this feature will ignore that change.
@@ -1414,12 +1412,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=empty>&nbsp;</p>
 <h3><a name='ImportNPCFaces'>Import NPC Faces</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
-<p class=list-1>&nbsp;&nbsp; This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the <a href="http://www.tesnexus.com/files/author.php?id=60210">Tamriel NPCs Revamped mods</a>), and add it to the patch, merging it over any changes to those same NPCs from other mods.
+<p class=list-1>&nbsp;&nbsp; This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the <a href="http://www.dreamingthepyramid.net/TNR-home.html">Tamriel NPCs Revamped mods</a>), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 <p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if their mod name starts with <B>TNR </B> or the mod has a <code>NpcFaces</code> <a href="#BashTags">tag</a> in the mod description. 
-  <p class=list-2>&bull;&nbsp; Note that since there is a now a <a href="http://www.tesnexus.com/files/file.php?id=9971">TNR All Races</a> mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
+  <p class=list-2>&bull;&nbsp; Note that since there is a now a <a href="http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip">TNR All Races</a> mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
 <p class=list-1>&bull;&nbsp; <B>Source Mods</B>
-  <p class=list-2>&bull;&nbsp; Since TNR contains <I>only</I> face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods &#150 but <I>do</I> keep them in your data directory, since Bash will need to find them when updating the patch.
+  <p class=list-2>&bull;&nbsp; Since TNR contains <I>only</I> face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods &#150; but <I>do</I> keep them in your data directory, since Bash will need to find them when updating the patch.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportRelations'>Import Relations</a></h3>
 <p class=list-1>&bull;&nbsp; Allows faction relation(ship)s to be imported from source mods and/or source csv files.
@@ -1477,10 +1475,24 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Stats</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Stats.csv</code>. Note that the <a href="#ExportImportStats">Export/Import Stats</a> command will export files in this format.
   <p class=empty>&nbsp;</p>
+<h3><a name='ImportSpellStats'>Import Spell Stats</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Overview</B>
+  <p class=list-2>&bull;&nbsp; This patcher can be used to modify spell stats according to specified mods and/or spreadsheet files. 
+  <p class=list-2>&bull;&nbsp; One use for this is to make sure that spell stats from one early loading mod are not overridden by a layer loading mod. 
+  <p class=list-2>&bull;&nbsp; Another use is patch random spell mods to fit the spell balancing system specified by one of the overhaul mods. For this use the best approach is to supply a single spreadsheet which rebalances spells of many mods to fit a given overhaul. When using such a file, Bash will only apply stats for mods that are currently active and ignore the rest.
+  <p class=list-2>&bull;&nbsp; Source spreadsheets can be generated by using the <a href="#ExportImportSpellStats">Export/Import Spell Stats</a> command.
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
+  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>SpellStats</code> <a href="#BashTags">tag</a> in the mod description. 
+  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the <a href="#ExportImportSpellStats">Export/Import Spell Stats</a> command will export files in this format.
+  <p class=empty>&nbsp;</p>
 <hr>
 <p><B>Tweakers</B> tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
-<h3><a name='Globals'>Globals</a></h3>
-<p class=list-1>&bull;&nbsp; Change specified globals to specified values.
+  <p class=empty>&nbsp;</p>
+<h2><a name='Globals'>Globals</a></h2>
+<p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
+<p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
+<p class=list-1>&bull;&nbsp; <B>Thieves Guild: Quest Misdemeanor Penalty:</B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
+<p class=list-1>&bull;&nbsp; <B>Timescale:</B> Oblivion's timescale.
 <p class=empty>&nbsp;</p>
 <h3><a name='NPCTweaker'>NPC Tweaker</a></h3>
 <p class=list-1>&bull;&nbsp; Changes to NPC record subrecords; such as skeleton.
@@ -1521,22 +1533,16 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; This feature is based on Quarn's <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&id=2859">Nvidia Black Screen Fix</a>.
 <p class=list-1>&bull;&nbsp; <B>Right Hand Rings</B>
   <p class=list-2>&bull;&nbsp; Makes rings behave more consistently by making all rings prefer to be on the right hand. 
-  <p class=list-2>&bull;&nbsp; With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to <B><I>make one ring permanently equipped</I></B> &#150 just equip it to the left hand and it will stay on until you specifically unequip it.
+  <p class=list-2>&bull;&nbsp; With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to <B><I>make one ring permanently equipped</I></B> &#150; just equip it to the left hand and it will stay on until you specifically unequip it.
   <p class=empty>&nbsp;</p>
 <h3><a name='TweakClothes'>Tweak Clothes</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Overview:</B> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150 however your tastes may vary.
+<p class=list-1>&bull;&nbsp; <B>Overview:</B> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150; however your tastes may vary.
 <p class=list-1>&bull;&nbsp; <B>Max Weight XXX:</B> Many clothes items are too heavy in Oblivion. These options force them to lower weights (as specified). Right click on item to choose maximum weight allowed.
 <p class=list-1>&bull;&nbsp; <B>Gloves Show Rings:</B> Prevents gloves from hiding rings. 
 <p class=list-1>&bull;&nbsp; <B>Robes Show Amulets:</B>  Forces all robes to show amulets. Not totally realistic, but looks cooler!
 <p class=list-1>&bull;&nbsp; <B>Robes Show Pants:</B>  Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. <I>Not recommended</I> because graphics clipping is common.
 <p class=list-1>&bull;&nbsp; <B>Unlimited Amulets:</B>  Allows you to wear an unlimited number of amulets. <I>Not recommended</I> because it is uber and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
 <p class=list-1>&bull;&nbsp; <B>Unlimited Rings:</B>  Same thing for rings. 
-<p class=empty>&nbsp;</p>
-<h2><a name='Globals'>Globals</a></h2>
-<p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
-<p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
-<p class=list-1>&bull;&nbsp; <B>Thieves Guild: Quest Misdemeanor Penalty:</B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
-<p class=list-1>&bull;&nbsp; <B>Timescale:</B> Oblivion's timescale.
 <p class=empty>&nbsp;</p>
 <h3><a name='TweakNames'>Tweak Names</a></h3>
 <p class=list-1>&bull;&nbsp; Tweaks names of items and spells to make them sort more easily in inventory. For each type of item you can select the format to be used. 
@@ -1552,7 +1558,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.
   <p class=list-2>&bull;&nbsp; If you only want to remove existing labels, then use the No Label option ("Fire Ball").
 <p class=list-1>&bull;&nbsp; <B>Weapons:</B> Choose format and whether you want damage to be shown.
-<p class=list-1>&bull;&nbsp; <B>Spells</B> will show school and level (0/Novice &#150 4/Master). 
+<p class=list-1>&bull;&nbsp; <B>Spells</B> will show school and level (0/Novice &#150; 4/Master). 
 <p class=empty>&nbsp;</p>
 <h3><a name='TweakSettings'>Tweak Settings</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
@@ -1562,7 +1568,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Attack:</B> The Bounty for attacking a "good" npc when observed.
 <p class=list-1>&bull;&nbsp; <B>Bounty: Horse Theft:</B> The Bounty for horse stealing.
-<p class=list-1>&bull;&nbsp; <B>Camera: Chase Distance:</B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150 but also a little bit uber for that reason.
+<p class=list-1>&bull;&nbsp; <B>Camera: Chase Distance:</B> Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a birds eye view &#150; but also a little bit uber for that reason.
 <p class=list-1>&bull;&nbsp; <B>Camera: Chase Tightness:</B> Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
 <p class=list-1>&bull;&nbsp; <B>Camera: PC Death Time:</B> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
 <p class=list-1>&bull;&nbsp; <B>Cell Respawn Time:</B> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
@@ -1592,12 +1598,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='AlchemicalCatalogs'>Alchemical Catalogs</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
-<p class=list-1>&nbsp;&nbsp; This patcher component will update the alchemical catalogs found in the <a href="http://wrye.ufrealms.net/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless <B>Cobl Main.esm</B> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://wrye.ufrealms.net/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.
+<p class=list-1>&nbsp;&nbsp; This patcher component will update the alchemical catalogs found in the <a href="http://www.wryemusings.com/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless <B>Cobl Main.esm</B> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://www.wryemusings.com/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.
 <p class=empty>&nbsp;</p>
 <h3><a name='CoblExhaustion'>Cobl Exhaustion</a></h3>
 <p class=list-1>&bull;&nbsp; Requires Cobl 1.66 or higher.
 <p class=list-1>&bull;&nbsp; Converts powers into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
-<p class=list-1>&bull;&nbsp; Cobl's power exhaustion feature is intended as a replacment for my <a href="http://wrye.ufrealms.net/Power%20Exhaustion.html">Power Exhaustion</a> mod. 
+<p class=list-1>&bull;&nbsp; Cobl's power exhaustion feature is intended as a replacment for my <a href="http://www.wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod. 
 <p class=empty>&nbsp;</p>
 <h3><a name='ContentChecker'>Content Checker</a></h3>
 <p class=list-1>&bull;&nbsp; When activated, this will check the inventory contents of containers, creatures and NPCs, and the entries of leveled lists to make sure that their entries are of valid types. E.g. it will try to ensure that leveled spell lists only contain spells and other leveled lists. 
@@ -1622,7 +1628,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Generally it's best to set the bash tags correctly and leave the configuration on auto. However, it's also possible to manually configure delevelers/relevelers.
   <p class=list-2>&bull;&nbsp; To add/remove mods from the list, uncheck Automatic and use the Add/Remove buttons.
   <p class=list-2>&bull;&nbsp; To manually override the Delev/Relev tags for a given mod, right click on the mod name and check/uncheck states as necessary. To return to automatic setting, choose the "Auto" option instead.
-<p class=list-1>&bull;&nbsp; <B><a href="http://devnull.devakm.googlepages.com/convergence">FCOM</a></B>
+<p class=list-1>&bull;&nbsp; <B><a href="http://devnull.sweetdanger.net/convergence/">FCOM</a></B>
   <p class=list-2>&bull;&nbsp; FCOM (aka Kaboom, aka FraBOOOMMM) is a mod by dev_akm and others that attempts to merge the changes from various major mods. While this might seem to be competitive with Bash's List Merger, it's actually complementary, since it's able to intelligently merge complicated list structures as well as correct and merge faction information.
   <p class=list-2>&bull;&nbsp; For further information on using FCOM with Bash, see the FCOM release notes/topics.
 <p class=list-1>&bull;&nbsp; <B>Empty Sublist Cleaning</B>
@@ -1634,7 +1640,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='PowerExhaustion'>Power Exhaustion</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview:</B>
-<p class=list-1>&bull;&nbsp; My <a href="http://wrye.ufrealms.net/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
+<p class=list-1>&bull;&nbsp; My <a href="http://www.wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently. 
 <p class=list-1>&bull;&nbsp; Assorted_Exhaust.csv: This patcher extends coverage to the Orrery and Shivering Isles powers.
 <p class=list-1>&bull;&nbsp; Kmacg94_Exhaust.csv: This patcher (by Kmagc94) extends coverage to several more mods (bgBalancingEVCore, Consequences, Kenhanimal's Awsome Vampire Mod, Oblivion War Cry EV, Oscuro's Oblivion Overhaul, StartX Vanilla Vampires Revised, Vampire Hunter Tools, Vows and Covenants).
 <p class=empty>&nbsp;</p>
@@ -1655,7 +1661,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Voice-F: If specifying female voice.
   <p class=list-2>&nbsp;&nbsp; E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
 <p class=list-1>&bull;&nbsp; Merge Procedure
-  <p class=list-2>&bull;&nbsp; Body: The last mod tagged with Body-M (Body-F) will win for males (females). Note that "body" includes: body texture, height and weight &#150 i.e. the winning mod (for a given gender) will determine all of these factors (for that gender).
+  <p class=list-2>&bull;&nbsp; Body: The last mod tagged with Body-M (Body-F) will win for males (females). Note that "body" includes: body texture, height and weight &#150; i.e. the winning mod (for a given gender) will determine all of these factors (for that gender).
   <p class=list-2>&bull;&nbsp; Hair: All hairs will be merged into final record.
   <p class=list-2>&bull;&nbsp; Eyes: All eyes will first be merged, then filtered by eye mesh to avoid googly eyes (see below).
   <p class=list-2>&bull;&nbsp; Relations: All relations will be merged into final record. Procedure is pretty much the same as for <a href="#ImportRelations">importing faction relations</a>.
@@ -1724,6 +1730,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='RulesetInformation'>Ruleset Information</a></h3>
 <p>The rest of the report is divided into rulesets reports. Rulesets are text files provided by modders and other modders and other players. They basically tell Bash's mod checker which things to look out for and what to say about them in the Mod Checker report. 
+<p class=list-1>&bull;&nbsp; Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
+<p class=list-1>&bull;&nbsp; Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
+<p class=list-1>&bull;&nbsp; For more info on ruleset syntax, see <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='OnlyOneWarnings'>Only One Warnings</a></h3>
 <p>These warnings may appear the top of the ruleset report. Such warnings are followed by a list of active/merged esps. These are typically are conflicting mods that do almost the same thing. You can resolve this by deactivating all but one of the listed mods.
@@ -1748,11 +1757,6 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Suggestions:</B> Toggles inclusion of mod group suggestions.
 <p class=list-1>&bull;&nbsp; <B>Copy Text:</B> Copies text of report to clipboard. (Useful for forum postings.)
 <p class=list-1>&bull;&nbsp; <B>Update:</B> The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
-<p class=empty>&nbsp;</p>
-<h3><a name='RulesetInformation'>Ruleset Information</a></h3>
-<p class=list-1>&bull;&nbsp; Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
-<p class=list-1>&bull;&nbsp; Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
-<p class=list-1>&bull;&nbsp; For more info on ruleset syntax, see <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
 <p class=empty>&nbsp;</p>
 <h2><a name='INITweaksTab'>INI Tweaks Tab</a></h2>
 <p class=list-1>&bull;&nbsp; This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain <I>only</I> the section/key settings that are to be changed.
@@ -1824,14 +1828,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=empty>&nbsp;</p>
 <h2><a name='SaveFileCommands'>Save File Commands</a></h2>
 <p>These are the commands found on context menu for saves...
-  <p class=empty>&nbsp;</p>
-<h3><a name='FileCommands'>File Commands</a></h3>
 <p class=list-1>&bull;&nbsp; Same as for <a href="#FileCommands">Mods Tab: File Commands</a> above.
 <p class=empty>&nbsp;</p>
 <h3><a name='LoadMasters'>Load Masters</a></h3>
 <p class=list-1>&bull;&nbsp; Synchronizes activated mods to savegame's masters.
 <p class=empty>&nbsp;</p>
-<h3><a name='ListMasters'>List Masters</a></h3>
+<h3><a name='ListMastersSave'>List Masters (Save)</a></h3>
 <p class=list-1>&bull;&nbsp; Lists savegame masters in window <B><I>and</I></B> copies the list to the clipboard.
 <p class=list-1>&nbsp;&nbsp; This is useful for forum postings where you want help debugging your load list, or just want to show off how many mods you have loaded!
 <p class=list-1>&bull;&nbsp; Notes
@@ -1849,7 +1851,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Reports various statistics for save file. Probably too technical for most people. Feel free to skip this section...
 <p class=list-1>&bull;&nbsp; Array Sizes
   <p class=list-2>&bull;&nbsp; These are the sizes of the major arrays in the savegame. 
-  <p class=list-2>&bull;&nbsp; Created Items are items created while playing &#150 e.g., spells, enchanted armor, clothing, weapons.
+  <p class=list-2>&bull;&nbsp; Created Items are items created while playing &#150; e.g., spells, enchanted armor, clothing, weapons.
   <p class=list-2>&bull;&nbsp; Records are records of changes to previously defined objects. E.g., removing the essential flag from an NPC.
   <p class=list-2>&bull;&nbsp; FormIds is a table which maps an internal reference number to a <a href="http://www.uesp.net/wiki/Tes4Mod:FormId">formid number</a>. Kind of technical, but what it comes down to is, if the savegame ever had to refer to a specific formid, then that formid shows up in this table. If the formid comes from a mod that is later removed from the game, then its entry in this table is replaced with a 0. (I refer to such an entry as a "lost ref" because it's lost it's connection to the source mod.)
 <p class=list-1>&bull;&nbsp; Created Items
@@ -1896,7 +1898,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high (over 1 lb per potion). (See: <a href="http://www.uesp.net/wiki/Oblivion:Alchemy#Weight">UESP: Oblivion Alchemy</a>.)
 <p class=list-1>&bull;&nbsp; You can use this command to set the weight for all of your created potions to specified value. 
 <p class=list-1>&bull;&nbsp; Notes:
-  <p class=list-2>&bull;&nbsp; Effects <I>all current potions</I> &#150 and thus all future potions with the same name and effects.
+  <p class=list-2>&bull;&nbsp; Effects <I>all current potions</I> &#150; and thus all future potions with the same name and effects.
   <p class=list-2>&bull;&nbsp; Potions created after use of this command with a new name and/or different effects, and/or different durations of the same effects will not be affected. To change them, you'll need to rerun this command.
   <p class=list-2>&bull;&nbsp; Suggested value: 0.1 to 0.3
   <p class=empty>&nbsp;</p>
@@ -1926,14 +1928,14 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; "Abomb Animation Slowing" is a slowing a of animations that typically appears around 225 hours into the game (though it may occur earlier or later). Effects are that many animations (spell effects, burning fires, opening/closing doors) have noticeably stop action effects, even while the rest of the scene is rendered normally. In fact the problem is <I>worse</I> in areas with high frame rates (e.g., simple interiors). This is presumably a bug with the game engine, probably something with thread prioritization for animations.
 <p class=list-1>&bull;&nbsp; The trigger for animation slowing seems to be the last four bytes of the TesClass data chunk in the save file. These bytes apparently represent a float value, which increments steadily with game play (on my machine advancing at about 2/3 of game seconds played). When the counter crosses a certain threshold (0x49000000), the animation slowing kicks in suddenly. The fix seems to be to simply reset this counter to an early value (0.0 would probably work. I use 8.0 or 0x41000000).
 <p class=list-1>&bull;&nbsp; There have been some reports of related problems with animations (dying wraiths not dropping properly) and physics collisions. Also, some have reported problems showing up before 0x49000000. However, there is clearly a substantial change as the counter crosses 0x490000, and the reported physics problems have been seen earlier in the game and so may be unrelated.
-<p class=list-1>&bull;&nbsp; For more discussion see: <a href="http://www.bethsoft.com/bgsforums/index.php?showtopic=688265">ESForums: Slow/Frozen Doors</a>.
+<p class=list-1>&bull;&nbsp; For more discussion see: <a href="http://forums.bethsoft.com/?showtopic=688265">ESForums: Slow/Frozen Doors</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='RepairFactions'>Repair Factions</a></h3>
-<p class=list-1>&bull;&nbsp; (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new <a href="#UpdateLevels">Update Levels</a> function. 
+<p class=list-1>&bull;&nbsp; (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new <a href="#UpdateNPCLevels">Update NPC Levels</a> function. 
 <p class=list-1>&bull;&nbsp; Also (optionally) updates NPC factions to reflect faction changes in mods.
 <p class=list-1>&bull;&nbsp; <B>Background</B>
-  <p class=list-2>&bull;&nbsp; The v105 bug caused some NPCs in the savegame to be marked as having no factions and no spells. The most notable effect of this was faction infighting, however, another major effect (for people importing faces at the start of the game) was the removal of the player from the playerfaction (very bad!). A few other rare effects might happen &#150 e.g. the inhabitants of Alsewell might become invisible sooner than they should.
-  <p class=list-2>&bull;&nbsp; Unfortunately, it's not possible to remove the effects of the bug with total safety &#150 sometimes, NPCs should <I>need</I> to have zeroed spells and/or factions. (E.g., Aleswell again. If citizens have empty spell arrays removed <I>after</I> the quest has been completed, they'll disappear when they shouldn't.)
+  <p class=list-2>&bull;&nbsp; The v105 bug caused some NPCs in the savegame to be marked as having no factions and no spells. The most notable effect of this was faction infighting, however, another major effect (for people importing faces at the start of the game) was the removal of the player from the playerfaction (very bad!). A few other rare effects might happen &#150; e.g. the inhabitants of Alsewell might become invisible sooner than they should.
+  <p class=list-2>&bull;&nbsp; Unfortunately, it's not possible to remove the effects of the bug with total safety &#150; sometimes, NPCs should <I>need</I> to have zeroed spells and/or factions. (E.g., Aleswell again. If citizens have empty spell arrays removed <I>after</I> the quest has been completed, they'll disappear when they shouldn't.)
   <p class=list-2>&bull;&nbsp; Aside from my bug, there are related problems with mods that are changed so as to <I>add</I> factions to NPCs after that NPC is already in play <I>and</I> has had its factions modified in-game. E.g. CM Partners that have been upgraded from v 1.4 to v 1.5.
 <p class=list-1>&bull;&nbsp; <B>Advice</B>
   <p class=list-2>&bull;&nbsp; Do not use this function unless you have to! In general, <B><I>if you have a recent save that you can revert to, I'd advise you to use that instead!</I></B>
@@ -2014,11 +2016,11 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='ImportArchives'>Import Archives</a></h3>
 <p class=list-1>&bull;&nbsp; <B>What's Importable</B>
   <p class=list-2>&bull;&nbsp; Only html format archives are archivable. Excel format archives are ''not'' archivable. 
-  <p class=list-2>&bull;&nbsp; PMs from other forums that use the same software as the bethsoft forums <I>may</I> also be importable &#150 but this has not been tested yet.
+  <p class=list-2>&bull;&nbsp; PMs from other forums that use the same software as the bethsoft forums <I>may</I> also be importable &#150; but this has not been tested yet.
 <p class=list-1>&bull;&nbsp; <B>Setup</B>
-  <p class=list-2>&bull;&nbsp; Typically you'll have your archives as attachments to mail messages. You'll need to save these to disk. When you save, it's best to name the file like "07.11.06 archive.html" or "2007.11.06 archive.html" (where the leading digits are year, month, date) &#150 <B><I>using the date the archive was created!</I></B>
+  <p class=list-2>&bull;&nbsp; Typically you'll have your archives as attachments to mail messages. You'll need to save these to disk. When you save, it's best to name the file like "07.11.06 archive.html" or "2007.11.06 archive.html" (where the leading digits are year, month, date) &#150; <B><I>using the date the archive was created!</I></B>
     <p class=list-3>&bull;&nbsp; It's important to get the archive date correct, since Bash will use it to figure out the date of PMs dated as "Today" or "Yesterday".
-    <p class=list-3>&bull;&nbsp; Note: The rest of the name doesn't matter &#150 it's just the date that counts.
+    <p class=list-3>&bull;&nbsp; Note: The rest of the name doesn't matter &#150; it's just the date that counts.
   <p class=list-2>&bull;&nbsp; It's usually simplest to save a bunch (all) of your archives to disk at once in a special folder.
 <p class=list-1>&bull;&nbsp; <B>Importing</B>
   <p class=list-2>&bull;&nbsp; Once you've got the archives saved as files...
@@ -2032,7 +2034,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=empty>&nbsp;</p>
 <h3><a name='OtherNotes'>Other Notes</a></h3>
 <p class=list-1>&bull;&nbsp; You can delete any message or group of message by right clicking on them and selecting "Delete"
-<p class=list-1>&bull;&nbsp; You can sort by any of the columns. When sorting by subject, leading "Re: " will be ignored &#150 thus messages should group together correctly. Also when searching by Subject or Author columns, messages will first be sorted by date.
+<p class=list-1>&bull;&nbsp; You can sort by any of the columns. When sorting by subject, leading "Re: " will be ignored &#150; thus messages should group together correctly. Also when searching by Subject or Author columns, messages will first be sorted by date.
 <p class=list-1>&bull;&nbsp; If you select multiple messages at once, all of them will be shown in the view pane, in the same order as they are shown in the list.
 <p class=list-1>&bull;&nbsp; When you select messages, they're actually temporarily written to an html file. You can view this directly, mail it to people, etc. You'll find the temporary file at "My Games\Oblivion\Messages.html"
 <p class=empty>&nbsp;</p>
@@ -2098,7 +2100,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=empty>&nbsp;</p>
 <h3><a name='ModTabSwapping'>Mod Tab Swapping</a></h3>
 <p class=list-1>&bull;&nbsp; Two swap versions on the mod tab, right click anywhere on the column header and got to the Oblivion.esm <B>menu item</B>. The currently available and selected versions will popup in a submenu where you can select them.
-<p class=list-1>&bull;&nbsp; Selecting a different version will swap names around &#150 you should see the change reflected immediately in the <a href="#VersionIndicators">Version Indicators</a>.
+<p class=list-1>&bull;&nbsp; Selecting a different version will swap names around &#150; you should see the change reflected immediately in the <a href="#VersionIndicators">Version Indicators</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='SaveTabSwapping'>Save Tab Swapping</a></h3>
 <p class=list-1>&bull;&nbsp; The same command is available from the column header context menu of the Saves Tab, and does exactly the same thing, but with <I>one exception...</I>
@@ -2109,8 +2111,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='Internationalization'>Internationalization</a></h3>
 <p>Bash now supports localization for most? western languages (translation of program strings to local language). It still probably does not support non-roman character sets (Cyrillic, Arabic, Asian languages, etc.). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
 <p class=list-1>&bull;&nbsp; <B><I>Custom Program Strings</I></B>
-  <p class=list-2>&bull;&nbsp; Custom program strings are translated from lookup files that you'll find in the <code>Mopy\local</code>. E.g., for English, it would be <code>Mopy\locale\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)
-  <p class=list-2>&bull;&nbsp; These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\locale\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this &#150 once someone does the txt files for a language, they can redistribute them to other people &#150 including me, so that I can include them in next Bash release.
+  <p class=list-2>&bull;&nbsp; Custom program strings are translated from lookup files that you'll find in the <code>Mopy\Data</code>. E.g., for English, it would be <code>Mopy\Data\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)
+  <p class=list-2>&bull;&nbsp; These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\Data\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this &#150; once someone does the txt files for a language, they can redistribute them to other people &#150; including me, so that I can include them in next Bash release.
 <p class=list-1>&bull;&nbsp; <B><I>Generating the Translation</I></B>
 <p class=list-1>&nbsp;&nbsp; To begin translating, or update an existing translation file...
   <p class=list-2>&bull;&nbsp; Go to Mods tab, right click on <B><I>File</I></B> column header and select <B><I>Dump Translator</I></B> from the pop up menu.
@@ -2132,11 +2134,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 </pre>
   <p class=list-2>&bull;&nbsp; Each entry begins with the source file and the line number (in case this helps you figure out how to translate the code).
   <p class=list-2>&bull;&nbsp; After that is the original text, then a <code>>>>></code> dividing line, then the translated text. Here, the second entry has been translated, while the first has not. (Here the "translation" consists of changing it to upper case.
-  <p class=list-2>&bull;&nbsp; It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X \n</code>. The '%' strings are place holders where file names, counts, etc. are entered &#150 if they're not present, Bash will throw an exception. The \n combinations are newline characters &#150 I use them in dialogs and other places where I want line breaks. 
-  <p class=list-2>&bull;&nbsp; In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> &#150 this is the name of the Mods tab. And right under it is the name of the Saves tab. 
+  <p class=list-2>&bull;&nbsp; It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X \n</code>. The '%' strings are place holders where file names, counts, etc. are entered &#150; if they're not present, Bash will throw an exception. The \n combinations are newline characters &#150; I use them in dialogs and other places where I want line breaks. 
+  <p class=list-2>&bull;&nbsp; In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> &#150; this is the name of the Mods tab. And right under it is the name of the Saves tab. 
   <p class=list-2>&bull;&nbsp; To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.
   <p class=list-2>&bull;&nbsp; Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away to it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)
-  <p class=list-2>&bull;&nbsp; Spell checking: If you're using an office suite, you might want turn on dictionaries for both English and your language &#150 Abot mentions that Open Office allows you to do this.
+  <p class=list-2>&bull;&nbsp; Spell checking: If you're using an office suite, you might want turn on dictionaries for both English and your language &#150; Abot mentions that Open Office allows you to do this.
   <p class=empty>&nbsp;</p>
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
@@ -2236,7 +2238,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
 <p class=list-1>&bull;&nbsp; New export/import options; Item Data, Prices
 <p class=list-1>&bull;&nbsp; INI Tweaks tab instead of Ini tweaks menu, showing status of the tweak etc. (contributed by Lojack)
-<p class=list-1>&bull;&nbsp; Bashed patch changes:
+<p class=list-1>&bull;&nbsp; Bashed Patch changes:
     <p class=list-3>&bull;&nbsp; New patchers:
         <p class=list-5>&bull;&nbsp; Actors.DeathItems
         <p class=list-5>&bull;&nbsp; Actors.Animations
@@ -2264,12 +2266,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Updated 7z dll & exe to latest version
 <p class=list-1>&bull;&nbsp; Various small fixes and code cleanups
 <p class=list-1>&bull;&nbsp; Fixes to 
-<p class=list-1>&bull;&nbsp; A few memory usage optimizations when building the bashed patch
+<p class=list-1>&bull;&nbsp; A few memory usage optimizations when building the Bashed Patch
 <p class=list-1>&bull;&nbsp; Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
-<p class=list-1>&bull;&nbsp; A new ini setting to determine whether or not to autocheck new items in the bashed patch dialogue (previously was determined per patcher in the code). 
+<p class=list-1>&bull;&nbsp; A new ini setting to determine whether or not to autocheck new items in the Bashed Patch dialogue (previously was determined per patcher in the code). 
 <p class=empty>&nbsp;</p>
 <h3><a name='27701082010PacificMorrowindHaamaBadhair'>277 [01/08/2010] [PacificMorrowind, Haama, Badhair]</a></h3>
-<p class=list-1>&bull;&nbsp; fixes: a GMST error causing problems with rebuilding the bashed patch, a couple others, typo fixes.
+<p class=list-1>&bull;&nbsp; fixes: a GMST error causing problems with rebuilding the Bashed Patch, a couple others, typo fixes.
 <p class=list-1>&bull;&nbsp; a new Bashed Patch section added: Globals
 <p class=list-1>&bull;&nbsp; 5 new Global tweaks added; Timescale, Crime Crime: Force Jail, and 3 TG quest penalties
 <p class=list-1>&bull;&nbsp; added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
@@ -2313,7 +2315,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Bain: just a couple changes (skip images/docs and autorecognizing ini folder)
 <p class=empty>&nbsp;</p>
 <h3><a name='2698232009'>269 [8/23/2009]</a></h3>
-<p class=list-1>&bull;&nbsp; Bain: Now supports umlauts, etc. in filenames. (At least on Wrye's machine &#150 solution is a bit of a hack.)
+<p class=list-1>&bull;&nbsp; Bain: Now supports umlauts, etc. in filenames. (At least on Wrye's machine &#150; solution is a bit of a hack.)
 <p class=empty>&nbsp;</p>
 <h3><a name='2687272009PacificMorrowind'>268 [7/27/2009] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch:
@@ -2339,7 +2341,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Safety check on bolt.Path.moveTo to avoid accidental deletion.
   <p class=list-2>&bull;&nbsp; Fix tooltip for Oblivion launcher to show "+ OBSE" correctly.
   <p class=list-2>&bull;&nbsp; Fix a bug in handling final lines of ini tweak files that lack a trailing new line.
-  <p class=list-2>&bull;&nbsp; Bashed patch rebuild will now auto-activate files as necessary.
+  <p class=list-2>&bull;&nbsp; Bashed Patch rebuild will now auto-activate files as necessary.
 <p class=list-1>&bull;&nbsp; Refactoring:
   <p class=list-2>&bull;&nbsp; Change formid/formId to fid.
   <p class=list-2>&bull;&nbsp; Removed "Id" from end of record fields.
@@ -2615,7 +2617,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Added R.Teeth and R.Mouth tags.
   <p class=list-2>&bull;&nbsp; Eyes and Hair for each race are now sorted by name.
 <p class=list-1>&bull;&nbsp; New: <a href="#ImportRoads">Import Roads</a>.
-<p class=list-1>&bull;&nbsp; Fix a bug in working with world records in bashed patch.
+<p class=list-1>&bull;&nbsp; Fix a bug in working with world records in Bashed Patch.
 <p class=list-1>&bull;&nbsp; Workaround for bug in time.strptime for Japanese locale.
 <p class=empty>&nbsp;</p>
 <h3><a name='22612142008'>226 [12/14/2008]</a></h3>
@@ -2624,11 +2626,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; New <a href="#DecompileAll">Decompile All</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='22512132008'>225 [12/13/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; Bashed patch now checks for "compile all" mods.
+<p class=list-1>&bull;&nbsp; Bashed Patch now checks for "compile all" mods.
 <p class=empty>&nbsp;</p>
 <h3><a name='22412122008'>224 [12/12/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Updated Rational_Names.csv.
-<p class=list-1>&bull;&nbsp; Bug fix for world orphan mod reporting in bashed patch.
+<p class=list-1>&bull;&nbsp; Bug fix for world orphan mod reporting in Bashed Patch.
 <p class=empty>&nbsp;</p>
 <h3><a name='22312112008'>223 [12/11/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#ModChecker">Mod Checker</a>
@@ -2644,7 +2646,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='2221262008'>222 [12/6/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Fix an iteritems bug in Balo group setting.
 <p class=list-1>&bull;&nbsp; Fix a rare bug with PM archiving dating for undated archives.
-<p class=list-1>&bull;&nbsp; Bashed patch now gets magic school/name from active mods. 
+<p class=list-1>&bull;&nbsp; Bashed Patch now gets magic school/name from active mods. 
 <p class=list-1>&bull;&nbsp; bolt.Flags: add eq/ne operator handling.
 <p class=list-1>&bull;&nbsp; Cell/World record review/update for fuller support of cell/world records.
 <p class=list-1>&bull;&nbsp; New: <a href="#RemoveWorldOrphans">Remove World Orphans</a>.
@@ -2655,19 +2657,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Added Configuration, Suggestions and Copy Text buttons.
   <p class=empty>&nbsp;</p>
 <h3><a name='22111232008'>221 [11/23/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; <a href="#CheckMods">Check Mods</a> 
+<p class=list-1>&bull;&nbsp; <a href="#ModChecker">Check Mods</a> 
   <p class=list-2>&bull;&nbsp; Now checks for missing/delinquent masters.
   <p class=list-2>&bull;&nbsp; Now supports merge only checking.
   <p class=list-2>&bull;&nbsp; Now supports file existence checking.
   <p class=empty>&nbsp;</p>
 <h3><a name='22011232008'>220 [11/23/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; <a href="#CheckMods">Check Mods</a> 
+<p class=list-1>&bull;&nbsp; <a href="#ModChecker">Check Mods</a> 
   <p class=list-2>&bull;&nbsp; Now checks for mergeable, but active mods.
   <p class=list-2>&bull;&nbsp; Now supports HEADER and ONEOF blocks.
   <p class=list-2>&bull;&nbsp; Changed report format slightly.
   <p class=empty>&nbsp;</p>
 <h3><a name='21911222008'>219 [11/22/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; New feature: <a href="#CheckMods">Check Mods</a>.
+<p class=list-1>&bull;&nbsp; New feature: <a href="#ModChecker">Check Mods</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='21811172008'>218 [11/17/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Fix bug with auto-updating after removing a mergeable file.
@@ -2677,7 +2679,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Mergeability is now determined automatically (see <a href="#MarkMergeable">Mark Mergeable</a> and <a href="#MergePatches">Merge Patches</a>.)
 <p class=empty>&nbsp;</p>
 <h3><a name='21611142008'>216 [11/14/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; <a href="#RaceInfo">Race Info</a> add support for R.Relations.
+<p class=list-1>&bull;&nbsp; <a href="#RaceRecords">Race Records</a> add support for R.Relations.
 <p class=list-1>&bull;&nbsp; <a href="#Installation">Installation</a> Simplified installation: Wrye Python, no shortcuts.
 <p class=list-1>&bull;&nbsp; Fix translation so that 'German' locales map to 'DE'.
 <p class=list-1>&bull;&nbsp; Maybe fix incompatibilities with very old config files.
@@ -2689,7 +2691,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='21410292008'>214 [10/29/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a>: 
   <p class=list-2>&bull;&nbsp; Changed to case insensitive sorting of ingredients in "Alchemical Effects" catalogs.
-<p class=list-1>&bull;&nbsp; <a href="#ExportRelations">Export Relations</a> and <a href="#ImportRelations">Import Relations</a> bashed patch component.
+<p class=list-1>&bull;&nbsp; <a href="#ExportRelations">Export Relations</a> and <a href="#ImportRelations">Import Relations</a> Bashed Patch component.
 <p class=empty>&nbsp;</p>
 <h3><a name='21310272008'>213 [10/27/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a>: 
@@ -2780,7 +2782,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=empty>&nbsp;</p>
 <h3><a name='1937162008'>193 [7/16/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Added <a href="#ExportFactions">Export Factions</a> and <a href="#ImportFactions">Import Factions</a>
-<p class=list-1>&bull;&nbsp; Expanded Bash_MFact.csv &#150 should be pretty complete now.
+<p class=list-1>&bull;&nbsp; Expanded Bash_MFact.csv &#150; should be pretty complete now.
 <p class=empty>&nbsp;</p>
 <h3><a name='1927132008'>192 [7/13/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Fix some checkmark icons.
@@ -3030,11 +3032,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Updated Portuguese (by Hadoki).
 <p class=empty>&nbsp;</p>
 <h3><a name='1382152008'>138 [2/15/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; <a href="#AutoOrdering">Auto Ordering</a>: Tweak diff between mods from 60 seconds to 70 (for OBMM compatibility).
+<p class=list-1>&bull;&nbsp; <a href="#Balo">Auto Ordering</a>: Tweak diff between mods from 60 seconds to 70 (for OBMM compatibility).
 <p class=list-1>&bull;&nbsp; Fix order of MGEF sub-records.
 <p class=list-1>&bull;&nbsp; Disable ctrl-up/down for auto-sorted files.
 <p class=list-1>&bull;&nbsp; Refactor saveFile.getRecord.
-<p class=list-1>&bull;&nbsp; Upgraded <a href="#ListMasters">List Masters</a> to be like <a href="#ListMods">List Mods</a>.
+<p class=list-1>&bull;&nbsp; Upgraded <a href="#ListMastersSave">List Masters (Save)</a> to be like <a href="#ListMods">List Mods</a>.
 <p class=list-1>&bull;&nbsp; Bashed Patch: <a href="#MorphFactions">Morph Factions</a>.
 <p class=list-1>&bull;&nbsp; Wrye Morph support: In progress.
 <p class=empty>&nbsp;</p>
@@ -3049,17 +3051,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='135222008'>135 [2/2/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Added Portuguese translation (by Hadoki).
 <p class=list-1>&bull;&nbsp; Added <a href="#SEWorldTests">SEWorld Tests</a> to Bashed Patch.
-<p class=list-1>&bull;&nbsp; Minor tweaks to <a href="#AutoOrdering">Auto Ordering</a>.
+<p class=list-1>&bull;&nbsp; Minor tweaks to <a href="#Balo">Auto Ordering</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='134212008'>134 [2/1/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; Fix: <a href="#AutoOrdering">Auto Ordering</a> to resort after redating anchor files.
+<p class=list-1>&bull;&nbsp; Fix: <a href="#Balo">Auto Ordering</a> to resort after redating anchor files.
 <p class=empty>&nbsp;</p>
 <h3><a name='133212008'>133 [2/1/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; New: <a href="#AutoOrdering">Auto Ordering</a> by group.
+<p class=list-1>&bull;&nbsp; New: <a href="#Balo">Auto Ordering</a> by group.
 <p class=list-1>&bull;&nbsp; Group headers in mods lists.
 <p class=empty>&nbsp;</p>
 <h3><a name='1321312008'>132 [1/31/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; Fix a bug with merging INGR records in bashed patch.
+<p class=list-1>&bull;&nbsp; Fix a bug with merging INGR records in Bashed Patch.
 <p class=empty>&nbsp;</p>
 <h3><a name='1311312008'>131 [1/31/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; Hack to get around bug with screens tab not showing up correctly.
@@ -3103,7 +3105,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='12212232007'>122 [12/23/2007]</a></h3>
 <p class=list-1>&bull;&nbsp; Updated Russian translation (by DJ_Kovrik).
 <p class=list-1>&bull;&nbsp; Better handling of deleted records.
-<p class=list-1>&bull;&nbsp; Fix a problem with bashed patches not including recent additions.
+<p class=list-1>&bull;&nbsp; Fix a problem with Bashed Patches not including recent additions.
 <p class=empty>&nbsp;</p>
 <h3><a name='12112162007'>121 [12/16/2007]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#Details">Mod Details</a> like TESCS Details view.
@@ -3297,8 +3299,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Mods marked as mergeable now marked with green text in main mods list.
   <p class=empty>&nbsp;</p>
 <h3><a name='088822007'>0.88 [8/2/2007]</a></h3>
-<p class=list-1>&bull;&nbsp; New <a href="#PatchAliases">Patch Aliases</a> handling.
-<p class=list-1>&bull;&nbsp; New <a href="#MergePatches">Merge Patches</a> and <a href="#CanMerge">Can Merge</a> command.
+<p class=list-1>&bull;&nbsp; New <a href="#AliasModNames">Patch Aliases</a> handling.
+<p class=list-1>&bull;&nbsp; New <a href="#MergePatches">Merge Patches</a> and <a href="#MarkMergeable">Can Merge</a> command.
 <p class=list-1>&bull;&nbsp; Fix minor bug with deleted quick/autosave backup files.
 <p class=list-1>&bull;&nbsp; Add support for Ammo to <a href="#ExportImportStats">Export/Import Stats</a> and <a href="#ImportStats">Import Stats</a>.
 <p class=list-1>&bull;&nbsp; Added Rational_Names.csv for use with <a href="#ImportNames">Import Names</a>.
@@ -3547,7 +3549,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; In progress: Bashed Patches
 <p class=empty>&nbsp;</p>
 <h3><a name='0523112007'>0.52 [3/11/2007]</a></h3>
-<p class=list-1>&bull;&nbsp; Tweaked <a href="#SaveImportfromMod">Face Import dialog</a> (better layout, saves game screenshot as image).
+<p class=list-1>&bull;&nbsp; Tweaked <a href="#FaceImport">Face Import dialog</a> (better layout, saves game screenshot as image).
 <p class=list-1>&bull;&nbsp; Added Load Order column to <a href="#ModsTab">Mods Tab</a>.
 <p class=list-1>&bull;&nbsp; Fix a bug that broke Replacers feature.
 <p class=list-1>&bull;&nbsp; Better handling for savegame file errors.
@@ -3564,14 +3566,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=empty>&nbsp;</p>
 <h3><a name='0502272007'>0.50 [2/27/2007]</a></h3>
 <p class=list-1>&bull;&nbsp; Tweak Unicode encoding to fix with Cyrillic (and hopefully other languages).
-<p class=list-1>&bull;&nbsp; Add <a href="#RemoveNullRefs">Remove Null Refs</a> command.
-<p class=list-1>&bull;&nbsp; Add <a href="#ImportTNRFaces">Import TNR Faces</a> command.
+<p class=list-1>&bull;&nbsp; Add <a href="#RemoveBloat">Remove Null Refs</a> command.
+<p class=list-1>&bull;&nbsp; Add <a href="#ImportNPCFaces">Import TNR Faces</a> command.
 <p class=empty>&nbsp;</p>
 <h3><a name='0492192007'>0.49 [2/19/2007]</a></h3>
-<p class=list-1>&bull;&nbsp; Savegame <a href="#statistics">statistics</a> bugfix.
+<p class=list-1>&bull;&nbsp; Savegame <a href="#Statistics">Statistics</a> bugfix.
 <p class=empty>&nbsp;</p>
 <h3><a name='0482192007'>0.48 [2/19/2007]</a></h3>
-<p class=list-1>&bull;&nbsp; More savegame <a href="#statistics">statistics</a>.
+<p class=list-1>&bull;&nbsp; More savegame <a href="#Statistics">Statistics</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='0472182007'>0.47 [2/18/2007]</a></h3>
 <p class=list-1>&bull;&nbsp; List Merging: Html logging
@@ -3780,7 +3782,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='015562006'>0.15 [5/6/2006]</a></h3>
 <p class=list-1>&bull;&nbsp; New/Improved
   <p class=list-2>&bull;&nbsp; Allow editing of  master names.
-  <p class=list-2>&bull;&nbsp; Allow sort masters by Save Order &#150 i.e., by current order in the file.
+  <p class=list-2>&bull;&nbsp; Allow sort masters by Save Order &#150; i.e., by current order in the file.
 <p class=list-1>&bull;&nbsp; Bugfixes
   <p class=list-2>&bull;&nbsp; Fix master listing to sort on first load.
   <p class=list-2>&bull;&nbsp; Fix a bug that prevented backups from being made.
@@ -3813,7 +3815,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; <B>Face Export/Import</B> <B><I>[BETA!]</I></B>
   <p class=list-2>&bull;&nbsp; Import now imports face, eyes, hair, haircolor, hairlength and gender.
     <p class=list-3>&bull;&nbsp; Race is not imported because it would require tweaking additional records (player's powers, etc.)
-  <p class=list-2>&bull;&nbsp; <B>Note:</B> Old code rewritten &#150 it's possible that new bugs have been introduced.
+  <p class=list-2>&bull;&nbsp; <B>Note:</B> Old code rewritten &#150; it's possible that new bugs have been introduced.
 <p class=list-1>&bull;&nbsp; New/Improved
   <p class=list-2>&bull;&nbsp; Internal: Mod and save game parsing fleshed out significantly.
   <p class=empty>&nbsp;</p>
