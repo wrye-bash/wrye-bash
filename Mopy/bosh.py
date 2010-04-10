@@ -6033,9 +6033,9 @@ class SaveFile:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkType[0] >= ' ' and chunkType[3] >= ' '):
-                        log(_('  %4s  %-4u  %08X') % (chunkType,chunkVersion,len(chunkBuff)))
+                        log('  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
-                        log(_('  %04X  %-4u  %08X') % (chunkTypeNum,chunkVersion,len(chunkBuff)))
+                        log('  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
                     ins = cStringIO.StringIO(chunkBuff)
                     def unpack(format,size):
                         return struct.unpack(format,ins.read(size))
@@ -6073,7 +6073,7 @@ class SaveFile:
                                         if refModID == 255:
                                             log(_('      %02X (Save File)') % (refModID))
                                         else:
-                                            log(_('      %02X (%s)') % (refModID, self.masters[refModID].s))
+                                            log('      %02X (%s)' % (refModID, self.masters[refModID].s))
                             numElements, = unpack('=I',4)
                             log(_('    Size:  %u') % numElements)
                             for i in range(numElements):
@@ -6100,7 +6100,7 @@ class SaveFile:
                                 elif dataType == 4:
                                     data, = unpack('=I',4)
                                     dataStr = '%u' % data
-                                log(_('    [%s]:%s = %s') % (keyStr,('BAD','NUM','REF','STR','ARR')[dataType],dataStr))
+                                log('    [%s]:%s = %s' % (keyStr,('BAD','NUM','REF','STR','ARR')[dataType],dataStr))
                     elif (opcodeBase == 0x2330):    # Pluggy
                         if (chunkTypeNum == 1):
                             #--Pluggy TypeESP
@@ -6109,12 +6109,12 @@ class SaveFile:
                             while (ins.tell() < len(chunkBuff)):
                                 if chunkVersion == 2:
                                     espId,modId, = unpack('=BB', 2)
-                                    log(_('    %02X    %02X') % (espId,modId))
+                                    log('    %02X    %02X' % (espId,modId))
                                     espMap[modId] = espId
                                 else: #elif chunkVersion == 1"
                                     espId,modId,modNameLen, = unpack('=BBI',6)
                                     modName = ins.read(modNameLen)
-                                    log(_('    %02X    %02X    %s') % (espId,modId,modName))
+                                    log('    %02X    %02X    %s' % (espId,modId,modName))
                                     espMap[modId] = modName # was [espId]
                         elif (chunkTypeNum == 2):
                             #--Pluggy TypeSTR
@@ -6138,13 +6138,13 @@ class SaveFile:
                                 elemStr = ins.read(4)
                                 if (elemType == 0): #--Integer
                                     elem, = struct.unpack('=i',elemStr)
-                                    log(_('        [%u]  INT  %d') % (elemIdx,elem,))
+                                    log('        [%u]  INT  %d' % (elemIdx,elem,))
                                 elif (elemType == 1): #--Ref
                                     elem, = struct.unpack('=I',elemStr)
-                                    log(_('        [%u]  REF  %08X') % (elemIdx,elem,))
+                                    log('        [%u]  REF  %08X' % (elemIdx,elem,))
                                 elif (elemType == 2): #--Float
                                     elem, = struct.unpack('=f',elemStr)
-                                    log(_('        [%u]  FLT  %08X') % (elemIdx,elem,))
+                                    log('        [%u]  FLT  %08X' % (elemIdx,elem,))
                         elif (chunkTypeNum == 4):
                             #--Pluggy TypeName
                             log(_('    Pluggy Name'))
@@ -6224,9 +6224,10 @@ class SaveFile:
         progress.setFull(len(self.created)+len(self.records))
         #--Created objects
         progress(0,_('Scanning created objects'))
+        fullAttr = 'full'
         for citem in self.created:
-            if 'full' in citem.__class__.__slots__:
-                full = citem.__getattribute__('full')
+            if fullAttr in citem.__class__.__slots__:
+                full = citem.__getattribute__(fullAttr)
             else:
                 full = citem.getSubString('FULL')
             if full:
@@ -8911,7 +8912,7 @@ class ConfigHelpers:
                         elif ruleMod in merged: bullet = '+'
                         elif ruleMod in imported: bullet = '*'
                         else: bullet = 'o'
-                        log(_('%s __%s__ -- %s') % (bullet,ruleMod.s,comment))
+                        log('%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
                 if showSuggest:
                     log.setHeader(_('=== SUGGESTIONS: ') + modList)
                     for ruleType,ruleMod,comment in modGroup.suggest:
@@ -11245,9 +11246,9 @@ class InstallersData(bolt.TankData, DataDict):
         for package in allPackages:
             prefix = '%03d' % (self.data[package].order)
             if isinstance(self.data[package],InstallerMarker):
-                log(_('%s - %s') % (prefix,package.s))
+                log('%s - %s' % (prefix,package.s))
             else:
-                log(_('%s - %s (%08X)') % (prefix,package.s,self.data[package].crc))
+                log('%s - %s (%08X)' % (prefix,package.s,self.data[package].crc))
         log('[/codebox]')
         return bolt.winNewLines(log.out.getvalue())
 # Utilities -------------------------------------------------------------------
