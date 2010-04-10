@@ -12,6 +12,11 @@ import win32api
 gDialogSize = (600,440)
 #---------------------------------------------------
 
+#Translateable strings
+EXTRA_ARGS =   _("Extra arguments to '%s'.")
+MISSING_ARGS = _("Missing arguments to '%s'.")
+UNEXPECTED =   _("Unexpected '%s'.")
+
 def replaceShader(sdpFileName, shaderName, shaderFileName):
     temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
     sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
@@ -124,7 +129,7 @@ class WizardReturn(object):
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
     def __init__(self, link, subs):
-        wiz.Wizard.__init__(self, link.gTank, -1, 'Installer Wizard')
+        wiz.Wizard.__init__(self, link.gTank, -1, _('Installer Wizard'))
         #Hide the "Previous" button, we wont use it
         self.FindWindowById(wx.ID_BACKWARD).Hide()
 
@@ -250,7 +255,7 @@ class PageSelect(PageInstaller):
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
         sizerBoxes = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerBoxes.Add(wx.StaticText(self, -1, 'Options:'))
+        sizerBoxes.Add(wx.StaticText(self, -1, _('Options:')))
         sizerBoxes.AddStretchSpacer()
         self.textItem = wx.TextCtrl(self, -1, '', style=wx.TE_READONLY|wx.TE_MULTILINE)        
         self.bmpItem = wx.StaticBitmap(self, -1, wx.NullBitmap, size=(200, 200))
@@ -272,7 +277,7 @@ class PageSelect(PageInstaller):
         sizerBoxes.AddGrowableCol(1)
         sizerMain.Add(sizerBoxes, -1, wx.EXPAND)
 
-        sizerMain.Add(wx.StaticText(self, -1, 'Description:'))
+        sizerMain.Add(wx.StaticText(self, -1, _('Description:')))
         sizerMain.Add(self.textItem, -1, wx.EXPAND|wx.ALL)
 
         self.SetSizer(sizerMain)
@@ -332,14 +337,14 @@ class PageFinish(PageInstaller):
         sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
 
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
-        textTitle = wx.StaticText(self, -1, "The installer script has finished, and selected the following sub-packages, esps, and esms to be installed.")
+        textTitle = wx.StaticText(self, -1, _("The installer script has finished, and selected the following sub-packages, esps, and esms to be installed."))
         textTitle.Wrap(gDialogSize[0]-10)
         sizerTitle.Add(textTitle, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
         sizerLists = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerLists.Add(wx.StaticText(self, -1, 'Sub-Packages'))
-        sizerLists.Add(wx.StaticText(self, -1, 'Esp/ms'))
+        sizerLists.Add(wx.StaticText(self, -1, _('Sub-Packages')))
+        sizerLists.Add(wx.StaticText(self, -1, _('Esp/ms')))
         self.listSubs = wx.CheckListBox(self, 666, choices=subs)
         wx.EVT_CHECKLISTBOX(self, 666, self.OnSelectSubs)
         for index,key in enumerate(subs):
@@ -360,14 +365,14 @@ class PageFinish(PageInstaller):
         sizerMain.Add(sizerLists, 1, wx.EXPAND)
 
         sizerNotes = wx.FlexGridSizer(2, 1, 5, 0)
-        sizerNotes.Add(wx.StaticText(self, -1, 'Notes:'))
+        sizerNotes.Add(wx.StaticText(self, -1, _('Notes:')))
         sizerNotes.Add(wx.TextCtrl(self, -1, ''.join(notes), style=wx.TE_READONLY|wx.TE_MULTILINE), 1, wx.EXPAND)
         sizerNotes.AddGrowableCol(0)
         sizerNotes.AddGrowableRow(1)
         sizerMain.Add(sizerNotes, 2, wx.TOP|wx.EXPAND)
 
         sizerChecks = wx.FlexGridSizer(1, 2, 5, 0)
-        self.checkApply = wx.CheckBox(self, 111, "Apply these selections")
+        self.checkApply = wx.CheckBox(self, 111, _("Apply these selections"))
         self.checkApply.SetValue(bAuto)
         wx.EVT_CHECKBOX(self, 111, self.OnCheckApply)
         sizerChecks.AddStretchSpacer()
@@ -415,17 +420,17 @@ class PageVersions(PageInstaller):
         
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
-        self.textWarning = wx.StaticText(self, 124, 'WARNING: The following version requirements are not met for using this installer.')
+        self.textWarning = wx.StaticText(self, 124, _('WARNING: The following version requirements are not met for using this installer.'))
         self.textWarning.Wrap(gDialogSize[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
-        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Version Requirements'))
+        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, -1, _('Version Requirements')))
         sizerVersions = wx.FlexGridSizer(4, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
         sizerVersions.AddStretchSpacer()
-        sizerVersions.Add(wx.StaticText(self, -1, 'Need'))
-        sizerVersions.Add(wx.StaticText(self, -1, 'Have'))
+        sizerVersions.Add(wx.StaticText(self, -1, _('Need')))
+        sizerVersions.Add(wx.StaticText(self, -1, _('Have')))
         sizerVersions.AddStretchSpacer()
 
         linkOb = wx.HyperlinkCtrl(self, -1, 'Oblivion', 'http://www.elderscrolls.com/downloads/updates_patches.htm')
@@ -470,7 +475,7 @@ class PageVersions(PageInstaller):
         sizerMain.AddStretchSpacer()
         
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
-        self.checkOk = wx.CheckBox(self, 123, 'Install anyway.')
+        self.checkOk = wx.CheckBox(self, 123, _('Install anyway.'))
         wx.EVT_CHECKBOX(self, 123, self.OnCheck)
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
         sizerCheck.AddStretchSpacer()
@@ -579,7 +584,7 @@ class WryeParser(ScriptParser.Parser):
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
-                return PageError(self.parent, "An error occured in the wizard script:", "Line " + str(self.cLine) + ": '" + newline.strip('\n') + "'\nError:  " + str(e))
+                return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script (Line %s):\n%s\nERROR:%s') % (self.cLine, newline.strip('\n'), e))
             if self.page:
                 return self.page
         return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
@@ -644,38 +649,38 @@ class WryeParser(ScriptParser.Parser):
     def Or(parser, lval, rval): return lval or rval
     def Not(self, params):
         if len(params) > 1:
-            self.error('Extra arguments to NOT operator (!)')
+            self.error(EXTRA_ARGS % 'NOT operator (!)')
         if len(params) < 1:
-            self.error('Missing argument to NOT operator (!)')
+            self.error(MISSING_ARGS % 'NOT operator (!)')
         return not params[0]
 
     # Functions...
     def FunctionCompareOblivionVersion(self, params):
         if len(params) > 1:
-            self.error("Extra arguments to function 'CompareOblivionVersion'")
+            self.error(EXTRA_ARGS % 'CompareOblivionVersion')
         if len(params) < 1:
-            self.error("Missing argument to function 'CompareOblivionVersion'")
+            self.error(MISSING_ARGS % 'CompareOblivionVersion')
         ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['app'].join('oblivion.exe'))
         return ret[0]
     def FunctionCompareOBSEVersion(self, params):
         if len(params) > 1:
-            self.error("Extra arguments to function 'CompareOBSEVersion'")
+            self.error(EXTRA_ARGS % 'CompareOBSEVersion')
         if len(params) < 1:
-            self.error("Missing argument to function 'CompareOBSEVersion'")
+            self.error(MISSING_ARGS % 'CompareOBSEVersion')
         ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['app'].join('obse_loader.exe'))
         return ret[0]
     def FunctionCompareOBGEVersion(self, params):
         if len(params) > 1:
-            self.error("Extra arguments to function 'CompareOBGEVersion'")
+            self.error(EXTRA_ARGS % 'CompareOBGEVersion')
         if len(params) < 1:
-            self.error("Missing argument to function 'CompareOBGEVersion'")
+            self.error(MISSING_ARGS % 'CompareOBGEVersion')
         ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         return ret[0]
     def FunctionDataFileExists(self, params):
         if len(params) > 1:
-            self.error("Extra arguments to function 'DataFileExists'")
+            self.error(EXTRA_ARGS % 'DataFileExists')
         if len(params) < 1:
-            self.error("Missing argument to function 'DataFileExists'")
+            self.error(MISSING_ARGS % 'DataFileExists')
         return bosh.dirs['mods'].join(params[0]).exists()
 
     # Keywords, mostly for flow control (If, Select, etc)
@@ -686,24 +691,24 @@ class WryeParser(ScriptParser.Parser):
             self.AddFlowControl('If', False, ['If', 'EndIf'])
             return
         if len(line) == 0:
-            self.error("Missing arguements to 'If'.")
+            self.error(MISSING_ARGS % 'If')
         bActive = self.Eval(line)
         self.AddFlowControl('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
     def KeywordElif(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If' or parser.GetFlowControl(-1).hitElse:
-            parser.error("Unexpected 'Elif'")
+            parser.error(UNEXPECTED % 'Elif')
         if parser.GetFlowControl(-1).ifTrue:
             parser.GetFlowControl(-1).active = False
         elif len(line) == 0:
-            parser.error("Missing arguments to 'Elif'")
+            parser.error(MISSING_ARGS % 'Elif')
         else:
             parser.GetFlowControl(-1).active = parser.Eval(line)
             parser.GetFlowControl(-1).ifTrue = parser.GetFlowControl(-1).active or parser.GetFlowControl(-1).ifTrue
     def KeywordElse(parser, line):
         if len(line) > 1:
-            parser.error("Extra arguments to 'Else'")
+            parser.error(EXTRA_ARGS % 'Else')
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If' or parser.GetFlowControl(-1).hitElse:
-            parser.error("Unexpected 'Else'")
+            parser.error(UNEXPECTED % 'Else')
         if parser.GetFlowControl(-1).ifTrue:
             parser.GetFlowControl(-1).active = False
             parser.GetFlowControl(-1).hitElse = True
@@ -712,7 +717,7 @@ class WryeParser(ScriptParser.Parser):
             parser.GetFlowControl(-1).hitElse = True
     def KeywordEndIf(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If':
-            parser.error("Unexpected 'EndIf'")
+            parser.error(UNEXPECTED % 'EndIf')
         parser.PopFlowControl()
 
     def KeywordSelectOne(self, line): self._KeywordSelect(line, False, 'SelectOne')
@@ -724,10 +729,10 @@ class WryeParser(ScriptParser.Parser):
             self.AddFlowControl('Select', False, ['SelectOne', 'SelectMany', 'EndSelect'])
             return
         if (not bMany and len(line) < 7) or (bMany and len(line) < 4):
-            self.error("Missing arguments to '" + name + "'")
+            self.error(MISSING_ARGS % name)
         main_desc = line.pop(0)
         if len(line) % 3:
-            self.error("Missing arguments to '" + name + "'")
+            self.error(MISSING_ARGS % name)
         images = []
         titles = []
         descs = []
@@ -764,32 +769,32 @@ class WryeParser(ScriptParser.Parser):
         else:
             for i in images:
                 image_paths.append(bosh.dirs['installers'].join(self.path.s, i))
-        self.page = PageSelect(self.parent, bMany, 'Installer Wizard', main_desc, titles, descs, image_paths, defaultMap)
+        self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def KeywordCase(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error("Unexpected 'Case'")
+            parser.error(UNEXPECTED % 'Case')
         if len(line) == 0:
-            parser.error("Missing arguments to 'Case'")
+            parser.error(MISSING_ARGS % 'Case')
         case = ' '.join(line)
         parser.GetFlowControl(-1).hitCase = True
         if case in parser.GetFlowControl(-1).values:
             parser.GetFlowControl(-1).active = True
     def KeywordDefault(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error("Unexpected 'Default'")
+            parser.error(UNEXPECTED % 'Default')
         if parser.GetFlowControl(-1).hitCase:
             return
         if len(line) != 1:
-            parser.error("Extra arguments to 'Default'")
+            parser.error(EXTRA_ARGS % 'Default')
         parser.GetFlowControl(-1).active = True
         parser.GetFlowControl(-1).hitCase = True
     def KeywordBreak(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error("Unexpected 'Break'")
+            parser.error(UNEXPECTED % 'Break')
         parser.GetFlowControl(-1).active = False
     def KeywordEndSelect(parser, line):
         if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error("Unexpected 'EndSelect'")
+            parser.error(UNEXPECTED % 'EndSelect')
         parser.PopFlowControl()
 
     # Package selection functions
@@ -797,9 +802,9 @@ class WryeParser(ScriptParser.Parser):
     def KeywordDeSelectSubPackage(self, line): self._SelectSubPackage(line, False, 'DeSelectSubPackage')
     def _SelectSubPackage(self, line, bSelect, name):
         if len(line) < 1:
-            self.error("Missing arguments to '" + name + "'")
+            self.error(MISSING_ARGS % name)
         if len(line) > 1:
-            self.error("Extra arguments to '" + name + "'")
+            self.error(EXTRA_ARGS % name)
         package = self.GetPackage(line[0])
         if package:
             self.sublist[package] = bSelect
@@ -810,12 +815,12 @@ class WryeParser(ScriptParser.Parser):
                     if not self.EspmHasActivePackage(i):
                         self._SelectEspm([i], False, 'DeSelectEspm')
         else:
-            self.error("Sub-package '" + line[0] + "' is not a part of the installer.")
+            self.error(_("Sub-package '%s' is not a part of the installer.") % line[0])
     def KeywordSelectAll(self, line): self._SelectAll(line, True, 'SelectAll')
     def KeywordDeSelectAll(self, line): self._SelectAll(line, False, 'DeSelectAll')
     def _SelectAll(self, line, bSelect, name):
         if len(line) > 0:
-            self.error("Extra arguments to '" + name + "'")
+            self.error(EXTRA_ARGS % name)
         for i in self.sublist.keys():
             self.sublist[i] = bSelect
         for i in self.espmlist.keys():
@@ -824,19 +829,19 @@ class WryeParser(ScriptParser.Parser):
     def KeywordDeSelectEspm(self, line): self._SelectEspm(line, False, 'DeSelectEspm')
     def _SelectEspm(self, line, bSelect, name):
         if len(line) < 1:
-            self.error("Missing arguments to '" + name + "'")
+            self.error(MISSING_ARGS % name)
         if len(line) > 1:
-            self.error("Extra arguments to '" + name + "'")
+            self.error(EXTRA_ARGS % name)
         espm = self.GetEspm(line[0])
         if espm:
             self.espmlist[espm] = bSelect
         else:
-            self.error("Espm '" + line[0] + "' is not part of the installer.")
+            self.error(_("Espm '%s' is not a part of the installer.") % line[0])
     def KeywordSelectAllEspms(self, line): self._SelectAllEspms(line, True, 'SelectAllEspms')
     def KeywordDeSelectAllEspms(self, line): self._SelectAllEspms(line, False, 'DeSelectAllEspms')
     def _SelectAllEspms(self, line, bSelect, name):
         if len(line) > 0:
-            self.error("Extra arguments to '" + name + "'")
+            self.error(EXTRA_ARGS % name)
         for i in self.espmlist.keys():
             self.espmlist[i] = bSelect
             
@@ -846,9 +851,9 @@ class WryeParser(ScriptParser.Parser):
     def KeywordRequireVersions(self, line):
         if self.bAuto: return
         if len(line) < 1:
-            self.error("Missing arguements to 'RequireVersions'")
+            self.error(MISSING_ARGS % 'RequireVersions')
         if len(line) > 3:
-            self.error("Extra arguments to 'RequireVersions'")
+            self.error(EXTRA_ARGS % 'RequireVersions')
         if len(line) < 2:
             line.append('None')
         if len(line) < 3:
@@ -889,7 +894,7 @@ class WryeParser(ScriptParser.Parser):
             if need == 'None':
                 return [1, ver]
             if len(need) != 4:
-                self.error("Version '" + want + "' expected in format 'x.x.x.x'")
+                self.error(_("Version '%s' expected in format 'x.x.x.x'") % want)
                 return [-1, ver]
             if have[0] > need[0]: return [1, ver]
             if have[0] < need[0]: return [-1, ver]
@@ -907,8 +912,8 @@ class WryeParser(ScriptParser.Parser):
         self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
     def KeywordCancel(self, line):
         if len(line) < 1:
-            msg = "No reason given"
+            msg = _("No reason given")
         else:
             msg = ' '.join(line)
-        self.page = PageError(self.parent, 'The installer wizard was canceled:', msg)
+        self.page = PageError(self.parent, _('The installer wizard was canceled:'), msg)
 # END --------------------------------------------------------------------------------------------------
