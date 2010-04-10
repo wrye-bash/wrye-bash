@@ -7297,6 +7297,33 @@ class INIInfo(FileInfo):
                         status = 10
         return status
 
+    def listErrors(self):
+        """Returns ini tweak errors as text."""
+        #--Setup
+        path = self.getPath()
+        tweak = oblivionIni.getTweakFileSettings(path)
+        settings = oblivionIni.getSettings()
+        text = ['%s:' % path.stail]
+
+        if len(tweak) == 0:
+            text.append(' Invalid INI formatted file.')
+        else:
+            for key in tweak:
+                if key not in settings:
+                    text.append(' [%s] - Invalid Header' % key)
+                else:
+                    for item in tweak[key]:
+                        if item not in settings[key]:
+                            text.append(' [%s] %s' % (key, item))
+        if len(text) == 1:
+            text.append(' None')
+        
+        log = bolt.LogFile(cStringIO.StringIO())                          
+        for line in text:
+            log(line)
+        return bolt.winNewLines(log.out.getvalue())   
+        
+
 class SaveInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""

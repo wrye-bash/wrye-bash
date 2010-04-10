@@ -195,9 +195,10 @@ settingDefaults = {
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
     #--Wrye Bash: INI Tweaks
-    'bash.ini.cols': ['File', 'Installer'],
+    'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
     'bash.ini.colReverse': {},
+    'bash.ini.sortValid': True,
     'bash.ini.colWidths': {
         'File':200,
         'Installer':100,
@@ -1000,8 +1001,10 @@ class INIList(List):
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.ini.colReverse')
         self.colWidths = settings['bash.ini.colWidths']
+        self.sortValid = settings['bash.ini.sortValid']
         #--Data/Items
         self.data = bosh.iniInfos
+        self.sort = settings['bash.ini.sort']
         #--Links
         self.mainMenu = INIList.mainMenu
         self.itemMenu = INIList.itemMenu
@@ -1072,14 +1075,13 @@ class INIList(List):
             self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
 
     def SortItems(self,col=None,reverse=-2):
-        #(col, reverse) = self.GetSortSettings(col,reverse)
-        #settings['bash.mods.sort'] = col
-        #selected = bosh.iniInfos.ordered
+        (col, reverse) = self.GetSortSettings(col,reverse)
+        settings['bash.ini.sort'] = col
         data = self.data
         #--Start with sort by name
         self.items.sort()
         self.items.sort(key = attrgetter('cext'))
-        if col == 'File' or not col:
+        if col == 'File':
             pass #--Done by default
         elif col == 'Installer':
             self.items.sort(key=lambda a: bosh.iniInfos.table.getItem(a,'installer',''))
@@ -1087,6 +1089,11 @@ class INIList(List):
             raise BashError(_('Unrecognized sort key: ')+col)
         #--Ascending
         if reverse: self.items.reverse()
+        #--Valid Tweaks first?
+        self.sortValid = settings['bash.ini.sortValid']
+        if self.sortValid:
+            self.items.sort(key=lambda a: self.data[a].getStatus() < 0)
+        
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
@@ -1693,10 +1700,12 @@ class ModDetails(wx.Window):
 #------------------------------------------------------------------------------
 class INIPanel(NotebookPanel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, parent,-1)
         global iniList
         iniList = INIList(self)
+        #--Events
         wx.EVT_SIZE(self,self.OnSize)
+        #--Layout
         sizer = hSizer(
             (iniList,1,wx.GROW))
         self.SetSizer(sizer)
@@ -7025,16 +7034,50 @@ class Mods_LoadList:
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class INI_Apply(Link):
-    """Apply an INI Tweak."""
-    def __init__(self,prefix=''):
-        Link.__init__(self)
-        self.prefix = prefix
-
+class INI_SortValid(Link):
+    """Sort valid INI Tweaks to the top."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.prefix+_('Apply'))
+        menuItem = wx.MenuItem(menu,self.id,_("Valid Tweaks First"),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.ini.sortValid'])
+
+    def Execute(self,event):
+        settings['bash.ini.sortValid'] ^= True
+        iniList.RefreshUI()
+#-------------------------------------------------------------------------------
+class INI_ListErrors(Link):
+    """List errors that make an INI Tweak invalid."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('List Errors'))
+        menu.AppendItem(menuItem)
+
+        bEnable = False
+        for i in data:
+            if bosh.iniInfos[i].getStatus() < 0:
+                bEnable = True
+                break
+        menuItem.Enable(bEnable)
+
+    def Execute(self,event):
+        """Handle printing out the errors."""
+        if (wx.TheClipboard.Open()):
+            text = ''
+            for i in self.data:
+                fileInfo = bosh.iniInfos[i]
+                text += '%s\n' % fileInfo.listErrors()
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_('INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
+#-------------------------------------------------------------------------------
+class INI_Apply(Link):
+    """Apply an INI Tweak."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Apply'))
+        menu.AppendItem(menuItem)
+
         bEnable = True
         for i in data:
             fileInfo = bosh.iniInfos[i]
@@ -11266,9 +11309,11 @@ def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     INIList.mainMenu.append(Mods_OblivionIni())
+    INIList.mainMenu.append(INI_SortValid())
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
+    INIList.itemMenu.append(INI_ListErrors())
     INIList.itemMenu.append(SeparatorLink())
     INIList.itemMenu.append(File_Open())
     INIList.itemMenu.append(File_Delete())
