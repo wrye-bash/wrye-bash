@@ -1421,8 +1421,8 @@ class ModDetails(wx.Window):
         id = self.mastersId = wx.NewId()
         self.masters = MasterList(self,None)
         #--Save/Cancel
-        self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
-        self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)
+        self.save = button(self,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
+        self.cancel = button(self,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
