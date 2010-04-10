@@ -12299,26 +12299,18 @@ class CompleteItemData:
                 longid = mapper(record.fid)
                 recordGetAttr = record.__getattribute__
                 stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-                if type == 'ALCH' or type == 'AMMO' or type == 'APPA' or type == 'BOOK' or type == 'INGR' or type == 'KEYM' or type == 'LIGH' or type == 'MISC' or type == 'SGST' or type == 'SLGM' or type == 'WEAP':
+                if type in ['ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']:
                     if record.model:
                         self.model[longid] = record.model.modPath
-                elif type == 'CLOT' or type == 'ARMO':
+                elif type in ['CLOT','ARMO']:
                     if record.maleBody:
                         self.Mmodel[longid] = record.maleBody.modPath
-                    else:
-                        self.Mmodel[longid] = 'NONE'
                     if record.maleWorld:
                         self.MGndmodel[longid] = record.maleWorld.modPath
-                    else:
-                        self.MGndmodel[longid] = 'NONE'
                     if record.femaleBody:
                         self.Fmodel[longid] = record.femaleBody.modPath
-                    else:
-                        self.Fmodel[longid] = 'NONE'
                     if record.femaleWorld:
                         self.FGndmodel[longid] = record.femaleWorld.modPath
-                    else:
-                        self.FGndmodel[longid] = 'NONE'
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -12471,12 +12463,12 @@ class CompleteItemData:
                 out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
                 tempstats = list(stats[longid])
                 if type == 'ARMO' or type == 'CLOT':
-                    tempstats.append(self.Mmodel[longid])
-                    tempstats.append(self.Fmodel[longid])
-                    tempstats.append(self.MGndmodel[longid])
-                    tempstats.append(self.FGndmodel[longid])
+                    tempstats.append(self.Mmodel.get(longid, 'NONE'))
+                    tempstats.append(self.Fmodel.get(longid, 'NONE'))
+                    tempstats.append(self.MGndmodel.get(longid, 'NONE'))
+                    tempstats.append(self.FGndmodel.get(longid, 'NONE'))
                 else:
-                    tempstats.append(self.model[longid])
+                    tempstats.append(self.model.get(longid, 'NONE'))
                 finalstats = tuple(tempstats)
                 out.write(format % finalstats)
         out.close()
