@@ -8867,7 +8867,7 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
-    def checkMods(self,showModList=False,showNotes=False,showConfig=True,showSuggest=True,showWarn=True):
+    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showWarn=True):
         """Checks currently loaded mods against ruleset."""
         active = set(modInfos.ordered)
         merged = modInfos.merged
@@ -8910,58 +8910,59 @@ class ConfigHelpers:
                         log('  * __%s__ %s' %(label,master.s))
                 previousMods.add(mod)
         #--Rule Sets
-        self.refreshRuleSets()
-        for fileName in sorted(self.name_ruleSet):
-            ruleSet = self.name_ruleSet[fileName]
-            modRules = ruleSet.modGroups
-            log.setHeader('= ' + fileName.s[:-4],True)
-            if ruleSet.header: log(ruleSet.header)
-            #--One ofs
-            for modSet in ruleSet.onlyones:
-                modSet &= activeMerged
-                if len(modSet) > 1:
-                    log.setHeader(warning+_('Only one of these should be active/merged'))
-                    for mod in sorted(modSet):
-                        log('* '+mod.s)
-            #--Mod Rules
-            for modGroup in ruleSet.modGroups:
-                if not modGroup.isActive(activeMerged): continue
-                modList = ' + '.join([x.s for x in modGroup.getActives(activeMerged)])
-                if showNotes and modGroup.notes:
-                    log.setHeader(_('=== NOTES: ') + modList )
-                    log(modGroup.notes)
-                if showConfig:
-                    log.setHeader(_('=== CONFIGURATION: ') + modList )
-                    #    + _('\nLegend: x: Active, +: Merged, -: Inactive'))
-                    for ruleType,ruleMod,comment in modGroup.config:
-                        if ruleType != 'o': continue
-                        if ruleMod in active: bullet = 'x'
-                        elif ruleMod in merged: bullet = '+'
-                        elif ruleMod in imported: bullet = '*'
-                        else: bullet = 'o'
-                        log('%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
-                if showSuggest:
-                    log.setHeader(_('=== SUGGESTIONS: ') + modList)
-                    for ruleType,ruleMod,comment in modGroup.suggest:
-                        if ((ruleType == 'x' and ruleMod not in activeMerged) or
-                            (ruleType == '+' and (ruleMod in active or ruleMod not in merged)) or
-                            (ruleType == '-' and ruleMod in activeMerged) or
-                            (ruleType == '-+' and ruleMod in active)
-                            ):
-                            log(_('* __%s__ -- %s') % (ruleMod.s,comment))
-                        elif ruleType == 'e' and not dirs['mods'].join(ruleMod).exists():
-                            log('* '+comment)
-                if showWarn:
-                    log.setHeader(warning + modList)
-                    for ruleType,ruleMod,comment in modGroup.warn:
-                        if ((ruleType == 'x' and ruleMod not in activeMerged) or
-                            (ruleType == '+' and (ruleMod in active or ruleMod not in merged)) or
-                            (ruleType == '-' and ruleMod in activeMerged) or
-                            (ruleType == '-+' and ruleMod in active)
-                            ):
-                            log(_('* __%s__ -- %s') % (ruleMod.s,comment))
-                        elif ruleType == 'e' and not dirs['mods'].join(ruleMod).exists():
-                            log('* '+comment)
+        if showRuleSets:
+            self.refreshRuleSets()
+            for fileName in sorted(self.name_ruleSet):
+                ruleSet = self.name_ruleSet[fileName]
+                modRules = ruleSet.modGroups
+                log.setHeader('= ' + fileName.s[:-4],True)
+                if ruleSet.header: log(ruleSet.header)
+                #--One ofs
+                for modSet in ruleSet.onlyones:
+                    modSet &= activeMerged
+                    if len(modSet) > 1:
+                        log.setHeader(warning+_('Only one of these should be active/merged'))
+                        for mod in sorted(modSet):
+                            log('* '+mod.s)
+                #--Mod Rules
+                for modGroup in ruleSet.modGroups:
+                    if not modGroup.isActive(activeMerged): continue
+                    modList = ' + '.join([x.s for x in modGroup.getActives(activeMerged)])
+                    if showNotes and modGroup.notes:
+                        log.setHeader(_('=== NOTES: ') + modList )
+                        log(modGroup.notes)
+                    if showConfig:
+                        log.setHeader(_('=== CONFIGURATION: ') + modList )
+                        #    + _('\nLegend: x: Active, +: Merged, -: Inactive'))
+                        for ruleType,ruleMod,comment in modGroup.config:
+                            if ruleType != 'o': continue
+                            if ruleMod in active: bullet = 'x'
+                            elif ruleMod in merged: bullet = '+'
+                            elif ruleMod in imported: bullet = '*'
+                            else: bullet = 'o'
+                            log('%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
+                    if showSuggest:
+                        log.setHeader(_('=== SUGGESTIONS: ') + modList)
+                        for ruleType,ruleMod,comment in modGroup.suggest:
+                            if ((ruleType == 'x' and ruleMod not in activeMerged) or
+                                (ruleType == '+' and (ruleMod in active or ruleMod not in merged)) or
+                                (ruleType == '-' and ruleMod in activeMerged) or
+                                (ruleType == '-+' and ruleMod in active)
+                                ):
+                                log(_('* __%s__ -- %s') % (ruleMod.s,comment))
+                            elif ruleType == 'e' and not dirs['mods'].join(ruleMod).exists():
+                                log('* '+comment)
+                    if showWarn:
+                        log.setHeader(warning + modList)
+                        for ruleType,ruleMod,comment in modGroup.warn:
+                            if ((ruleType == 'x' and ruleMod not in activeMerged) or
+                                (ruleType == '+' and (ruleMod in active or ruleMod not in merged)) or
+                                (ruleType == '-' and ruleMod in activeMerged) or
+                                (ruleType == '-+' and ruleMod in active)
+                                ):
+                                log(_('* __%s__ -- %s') % (ruleMod.s,comment))
+                            elif ruleType == 'e' and not dirs['mods'].join(ruleMod).exists():
+                                log('* '+comment)
         return log.out.getvalue()
 
 # TankDatas -------------------------------------------------------------------
@@ -18428,7 +18429,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             scriptEffect.full = _("Power Exhaustion")
             scriptEffect.script = exhaustId
             scriptEffect.school = 2
-            scriptEffect.visual = '\x00\x00\x00\x00'
+            scriptEffect.visual = null4
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
@@ -18808,7 +18809,7 @@ class PowerExhaustion(SpecialPatcher,Patcher):
             scriptEffect.full = _("Power Exhaustion")
             scriptEffect.name = exhaustId
             scriptEffect.school = 2
-            scriptEffect.visual = '\x00\x00\x00\x00'
+            scriptEffect.visual = null4
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
