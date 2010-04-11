@@ -6113,7 +6113,7 @@ class Installer_Hide(InstallerLink):
             file.moveTo(newName)
         finally:
             wx.EndBusyCursor()
-        self.data.refresh(what='N')
+        self.data.refresh(what='ION')
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
