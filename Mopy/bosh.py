@@ -10962,7 +10962,7 @@ class InstallersData(bolt.TankData, DataDict):
         for archive in dirs['converters'].list():
             bcfPath = convJoin(archive)
             if bcfPath.isdir(): continue
-            if archive.cext in (defaultExt) and archive.csbody[-4:] == '-bcf':
+            if archive.cext in (defaultExt) and (archive.csbody[-4:] == '-bcf' or '-bcf-' in archive.csbody):
                 size,crc,modified = self.bcfPath_sizeCrcDate.get(bcfPath,(None,None,None))
                 if crc == None or (size,modified) != (bcfPath.size,bcfPath.mtime):
                     crc = bcfPath.crc
