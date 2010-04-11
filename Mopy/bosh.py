@@ -9337,7 +9337,7 @@ class Installer(object):
     docDirs = set(('screenshots',))
     dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts'))
+    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy'))
     dataDirsMinus = set(('bash','obse','replacers')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
@@ -9345,6 +9345,7 @@ class Installer(object):
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
     imageExts = set(('.gif','.jpg','.png'))
+    scriptExts = set(('.txt','.ini'))
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -9630,8 +9631,10 @@ class Installer(object):
             elif skipImages :
                 if fileExt in imageExts :
                     continue
-            elif skipDocs :
-                if fileExt in docExts :
+            elif skipDocs:
+                if rootLower and rootLower in dataDirsPlus and fileExt in scriptExts:
+                    pass
+                elif fileExt in docExts :
                     continue
             elif file[:2] == '--':
                 continue
@@ -9665,6 +9668,8 @@ class Installer(object):
             dest = file
             if rootLower in docDirs:
                 dest = 'Docs\\'+file[rootPos+1:]
+            elif rootLower in dataDirsPlus:
+                pass
             elif not rootLower:
                 maReadMe = reReadMe.match(file)
                 if fileLower == 'masterlist.txt' or fileLower == 'dlclist.txt':
