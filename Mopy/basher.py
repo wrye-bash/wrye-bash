@@ -7050,7 +7050,7 @@ class INI_ListErrors(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('List Errors'))
+        menuItem = wx.MenuItem(menu,self.id,_('List Errors...'))
         menu.AppendItem(menuItem)
 
         bEnable = False
