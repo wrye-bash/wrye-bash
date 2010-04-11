@@ -6036,7 +6036,7 @@ class Installer_Delete(balt.Tank_Delete):
     def Execute(self,event):
         balt.Tank_Delete.Execute(self,event)
         self.data.refreshOrder()
-        self.data.refresh(what='N')
+        self.data.refresh(what='ION')
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
