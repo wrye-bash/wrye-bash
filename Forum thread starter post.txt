@@ -6,7 +6,7 @@ Previous Topic: [url="http://forums.bethsoft.com/index.php?/topic/1084996-relz-w
 Requirements
 Python 2.5.4 and wxpython 2.8.7.1 ansi (the old "official" setup) - if using this best to just download the installer package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 or
-[url="http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi"]Python 2.6.4[/url], [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe"]wxpython 2.8.10.1 ansi[/url], [url="http://pypi.python.org/pypi/comtypes/0.6.1"]ComTypes[/url] and [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url]. (the newer stuff so should be faster, needed for newer versions of Blender/Nifscripts/PyFFI, tested as working well other than one bug to be fixed)
+[url="http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi"]Python 2.6.4[/url], [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe"]wxpython 2.8.10.1 ansi[/url], [url="http://pypi.python.org/pypi/comtypes/0.6.1"]ComTypes[/url], [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url], and [url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url]. (the newer stuff so should be faster, needed for newer versions of Blender/Nifscripts/PyFFI, tested as working well other than one bug to be fixed)
 
 Wrye Bash has a lot of features. I mean a LOT. It's like twenty tools rolled into one. It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has. [s]Except installation. It's the "everything but installation" tool![/s] Now with installation too! 
 

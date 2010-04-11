@@ -10836,7 +10836,7 @@ class InstallersData(bolt.TankData, DataDict):
                 except InstallerArchiveError:
                     installer.type = -1
         self.data = newData
-        self.crc_installer = dict((x.crc,x) for x in self.data.values())
+        self.crc_installer = dict((x.crc,x) for x in self.data.values() if isinstance(x, InstallerArchive))
         return changed
 
     def refreshInstallersNeeded(self):
