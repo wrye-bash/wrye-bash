@@ -1,7 +1,4 @@
-\ Taglist for Wrye BASH; derived from BOSS Masterlist revision 714.
-\ Leading symbol code:
-\
-\ \ A silent comment - will be ignored by the program.
+\ Taglist for Wrye BASH; derived from BOSS Masterlist revision 800.
 \ % A Bashed Patch suggestion for the mod above.
 
 Francesco's Leveled Creatures-Items Mod.esm
@@ -250,8 +247,7 @@ BlackLoadNoTip.esp
 Zira's Horse Theme Loadscreens.esp
 % {{BASH:Graphics}}
 All Natural - Real Lights.esp
-% {{BASH:C.Light}}
-? Do not use with original Real Lights mod.
+% {{BASH:Scripts}}
 All Natural.esp
 ? Required for All Natural.
 % {{BASH:C.Climate}}
@@ -432,9 +428,9 @@ Sexual_SpiderDaedra.esp
 % {{BASH:Graphics}}
 ? Obselete get Oblivion Sexualized Monsters.esm and OSM-All Genders.esp instead.
 OSM-All Genders.esp
- % {{BASH:Graphics,Invent}} This is just an educated guess - needs confirming by someone who uses this.
+ % {{BASH:Graphics,Invent}}
  Oblivion Sexualized Monsters-exclu TRM.esm
-  % {{BASH:Graphics,Invent}} This is just an educated guess - needs confirming by someone who uses this.
+  % {{BASH:Graphics,Invent}}
 Shadow's Merged Value Fixesv1.1.esp
 Shads Coffee.esp
 Shads Hunting & Fauna.esp
@@ -457,9 +453,9 @@ wd purse of wonders.esp
 Wyverex's - Runes.esp
 % {{BASH:Invent}}
 moDem's City Life - BP Compat Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} (Tag requires WB version 278+)	
+% {{BASH:Actors.Anims,NoMerge}}
 moDem's City Life Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} (Tag requires WB version 278+)	
+% {{BASH:Actors.Anims,NoMerge}}
 Oblivion Alive Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}}
 Crowded Roads Vwalk.esp
@@ -599,6 +595,8 @@ FalxMod.esp
 % {{BASH:Invent}}
 Fantasy Mod.esp
 % {{BASH:Hair,Eyes}}
+Fighters Guild Scalemail Full.esp
+% {{BASH:Invent}}
 FineWeapons.esp
 % {{BASH:Graphics}}
 Garak's Staff Replacer Artefacts.esp
@@ -617,6 +615,8 @@ JCapesBonus.esp
 % {{BASH:Invent}}
 JG Elven.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Leviathan Daikatana.esp
+% {{BASH:Graphics}}
 LootableLichHelm_Lt.esp
 % {{BASH:Invent}}
 LootableLichHelm_Hvy.esp
@@ -1134,8 +1134,6 @@ TIE.esp
 % {{BASH:Actors.ACBS,Actors.AIData,Actors.AIPackages,Actors.DeathItem,Actors.Stats,C.RecordFlags,Delev,Invent,NpcFaces,Relations,Relev,Scripts}}
 TIE+Frans NPC Inventory.esp
 % {{BASH:NoMerge}}
-Mart's Monster Mod - Shivering Isles.esp
-% {{BASH:Relev,Delev}}
 LoadingScreens-OOO.esp
 % {{BASH:Graphics,NoMerge}}
 RustyItems for OOO.esp
@@ -1464,6 +1462,8 @@ NameReplacer-Clothing.esp
 % {{BASH:Names}} - deactivate.
 newsheogorath.esp
 % {{BASH:NpcFaces}}
+real_tools.esp
+% {{BASH:Scripts}}
 ShinySeptims_Septimus.esp
 % {{BASH:Graphics}}
 ShinySeptims_Trajanus.esp
@@ -1476,7 +1476,6 @@ vendorfreedom.esp
 % {{BASH:relev}}
 Feudal Empire 300.esp
 % {{BASH:Invent,Graphics}}
-? Use instead of 300_White Stallion 4.esp
 300 Feudal Empire.esp
 % {{BASH:Invent,Graphics}}
 Alternative Start by Robert Evrae.esp
@@ -1537,70 +1536,48 @@ _darker dungeons.esp
 _darker_dungeons.esp
 % {{BASH:C.Light}}
 Let There Be Darkness.esp
-? Obsolete. Upgrade to version 1.2+.
 % {{BASH:C.Light}}
 Let There Be Darkness - Shivering Isles.esp
-? Requires Shivering Isles.
-? Obsolete. Upgrade to version 1.2+.
 % {{BASH:C.Light}}
 Let There Be Darkness - Cyrodiil.esp
 % {{BASH:C.Light}}
 Let There Be Darkness - Cyrodiil + SI.esp
-? Requires Shivering Isles.
 % {{BASH:C.Light}}
 Let There Be Darkness - Knights.esp
-? Requires Knights of the Nine.
 % {{BASH:C.Light}}
 Let There Be Darkness - Mehrunes Razor.esp
-? Requires Mehrunes Razor DLC
 % {{BASH:C.Light}}
 Let there be Darkness All Merge.esp
-? Merge requiring KOTN, Shivering Isles and Mehrunes Razor.
 % {{BASH:C.Light}}
 Let There Be Darkness - Thieves Den.esp
-? Requires Thieves Den.
 % {{BASH:C.Light}}
 Let There Be Darkness - OOO.esp
-? Requires Oscuro's Oblivion Overhaul.
 % {{BASH:C.Light}}
 Let There Be Darkness - Kvatch Rebuilt.esp
-? Requires Kvatch Rebuilt.
 % {{BASH:C.Light}}
 Let There Be Darkness - Curse of Hircine.esp
-? Requires Curse of Hircine.
 % {{BASH:C.Light}}
 Let There Be Darkness - Glenvar Castle.esp
-? Requires Glenvar Castle.
 % {{BASH:C.Light}}
 Let There Be Darkness - The Elder Council.esp
-? Requires The Elder Council.
 % {{BASH:C.Light}}
 Let There Be Darkness - Thievery.esp
-? Requires Thievery in the Imperial City.
 % {{BASH:C.Light}}
 Let There Be Darkness - VH Bloodlines.esp
-? Requires Verona House Bloodlines.
 % {{BASH:C.Light}}
 Let There Be Darkness - Lost Spires.esp
-? Requires The Lost Spires.
 % {{BASH:C.Light}}
 Let There Be Darkness - Elsweyr.esp
-? Requires Elsweyr Deserts of Anequina.
 % {{BASH:C.Light}}
 Let There Be Darkness - UL Colovian Highlands.esp
-? Requires UL Colovian Highlands.
 % {{BASH:C.Light}}
 Let There Be Darkness - UL Lost Coast.esp
-? Requires UL Lost Coast.
 % {{BASH:C.Light}}
 Let There Be Darkness - UL Brena.esp
-? Requires Ul Brena River Ravine.
 % {{BASH:C.Light}}
 Let There Be Darkness - UL Blackwood Forest.esp
-? Requires UL Blackwood Forest.esp
 % {{BASH:C.Light}}
 Let There Be Darkness All.esp
-? Merge, please ensure all masters are present. Masters can be checked using Wrye BASH.
 % {{BASH:C.Light}}
 Atmospheric Loading Screens - No Text.esp
 % {{BASH:Graphics}}
@@ -1794,7 +1771,6 @@ Riflers Races.esp
 % {{BASH:Hair,Eyes,R.Relations}}
 Slof's Playable Xivilai.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Not compatible with OOO, MMM or FCOM: Xivilai won't appear. Patch planned.
 Slof's Clouded Leopard.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Teeth,R.Relations}}
 Slof's Snow Leopard Race.esp
@@ -1820,7 +1796,6 @@ The Complete Dremora.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Luchaire's Dryad Race.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Use 'for MMM' version if using MMM/FCOM.
 The Southlanders.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Tabaxi_Race_Default.esp
@@ -1952,22 +1927,16 @@ Altair_Race.esp
 
 Assassins Creed - Altair's Gear.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Choose only one 'Assassins Creed' ESP.
 Assassins Creed - Altair's Gear - Light Armor.esp
-? Choose only one 'Assassins Creed' ESP.
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Assassins Creed - Altair's Gear- HeavyArmor.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Choose only one 'Assassins Creed' ESP.
 Assassins Creed - Altair's Gear - ThrowingKnives.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Choose only one 'Assassins Creed' ESP.
 Assassins Creed - Altair's Gear - Heavy Armor.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Choose only one 'Assassins Creed' ESP.
 Assassins Creed - Altair's Gear - HeavyArmor+ThrowingKnives.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
-? Choose only one 'Assassins Creed' ESP.
 Raven Elves.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 AsharasSirensAndTritons.esp
@@ -2050,7 +2019,6 @@ BP_and_Soya.esp
 Elaborate HGEBetter Beauty Soya Expansion.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
 Diverse NPCs.esp
-? Requires TNR, Ren's Hair, Elaborate Eyes.
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,NoMerge}}
 Corean Hairs and Elaborate Eyes Merged.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
@@ -2165,7 +2133,6 @@ DAAanila.esp
 DAAltair.esp
 % {{BASH:Hair,Eyes}}
 DAJynx.esp
-? Requires OBSE.
 % {{BASH:Hair,Eyes}}
 DAClair.esp
 % {{BASH:Hair,Eyes}}
@@ -2238,47 +2205,36 @@ Cobl Races.esp
 % {{BASH: Eyes, Hair, R.Relations, Voice-M, Voice-F}}
 Cobl Races TNR.esp
 % {{BASH:NpcFaces,NoMerge}}
-? Requires the Cobl Cosmetics Res 01 files installed.
 Cobl Races TNR SI.esp
 % {{BASH:NpcFaces,NoMerge}}
-? Requires the Cobl Cosmetics Res 01 files installed.
 Cobl - NPCDiversity - TNR Merge.esp
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgMagicDV.esp
 % {{BASH:Names,Delev,Relev}}
-? German version
 bgMagicEV.esp
 % {{BASH:Names,Delev,Relev}} if you are running more than one magic overhaul and want to use LAME spell names.
 cidnothump.esp
 % {{BASH:Sound}}
 PMSneakySummonCompatibility.esp
-? Requires BASH for proper use
 % {{BASH:IIM,Filter,Invent}}
 bgBalancingEVOptionalNPCDiversity, Beautification.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
 bgBalancingEVOptionalNPCDiversity, for Wrye Bash.esp
-? Replace with 'bgBalancingEVOptionalNPCDiversity, Vanilla.esp'
 bgBalancingEVOptionalNPCDiversity, Vanilla.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
 bgBalancingEVOptionalNPCDiversity, TNR Merge.esp
 % {{BASH:NpcFaces,NoMerge}} and deactivate.
 bgBalancingEVOptionalNPCDiversity, Beautification Better Redguards.esp
-? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingEVOptionalNPCDiversity, for Wrye BASH Better Redguards.esp
-? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingEVOptionalNPCDiversity, for Wrye BASH Better Redguards.esp
-? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingEVOptionalNPCDiversity, TNR Merge Better Redguards.esp
-? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingDVOptionalNPCDiversity, TNR Merge Better Redguards.esp
-? Requires 'bgBalancingEVOptionalBetterRedguards.esp'.
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgIntegrationEV.esp
-? Requires LAME, Shivering Isles and Race Balancing Project.
 bgIntegrationEV - Alternative NPC Faces by LazyMonk.esp
 % {{BASH:NpcFaces}}
 Cobl Races - Balanced.esp
@@ -2288,9 +2244,7 @@ Diverse Races.esp
 % {{BASH:Body-F,Body-M}}
 Better_Berserk-2177.esp
 Willful Resistance.esp
-? Only use one willpower equals magicka resistance/weakness type mod at once.
 DBWBMR.esp
-? Only use one willpower equals magicka resistance/weakness type mod at once.
 ArgonianFeets.esp
 % {{BASH:Invent}}
 EVE_KhajiitFix.esp
@@ -2310,16 +2264,12 @@ Advanced_Water_Modification.esp
 Real Lava 1.3.esp
 % {{BASH:Graphics}}
 Real Lava.esp
-? Update to 1.3 or later.
 % {{BASH:Graphics}}
 Real Lava v1.1.esp
-? Update to 1.3 or later.
 % {{BASH:Graphics}}
 Real Lava 1.2.esp
-? Update to 1.3 or later.
 % {{BASH:Graphics}}
 Real Lava v1.2.esp
-? Update to 1.3 or later.
 % {{BASH:Graphics}}
 Improved Lava.esp
 % {{BASH:Graphics}}
@@ -2387,22 +2337,7 @@ CoreRandmonClothing4Npcs.esp
 % {{BASH:Filter,Invent,IIM}}
 All Natural - Indoor Weather Filter For Mods.esp
 % {{BASH:Filter,C.Climate}}
-? Do not activate. Must be merged into Bashed Patch using Import Cells.
 Duke Patricks - SCA Shield Tricks.esp
-\% {{BASH:Sound}}
 Duke Patricks - Combat Magic.esp
-\% {{BASH:Sound}}
 OOO-Magic_Script_Effect_Fix.esp
 % {{BASH:Sound}}
-Duke Patricks Script Effect Silencer.esp
-\% {{BASH:Sound}}
-Duke Patricks Script Effect Silencer Rev 2.esp
-\% {{BASH:Sound}}
-Duke Patricks Script Effect Silencer Silver Edition.esp
-\% {{BASH:Sound}}
-Duke Patricks Script Effect Silencer Gold Edition.esp
-\% {{BASH:Sound}}
-Duke Patricks - BASIC Script Effect Silencer.esp
-\% {{BASH:Sound}}
-Duke Patricks - BASIC Script Effect Silencer BETA.esp
-\% {{BASH:Sound}}
