@@ -8614,6 +8614,23 @@ class Mod_Patch_Update(Link):
                 bosh.modInfos.unselect(mod,False)
             bosh.modInfos.refreshInfoLists()
             bosh.modInfos.plugins.save()
+        previousMods = set()
+        text = ''
+        for mod in bosh.modInfos.ordered:
+            for master in bosh.modInfos[mod].header.masters:
+                if master not in bosh.modInfos.ordered:
+                    label = _('MISSING MASTER')
+                elif master not in previousMods:
+                    label = _('DELINQUENT MASTER')
+                else:
+                    label = ''
+                if label:
+                    text += '* '+mod.s+'\n'
+                    text += '    %s: %s\n' % (label,master.s)
+            previousMods.add(mod)
+        if text:
+            balt.showWarning(self.window,(_('WARNING!\nThe following mods have master file errors:\n%sPlease adjust load order to rectify those probems before continuing.') % (text)),_("Missing or Delinquent master error"))
+            return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
