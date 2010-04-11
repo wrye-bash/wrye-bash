@@ -7223,7 +7223,7 @@ class Mods_DumpTranslator(Link):
         dumpedKeys = set()
         reKey = re.compile(r'_\([\'\"](.+?)[\'\"]\)')
         reTrans = bolt.reTrans
-        for pyPath in (GPath(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon')):
+        for pyPath in (GPath(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt')):
             pyText = pyPath.open()
             for lineNum,line in enumerate(pyText):
                 line = re.sub('#.*','',line)
@@ -7241,7 +7241,7 @@ class Mods_DumpTranslator(Link):
             pyText.close()
         outFile.close()
         balt.showOk(self.window,
-            '%d translation keys written to Mopy\\Data\\%s.' % (keyCount,outPath.stail),
+            (_('%d translation keys written to Mopy\\Data\\%s.') % (keyCount,outPath.stail)),
             _('Dump Translator')+': '+outPath.stail)
 
 #------------------------------------------------------------------------------
