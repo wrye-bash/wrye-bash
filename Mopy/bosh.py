@@ -9442,7 +9442,7 @@ class Installer(object):
                 size = apFile.size
                 date = apFile.mtime
                 oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
-                if size == oSize and (date == oDate or isEspm):
+                if not isEspm and size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize,oCrc,oDate)
                 else:
                     pendingAdd(rpFile)
