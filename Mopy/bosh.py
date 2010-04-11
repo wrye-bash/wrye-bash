@@ -9137,8 +9137,8 @@ class Messages(DataDict):
                         author = maSent.group(2)
                         date = getTime(maSent.group(3))
                         messageKey = '::'.join((subject,author,`int(date)`))
-                        newSent = 'Sent %s <b>%s</b> on %s</div>' % (direction,
-                            author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date)))
+                        newSent = (_('Sent %s <b>%s</b> on %s</div>') % (direction,
+                            author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
                         line = reSent.sub(newSent,line,1)
                         buff.write(line)
                         self.data[messageKey] = (subject,author,date,buff.getvalue())
@@ -12550,7 +12550,7 @@ class ScriptText:
         progress = progress.Destroy()
         if num == 0:
             return False
-        changedScripts = 'Imported %d changed scripts from %s:\n'%(num,textPath)+changedScripts
+        changedScripts = (_('Imported %d changed scripts from %s:\n') % (num,textPath)+changedScripts)
         return changedScripts
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
@@ -12582,7 +12582,7 @@ class ScriptText:
                 out.write(longid[0].s+'\r\n'+formid+'\r\n'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
                 out.close
                 exportedScripts += scriptTexts[longid][0]+'\n'
-        exportedScripts = 'Exported %d scripts from %s:\n'%(num,esp)+exportedScripts
+        exportedScripts = (_('Exported %d scripts from %s:\n') % (num,esp)+exportedScripts)
         progress = progress.Destroy()
         return exportedScripts
 
@@ -13582,15 +13582,15 @@ class PatchFile(ModFile):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
         if reEsmExt.search(modInfo.name.s):
-            reasons += "\n.    Is esm."
+            reasons += _("\n.    Is esm.")
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
-            reasons += "\n.    Is Bashed Patch."
+            reasons += _("\n.    Is Bashed Patch.")
         #--Bsa?
         reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
         for file in modInfos.dir.list():
             if reBsa.match(file.s):
-                reasons += "\n.    Has BSA archive."
+                reasons += _("\n.    Has BSA archive.")
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
@@ -13602,10 +13602,10 @@ class PatchFile(ModFile):
             reasons += '\n.    ' + str(error)+'.'
         #--Skipped over types?
         if modFile.topsSkipped:
-            reasons += "\n.    Unsupported types: " + ', '.join(sorted(modFile.topsSkipped))+'.'
+            reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(modFile.topsSkipped))+'.')
         #--Empty mod
         if not modFile.tops:
-            reasons += "\n.    Empty mod."
+            reasons += _("\n.    Empty mod.")
         #--New record
         lenMasters = len(modFile.tes4.masters)
         newblocks = []
@@ -13614,7 +13614,7 @@ class PatchFile(ModFile):
                 if record.fid >> 24 >= lenMasters:
                     newblocks.append(type)
                     break
-        if newblocks: reasons += "\n.    New record(s) in block(s): " + ', '.join(sorted(newblocks))+'.'
+        if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
         if reasons: return reasons
         return True
 
@@ -19950,7 +19950,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             os.remove(inisettings['logFile'].s)
     else:
         log = inisettings['logFile'].open("a")
-        log.write('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n'%(datetime.datetime.now(),inisettings['keepLog']))
+        log.write(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['keepLog']))
         log.close()
 
 def initSettings(readOnly=False):
