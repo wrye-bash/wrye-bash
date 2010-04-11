@@ -1964,7 +1964,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed sorting on the INI Tweaks tab.
   * Added option to sort valid ini tweaks to the top.
   * Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
-* check added at start of patch build diaologue to detect (with fatal warning missing/delinquent masters.
+* Check added at start of patch build diaologue to detect (with fatal warning) missing/delinquent masters.
+* Option to show/hide ruleset info from Mod Checker added.
 
 === 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
 * bug fixes:

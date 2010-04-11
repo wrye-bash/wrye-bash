@@ -4125,7 +4125,7 @@ class ModChecker(wx.Frame):
         modChecker = self
         #--Window
         pos = settings.get('bash.modChecker.pos',balt.defPos)
-        size = settings.get('bash.modChecker.size',(400,400))
+        size = settings.get('bash.modChecker.size',(400,440))
         wx.Frame.__init__(self, bashFrame, -1, _('Mod Checker'), pos, size,
             style=wx.DEFAULT_FRAME_STYLE)
         self.SetBackgroundColour(wx.NullColour)
@@ -4144,6 +4144,7 @@ class ModChecker(wx.Frame):
         gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
         gUpdateButton = button(self,_('Update'),onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self,_("Mod List"),onClick=self.CheckMods)
+        self.gShowRuleSets = toggleButton(self,_("Rule Sets"),onClick=self.CheckMods)
         self.gShowNotes = toggleButton(self,_("Notes"),onClick=self.CheckMods)
         self.gShowConfig = toggleButton(self,_("Configuration"),onClick=self.CheckMods)
         self.gShowSuggest = toggleButton(self,_("Suggestions"),onClick=self.CheckMods)
@@ -4163,6 +4164,7 @@ class ModChecker(wx.Frame):
                     gBackButton,
                     gForwardButton,
                     (self.gShowModList,0,wx.LEFT,4),
+                    (self.gShowRuleSets,0,wx.LEFT,4),
                     (self.gShowNotes,0,wx.LEFT,4),
                     (self.gShowConfig,0,wx.LEFT,4),
                     (self.gShowSuggest,0,wx.LEFT,4),
@@ -4188,6 +4190,11 @@ class ModChecker(wx.Frame):
     def CheckMods(self,event=None):
         """Do mod check."""
         settings['bash.modChecker.showModList'] = self.gShowModList.GetValue()
+        settings['bash.modChecker.showRuleSets'] = self.gShowRuleSets.GetValue()
+        if not settings['bash.modChecker.showRuleSets']:
+            self.gShowNotes.SetValue(False)
+            self.gShowConfig.SetValue(False)
+            self.gShowSuggest.SetValue(False)
         settings['bash.modChecker.showNotes'] = self.gShowNotes.GetValue()
         settings['bash.modChecker.showConfig'] = self.gShowConfig.GetValue()
         settings['bash.modChecker.showSuggest'] = self.gShowSuggest.GetValue()
@@ -4198,9 +4205,10 @@ class ModChecker(wx.Frame):
         #--Do it
         self.text = bosh.configHelpers.checkMods(
             self.gShowModList.GetValue(),
-            self.gShowNotes.GetValue(),
-            self.gShowConfig.GetValue(),
-            self.gShowSuggest.GetValue(),
+            self.gShowRuleSets.GetValue(),
+            settings['bash.modChecker.showNotes'],
+            settings['bash.modChecker.showConfig'],
+            settings['bash.modChecker.showSuggest']
             )
         logPath = bosh.dirs['saveBase'].join('ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(''))
