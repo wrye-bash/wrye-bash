@@ -1017,7 +1017,7 @@ class Tank(wx.Panel):
         else: gItem.SetTextColour(gList.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
-        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
+##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
         gItem.SetData(self.GetId(item))
         gList.SetItem(gItem)
 
