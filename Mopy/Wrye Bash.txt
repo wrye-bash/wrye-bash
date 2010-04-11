@@ -421,7 +421,7 @@ Bain Conversion Files (BCFs) allow modders to essentially repackage existing arc
 * __Notes__
   * BCFs are stored in the __Oblivion Mods\Bash Installers\Bain Converters__ directory. This is referred to as the BCF directory.
   * The fastest way to access this directory is to open Bash, navigate to the Installers Tab, and right-click on the column header and choose "Open...". This opens __Oblivion Mods\Bash Installers__ and you should easily see the BCF directory.
-  * BCFs must end in -BCF.7z, but the resulting converted archive may use .7z or .zip.
+  * BCFs must either end in -BCF.7z or -BCF-*.7z, but the resulting converted archive may use .7z or .zip.
   * BCFs store the configuration settings of the original converted archive.
   * BCFs supports any level of embedded archives within an archive.
   * Any duplicate BCFs in the BCF directory will be moved to __Oblivion Mods\Bash Installers\Bain Converters\--Duplicates__
@@ -438,9 +438,9 @@ Bain Conversion Files (BCFs) allow modders to essentially repackage existing arc
   * If it looks right, you can find the BCF in the BCF for distribution. It is recommended that you copy/paste the result log into your readme for your BCF.
 * __Installing BCFs__
 You've downloaded a bunch of BCFs.  Now what?
-  * Simply copy all of the *-BCF.7z files that you downloaded into your BCF directory.
+  * Simply copy all of the *-BCF.7z and *-BCF-*.7z files that you downloaded into your BCF directory.
 * __Applying a BCF__
-  * Bash will only display the BCFs that are currently valid. Valid BCFs are those that end in -BCF.7z, and have all of their required source archives visible on the Installers Tab.
+  * Bash will only display the BCFs that are currently valid. Valid BCFs are those that end in -BCF.7z or -BCF-*.7z, and have all of their required source archives visible on the Installers Tab.
   * If a source archive has any associated BCFs, you will see them listed when you right-click an archive package and open the "Conversions" sub menu.  If the "Apply" menu is grayed out, then there are no valid BCFs for that particular archive.
   * An asterisk is added to the end of the BCF name for every source archive it requires that you don't have currently selected (but do have installed).
   * Select a BCF from the "Apply" menu.
