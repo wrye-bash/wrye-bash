@@ -6104,7 +6104,7 @@ class Installer_Hide(InstallerLink):
         newName = destDir.join(curName)
         if newName.exists():
             message = (_('A file named %s already exists in the hidden files directory. Overwrite it?')
-                % (fileName.s,))
+                % (newName.stail,))
             if not balt.askYes(self.gTank,message,_('Hide Files')): return
         #Move
         try:
