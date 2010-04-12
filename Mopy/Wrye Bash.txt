@@ -847,6 +847,7 @@ These are the commands found on context menu for mods...
   * Using an external editor with better editing capabilities
   * The scripts are each individually written/read as a text file (using default extention of .txt, but settable via Bash's Ini). Do not change the first three lines unless you know what you're doing. Change the rest of it however you want.
   * After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
+  * As of version 283 can also now import and build the record for new scripts.
   
 === Export/Import Spell Stats
 * These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
@@ -1561,7 +1562,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
   * This has same format as suggestions. Problem mods will be listed along with instructions to activate them or deactivate them as need be.
 
 === Mod Checker Options
-* __Mod List:__ Toggles mod list in the report. 
+* __Mod List:__ Toggles mod list in the report.
+* __Rule Sets:__ Toggles inclusion of all the mod rule group info including headers.
 * __Notes:__ Toggles inclusion of mod group notes.
 * __Configuration:__ Toggles inclusion of mod group configuration info.
 * __Suggestions:__ Toggles inclusion of mod group suggestions.
@@ -1964,8 +1966,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed sorting on the INI Tweaks tab.
   * Added option to sort valid ini tweaks to the top.
   * Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
-* Check added at start of patch build diaologue to detect (with fatal warning) missing/delinquent masters.
+* Check added at start of patch build dialogue to detect (with fatal warning) missing/delinquent masters.
 * Option to show/hide ruleset info from Mod Checker added.
+* Import Scripts can now add new scripts to the esp (optional).
 
 === 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
 * bug fixes:
