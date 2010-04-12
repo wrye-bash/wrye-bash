@@ -446,7 +446,7 @@ class Parser(object):
             self.parens -= 1
             if self.parens < 0:
                 self.error("Unmatched parenthesis.")
-            if parens == 0:
+            if self.parens == 0:
                 self.bInFn = False
             self._emit_word(')')
         elif c in self.op_chars:
@@ -570,8 +570,22 @@ class Parser(object):
             parens = 0
             while len(line) > 0:
                 i = line.pop(0)
-                #Step 2.1 - handle functions
-                if i in self.functions:
+                #Step 2.1 - handle parenthesis
+                if i == '(':
+                    if parens > 0:
+                        newexpr.append(i)
+                    parens += 1
+                elif i == ')':
+                    parens -= 1
+                    if parens > 0:
+                        newexpr.append(i)
+                    else:
+                        newline.append(self._EvalStep2(newexpr))
+                        newexpr = []
+                elif parens > 0:
+                    newexpr.append(i)
+                #Step 2.2 - handle functions
+                elif i in self.functions:
                     parens = 1
                     line.pop(0)     #throw out next '(', it's for the function
                     params = []
@@ -596,18 +610,6 @@ class Parser(object):
                         params.append(newexpr[0])
                     #Evaluate the function
                     newline.append(self.func_map[i](params) or 0)
-                #Step 2.2 - handle parenthesis
-                elif i == '(':
-                    if parens > 0:
-                        newexpr.append(i)
-                    parens += 1
-                elif i == ')':
-                    parens -= 1
-                    if parens > 0:
-                        newexpr.append(i)
-                    else:
-                        newline.append(self._EvalStep2(newexpr))
-                        newexpr = []
                 #Not a parenthesis or function, so just add it on to the line
                 else:
                     if parens > 0:
