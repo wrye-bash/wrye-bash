@@ -2138,6 +2138,7 @@ class InstallersList(balt.Tank):
     def OnChar(self,event):
         """Char event: Reorder."""
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
+            if len(self.GetSelected()) < 1: return
             orderKey = lambda x: self.data.data[x].order
             maxPos = max(self.data.data[x].order for x in self.data.data)
             if(event.GetKeyCode() == wx.WXK_DOWN):
