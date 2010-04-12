@@ -8872,15 +8872,17 @@ class Mod_Scripts_Import(Link):
         if textDir == None:
             balt.showError(self.window,_('Source folder must be selected.'))
             return
-        try:
-            ScriptText = bosh.ScriptText()
-            importedScripts=ScriptText.readFromText(textDir.s,fileInfo)
-        finally:
-        #--Log
-            if not importedScripts:
-                balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
-            else:
-                balt.showLog(self.window,importedScripts,_('Import Scripts'),icons=bashBlue)
+        message = _("Import scripts that don't exist in the esp as new scripts?\n(If not they will just be skipped).")
+        makeNew = balt.askYes(self.window,message,_('Import Scripts'),icon=wx.ICON_QUESTION)
+        #try:
+        ScriptText = bosh.ScriptText()
+        importedScripts=ScriptText.readFromText(textDir.s,fileInfo,makeNew)
+    #finally:
+    #--Log
+        if not importedScripts:
+            balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
+        else:
+            balt.showLog(self.window,importedScripts,_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):

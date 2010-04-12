@@ -404,9 +404,9 @@ def askOk(parent,message,title=''):
     """Shows a modal error message."""
     return askStyled(parent,message,title,wx.OK|wx.CANCEL)
 
-def askYes(parent,message,title='',default=True):
-    """Shows a modal warning message."""
-    style = wx.YES_NO|wx.ICON_EXCLAMATION|((wx.NO_DEFAULT,wx.YES_DEFAULT)[default])
+def askYes(parent,message,title='',default=True,icon=wx.ICON_EXCLAMATION):
+    """Shows a modal warning or question message."""
+    style = wx.YES_NO|icon|((wx.NO_DEFAULT,wx.YES_DEFAULT)[default])
     return askStyled(parent,message,title,style)
 
 def askWarning(parent,message,title=_('Warning')):

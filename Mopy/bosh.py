@@ -12481,7 +12481,7 @@ class CompleteItemData:
 
 #------------------------------------------------------------------------------
 class ScriptText:
-    """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
+    """import & export functions for script text."""
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.type_stats = {'SCPT':{},}
@@ -12510,7 +12510,7 @@ class ScriptText:
                 #return stats
         progress = progress.Destroy()
 
-    def writeToMod(self,modInfo,eid,newScriptText):
+    def writeToMod(self,modInfo,eid,newScriptText,makeNew=False):
         """Writes scripts to specified mod."""
         loadFactory = LoadFactory(True,MreScpt)
         modFile = ModFile(modInfo,loadFactory)
@@ -12527,10 +12527,20 @@ class ScriptText:
                         return True
                     else:
                         return False
-            print "eid %s doesn't match any record." %(eid)
+            if makeNew:
+                tes4 = modFile.tes4
+                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
+                newScript.eid = eid
+                newScript.scriptText = newScriptText
+                newScript.setChanged()
+                modFile.SCPT.records.append(newScript)
+                modFile.safeSave()
+                return True
+            #print "eid %s doesn't match any record." %(eid)
             return False
 
-    def readFromText(self,textPath,modInfo):
+    def readFromText(self,textPath,modInfo,makeNew):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         aliases = self.aliases
         changedScripts = ''
@@ -12549,7 +12559,7 @@ class ScriptText:
                 for line in lines[3:]:
                     scriptText = (scriptText+line)
                 text.close()
-                changed = self.writeToMod(modInfo,eid,scriptText)
+                changed = self.writeToMod(modInfo,eid,scriptText,makeNew)
                 if changed:
                     num += 1
                     changedScripts += eid+'\r\n'
