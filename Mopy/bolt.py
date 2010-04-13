@@ -35,17 +35,16 @@ from binascii import crc32
 
 # Localization ----------------------------------------------------------------
 reTrans = re.compile(r'^([ :=\.]*)(.+?)([ :=\.]*$)')
+hunky = 0
 def compileTranslator(txtPath,pklPath):
     """Compiles specified txtFile into pklFile."""
     reSource = re.compile(r'^=== ')
     reValue = re.compile(r'^>>>>\s*$')
-    reBlank = re.compile(r'^\s*$')
     reNewLine = re.compile(r'\\n')
     #--Scan text file
     translator = {}
     def addTranslation(key,value):
         key,value   = key[:-1],value[:-1]
-        #print `key`, `value`
         if key and value:
             key = reTrans.match(key).group(2)
             value = reTrans.match(value).group(2)
@@ -53,12 +52,8 @@ def compileTranslator(txtPath,pklPath):
     key,value,mode = '','',0
     textFile = file(txtPath)
     for line in textFile:
-        #--Blank line. Terminates key, value pair
-        if reBlank.match(line):
-            addTranslation(key,value)
-            key,value,mode = '','',0
         #--Begin key input?
-        elif reSource.match(line):
+        if reSource.match(line):
             addTranslation(key,value)
             key,value,mode = '','',1
         #--Begin value input?
@@ -78,11 +73,10 @@ def compileTranslator(txtPath,pklPath):
     os.rename(tempPath,filePath)
 
 #--Do translator test and set
-currentLocale = locale.getlocale()
 if locale.getlocale() == (None,None):
     locale.setlocale(locale.LC_ALL,'')
 language = locale.getlocale()[0].split('_',1)[0]
-if language.lower() == 'german': language = 'de' #--Hack for German speakers who arne't 'DE'.
+if language.lower() == 'german': language = 'de' #--Hack for German speakers who aren't 'DE'.
 languagePkl, languageTxt = (os.path.join('data',language+ext) for ext in ('.pkl','.txt'))
 #--Recompile pkl file?
 if os.path.exists(languageTxt) and (
