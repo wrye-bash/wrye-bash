@@ -18890,6 +18890,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             bashTags = srcInfo.getBashTags()
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
+            self.tempRaceData = {} #so as not to carry anything over!
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
@@ -18935,34 +18936,36 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     masterFile.convertToLongFids(('RACE',))
                     cachedMasters[master] = masterFile
                 for race in masterFile.RACE.getActiveRecords():
-                    if race not in tempRaceData: continue
+                    if race.fid not in self.tempRaceData: continue
+                    tempRaceData = self.tempRaceData[race.fid]
+                    raceData = self.raceData[race.fid]
                     if self.eyeKeys & bashTags:
-                        if not tempRaceData[race.fid]['rightEye'] == race.rightEye:
-                            raceData['rightEye'] = tempRaceData[race.fid]['rightEye']
-                        if not tempRaceData[race.fid]['leftEye'] == race.leftEye:
-                            raceData[race.fid]['leftEye'] = tempRaceData[race.fid]['leftEye']
+                        if not tempRaceData['rightEye'] == race.rightEye:
+                            raceData['rightEye'] = tempRaceData['rightEye']
+                        if not tempRaceData['leftEye'] == race.leftEye:
+                            raceData['leftEye'] = tempRaceData['leftEye']
                     if 'Voice-M' in bashTags:
-                        if not tempRaceData[race.fid]['maleVoice'] == race.maleVoice:
-                            raceData[race.fid]['maleVoice'] = tempRaceData[race.fid]['maleVoice']
+                        if not tempRaceData['maleVoice'] == race.maleVoice:
+                            raceData['maleVoice'] = tempRaceData['maleVoice']
                     if 'Voice-F' in bashTags:
-                        if not tempRaceData[race.fid]['femaleVoice'] == race.femaleVoice:
-                            raceData[race.fid]['femaleVoice'] = tempRaceData[race.fid]['femaleVoice']
+                        if not tempRaceData['femaleVoice'] == race.femaleVoice:
+                            raceData['femaleVoice'] = tempRaceData['femaleVoice']
                     if 'Body-M' in bashTags:
                         for key in ['male'+key for key in self.bodyKeys]:
-                            if not tempRaceData[race.fid][key] == getattr(race,key):
-                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                            if not tempRaceData[key] == getattr(race,key):
+                                raceData[key] = tempRaceData[key]
                     if 'Body-F' in bashTags:
                         for key in ['female'+key for key in self.bodyKeys]:
-                            if not tempRaceData[race.fid][key] == getattr(race,key):
-                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                            if not tempRaceData[key] == getattr(race,key):
+                                raceData[key] = tempRaceData[key]
                     if 'R.Teeth' in bashTags:
                         for key in ('teethLower','teethUpper'):
-                            if not tempRaceData[race.fid][key] == getattr(race,key):
-                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                            if not tempRaceData[key] == getattr(race,key):
+                                raceData[key] = tempRaceData[key]
                     if 'R.Mouth' in bashTags:
                         for key in ('mouth','tongue'):
-                            if not tempRaceData[race.fid][key] == getattr(race,key):
-                                raceData[race.fid][key] = tempRaceData[race.fid][key]
+                            if not tempRaceData[key] == getattr(race,key):
+                                raceData[key] = tempRaceData[key]
             progress.plus()
 
     def getReadClasses(self):
