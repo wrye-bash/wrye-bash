@@ -8638,7 +8638,7 @@ class Mod_Patch_Update(Link):
                     text += '    %s: %s\n' % (label,master.s)
             previousMods.add(mod)
         if text:
-            balt.showWarning(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing.') % (text)),_("Missing or Delinquent Master Errors"))
+            balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
             return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
