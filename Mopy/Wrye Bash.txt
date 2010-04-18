@@ -3,7 +3,7 @@
 === Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1085888-relz-wrye-bash-thread-%2339/|RELZ Topic]]
+* [[http://forums.bethsoft.com/index.php?/topic/1087446-relz-wrye-bash-thread-no-40/|RELZ Topic]]
 * Download: 
   * [[http://www.wryemusings.com/|Wrye Musings]]
   * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]] 
@@ -559,6 +559,9 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * **Orange:** Exclusion group violation. See [[#|Exclusion Groups]] below. 
   * **Red:** A file that shares a modification date/time with another file -- with 
     both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+* __Text Styles__
+    * **__Bold__:** A file that is reccommended to be imported and deactivated (ie. has the 'Deactivate' tag).
+    * **Normal:** Any other file.
 * __Checkbox Types__
   * Regular checkmark: mod is active.
   * Plus sign (+) checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
@@ -1047,6 +1050,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * C.RecordFlags: Mod changes the offlimits/dangerous flag ([[#|Import Cells]]).
   * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
   * Creatures.Blood: Mod changes the creature blood subrecords ([[#|Import Actors]]).
+  * Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.
   * Delev: Mod deletes items from ([[#|Leveled Lists]]).
   * Eyes: Mod contributes eyes ([[#|Race Records]]).
   * Relations: Mod changes faction relationships ([[#|Import Relations]]).
@@ -1956,8 +1960,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 283 [12/12/2010] [Lojack,PacificMorrowind,Warrudar]
-* Taglist: updated to masterlist version 280 and a bunch of cruft removed.
+=== 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
+* Taglist: updated to masterlist version 824 and a bunch of cruft removed.
 * Fixes:
   * Fixed untranslatable strings reported by ThreeD.
   * Remaining scrolling issues in installers tab fixed.
@@ -1972,7 +1976,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Fixed major bug and a slight optimization in Race Patcher.
 * Slight optimization to translation feature (only affects you if you have a Non-English OS).
 * Some more random strings made translateable.
-
+* New tag __Deactivate__: suggests when you should import & deactivate.
 
 === 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
 * bug fixes:
