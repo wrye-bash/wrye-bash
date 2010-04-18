@@ -27,7 +27,7 @@
 <h3><a name='QuickStart'>Quick Start</a></h3>
 <p class=list-1>&bull;&nbsp; <B><a href="#Installation">Installation</a></B>
 <p class=list-1>&bull;&nbsp; <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash">How To's and FAQs</a>
-<p class=list-1>&bull;&nbsp; <a href="http://forums.bethsoft.com/index.php?/topic/1085888-relz-wrye-bash-thread-%2339"/>RELZ Topic</a>
+<p class=list-1>&bull;&nbsp; <a href="http://forums.bethsoft.com/index.php?/topic/1087446-relz-wrye-bash-thread-no-40/">RELZ Topic</a>
 <p class=list-1>&bull;&nbsp; Download: 
   <p class=list-2>&bull;&nbsp; <a href="http://www.wryemusings.com/">Wrye Musings</a>
   <p class=list-2>&bull;&nbsp; <a href="http://tesnexus.com/downloads/file.php?id=22368">TesNexus</a> 
@@ -611,7 +611,7 @@
 <p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; BCFs are stored in the <B>Oblivion Mods\Bash Installers\Bain Converters</B> directory. This is referred to as the BCF directory.
   <p class=list-2>&bull;&nbsp; The fastest way to access this directory is to open Bash, navigate to the Installers Tab, and right-click on the column header and choose "Open...". This opens <B>Oblivion Mods\Bash Installers</B> and you should easily see the BCF directory.
-  <p class=list-2>&bull;&nbsp; BCFs must end in -BCF.7z, but the resulting converted archive may use .7z or .zip.
+  <p class=list-2>&bull;&nbsp; BCFs must either end in -BCF.7z or -BCF-*.7z, but the resulting converted archive may use .7z or .zip.
   <p class=list-2>&bull;&nbsp; BCFs store the configuration settings of the original converted archive.
   <p class=list-2>&bull;&nbsp; BCFs supports any level of embedded archives within an archive.
   <p class=list-2>&bull;&nbsp; Any duplicate BCFs in the BCF directory will be moved to <B>Oblivion Mods\Bash Installers\Bain Converters\--Duplicates</B>
@@ -628,9 +628,9 @@
   <p class=list-2>&bull;&nbsp; If it looks right, you can find the BCF in the BCF for distribution. It is recommended that you copy/paste the result log into your readme for your BCF.
 <p class=list-1>&bull;&nbsp; <B>Installing BCFs</B>
 <p>You've downloaded a bunch of BCFs.  Now what?
-  <p class=list-2>&bull;&nbsp; Simply copy all of the *-BCF.7z files that you downloaded into your BCF directory.
+  <p class=list-2>&bull;&nbsp; Simply copy all of the *-BCF.7z and *-BCF-*.7z files that you downloaded into your BCF directory.
 <p class=list-1>&bull;&nbsp; <B>Applying a BCF</B>
-  <p class=list-2>&bull;&nbsp; Bash will only display the BCFs that are currently valid. Valid BCFs are those that end in -BCF.7z, and have all of their required source archives visible on the Installers Tab.
+  <p class=list-2>&bull;&nbsp; Bash will only display the BCFs that are currently valid. Valid BCFs are those that end in -BCF.7z or -BCF-*.7z, and have all of their required source archives visible on the Installers Tab.
   <p class=list-2>&bull;&nbsp; If a source archive has any associated BCFs, you will see them listed when you right-click an archive package and open the "Conversions" sub menu.  If the "Apply" menu is grayed out, then there are no valid BCFs for that particular archive.
   <p class=list-2>&bull;&nbsp; An asterisk is added to the end of the BCF name for every source archive it requires that you don't have currently selected (but do have installed).
   <p class=list-2>&bull;&nbsp; Select a BCF from the "Apply" menu.
@@ -749,6 +749,9 @@
   <p class=list-2>&bull;&nbsp; <B><I>Orange:</I></B> Exclusion group violation. See <a href="#ExclusionGroups">Exclusion Groups</a> below. 
   <p class=list-2>&bull;&nbsp; <B><I>Red:</I></B> A file that shares a modification date/time with another file &#150; with 
     both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+<p class=list-1>&bull;&nbsp; <B>Text Styles</B>
+    <p class=list-3>&bull;&nbsp; <B><I><B>Bold</B>:</I></B> A file that is reccommended to be imported and deactivated (ie. has the 'Deactivate' tag).
+    <p class=list-3>&bull;&nbsp; <B><I>Normal:</I></B> Any other file.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Types</B>
   <p class=list-2>&bull;&nbsp; Regular checkmark: mod is active.
   <p class=list-2>&bull;&nbsp; Plus sign (+) checkmark: mod is merged into an active <a href="#BashedPatches">Bashed Patch</a> mod.
@@ -1037,6 +1040,7 @@
   <p class=list-2>&bull;&nbsp; Using an external editor with better editing capabilities
   <p class=list-2>&bull;&nbsp; The scripts are each individually written/read as a text file (using default extention of .txt, but settable via Bash's Ini). Do not change the first three lines unless you know what you're doing. Change the rest of it however you want.
   <p class=list-2>&bull;&nbsp; After changing import and then 'recompile all' scripts in the cs, then in Bash run decompile all (at least that's the quickest method if there are more than a few changed scripts.
+  <p class=list-2>&bull;&nbsp; As of version 283 can also now import and build the record for new scripts.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportSpellStats'>Export/Import Spell Stats</a></h3>
 <p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
@@ -1236,6 +1240,7 @@
   <p class=list-2>&bull;&nbsp; C.RecordFlags: Mod changes the offlimits/dangerous flag (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).
   <p class=list-2>&bull;&nbsp; Creatures.Blood: Mod changes the creature blood subrecords (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.
   <p class=list-2>&bull;&nbsp; Delev: Mod deletes items from (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Eyes: Mod contributes eyes (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Relations: Mod changes faction relationships (<a href="#ImportRelations">Import Relations</a>).
@@ -1751,7 +1756,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; This has same format as suggestions. Problem mods will be listed along with instructions to activate them or deactivate them as need be.
   <p class=empty>&nbsp;</p>
 <h3><a name='ModCheckerOptions'>Mod Checker Options</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Mod List:</B> Toggles mod list in the report. 
+<p class=list-1>&bull;&nbsp; <B>Mod List:</B> Toggles mod list in the report.
+<p class=list-1>&bull;&nbsp; <B>Rule Sets:</B> Toggles inclusion of all the mod rule group info including headers.
 <p class=list-1>&bull;&nbsp; <B>Notes:</B> Toggles inclusion of mod group notes.
 <p class=list-1>&bull;&nbsp; <B>Configuration:</B> Toggles inclusion of mod group configuration info.
 <p class=list-1>&bull;&nbsp; <B>Suggestions:</B> Toggles inclusion of mod group suggestions.
@@ -2143,6 +2149,24 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h3><a name='28318042010LojackPacificMorrowindWarrudar'>283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]</a></h3>
+<p class=list-1>&bull;&nbsp; Taglist: updated to masterlist version 824 and a bunch of cruft removed.
+<p class=list-1>&bull;&nbsp; Fixes:
+  <p class=list-2>&bull;&nbsp; Fixed untranslatable strings reported by ThreeD.
+  <p class=list-2>&bull;&nbsp; Remaining scrolling issues in installers tab fixed.
+<p class=list-1>&bull;&nbsp; BAIN Wizard strings now translateable.
+<p class=list-1>&bull;&nbsp; INI Tweaks tab edits:
+  <p class=list-2>&bull;&nbsp; Fixed sorting on the INI Tweaks tab.
+  <p class=list-2>&bull;&nbsp; Added option to sort valid ini tweaks to the top.
+  <p class=list-2>&bull;&nbsp; Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
+<p class=list-1>&bull;&nbsp; Check added at start of patch build dialogue to detect (with warning and choice of proceeding or not) missing/delinquent masters.
+<p class=list-1>&bull;&nbsp; Option to show/hide ruleset info from Mod Checker added.
+<p class=list-1>&bull;&nbsp; Import Scripts can now add new scripts to the esp (optional).
+<p class=list-1>&bull;&nbsp; Fixed major bug and a slight optimization in Race Patcher.
+<p class=list-1>&bull;&nbsp; Slight optimization to translation feature (only affects you if you have a Non-English OS).
+<p class=list-1>&bull;&nbsp; Some more random strings made translateable.
+<p class=list-1>&bull;&nbsp; New tag <B>Deactivate</B>: suggests when you should import & deactivate.
+<p class=empty>&nbsp;</p>
 <h3><a name='28208042010WaruddarPacificMorrowindMetallicowLojack'>282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]</a></h3>
 <p class=list-1>&bull;&nbsp; bug fixes:
   <p class=list-2>&bull;&nbsp; fix for AttributeError: 'str' object has no attribute 'get'
