@@ -1,4 +1,4 @@
-\ Taglist for Wrye BASH; derived from BOSS Masterlist revision 800.
+\ Taglist for Wrye BASH; derived from BOSS Masterlist revision 822.
 \ % A Bashed Patch suggestion for the mod above.
 
 Francesco's Leveled Creatures-Items Mod.esm
@@ -14,7 +14,7 @@ Mart's Monster Mod for OOO.esm
 FCOM_Convergence.esm
 % {{BASH:Delev,Factions,Relations,Relev}}
 SoVvM.esm
-% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+% {{BASH:NpcFaces,Graphics}}
 Chocolate Elves.esm
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 p2p'sAshDraconian.esm
@@ -28,128 +28,130 @@ Book Jackets Oblivion - SSBFL.esp
 % {{BASH:Graphics,Scripts}}
 
 Oblivion Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 SoVvM Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Oblivion_SI Vwalk Full.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TRoN 0-59-1b Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TRoN Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
+notamod.esp
+? I'm just here for temporary testing/workaroud until a fix is applied to the taglist tag getting code.
 !Oblivion_PL.esp
 % {{BASH:Names}}
 
 xeoex.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics}}
 xeoex Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TNR - THE REDGUARDS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE DUNMER.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE IMPERIALS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE BRETONS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE ALTMER.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE BOSMER.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE NORDS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE ORCS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE KHAJIIT.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - THE ARGONIANS.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - all.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR- All Races.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR ALL RACES FINAL.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR ALL RACES FINAL Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TNR - ALL RACES FINAL.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR ALL RACES FINAL Vwalk.esp
 TNR - All Races for OOO.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - ShiveringIsles.esp
 ? Not need if use Cobl Races TNR SI.esp
 % {{BASH:NpcFaces,Invent,NoMerge}}
 TNR - ShiveringIsles no helms.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TNR - ShiveringIsles no helms Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Tamriel NPCs Revamped.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Oblivion_SI Vwalk Full TNR.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TweakedGenericFaces.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 TweakedGenericFaces-LITE.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Better-Horse-Eyes.esp
 % {{BASH:Graphics,NoMerge}}
 Younger Hotter NPC's 0.99.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Younger Hotter NPC's v1.0.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Younger Hotter NPC's v1.0 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_NiceOnly.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_DB_Addon.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_SI.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_Vampires.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_Vampires_50.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_DB_Addon Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_NiceOnly Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_NotSoNice_Bonus.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Beautiful_Women_NotSoNice_Bonus Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_SI Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_Vampires_50 VWalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful Women Vwalk Full.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_Vampires Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Handsome_Gents_Addon.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Handsome_Gents_DB_Addon.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Handsome_Gents_SI.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Handsome_Gents_Vampires.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Handsome_Gents_Vampires_50.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Handsome_Gents_Bonus.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 emperorface.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Absolutely_Sexy_MarketDistrict.esp
 % {{BASH:NpcFaces,Invent,NoMerge}}
 YoungerNPCs.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 LD_Patrick_Stewart_Sean_Bean.esp
 % {{BASH:NpcFaces}}
 Colourwheels Sexy Female NPCs.esp
 % {{BASH:Actors.Anims,NpcFaces}}
 Colourwheels Sexy Female NPCs Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 beardy.esp
 % {{BASH:NpcFaces}}
 
@@ -177,9 +179,9 @@ Traduccion Mejorada S.I.esp
 Unofficial Shivering Isles Patch.esp
 % {{BASH:Actors.AIData,Actors.AIPackages,Actors.DeathItem,Actors.Stats,C.Climate,C.Light,C.Name,C.Owner,Delev,Factions,Invent,Names,Relev,Scripts,Stats,Relations}}
 DLCShiveringIsles Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCShiveringIsles Vwalk DG_DS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 SI Public Music.esp
 % {{BASH:C.Music}}
 MOBS.esp
@@ -188,35 +190,35 @@ MOBS SI.esp
 % {{BASH:Stats}}
 
 Oblivion Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Oblivion_SI Vwalk Full UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCShiveringIsles Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCShiveringIsles Vwalk DG_DS UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TNR ALL RACES FINAL Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TNR - ShiveringIsles no helms Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Oblivion_SI Vwalk Full TNR UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_NiceOnly Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_DB_Addon Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_SI Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_Vampires Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_Vampires_50 Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful_Women_NotSoNice_Bonus Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Beautiful Women Vwalk Full UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Colourwheels Sexy Female NPCs Vwalk UOS.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Francesco's Dark Seducer Weapons Patch.esp
 % {{BASH:Delev, Relev}}
 FranDarkSeducerWeapFix.esp
@@ -364,7 +366,7 @@ SNR Crowded Roads UFF.esp
 SNR Crowded Roads 2.1.esp
 ? Make sure to install the additional mods (listed in the readme).
 CM_Better Wine.esp
-% {{BASH:Graphics}}d
+% {{BASH:Graphics,Deactivate}}
 Cryptic Festive Ayleid Dining Set.esp
 % {{BASH:Names,Graphics}}
 ? also BASH tag Stats if you want the values from this to overide overhaul values (ie. OOO)
@@ -398,7 +400,7 @@ Buyable Ayldeid Dishes.esp
 % {{BASH:Invent}}
 ? Don't use with Cryptic's Buyable Ayleid Dining Sets.esp
 Cyrodilic Brandy.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 ChallangingThieveryFull.esp
 % {{BASH:Invent}}
 ? Only use one ChallangingThievery*.esp.
@@ -423,12 +425,12 @@ New Potions.esp
 RealitySpectre'sBetterPotions.esp
 % {{BASH:Graphics}}, if not using Wrye BASH this may have to be moved down after any overhauls to take proper effect.
 REBetterLCB.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Sexual_SpiderDaedra.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 ? Obselete get Oblivion Sexualized Monsters.esm and OSM-All Genders.esp instead.
 OSM-All Genders.esp
- % {{BASH:Graphics,Invent}}
+ % {{BASH:Graphics,Invent,Deactivate}}
  Oblivion Sexualized Monsters-exclu TRM.esm
   % {{BASH:Graphics,Invent}}
 Shadow's Merged Value Fixesv1.1.esp
@@ -453,37 +455,37 @@ wd purse of wonders.esp
 Wyverex's - Runes.esp
 % {{BASH:Invent}}
 moDem's City Life - BP Compat Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 moDem's City Life Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Oblivion Alive Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Crowded Roads Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Crowded Roads 7 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Crowded Roads 15 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Oblivion Alive Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Crowded Cities 30 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Crowded Roads 23 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 travellers-new balance Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 C&C - The Blackwood Company.esp
 % {{BASH:C.Owner,Relations}}
 DLCOrrery Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Lair_mobs.esp
 % {{BASH:Stats}}
 Mehrunes_mobs.esp
 % {{BASH:Stats}}
 DLCMehrunesRazor Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCMehrunesRazor Vwalk UOP.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCSpellTomes.esp
 % {{BASH:Relev}}
 DLCSpellTomes - Unofficial Patch.esp
@@ -494,7 +496,7 @@ Book Jackets DLC.esp
 GrimbotsSpellTomes.esp
 % {{BASH:Graphics}}
 Nude Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 EyeCandy Compilation.esp
 % {{BASH:Graphics,NpcFaces,Hair,Eyes}}
 Bab.esp
@@ -644,13 +646,15 @@ Oddbasket Glass Replace ALT.esp
 PinkGlassArmor.esp
 % May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
 RTFemaleReplacerV12.esp
-% {{BASH:Graphics}} - De-activate
+% {{BASH:Graphics,Deactivate}}
 Robe Replacer2.esp
 % {{BASH:Graphics}}
 RustyItems.esp
 % {{BASH:Graphics}}
 Saint Hiryu's Artifacts.esp
 % {{BASH:Invent}}
+Shields Of Antiquity.esp
+% {BASH:Invent}}
 Shrouded Armor X.esp
 % {{BASH:Graphics}}
 Sin's Expanded Light Armor Kit [Chest].esp
@@ -663,9 +667,9 @@ The Little Weapon Pack OB.esp
 The SilverDragonArmorQuest.esp
 % {{BASH:Invent}}
 mz_Shields.esp
-% {{BASH:Graphics}} when using overhaul mods.
+% {{BASH:Graphics,Deactivate}} when using overhaul mods.
 mz_Shields_SI.esp
-% {{BASH:Graphics,NoMerge}} when using overhaul mods.
+% {{BASH:Graphics,NoMerge,Deactivate}} when using overhaul mods.
 RealSwords - Argonian HI-NPC.esp
 * Delete. Use FCOM_RealSwords instead.
 ? Requires Wrye BASH for compatibility with overhaul mods like OOO/MMM/Fran's.
@@ -871,7 +875,7 @@ HGEC_Rogue01.esp
 HGEC_AmazonArmor.esp
 % {{BASH:Graphics}}
 Armamentium female.esp
-% {{BASH:Graphics,NoMerge}}
+% {{BASH:Graphics,NoMerge,Deactivate}}
 Roberts Armamentium female.esp
 % {{BASH:Graphics}}
 Imperial Armor Replace.esp
@@ -974,22 +978,24 @@ NV Imperial Guard Horse Armour.esp
 Legion's Horses Armored With Slof's Horse Bases.esp
 % {{BASH:Graphics}} untested.
 AncientTowers Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Goblin Realswords+Tribal Shields.esp
 % {{BASH:Graphics}}
 ? Only use this or Goblin Realswords.esp (or FCOM)
 Mart's Monster Mod - Hemingweys NPC and Guard Capes.esp
 % {{BASH:Invent}}
+SIRMS.esp  
+% {{BASH:Names}}
 Ranokoas Organized Potions.esp
-% {{BASH:Names}}, deactivate. If not using Wrye BASH load with overrides but then incompatible with most overhauls etc.
+% {{BASH:Names,Deactivate}}
 DLCThievesDen.esp
 % {{BASH:C.Name,C.Light}}
 Thievesden_mobs.esp
 % {{BASH:Stats}}
 DLCThievesDen Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCThievesDen Vwalk UOP.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Fran Armor Add-on.esp
 % {{BASH:Invent}}
 Francesco's Optional Files.esp
@@ -1011,9 +1017,9 @@ Oscuro's_Oblivion_Overhaul.esp
 OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
 % {{BASH:Stats}}
 Oscuro's_Oblivion_Overhaul Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Personality Idles 4 - Cleanned version.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 RealitySpectreStars2HeavenBetterPotionsOOOEffects.esp
 % {{BASH:Graphics}}
 OMOBS.esp
@@ -1077,21 +1083,19 @@ WACESM_Ingredients_Rebalance.esp
 % {{BASH:Stats}}
 WAC-OOO.esp
 TamrielTravellers Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TamrielTravellers4MMM Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TamrielTravellersItemsNPC.esp
-% {{BASH:Filter,Delev,Relev}}
-TamrielTravellersItemsCobl.esp
-? Requires COBL.
+% {{BASH:Filter,Delev,Relev,Deactivate}}
 TamrielTravellersItemsVendor.esp
-% {{BASH:Filter,Delev,Relev}}
+% {{BASH:Filter,Delev,Relev,Deactivate}}
 ShiveringIsleTravellers.esp
 % {{BASH:Factions,Relations}}
 TamrielTravellers4OOO Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 ShiveringIsleTravellers Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 TamrielTravellersHorseTextures.esp
 % {{BASH:NoMerge,Graphics}}
 FCOM_HungersUnitySI.esp
@@ -1180,31 +1184,35 @@ Enhanced Quest Roleplaying.esp
 ArtifactsFemaleArmor
 % {{BASH:Graphics}}
 Auriel's_Retreat Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 BrotherhoodRenewed.esp
 % {{BASH:Actors.AIPackages}}
 CDEP-UnderpallCave.esp
 % {{BASH:C.Light, C.Water}}
+(DC) Sutch Reborn Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Dschinni Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
+Dwarven Mines Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Extended Imperial City Version 1.0 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Extended Chorrol Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Extended Skingrad Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Extended City Series Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 eyja Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Eyja Abriael Human Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Hammerfell Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Hentai Mania.esp
 % {{BASH:Hair}}
 Hentai Mania Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 HauntedHouse v1.3.esp
 % {{BASH:Invent}}
 ? Version 1.5 is available.
@@ -1218,29 +1226,31 @@ Hentai Mania.esp
 HeartoftheDead.esp
 % {{BASH:Hair}}
 HeartOftheDead Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 ImpeREAL Empire - Unique Forts Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Kvatch Rebuilt Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 EiAmod Vwalk.esp[
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Legion Faction Mod.esp
 % {{BASH:Relations}}
 bladesfactionmod.esp
 % {{BASH:Invent,Relations}}
 GlenvarCastle Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} 
+% {{BASH:Actors.Anims,NoMerge,Deactivate}} 
+Vampire Hunting - Order Of The Virtuous Blood Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Ruins of Tarnesia.esp
 % {{BASH:NpcFaces}}
 RumpleMod Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Sylar_INNMergedCyrodillInnsRevised vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Sylar_INNMergedCyrodillInnsRevisedV1.1 vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Tantrivaylia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 The forgotten Castle.esp
 % {{BASH:Hair}}
 TR_Stirk.esp
@@ -1248,9 +1258,9 @@ TR_Stirk.esp
 treasure maps v1.esp
 % {{BASH:Invent}}
 VHBloodlines 1.2 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Cyrodiil Travel Services Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Arena_BattlesV1.1.esp
 % {{BASH:Relations}}
 ? Old, update to version 1.2+.
@@ -1263,13 +1273,13 @@ DLCFrostcrag.esp
 DLCFrostcrag - Unofficial Patch.esp
 % {{BASH:C.Name,C.Owner}} and remove the C.Climate tag
 BrumaMGRestored Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCFrostcrag Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCfrostcrag Reborn Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DLCFrostcrag Spire Revisited Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Ulrim's Horses - LegionArmor.esp
 ? Obsolete. Check for newer version.
 % {{BASH:Graphics}} for Slof's Horses compatibility.
@@ -1294,7 +1304,7 @@ Ulrim's Horses - OOO.esp
 Ulrim's Horses - Vanilla.esp
 % {{BASH:Graphics}} for Slof's Horses compatibility.
 Knights - Book Jackets.esp
-% {{BASH:Graphics, NoMerge}}
+% {{BASH:Graphics, NoMerge,Deactivate}}
 Traduccion mejorada KoT9.esp
 % {{BASH:Names}} or without BASH load it later.
 Knights - Unofficial Patch.esp
@@ -1306,9 +1316,9 @@ MOBS_Knights.esp
 MOBS Knights.esp
 % {{BASH:Stats}}
 Knights Vwalk.esp
-{BASH:Actors.Anims,NoMerge}}
+{BASH:Actors.Anims,NoMerge,Deactivate}}
 Knights Vwalk UOP.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Mart's Monster Mod - Knights of the Nine Patch.esp
 % {{BASH:Actors.AIData,Actors.AIPackages, Actors.Stats,Delev,Relev,Stats}}
 Mart's Monster Mod - Knights.esp
@@ -1322,15 +1332,15 @@ DLC_MOBS.esp
 MOBS DLCs.esp
 % {{BASH:Stats}}
 Cybiades Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 RTT Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 The Lost Spires Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Blood&Mud.esp
 % {{BASH:Hair, NpcFaces}}
 Blood&Mud Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 HoarfrostCastle.esp
 % {{BASH:Hair}}
 MannimarcoRevisitedOOO.esp
@@ -1342,53 +1352,53 @@ FCOM_OMG.esp
 ElsweyrAnequina.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 ElsweyrAnequina Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 ElsweyrAnequina v2 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 ElsweyrAnequinaNoSpiders.esp
 % {{BASH:Delev}}
 Faregyl.esp
 % {{BASH:Factions,Relations}}
 Faregyl Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Vergayun Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Faregyl Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Cyrodiil Travel-Vergayun-Faregyl Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Cyrodiil Travel-Feldscar-Vergayun-Faregyl Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Fort Akatosh.esp
 % {{BASH:Relations}}
 FortAkatosh.esp
 % {{BASH:Relations}}
 Split Expansion Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Valhalla Asgardia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} (requires WB version 278+ otherwise merge but may run into facial errors).
+% {{BASH:Actors.Anims,NoMerge,Deactivate}} (requires WB version 278+ otherwise merge but may run into facial errors).
 MTCThievesGrottoV4.1 Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} (requires WB version 278+ otherwise merge but may run into facial errors).
+% {{BASH:Actors.Anims,NoMerge,Deactivate}} (requires WB version 278+ otherwise merge but may run into facial errors).
 Castle_Tirith Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulbravilbarrowfields Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulRollingHills_EV Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulBrenaRiverRavine Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulImperialIsle Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulAspenWood Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulSkingradOutskirts Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xul Vwalk Full.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 xulChorrolHinterland Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Bartholm Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}} 
+% {{BASH:Actors.Anims,NoMerge,Deactivate}} 
 Fort Akatosh Redux.esp
 % {{BASH:Relations}}
 Moriarcis.esp
@@ -1421,13 +1431,13 @@ BloodSpray.esp
 BMC Chrome Ebony.esp
 % May need to be tagged {{BASH:Graphics}} when using overhaul mods (eg OOO).
 Bow Damage Balanced.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Brandon's Misc Rebalance.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Cliff_BetterLetters.esp
 % {{BASH:Names}}
 Colourwheels Sexy Imperial Legion Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Curseman's Anti Extinction Mod.esp
 % {{BASH:Delev,Relev}}
 CUO_UnLeveledPotions.esp
@@ -1447,21 +1457,21 @@ M.O.E. - Realistic Prices, Realistic Weights, No Quest Items.esp
 ? May cause some quest items to revert to vanilla stats when using overhaul mods. Will not remove quest status from non-vanilla quests.
 % {{BASH:Stats}} if you don't care about the No Quest Items feature.
 Better and realistic prices.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 RedBag - Items Repriced v2.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Fixed_Repriced_Clutter_11_by_Carpmalenko_POD-9319.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Shadow's Balance Price Fixv2.0.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Shadow's Merged Value FixesNOBLOODPOTv2.0.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 Shadow's Merged Value Fixesv2.0.esp
-% {{BASH:Stats}}
+% {{BASH:Stats,Deactivate}}
 NameReplacer-Clothing.esp
 % {{BASH:Names}} - deactivate.
 newsheogorath.esp
-% {{BASH:NpcFaces}}
+% {{BASH:NpcFaces,Deactivate}}
 real_tools.esp
 % {{BASH:Scripts}}
 ShinySeptims_Septimus.esp
@@ -1472,12 +1482,16 @@ Side's Backpacks.esp
 % {{BASH:Invent}}
 Side's Backpacks (COBL).esp
 % {{BASH:Invent}}
+Steel Helm Replacer.esp
+% {{BASH:Graphics,NoMerge,Deactivate}}
 vendorfreedom.esp
 % {{BASH:relev}}
 Feudal Empire 300.esp
 % {{BASH:Invent,Graphics}}
 300 Feudal Empire.esp
 % {{BASH:Invent,Graphics}}
+AyleidMeteorIronWeaponsVANILLA.esp
+% {{BASH:Invent,Relev}}
 Alternative Start by Robert Evrae.esp
 % {{BASH:Relations}}
 MHE v2 Tail.esp
@@ -1507,9 +1521,9 @@ AgarVariedSpellSounds_SupremeMagicka.esp
 SupremeMagicka.esp
 % {{BASH:Names,Graphics}}
 MMC_Iphigenia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 MMC_DarkZoe Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 RenGuardOverhaul.esp
 % {{BASH:Actors.AIData}}
 mighty_bows_full.esp
@@ -1526,15 +1540,15 @@ immersive_caves_auto.esp
 % {{BASH:Names}}
 immersive_caves_manual.esp
 Dark Dungeons.esp
-% {{BASH:C.Light}}
+% {{BASH:C.Light,Deactivate}}
 Dark Dungeons -  SI.esp
-% {{BASH:C.Light}}
+% {{BASH:C.Light,Deactivate}}
 Darker Dungeons.esp
-% {{BASH:C.Light}}
+% {{BASH:C.Light,Deactivate}}
 _darker dungeons.esp
-% {{BASH:C.Light}}
+% {{BASH:C.Light,Deactivate}}
 _darker_dungeons.esp
-% {{BASH:C.Light}}
+% {{BASH:C.Light,Deactivate}}
 Let There Be Darkness.esp
 % {{BASH:C.Light}}
 Let There Be Darkness - Shivering Isles.esp
@@ -1582,125 +1596,123 @@ Let There Be Darkness All.esp
 Atmospheric Loading Screens - No Text.esp
 % {{BASH:Graphics}}
 BulkyNord.esp
-% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,Deactivate}}
 BulkyOrcs.esp
-% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,Deactivate}}
 Mart's Monster Mod - Resized Races.esp
-% {{BASH:Body-M,Body-F,R.Relations}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,R.Relations,Deactivate}}
 Bigger_Dremora.esp
-% {{BASH:Body-M,Body-F}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,Deactivate}}
 Slof's Oblivion Better Beasts.esp
-% {{BASH:NpcFaces,R.Teeth,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,R.Teeth,Graphics,Deactivate}}
 JJR'sWhiskers and Eyebrow.esp
-% {{BASH:NpcFaces,R.Teeth,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,R.Teeth,Graphics,Deactivate}}
 EyelashesVanillaRaces.esp
-% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,Graphics,Deactivate}}
 EyelashesVannilaRaces.esp
-% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,Graphics,Deactivate}}
 EyelashesForVanillaRaces1.0.esp
-% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,Graphics,Deactivate}}
 Jjiinx_MorrowindStyleArgonians.esp
-% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,Graphics,Deactivate}}
 Better Redguard v2.esp
-% {{BASH:NpcFaces,Graphics}} make sure to merge into the bashed patch
+% {{BASH:NpcFaces,Graphics,Deactivate}}
 BigDunmerEars.esp
-% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,NpcFaces,Deactivate}}
 Smaller Elf ears.esp
-% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,NpcFaces,Deactivate}}
 Jjiinx_Long Ears.esp
-% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,NpcFaces,Deactivate}}
 Head06 Replacer.esp
-% {{BASH:Body-M,Body-F,NpcFaces}} make sure to merge into the bashed patch
+% {{BASH:Body-M,Body-F,NpcFaces,Deactivate}}
 WhiskersAll.esp
-% {{BASH:R.Teeth,Graphics}} make sure to merge into the bashed patch
+% {{BASH:R.Teeth,Graphics,Deactivate}}
 MergedMouth.esp
-% {{BASH:R.Mouth}} make sure to merge into the bashed patch
+% {{BASH:R.Mouth,Deactivate}}
 JoinedJaws.esp
-% {{BASH:R.Teeth}}
+% {{BASH:R.Teeth,Deactivate}}
 Custom Hairs for Vanilla Race.esp
 % {{BASH:Hair}}
-M.O.E. - Unlocked Hairstyles.esp
 Bald_Hairstyle.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 tkHairPack01.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 babehair_EV.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 soya_04hair.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 Soya 4 Hair Pack.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 Soya 4 Hair Pack - English.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 BWs Argonian Hair.esp
-% {{BASH:Graphics,Hair}}
+% {{BASH:Graphics,Hair,Deactivate}}
 CT-Argonian Headstyles.esp
-% {{BASH:Graphics,Hair}}
+% {{BASH:Graphics,Hair,Deactivate}}
 Corean_hair_for_Original_race.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 _Ren_BeautyPack_onlyhairs.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 KDshorthair.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 Saram_Corean_NPC_Hair_1_0.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 ZBRE.esp
-% {{BASH:Hair}}
+% {{BASH:Hair,Deactivate}}
 ZelsHairfixRenshairV1_5.esp
-% {{BASH:Hair}}
 ElaborateEyes.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 Ethereal - Eyes.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 DaMage's_Eye_Pack.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 PHVanillaEyesAddon.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 elveons realistic eyes.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 Cernasite - DragonEyes.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 JCPeepers.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 Koldorns Eye Mod.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 Cat_eyes.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 Cat_eyes_add.esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 DesuChan's Anime Eyes (Vanilla).esp
-% {{BASH:Eyes}}
+% {{BASH:Eyes,Deactivate}}
 All_hair_and_eyes-1841.esp
-% {{BASH:Hair,Eyes}}
+% {{BASH:Hair,Eyes,Deactivate}}
 BP-Cosmetic_Compilation-Alternative.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
 Cosmetic Compilation.esp
-% {{BASH:NpcFaces,Hair,Eyes}}
+% {{BASH:NpcFaces,Hair,Eyes,Deactivate}}
 Cosmetic Compilation XXL DV.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
 Cosmetic Compilation - No NPC Changes.esp
-% {{BASH:NpcFaces,Hair,Eyes}}
+% {{BASH:NpcFaces,Hair,Eyes,Deactivate}}
 Cosmetic Compilation - No JPeepers or NPC Changes.esp
-% {{BASH:NpcFaces,Hair,Eyes}}
+% {{BASH:NpcFaces,Hair,Eyes,Deactivate}}
 EE-Cosmetic Compilation.esp
-% {{BASH:NpcFaces,Hair,Eyes}}
-CCR - EE.esp 
-% {{BASH:NpcFaces,Hair,Eyes}}
+% {{BASH:NpcFaces,Hair,Eyes,Deactivate}}
+CCR - EE.esp
+% {{BASH:NpcFaces,Hair,Eyes,Deactivate}}
 CCR - Capucine.esp
 Capucine'sEyeSelection+NewHair.esp
-% {{BASH:Hair,Eyes}}
+% {{BASH:Hair,Eyes,Deactivate}}
 Comprehensive Style Collection RM.esp
-% {{BASH:Hair,Eyes}}
+% {{BASH:Hair,Eyes,Deactivate}}
 ElaborateEyes-RensBeautyPackFull.esp
-% {{BASH:Hair,Eyes}}
+% {{BASH:Hair,Eyes,Deactivate}}
 ElaborateEyes-RensBeautyPackHairsOnly.esp
-% {{BASH:Hair,Eyes}}
+% {{BASH:Hair,Eyes,Deactivate}}
 CT-Argonian Headstyles-EE.esp
-% {{BASH:Graphics,Hair,Eyes}}
+% {{BASH:Graphics,Hair,Eyes,Deactivate}}
 CT-Argonian Headstyles-MM.esp
-% {{BASH:Graphics,Hair,Eyes}}
+% {{BASH:Graphics,Hair,Eyes,Deactivate}}
 CT-Argonian Headstyles-EE+MM.esp
-% {{BASH:Graphics,Hair,Eyes}}
+% {{BASH:Graphics,Hair,Eyes,Deactivate}}
 MD_Natural_Faces_DV.esp
 % {{BASH:Graphics,Hair,Eyes}}
 King_O_POPver2
@@ -1746,6 +1758,8 @@ Nec-Character_Karla.esp
 Nec-Character_Sonnet_Mature.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Moonshadow Elves - Sc.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+Moonshadow Elves - NoSc.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Mystic_DarkElf.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
@@ -1793,6 +1807,8 @@ Dremora Race Playable.esp
 DremoraFemales.esp
 % {{BASH:Voices-F}}
 The Complete Dremora.esp
+% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+LJD_HumanMIKA.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Luchaire's Dryad Race.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
@@ -1907,7 +1923,7 @@ MGothic Breton Race.esp
 Lattamer.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Chocolate Elves.esp
-% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
 IceElfRace.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 LittleElf.esp
@@ -1956,7 +1972,7 @@ Ash Elves.esp
 Ancient Elven Sorceress - EV.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 CapsAdmin.esp
-% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
 Moogles.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Sharingan and Uchiha Clan.esp
@@ -1970,7 +1986,7 @@ X.Night.Elf.esp
 X.Vampire.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 X.Races.Comp.esp
-% {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
+% {{BASH:NpcFaces,Hair,Eyes,Graphics}}
 Luchaire's Dryad Race for MMM.esp
 % {{BASH:NpcFaces,Hair,Eyes,Graphics,R.Relations}}
 Tabaxi_Race_Robert.esp
@@ -2003,7 +2019,7 @@ Additional Cosmetics for BP.esp
 TFF ROBERT Cosmetic Compilation.esp
 % {{BASH:NpcFaces,Graphics,Hair,Eyes,Body-M,Body-F,Graphics}}.
 TFF & ROBERT & Slof's Better Beasts.esp
-% {{BASH:NpcFaces,Hair,Eyes,Body-M,Body-F,R.Teeth,Graphics,NoMerge}}
+% {{BASH:NpcFaces,Hair,Eyes,Body-M,Body-F,R.Teeth,Graphics,NoMerge,Deactivate}}
 BeautifulPeople2.2+TweakedGenericFacesLITE.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
 BeautifulPeople2.2+TweakedGenericFaces.esp
@@ -2024,39 +2040,39 @@ Corean Hairs and Elaborate Eyes Merged.esp
 % {{BASH:NpcFaces,Hair,Eyes}}
 CM Partners.esp
 CM Partners Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners Special NPCs.esp
 % {{BASH:Hair,Eyes}}
 CM Partners Special NPCs Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners NPC.esp
 % {{BASH:Hair,Eyes}}
 CM Partners NPC Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners NPC NE.esp
 % {{BASH:Hair,Eyes}}
 CM Partners NPC NE Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners More NPCs.esp
 % {{BASH:Hair,Eyes}}
 CM Partners More NPCs Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners More NPCs NE.esp
 % {{BASH:Hair,Eyes}}
 CM Partners More NPCs NE Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners Marker NPCs.esp
 % {{BASH:Hair,Eyes}}
 CM Partners Marker NPCs Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM Partners Extra NPCs.esp
 % {{BASH:Hair,Eyes}}
 CM Partners Extra NPCs Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CMPartner_Xenia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Xenia_CMPartner Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 CM_LoreleiU.esp
 % {{BASH:Hair,Eyes}}
 Colourwheels Sexy Tifa.esp
@@ -2070,15 +2086,15 @@ Terimer.esp
 Arwen companion.esp
 % {{BASH:Hair,Eyes}}
 1em_Vilja Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 1em_Vilja Not Essential Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Companion Neeshka.esp
 % {{BASH:Hair}} for the Mystic Elf version.
 companion_nightelves.esp
 % {{BASH:Hair,Eyes}}
 Companion Neeshka Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 DremoraCompanion.esp
 % {{BASH:Hair,Eyes}}
 Eluna.esp
@@ -2109,7 +2125,7 @@ Ramy Enfant.esp
 Rhianna.esp
 % {{BASH:Hair,Eyes}}
 Rhianna Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 RhiannaII.esp
 % {{BASH:Hair,Eyes}}
 Rinn.esp
@@ -2117,13 +2133,13 @@ Rinn.esp
 Saerileth.esp
 % {{BASH:Hair,Eyes}}
 sexycompanion Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 SnowAndHarukoCMPartners.esp
 % {{BASH:Hair,Eyes}}
 Sonia.esp
 % {{BASH:Hair,Eyes}}
 Sonia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Tamara.esp
 % {{BASH:Hair,Eyes}}
 RhiannaII-essential.esp
@@ -2204,26 +2220,32 @@ AMD.esp
 Cobl Races.esp
 % {{BASH: Eyes, Hair, R.Relations, Voice-M, Voice-F}}
 Cobl Races TNR.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Cobl Races TNR SI.esp
-% {{BASH:NpcFaces,NoMerge}}
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 Cobl - NPCDiversity - TNR Merge.esp
 % {{BASH: NpcFaces,Invent,NoMerge}}
+bgBalancingEVCore.esp
+% {{BASH:Eyes,Hair,R.Relations}}
+bgBalancingDVCore.esp
+% {{BASH:Eyes,Hair,R.Relations}}
 bgMagicDV.esp
 % {{BASH:Names,Delev,Relev}}
 bgMagicEV.esp
 % {{BASH:Names,Delev,Relev}} if you are running more than one magic overhaul and want to use LAME spell names.
+bgMagicEV Vwalk.esp
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 cidnothump.esp
 % {{BASH:Sound}}
 PMSneakySummonCompatibility.esp
 % {{BASH:IIM,Filter,Invent}}
 bgBalancingEVOptionalNPCDiversity, Beautification.esp
-% {{BASH:NpcFaces,NoMerge}} and deactivate.
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 bgBalancingEVOptionalNPCDiversity, for Wrye Bash.esp
 bgBalancingEVOptionalNPCDiversity, Vanilla.esp
-% {{BASH:NpcFaces,NoMerge}} and deactivate.
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 bgBalancingEVOptionalNPCDiversity, TNR Merge.esp
-% {{BASH:NpcFaces,NoMerge}} and deactivate.
+% {{BASH:NpcFaces,NoMerge,Deactivate}}
 bgBalancingEVOptionalNPCDiversity, Beautification Better Redguards.esp
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingEVOptionalNPCDiversity, for Wrye BASH Better Redguards.esp
@@ -2234,7 +2256,10 @@ bgBalancingEVOptionalNPCDiversity, TNR Merge Better Redguards.esp
 % {{BASH: NpcFaces,Invent,NoMerge}}
 bgBalancingDVOptionalNPCDiversity, TNR Merge Better Redguards.esp
 % {{BASH: NpcFaces,Invent,NoMerge}}
-bgIntegrationEV.esp
+bgBalancingEVOptionalSeamReducerHighElfFix.esp
+% {{BASH:Body-M}}
+bgBalancingDVOptionalSeamReducerHighElfFix.esp
+% {{BASH:Body-M}}
 bgIntegrationEV - Alternative NPC Faces by LazyMonk.esp
 % {{BASH:NpcFaces}}
 Cobl Races - Balanced.esp
@@ -2248,65 +2273,65 @@ DBWBMR.esp
 ArgonianFeets.esp
 % {{BASH:Invent}}
 EVE_KhajiitFix.esp
-% {{BASH:Body-F}} and deactivate
+% {{BASH:Body-F,Deactivate}}
 Better Cities Full Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Better Cities Full - B&M Edition Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Better Imperial City Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Better Cities and IC Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Jake's Water.esp
 % {{BASH:Graphics}}
 Advanced_Water_Modification.esp
 % {{BASH:Graphics}}
 Real Lava 1.3.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Real Lava.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Real Lava v1.1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Real Lava 1.2.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Real Lava v1.2.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Improved Lava.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Damage and Absorb with Particles.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Drains 1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Drains.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Fire 1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Fire 2.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Fire 3.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Fire.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Frost 1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Frost 2.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Frost 3.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Frost.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Shock 1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Shock 2.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Shock 3.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted Shock.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted SoulTrap 1.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Visually Enchanted SoulTrap.esp
-% {{BASH:Graphics}}
+% {{BASH:Graphics,Deactivate}}
 Duke Patrick's magic you can believe in 4p5.esp
 % {{BASH:Sound}}
 Duke Patrick's magic you can believe in 5.esp
@@ -2324,9 +2349,9 @@ Shining Creatures_WillOWisp.esp
 Shining Creatures_DLCFrostcrag.esp
 % {{BASH:Invent}}
 Viconia Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 ViconiaChapterTwo Vwalk.esp
-% {{BASH:Actors.Anims,NoMerge}}
+% {{BASH:Actors.Anims,NoMerge,Deactivate}}
 Bashed Delayers - MERGE ONLY.esp
 % {{BASH:Filter}}
 Bashed Delayers E - MERGE ONLY.esp
