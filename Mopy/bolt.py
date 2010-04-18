@@ -800,7 +800,11 @@ class PickleDict:
                 ins = None
                 try:
                     ins = path.open('rb')
-                    header = cPickle.load(ins)
+                    try: 
+                        header = cPickle.load(ins)
+                    except ValueError:
+                        os.remove(path)
+                        continue # file corrupt - try next file
                     if header == 'VDATA':
                         self.vdata.update(cPickle.load(ins))
                         self.data.update(cPickle.load(ins))
