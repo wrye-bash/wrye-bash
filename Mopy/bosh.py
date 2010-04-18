@@ -19209,14 +19209,15 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             for srcMod in sorted(mod_npcsFixed):
                 log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
 #------------------------------------------------------------------------------
-class RedguardNPCPatcher(MultiTweakItem):
-    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
+class BasalNPCTweaker(MultiTweakItem):
+    """Base for all NPC tweakers"""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
-            _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
-            'RedguardFGTSPatcher',
+        # Override this segment with real info.
+        MultiTweakItem.__init__(self,_("Title"),
+            _('Description'),
+            'Ignored',
             ('1.0',  '1.0'),
             )
 
@@ -19240,6 +19241,30 @@ class RedguardNPCPatcher(MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
+        # override this section too!
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            continue
+        #--Log suggestions:
+        #log.setHeader(_('===TITLE'))
+        #log(_('* %d X Tweaked') % (sum(count.values()),))
+        #for srcMod in modInfos.getOrdered(count.keys()):
+        #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class RedguardNPCPatcher(BasalNPCTweaker):
+    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
+            _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
+            'RedguardFGTSPatcher',
+            ('1.0',  '1.0'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
@@ -19254,7 +19279,7 @@ class RedguardNPCPatcher(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
-class MAONPCSkeletonPatcher(MultiTweakItem):
+class MAONPCSkeletonPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
 
     #--Config Phase -----------------------------------------------------------
@@ -19264,24 +19289,6 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
             'MAO Skeleton',
             ('1.0',  '1.0'),
             )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
@@ -19305,7 +19312,7 @@ class MAONPCSkeletonPatcher(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
-class RWALKNPCAnimationPatcher(MultiTweakItem):
+class RWALKNPCAnimationPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
 
     #--Config Phase -----------------------------------------------------------
@@ -19315,24 +19322,6 @@ class RWALKNPCAnimationPatcher(MultiTweakItem):
             'Mur Zuk SWalk',
             ('1.0',  '1.0'),
             )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
@@ -19350,7 +19339,7 @@ class RWALKNPCAnimationPatcher(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
-class SWALKNPCAnimationPatcher(MultiTweakItem):
+class SWALKNPCAnimationPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
 
     #--Config Phase -----------------------------------------------------------
@@ -19360,24 +19349,6 @@ class SWALKNPCAnimationPatcher(MultiTweakItem):
             'Mur Zuk RWalk',
             ('1.0',  '1.0'),
             )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
@@ -19627,7 +19598,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     if oblivionPath: dirs['app'] = GPath(oblivionPath)
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
         dirs['app'] = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblviion\Mopy\)
+    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
     #--If path is relative, make absolute
     if not dirs['app'].isabs():
         dirs['app'] = dirs['mopy'].join(dirs['app'])
