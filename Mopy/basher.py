@@ -1230,7 +1230,7 @@ class ModList(List):
         elif status == 20:   mouseText = _("Masters have been re-ordered.")
         #should mod be deactivated
         if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
-            item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.BOLD))
+            item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
             if checkMark == 1:
                 mouseText = _("Mod should be imported  and deactivated")
         #--Text BG
