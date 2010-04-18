@@ -2,7 +2,7 @@ Download: [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] 
 Readme: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (at time slightly outdated... most up to date readme in the download - the file named Wrye Bash.html in the mopy folder)
 Wrye Bash Wiki: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 Screenshots: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-Previous Topic: [url="http://forums.bethsoft.com/index.php?/topic/1084996-relz-wrye-bash-thread-%2338//"][RELZ] Wrye Bash #38[/url]
+Previous Topic: [url=http://forums.bethsoft.com/index.php?/topic/1087446-relz-wrye-bash-thread-no-40/][RELZ] Wrye Bash #38[/url]
 Requirements
 Python 2.5.4 and wxpython 2.8.7.1 ansi (the old "official" setup) - if using this best to just download the installer package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 or
@@ -65,21 +65,23 @@ For mod-makers:
 [/quote]
 
 Latest Version:
-[code]=== 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
-* bug fixes:
-  * fix for AttributeError: 'str' object has no attribute 'get'
-  * fix for when wrong color was occasionally used
-  * fixed various icons and launchers (reported by Metallicow)
-  * minor fix for List Structure. It wasn't disabled properly when multiple installers were selected.
-  * fix for bug causing archives to fail to 'Unpack to Project' and to apply BCF's, also caused the archive to show up in the list of skipped files.
-  * minor improvements to the BAIN wizards.
-  * fix for UI not refreshing on installer renames
-  * fix for renaming installer projects
-  * fix for renamed installers not retaining installed state
-  * fix for Ctrl-Up/Down on installer tab not scrolling
-* Ctrl-A (select all) support added for all tabs except People.
-* Updated readme to reflect that the installer tab uses navy blue as a text color and not blue like the mods tab does
-* Cleaned out some old test code[/code]
+[code]=== 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
+* Taglist: updated to masterlist version 824 and a bunch of cruft removed.
+* Fixes:
+  * Fixed untranslatable strings reported by ThreeD.
+  * Remaining scrolling issues in installers tab fixed.
+* BAIN Wizard strings now translateable.
+* INI Tweaks tab edits:
+  * Fixed sorting on the INI Tweaks tab.
+  * Added option to sort valid ini tweaks to the top.
+  * Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
+* Check added at start of patch build dialogue to detect (with warning and choice of proceeding or not) missing/delinquent masters.
+* Option to show/hide ruleset info from Mod Checker added.
+* Import Scripts can now add new scripts to the esp (optional).
+* Fixed major bug and a slight optimization in Race Patcher.
+* Slight optimization to translation feature (only affects you if you have a Non-English OS).
+* Some more random strings made translateable.
+* New tag __Deactivate__: suggests when you should import & deactivate.[/code]
 
 and just to repeat some links and news:
 Wrye4Fallout3.
