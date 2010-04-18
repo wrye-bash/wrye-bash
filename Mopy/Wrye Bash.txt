@@ -1977,6 +1977,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Slight optimization to translation feature (only affects you if you have a Non-English OS).
 * Some more random strings made translateable.
 * New tag __Deactivate__: suggests when you should import & deactivate.
+* Fix for potential type of bashsettings.dat corruption
+* NPC patchers optimized.
 
 === 282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]
 * bug fixes:
