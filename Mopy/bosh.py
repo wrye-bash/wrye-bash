@@ -19158,8 +19158,14 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
                 mod_npcsFixed[srcMod].add(npc.fid)
                 keep(npc.fid)
-           # print npc.hairLength
-           # if npc.hairLength == 0.0:
+            if not npc.hairLength or npc.hairLength == 0.0:
+                npc.hairLength = random.random()
+                srcMod = npc.fid[0]
+                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
+                keep(npc.fid)
+                if npc.fid in mod_npcsFixed[srcMod]: continue
+                mod_npcsFixed[srcMod].add(npc.fid)
+
                 
         #--Done
         log.setHeader('= '+self.__class__.name)
