@@ -1233,6 +1233,8 @@ class ModList(List):
             item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
             if checkMark == 1:
                 mouseText = _("Mod should be imported  and deactivated")
+        else:
+            item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['bash.doubleTime.load'])
