@@ -9558,6 +9558,7 @@ class Installer(object):
         reReadMe = self.reReadMe
         docExts = self.docExts
         imageExts = self.imageExts
+        scriptExts = self.scriptExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
