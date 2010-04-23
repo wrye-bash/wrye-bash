@@ -3,7 +3,7 @@
 === Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1087446-relz-wrye-bash-thread-no-40/|RELZ Topic]]
+* [[http://forums.bethsoft.com/index.php?/topic/1089021-relz-wrye-bash-thread-no-41/|RELZ Topic]]
 * Download: 
   * [[http://www.wryemusings.com/|Wrye Musings]]
   * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]] 
