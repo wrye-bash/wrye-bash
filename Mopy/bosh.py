@@ -9629,14 +9629,10 @@ class Installer(object):
             elif fileLower == 'wizard.txt':
                 self.hasWizard = True
                 continue
-            elif skipImages :
-                if fileExt in imageExts :
-                    continue
-            elif skipDocs:
-                if rootLower and rootLower in dataDirsPlus and fileExt in scriptExts:
-                    pass
-                elif fileExt in docExts :
-                    continue
+            elif skipImages and fileExt in imageExts:
+                continue
+            elif skipDocs and fileExt in docExts:
+                continue
             elif file[:2] == '--':
                 continue
             #--Noisy skips
