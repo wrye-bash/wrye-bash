@@ -8878,8 +8878,10 @@ class ConfigHelpers:
         log = bolt.LogFile(cStringIO.StringIO())
         log.setHeader(_('= Check Mods'),True)
         log(_("This is a report on your currently active/merged mods."))
-        #--Mergeable
+        #--Mergeable/NoMerge/Deactivate tagged mods
         shouldMerge = active & modInfos.mergeable
+        shouldDeactivateA = [x for x in modInfos.ordered if 'Deactivate' in modInfos[x].getBashTags()]
+        shouldDeactivateB = [x for x in modInfos.ordered if 'NoMerge' in modInfos[x].getBashTags()]
         for mod in tuple(shouldMerge):
             if 'NoMerge' in modInfos[mod].getBashTags():
                 shouldMerge.discard(mod)
@@ -8887,6 +8889,16 @@ class ConfigHelpers:
             log.setHeader(_("=== Mergeable"))
             log(_("Following mods are active, but could be merged into the bashed patch."))
             for mod in sorted(shouldMerge):
+                log('* __'+mod.s+'__')
+        if shouldDeactivateB:
+            log.setHeader(_("=== NoMerge Tagged Mods"))
+            log(_("Following mods are tagged NoMerge and should be deactivate and imported into the bashed patch but are currently active."))
+            for mod in sorted(shouldDeactivateB):
+                log('* __'+mod.s+'__')
+        if shouldDeactivateA:
+            log.setHeader(_("=== Deactivate Tagged Mods"))
+            log(_("Following mods are tagged Deactivate and should be deactivate and imported into the bashed patch but are currently active."))
+            for mod in sorted(shouldDeactivateA):
                 log('* __'+mod.s+'__')
         #--Missing/Delinquent Masters
         if showModList:
@@ -13650,8 +13662,7 @@ class PatchFile(ModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        patchTime = modInfo.mtime
-        self.setMods([name for name in modInfos.ordered if modInfos[name].mtime < patchTime],[])
+        self.setMods([name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime],[])
         for patcher in self.patchers:
             patcher.initPatchFile(self,self.loadMods)
 
@@ -14113,7 +14124,7 @@ class PatchMerger(ListPatcher):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and 'NoMerge' not in modInfo.getBashTags():
+            if modInfo.name in modInfos.mergeable and 'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < PatchFile.patchTime:
                 autoItems.append(modInfo.name)
         return autoItems
 
@@ -18842,7 +18853,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears')
+        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears',
+        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description')
     forceAuto = True
 
     #--Config Phase -----------------------------------------------------------
@@ -18866,6 +18878,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
         self.isActive = True #--Always enabled to support eye filtering
         self.bodyKeys = set(('Height','Weight','TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
+        self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
+        self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
         self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
         #--Mesh tuple for each defined eye. Derived from race records.
         defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
@@ -18924,6 +18938,17 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     relations = raceData.setdefault('relations',{})
                     for x in race.relations:
                         relations[x.faction] = x.mod
+                if 'R.Attributes-F' in bashTags:
+                    for key in ['female'+key for key in self.raceAttributes]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Attributes-M' in bashTags:
+                    for key in ['male'+key for key in self.raceAttributes]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Skills' in bashTags:
+                    for key in self.raceSkills:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Description' in bashTags:
+                    tempRaceData['description'] = race.description
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -19019,19 +19044,14 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     race.rightEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
             #--Teeth/Mouth
-            for key in ('teethLower','teethUpper','mouth','tongue'):
+            for key in ('teethLower','teethUpper','mouth','tongue','description'):
                 if key in raceData:
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
                         raceChanged = True
             #--Gender info (voice, body data)
             for gender in ('male','female'):
-                voiceKey = gender+'Voice'
-                if voiceKey in raceData:
-                    if getattr(race,voiceKey) != raceData[voiceKey]:
-                        setattr(race,voiceKey,raceData[voiceKey])
-                        raceChanged = True
-                bodyKeys = self.bodyKeys.union('ears')
+                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('ears','Voice'))))
                 bodyKeys = [gender+key for key in bodyKeys]
                 for key in bodyKeys:
                     if key in raceData:
@@ -19155,7 +19175,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
                 mod_npcsFixed[srcMod].add(npc.fid)
                 keep(npc.fid)
-            if not npc.hairLength or npc.hairLength == 0.0:
+            if not npc.hairLength:
                 npc.hairLength = random.random()
                 srcMod = npc.fid[0]
                 if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
