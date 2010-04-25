@@ -6193,12 +6193,22 @@ class Installer_Rename(InstallerLink):
                     installer.archive = newName.s
                     #--Add the new archive to Bash
                     self.data[newName] = installer
+                    #--Update the iniInfos & modInfos for 'installer'
+                    mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                    ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                    for i in mfiles:
+                        bosh.modInfos.table[i]['installer'] = newPath.stail
+                    for i in ifiles:
+                        bosh.iniInfos.table[i]['installer'] = newPath.stail
+                        
             num += 1
             numStr = `num`
             numStr = '0'*(numLen-len(numStr))+numStr
 
         #--Refresh UI
         self.data.refresh(what='I')
+        modList.RefreshUI()
+        iniList.RefreshUI()
         self.gTank.RefreshUI()
 #------------------------------------------------------------------------------
 class Installer_HasExtraData(InstallerLink):
