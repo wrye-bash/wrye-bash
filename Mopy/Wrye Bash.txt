@@ -1975,6 +1975,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
 * Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
+* BAIN:
+  * Renaming now updates the 'Mods' and 'INI Edits' tabs
+  * 2 bugfixes dealing with filtering (reported by Vindicator)
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
