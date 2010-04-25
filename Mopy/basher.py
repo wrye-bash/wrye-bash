@@ -1440,7 +1440,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water', 'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water', 'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -8623,16 +8623,33 @@ class Mod_Patch_Update(Link):
 
     def Execute(self,event):
         """Handle activation event."""
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
         unfiltered = [x for x in bosh.modInfos.ordered if 'Filter' in bosh.modInfos[x].getBashTags()]
+        noMerge = [x for x in bosh.modInfos.ordered if 'NoMerge' in bosh.modInfos[x].getBashTags()]
+        deactivate = [x for x in bosh.modInfos.ordered if 'Deactivate' in bosh.modInfos[x].getBashTags()]
         message = balt.fill(_("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in unfiltered),),80)
         if unfiltered and balt.askYes(self.window,message,_("Deactivate Filter Mods")):
             for mod in unfiltered:
                 bosh.modInfos.unselect(mod,False)
             bosh.modInfos.refreshInfoLists()
             bosh.modInfos.plugins.save()
+        message = balt.fill(_("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in deactivate),),80)
+        if deactivate and balt.askYes(self.window,message,_("Deactivate 'Deactivate' tagged Mods")):
+            for mod in deactivate:
+                bosh.modInfos.unselect(mod,False)
+            bosh.modInfos.refreshInfoLists()
+            bosh.modInfos.plugins.save()
+        message = balt.fill(_("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in noMerge),),80)
+        if noMerge and balt.askYes(self.window,message,_("Deactivate 'NoMerge' tagged Mods")):
+            for mod in noMerge:
+                bosh.modInfos.unselect(mod,False)
+            bosh.modInfos.refreshInfoLists()
+            bosh.modInfos.plugins.save()
         previousMods = set()
         text = ''
         for mod in bosh.modInfos.ordered:
+            if mod == fileInfo: continue
             for master in bosh.modInfos[mod].header.masters:
                 if master not in bosh.modInfos.ordered:
                     label = _('MISSING MASTER')
@@ -8648,11 +8665,10 @@ class Mod_Patch_Update(Link):
             warning = balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
             if not warning:
                 return
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
             return
+        bosh.PatchFile.patchTime = fileInfo.mtime
         patchDialog = PatchDialog(self.window,fileInfo)
         patchDialog.ShowModal()
         self.window.RefreshUI(detail=fileName)

@@ -1960,6 +1960,22 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 284 [12/12/2010] [Lojack,PacificMorrowind]
+* Incorrect italicization fixed.
+* Bashed Patch changes:
+  * RacePatcher changes:
+    * R.Ears tag added; imports ears
+    * R.Attributes-F added; imports race attributes for females
+    * R.Attributes-M added; imports race attributes for males
+    * R.Skills added; imports race skill bonuses
+    * R.Description added; imports race description
+    * NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) __if__ hair length is 0.0 or None.
+    * another not insignificant optimization.
+  * Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
+  * Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
+  * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+* Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
+
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
 * Fixes:
