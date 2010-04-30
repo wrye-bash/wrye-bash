@@ -3561,7 +3561,11 @@ class BashNotebook(wx.Notebook):
         self.AddPage(INIPanel(self),_("INI Edits"))
         self.AddPage(ScreensPanel(self),_("Screenshots"))
         if re.match('win',sys.platform):
-            self.AddPage(MessagePanel(self),_("PM Archive"))
+            try:
+                self.AddPage(MessagePanel(self),_("PM Archive"))
+            except ImportError:
+                if bolt.deprintOn:
+                    print _("PM Archive panel disabled due to Import Error (most likely comtypes)")
         self.AddPage(PeoplePanel(self),_("People"))
         #self.AddPage(ModBasePanel(self),_("ModBase"))
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
