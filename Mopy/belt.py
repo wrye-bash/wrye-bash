@@ -246,6 +246,7 @@ class PageSelect(PageInstaller):
         self.descs = listDescs
         self.bMany = bMany
         self.bmp = wx.EmptyBitmap(1, 1)
+        self.index = None
 
         sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
 
@@ -286,12 +287,24 @@ class PageSelect(PageInstaller):
         self.Layout()
 
         wx.EVT_LISTBOX(self, 643, self.OnSelect)
+        self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
+        self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
     def OnSelect(self, event):
         index = event.GetSelection()
         self.Selection(index)
 
+    def OnDoubleClick(self, event):
+        try:
+            file = self.images[self.index]
+            if file.exists() and not file.isdir():
+                file.start()
+        except:
+            pass
+        
+
     def Selection(self, index):
+        self.index = index
         self.textItem.SetLabel(self.descs[index])
         file = self.images[index]
         if file.exists() and not file.isdir():
