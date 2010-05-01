@@ -1231,14 +1231,15 @@ class ModList(List):
         #should mod be deactivated
         if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
             item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
-            if checkMark == 1:
-                mouseText = _("Mod should be imported  and deactivated")
         else:
             item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['bash.doubleTime.load'])
             mouseText = _("WARNING: Has same load order as another mod.")
+        elif 'Deactivate' in bosh.modInfos[fileName].getBashTags() and checkMark == 1:
+            item.SetBackgroundColour(colors['bash.doubleTime.load'])
+            mouseText = _("Mod should be imported and deactivated")
         elif fileInfo.isExOverLoaded():
             item.SetBackgroundColour(colors['bash.exOverLoaded'])
             mouseText = _("WARNING: Exclusion group is overloaded.")
