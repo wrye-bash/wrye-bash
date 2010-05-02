@@ -5546,7 +5546,7 @@ class Installers_AddMarker(Link):
         if not name: return
         name = '=='+name+'=='
         self.data.addMarker(name)
-        self.data.refresh(what='S')
+        self.data.refresh(what='OS')
         gInstallers.RefreshUIMods()
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
