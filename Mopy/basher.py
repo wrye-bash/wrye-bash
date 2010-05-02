@@ -5532,8 +5532,23 @@ class File_Open(Link):
         dir = self.window.data.dir
         for file in self.data:
             dir.join(file).start()
+#------------------------------------------------------------------------------
+class Installers_AddMarker(Link):
+    """Add an installer marker."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Add Marker...'))
+        menu.AppendItem(menuItem)
 
-# Installers Links -----------------------------------------------------------------
+    def Execute(self,event):
+        """Handle selection."""
+        name = balt.askText(self.gTank,_('Enter a title:'),_('Add Marker'))
+        if not name: return
+        name = '=='+name+'=='
+        self.data.addMarker(name)
+        self.data.refresh(what='S')
+        gInstallers.RefreshUIMods()
+# Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AnnealAll(Link):
     """Anneal all packages."""
@@ -5914,9 +5929,21 @@ class Installers_SortStructure(Link):
 class InstallerLink(Link):
     """Common functions for installer links..."""
 
+    def hasMarker(self):
+        if len(self.selected) > 0:
+            for i in self.selected:
+                if isinstance(self.data[i],bosh.InstallerMarker):
+                    return True
+        return False
+
     def isSingle(self):
         """Indicates whether or not is single installer."""
         return len(self.selected) == 1
+
+    def isSingleMarker(self):
+        """Indicates wheter or not is single installer marker."""
+        if len(self.selected) != 1: return False
+        else: return isinstance(self.data[self.selected[0]],bosh.InstallerMarker)
 
     def isSingleProject(self):
         """Indicates whether or not is single project."""
@@ -6060,7 +6087,7 @@ class Installer_Duplicate(InstallerLink):
         self.title = _('Duplicate...')
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingle())
+        menuItem.Enable(self.isSingle() and not self.isSingleMarker())
 
     def Execute(self,event):
         """Handle selection."""
@@ -6106,7 +6133,7 @@ class Installer_Hide(InstallerLink):
         self.title = _('Hide...')
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingle())
+        menuItem.Enable(self.isSingle() and not self.isSingleMarker())
 
     def Execute(self,event):
         """Handle selection."""
@@ -6337,7 +6364,7 @@ class Installer_Open(balt.Tank_Open):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Open...'))
         menu.AppendItem(menuItem)
-        self.selected = [x for x in self.selected if x != self.data.lastKey]
+        self.selected = [x for x in self.selected if not isinstance(self.data.data[x],bosh.InstallerMarker)]
         menuItem.Enable(bool(self.selected))
 
 #------------------------------------------------------------------------------
@@ -11298,6 +11325,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(balt.Tanks_Open())
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
+    InstallersPanel.mainMenu.append(Installers_AddMarker())    
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())
