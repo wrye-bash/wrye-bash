@@ -1962,6 +1962,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 284 [12/12/2010] [Lojack,PacificMorrowind]
 * Incorrect italicization fixed.
+* Active mods with the 'Deactivate' tag will be highlighted in red.
 * Bashed Patch changes:
   * RacePatcher changes:
     * R.Ears tag added; imports ears
@@ -1978,6 +1979,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * BAIN:
   * Renaming now updates the 'Mods' and 'INI Edits' tabs
   * 2 bugfixes dealing with filtering (reported by Vindicator)
+  * Double or middle clicking on an image in a BAIN Wizard will open the full image.
+  * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+* comtypes is optional now.  It is only required for the PM Archive panel
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
