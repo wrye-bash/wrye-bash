@@ -18965,7 +18965,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     for key in self.raceSkills:
                         tempRaceData[key] = getattr(race,key)
                 if 'R.Description' in bashTags:
-                    tempRaceData['description'] = race.text
+                    tempRaceData['text'] = race.text
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
