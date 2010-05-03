@@ -1,4 +1,4 @@
-= Wrye Bash ====================================================================
+= Wrye Bash ====================================================================#
 <table><tr valign=top><tr valign=top><td  width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
 === Quick Start
 * __[[#|Installation]]__
