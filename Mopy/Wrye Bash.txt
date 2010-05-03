@@ -111,7 +111,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 
 == Installation ===============================================================
 === Get and Install
-* __Download and run [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44| Wrye Python]]__
+* __Download and run Wrye Python [ [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44|PlanetElderScrolls]] | [[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]] ]__
   * Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer. 
   * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se [[#|Python Components]].
 * __Download and Unzip [[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]__ 
@@ -183,19 +183,18 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 === Python Components
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 * __Components:__
-  * __Python 2.5__ 
-    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
-    * Download link: [[http://python.org/ftp/python/2.5.2/python-2.5.2.msi|Python 2.5.2]]
-  * __wxPython 2.8.7.1 ANSI__  
-    * Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 -- later versions of wxPython 2.8 are not compatible with Psyco.
-    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe|wxPython 2.8.7.1 ANSI for python 2.5]]. 
-  * __pyWin32__
-    * PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-    * Download link: [[http://sourceforge.net/projects/pywin32/files/latest|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
-  * __ComTypes 0.5.2__ 
-    * ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
-  * __PIL 1.1.6__
-    * PIL (Python Imaging Library) is currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
+  * __Python 2.6__ 
+    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
+    * Download link: [[http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi|Python 2.6.4]]
+  * __wxPython 2.8.10.1 ANSI__  
+    * Python supports several different GUI libraries. Wrye Bash uses wxPython.
+    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe|wxPython 2.8.10.1 ANSI for Python 2.6]]. 
+  * __PyWin32__
+    * Optional component.  PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this to retreive version info for BAIN Wizards.
+    * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|PyWin32]].
+  * __ComTypes 0.6.2__ 
+    * Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
+    * Download link:  [[http://pypi.python.org/pypi/comtypes/0.6.2|ComTypes]]
   * __Psyco 1.6__ 
     * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
     * Download link: [[http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0|Psyco 1.6-py25.exe]].
@@ -345,6 +344,8 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * Orange: Indicates that the install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running Anneal or Anneal All.
   * Yellow: Indicates that the package has "underrides" i.e. some of its installed files ~~should~~ be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running Anneal or Anneal All.
   * Grey: Indicates that some files present in the package will **not** be installed. This is usually due to a complex structure that is only partially handled by Bain, but can also be due to having files that Bain refuses to install (exe's, dlls, sub-archives, etc.)
+* __Markers__
+  * "Dummy" packages that begin and end with "==".  These are usefull for organizing packages into groups.  ==Last== is an example of these.
 
 === Package Details
 Details for the currently selected package will be show on the right. There are (currently) three fields here:
@@ -448,6 +449,17 @@ You've downloaded a bunch of BCFs.  Now what?
   * Wait while Bash unpacks the source archive, rearranges the files, and packs the converted archive.
   * Once finished, you are free to delete the original archives if you so desire.
 
+=== Bain Wizards
+Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a __wizard.txt__ file in the package.  For more information on the wizard format, see WizardDocs.txt.  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
+* __Wizard Pages__
+  * __[[images/Versions.jpg|Version Warning Page]]:__ Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
+  * __[[images/SelectOne.jpg|Single Selection Page]] | [[images/SelectMany.jpg|Multi Selection Page]]:__ Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.
+  * __[[images/Cancel.jpg|Cancel Page]]:__ Shown if the wizard canceled installation.
+  * __[[images/Finish.jpg|Finish Page]]:__ Shown at the end of the wizard.  This will give a list of the sub-packages and esps/esms that will be selected once the wizard is completed.
+* __Wizard Options__
+  * __Auto-Anneal/Install:__ If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.
+  * __Auto Wizard:__ When this is selected, any dialogs that are provided with default answers will automatically use these.
+
 === Package Commands
 The following commands are available from context menu of packages.
 * __File__
@@ -497,7 +509,7 @@ The following commands are available by right clicking on the column header of t
   * __Open:__ Opens the Installers directory in Windows Explorer. 
   * __Refresh Data:__ Rescans the Data directory and all project directories. Since this operation takes a little while, this scan is ordinarily done only once per Bash session. So, if you have manually edited the directories after that one-time scan, you should run this command to update Bain to the changes.
   * __Full Refresh:__ This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
-  * __INI Tweaks:__ This brings up a list of INI tweaks that can be applied. For use after installing/uninstalling a mod that needs to tweak INI settings.
+  * __Add Marker:__ Creates a marker for organizing your packages.  The "==" will be added for you.
   * __List Packages:__ Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help. 
   * __Anneal All:__ This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
   * __Unhide:__ Unhides hidden packages.
@@ -506,7 +518,7 @@ The following commands are available by right clicking on the column header of t
   * __Enabled:__ This enables/disables Bain itself. Preferred setting: Enabled (checked).
   * __Show Replacers Tab:__ If checked, will cause the Replacers tab to appear.
   * __Auto-Anneal:__ Toggles the auto-anneal process on/off. Preferred setting: enabled.
-  * __Auto-Wizard:__ Toggles whether or not to auto-install/anneal when finished with a wizard. (Available only if Wizard Instally system is active)
+  * __Auto-Anneal/Install Wizard:__ Toggles whether or not to automatically install/anneal a package when finished with its wizard. (Available only if Wizard Instally system is active)
   * __Enable Wizard Install:__ Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
 * __Behavior__
@@ -515,6 +527,8 @@ The following commands are available by right clicking on the column header of t
   * __Show Inactive Conflicts:__ If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes its useful to review all conflicting packages.
   * __Show Lower Conflicts:__ If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
   * __Skip Screenshots:__ If checked, then files from a Data\Screenshots directory will be skipped.
+  * __Skip Images:__ If checked, image files will be skipped.
+  * __Skip Docs:__ If checked, document files will be skipped vice being swept to the Docs\ directory.
   * __Skip DistantLOD:__ If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
 
 == Replacers Tab ==============================================================
@@ -557,11 +571,12 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * **Pink:** A file that shares a modification date/time with another file.
     Not a problem unless they're both activated, in which case, the lines turn...
   * **Orange:** Exclusion group violation. See [[#|Exclusion Groups]] below. 
-  * **Red:** A file that shares a modification date/time with another file -- with 
-    both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+  * **Red:**
+    * A file that shares a modification date/time with another file -- with both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+    * An active file that has the 'Deactivate' tag.  The file should be deactivated to function properly.
 * __Text Styles__
     * **__Slant__:** A file that is reccommended to be imported and deactivated (ie. has the 'Deactivate' tag).
-    * **Normal:** Any other file.
+    * __Normal:__ Any other file.
 * __Checkbox Types__
   * Regular checkmark: mod is active.
   * Plus sign (+) checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
@@ -641,12 +656,6 @@ These are the commands for the context menu for the mods list. (You'll get this 
 * __Save List...__ Saves your currently activated mods to a new load list.
 * __Edit Lists...__ Allows you to delete and rename previously defined load lists.
 * __[Load List]__ Synchronizes activated mods to load list.
-
-=== Oblivion.ini
-* This opens the Oblivion.ini file in your preferred editor.
-
-=== INI Tweaks
-* This feature has been deprecated and instead has a tab all to itself. (see [[#|INI Tweaks Tab]
 
 === List Mods
 * Displays list of currently active mods and copies that same list to the clipboard. Useful for posting your list of mods to forums for load debugging help.
@@ -1580,11 +1589,22 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__ 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
+  <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
   <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
     * Checkbox colors indicate the status of the ini tweak
   * Orange: Invalid; some or all variables set in the INI do not exist in Oblivion.ini
   * Green: Valid; all values exist in the oblivion.ini. But not 'Active' - as in not all changes in the tweak are applied.
   * Green with Check: Valid and Active.
+
+=== INI Tweaks Options
+* __Oblivion.ini:__ Opens the Oblivion.ini for editing/viewing.
+* __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
+
+=== Tweak File Commands
+* __Apply:__ Applies the INI Tweak to Ovlivion.ini
+* __List Errors:__ If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
+* __Open:__ Open the tweak file for editing.
+* __Delete:__ Delete the tweak file.
 
 == Saves Tab ==================================================================
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
