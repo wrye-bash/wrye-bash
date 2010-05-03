@@ -55,6 +55,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#Ordering">Ordering</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#OmodConversionData">Omod Conversion Data</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#BainConversionFiles">Bain Conversion Files</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#BainWizards">Bain Wizards</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#PackageCommands">Package Commands</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#PackageHeaderCommands">Package Header Commands</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#ReplacersTab">Replacers Tab</a></p>
@@ -66,8 +67,6 @@
 <p class=list-1>&bull;&nbsp; <a href="#ModsTabCommands">Mods Tab Commands</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#AutoGhost">Auto-Ghost</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#LoadLists">Load Lists</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#Oblivionini">Oblivion.ini</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#INITweaks">INI Tweaks</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ListMods">List Mods</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#DebugMode">Debug Mode</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#ModFileCommands">Mod File Commands</a></p>
@@ -153,6 +152,8 @@
 <p class=list-2>&bull;&nbsp; <a href="#ModGroupInfo">Mod Group Info</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ModCheckerOptions">Mod Checker Options</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#INITweaksTab">INI Tweaks Tab</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#INITweaksOptions">INI Tweaks Options</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#TweakFileCommands">Tweak File Commands</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#SavesTab">Saves Tab</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#SavesList">Saves List</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#BackupFiles">Backup Files</a></p>
@@ -301,7 +302,7 @@
 <p class=empty>&nbsp;</p>
 <h2><a name='Installation'>Installation</a></h2>
 <h3><a name='GetandInstall'>Get and Install</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Download and run <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44">Wrye Python</a></B>
+<p class=list-1>&bull;&nbsp; <B>Download and run Wrye Python [ <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&id=44">PlanetElderScrolls</a> | <a href="http://tesnexus.com/downloads/file.php?id=22368">TESNexus</a> ]</B>
   <p class=list-2>&bull;&nbsp; Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer. 
   <p class=list-2>&bull;&nbsp; <B>Note:</B> This is not part of Wrye Bash itself &#150; rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more infos, se <a href="#PythonComponents">Python Components</a>.
 <p class=list-1>&bull;&nbsp; <B>Download and Unzip <a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX.zip</a></B> 
@@ -373,19 +374,18 @@
 <h3><a name='PythonComponents'>Python Components</a></h3>
 <p class=list-1>&bull;&nbsp; If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 <p class=list-1>&bull;&nbsp; <B>Components:</B>
-  <p class=list-2>&bull;&nbsp; <B>Python 2.5</B> 
-    <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
-    <p class=list-3>&bull;&nbsp; Download link: <a href="http://python.org/ftp/python/2.5.2/python-2.5.2.msi">Python 2.5.2</a>
-  <p class=list-2>&bull;&nbsp; <B>wxPython 2.8.7.1 ANSI</B>  
-    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 &#150; later versions of wxPython 2.8 are not compatible with Psyco.
-    <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe">wxPython 2.8.7.1 ANSI for python 2.5</a>. 
-  <p class=list-2>&bull;&nbsp; <B>pyWin32</B>
-    <p class=list-3>&bull;&nbsp; PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/projects/pywin32/files/latest">SourceForge pywin32</a>. <B>Be sure to install the version that matches the version of python you installed!</B> E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
-  <p class=list-2>&bull;&nbsp; <B>ComTypes 0.5.2</B> 
-    <p class=list-3>&bull;&nbsp; ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
-  <p class=list-2>&bull;&nbsp; <B>PIL 1.1.6</B>
-    <p class=list-3>&bull;&nbsp; PIL (Python Imaging Library) is currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
+  <p class=list-2>&bull;&nbsp; <B>Python 2.6</B> 
+    <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi">Python 2.6.4</a>
+  <p class=list-2>&bull;&nbsp; <B>wxPython 2.8.10.1 ANSI</B>  
+    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe">wxPython 2.8.10.1 ANSI for Python 2.6</a>. 
+  <p class=list-2>&bull;&nbsp; <B>PyWin32</B>
+    <p class=list-3>&bull;&nbsp; Optional component.  PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this to retreive version info for BAIN Wizards.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/project/platformdownload.php?group_id=78018">PyWin32</a>.
+  <p class=list-2>&bull;&nbsp; <B>ComTypes 0.6.2</B> 
+    <p class=list-3>&bull;&nbsp; Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
+    <p class=list-3>&bull;&nbsp; Download link:  <a href="http://pypi.python.org/pypi/comtypes/0.6.2">ComTypes</a>
   <p class=list-2>&bull;&nbsp; <B>Psyco 1.6</B> 
     <p class=list-3>&bull;&nbsp; <B><a href="http://psyco.sourceforge.net/">Psyco</a></B> provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
     <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0">Psyco 1.6-py25.exe</a>.
@@ -535,6 +535,8 @@
   <p class=list-2>&bull;&nbsp; Orange: Indicates that the install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running Anneal or Anneal All.
   <p class=list-2>&bull;&nbsp; Yellow: Indicates that the package has "underrides" i.e. some of its installed files <I>should</I> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running Anneal or Anneal All.
   <p class=list-2>&bull;&nbsp; Grey: Indicates that some files present in the package will <B><I>not</I></B> be installed. This is usually due to a complex structure that is only partially handled by Bain, but can also be due to having files that Bain refuses to install (exe's, dlls, sub-archives, etc.)
+<p class=list-1>&bull;&nbsp; <B>Markers</B>
+  <p class=list-2>&bull;&nbsp; "Dummy" packages that begin and end with "==".  These are usefull for organizing packages into groups.  ==Last== is an example of these.
   <p class=empty>&nbsp;</p>
 <h3><a name='PackageDetails'>Package Details</a></h3>
 <p>Details for the currently selected package will be show on the right. There are (currently) three fields here:
@@ -638,6 +640,17 @@
   <p class=list-2>&bull;&nbsp; Wait while Bash unpacks the source archive, rearranges the files, and packs the converted archive.
   <p class=list-2>&bull;&nbsp; Once finished, you are free to delete the original archives if you so desire.
   <p class=empty>&nbsp;</p>
+<h3><a name='BainWizards'>Bain Wizards</a></h3>
+<p>Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a <B>wizard.txt</B> file in the package.  For more information on the wizard format, see WizardDocs.txt.  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
+<p class=list-1>&bull;&nbsp; <B>Wizard Pages</B>
+  <p class=list-2>&bull;&nbsp; <B><a href="images/Versions.jpg">Version Warning Page</a>:</B> Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
+  <p class=list-2>&bull;&nbsp; <B><a href="images/SelectOne.jpg">Single Selection Page</a> | <a href="images/SelectMany.jpg">Multi Selection Page</a>:</B> Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.
+  <p class=list-2>&bull;&nbsp; <B><a href="images/Cancel.jpg">Cancel Page</a>:</B> Shown if the wizard canceled installation.
+  <p class=list-2>&bull;&nbsp; <B><a href="images/Finish.jpg">Finish Page</a>:</B> Shown at the end of the wizard.  This will give a list of the sub-packages and esps/esms that will be selected once the wizard is completed.
+<p class=list-1>&bull;&nbsp; <B>Wizard Options</B>
+  <p class=list-2>&bull;&nbsp; <B>Auto-Anneal/Install:</B> If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.
+  <p class=list-2>&bull;&nbsp; <B>Auto Wizard:</B> When this is selected, any dialogs that are provided with default answers will automatically use these.
+  <p class=empty>&nbsp;</p>
 <h3><a name='PackageCommands'>Package Commands</a></h3>
 <p>The following commands are available from context menu of packages.
 <p class=list-1>&bull;&nbsp; <B>File</B>
@@ -687,7 +700,7 @@
   <p class=list-2>&bull;&nbsp; <B>Open:</B> Opens the Installers directory in Windows Explorer. 
   <p class=list-2>&bull;&nbsp; <B>Refresh Data:</B> Rescans the Data directory and all project directories. Since this operation takes a little while, this scan is ordinarily done only once per Bash session. So, if you have manually edited the directories after that one-time scan, you should run this command to update Bain to the changes.
   <p class=list-2>&bull;&nbsp; <B>Full Refresh:</B> This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
-  <p class=list-2>&bull;&nbsp; <B>INI Tweaks:</B> This brings up a list of INI tweaks that can be applied. For use after installing/uninstalling a mod that needs to tweak INI settings.
+  <p class=list-2>&bull;&nbsp; <B>Add Marker:</B> Creates a marker for organizing your packages.  The "==" will be added for you.
   <p class=list-2>&bull;&nbsp; <B>List Packages:</B> Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help. 
   <p class=list-2>&bull;&nbsp; <B>Anneal All:</B> This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
   <p class=list-2>&bull;&nbsp; <B>Unhide:</B> Unhides hidden packages.
@@ -696,7 +709,7 @@
   <p class=list-2>&bull;&nbsp; <B>Enabled:</B> This enables/disables Bain itself. Preferred setting: Enabled (checked).
   <p class=list-2>&bull;&nbsp; <B>Show Replacers Tab:</B> If checked, will cause the Replacers tab to appear.
   <p class=list-2>&bull;&nbsp; <B>Auto-Anneal:</B> Toggles the auto-anneal process on/off. Preferred setting: enabled.
-  <p class=list-2>&bull;&nbsp; <B>Auto-Wizard:</B> Toggles whether or not to auto-install/anneal when finished with a wizard. (Available only if Wizard Instally system is active)
+  <p class=list-2>&bull;&nbsp; <B>Auto-Anneal/Install Wizard:</B> Toggles whether or not to automatically install/anneal a package when finished with its wizard. (Available only if Wizard Instally system is active)
   <p class=list-2>&bull;&nbsp; <B>Enable Wizard Install:</B> Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   <p class=list-2>&bull;&nbsp; <B>Auto-Refresh Projects:</B> Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
 <p class=list-1>&bull;&nbsp; <B>Behavior</B>
@@ -705,6 +718,8 @@
   <p class=list-2>&bull;&nbsp; <B>Show Inactive Conflicts:</B> If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes its useful to review all conflicting packages.
   <p class=list-2>&bull;&nbsp; <B>Show Lower Conflicts:</B> If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
   <p class=list-2>&bull;&nbsp; <B>Skip Screenshots:</B> If checked, then files from a Data\Screenshots directory will be skipped.
+  <p class=list-2>&bull;&nbsp; <B>Skip Images:</B> If checked, image files will be skipped.
+  <p class=list-2>&bull;&nbsp; <B>Skip Docs:</B> If checked, document files will be skipped vice being swept to the Docs\ directory.
   <p class=list-2>&bull;&nbsp; <B>Skip DistantLOD:</B> If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
   <p class=empty>&nbsp;</p>
 <h2><a name='ReplacersTab'>Replacers Tab</a></h2>
@@ -747,11 +762,12 @@
   <p class=list-2>&bull;&nbsp; <B><I>Pink:</I></B> A file that shares a modification date/time with another file.
     Not a problem unless they're both activated, in which case, the lines turn...
   <p class=list-2>&bull;&nbsp; <B><I>Orange:</I></B> Exclusion group violation. See <a href="#ExclusionGroups">Exclusion Groups</a> below. 
-  <p class=list-2>&bull;&nbsp; <B><I>Red:</I></B> A file that shares a modification date/time with another file &#150; with 
-    both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+  <p class=list-2>&bull;&nbsp; <B><I>Red:</I></B>
+    <p class=list-3>&bull;&nbsp; A file that shares a modification date/time with another file &#150; with both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
+    <p class=list-3>&bull;&nbsp; An active file that has the 'Deactivate' tag.  The file should be deactivated to function properly.
 <p class=list-1>&bull;&nbsp; <B>Text Styles</B>
     <p class=list-3>&bull;&nbsp; <B><I><B>Slant</B>:</I></B> A file that is reccommended to be imported and deactivated (ie. has the 'Deactivate' tag).
-    <p class=list-3>&bull;&nbsp; <B><I>Normal:</I></B> Any other file.
+    <p class=list-3>&bull;&nbsp; <B>Normal:</B> Any other file.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Types</B>
   <p class=list-2>&bull;&nbsp; Regular checkmark: mod is active.
   <p class=list-2>&bull;&nbsp; Plus sign (+) checkmark: mod is merged into an active <a href="#BashedPatches">Bashed Patch</a> mod.
@@ -831,12 +847,6 @@
 <p class=list-1>&bull;&nbsp; <B>Save List...</B> Saves your currently activated mods to a new load list.
 <p class=list-1>&bull;&nbsp; <B>Edit Lists...</B> Allows you to delete and rename previously defined load lists.
 <p class=list-1>&bull;&nbsp; <B>[Load List]</B> Synchronizes activated mods to load list.
-<p class=empty>&nbsp;</p>
-<h3><a name='Oblivionini'>Oblivion.ini</a></h3>
-<p class=list-1>&bull;&nbsp; This opens the Oblivion.ini file in your preferred editor.
-<p class=empty>&nbsp;</p>
-<h3><a name='INITweaks'>INI Tweaks</a></h3>
-<p class=list-1>&bull;&nbsp; This feature has been deprecated and instead has a tab all to itself. (see [[#|INI Tweaks Tab]
 <p class=empty>&nbsp;</p>
 <h3><a name='ListMods'>List Mods</a></h3>
 <p class=list-1>&bull;&nbsp; Displays list of currently active mods and copies that same list to the clipboard. Useful for posting your list of mods to forums for load debugging help.
@@ -1770,15 +1780,26 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B><I>Note:</I></B> The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
+  <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
   <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
     <p class=list-3>&bull;&nbsp; Checkbox colors indicate the status of the ini tweak
   <p class=list-2>&bull;&nbsp; Orange: Invalid; some or all variables set in the INI do not exist in Oblivion.ini
   <p class=list-2>&bull;&nbsp; Green: Valid; all values exist in the oblivion.ini. But not 'Active' - as in not all changes in the tweak are applied.
   <p class=list-2>&bull;&nbsp; Green with Check: Valid and Active.
   <p class=empty>&nbsp;</p>
+<h3><a name='INITweaksOptions'>INI Tweaks Options</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Oblivion.ini:</B> Opens the Oblivion.ini for editing/viewing.
+<p class=list-1>&bull;&nbsp; <B>Valid Tweaks First:</B> If checked, invalid tweaks will be sorted to the bottom.
+<p class=empty>&nbsp;</p>
+<h3><a name='TweakFileCommands'>Tweak File Commands</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Apply:</B> Applies the INI Tweak to Ovlivion.ini
+<p class=list-1>&bull;&nbsp; <B>List Errors:</B> If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
+<p class=list-1>&bull;&nbsp; <B>Open:</B> Open the tweak file for editing.
+<p class=list-1>&bull;&nbsp; <B>Delete:</B> Delete the tweak file.
+<p class=empty>&nbsp;</p>
 <h2><a name='SavesTab'>Saves Tab</a></h2>
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
-  <p class=empty>&nbsp;</p>
+<p class=empty>&nbsp;</p>
 <h3><a name='SavesList'>Saves List</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_purple_on.png" width="16" height="16" border="0" alt="Purple">
@@ -2149,6 +2170,29 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h3><a name='28412122010LojackPacificMorrowind'>284 [12/12/2010] [Lojack,PacificMorrowind]</a></h3>
+<p class=list-1>&bull;&nbsp; Incorrect italicization fixed.
+<p class=list-1>&bull;&nbsp; Active mods with the 'Deactivate' tag will be highlighted in red.
+<p class=list-1>&bull;&nbsp; Bashed Patch changes:
+  <p class=list-2>&bull;&nbsp; RacePatcher changes:
+    <p class=list-3>&bull;&nbsp; R.Ears tag added; imports ears
+    <p class=list-3>&bull;&nbsp; R.Attributes-F added; imports race attributes for females
+    <p class=list-3>&bull;&nbsp; R.Attributes-M added; imports race attributes for males
+    <p class=list-3>&bull;&nbsp; R.Skills added; imports race skill bonuses
+    <p class=list-3>&bull;&nbsp; R.Description added; imports race description
+    <p class=list-3>&bull;&nbsp; NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) <B>if</B> hair length is 0.0 or None.
+    <p class=list-3>&bull;&nbsp; another not insignificant optimization.
+  <p class=list-2>&bull;&nbsp; Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
+  <p class=list-2>&bull;&nbsp; Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
+  <p class=list-2>&bull;&nbsp; New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+<p class=list-1>&bull;&nbsp; Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
+<p class=list-1>&bull;&nbsp; BAIN:
+  <p class=list-2>&bull;&nbsp; Renaming now updates the 'Mods' and 'INI Edits' tabs
+  <p class=list-2>&bull;&nbsp; 2 bugfixes dealing with filtering (reported by Vindicator)
+  <p class=list-2>&bull;&nbsp; Double or middle clicking on an image in a BAIN Wizard will open the full image.
+  <p class=list-2>&bull;&nbsp; You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+<p class=list-1>&bull;&nbsp; comtypes is optional now.  It is only required for the PM Archive panel
+<p class=empty>&nbsp;</p>
 <h3><a name='28318042010LojackPacificMorrowindWarrudar'>283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]</a></h3>
 <p class=list-1>&bull;&nbsp; Taglist: updated to masterlist version 824 and a bunch of cruft removed.
 <p class=list-1>&bull;&nbsp; Fixes:
