@@ -17684,6 +17684,17 @@ class GmstTweaker(MultiTweaker):
             ('10',10),
             ('15',15),
             ),
+        GmstTweak(_('AI: Max Active Actors'),
+            _("Maximum actors whose AI can be active. Should be higher than Combat: Max Actors"),
+            'iAINumberActorsComplexScene',
+            ('20',20),
+            ('[25]',25),
+            ('30',30),
+            ('35',35),
+            (_('MMM Default: 40'),40),
+            ('50',50),
+            ('60',60),
+            ),
         GmstTweak(_('Magic: Max Player Summons'),
             _("Maximum number of creatures the player can summon."),
             'iMaxPlayerSummonedCreatures',
@@ -18954,7 +18965,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     for key in self.raceSkills:
                         tempRaceData[key] = getattr(race,key)
                 if 'R.Description' in bashTags:
-                    tempRaceData['description'] = race.description
+                    tempRaceData['description'] = race.text
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -19046,8 +19057,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     race.rightEye.modPath = raceData['rightEye'].modPath
                     raceChanged = True
             if 'leftEye' in raceData:
-                if race.rightEye.modPath != raceData['leftEye'].modPath:
-                    race.rightEye.modPath = raceData['leftEye'].modPath
+                if race.leftEye.modPath != raceData['leftEye'].modPath:
+                    race.leftEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
             #--Teeth/Mouth
             for key in ('teethLower','teethUpper','mouth','tongue','description'):
