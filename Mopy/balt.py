@@ -495,7 +495,22 @@ def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=
 #------------------------------------------------------------------------------
 def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
-    import wx.lib.iewin
+    try:
+        import wx.lib.iewin
+    except ImportError:
+        # Comtypes not available most likely! so do it this way:
+        import os
+        if not isinstance(logText,bolt.Path):
+            logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
+            cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
+            ins = cStringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
+            out = logPath.open('w')
+            bolt.WryeText.genHtml(ins,out,cssDir)
+            out.close()
+            logText = logPath
+        os.startfile(logText.s)
+        return
+        
     #--Sizing
     pos = _settings.get('balt.WryeLog.pos',defPos)
     size = _settings.get('balt.WryeLog.size',(400,400))
