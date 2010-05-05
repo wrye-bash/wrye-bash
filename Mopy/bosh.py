@@ -10242,8 +10242,9 @@ class InstallerArchive(Installer):
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
                     #--Hopefully this will mostly resolve problem with german umlauts, etc.
                     #  It won't solve problems with non-european characters though.
-                    try: file = value.decode('cp437').encode('cp1252')
-                    except: pass
+                   ## try: file = value.decode('cp437').encode('cp1252')
+                   ## except: pass
+                    file = value
                 elif key == 'Size': size = int(value)
                 elif key == 'Attributes': isdir = (value[0] == 'D')
                 elif key == 'CRC' and value:
@@ -13691,10 +13692,14 @@ class PatchFile(ModFile):
     def initData(self,progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
+        import time
+        t = time.time()
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(self.patchers):
             progress(index,_("Preparing\n%s") % patcher.getName())
             patcher.initData(SubProgress(progress,index))
+            print '%s took %.3f seconds' % (patcher.getName(),time.time()-t)
+            t = time.time()
         progress(progress.full,_('Patchers prepared.'))
 
     def initFactories(self,progress):
@@ -13713,7 +13718,7 @@ class PatchFile(ModFile):
         updateClasses(writeClasses,(MreMgef,)) #--Need info from magic effects.
         for patcher in self.patchers:
             updateClasses(readClasses, patcher.getReadClasses())
-            updateClasses(writeClasses,patcher.getWriteClasses())
+            updateClasses(writeClasses, patcher.getWriteClasses())
         self.readFactory = LoadFactory(False,*readClasses.values())
         self.loadFactory = LoadFactory(True,*writeClasses.values())
         #--Merge Factory
@@ -13725,7 +13730,8 @@ class PatchFile(ModFile):
         nullProgress = bolt.Progress()
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
-            if modName in self.loadMods and 'Filter' in modInfos[modName].getBashTags():
+            bashTags = modInfos[modName].getBashTags()
+            if modName in self.loadMods and 'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
@@ -13745,10 +13751,9 @@ class PatchFile(ModFile):
                     if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5
-                bashTags = modFile.fileInfo.getBashTags()
                 isMerged = modName in self.mergeSet
                 doFilter = isMerged and 'Filter' in bashTags
-                #--iiMod is a hack to support Item Interchange. Actual key used is InventOnly.
+                #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
                 iiMode = isMerged and bool(set(('InventOnly','IIM')) & bashTags)
                 if isMerged:
                     progress(pstate,_("%s\nMerging...") % modName.s)
@@ -14463,7 +14468,6 @@ class GraphicsPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -14626,7 +14630,6 @@ class ActorImporter(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -14770,7 +14773,6 @@ class KFFZPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -15232,7 +15234,6 @@ class ImportScripts(ImportPatcher):
         self.srcClasses = set() #--Record classes actually provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
-     #   self.masters = {}
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreWeap,MreActi,MreAlch,MreAppa,MreArmo,MreBook,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreFurn,MreIngr,MreKeym,MreLigh,MreMisc,MreNpc,MreQust,MreSgst,MreSlgm,):
@@ -15254,7 +15255,6 @@ class ImportScripts(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -15414,7 +15414,6 @@ class ImportScriptContents(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -16077,7 +16076,6 @@ class SoundPatcher(ImportPatcher):
             if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            bashTags = srcFile.fileInfo.getBashTags()
             masters = srcInfo.header.masters
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -19061,7 +19059,13 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     race.leftEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
             #--Teeth/Mouth
-            for key in ('teethLower','teethUpper','mouth','tongue','description'):
+            for key in ('teethLower','teethUpper','mouth','tongue','text'):
+                if key in raceData:
+                    if getattr(race,key) != raceData[key]:
+                        setattr(race,key,raceData[key])
+                        raceChanged = True
+            #--skills
+            for key in self.raceSkills:
                 if key in raceData:
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
