@@ -13692,14 +13692,10 @@ class PatchFile(ModFile):
     def initData(self,progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
-        import time
-        t = time.time()
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(self.patchers):
             progress(index,_("Preparing\n%s") % patcher.getName())
             patcher.initData(SubProgress(progress,index))
-            print '%s took %.3f seconds' % (patcher.getName(),time.time()-t)
-            t = time.time()
         progress(progress.full,_('Patchers prepared.'))
 
     def initFactories(self,progress):
