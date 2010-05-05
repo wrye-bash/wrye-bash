@@ -1100,6 +1100,12 @@ class INIList(List):
         ##Ctrl+A
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
+        elif event.GetKeyCode() == wx.WXK_DELETE:
+            try:
+                wx.BeginBusyCursor()
+                self.DeleteSelected()
+            finally:
+                wx.EndBusyCursor()           
         event.Skip()
 #------------------------------------------------------------------------------
 class ModList(List):
@@ -2137,12 +2143,14 @@ class InstallersList(balt.Tank):
     def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
             details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
-            details,id,style)
+            details,id,style,dndList=True,dndFiles=True,dndColumns=[_('Order')])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
             self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            
     def OnChar(self,event):
         """Char event: Reorder."""
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
@@ -2169,9 +2177,16 @@ class InstallersList(balt.Tank):
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
-        ##Ctrl+A
+        ##Ctrl+A - select all
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
+        ##Delete - delete
+        if event.GetKeyCode() == wx.WXK_DELETE:
+            try:
+                wx.BeginBusyCursor()
+                self.DeleteSelected()
+            finally:
+                wx.EndBusyCursor()
         event.Skip()
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
