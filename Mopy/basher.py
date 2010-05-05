@@ -71,6 +71,7 @@ from balt import leftSash, topSash
 from balt import spacer, hSizer, vSizer, hsbSizer, vsbSizer
 from balt import colors, images, Image
 from balt import Links, Link, SeparatorLink, MenuLink
+from balt import ListCtrl
 
 try:
     if bosh.inisettings['enablewizard']:
@@ -488,22 +489,19 @@ class SashTankPanel(NotebookPanel):
         return self.detailsItem
 
 #------------------------------------------------------------------------------
-class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
-    def __init__(self, parent, ID, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style=style)
-        ListCtrlAutoWidthMixin.__init__(self)
-
-#------------------------------------------------------------------------------
 class List(wx.Panel):
-    def __init__(self,parent,id=-1,ctrlStyle=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
+    def __init__(self,parent,id=-1,ctrlStyle=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
+                 dndFiles=False, dndList=False, dndColumns=[]):
         wx.Panel.__init__(self,parent,id, style=wx.WANTS_CHARS)
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
         self.SetSizeHints(-1,50)
+        self.dndColumns = dndColumns
         #--ListCtrl
         listId = self.listId = wx.NewId()
-        self.list = ListCtrl(self, listId, style=ctrlStyle)
+        self.list = ListCtrl(self, listId, style=ctrlStyle,
+                             dndFiles=dndFiles, dndList=dndList,
+                             fnDndAllow=self.dndAllow, fnDropFiles=self.OnDropFiles, fnDropIndexes=self.OnDropIndexes)
         self.checkboxes = colorChecks
         self.mouseItem = None
         self.mouseTexts = {}
@@ -528,6 +526,14 @@ class List(wx.Panel):
         self.list.Bind(wx.EVT_MOTION,self.OnMouse)
         self.list.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
         self.list.Bind(wx.EVT_SCROLLWIN,self.OnScroll)
+
+    #--Drag and Drop---------------------------------------
+    def dndAllow(self):
+        col = self.sort
+        if col not in self.dndColumns: return False
+        return True
+    def OnDropFiles(self, x, y, filenames): raise AbstractError
+    def OnDropIndexes(self, indexes, newPos): raise AbstractError
 
     #--Items ----------------------------------------------
     #--Populate Columns
@@ -1130,7 +1136,7 @@ class ModList(List):
         self.mainMenu = ModList.mainMenu
         self.itemMenu = ModList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT))#|wx.SUNKEN_BORDER))
+        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT), dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
         #--Image List
         checkboxesIL = colorChecks.GetImageList()
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
@@ -1142,6 +1148,62 @@ class ModList(List):
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+
+    #-- Drag and Drop-----------------------------------------------------
+    def OnDropIndexes(self, indexes, newPos):
+        # Make sure we're not auto-sorting
+        for thisFile in self.GetSelected():
+            if GPath(thisFile) in bosh.modInfos.autoSorted:
+                balt.showError(self,_("Auto-ordered files cannot be manually moved."))
+                return
+
+        if newPos > indexes[0]:   inc = 1
+        elif newPos < indexes[0]: inc = -1
+        else: return
+        howMany = indexes[-1]-indexes[0]
+
+        # Make sure we don't go out of bounds
+        target = indexes[0]
+        thisFile = self.items[target]
+        while True:
+            if target < 0: break
+            if target + howMany >= len(self.items) - inc: break
+            if target == newPos: break
+            swapFile = self.items[target]
+            if thisFile.cext != swapFile.cext: break
+            target += inc
+        if inc == 1 and target + howMany <= indexes[-1]: return
+        if inc == -1 and target >= indexes[0]: return
+
+        if inc > 0:
+            target += howMany
+        else:
+            indexes.reverse()
+
+        # Gather time codes
+        i = indexes[0]
+        times = []
+        while i != target + inc:
+            info = bosh.modInfos[self.items[i]]
+            times.append(info.mtime)
+            i += inc
+
+        # Rearrange them for the new load order            
+        times.reverse()
+        newThisTimes = times[:howMany+1]
+        newSwapTimes = times[howMany+1:]
+        times = newSwapTimes + newThisTimes
+
+        # Apply new times
+        i = indexes[0]
+        while i != target + inc:
+            info = bosh.modInfos[self.items[i]]
+            info.setmtime(times.pop())
+            i += inc
+
+        # Refresh    
+        bosh.modInfos.refreshInfoLists()
+        self.RefreshUI()
 
     def RefreshUI(self,files='ALL',detail='SAME',refreshSaves=True):
         """Refreshes UI for specified file. Also calls saveList.RefreshUI()!"""

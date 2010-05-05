@@ -910,37 +910,143 @@ class Progress(bolt.Progress):
             self.dialog = None
 
 #------------------------------------------------------------------------------
+class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
+    """List control extended with the wxPython auto-width mixin class.
+    Also extended to support drag-and-drop.  To define custom drag-and-drop
+    functionality, you can provide callbacks for, or override the following functions:
+    OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
+    OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
+    dndAllow(self) - return true to allow dnd, false otherwise
+
+    OnDropFiles callback:   fnDropFiles
+    OnDropIndexes callback: fnDropIndexes
+    dndAllow callback:      fnDndAllow
+    """
+    class DropFileOrList(wx.PyDropTarget):
+        
+        def __init__(self, window, dndFiles, dndList):
+            wx.PyDropTarget.__init__(self)
+            self.window = window
+
+            self.data = wx.DataObjectComposite()
+            self.dataFile = wx.FileDataObject()                 # Accept files
+            self.dataList = wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
+            if dndFiles: self.data.Add(self.dataFile)
+            if dndList : self.data.Add(self.dataList)
+            self.SetDataObject(self.data)
+
+        def OnData(self, x, y, data):
+            if self.GetData():
+                dtype = self.data.GetReceivedFormat().GetType()
+                if dtype == wx.DF_FILENAME:
+                    # File(s) were dropped
+                    self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
+                elif dtype == self.dataList.GetFormat().GetType():
+                    # ListCtrl indexes
+                    data = cPickle.loads(self.dataList.GetData())
+                    self.window._OnDropList(x, y, data)
+
+    def __init__(self, parent, id, pos=defPos, size=defSize, style=0,
+                 dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
+                 fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
+        wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
+        if dndFiles or dndList:
+            self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
+            if dndList:
+                self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnBeginDrag)
+        self.dndOnlyCont = dndOnlyMoveContinuousGroup
+        self.fnDropFiles = fnDropFiles
+        self.fnDropIndexes = fnDropIndexes
+        self.fnDndAllow = fnDndAllow
+
+    def OnBeginDrag(self, event):
+        if not self.dndAllow(): return
+        
+        indexes = []
+        start = stop = -1
+        for index in range(self.GetItemCount()):
+            if self.GetItemState(index, wx.LIST_STATE_SELECTED):
+                if stop >= 0 and self.dndOnlyCont:
+                    # Only allow moving selections if they are in a
+                    # continuous block...they aren't
+                    return
+                if start < 0:
+                    start = index
+                indexes.append(index)
+            else:
+                if start >=0 and stop < 0:
+                    stop = index - 1
+        if stop < 0: stop = self.GetItemCount()
+
+        selected = cPickle.dumps(indexes, 1)
+        ldata = wx.CustomDataObject('ListIndexes')
+        ldata.SetData(selected)
+
+        data = wx.DataObjectComposite()
+        data.Add(ldata)
+
+        source = wx.DropSource(self)
+        source.SetData(data)
+        source.DoDragDrop(flags=wx.Drag_DefaultMove)
+
+    def OnDropFiles(self, x, y, filenames):
+        if self.fnDropFiles:
+            self.fnDropFiles(x, y, filenames)
+            return
+        # To be implemented by sub-classes
+        raise AbstractError
+
+    def _OnDropList(self, x, y, indexes):
+        start = indexes[0]
+        stop = indexes[-1]
+
+        index, flags = self.HitTest((x, y))        
+        if index == wx.NOT_FOUND:   # Didn't drop it on an item
+            if self.GetItemCount() > 0:
+                if y <= self.GetItemRect(0).y:
+                    # Dropped it before the first item
+                    index = 0
+                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
+                    # Dropped it after the last item
+                    index = self.GetItemCount()
+                else:
+                    # Dropped it on the edge of the list, but not above or below
+                    return
+            else:
+                # Empty list
+                index = 0
+        else:
+            # Dropped on top of an item
+            target = index
+            if target >= start and target <= stop:
+                # Trying to drop it back on itself
+                return
+            elif target < start:
+                # Trying to drop it furthur up in the list
+                pass
+            elif target > stop:
+                # Trying to drop it further down the list
+                index -= 1 + (stop-start)
+
+            # If dropping on the top half of the item, insert above it,
+            # otherwise insert below it
+            rect = self.GetItemRect(target)
+            if y > rect.y + rect.height/2:
+                index += 1
+
+        # Do the moving
+        self.OnDropIndexes(indexes, index)
+
+    def OnDropIndexes(self, indexes, newPos):
+        if self.fnDropIndexes: self.fnDropIndexes(indexes, newPos)
+
+    def dndAllow(self):
+        if self.fnDndAllow: return self.fnDndAllow()
+        return True
+#------------------------------------------------------------------------------        
 class Tank(wx.Panel):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column an item menus."""
-
-    class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
-        """List control extended with the wxPython auto-width mixin class."""
-        def __init__(self, parent, id, pos=defPos, size=defSize, style=0):
-            wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
-            ListCtrlAutoWidthMixin.__init__(self)
-
-    class DropFileOrList(wx.PyDropTarget):
-        """Drag and Drop target."""
-        def __init__(self, window, dndList, dndFiles):
-            wx.PyDropTarget.__init__(self)
-            self.window = window
-            
-            self.data = wx.DataObjectComposite()                        # Gets filled with the data
-            self.dataFile = wx.FileDataObject()                         # Accept file drops
-            self.dataIndex = wx.CustomDataObject('ListControlIndexes')  # For passing indexes
-            if dndFiles: self.data.Add(self.dataFile)
-            if dndList:  self.data.Add(self.dataIndex)
-            self.SetDataObject(self.data)
-            
-        def OnData(self, x, y, data):
-            if self.GetData():
-                dataType = self.data.GetReceivedFormat().GetType()
-                if dataType == wx.DF_FILENAME:
-                    self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
-                elif dataType == self.dataIndex.GetFormat().GetType():
-                    data = cPickle.loads(self.dataIndex.GetData())
-                    self.window.OnDropIndexes(x, y, data)
     #--Class-------------------------------------------------------------------
     mainMenu = None
     itemMenu = None
@@ -967,7 +1073,9 @@ class Tank(wx.Panel):
         self.SetSizer(sizer)
         self.SetSizeHints(50,50)
         #--ListCtrl
-        self.gList = gList = Tank.ListCtrl(self, -1, style=style)
+        self.gList = gList = ListCtrl(self, -1, style=style,
+                                      dndFiles=dndFiles, dndList=dndList,
+                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes)
         if self.icons:
             gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
         #--State info
@@ -998,92 +1106,27 @@ class Tank(wx.Panel):
         data.setParam('vScrollPos', gList.GetScrollPos(wx.VERTICAL))
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-        #--Enable Drag and Drop
-        if dndFiles or dndList:
-            gList.SetDropTarget(Tank.DropFileOrList(self,dndList,dndFiles))
-            if dndList:
-                gList.Bind(wx.EVT_LIST_BEGIN_DRAG, self._OnStartDrag)
 
     #--Drag and Drop-----------------------------------------------------------
-    def _OnStartDrag(self, event):
+    def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
         curColumn = self.data.defaultParam('colSort',self.data.tankColumns[0])
-        if curColumn not in self.dndColumns: return
+        if curColumn not in self.dndColumns: return False
+        return True
+
+    def OnDropIndexes(self, indexes, newPos):
+        # See if the column is reverse sorted first
+        data = self.data
+        column = data.defaultParam('colSort',data.tankColumns[0])
+        reverse = data.defaultParam('colReverse',{}).get(column,False)
+        if reverse:
+            newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            if newPos < 0: newPos = 0
         
-        # Only allow drag and drop if the selection is one continuous block
-        # Find the index of the first item and last item to move
-        start = stop = -1
-        for index in range(self.gList.GetItemCount()):
-            if self.gList.GetItemState(index, wx.LIST_STATE_SELECTED):
-                if stop >= 0:
-                    return
-                if start < 0:
-                    start = index
-            else:
-                if start >= 0 and stop < 0:
-                    stop = index - 1
-        if stop < 0: stop = self.gList.GetItemCount() - 1
-                    
-        selected = cPickle.dumps((start,stop), 1)
-        ldata = wx.CustomDataObject('ListControlIndexes')
-        ldata.SetData(selected)
-
-        data = wx.DataObjectComposite()
-        data.Add(ldata)
-
-        source = wx.DropSource(self)
-        source.SetData(data)
-        source.DoDragDrop(flags=wx.Drag_DefaultMove)
-
-
-    def OnDropFiles(self, x, y, filenames):
-        # Implement this in sub-classes
-        raise AbstractError
-
-    def OnDropIndexes(self, x, y, indexes):
-        # Determine new index
-        start,stop = indexes
-        index, flags = self.gList.HitTest((x, y))
-
-        if index == wx.NOT_FOUND:    # Not on an item
-            if self.gList.GetItemCount() > 0:
-                if y <= self.gList.GetItemRect(0).y:
-                    # Before first item
-                    index = 0
-                elif y >= self.gList.GetItemRect(self.gList.GetItemCount()-1).y:
-                    # After last item
-                    index = self.gList.GetItemCount()
-                else:
-                    # On the edge, but not above or below, so don't do it
-                    return
-            else:
-                #Empty list
-                index = 0
-        else:
-            # Dropped it on an item
-            # Check to see if target is before, after, or IS the list we're moving
-            target = index
-            if index >= start and index <= stop:
-                # Target is what we're trying to move
-                return
-            if index < start:
-                # Target is before what we're moving
-                pass
-            if index > stop:
-                # Target is after what we're moving
-                index -= 1 + (stop-start)
-                
-            # If dropping on the lower half, insert below
-            # If dropping on the upper half, insert before
-            rect = self.gList.GetItemRect(target)
-            if y > rect.y + rect.height/2:
-                index += 1
-
-        # Do the moving and refresh
-        self.data.moveArchives(self.GetSelected(),index)
+        # Move the given indexes to the new position
+        self.data.moveArchives(self.GetSelected(), newPos)
         self.data.refresh(what='N')
         self.RefreshUI()
-            
 
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):

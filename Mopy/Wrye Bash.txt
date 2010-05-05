@@ -630,6 +630,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * You can alphabetically sort several mods at once by selecting them and then selecting "File: Sort" from the context menu.
   * You can move files up and down the load order with Ctrl-Up and Ctrl-Down, respectively. This also works when multiple files are selected, and preserves their relative load order.
   * You can select multiple files and use the "Redate" command. The first mod will be moved to the specified date/time, with other mods following at one minute intervals.
+  * You can move one or more files in a group (if sorted by 'Load Order'), and drag and drop them to rearrange the load order.
 * __Maintaining Load Order__
   * First, make sure that the "Lock Times" option is selected on the column header context menu.
   * Then, after making any changes to mod files, bring the main Bash window to the foreground, and Bash will reset times as needed.
@@ -2002,9 +2003,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 2 bugfixes dealing with filtering (reported by Vindicator)
   * Double or middle clicking on an image in a BAIN Wizard will open the full image.
   * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
-  * Drag and drop ordering is supported, as long as you have selected the 'Order' column for sorting.
 * comtypes is optional now.  It is only required for the PM Archive panel
 * You can delete Installers and INI Edits with the Delete key now.
+* You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
