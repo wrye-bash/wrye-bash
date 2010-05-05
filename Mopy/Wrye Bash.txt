@@ -399,6 +399,7 @@ Bain assigns an install order to all packages. When packages are installed and/o
   * All packages are moved to just before the ==Last== marker when Bain first encounteres them.
   * Order can be changed by right clicking on a package (or group of selected packages) and selecting "Move To". Just enter the position to which the packages should be moved. If you're moving many packages at once, they'll keep their relative order, with the "oldest" moving to the specified position, and the others following after it.
   * You can also use Ctrl-Up and Ctrl-Down to change the order of packages.  This preserves their relative load order without moving them as a block.
+  * You can also re-order packages by dragging and dropping the package where you want in the load order.  This will only work if the list is sorted by 'Order'
 * __Last__
   * Last is a special marker entry that Bain automatically adds to the archive list. It corresponds to the position at which any newly encountered packages are inserted. if you want specific packages (e.g. your personal projects) to always have high order, then move them to ~~after~~ the ==Last== marker.
 * __Install Order__
@@ -2001,7 +2002,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 2 bugfixes dealing with filtering (reported by Vindicator)
   * Double or middle clicking on an image in a BAIN Wizard will open the full image.
   * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+  * Drag and drop ordering is supported, as long as you have selected the 'Order' column for sorting.
 * comtypes is optional now.  It is only required for the PM Archive panel
+* You can delete Installers and INI Edits with the Delete key now.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
