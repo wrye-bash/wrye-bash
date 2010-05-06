@@ -15107,7 +15107,7 @@ class DeathItemPatcher(ImportPatcher):
         for type,count in sorted(type_count.items()):
             if count: log("* %s: %d" % (type,count))
 
-+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
