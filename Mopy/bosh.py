@@ -15102,7 +15102,7 @@ class DeathItemPatcher(ImportPatcher):
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
         for mod in self.sourceMods:
-            log("* " mod.s)
+            log("* " + mod.s)
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.items()):
             if count: log("* %s: %d" % (type,count))
@@ -17790,7 +17790,7 @@ class GmstTweaker(MultiTweaker):
             ('15',15),
             ),
         GmstTweak(_('AI: Max Active Actors'),
-            _("Maximum actors whose AI can be active. Should be higher than Combat: Max Actors"),
+            _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
             'iAINumberActorsComplexScene',
             ('20',20),
             ('[25]',25),
@@ -17799,6 +17799,7 @@ class GmstTweaker(MultiTweaker):
             (_('MMM Default: 40'),40),
             ('50',50),
             ('60',60),
+            ('100',100),
             ),
         GmstTweak(_('Magic: Max Player Summons'),
             _("Maximum number of creatures the player can summon."),
@@ -18976,7 +18977,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears',
-        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description')
+        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
+        'R.AddSpells', 'R.ChangeSpells')
     forceAuto = True
 
     #--Config Phase -----------------------------------------------------------
@@ -19069,6 +19071,10 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if 'R.Skills' in bashTags:
                     for key in self.raceSkills:
                         tempRaceData[key] = getattr(race,key)
+                if 'R.AddSpells' in bashTags:
+                    tempRaceData['AddSpells'] = race.spells
+                if 'R.ChangeSpells' in bashTags:
+                    raceData['spellsOverride'] = race.spells
                 if 'R.Description' in bashTags:
                     tempRaceData['text'] = race.text
             for master in masters:
@@ -19086,9 +19092,17 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     if race.fid not in self.tempRaceData: continue
                     tempRaceData = self.tempRaceData[race.fid]
                     raceData = self.raceData[race.fid]
+                    if 'AddSpells' in tempRaceData:
+                        raceData.setdefault('AddSpells', [])
+                        for spell in tempRaceData['AddSpells']:
+                            if spell not in race.spells:
+                                if spell not in raceData['AddSpells']:
+                                    raceData['AddSpells'].append(spell)
+                        del tempRaceData['AddSpells']
                     for key in tempRaceData:
                         if not tempRaceData[key] == getattr(race,key):
                             raceData[key] = tempRaceData[key]
+                            
             progress.plus()
 
     def getReadClasses(self):
@@ -19171,6 +19185,14 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
                         raceChanged = True
+            #--spells
+            if 'spellsOverride' in raceData:
+                race.spells = raceData['spellsOverride']
+            if 'AddSpells' in raceData:
+                raceData['spells'] = race.spells
+                for spell in raceData['AddSpells']:
+                    raceData['spells'].append(spell)
+                race.spells = raceData['spells']
             #--skills
             for key in self.raceSkills:
                 if key in raceData:
