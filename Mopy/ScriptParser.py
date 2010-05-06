@@ -20,28 +20,158 @@
 #  - Functions can be defined
 #
 # Defined functions to use are:
-#  AddBooleanOperator
-#  AddBooleanOperators
-#  AddAssignmentOperator
-#  AddAssignmentOperators
-#  AddKeyword
-#  AddKeywords
-#  AddConstant
-#  AddConstants
-#  AddVariable
-#  AddVariables
-#  AddFunction
-#  AddFunctions
-#  AddFlowControl
-#  PopFlowControl
-#  GetFlowControl
-#  LenFlowControl
-#  ClearFlowControl
+#  SetOperator
+#  SetKeyword
+#  SetFunction
+#  SetConstant
+#  SetVariable
+#  PushFlow
+#  PopFlow
+#  PeekFlow
+#  LenFlow
+#  PurgeFlow
 #  RunLine
 #  error
-#  Eval
+#  ExecuteTokens
+#  TokensToRPN
+#  ExecuteRPN
 #==================================================
 from string import digits, whitespace, letters
+import types
+#--------------------------------------------------
+name_start = letters + '_'
+name_chars = name_start + digits
+
+# validName ---------------------------------------
+#  Test if a string can be used as a valid name
+#--------------------------------------------------
+def validName(name):
+    try:
+        if name[0] not in name_start: return False
+        for i in name:
+            if i not in name_chars: return False
+        return True
+    except:
+        return False
+
+# validNumber -------------------------------------
+#  Test if a string can be used as a valid number
+#--------------------------------------------------
+def validNumber(string):
+    try:
+        bDecimal = False
+        for i in string:
+            if i == '.':
+                if bDecimal: return False
+                bDecimal = True
+            elif i not in digits:
+                return False
+        return True
+    except:
+        return False
+
+# Define Some Constants ---------------------------
+
+# Some error string
+ERR_CANNOT_SET = "Cannot set %s '%s': type is '%s'."
+ERR_TOO_FEW_ARGS = "Too few arguments to %s '%s':  got %s, expected %s."
+ERR_TOO_MANY_ARGS = "Too many arguments to %s '%s':  got %s, expected %s."
+
+class KEY:
+    # Constants for keyword args
+    NO_MAX = -1     # No maximum arguments
+    NA = 0          # Not a variable argument keyword
+    
+class OP:
+    # Constants for operator precedences
+    PAR = 0     # Parenthesis
+    EXP = 1     # Exponent
+    UNA = 2     # Unary (!, ++, --)
+    MUL = 3     # Multiplication (*, /, %)
+    ADD = 4     # Addition (+, -)
+    CO1 = 5     # Comparison (>=,<=,>,<)
+    CO2 = 6     # Comparison (!=, ==)
+    AND = 7     # Logical and (and, &)
+    OR  = 8     # Locical or (or, |)
+    ASS = 9     # Assignment (=,+=,etc
+
+# Constants for operator associations
+LEFT = 0
+RIGHT = 1
+
+# Constants for the type of a token
+UNKNOWN = 0
+NAME = 1            # Can be a name token, but not used yet
+CONSTANT = 2
+VARIABLE = 3
+FUNCTION = 4
+KEYWORD = 5
+OPERATOR = 6
+INTEGER = 7
+DECIMAL = 8
+OPEN_PARENS = 9
+CLOSE_PARENS = 10
+COMMA = 11
+WHITESPACE = 12
+STRING = 13
+
+Types = {UNKNOWN:'UNKNOWN',
+         NAME:'NAME',
+         CONSTANT:'CONSTANT',
+         VARIABLE:'VARIABLE',
+         FUNCTION:'FUNCTION',
+         KEYWORD:'KEYWORD',
+         OPERATOR:'OPERATOR',
+         INTEGER:'INTEGER',
+         DECIMAL:'DECIMAL',
+         OPEN_PARENS:'OPEN_PARENS',
+         CLOSE_PARENS:'CLOSE_PARENS',
+         COMMA:'COMMA',
+         WHITESPACE:'WHITESPACE',
+         STRING:'STRING'
+         }
+
+# getType ---------------------------------------
+#  determines the type of a string.  If 'parser'
+#  is passed, then it will attempt it against
+#  vairious names as well.
+#------------------------------------------------
+def getType(item, parser=None):
+    if type(item) == types.StringType:
+        if not parser: return STRING
+        if item in parser.constants: return CONSTANT
+        if item in parser.variables: return VARIABLE
+        if item in parser.keywords : return KEYWORD
+        if item in parser.functions: return FUNCTION
+        if item in parser.operators: return OPERATOR
+        if item == '(': return OPEN_PARENS
+        if item == ')': return CLOSE_PARENS
+        if item == ',': return COMMA
+        if validName(item): return NAME
+        if validNumber(item):
+            if '.' in item: return DECIMAL
+            return INTEGER
+        for i in item:
+            if i not in whitespace: return UNKNOWN
+        return WHITESPACE
+    if type(item) == types.IntType: return INTEGER
+    if type(item) == types.FloatType: return DECIMAL
+    return UNKNOWN
+
+# FlowControl -------------------------------------
+#  Flow control object, to hold info about a flow
+#  control statement
+#--------------------------------------------------
+class FlowControl:
+    def __init__(self, type, active, keywords=[], **attribs):
+        self.type = type
+        self.active = active
+        self.keywords = keywords
+        for i in attribs:
+            setattr(self, i, attribs[i])
+
+# Token -------------------------------------------
+#  Token object, to hold info about a token
 #--------------------------------------------------
 
 # ParserError -------------------------------------
@@ -49,658 +179,424 @@ from string import digits, whitespace, letters
 #  problem with the parser, or a problem with the
 #  script
 #--------------------------------------------------
-class ParserError(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
+class ParserError(SyntaxError): pass
     
 class Parser(object):
-#    __slots__ = ( 'op_chars', 'ops_math', 'ops_bool', 'operators',
-#                  'word', 'split_line', 'bStop', 'state',
-#                  'parens', 'bInFn', 'Flow'
-#                  'keywords', 'constants', 'vars', 'functions',
-#                  'ops_ass', 'func_map'
-#                  )
-    op_chars = "+-/*%^="
-    ops_math = ['+', '-', '*', '/', '%', '^']
-    ops_ass = ['=']
-    operators = ops_math
+    class Operator:
+        def __init__(self, function, precedence, association):
+            self.function = function
+            self.precedence = precedence
+            self.association = association
+            if self.precedence == OP.UNA:
+                self.numArgs = 1
+            else:
+                self.numArgs = 2
 
-    class _flow:
-        def __init__(self, type, active, keywords):
-            self.type = type
-            self.active = active
-            self.keywords = keywords
+        def __call__(self, l, r=None):
+            if self.numArgs == 1:
+                return self.function(l)
+            return self.function(l, r)
 
-    def _add_op_chars(self, operator):
-        for i in operator:
-            if i not in self.op_chars:
-                self.op_chars += i
+    class Keyword:
+        def __init__(self, function, min_args=0, max_args=-1, keepCommas=False, passTokens=False):
+            self.function = function
+            self.minArgs = min_args
+            self.maxArgs = max_args
+            self.commas = keepCommas
+            self.passTokens = passTokens
 
-    def AddBooleanOperator(self, operator, function):
-        self.func_map[operator] = function
-        self.ops_bool.append(operator)
-        self.operators.append(operator)
-        self._add_op_chars(operator)
-    def AddBooleanOperators(self, op_func_map):
-        for i in op_func_map:
-            self.AddBooleanOperator(i, op_func_map[i])
+        def __call__(self, *args): return self.function(*args)
+
+    class Function:
+        def __init__(self, function, num_args, passTokens=False):
+            self.function = function
+            self.numArgs = num_args
+            self.passTokens = passTokens
+
+        def __call__(self, *args): return self.function(*args)
+
+    class Token:
+        def __init__(self, text, Type=None, parser=None, line=None, pos=(None,None)):
+            if isinstance(text, Parser.Token):
+                self.text = text.text
+                self.type = text.type
+                self.parser = text.parser
+                self.line = text.line
+                self.pos = text.pos
+            else:
+                self.text = text
+                self.type = Type or getType(text,parser)
+                self.parser = parser
+                self.line = line
+                self.pos = pos
+
+        def GetData(self):
+            if self.parser:
+                if self.type == FUNCTION: return self.parser.functions[self.text]
+                if self.type == KEYWORD : return self.parser.keywords[self.text]
+                if self.type == OPERATOR: return self.parser.operators[self.text]
+                if self.type == VARIABLE: return self.parser.variables[self.text]
+                if self.type == CONSTANT: return self.parser.constants[self.text]
+                if self.type == DECIMAL : return float(self.text)
+                if self.type == INTEGER : return int(self.text)
+            return self.text
+        data = property(GetData)
+
+        def __cmp__(self, other): return cmp(self.data, other.data)
+        def __add__(self, other): return Parser.Token(self.data + other.data)
+        def __sub__(self, other): return Parser.Token(self.data - other.data)
+        def __mul__(self, other): return Parser.Token(self.data * other.data)
+        def __div__(self, other): return Parser.Token(self.data / other.data)
+        def __truediv__(self, other): return Parser.Token(self.data / other.data)
+        def __floordiv__(self, other): return Parser.Token(self.data // other.data)
+        def __divmod__(self, other): return Parser.Token(divmod(self.data, other.data))
+        def __pow__(self, other): return Parser.Token(self.data ** other.data)
+        def __lshift__(self, other): return Parser.Token(self.data << other.data)
+        def __rshift__(self, other): return Parser.Token(self.data >> other.data)
+        def __and__(self, other): return Parser.Token(self.data & other.data)
+        def __xor__(self, other): return Parser.Token(self.data ^ other.data)
+        def __or__(self, other): return Parser.Token(self.data | other.data)
+        def __nonzero__(self): return bool(self.data)
+        def __neg__(self): return Parser.Token(-self.data)
+        def __pos__(self): return Parser.Token(+self.data)
+        def __abs__(self): return abs(self.data)
+        def __int__(self): return int(self.data)
+        def __long__(self): return long(self.data)
+        def __float__(self): return float(self.data)
+        def __str__(self): return str(self.data)
+
+        def __repr__(self): return '<Token-%s:%s>' % (Types[self.type],self.text)
         
-    def AddAssignmentOperator(self, operator, function):
-        self.func_map[operator] = function
-        self.ops_ass.append(operator)
-        self.operators.append(operator)
-        self._add_op_chars(operator)
-    def AddAssignmentOperators(self, op_func_map):
-        for i in op_func_map:
-            self.AddAssignmentOperator(i, op_func_map[i])
 
-    def AddKeyword(self, keyword, function):
-        self.func_map[keyword] = function
-        self.keywords.append(keyword)
-    def AddKeywords(self, keyword_func_map):
-        for i in keyword_func_map:
-            self.AddKeyword(i, keyword_func_map[i])
-            
-    def AddConstant(self, constant, value=0):
-        self.constants[constant] = value
-    def AddConstants(self, const_val_map):
-        for i in const_val_map:
-            self.AddConstant(i, const_val_map[i])
+    # Now for the Parser class
+    def __init__(self,
+                 doImplicit='*',
+                 comment=';',
+                 constants={'True':True,'False':False},
+                 variables=None
+                 ):
+        self.doImplicit = doImplicit
+        self.comment = comment
 
-    def AddVariable(self, var, value=0):
-        self.vars[var] = value
-    def AddVariables(self, var_val_map):
-        for i in var_val_map:
-            self.AddVariable(i, var_val_map[i])
+        self.runon = False
+        self.cCol = 0
+        self.cLine = 0
+        self.tokens = []
+        self.flow = []
 
-    def AddFunction(self, name, function):
-        self.func_map[name] = function
-        self.functions.append(name)
-    def AddFunctions(self, name_func_map):
-        for i in name_func_map:
-            self.AddFunction(i, name_func_map[i])
+        self.opChars = ''
+        self.operators = {}
+        self.keywords = {}
+        self.functions = {}
+        self.constants = constants or {}
+        self.variables = variables or {}
+        self.escapes = {'n':'\n',
+                        't':'\t'
+                        }
 
-    def AddFlowControl(self, type, active, list_keywords, **attribs):
-        obj = Parser._flow(type, active, list_keywords)
-        for i in attribs:
-            setattr(obj, i, attribs[i])
-        self.Flow.append(obj)
-    def PopFlowControl(self):
-        return self.Flow.pop()
-    def GetFlowControl(self, index):
-        return self.Flow[index]
-    def LenFlowControl(self):
-        return len(self.Flow)
-    def ClearFlowControl(self):
-        self.Flow = []
-    
-    def __init__(self):
-        self.bStop = False
-        self.bInFn = False
-        self.func_map = {}
-        self.ops_bool = []
-        self.keywords = []
-        self.functions = []
-        self.constants = {}
-        self.vars = {}
-        self.Flow = []
-        self.AddAssignmentOperator('=',self.Assign)
+        self.word = None
+        self.wordStart = None
 
-    def Assign(self, var, value):
-        self.vars[var] = value
+    def SetOperator(self, name, function, precedence, association=LEFT):
+        type = getType(name, self)
+        if type not in [NAME,OPERATOR,UNKNOWN]:
+            self.error(ERR_CANNOT_SET % ('operator', name, Types[type]))
+        self.operators[name] = Parser.Operator(function, precedence, association)
+        for i in name:
+            if i not in self.opChars: self.opChars += i
+    def SetKeyword(self, name, function, min_args=0, max_args=KEY.NA, keepCommas=False, passTokens=False):
+        type = getType(name, self)
+        if type not in [NAME,KEYWORD]:
+            self.error(ERR_CANNOT_SET % ('keyword', name, Types[type]))
+        if max_args == KEY.NA: max_args = min_args
+        if max_args < min_args and max_args > 0: max_args = min_args
+        self.keywords[name] = Parser.Keyword(function, min_args, max_args, keepCommas, passTokens)
+    def SetFunction(self, name, function, num_args=0, passTokens=False):
+        type = getType(name, self)
+        if type not in [NAME,FUNCTION]:
+            self.error(ERR_CANNOT_SET % ('function', name, Types[type]))
+        self.functions[name] = Parser.Function(function, num_args, passTokens)
+    def SetConstant(self, name, value):
+        type = getType(name, self)
+        if type not in [NAME,CONSTANT]:
+            self.error(ERR_CANNOT_SET % ('constant', name, Types[type]))
+        self.constants[name] = value
+    def SetVariable(self, name, value):
+        type = getType(name, self)
+        if type not in [NAME, VARIABLE]:
+            self.error(ERR_CANNOT_SET % ('variable', name, Types[type]))
 
+    # Flow control stack
+    def PushFlow(self, type, active, keywords, **attribs): self.Flow.append(FlowControl(type,active,keywords,**attribs))
+    def PopFlow(self): return self.Flow.pop()
+    def PopFrontFlow(self): return self.Flow.pop(0)
+    def PeekFlow(self,index=-1): return self.Flow[index]
+    def LenFlow(self): return len(self.Flow)
+    def PurgeFlow(self): self.Flow = []
+
+    # Run a line of code: returns True if more lines are needed to make a complete line, False if not
     def RunLine(self, line):
-        split = self._eat_line(line)
+        self.cLine += 1
 
-        if not split or len(split) == 0: return        
+        # First parse the line into tokens
+        if not self.runon:
+            self.tokens = []
+        self.TokenizeLine(line)
+        if self.runon: return True
 
-        #See if we're in a flow branching statement
-        if len(self.Flow) != 0:
-            i = self.GetFlowControl(-1)
-            if not i.active and split[0] not in i.keywords:
-                return
-        if split[0] in self.keywords:
-            word = split.pop(0)
-            self.func_map[word](split)
+        # No tokens?
+        if len(self.tokens) == 0: return False
+
+        # See if we're in currently within a flow control construct
+        if self.LenFlow() > 0:
+            i = self.PeekFlow()
+            if not i.active and self.tokens[0].text not in i.keywords:
+                return False
+
+        # If we have a keyword, just run it
+        if self.tokens[0].type == KEYWORD:
+            key = self.tokens.pop(0)
+            if not key.data.commas: self.SkipCommas()
+            if not key.data.passTokens: self.ConvertToValues()
+            numArgs = len(self.tokens)
+            if numArgs > key.data.maxArgs and key.data.maxArgs != KEY.NO_MAX:
+                self.error(ERR_TOO_MANY_ARGS % ('keyword', key.text, numArgs, (key.data.minArgs,key.data.maxArgs)))
+            if numArgs < key.data.minArgs:
+                self.error(ERR_TOO_FEW_ARGS % ('keyword', key.text, numArgs, (key.data.minArgs,key.data.maxArgs)))
+            key.data(*self.tokens)
+        # It's just an expression, didnt start with a keyword
         else:
-            self.Eval(split)
-                
-    #Functions for parsing a line into tokesn
-    def _eat_line(self, line):
+            # Convert to reverse-polish notation and execute
+            self.ExecuteTokens()
+        return False
+
+    # Removes any commas from a list of tokesn
+    def SkipCommas(self, tokens=None):
+        if tokens is None:
+            self.tokens = [x for x in self.tokens if x.type != COMMA]
+            return self.tokens
+        tokens = [x for x in tokens if x.type != COMMA]
+        return tokens
+
+    # Changes out tokens for their values
+    def ConvertToValues(self, tokens=None):
+        if tokens is None:
+            self.tokens = [x.data for x in self.tokens]
+            return self.tokens
+        tokens = [x.data for x in tokens]
+        return tokens
+
+    # Split a string into tokens
+    def TokenizeLine(self, line):
         self.word = None
-        self.state = self._state_space
+        self.wordStart = None
+        self.cCol = 0
+        self.runon = False
 
-        line = line.strip() + '\n'
-        if not self.bStop:
-            self.split_line = []
-            self.bInFn = False
-            self.parens = 0
-        else:
-            self.bStop = False
-
+        state = self._stateSpace
         for i in line:
-            self.state(i)
-            if self.bStop:
-                break            
+            state = state(i)
+            if not state: return None
+            self.cCol += 1
+        self._emit()
 
-        if self.parens > 0:
-            self.error("Unmatched parenthesis.")
+        return self.tokens
 
-        if self.bStop:
-            return None
-        return self.split_line
+    # Run a list of tokens
+    def ExecuteTokens(self, tokens=None):
+        tokens = tokens or self.tokens
+        self.TokensToRPN(tokens)
+        return self.ExecuteRPN()
 
-    def _newline(self):
-        self.bStop = True
+    # Convert a list of tokens to rpn
+    def TokensToRPN(self, tokens=None):
+        tokens = tokens or self.tokens
+        rpn = []
+        stack = []
 
-    def _emit_word(self, c=None):
-        if c:
-            self.split_line.append(c)
-        elif self.word:
-            self.split_line.append(self.word)
+        for i in tokens:
+            if i.type in [INTEGER,DECIMAL,CONSTANT,VARIABLE,NAME,STRING]:
+                rpn.append(i)
+            elif i.type == COMMA:
+                while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
+                    rpn.append(stack.pop())
+                if len(stack) == 0:
+                    self.error("Misplaced ',' or missing parenthesis.")
+            elif i.type == FUNCTION:
+                stack.append(i)
+            elif i.type == OPERATOR:
+                while len(stack) > 0 and stack[-1].type == OPERATOR:
+                    if i.data.association == LEFT and i.data.precedence >= stack[-1].data.precedence:
+                        rpn.append(stack.pop())
+                    elif i.data.association == RIGHT and i.data.precedence > stack[-1].data.precedence:
+                        rpn.append(stack.pop())
+                    else:
+                        break
+                stack.append(i)
+            elif i.type == OPEN_PARENS:
+                stack.append(i)
+            elif i.type == CLOSE_PARENS:
+                while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
+                    rpn.append(stack.pop())
+                if len(stack) == 0:
+                    self.error('Unmatched parenthesis.')
+                stack.pop()
+                if len(stack) > 0 and stack[-1].type == FUNCTION:
+                    rpn.append(stack.pop())
+            else:
+                self.error("Unrecognized token: '%s', type: %" % (i.text, Types[i.type]))
+        while len(stack) > 0:
+            i = stack.pop()
+            if i.type in [OPEN_PARENS,CLOSE_PARENS]:
+                self.error('Unmatched parenthesis.')
+            rpn.append(i)
+        self.rpn = rpn
+        return rpn
+
+    def ExecuteRPN(self, rpn=None):
+        rpn = rpn or self.rpn
+
+        stack = []
+        for i in rpn:
+            if i.type == OPERATOR:
+                if len(stack) < i.data.numArgs:
+                    self.error(ERR_TOO_FEW_ARGS % ('operator', i.text, len(stack), i.data.numArgs))
+                args = []
+                while len(args) < i.data.numArgs:
+                    args.append(stack.pop())
+                args.reverse()
+                ret = i.data(*args)
+                stack.append(Parser.Token(ret))
+            elif i.type == FUNCTION:
+                if len(stack) < i.data.numArgs:
+                    self.error(ERR_TOO_FEW_ARGS % ('function', i.text, len(stack), i.data.numArgs))
+                args = []
+                while len(args) < i.data.numArgs:
+                    args.append(stack.pop())
+                args.reverse()
+                if not i.data.passTokens: args = self.ConvertToValues(args)
+                ret = i.data(*args)
+                stack.append(Parser.Token(ret))
+            else:
+                stack.append(i)
+        if len(stack) == 1:
+            return stack[0].data
+        self.error('Too many values left at the end of evaluation.')
+
+    def error(self, msg):
+        raise ParserError, '(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg)
+
+    #Functions for parsing a line into tokens
+    def _grow(self, c):
+        if self.word: self.word += c
         else:
-            self.split_line.append('')
+            self.word = c
+            self.wordStart = self.cCol
+
+    def _emit(self, word=None, type=None):
+        word = word or self.word
+        if word is None: return
+        self.wordStart = self.wordStart or self.cCol - 1
+        type = type or getType(word, self)
+
+        # Implicit multiplication
+        if self.doImplicit:
+            if len(self.tokens) > 0:
+                left = self.tokens[-1].type
+                if left == CLOSE_PARENS:
+                    if type in [OPEN_PARENS,DECIMAL,INTEGER,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                        self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
+                elif left in [DECIMAL,INTEGER]:
+                    if type in [OPEN_PARENS,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                        self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
+        self.tokens.append(Parser.Token(word,type,self,self.cLine,(self.wordStart,self.cCol)))
         self.word = None
-
-    def _grow_word(self, c):
-        if self.word:
-            self.word += c
-        else:
-            self.word = c
-
-    def error(self, message):
-        message += '\nVariables:\n' + str(self.vars) + '\n\nConstants:\n' + str(self.constants)
-        raise ParserError(message)
-
-    def _state_space(self, c):
-        if c == '"':
-            self.state = self._state_dquote
-        elif c == "'":
-            self.state = self._state_squote
-        elif c == '\\':
-            self.state = self._state_escape
-        elif c in self.op_chars:
-            self.word = c
-            self.state = self._state_operator
-        elif c in digits:
-            self.word = c
-            self.state = self._state_number
-        elif c in letters or c == '_':
-            self.word = c
-            self.state = self._state_name
-        elif c == '(':
-            self.parens += 1
-            self._emit_word('(')
-        elif c == ')':
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            self._emit_word(')')
-            self.state = self._state_paren
-        elif c == ';':
-            self.state = self._state_comment
-        elif c == ',' and self.bInFn:
-            self._emit_word(',')
-        elif c not in whitespace:
-            self.error("Unexpected character '" + c + "'.")
-
-    def _state_comment(self, c):
-        self._grow_word(c)
-
-    def _state_squote(self, c):
-        if c == '\\':
-            self.state = self._state_squote_esc
-        elif c == "'":
-            self._emit_word()
-            self.state = self._state_end_quote
-        else:
-            self._grow_word(c)
-
-    def _state_dquote(self, c):
-        if c == '\\':
-            self.state = self._state_dquote_esc
-        elif c == '"':
-            self._emit_word()
-            self.state = self._state_end_quote
-        else:
-            self._grow_word(c)
-
-    def _state_squote_esc(self, c):
-        if c == '\\' or c == "'" or c == '"':
-            self._grow_word(c)
-        elif c == 'n':
-            self._grow_word('\n')
-        elif c == 't':
-            self._grow_word('\t')
-        else:
-            self.error("Invalid escape sequence '\\" + c + "'.")
-        self.state = self._state_squote        
-
-    def _state_dquote_esc(self, c):
-        if c == '\\' or c == "'" or c == '"':
-            self._grow_word(c)
-        elif c == 'n':
-            self._grow_word('\n')
-        elif c == 't':
-            self._grow_word('\t')
-        else:
-            self.error("Invalid escape sequence '\\" + c + "'.")
-        self.state = self._state_dquote
-
-    def _state_end_quote(self, c):
-        if c == ')':
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            self._emit_word(')')
-            self.state = self._state_paren
-        elif c == ',' or c in whitespace:
-            self.state = self._state_space
-        elif c == ';':
-            self.state = self._state_comment
-        else:
-            self.error("Unexpected '" + c + "' following quotation.")
-
-    def _state_number(self, c):
-        if c in digits:
-            self.word += c
-        elif c == '.':
-            self.word += c
-            self.state = self._state_decimal
-        elif c in letters or c == '_':      #implicit multiplication
-            self._emit_word()
-            self._emit_word('*')
-            self.word = c
-            self.state = self._state_name
-        elif c == '(':                      #implicit multiplication
-            self.parens += 1
-            self._emit_word()
-            self._emit_word('*')
-            self._emit_word('(')
-            self.state = self._state_space
-        elif c == ')':
-            self._emit_word()
-            self._emit_word(')')
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            self.state = self._state_paren
-        elif c in self.op_chars:
-            self._emit_word()
-            self.word = c
-            self.state = self._state_operator
-        elif c == ',' and self.bInFn:
-            self._emit_word()
-            self._emit_word(',')
-            self.state = self._state_space
-        elif c in whitespace:
-            self._emit_word()
-            self.state = self._state_space
-        elif c == ';':
-            self._emit_word()
-            self.state = self._state_comment
-        else:
-            self.error("Unexpected character '" + c + "'.")
-
-    def _state_name(self, c):
-        if c in letters or c in digits or c == '_':
-            self.word += c
-        elif c in whitespace:
-            #Check if word is a function, if it is, error!
-            if self.word in self.functions:
-                self.error("Expected '(' after function '" + self.word + "'.")
-            #If word isn't a var, const, or keyword, make a var
-            if self.word in self.keywords and len(self.split_line) > 0:
-                #Keywords should only occur as the first token on a line
-                self.error("Unexpected keyword '" + self.word + "'.")
-            if self.word not in self.keywords+self.constants.keys()+self.vars.keys():
-                self.vars[self.word] = 0
-            self._emit_word()
-            self.state = self._state_space
-        elif c == ',' and self.bInFn:
-            if self.word in self.functions:
-                self.error("Expected '(' after function '" + self.word + "'.")
-            elif self.word in self.keywords:
-                self.error("Unexpected keyword '" + self.word + "' inside function call.")
-            elif self.word not in self.constants.keys()+self.vars.keys():
-                self.vars[self.word] = 0
-            self._emit_word()
-            self._emit_word(',')
-            self.state = self._state_space            
-        elif c == ';':
-            if self.word in self.functions:
-                self.error("Expected '(' after function '" + self.word + "'.")
-            if self.word not in self.keywords+self.constants.keys()+self.vars.keys():
-                self.vars[self.word] = 0
-            self._emit_word()
-            self.state = self._state_comment
-        elif c == '(':      #implicit multiplication
-            #See if it's a function
-            if self.word in self.functions:
-                self._emit_word()
-                self._emit_word('(')
-            else:
-                #it's not, so implied multiplication, see if we need to make a var first
-                if self.word not in self.keywords and self.word not in self.constants and self.word not in self.vars:
-                    self.vars[self.word] = 0
-                self._emit_word()
-                self._emit_word('*')
-                self._emit_word('(')
-            self.parens += 1
-            self.state = self._state_space
-        elif c == ')':
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            #Check if it's function, if it is, error!
-            if self.word in self.functions:
-                self.error("Unexpected ')' after function '" + self.word + "'.")
-            if self.word in self.keywords:
-                self.error("Unexpected ')' after keyword '" + self.word + "'.")
-            if self.word not in self.constants.keys()+self.vars.keys():
-                self.vars[self.word] = 0
-            self._emit_word()
-            self._emit_word(')')
-            self.state = self._state_paren
-        elif c in self.op_chars:
-            if self.word in self.functions:
-                self.error("Unexpected operator '" + c + "' after function '" + self.word + "'.")
-            if self.word in self.keywords:
-                self.error("Unexpected operator '" + c + "' after keyword '" + self.word + "'.")
-            if self.word not in self.constants.keys()+self.vars.keys():
-                self.vars[self.word] = 0
-            self._emit_word()
-            self.word = c
-            self.state = self._state_operator
-        else:
-            self.error("Unexpected character '" + c + "'.")
-
-    def _state_escape(self, c):
-        if c == '\n':
-            self._newline()
-        elif c not in whitespace:
-            self.error("Invalid escape sequence '\\" + c + "'.")
-
-    def _state_paren(self, c):
-        if c in whitespace:
-            self.state = self._state_space
-        elif c == ',' and self.bInFn:
-            self._emit_word(',')
-            self.state = self._state_space
-        elif c == ';':
-            self.state = self._state_comment
-        elif c in digits:       #implicit multiplication
-            self._emit_word('*')
-            self.word = c
-            self.state = self._state_number
-        elif c in letters or c == '_':  #implicit multiplication
-            self._emit_word('*')
-            self.word = c
-            self.state = self._state_name
-        elif c == '(':      #implicit multiplication
-            self.parens += 1
-            self._emit_word('*')
-            self._emit_word('(')
-            self.state = self._state_space
-        elif c == ')':
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            if self.parens == 0:
-                self.bInFn = False
-            self._emit_word(')')
-        elif c in self.op_chars:
-            self.word = c
-            self.state = self._state_operator
-        else:
-            self.error("Unexpected character '" + c + "' following parenthesis.")
-
-    def _state_decimal(self, c):
-        if c in digits:
-            self.word += c
-        elif c == ';':
-            self.word += '0'
-            self._emit_word()
-            self.state = self._state_comment
-        elif c in letters or c == '_':  #implicit multiplication
-            self.word += '0'
-            self._emit_word()
-            self._emit_word('*')
-            self.word = c
-            self.state = self._state_name
-        elif c == '(':      #implicit multiplication
-            self.word += '0'
-            self._emit_word()
-            self._emit_word('*')
-            self._emit_word('(')
-            self.word = c
-            self.parens += 1
-            self.state = self._state_space
-        elif c == ')':
-            self.parens -= 1
-            if self.parens < 0:
-                self.error("Unmatched parenthesis.")
-            self.word += '0'
-            self._emit_word()
-            self._emit_word(')')
-            self.state = self._state_paren
-        elif c in self.op_chars:
-            self.word += '0'
-            self._emit_word()
-            self.word = c
-            self.state = self._state_operator
-        elif c == ',' and self.bInFn:
-            self.word += '0'
-            self._emit_word()
-            self._emit_word(',')
-            self.state = self._state_space
-        elif c in whitespace:
-            self.word += '0'
-            self._emit_word()
-            self.state = self._state_space
-        else:
-            self.error("Unexpected character '" + c + "'.")
-
-    def _state_operator(self, c):
-        if c in self.op_chars:
-            self.word += c
-        elif c == '(':
-            self.parens += 1
-            if self.word not in self.operators:
-                self.error("Invalid operator '" + self.word + "'.")
-            self._emit_word()
-            self._emit_word('(')
-            self.state = self._state_space
-        elif c in digits:
-            if self.word not in self.operators:
-                self.error("Invalid operator '" + self.word + "'.")
-            self._emit_word()
-            self.word = c
-            self.state = self._state_number
-        elif c in letters or c == '_':
-            if self.word not in self.operators:
-                self.error("Invalid operator '" + self.word + "'.")
-            self._emit_word()
-            self.word = c
-            self.state = self._state_name
-        elif c in whitespace:
-            if self.word not in self.operators:
-                self.error("Invalid operator '" + self.word + "'.")
-            self._emit_word()
-            self.state = self._state_space
-        else:
-            self.error("Unexpected '" + c + "' following operator '" + self.word + "'.")
-
-    #End line parsing functions
-    #------------------------------------
-
-    def Eval(self, line):
-        return self._EvalStep1(line)
-    
-    def _EvalStep1(self, line):
-        #Step 1 - Handle assignment operators, multiple assignment is allowed
-        if len(line) > 1 and line[1] in self.ops_ass:
-            #Make sure first token is a variable
-            if line[0] not in self.vars:
-                self.error("Cannot assign a value to a non-variable.")
-            #Make sure actually assigning something
-            if len(line) == 2:
-                self.error("Missing value following assignmen operator '" + line[1] + "'.")
-            var = line.pop(0)
-            op = line.pop(0)
-            self.func_map[op](var, self._EvalStep1(line))
-            return self.vars[var]
-        #Step 1.1 - replace variables and constants with their values
-        newline = []
-        while len(line) > 0:
-            i = line.pop(0)
-            if i in self.constants:
-                newline.append(self.constants[i])
-            elif i in self.vars:
-                newline.append(self.vars[i])
-            else:
-                newline.append(i)
-        return self._EvalStep2(newline)
-
-    def _EvalStep2(self, line):
-        #Step 2 - Handle functions and parenthesis
-        if '(' in line or ')' in line:
-            newline = []
-            newexpr = []
-            parens = 0
-            while len(line) > 0:
-                i = line.pop(0)
-                #Step 2.1 - handle parenthesis
-                if i == '(':
-                    if parens > 0:
-                        newexpr.append(i)
-                    parens += 1
-                elif i == ')':
-                    parens -= 1
-                    if parens > 0:
-                        newexpr.append(i)
-                    else:
-                        newline.append(self._EvalStep2(newexpr))
-                        newexpr = []
-                elif parens > 0:
-                    newexpr.append(i)
-                #Step 2.2 - handle functions
-                elif i in self.functions:
-                    parens = 1
-                    line.pop(0)     #throw out next '(', it's for the function
-                    params = []
-                    newexpr = []
-                    while parens > 0:
-                        j = line.pop(0)
-                        if j == '(':
-                            parens += 1
-                        elif j == ')':
-                            parens -= 1
-                        if parens == 1 and j == ',':    # Comma seperated arguments
-                            if len(newexpr) > 1:
-                                params.append(self._EvalStep2(newexpr))
-                            elif len(newexpr) == 1:
-                                params.append(newexpr[0])
-                            newexpr = []
-                        elif parens > 0:
-                            newexpr.append(j)
-                    if len(newexpr) > 1:
-                        params.append(self._EvalStep2(newexpr))
-                    elif len(newexpr) == 1:
-                        params.append(newexpr[0])
-                    #Evaluate the function
-                    newline.append(self.func_map[i](params) or 0)
-                #Not a parenthesis or function, so just add it on to the line
-                else:
-                    if parens > 0:
-                        newexpr.append(i)
-                    else:
-                        newline.append(i)
-            line = newline
-            newline = []
-        return self._EvalStep3(line)
-
-    def _EvalStep3(self, line):
-        #Step 3 - do boolean operators
-        for op in self.ops_bool:
-            if op in line:
-                newline = []
-                while len(line) > 0:
-                    i = line.pop(0)
-                    if i == op:
-                        l = self._EvalStep4(newline)
-                        r = self._EvalStep3(line)
-                        return self.func_map[op](l, r)
-                    else:
-                        newline.append(i)
-        return self._EvalStep4(line)
-
-    def _EvalStep4(self, line):
-        #Step 4 - do addition and subtraction
-        if '+' in line or '-' in line:
-            newline = []
-            while True:
-                i = line.pop(0)
-                if i == '+':
-                    l = self._EvalStep5(newline)
-                    r = self._EvalStep4(line)
-                    return l + r
-                elif i == '-':
-                    l = self._EvalStep5(newline)
-                    r = self._EvalStep4(line)
-                    return l - r
-                else:
-                    newline.append(i)
-        else:
-            return self._EvalStep5(line)
-
-    def _EvalStep5(self, line):
-        #Step 5 - do multiplication, division, and modulus
-        if '*' in line or '/' in line or '%' in line:
-            newline = []
-            while True:
-                i = line.pop(0)
-                if i == '*':
-                    l = self._EvalStep6(newline)
-                    r = self._EvalStep5(line)
-                    return l * r
-                elif i == '/':
-                    l = self._EvalStep6(newline)
-                    r = self._EvalStep5(line)
-                    if r == 0:
-                        self.error("Division by 0")
-                    else:
-                        return l / r
-                elif i == '%':
-                    l = self._EvalStep6(newline)
-                    r = self._EvalStep5(line)
-                    return l % r
-                else:
-                    newline.append(i)
-        else:
-            return self._EvalStep6(line)
-
-    def _EvalStep6(self, line):
-        #Step 6 - do exponents
-        if '^' in line:
-            newline = []
-            while True:
-                i = line.pop(0)
-                if i == '^':
-                    if len(newline) > 1:
-                        self.error("Unexpected tokens in expression: " + ' '.join(newline) + "^" + ' '.join(line))
-                    try:
-                        l = float(newline[0])
-                    except:
-                        self.error("Could not convert '" + str(newline[0]) + "' to a value.")
-                    r = self._EvalStep6(line)
-                    return l ** r
-        else:
-            if len(line) > 1:
-                self.error("Unexpected tokens in expression: '" + ' '.join(line) + "'")
-            try:
-                return float(line[0])
-            except:
-                self.error("Could not convert '" + str(line[0]) + "' to a value.")
-# End LineSplitter      
+        self.wordStart = None
         
+    def _stateSpace(self, c):
+        self._emit()
+        if c in whitespace: return self._stateSpace
+        if c == "'": return self._stateSQuote
+        if c == '"': return self._stateDQuote
+        if c == '\\': return self._stateEscape
+        if c == self.comment: return self._stateComment
+        self._grow(c)
+        if c in name_start: return self._stateName
+        if c in self.opChars: return self._stateOperator
+        if c in digits: return self._stateNumber
+        if c == '.': return self._stateDecimal
+        if c == '(': return self._stateSpace
+        if c == ')': return self._stateEndBracket
+        if c == ',': return self._stateSpace
+        self.error("Invalid character: '%s'" % c)
+
+    def _stateSQuote(self, c):
+        if c == '\\': return self._stateSQuoteEscape
+        if c == "'":
+            if not self.word: self.word = ''
+            self._emit(type=STRING)
+            return self._stateSpace
+        self._grow(c)
+        return self._stateSQuote
+    def _stateSQuoteEscape(self, c):
+        if c in self.escapes: self._grow(self.escapes[c])
+        else: self._grow(c)
+        return self._stateSQuote
+
+    def _stateDQuote(self, c):
+        if c == '\\': return self._stateDQuoteEscape
+        if c == '"':
+            if not self.word: self.word = ""
+            self._emit(type=STRING)
+            return self._stateSpace
+        self._grow(c)
+        return self._stateDQuote
+    def _stateDQuoteEscape(self, c):
+        if c in self.escapes: self._grow(self.escapes[c])
+        else: self._grow(c)
+        return self._stateDQuote
+
+    def _stateEscape(self, c):
+        if c == '\n':
+            self.runon = True
+            return
+        return self._stateSpace(c)
+
+    def _stateComment(self, c): return self._stateComment
+
+    def _stateName(self, c):
+        if c in name_chars:
+            self._grow(c)
+            return self._stateName
+        if c in ["'",'"']:
+            self.error('Unexpected quotation %s following name token.' % c)
+        return self._stateSpace(c)
+
+    def _stateOperator(self, c):
+        if c in self.opChars:
+            self._grow(c)
+            return self._stateOperator
+        return self._stateSpace(c)
+
+    def _stateNumber(self, c):
+        if c in digits:
+            self._grow(c)
+            return self._stateNumber
+        if c == '.':
+            self._grow(c)
+            return self._stateDecimal
+        if c in ['"',"'"]:
+            self.error('Unexpected quotation %s following number token.' % c)
+        return self._stateSpace(c)
+    def _stateDecimal(self, c):
+        if c in digits:
+            self._grow(c)
+            return self._stateDecimal
+        if c in ['"',"'",'.']:
+            self.error('Unexpected %s following decimal token.' % c)
+        return self._stateSpace(c)
+
+    def _stateEndBracket(self, c):
+        if c in ['"',"'"]:
+            self.error('Unexpected quotation %s following parenthesis.' % c)
+        return self._stateSpace(c)

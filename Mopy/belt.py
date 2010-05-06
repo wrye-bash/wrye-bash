@@ -330,7 +330,7 @@ class PageSelect(PageInstaller):
         else:
             for i in self.listOptions.GetSelections():
                 temp.append(self.items[i])
-        self.parent.parser.AddFlowControl('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+        self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
 # End PageSelect -----------------------------------------
 
 # PageFinish ---------------------------------------------
@@ -514,6 +514,7 @@ class PageVersions(PageInstaller):
 class WryeParser(ScriptParser.Parser):
     def __init__(self, parent, installer, subs, bArchive, path, bAuto):
         ScriptParser.Parser.__init__(self)
+        
         self.parent = parent
         self.installer = installer
         self.bArchive = bArchive
@@ -529,57 +530,75 @@ class WryeParser(ScriptParser.Parser):
                 if j not in self.espmlist:
                     self.espmlist[j] = False
             if i == '': continue
-            self.sublist[i] = False                
-            
-        self.AddAssignmentOperator('+=', self.AssignPlus)
-        self.AddAssignmentOperator('-=', self.AssignMin)
-        self.AddAssignmentOperator('*=', self.AssignMult)
-        self.AddAssignmentOperator('/=', self.AssignDiv)
-        self.AddAssignmentOperator('%=', self.AssignMod)
-        self.AddAssignmentOperator('^=', self.AssignPow)
-        self.AddBooleanOperator('==', self.CompE)
-        self.AddBooleanOperator('!=', self.CompNE)
-        self.AddBooleanOperator('>=', self.CompGE)
-        self.AddBooleanOperator('>', self.CompG)
-        self.AddBooleanOperator('<=', self.CompLE)
-        self.AddBooleanOperator('<', self.CompL)
-        self.AddBooleanOperator('|', self.Or)
-        self.AddBooleanOperator('&', self.And)
-        self.AddFunction('!', self.Not)
-        self.operators.append('!')
-        self.AddFunction('CompareOblivionVersion', self.FunctionCompareOblivionVersion)
-        self.AddFunction('CompareOBSEVersion', self.FunctionCompareOBSEVersion)
-        self.AddFunction('CompareOBGEVersion', self.FunctionCompareOBGEVersion)
-        self.AddFunction('DataFileExists', self.FunctionDataFileExists)
-        self.AddKeyword('SelectSubPackage', self.KeywordSelectSubPackage)
-        self.AddKeyword('DeSelectSubPackage', self.KeywordDeSelectSubPackage)
-        self.AddKeyword('SelectEspm', self.KeywordSelectEspm)
-        self.AddKeyword('DeSelectEspm', self.KeywordDeSelectEspm)
-        self.AddKeyword('SelectAll', self.KeywordSelectAll)
-        self.AddKeyword('DeSelectAll', self.KeywordDeSelectAll)
-        self.AddKeyword('SelectAllEspms', self.KeywordSelectAllEspms)
-        self.AddKeyword('DeSelectAllEspms', self.KeywordDeSelectAllEspms)
-        self.AddKeyword('Note', self.KeywordNote)
-        self.AddKeyword('If', self.KeywordIf)
-        self.AddKeyword('Elif', self.KeywordElif)
-        self.AddKeyword('Else', self.KeywordElse)
-        self.AddKeyword('EndIf', self.KeywordEndIf)
-        self.AddKeyword('SelectOne', self.KeywordSelectOne)
-        self.AddKeyword('SelectMany', self.KeywordSelectMany)
-        self.AddKeyword('Case', self.KeywordCase)
-        self.AddKeyword('Default', self.KeywordDefault)
-        self.AddKeyword('Break', self.KeywordBreak)
-        self.AddKeyword('EndSelect', self.KeywordEndSelect)
-        self.AddKeyword('Return', self.KeywordReturn)
-        self.AddKeyword('Cancel', self.KeywordCancel)
-        self.AddKeyword('RequireVersions', self.KeywordRequireVersions)
-        self.AddConstant('True', True)
-        self.AddConstant('False', False)
+            self.sublist[i] = False
+
+        #--Operators
+        #Assignment
+        self.SetOperator('=' , self.Ass, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator('+=', self.AssAdd, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator('-=', self.AssMin, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator('*=', self.AssMul, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator('/=', self.AssDiv, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        #self.SetOperator('%=', self.AssMod, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator('^=', self.AssExp, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        #Comparison
+        self.SetOperator('==', self.opE, ScriptParser.OP.CO2)
+        self.SetOperator('!=', self.opNE, ScriptParser.OP.CO2)
+        self.SetOperator('>=', self.opGE, ScriptParser.OP.CO1)
+        self.SetOperator('>' , self.opG, ScriptParser.OP.CO1)
+        self.SetOperator('<=', self.opLE, ScriptParser.OP.CO1)
+        self.SetOperator('<' , self.opL, ScriptParser.OP.CO1)
+        #Boolean
+        self.SetOperator('&' , self.opAnd, ScriptParser.OP.AND)
+        self.SetOperator('and', self.opAnd, ScriptParser.OP.AND)
+        self.SetOperator('|', self.opOr, ScriptParser.OP.OR)
+        self.SetOperator('or', self.opOr, ScriptParser.OP.OR)
+        self.SetOperator('!', self.opNot, ScriptParser.OP.UNA, ScriptParser.RIGHT)
+        self.SetOperator('not', self.opNot, ScriptParser.OP.UNA, ScriptParser.RIGHT)
+        #Post-fix increment/decrement
+        self.SetOperator('++', self.opInc, ScriptParser.OP.UNA)
+        self.SetOperator('--', self.opDec, ScriptParser.OP.UNA)
+        #Math
+        self.SetOperator('+', self.opAdd, ScriptParser.OP.ADD)
+        self.SetOperator('-', self.opMin, ScriptParser.OP.ADD)
+        self.SetOperator('*', self.opMul, ScriptParser.OP.MUL)
+        self.SetOperator('/', self.opDiv, ScriptParser.OP.MUL)
+        #self.SetOperator('%', self.opMod, ScriptParser.OP.MUL)
+        self.SetOperator('^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
+
+        #--Functions
+        self.SetFunction('CompareOblivionVersion', self.fnCompareOblivionVersion, 1)
+        self.SetFunction('CompareOBSEVersion', self.fnCompareOBSEVersion, 1)
+        self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
+        self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
+        #--Keywords
+        self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
+        self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
+        self.SetKeyword('SelectEspm', self.kwdSelectEspm, 1)
+        self.SetKeyword('DeSelectEspm', self.kwdDeSelectEspm, 1)
+        self.SetKeyword('SelectAll', self.kwdSelectAll)
+        self.SetKeyword('DeSelectAll', self.kwdDeSelectAll)
+        self.SetKeyword('SelectAllEspms', self.kwdSelectAllEspms)
+        self.SetKeyword('DeSelectAllEspms', self.kwdDeSelectAllEspms)
+        self.SetKeyword('Note', self.kwdNote, 1, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('If', self.kwdIf, 1, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('Elif', self.kwdElif, 1, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('Else', self.kwdElse)
+        self.SetKeyword('EndIf', self.kwdEndIf)
+        self.SetKeyword('SelectOne', self.kwdSelectOne, 7, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('SelectMany', self.kwdSelectMany, 4, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('Case', self.kwdCase, 1, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('Default', self.kwdDefault)
+        self.SetKeyword('Break', self.kwdBreak)
+        self.SetKeyword('EndSelect', self.kwdEndSelect)
+        self.SetKeyword('Return', self.kwdReturn)
+        self.SetKeyword('Cancel', self.kwdCancel, 0, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 3)
+
 
     def Begin(self, file):
         self.vars = {}
         self.Flow = []
-        self.cLine = 0
 
         if file.exists() and file.isfile():
             script = file.open()
@@ -593,11 +612,12 @@ class WryeParser(ScriptParser.Parser):
         self.page = None
         while len(self.lines) > 0:
             newline = self.lines.pop(0)
-            self.cLine += 1
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
-                return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script (Line %s):\n%s\nERROR:%s') % (self.cLine, newline.strip('\n'), e))
+                return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script:\n Line:%s\n Error:%s') % (newline.strip('\n'), e))
+            except Exception, e:
+                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line:%s\n Error:%s') % (newline.strip('\n'), e))
             if self.page:
                 return self.page
         return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
@@ -642,125 +662,114 @@ class WryeParser(ScriptParser.Parser):
         return None
 
     # Assignment operators
-    def AssignPlus(parser, var, value): parser.vars[var] += value
-    def AssignMin(parser, var, value): parser.vars[var] -= value
-    def AssignMult(parser, var, value): parser.vars[var] *= value
-    def AssignDiv(parser, var, value): parser.vars[var] /= value
-    def AssignMod(parser, var, value): parser.vars[var] %= value
-    def AssignPow(parser, var, value): parser.vars[var] **= value
-
-    # Comparison boolean operators
-    def CompE(parser, lval, rval): return lval == rval
-    def CompNE(parser, lval, rval): return lval != rval
-    def CompGE(parser, lval, rval): return lval >= rval
-    def CompG(parser, lval, rval): return lval > rval
-    def CompLE(parser, lval, rval): return lval <= rval
-    def CompL(parser, lval, rval): return lval < rval
-
-    # and, or, not boolean operators
-    def And(parser, lval, rval): return lval and rval
-    def Or(parser, lval, rval): return lval or rval
-    def Not(self, params):
-        if len(params) > 1:
-            self.error(EXTRA_ARGS % 'NOT operator (!)')
-        if len(params) < 1:
-            self.error(MISSING_ARGS % 'NOT operator (!)')
-        return not params[0]
+    def Ass(self, l, r):
+        if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
+            self.error('Cannot assign a value to %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+        self.variables[l.text] = r.data
+        return r.data
+    def AssAdd(self, l, r): return self.Ass(l, l+r)
+    def AssMin(self, l, r): return self.Ass(l, l-r)
+    def AssMul(self, l, r): return self.Ass(l, l*r)
+    def AssDiv(self, l, r): return self.Ass(l, l/r)
+    def AssMod(self, l, r): return self.Ass(l, l%r)
+    def AssExp(self, l, r): return self.Ass(l, l**r)
+    # Comparison operators
+    def opE(self, l, r): return l == r
+    def opNE(self, l, r): return l != r
+    def opGE(self, l, r): return l >= r
+    def opG(self, l, r): return l > r
+    def opLE(self, l, r): return l <= r
+    def opL(self, l, r): return l < r
+    # Boolean operators
+    def opAnd(self, l, r): return l and r
+    def opOr(self, l, r): return l or r
+    def opNot(self, l): return not l
+    # Postfix inc/dec
+    def opInc(self, l):
+        l += 1
+        return l
+    def opDec(self, l):
+        l -= 1
+        return l
+    # Math operators
+    def opAdd(self, l, r): return l + r
+    def opMin(self, l, r): return l - r
+    def opMul(self, l, r): return l * r
+    def opDiv(self, l, r): return l / r
+    def opMod(self, l, r): return l % r
+    def opExp(self, l, r): return l ** r
 
     # Functions...
-    def FunctionCompareOblivionVersion(self, params):
-        if len(params) > 1:
-            self.error(EXTRA_ARGS % 'CompareOblivionVersion')
-        if len(params) < 1:
-            self.error(MISSING_ARGS % 'CompareOblivionVersion')
-        ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['app'].join('oblivion.exe'))
+    def fnCompareOblivionVersion(self, obWant):
+        ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join('oblivion.exe'))
         return ret[0]
-    def FunctionCompareOBSEVersion(self, params):
-        if len(params) > 1:
-            self.error(EXTRA_ARGS % 'CompareOBSEVersion')
-        if len(params) < 1:
-            self.error(MISSING_ARGS % 'CompareOBSEVersion')
-        ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['app'].join('obse_loader.exe'))
+    def fnCompareOBSEVersion(self, obseWant):
+        ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join('obse_loader.exe'))
         return ret[0]
-    def FunctionCompareOBGEVersion(self, params):
-        if len(params) > 1:
-            self.error(EXTRA_ARGS % 'CompareOBGEVersion')
-        if len(params) < 1:
-            self.error(MISSING_ARGS % 'CompareOBGEVersion')
-        ret = self._TestVersion(self._TestVersion_Want(params[0]), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
+    def fnCompareOBGEVersion(self, obgeWant):
+        ret = self._TestVersion(self._TestVersion_Want(obgeWant), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         return ret[0]
-    def FunctionDataFileExists(self, params):
-        if len(params) > 1:
-            self.error(EXTRA_ARGS % 'DataFileExists')
-        if len(params) < 1:
-            self.error(MISSING_ARGS % 'DataFileExists')
-        return bosh.dirs['mods'].join(params[0]).exists()
+    def fnDataFileExists(self, filename):
+        return bosh.dirs['mods'].join(filename).exists()
 
     # Keywords, mostly for flow control (If, Select, etc)
-    def KeywordIf(self, line):
-        if self.LenFlowControl() > 0 and self.GetFlowControl(-1).type == 'If' and not self.GetFlowControl(-1).active:
+    def kwdIf(self, *args):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'If' and not self.PeekFlow().active:
             #Inactive portion of an If-Elif-Else-EndIf statement, but we hit an If, so we need
             #To not count the next 'EndIf' towards THIS one
-            self.AddFlowControl('If', False, ['If', 'EndIf'])
+            self.PushFlow('If', False, ['If', 'EndIf'])
             return
-        if len(line) == 0:
-            self.error(MISSING_ARGS % 'If')
-        bActive = self.Eval(line)
-        self.AddFlowControl('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
-    def KeywordElif(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If' or parser.GetFlowControl(-1).hitElse:
-            parser.error(UNEXPECTED % 'Elif')
-        if parser.GetFlowControl(-1).ifTrue:
-            parser.GetFlowControl(-1).active = False
-        elif len(line) == 0:
-            parser.error(MISSING_ARGS % 'Elif')
+        bActive = self.ExecuteTokens(args)
+        self.PushFlow('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
+    def kwdElif(self, *args):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
+            self.error(UNEXPECTED % 'Elif')
+        if self.PeekFlow().ifTrue:
+            self.PeekFlow().active = False
         else:
-            parser.GetFlowControl(-1).active = parser.Eval(line)
-            parser.GetFlowControl(-1).ifTrue = parser.GetFlowControl(-1).active or parser.GetFlowControl(-1).ifTrue
-    def KeywordElse(parser, line):
-        if len(line) > 1:
-            parser.error(EXTRA_ARGS % 'Else')
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If' or parser.GetFlowControl(-1).hitElse:
-            parser.error(UNEXPECTED % 'Else')
-        if parser.GetFlowControl(-1).ifTrue:
-            parser.GetFlowControl(-1).active = False
-            parser.GetFlowControl(-1).hitElse = True
+            self.PeekFlow().active = self.ExecuteTokens(args)
+            self.PeekFlow().ifTrue = self.PeekFlow().active or self.PeekFlow().ifTrue
+    def kwdElse(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
+            self.error(UNEXPECTED % 'Else')
+        if self.PeekFlow().ifTrue:
+            self.PeekFlow().active = False
+            self.PeekFlow().hitElse = True
         else:
-            parser.GetFlowControl(-1).active = True
-            parser.GetFlowControl(-1).hitElse = True
-    def KeywordEndIf(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'If':
-            parser.error(UNEXPECTED % 'EndIf')
-        parser.PopFlowControl()
+            self.PeekFlow().active = True
+            self.PeekFlow().hitElse = True
+    def kwdEndIf(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
+            self.error(UNEXPECTED % 'EndIf')
+        self.PopFlow()
 
-    def KeywordSelectOne(self, line): self._KeywordSelect(line, False, 'SelectOne')
-    def KeywordSelectMany(self, line): self._KeywordSelect(line, True, 'SelectMany')
-    def _KeywordSelect(self, line, bMany, name):
-        if self.LenFlowControl() > 0 and self.GetFlowControl(-1).type == 'Select' and not self.GetFlowControl(-1).active:
+    def kwdSelectOne(self, *args): self._KeywordSelect(False, 'SelectOne', *args)
+    def kwdSelectMany(self, *args): self._KeywordSelect(True, 'SelectMany', *args)
+    def _KeywordSelect(self, bMany, name, *args):
+        args = list(args)
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'Select' and not self.PeekFlow().active:
             #We're inside an invalid Case for a Select alread, so just add a blank FlowControl for
             #this select
-            self.AddFlowControl('Select', False, ['SelectOne', 'SelectMany', 'EndSelect'])
+            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'EndSelect'])
             return
-        if (not bMany and len(line) < 7) or (bMany and len(line) < 4):
-            self.error(MISSING_ARGS % name)
-        main_desc = line.pop(0)
-        if len(line) % 3:
+        main_desc = args.pop(0)
+        if len(args) % 3:
             self.error(MISSING_ARGS % name)
         images = []
         titles = []
         descs = []
         defaultMap = []
         image_paths = []
-        while len(line):
-            title = line.pop(0)
+        while len(args):
+            title = args.pop(0)
             if title[0] == '|':
                 defaultMap.append(True)
                 titles.append(title[1:])
             else:
                 defaultMap.append(False)
                 titles.append(title)
-            descs.append(line.pop(0))
-            images.append(line.pop(0))
+            descs.append(args.pop(0))
+            images.append(args.pop(0))
         if self.bAuto:
             temp = []
             for index in range(len(titles)):
@@ -768,7 +777,7 @@ class WryeParser(ScriptParser.Parser):
                     temp.append(titles[index])
                     if not bMany:
                         break
-            self.AddFlowControl('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
             return
         if self.bArchive:
             temp = []
@@ -783,103 +792,88 @@ class WryeParser(ScriptParser.Parser):
             for i in images:
                 image_paths.append(bosh.dirs['installers'].join(self.path.s, i))
         self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
-    def KeywordCase(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error(UNEXPECTED % 'Case')
-        if len(line) == 0:
-            parser.error(MISSING_ARGS % 'Case')
-        case = ' '.join(line)
-        parser.GetFlowControl(-1).hitCase = True
-        if case in parser.GetFlowControl(-1).values:
-            parser.GetFlowControl(-1).active = True
-    def KeywordDefault(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error(UNEXPECTED % 'Default')
-        if parser.GetFlowControl(-1).hitCase:
+    def kwdCase(self, *args):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            self.error(UNEXPECTED % 'Case')
+        case = ' '.join(args)
+        self.PeekFlow().hitCase = True
+        if case in self.PeekFlow().values:
+            self.PeekFlow().active = True
+    def kwdDefault(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            self.error(UNEXPECTED % 'Default')
+        if self.PeekFlow().hitCase:
             return
-        if len(line) != 1:
-            parser.error(EXTRA_ARGS % 'Default')
-        parser.GetFlowControl(-1).active = True
-        parser.GetFlowControl(-1).hitCase = True
-    def KeywordBreak(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error(UNEXPECTED % 'Break')
-        parser.GetFlowControl(-1).active = False
-    def KeywordEndSelect(parser, line):
-        if parser.LenFlowControl() == 0 or parser.GetFlowControl(-1).type != 'Select':
-            parser.error(UNEXPECTED % 'EndSelect')
-        parser.PopFlowControl()
+        self.PeekFlow().active = True
+        self.PeekFlow().hitCase = True
+    def kwdBreak(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            self.error(UNEXPECTED % 'Break')
+        self.PeekFlow().active = False
+    def kwdEndSelect(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            self.error(UNEXPECTED % 'EndSelect')
+        self.PopFlow()
 
     # Package selection functions
-    def KeywordSelectSubPackage(self, line): self._SelectSubPackage(line, True, 'SelectSubPackage')
-    def KeywordDeSelectSubPackage(self, line): self._SelectSubPackage(line, False, 'DeSelectSubPackage')
-    def _SelectSubPackage(self, line, bSelect, name):
-        if len(line) < 1:
-            self.error(MISSING_ARGS % name)
-        if len(line) > 1:
-            self.error(EXTRA_ARGS % name)
-        package = self.GetPackage(line[0])
+    def kwdSelectSubPackage(self, subpackage): self._SelectSubPackage(True, subpackage)
+    def kwdDeSelectSubPackage(self, subpackage): self._SelectSubPackage(False, subpackage)
+    def _SelectSubPackage(self, bSelect, subpackage):
+        package = self.GetPackage(subpackage)
         if package:
             self.sublist[package] = bSelect
             for i in self.EspmList(package):
                 if bSelect:
-                    self._SelectEspm([i], True, 'SelectEspm')
+                    self._SelectEspm(True, i)
                 else:
                     if not self.EspmHasActivePackage(i):
-                        self._SelectEspm([i], False, 'DeSelectEspm')
+                        self._SelectEspm(False, i)
         else:
-            self.error(_("Sub-package '%s' is not a part of the installer.") % line[0])
-    def KeywordSelectAll(self, line): self._SelectAll(line, True, 'SelectAll')
-    def KeywordDeSelectAll(self, line): self._SelectAll(line, False, 'DeSelectAll')
-    def _SelectAll(self, line, bSelect, name):
-        if len(line) > 0:
-            self.error(EXTRA_ARGS % name)
+            self.error(_("Sub-package '%s' is not a part of the installer.") % subpackage)
+    def kwdSelectAll(self): self._SelectAll(True)
+    def kwdDeSelectAll(self): self._SelectAll(False)
+    def _SelectAll(self, bSelect):
         for i in self.sublist.keys():
             self.sublist[i] = bSelect
         for i in self.espmlist.keys():
             self.espmlist[i] = bSelect
-    def KeywordSelectEspm(self, line): self._SelectEspm(line, True, 'SelectEspm')
-    def KeywordDeSelectEspm(self, line): self._SelectEspm(line, False, 'DeSelectEspm')
-    def _SelectEspm(self, line, bSelect, name):
-        if len(line) < 1:
-            self.error(MISSING_ARGS % name)
-        if len(line) > 1:
-            self.error(EXTRA_ARGS % name)
-        espm = self.GetEspm(line[0])
+    def kwdSelectEspm(self, espm): self._SelectEspm(True, espm)
+    def kwdDeSelectEspm(self, espm): self._SelectEspm(False, espm)
+    def _SelectEspm(self, bSelect, name):
+        espm = self.GetEspm(name)
         if espm:
             self.espmlist[espm] = bSelect
         else:
-            self.error(_("Espm '%s' is not a part of the installer.") % line[0])
-    def KeywordSelectAllEspms(self, line): self._SelectAllEspms(line, True, 'SelectAllEspms')
-    def KeywordDeSelectAllEspms(self, line): self._SelectAllEspms(line, False, 'DeSelectAllEspms')
-    def _SelectAllEspms(self, line, bSelect, name):
-        if len(line) > 0:
-            self.error(EXTRA_ARGS % name)
+            self.error(_("Espm '%s' is not a part of the installer.") % name)
+    def kwdSelectAllEspms(self): self._SelectAllEspms(True)
+    def kwdDeSelectAllEspms(self): self._SelectAllEspms(False)
+    def _SelectAllEspms(self, bSelect):
         for i in self.espmlist.keys():
             self.espmlist[i] = bSelect
-            
-    def KeywordNote(self, line):
-        if len(line) > 0:
-            self.notes.append('- ' + ' '.join(line) + '\n')
-    def KeywordRequireVersions(self, line):
+
+    def kwdNote(self, *args):
+        temp = []
+        for i in args:
+            if i.type in [ScriptParser.CONSTANT,
+                          ScriptParser.VARIABLE,
+                          ScriptParser.NAME,
+                          ScriptParser.STRING,
+                          ScriptParser.INTEGER,
+                          ScriptParser.DECIMAL]:
+                temp.append(str(i.data))
+            else:
+                temp.append(str(i.text))
+        self.notes.append('- %s\n' % ' '.join(temp))
+    def kwdRequireVersions(self, ob, obse='None', obge='None'):
         if self.bAuto: return
-        if len(line) < 1:
-            self.error(MISSING_ARGS % 'RequireVersions')
-        if len(line) > 3:
-            self.error(EXTRA_ARGS % 'RequireVersions')
-        if len(line) < 2:
-            line.append('None')
-        if len(line) < 3:
-            line.append('None')
-        obWant = self._TestVersion_Want(line[0])
-        if obWant == 'None':
-            line[0] = 'None'
-        obseWant = self._TestVersion_Want(line[1])
-        if obseWant == 'None':
-            line[1] = 'None'
-        obgeWant = self._TestVersion_Want(line[2])
-        if obgeWant == 'None':
-            line[2] = 'None'
+        
+        obWant = self._TestVersion_Want(ob)
+        if obWant == 'None': ob = 'None'
+        obseWant = self._TestVersion_Want(obse)
+        if obseWant == 'None': obse = 'None'
+        obgeWant = self._TestVersion_Want(obge)
+        if obgeWant == 'None': obge = 'None'
+
         ret = self._TestVersion(obWant, bosh.dirs['app'].join('oblivion.exe'))
         bObOk = ret[0] >= 0
         obHave = ret[1]
@@ -889,8 +883,9 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(obgeWant, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
+
         if not bObOk or not bOBSEOk or not bOBGEOk:
-            self.page = PageVersions(self.parent, bObOk, obHave, line[0], bOBSEOk, obseHave, line[1], bOBGEOk, obgeHave, line[2])
+            self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge)
     def _TestVersion_Want(self, want):
         try:
             need = [int(i) for i in want.split('.')]
@@ -921,12 +916,12 @@ class WryeParser(ScriptParser.Parser):
         elif need == 'None':
             return [0, 'None']
         return [-1, 'None']
-    def KeywordReturn(self, line):
+    def kwdReturn(self):
         self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
-    def KeywordCancel(self, line):
-        if len(line) < 1:
+    def kwdCancel(self, *args):
+        if len(args) < 1:
             msg = _("No reason given")
         else:
-            msg = ' '.join(line)
+            msg = ' '.join(args)
         self.page = PageError(self.parent, _('The installer wizard was canceled:'), msg)
 # END --------------------------------------------------------------------------------------------------
