@@ -4645,11 +4645,16 @@ class PatchDialog(wx.Dialog):
             log = bolt.LogFile(cStringIO.StringIO())
             nullProgress = bolt.Progress()
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
+            import time
+            t = time.time()
             patchFile = bosh.PatchFile(self.patchInfo,patchers)
-            patchFile.initData(SubProgress(progress,0,0.1))
-            patchFile.initFactories(SubProgress(progress,0.1,0.2))
-            patchFile.scanLoadMods(SubProgress(progress,0.2,0.8))
-            patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))
+            print "%.3f" % (time.time()-t)
+            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            print "%.3f" % (time.time()-t)
+            patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
+            patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
+            print "%.3f" % (time.time()-t)
+            patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
             #--Save
             progress(0.9,patchName.s+_('\nSaving...'))
             patchFile.safeSave()
@@ -5081,6 +5086,8 @@ class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 
 class ActorImporter(bosh.ActorImporter,ListPatcher): pass
 
+class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
+
 class CellImporter(bosh.CellImporter,ListPatcher): pass
 
 class ImportFactions(bosh.ImportFactions,ListPatcher): pass
@@ -5149,6 +5156,7 @@ PatchDialog.patchers.extend((
     AlchemicalCatalogs(),
     ActorAnimPatcher(),
     ActorImporter(),
+    DeathItemPatcher(),
     NPCAIPackagePatcher(),
     CoblExhaustion(),
     CellImporter(),
