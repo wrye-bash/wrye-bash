@@ -1450,7 +1450,10 @@ class ModList(List):
         """Left Down: Check/uncheck mods."""
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
         if hitFlag == 32:
+            self.list.SetDnD(False)
             self.checkUncheckMod(self.items[hitItem])
+        else:
+            self.list.SetDnD(True)
         #--Pass Event onward
         event.Skip()
 

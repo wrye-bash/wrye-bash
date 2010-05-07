@@ -958,7 +958,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
+        self.doDnD = True
 
+    def SetDnD(self, allow): self.doDnD = allow
+    
     def OnBeginDrag(self, event):
         if not self.dndAllow(): return
         
@@ -1041,8 +1044,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         if self.fnDropIndexes: self.fnDropIndexes(indexes, newPos)
 
     def dndAllow(self):
-        if self.fnDndAllow: return self.fnDndAllow()
-        return True
+        if self.doDnD:
+            if self.fnDndAllow: return self.fnDndAllow()
+            return True
+        return False
 #------------------------------------------------------------------------------        
 class Tank(wx.Panel):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
