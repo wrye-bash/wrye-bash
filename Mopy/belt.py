@@ -548,6 +548,8 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('>' , self.opG, ScriptParser.OP.CO1)
         self.SetOperator('<=', self.opLE, ScriptParser.OP.CO1)
         self.SetOperator('<' , self.opL, ScriptParser.OP.CO1)
+        #Membership operators
+        self.SetOperator('in', self.opIn, ScriptParser.OP.MEM,passTokens=False)
         #Boolean
         self.SetOperator('&' , self.opAnd, ScriptParser.OP.AND)
         self.SetOperator('and', self.opAnd, ScriptParser.OP.AND)
@@ -681,6 +683,8 @@ class WryeParser(ScriptParser.Parser):
     def opG(self, l, r): return l > r
     def opLE(self, l, r): return l <= r
     def opL(self, l, r): return l < r
+    # Membership tests
+    def opIn(self, l, r): return l in r
     # Boolean operators
     def opAnd(self, l, r): return l and r
     def opOr(self, l, r): return l or r

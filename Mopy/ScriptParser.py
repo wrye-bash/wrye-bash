@@ -91,9 +91,10 @@ class OP:
     ADD = 4     # Addition (+, -)
     CO1 = 5     # Comparison (>=,<=,>,<)
     CO2 = 6     # Comparison (!=, ==)
-    AND = 7     # Logical and (and, &)
-    OR  = 8     # Locical or (or, |)
-    ASS = 9     # Assignment (=,+=,etc
+    MEM = 7     # Membership test (a in b)
+    AND = 8     # Logical and (and, &)
+    OR  = 9     # Locical or (or, |)
+    ASS = 10    # Assignment (=,+=,etc
 
 # Constants for operator associations
 LEFT = 0
@@ -183,7 +184,7 @@ class ParserError(SyntaxError): pass
     
 class Parser(object):
     class Operator:
-        def __init__(self, function, precedence, association):
+        def __init__(self, function, precedence, association=LEFT, passTokens=True):
             self.function = function
             self.precedence = precedence
             self.association = association
@@ -191,6 +192,7 @@ class Parser(object):
                 self.numArgs = 1
             else:
                 self.numArgs = 2
+            self.passTokens = passTokens
 
         def __call__(self, l, r=None):
             if self.numArgs == 1:
@@ -200,6 +202,8 @@ class Parser(object):
     class Keyword:
         def __init__(self, function, min_args=0, max_args=-1, keepCommas=False, passTokens=False):
             self.function = function
+            if max_args == KEY.NA: max_args = min_args
+            if max_args < min_args and max_args > 0: max_args = min_args
             self.minArgs = min_args
             self.maxArgs = max_args
             self.commas = keepCommas
@@ -297,25 +301,23 @@ class Parser(object):
         self.word = None
         self.wordStart = None
 
-    def SetOperator(self, name, function, precedence, association=LEFT):
+    def SetOperator(self, name, *args, **kwdargs):
         type = getType(name, self)
         if type not in [NAME,OPERATOR,UNKNOWN]:
             self.error(ERR_CANNOT_SET % ('operator', name, Types[type]))
-        self.operators[name] = Parser.Operator(function, precedence, association)
+        self.operators[name] = Parser.Operator(*args, **kwdargs)
         for i in name:
             if i not in self.opChars: self.opChars += i
-    def SetKeyword(self, name, function, min_args=0, max_args=KEY.NA, keepCommas=False, passTokens=False):
+    def SetKeyword(self, name, *args, **kwdargs):
         type = getType(name, self)
         if type not in [NAME,KEYWORD]:
             self.error(ERR_CANNOT_SET % ('keyword', name, Types[type]))
-        if max_args == KEY.NA: max_args = min_args
-        if max_args < min_args and max_args > 0: max_args = min_args
-        self.keywords[name] = Parser.Keyword(function, min_args, max_args, keepCommas, passTokens)
-    def SetFunction(self, name, function, num_args=0, passTokens=False):
+        self.keywords[name] = Parser.Keyword(*args, **kwdargs)
+    def SetFunction(self, name, *args, **kwdargs):
         type = getType(name, self)
         if type not in [NAME,FUNCTION]:
             self.error(ERR_CANNOT_SET % ('function', name, Types[type]))
-        self.functions[name] = Parser.Function(function, num_args, passTokens)
+        self.functions[name] = Parser.Function(*args, **kwdargs)
     def SetConstant(self, name, value):
         type = getType(name, self)
         if type not in [NAME,CONSTANT]:
@@ -465,6 +467,8 @@ class Parser(object):
                 while len(args) < i.data.numArgs:
                     args.append(stack.pop())
                 args.reverse()
+                if not i.data.passTokens:
+                    args = [x.data for x in args]
                 ret = i.data(*args)
                 stack.append(Parser.Token(ret))
             elif i.type == FUNCTION:
