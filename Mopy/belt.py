@@ -422,15 +422,16 @@ class PageFinish(PageInstaller):
 # PageVersions ---------------------------------------
 #  Page for displaying what versions an installer
 #  requires/recommends and what you have installed
-#  for Oblivion, OBSE, and OBGE
+#  for Oblivion, OBSE, and OBGE, and Wrye Bash
 #-----------------------------------------------------
 class PageVersions(PageInstaller):
-    def __init__(self, parent, bObOk, obHave, obNeed, bOBSEOk, obseHave, obseNeed, bOBGEOk, obgeHave, obgeNeed):
+    def __init__(self, parent, bObOk, obHave, obNeed, bOBSEOk, obseHave, obseNeed, bOBGEOk, obgeHave, obgeNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
 
-        bmpGood = wx.Bitmap(bosh.dirs['mopy'].join('images', 'check.png').s)
-        bmpBad = wx.Bitmap(bosh.dirs['mopy'].join('images', 'x.png').s)
-        
+        bmp = [wx.Bitmap(bosh.dirs['mopy'].join('images', 'x.png').s),
+               wx.Bitmap(bosh.dirs['mopy'].join('images', 'check.png').s)
+               ] 
+
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
         self.textWarning = wx.StaticText(self, 124, _('WARNING: The following version requirements are not met for using this installer.'))
@@ -438,7 +439,7 @@ class PageVersions(PageInstaller):
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
         sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, -1, _('Version Requirements')))
-        sizerVersions = wx.FlexGridSizer(4, 4, 5, 5)
+        sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
         sizerVersions.AddStretchSpacer()
@@ -452,10 +453,7 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(linkOb)
         sizerVersions.Add(wx.StaticText(self, -1, obNeed))
         sizerVersions.Add(wx.StaticText(self, -1, obHave))
-        if bObOk:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpGood))
-        else:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpBad))
+        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bObOk]))
 
         linkOBSE = wx.HyperlinkCtrl(self, -1, 'Oblivion Script Extender', 'http://obse.silverlock.org/')
         linkOBSE.SetVisitedColour(linkOBSE.GetNormalColour())
@@ -463,10 +461,7 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(linkOBSE)
         sizerVersions.Add(wx.StaticText(self, -1, obseNeed))
         sizerVersions.Add(wx.StaticText(self, -1, obseHave))
-        if bOBSEOk:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpGood))
-        else:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpBad))
+        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bOBSEOk]))
 
         linkOBGE = wx.HyperlinkCtrl(self, -1, 'Oblivion Graphics Extender', 'http://timeslip.chorrol.com/obge.html')
         linkOBGE.SetVisitedColour(linkOBGE.GetNormalColour())
@@ -474,10 +469,15 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(linkOBGE)
         sizerVersions.Add(wx.StaticText(self, -1, obgeNeed))
         sizerVersions.Add(wx.StaticText(self, -1, obgeHave))
-        if bOBGEOk:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpGood))
-        else:
-            sizerVersions.Add(wx.StaticBitmap(self, -1, bmpBad))
+        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bOBGEOk]))
+
+        linkWB = wx.HyperlinkCtrl(self, -1, 'Wrye Bash', 'http://tesnexus.com/downloads/file.php?id=22368')
+        linkWB.SetVisitedColour(linkWB.GetNormalColour())
+        linkWB.SetToolTip(wx.ToolTip('http://tesnexus.com/'))
+        sizerVersions.Add(linkWB)
+        sizerVersions.Add(wx.StaticText(self, -1, wbNeed))
+        sizerVersions.Add(wx.StaticText(self, -1, wbHave))
+        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bWBOk]))
 
         sizerVersions.AddGrowableCol(0)
         sizerVersions.AddGrowableCol(1)
@@ -570,6 +570,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareOblivionVersion', self.fnCompareOblivionVersion, 1)
         self.SetFunction('CompareOBSEVersion', self.fnCompareOBSEVersion, 1)
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
+        self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
         #--Keywords
         self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
@@ -593,7 +594,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('EndSelect', self.kwdEndSelect)
         self.SetKeyword('Return', self.kwdReturn)
         self.SetKeyword('Cancel', self.kwdCancel, 0, ScriptParser.KEY.NO_MAX)
-        self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 3)
+        self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 4)
 
 
     def Begin(self, file):
@@ -709,6 +710,9 @@ class WryeParser(ScriptParser.Parser):
     def fnCompareOBGEVersion(self, obgeWant):
         ret = self._TestVersion(self._TestVersion_Want(obgeWant), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         return ret[0]
+    def fnCompareWBVersion(self, wbWant):
+        wbHave = bosh.settings['bash.readme'][1]
+        return cmp(wbHave, wbWant)
     def fnDataFileExists(self, filename):
         return bosh.dirs['mods'].join(filename).exists()
 
@@ -864,7 +868,7 @@ class WryeParser(ScriptParser.Parser):
             else:
                 temp.append(str(i.text))
         self.notes.append('- %s\n' % ' '.join(temp))
-    def kwdRequireVersions(self, ob, obse='None', obge='None'):
+    def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant=0):
         if self.bAuto: return
         
         obWant = self._TestVersion_Want(ob)
@@ -873,6 +877,7 @@ class WryeParser(ScriptParser.Parser):
         if obseWant == 'None': obse = 'None'
         obgeWant = self._TestVersion_Want(obge)
         if obgeWant == 'None': obge = 'None'
+        wbHave = bosh.settings['bash.readme'][1]
 
         ret = self._TestVersion(obWant, bosh.dirs['app'].join('oblivion.exe'))
         bObOk = ret[0] >= 0
@@ -883,9 +888,10 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(obgeWant, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
+        bWBOk = wbHave >= wbWant
 
         if not bObOk or not bOBSEOk or not bOBGEOk:
-            self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge)
+            self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge, bWBOk, wbHave, wbWant)
     def _TestVersion_Want(self, want):
         try:
             need = [int(i) for i in want.split('.')]

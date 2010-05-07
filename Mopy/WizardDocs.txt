@@ -7,7 +7,7 @@ Image files:
  SelectOne.jpg - Example of what using a 'SelectOne' keyword looks like
  Versions.jpg - Example of using the 'RequireVersions' keyword, and some versions are not met
   
-Supports variables (numbers only, no strings), math, and is fairly easy to add new keywords/functions.
+Supports variables, math, and is fairly easy to add new keywords/functions.
 Strings can be surrounded by single quotes (') or double quotes (").
 Ending a line with a backslash (\) will make the parser treat it as a run-on line (the code for that line continues on the next line).
 Comments are denoted with a semi-colon (;)
@@ -39,7 +39,7 @@ Internally, objects are split up into a few types:
                     is less than,equal, or greater than the given version string
      CompareOBSEVersion('version string') - same but for OBSE
      CompareOBGEVersion('version string') - same but for OBGE
-     !(value) - the NOT operator.  It was easier to code this way, so you must use parenthesis
+     CompareWBVersion(version number) - same but for Wrye Bash version
      DataFileExists('filename') - return True if the file exists, False otherwise.  Path is
                     relative to the Data directory
  - Keyword List:
@@ -62,13 +62,10 @@ Internally, objects are split up into a few types:
      Case/Default/Break/EndSelect - Use with SelectOne/Many, just like in OBMM
      Return - Signals the completion of installation.  Jumps to the 'Finish' page
      Cancel 'message' - Cancels installation, giving a message why
-     RequireVersions 'oblivion version', 'obse version', 'obge version'
+     RequireVersions 'oblivion version', 'obse version', 'obge version' 'wrye bash version'
          - checks the installed versions against the given versions, if you don't meet the
            requirements, shows a page telling why.  If any versions string is given as '0' or '',
            it is treated as a 'None' requirement
   - Predefined constants:
      True
      False
-
-*NOTES*
- *the NOT operator '!' is coded as a function rather than an operator.  This was easier to code.  That means to use it you must enclose whatever you are 'NOT-ing' in parenthesis
