@@ -712,7 +712,7 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join('obse_loader.exe'))
         return ret[0]
     def fnCompareOBGEVersion(self, obgeWant):
-        ret = self._TestVersion_OBGE(self._TestVersion_Want(obgeWant), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
+        ret = self._TestVersion_OBGE(self._TestVersion_Want(obgeWant))
         return ret[0]
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
@@ -889,7 +889,7 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(obseWant, bosh.dirs['app'].join('obse_loader.exe'))
         bOBSEOk = ret[0] >= 0
         obseHave = ret[1]
-        ret = self._TestVersion_OBGE(obgeWant, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
+        ret = self._TestVersion_OBGE(obgeWant)
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
         bWBOk = wbHave >= wbWant
