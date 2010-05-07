@@ -5126,7 +5126,7 @@ class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
 
-class SkelTweaker(bosh.SkelTweaker,TweakPatcher): pass
+class TweakActors(bosh.TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
@@ -5165,7 +5165,7 @@ PatchDialog.patchers.extend((
     ImportFactions(),
     ImportInventory(),
     ImportActorSpells(),
-    SkelTweaker(),
+    TweakActors(),
     ImportRelations(),
     ImportScripts(),
     ImportScriptContents(),

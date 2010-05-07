@@ -2249,7 +2249,7 @@ class MreCont(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreCrea(MreActor):
-    """NPC Record. Non-Player Character."""
+    """Creature Record."""
     classType = 'CREA'
     #--Main flags
     _flags = Flags(0L,Flags.getNames(
@@ -15854,6 +15854,7 @@ class ImportSpells(ImportPatcher):
         mod_count = {}
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
+                print record.full
                 changed = False
                 deltas = id_deltas.get(record.fid)
                 if not deltas: continue
@@ -19408,6 +19409,49 @@ class BasalNPCTweaker(MultiTweakItem):
         #for srcMod in modInfos.getOrdered(count.keys()):
         #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
+class BasalCreatureTweaker(MultiTweakItem):
+    """Base for all Creature tweakers"""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        # Override this segment with real info.
+        MultiTweakItem.__init__(self,_("Title"),
+            _('Description'),
+            'Ignored',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreCrea,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreCrea,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.CREA
+        for record in modFile.CREA.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        # override this section too!
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.CREA.records:
+            continue
+        #--Log suggestions:
+        #log.setHeader(_('===TITLE'))
+        #log(_('* %d X Tweaked') % (sum(count.values()),))
+        #for srcMod in modInfos.getOrdered(count.keys()):
+        #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
 class RedguardNPCPatcher(BasalNPCTweaker):
     """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
 
@@ -19522,14 +19566,106 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
-class SkelTweaker(MultiTweaker):
+class NoBloodCreaturesPatcher(BasalCreatureTweaker):
+    """Set all creatures to have no blood records."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("No Bloody Creatures"),
+            _("Set all creatures to have no blood records."),
+            'No bloody creatures',
+            ('1.0',  '1.0'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.CREA.records:
+            if record.bloodDecalPath or record.bloodSprayPath:
+                record.bloodDecalPath = None
+                record.bloodSprayPath = None
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===No Bloody Creatures'))
+        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class AsIntendedImpsPatcher(BasalCreatureTweaker):
+    """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_('As Intended: Imps'),
+            _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
+            'vicious imps!',
+            ('1.0',  '1.0'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        spell = (GPath('Oblivion.esm'), 0x02B53F)
+        for record in patchFile.CREA.records:
+            if not record.full: continue #for unnamed creatures else next if crashes.
+            if 'imp' in record.full.lower():
+                if 'imperial' in record.full.lower(): continue #avoids false positive.
+                if spell not in record.spells:
+                    record.spells.append(spell)
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===As Intended: Imps'))
+        log(_('* %d Imps Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class AsIntendedBoarsPatcher(BasalCreatureTweaker):
+    """Set all imps to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_('As Intended: Boars'),
+            _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
+            'vicious boars!',
+            ('1.0',  '1.0'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        spell = (GPath('Oblivion.esm'), 0x02B54E)
+        keep = patchFile.getKeeper()
+        for record in patchFile.CREA.records:
+            if not record.full: continue #for unnamed creatures else next if crashes.
+            if 'boar' in record.full.lower():
+                if spell not in record.spells:
+                    record.spells.append(spell)
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===As Intended: Boars'))
+        log(_('* %d Boars Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class TweakActors(MultiTweaker):
     """Sets NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _('NPC Tweaker')
-    text = _("Tweak NPC Records in specified ways")
+    name = _('Tweak Actors')
+    text = _("Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
         RedguardNPCPatcher(),
+        NoBloodCreaturesPatcher(),
+        AsIntendedImpsPatcher(),
+        AsIntendedBoarsPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
