@@ -15759,7 +15759,7 @@ class ImportSpells(ImportPatcher):
     """Merge changes to actor inventories."""
     name = _('Import Spells')
     text = _("Merges changes to NPC, creature spell lists.")
-    autoKey = ('Spells','spellsOnly')
+    autoKey = ('Actors.Spells','spellsOnly')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     siMode = True
 
@@ -15771,7 +15771,7 @@ class ImportSpells(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
         self.spellsOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set(('spellsOnly','SIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and set(('spellsOnly')) & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.masters = set()
         for srcMod in self.srcMods:
@@ -15828,16 +15828,16 @@ class ImportSpells(ImportPatcher):
             for fid,entries in mod_id_entries[modName].iteritems():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
-                masterItems = set(x.spells for x in masterEntries)
-                modItems = set(x.spells for x in entries)
+                masterItems = set(x for x in masterEntries)
+                modItems = set(x for x in entries)
                 removeItems = masterItems - modItems
                 addItems = modItems - masterItems
-                addEntries = [x for x in entries if x.item in addItems]
+                addEntries = [x for x in entries if x in addItems]
                 deltas = self.id_deltas.get(fid)
                 if deltas is None: deltas = self.id_deltas[fid] = []
                 deltas.append((removeItems,addEntries))
         #--Keep record?
-        if modFile.fileInfo.name not in self.inventOnlyMods:
+        if modFile.fileInfo.name not in self.spellsOnlyMods:
             for type in ('NPC_','CREA'):
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
@@ -15857,18 +15857,19 @@ class ImportSpells(ImportPatcher):
                 changed = False
                 deltas = id_deltas.get(record.fid)
                 if not deltas: continue
-                removable = set(x.spells for x in record.spells)
+                removable = set(x for x in record.spells)
                 for removeItems,addEntries in reversed(deltas):
                     if removeItems:
                         #--Skip if some items to be removed have already been removed
                         if not removeItems.issubset(removable): continue
-                        record.items = [x for x in record.spells if x.spells not in removeItems]
+                        record.items = [x for x in record.spells if x not in removeItems]
                         removable -= removeItems
                         changed = True
                     if addEntries:
-                        current = set(x.spells for x in record.spells)
+                        current = set(x for x in record.spells)
                         for entry in addEntries:
-                            if entry.spells not in current:
+                            if entry not in current:
+                                print entry
                                 record.spells.append(entry)
                                 changed = True
                 if changed:
@@ -17757,6 +17758,7 @@ class GmstTweaker(MultiTweaker):
             ('30',30),
             ('40',40),
             ('50',50),
+            ('80',80),
             ),
         GmstTweak(_('Crime Alarm Distance'),
             _("Distance from player that NPCs(guards) will be alerted of a crime."),
