@@ -712,7 +712,7 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join('obse_loader.exe'))
         return ret[0]
     def fnCompareOBGEVersion(self, obgeWant):
-        ret = self._TestVersion(self._TestVersion_Want(obgeWant), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
+        ret = self._TestVersion_OBGE(self._TestVersion_Want(obgeWant), bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         return ret[0]
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
@@ -889,13 +889,24 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(obseWant, bosh.dirs['app'].join('obse_loader.exe'))
         bOBSEOk = ret[0] >= 0
         obseHave = ret[1]
-        ret = self._TestVersion(obgeWant, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
+        ret = self._TestVersion_OBGE(obgeWant, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
         bWBOk = wbHave >= wbWant
 
         if not bObOk or not bOBSEOk or not bOBGEOk:
             self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge, bWBOk, wbHave, wbWant)
+    def _TestVersion_OBGE(self, want):
+        retOBGEOld = self._TestVersion(want, bosh.dirs['app'].join('obse', 'plugins', 'obge.dll'))
+        retOBGENew = self._TestVersion(want, bosh.dirs['app'].join('obse', 'plugins', 'obgev2.dll'))
+        haveNew = retOBGENew[1]
+        haveOld = retOBGEOld[1]
+        if haveNew != 'None':
+            # OBGEv2 is installed, use that for comparison
+            return retOBGENew
+        else:
+            # OBGEv2 isn't installed
+            return retOBGEOld
     def _TestVersion_Want(self, want):
         try:
             need = [int(i) for i in want.split('.')]
