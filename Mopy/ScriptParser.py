@@ -86,15 +86,16 @@ class OP:
     # Constants for operator precedences
     PAR = 0     # Parenthesis
     EXP = 1     # Exponent
-    UNA = 2     # Unary (!, ++, --)
+    UNA = 2     # Unary (++, --)
     MUL = 3     # Multiplication (*, /, %)
     ADD = 4     # Addition (+, -)
     CO1 = 5     # Comparison (>=,<=,>,<)
     CO2 = 6     # Comparison (!=, ==)
     MEM = 7     # Membership test (a in b)
-    AND = 8     # Logical and (and, &)
-    OR  = 9     # Locical or (or, |)
-    ASS = 10    # Assignment (=,+=,etc
+    NOT = 8     # Logical not (not, !)
+    AND = 9     # Logical and (and, &)
+    OR  = 10    # Locical or (or, |)
+    ASS = 11    # Assignment (=,+=,etc
 
 # Constants for operator associations
 LEFT = 0
@@ -188,7 +189,7 @@ class Parser(object):
             self.function = function
             self.precedence = precedence
             self.association = association
-            if self.precedence == OP.UNA:
+            if self.precedence in [OP.UNA, OP.NOT]:
                 self.numArgs = 1
             else:
                 self.numArgs = 2
@@ -200,7 +201,7 @@ class Parser(object):
             return self.function(l, r)
 
     class Keyword:
-        def __init__(self, function, min_args=0, max_args=-1, keepCommas=False, passTokens=False):
+        def __init__(self, function, min_args=0, max_args=KEY.NA, keepCommas=False, passTokens=False):
             self.function = function
             if max_args == KEY.NA: max_args = min_args
             if max_args < min_args and max_args > 0: max_args = min_args
@@ -362,9 +363,9 @@ class Parser(object):
             if not key.data.passTokens: self.ConvertToValues()
             numArgs = len(self.tokens)
             if numArgs > key.data.maxArgs and key.data.maxArgs != KEY.NO_MAX:
-                self.error(ERR_TOO_MANY_ARGS % ('keyword', key.text, numArgs, (key.data.minArgs,key.data.maxArgs)))
+                self.error(ERR_TOO_MANY_ARGS % ('keyword', key.text, numArgs, 'min: %s, max: %s' % (key.data.minArgs,key.data.maxArgs)))
             if numArgs < key.data.minArgs:
-                self.error(ERR_TOO_FEW_ARGS % ('keyword', key.text, numArgs, (key.data.minArgs,key.data.maxArgs)))
+                self.error(ERR_TOO_FEW_ARGS % ('keyword', key.text, numArgs, 'min: %s, max: %s' % (key.data.minArgs,key.data.maxArgs)))
             key.data(*self.tokens)
         # It's just an expression, didnt start with a keyword
         else:

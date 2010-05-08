@@ -1,0 +1,458 @@
+= BAIN Wizards ====================================================================#
+<table><tr valign=top><tr valign=top><td width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
+=== Contents
+{{CONTENTS=3}}
+{{CONTENTS=3}}
+</td><td style="border: 1px solid #000000; padding: 5px; background: f6f68c;">
+= Introduction
+
+Starting with Wrye Bash version 278, wizards were added to make it easier to install BAIN packages.  Wizards allow modders to include a simple configuration script with their packages.  All that needs to be done is create a script file name __wizard.txt__ and include it in the package.  When run, the wizard will step through a series of dialogs to determine which sub-packages, esps, and esms should be selected.  Afterwards, you can install the package using those selections.
+
+== Dialogs
+=== SelectOne
+This [[images/SelectOne.jpg|dialog]] gives you a list of options, with the option to select one of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+
+=== SelectMany
+This [[images/SelectMany.jpg|dialog]] gives you a list of options, with the option to select one or more of them, or even none of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+
+=== Versions
+This [[images/Versions.jpg|dialog]] will show up if the wizard specified minimum version requirements, and your system doesn't meet those requirements.  If you want to run the wizard anyway, you can override the warning by clicking the "Install Anyway." option.  If you are running the wizard as an Auto-Wizard, this page will still be shown, but the "Install Anyway." option will already be checked for you.
+
+=== Cancel
+This [[images/Cancel.jpg|dialog]] will be show if the wizard cancels execution for some reason.  If a reason is given, it will be displayed
+
+=== Error
+This [[images/Error.jpg|dialog]] will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
+
+=== Finish
+This [[images/Finish.jpg|dialog]] will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It is also a place for any extra notes from the mod auther to be displayed.
+
+== The language
+BAIN wizards use a language similar to OBMM script, so modders familiar with OBMM should be able to quickly write BAIN versions of their scripts.
+
+Wizards are case sensitive, so ensure you get the case right.  The only exception to this is filenames.
+
+Each line of the wizard contains one statement.  If you want to continue the line onto the next one, just add a __backslash ( \ )__ to the end of the line.  This will cause BAIN to read the next line as is it were part of the first.
+
+=== Variables
+You can use variables by assigning a value using an [[#Operators|assignment operator]].  Just make sure you assign a value before using a variable, or it will generate an error.
+
+Variable names can contain any alpha-numeric characters (a-z,A-Z,0-9) and underscores ( _ ), but cannot start with a digit.  You also cannot create a variable with the same name (case sensitive) as a [[#Keywords|keyword]], [[#Functions|function]], or [[#Constants|constant]].  Variables can be used to hold any of the following types of data:
+* **Integers**
+  * 3
+  * -1
+  * 0
+* **Decimals**
+  * 0.123
+  * -3.5
+  * 7.0
+* **[[#Strings|Strings]]**
+  * "Hello"
+  * 'World!'
+
+=== Constants
+Constants are a sub-type of variables.  They follow the same rules, only they cannot be changed.  You cannot create constants yourself, but there are a few pre-defined constants in BAIN.
+
+=== Expressions
+BAIN will evaluate expressions following the correct order of operations.  For example the expression:
+
+__3 + 6 * 2__
+
+Will evaluate to __15__ as expected, not __18__.
+
+=== Strings
+Strings can be denoted by enclosing the text in either single quotes ( ' ), or double quotes ( " ).  If you need to include a special character in the string, use an escape sequence.  Strings can be added and multiplied using the addition and multiplication [[#Operators|operator]].  You can also test if one string is contained within another using the [[#Operators|in operator]].
+
+= Functions
+
+Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments can be seperatred either by whitespace or a comma.  For example, both of the following would have the same result:
+
+__DummyFunction(arg1, "Hello")__<br />
+__DummyFunction(arg1 "Hello")__
+
+== CompareObVersion
+Used to test the installed version of Oblivion against one you specify.
+
+* __Usage:__
+  * __CompareObVersion(**version_string**)__
+* __Arguments:__
+  * **version_string:** a string formatted to hold a file version number, like "1.2.3.93".  For example the current Oblivion version would be represented as "1.2.0.416"
+* __Return:__
+  * **-1:** Installed Oblivion version is less than the version specified in **version_string**.
+  * **0:** Installed Oblivion version is the same as the version specified in **version_string**.
+  * **1:** Installed Oblivion version is higher than the version specified in **version_string**.
+
+== CompareOBSEVersion
+Used to test the installed version of [[http://obse.silverlock.org/|OBSE]] against one you specify.
+
+* __Usage:__
+  * __CompareOBSEVersion(**version_string**)__
+* __Arguments:__
+  * **version_string:** a string formatted to hold a file version number, like "1.2.3.93".  For example OBSE v18 would be represented as "0.0.18.6"
+* __Return:__
+  * **-1:** Installed OBSE version is less than the version specified in **version_string**.
+  * **0:** Installed OBSE version is the same as the version specified in **version_string**.
+  * **1:** Installed OBSE version is higher than the version specified in **version_string**.
+
+== CompareOBGEVersion
+Used to test the installed version of OBGE against one you specify.  If the [[http://www.tesnexus.com/downloads/file.php?id=30054|new version]] of OBGE/OGE is installed, this will be used for the comparison.  Otherwise, this will be compared to the [[http://timeslip.users.sourceforge.net/obge.html|old version]] or [[http://www.tesnexus.com/downloads/file.php?id=25912|debugged version]] if installed.
+
+* __Usage:__
+  * __CompareOBGEVersion(**version_string**)__
+* __Arguments:__
+  * **version_string:** a string formatted to hold a file version number, like "1.2.3.93".  For example OBGEv2 version 3 would be represented as "3.0.0.0", while the old OBGE would be "0.1.1.0"
+* __Return:__
+  * **-1:** Installed OBGE version is less than the version specified in **version_string**
+  * **0:** Installed OBGE version is the same as the version specified in **version_string**
+  * **1:** Installed OBGE version is higher than the version specified in **version_string**
+
+== CompareWBVersion
+Used to test the current version of Wrye Bash agains one you specify.
+
+* __Usage:__
+  * __CompareWBVersion(**version_number**)__
+* __Arguments:__
+  * **version_number:** a number representing the Wrye Bash version you want to check.  For example Wrye Bash version 284 could be intered as either __284__ or __"284"__.
+* __Return:__
+  * **-1:** Installed Wrye Bash version is less than the version specified in **version_number**.
+  * **0:** Installed Wrye Bash version is the same as the version specified in **version_number**.
+  * **1:** Installed Wrye Bash version is higher than the version specified in **version_number**.
+
+== str
+Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
+
+* __Usage:__
+  * __str(**value**)__
+* __Arguments:__
+  * **value:** any value.  An integer, decimal, variable, constant, or another string.
+* __Return:__
+  * String representation of **value**.  For example, __str(5)__ would return __"5"__.
+
+== int
+Used to convert a value to an integer, for example converting a value held in a string to a integer value.
+
+* __Usage:__
+  * __int(**value**)__
+* __Arguments:__
+  * **value:** any value.  An integer, decimal, variable, constant, or string.
+* __Return:__
+  * Integer value of **value**, if possible.  For example __int('65')__ would return __65__.
+  * **0** if integer conversion is not possible.
+
+== float
+Used to convert a value to decimal, for example converting a value held in a string to a decimal value.
+
+* __Usage:__
+  * __float(**value**)__
+* __Arguments:__
+  * **value:** any value.  An integer, decimal, variable, constant, or string.
+* __Return:__
+  * Decimal value of **value**, if possible.  For example, __float('2.4')__ would return __2.4__.
+  * **0.0** if decimal conversion is not possible.
+
+== len
+Used to find the length of a string.
+
+* __Usage:__
+  * __len(**string**)__
+* __Arguments:__
+  * **string:** a string, variable, or constant.
+* __Return:__
+  * Length of the string if possible.
+  * **0** if length calculation was not possible.
+
+= Keywords
+
+Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.
+
+== SelectSubPackage
+Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package in the BAIN window.
+
+* __Usage:__
+  * __SelectSubPackage **name**__
+* __Arguments:__
+  * **name:** string or variable holding the name of the sub-package to select.
+
+== DeSelectSubPackage
+Cause the specified sub-package to be de-selected from installation.  This is equivilant to un-checking the sub-package in the BAIN window.
+
+* __Usage:__
+  * __DeSelectSubPackage **name**__
+* __Arguments:__
+  * **name:** string or variable holding the name of the sub-package to de-select.
+
+== SelectEspm
+Cause the specified esp or esm to be selected for installation.  This is equivilant to checking the esp or esm from the BAIN window.
+
+* __Usage:__
+  * __SelectEspm **name**__
+* __Arguments:__
+  * **name:** string or variable holding the name of the esp or esm to select.
+
+== DeSelectEspm
+Cause the specified esp or esm to be deselected from installation.  This is equivilant to un-checking the esp or esm from the BAIN window.
+
+* __Usage:__
+  * __DeSelectEspm **name**__
+* __Arguments:__
+  * **name:** string or variable holding the name of the esp or esm to de-select.
+
+== SelectAll
+Cause all sub-packages, esps, and esms to be selected for installation.  This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
+
+* __Usage:__
+  * __SelectAll__
+
+== DeSelectAll
+Cause all sub-packages, esps, and esms to be de-selected from installation.  This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
+
+* __Usage:__
+  * __DeSelectAll__
+
+== SelectAllEspms
+Cause all esps and esms to be selected for installation.  This is equivilant to checking all esps and esms in the BAIN window
+
+* __Usage:__
+  * __SelectAllEspms__
+
+== DeSelectAllEspms
+Cause all esps and esms to be de-selected from installation.  This is equivilant to un-checking all esps and esms in the BAIN window.
+
+* __Usage:__
+  * __DeSelectAllEspms__
+
+== Note
+Add a note to the user to be displayed at the end of the wizard, on the [[images/finish.jpg|finish page]].  The '- ' will be added automatically.
+
+* __Usage:__
+  * __Note **note**__
+* __Arguments:__
+  * **note:** string or variable holding a string, to be displayed on the [[images/finish.jpg|finish page]].
+
+== If-Elif-Else-EndIf
+A basic __If__ control block.
+
+__Usage:__ <br />
+__If__ **satement** <br />
+...lines... <br />
+__Elif__ **statement** <br />
+...lines... <br />
+__Elif__ **statement** <br />
+...lines... <br />
+__Else__ <br />
+...lines... <br />
+__EndIf__
+
+=== If
+* A begins the control block.
+*  If **statement** evaluates to **True**, then the lines following it will be run, until the next __Elif__, __Else__, or __EndIf__.
+
+=== Elif
+*  If **statement** evaluates to **True**, and the initial __If__ and none of the previous __Elif__'s were **True**, then the lines following this __Elif__ will be run, until the next __Elif__, __Else__, or __EndIf__.
+
+=== Else
+*  If the initail __If__ and none of the previous __Elif__'s were **True**, then the lines following will be run until an __EndIf__ is met.
+
+=== EndIf
+* Signals the end of the __If__ control block.
+
+== SelectOne
+Shows a [[images/SelectOne.jpg|dialog]] where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a __Select__ control block.
+
+__Usage:__ <br />
+__SelectOne__ **description**, **option 1**, **description 1**, **image 1**, **option 2**, **description 2**, **image 2**, ..., "option n", "description n", "image n" <br />
+__Case__ **option 1** <br />
+...lines... <br />
+__Break__ <br />
+__Case__ **option 2** <br />
+...lines... <br />
+__Break__ <br />
+... <br />
+... <br />
+__Case__ **option n** <br />
+... <br />
+... <br />
+__Break__
+__Default__ <br />
+...lines... <br />
+__Break__ <br />
+__EndSelect__ <br />
+
+* __Arguments:__
+  * **description:** The text that will be displayed at the top of the dialog.  If the text begins with a "|", this is considered a default option and will be selected by default.
+  * **option n:** The text of the specific option.
+  * **description n:** The description to display when **option n** is selected.
+  * **image n:** The image to display when **option n** is selected.  An empty string will make no image display.
+
+=== Case
+* The lines following the __Case__ will be run if the user selected **option n** on the dialog, until a __Break__ or __EndSelect__ is met.
+* __Usage:__
+  * __Case__ **option n**
+
+=== Default
+* The lines following the __Default__ will be run, until a __Break__ or __EndSelect__,  if none of the __Case__ options have been run.
+* __Usage:__
+  * __Default__
+
+=== Break
+* Stops running lines in the current __Case__ or __Default__ block.
+* __Usage:__
+  * __Break__
+
+=== EndSelect
+* Signals the end of the __Select__ control block.
+
+== SelectMany
+Shows a [[images/SelectMany.jpg|dialog]] where the user can select multiple options from a list.  After the user presses the "Next" button, this begins a __Select__ control block.  See [[#SelectOne|SelectOne]] for usage.
+
+== Return
+Signals completion of the wizard.  This will jump right to the [[images/finish.jpg|finish page]].
+
+* __Usage:__
+  * __Return__
+
+== Cancel
+Cancels the wizard, with an optional text to display in a [[images/Cancel.jpg|dialog]] as to why the wizard was canceled.
+
+* __Usage:__
+  * __Cancel__ [**text**]
+
+== RequireVersions
+Tests the users system agains version requirements you specify.  If the requirements are not met, a [[images/versions.jpg|warning dialog]] will be shown asking if you wish to continue anyway.
+
+* __Usage:__
+  * __RequireVersions__ **oblivion_version** [, **obse_version**] [, **obge_version**] [, **wrye_bash_version**]
+* __Arguments:__
+  * **oblivion_version:** Version of Oblivion to for.  See [[#CompareObVersion|CompareObVersion]] for the proper format of the string.
+  * **obse_version:** Optional.  Version of OBSE to test for.  See [[#CompareOBSEVersion|CompareOBSEVersion]] for the proper format of the string.
+  * **obge_version:** Optional.  Version of OBGE to test for.  See [[#CompareOBGEVersion|CompareOBGEVersion]] for the proper format of the string.
+  * **wrye_bash_version:** Optional.  Version of Wrye Bash to test for.  See [[#CompareWBVersion|CompareWBVersion]] for more info.
+
+= Operators
+
+== Assignment Operators
+
+Assignment operators are how you assign values to variables.  The usage can either be to assign one variable a value, or multiple variables the same value:
+* variable = value
+* variable1 = variable2 = variable3 = value
+
+=== Assignment (=)
+* variable = value
+
+=== Compound Assignment (+=, -=, etc)
+There are compound assignment operators for all of the math operators.  A compound assignment will first perform the math operation using the variable and the value, then assign the result to the variable.
+* variable += value
+* variable -= value
+* variable *= value
+
+== Math Operators
+
+=== Addition (+)
+Adds two values, variables, etc together
+
+=== Subtraction (-)
+Subtracts two values, variables, etc.
+
+=== Multiplication (*)
+Multiplies two values, variables, etc together.
+
+=== Division (/)
+Divides two values, variables, etc.
+
+=== Exponentiation (^)
+Raised one value to the power of another value
+
+==  Boolean Operators
+Used to test the Truth of values
+
+=== And (&, and)
+* __Usage:__
+  * left & right
+  * left and right
+* __Return:__
+  * **True** if both **left** and **right** are **True**.
+  * **False** otherwise.
+
+=== Or (|, or)
+* __Usage:__
+  * left | right
+  * left or right
+* __Return:__
+  * **True** if either **left** or **right** is **True**.
+  * **False** if neither **left** nor **right** is **True**.
+
+=== Not (!, not)
+* __Usage:__
+  * !value
+  * not value
+* __Return:__
+  * **True** if value is **False**.
+  * **False** if value is **True**.
+
+=== In (in)
+* __Usage:__
+  * left in right
+* __Return:__
+  * **True** if left is contained in right.  For example __'hi' in 'this'__ would return **True**.
+  * **False** otherwise.
+
+== Comparison Operators
+Used to compare two values, variables, etc together.
+
+=== Equal (==)
+* __Usage:__
+  * left == right
+* __Return:__
+  * **True** if left is equal to right.
+  * **False** otherwise.
+
+=== Not Equal (!=)
+* __Usage:__
+  * left != right
+* __Return:__
+  * **True** if left does not equal right.
+  * **False** otherwise.
+
+=== Greater Than or Equal (>=)
+* __Usage:__
+  * left >= right
+* __Return:__
+  * **True** if left is greater than or equal to right.
+  * **False** otherwise.
+
+=== Greater Than (>)
+* __Usage:__
+  * left > right
+* __Return:__
+  * **True** if left is greater than right.
+  * **False** otherwise.
+
+=== Less Than or Equal (<=)
+* __Usage:__
+  * left <= right
+* __Return:__
+  * **True** if left is less than or equal to right.
+  * **False** otherwise.
+
+=== Less Than (<)
+* __Usage:__
+  * left < right
+* __Return:__
+  * **True** if left is less than right.
+  * **False** otherwise
+
+= Built-in Constants
+There are only a few constants that come defined in BAIN wizards.
+
+=== True
+* __Value:__ True (1)
+
+=== False
+* __Value: __ False (0)
+
+= Escape Sequences
+Escape sequences are special sequences of character you can put in a string to get a different character out when used in the wizard
+* __'\t':__ Insert a Tab
+* __'\n':__ Insert a newline character.
+
+</td></tr></table>
