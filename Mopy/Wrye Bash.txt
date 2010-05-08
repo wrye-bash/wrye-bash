@@ -1586,7 +1586,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Copy Text:__ Copies text of report to clipboard. (Useful for forum postings.)
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 
-== INI Tweaks Tab ==================================================================
+== INI Edits Tab ==================================================================
+<img src="images/INI Edits Tab.jpg" width="686" height="527" border="0" alt="INI Edits Tabl">
 * This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
