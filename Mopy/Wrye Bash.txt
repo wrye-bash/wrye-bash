@@ -460,6 +460,7 @@ Bain Wizards allow modders to include a simple configuration script with their p
 * __Wizard Options__
   * __Auto-Anneal/Install:__ If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.
   * __Auto Wizard:__ When this is selected, any dialogs that are provided with default answers will automatically use these.
+* For more information on BAIN Wizards, see the wizards [[wizards.html|documentation]].
 
 === Package Commands
 The following commands are available from context menu of packages.

@@ -1,0 +1,553 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+    <HTML>
+    <HEAD>
+    <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
+    <TITLE>BAIN Wizards</TITLE>
+    <STYLE>
+    H1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+    H2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    H3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+    H4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+    P { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    P.empty {}
+    P.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+    P.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+    P.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+    P.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+    P.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+    P.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+    PRE { border: 1px solid; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+    CODE { background-color: #FDF5E6;}
+    BODY { background-color: #ffffcc; }
+    </STYLE>
+    </HEAD>
+    <BODY>
+    <h1><a name='BAINWizards'>BAIN Wizards</a></h1>
+<table><tr valign=top><tr valign=top><td width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
+<h3><a name='Contents'>Contents</a></h3>
+<p class=list-1>&bull;&nbsp; <a href="#Introduction">Introduction</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#Dialogs">Dialogs</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#SelectOne">SelectOne</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#SelectMany">SelectMany</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Versions">Versions</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Cancel">Cancel</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Error">Error</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Finish">Finish</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#Thelanguage">The language</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Variables">Variables</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Constants">Constants</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Expressions">Expressions</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Strings">Strings</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#Functions">Functions</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CompareObVersion">CompareObVersion</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CompareOBSEVersion">CompareOBSEVersion</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CompareOBGEVersion">CompareOBGEVersion</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CompareWBVersion">CompareWBVersion</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#str">str</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#int">int</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#float">float</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#len">len</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#Keywords">Keywords</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectSubPackage">SelectSubPackage</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#DeSelectSubPackage">DeSelectSubPackage</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectEspm">SelectEspm</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#DeSelectEspm">DeSelectEspm</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectAll">SelectAll</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#DeSelectAll">DeSelectAll</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectAllEspms">SelectAllEspms</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#DeSelectAllEspms">DeSelectAllEspms</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#Note">Note</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#IfElifElseEndIf">If-Elif-Else-EndIf</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#If">If</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Elif">Elif</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Else">Else</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#EndIf">EndIf</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectOne">SelectOne</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Case">Case</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Default">Default</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Break">Break</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#EndSelect">EndSelect</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SelectMany">SelectMany</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#Return">Return</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#Cancel">Cancel</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#RequireVersions">RequireVersions</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#Operators">Operators</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#AssignmentOperators">Assignment Operators</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Assignment">Assignment (=)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#CompoundAssignmentetc">Compound Assignment (+=, -=, etc)</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#MathOperators">Math Operators</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Addition">Addition (+)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Subtraction">Subtraction (-)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Multiplication">Multiplication (*)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Division">Division (/)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Exponentiation">Exponentiation (^)</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#BooleanOperators">Boolean Operators</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Andand">And (&, and)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Oror">Or (|, or)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Notnot">Not (!, not)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Inin">In (in)</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ComparisonOperators">Comparison Operators</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Equal">Equal (==)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#NotEqual">Not Equal (!=)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#GreaterThanorEqual">Greater Than or Equal (>=)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#GreaterThan">Greater Than (>)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#LessThanorEqual">Less Than or Equal (<=)</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#LessThan">Less Than (<)</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#BuiltinConstants">Built-in Constants</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#True">True</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#False">False</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#EscapeSequences">Escape Sequences</a></p>
+</td><td style="border: 1px solid #000000; padding: 5px; background: f6f68c;">
+<h1><a name='Introduction'>Introduction</a></h1>
+<p class=empty>&nbsp;</p>
+<p>Starting with Wrye Bash version 278, wizards were added to make it easier to install BAIN packages.  Wizards allow modders to include a simple configuration script with their packages.  All that needs to be done is create a script file name <B>wizard.txt</B> and include it in the package.  When run, the wizard will step through a series of dialogs to determine which sub-packages, esps, and esms should be selected.  Afterwards, you can install the package using those selections.
+<p class=empty>&nbsp;</p>
+<h2><a name='Dialogs'>Dialogs</a></h2>
+<h3><a name='SelectOne'>SelectOne</a></h3>
+<p>This <a href="images/SelectOne.jpg">dialog</a> gives you a list of options, with the option to select one of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+<p class=empty>&nbsp;</p>
+<h3><a name='SelectMany'>SelectMany</a></h3>
+<p>This <a href="images/SelectMany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+<p class=empty>&nbsp;</p>
+<h3><a name='Versions'>Versions</a></h3>
+<p>This <a href="images/Versions.jpg">dialog</a> will show up if the wizard specified minimum version requirements, and your system doesn't meet those requirements.  If you want to run the wizard anyway, you can override the warning by clicking the "Install Anyway." option.  If you are running the wizard as an Auto-Wizard, this page will still be shown, but the "Install Anyway." option will already be checked for you.
+<p class=empty>&nbsp;</p>
+<h3><a name='Cancel'>Cancel</a></h3>
+<p>This <a href="images/Cancel.jpg">dialog</a> will be show if the wizard cancels execution for some reason.  If a reason is given, it will be displayed
+<p class=empty>&nbsp;</p>
+<h3><a name='Error'>Error</a></h3>
+<p>This <a href="images/Error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
+<p class=empty>&nbsp;</p>
+<h3><a name='Finish'>Finish</a></h3>
+<p>This <a href="images/Finish.jpg">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It is also a place for any extra notes from the mod auther to be displayed.
+<p class=empty>&nbsp;</p>
+<h2><a name='Thelanguage'>The language</a></h2>
+<p>BAIN wizards use a language similar to OBMM script, so modders familiar with OBMM should be able to quickly write BAIN versions of their scripts.
+<p class=empty>&nbsp;</p>
+<p>Wizards are case sensitive, so ensure you get the case right.  The only exception to this is filenames.
+<p class=empty>&nbsp;</p>
+<p>Each line of the wizard contains one statement.  If you want to continue the line onto the next one, just add a <B>backslash ( \ )</B> to the end of the line.  This will cause BAIN to read the next line as is it were part of the first.
+<p class=empty>&nbsp;</p>
+<h3><a name='Variables'>Variables</a></h3>
+<p>You can use variables by assigning a value using an <a href="#Operators">assignment operator</a>.  Just make sure you assign a value before using a variable, or it will generate an error.
+<p class=empty>&nbsp;</p>
+<p>Variable names can contain any alpha-numeric characters (a-z,A-Z,0-9) and underscores ( _ ), but cannot start with a digit.  You also cannot create a variable with the same name (case sensitive) as a <a href="#Keywords">keyword</a>, <a href="#Functions">function</a>, or <a href="#Constants">constant</a>.  Variables can be used to hold any of the following types of data:
+<p class=list-1>&bull;&nbsp; <B><I>Integers</I></B>
+  <p class=list-2>&bull;&nbsp; 3
+  <p class=list-2>&bull;&nbsp; -1
+  <p class=list-2>&bull;&nbsp; 0
+<p class=list-1>&bull;&nbsp; <B><I>Decimals</I></B>
+  <p class=list-2>&bull;&nbsp; 0.123
+  <p class=list-2>&bull;&nbsp; -3.5
+  <p class=list-2>&bull;&nbsp; 7.0
+<p class=list-1>&bull;&nbsp; <B><I><a href="#Strings">Strings</a></I></B>
+  <p class=list-2>&bull;&nbsp; "Hello"
+  <p class=list-2>&bull;&nbsp; 'World!'
+  <p class=empty>&nbsp;</p>
+<h3><a name='Constants'>Constants</a></h3>
+<p>Constants are a sub-type of variables.  They follow the same rules, only they cannot be changed.  You cannot create constants yourself, but there are a few pre-defined constants in BAIN.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Expressions'>Expressions</a></h3>
+<p>BAIN will evaluate expressions following the correct order of operations.  For example the expression:
+  <p class=empty>&nbsp;</p>
+<p><B>3 + 6 * 2</B>
+  <p class=empty>&nbsp;</p>
+<p>Will evaluate to <B>15</B> as expected, not <B>18</B>.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Strings'>Strings</a></h3>
+<p>Strings can be denoted by enclosing the text in either single quotes ( ' ), or double quotes ( " ).  If you need to include a special character in the string, use an escape sequence.  Strings can be added and multiplied using the addition and multiplication <a href="#Operators">operator</a>.  You can also test if one string is contained within another using the <a href="#Operators">in operator</a>.
+  <p class=empty>&nbsp;</p>
+<h1><a name='Functions'>Functions</a></h1>
+  <p class=empty>&nbsp;</p>
+<p>Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments can be seperatred either by whitespace or a comma.  For example, both of the following would have the same result:
+  <p class=empty>&nbsp;</p>
+<p><B>DummyFunction(arg1, "Hello")</B><br />
+<B>DummyFunction(arg1 "Hello")</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='CompareObVersion'>CompareObVersion</a></h2>
+<p>Used to test the installed version of Oblivion against one you specify.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>CompareObVersion(<B><I>version_string</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>version_string:</I></B> a string formatted to hold a file version number, like "1.2.3.93".  For example the current Oblivion version would be represented as "1.2.0.416"
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> Installed Oblivion version is less than the version specified in <B><I>version_string</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>0:</I></B> Installed Oblivion version is the same as the version specified in <B><I>version_string</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>1:</I></B> Installed Oblivion version is higher than the version specified in <B><I>version_string</I></B>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='CompareOBSEVersion'>CompareOBSEVersion</a></h2>
+<p>Used to test the installed version of <a href="http://obse.silverlock.org/">OBSE</a> against one you specify.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>CompareOBSEVersion(<B><I>version_string</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>version_string:</I></B> a string formatted to hold a file version number, like "1.2.3.93".  For example OBSE v18 would be represented as "0.0.18.6"
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> Installed OBSE version is less than the version specified in <B><I>version_string</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>0:</I></B> Installed OBSE version is the same as the version specified in <B><I>version_string</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>1:</I></B> Installed OBSE version is higher than the version specified in <B><I>version_string</I></B>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='CompareOBGEVersion'>CompareOBGEVersion</a></h2>
+<p>Used to test the installed version of OBGE against one you specify.  If the <a href="http://www.tesnexus.com/downloads/file.php?id=30054">new version</a> of OBGE/OGE is installed, this will be used for the comparison.  Otherwise, this will be compared to the <a href="http://timeslip.users.sourceforge.net/obge.html">old version</a> or <a href="http://www.tesnexus.com/downloads/file.php?id=25912">debugged version</a> if installed.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>CompareOBGEVersion(<B><I>version_string</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>version_string:</I></B> a string formatted to hold a file version number, like "1.2.3.93".  For example OBGEv2 version 3 would be represented as "3.0.0.0", while the old OBGE would be "0.1.1.0"
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> Installed OBGE version is less than the version specified in <B><I>version_string</I></B>
+  <p class=list-2>&bull;&nbsp; <B><I>0:</I></B> Installed OBGE version is the same as the version specified in <B><I>version_string</I></B>
+  <p class=list-2>&bull;&nbsp; <B><I>1:</I></B> Installed OBGE version is higher than the version specified in <B><I>version_string</I></B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='CompareWBVersion'>CompareWBVersion</a></h2>
+<p>Used to test the current version of Wrye Bash agains one you specify.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>CompareWBVersion(<B><I>version_number</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>version_number:</I></B> a number representing the Wrye Bash version you want to check.  For example Wrye Bash version 284 could be intered as either <B>284</B> or <B>"284"</B>.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> Installed Wrye Bash version is less than the version specified in <B><I>version_number</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>0:</I></B> Installed Wrye Bash version is the same as the version specified in <B><I>version_number</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>1:</I></B> Installed Wrye Bash version is higher than the version specified in <B><I>version_number</I></B>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='str'>str</a></h2>
+<p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>str(<B><I>value</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>value:</I></B> any value.  An integer, decimal, variable, constant, or another string.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; String representation of <B><I>value</I></B>.  For example, <B>str(5)</B> would return <B>"5"</B>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='int'>int</a></h2>
+<p>Used to convert a value to an integer, for example converting a value held in a string to a integer value.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>int(<B><I>value</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>value:</I></B> any value.  An integer, decimal, variable, constant, or string.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; Integer value of <B><I>value</I></B>, if possible.  For example <B>int('65')</B> would return <B>65</B>.
+  <p class=list-2>&bull;&nbsp; <B><I>0</I></B> if integer conversion is not possible.
+  <p class=empty>&nbsp;</p>
+<h2><a name='float'>float</a></h2>
+<p>Used to convert a value to decimal, for example converting a value held in a string to a decimal value.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>float(<B><I>value</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>value:</I></B> any value.  An integer, decimal, variable, constant, or string.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; Decimal value of <B><I>value</I></B>, if possible.  For example, <B>float('2.4')</B> would return <B>2.4</B>.
+  <p class=list-2>&bull;&nbsp; <B><I>0.0</I></B> if decimal conversion is not possible.
+  <p class=empty>&nbsp;</p>
+<h2><a name='len'>len</a></h2>
+<p>Used to find the length of a string.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>len(<B><I>string</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>string:</I></B> a string, variable, or constant.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; Length of the string if possible.
+  <p class=list-2>&bull;&nbsp; <B><I>0</I></B> if length calculation was not possible.
+  <p class=empty>&nbsp;</p>
+<h1><a name='Keywords'>Keywords</a></h1>
+  <p class=empty>&nbsp;</p>
+<p>Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.
+  <p class=empty>&nbsp;</p>
+<h2><a name='SelectSubPackage'>SelectSubPackage</a></h2>
+<p>Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package in the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>SelectSubPackage <B><I>name</I></B></B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>name:</I></B> string or variable holding the name of the sub-package to select.
+  <p class=empty>&nbsp;</p>
+<h2><a name='DeSelectSubPackage'>DeSelectSubPackage</a></h2>
+<p>Cause the specified sub-package to be de-selected from installation.  This is equivilant to un-checking the sub-package in the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>DeSelectSubPackage <B><I>name</I></B></B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>name:</I></B> string or variable holding the name of the sub-package to de-select.
+  <p class=empty>&nbsp;</p>
+<h2><a name='SelectEspm'>SelectEspm</a></h2>
+<p>Cause the specified esp or esm to be selected for installation.  This is equivilant to checking the esp or esm from the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>SelectEspm <B><I>name</I></B></B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>name:</I></B> string or variable holding the name of the esp or esm to select.
+  <p class=empty>&nbsp;</p>
+<h2><a name='DeSelectEspm'>DeSelectEspm</a></h2>
+<p>Cause the specified esp or esm to be deselected from installation.  This is equivilant to un-checking the esp or esm from the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>DeSelectEspm <B><I>name</I></B></B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>name:</I></B> string or variable holding the name of the esp or esm to de-select.
+  <p class=empty>&nbsp;</p>
+<h2><a name='SelectAll'>SelectAll</a></h2>
+<p>Cause all sub-packages, esps, and esms to be selected for installation.  This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>SelectAll</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='DeSelectAll'>DeSelectAll</a></h2>
+<p>Cause all sub-packages, esps, and esms to be de-selected from installation.  This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>DeSelectAll</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='SelectAllEspms'>SelectAllEspms</a></h2>
+<p>Cause all esps and esms to be selected for installation.  This is equivilant to checking all esps and esms in the BAIN window
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>SelectAllEspms</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='DeSelectAllEspms'>DeSelectAllEspms</a></h2>
+<p>Cause all esps and esms to be de-selected from installation.  This is equivilant to un-checking all esps and esms in the BAIN window.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>DeSelectAllEspms</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='Note'>Note</a></h2>
+<p>Add a note to the user to be displayed at the end of the wizard, on the <a href="images/finish.jpg">finish page</a>.  The '- ' will be added automatically.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Note <B><I>note</I></B></B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>note:</I></B> string or variable holding a string, to be displayed on the <a href="images/finish.jpg">finish page</a>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='IfElifElseEndIf'>If-Elif-Else-EndIf</a></h2>
+<p>A basic <B>If</B> control block.
+  <p class=empty>&nbsp;</p>
+<p><B>Usage:</B> <br />
+<B>If</B> <B><I>satement</I></B> <br />
+...lines... <br />
+<p><B>Elif</B> <B><I>statement</I></B> <br />
+...lines... <br />
+<p><B>Elif</B> <B><I>statement</I></B> <br />
+...lines... <br />
+<p><B>Else</B> <br />
+...lines... <br />
+<p><B>EndIf</B>
+  <p class=empty>&nbsp;</p>
+<h3><a name='If'>If</a></h3>
+<p class=list-1>&bull;&nbsp; A begins the control block.
+<p class=list-1>&bull;&nbsp;  If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, then the lines following it will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
+<p class=empty>&nbsp;</p>
+<h3><a name='Elif'>Elif</a></h3>
+<p class=list-1>&bull;&nbsp;  If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, and the initial <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following this <B>Elif</B> will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
+<p class=empty>&nbsp;</p>
+<h3><a name='Else'>Else</a></h3>
+<p class=list-1>&bull;&nbsp;  If the initail <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following will be run until an <B>EndIf</B> is met.
+<p class=empty>&nbsp;</p>
+<h3><a name='EndIf'>EndIf</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the end of the <B>If</B> control block.
+<p class=empty>&nbsp;</p>
+<h2><a name='SelectOne'>SelectOne</a></h2>
+<p>Shows a <a href="images/SelectOne.jpg">dialog</a> where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a <B>Select</B> control block.
+<p class=empty>&nbsp;</p>
+<p><B>Usage:</B> <br />
+<B>SelectOne</B> <B><I>description</I></B>, <B><I>option 1</I></B>, <B><I>description 1</I></B>, <B><I>image 1</I></B>, <B><I>option 2</I></B>, <B><I>description 2</I></B>, <B><I>image 2</I></B>, ..., "option n", "description n", "image n" <br />
+<B>Case</B> <B><I>option 1</I></B> <br />
+...lines... <br />
+<p><B>Break</B> <br />
+<B>Case</B> <B><I>option 2</I></B> <br />
+...lines... <br />
+<p><B>Break</B> <br />
+... <br />
+... <br />
+<p><B>Case</B> <B><I>option n</I></B> <br />
+... <br />
+... <br />
+<p><B>Break</B>
+<B>Default</B> <br />
+...lines... <br />
+<p><B>Break</B> <br />
+<B>EndSelect</B> <br />
+<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>description:</I></B> The text that will be displayed at the top of the dialog.  If the text begins with a "|", this is considered a default option and will be selected by default.
+  <p class=list-2>&bull;&nbsp; <B><I>option n:</I></B> The text of the specific option.
+  <p class=list-2>&bull;&nbsp; <B><I>description n:</I></B> The description to display when <B><I>option n</I></B> is selected.
+  <p class=list-2>&bull;&nbsp; <B><I>image n:</I></B> The image to display when <B><I>option n</I></B> is selected.  An empty string will make no image display.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Case'>Case</a></h3>
+<p class=list-1>&bull;&nbsp; The lines following the <B>Case</B> will be run if the user selected <B><I>option n</I></B> on the dialog, until a <B>Break</B> or <B>EndSelect</B> is met.
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Case</B> <B><I>option n</I></B>
+  <p class=empty>&nbsp;</p>
+<h3><a name='Default'>Default</a></h3>
+<p class=list-1>&bull;&nbsp; The lines following the <B>Default</B> will be run, until a <B>Break</B> or <B>EndSelect</B>,  if none of the <B>Case</B> options have been run.
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Default</B>
+  <p class=empty>&nbsp;</p>
+<h3><a name='Break'>Break</a></h3>
+<p class=list-1>&bull;&nbsp; Stops running lines in the current <B>Case</B> or <B>Default</B> block.
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Break</B>
+  <p class=empty>&nbsp;</p>
+<h3><a name='EndSelect'>EndSelect</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the end of the <B>Select</B> control block.
+<p class=empty>&nbsp;</p>
+<h2><a name='SelectMany'>SelectMany</a></h2>
+<p>Shows a <a href="images/SelectMany.jpg">dialog</a> where the user can select multiple options from a list.  After the user presses the "Next" button, this begins a <B>Select</B> control block.  See <a href="#SelectOne">SelectOne</a> for usage.
+<p class=empty>&nbsp;</p>
+<h2><a name='Return'>Return</a></h2>
+<p>Signals completion of the wizard.  This will jump right to the <a href="images/finish.jpg">finish page</a>.
+<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Return</B>
+  <p class=empty>&nbsp;</p>
+<h2><a name='Cancel'>Cancel</a></h2>
+<p>Cancels the wizard, with an optional text to display in a <a href="images/Cancel.jpg">dialog</a> as to why the wizard was canceled.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>Cancel</B> [<B><I>text</I></B>]
+  <p class=empty>&nbsp;</p>
+<h2><a name='RequireVersions'>RequireVersions</a></h2>
+<p>Tests the users system agains version requirements you specify.  If the requirements are not met, a <a href="images/versions.jpg">warning dialog</a> will be shown asking if you wish to continue anyway.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>RequireVersions</B> <B><I>oblivion_version</I></B> [, <B><I>obse_version</I></B>] [, <B><I>obge_version</I></B>] [, <B><I>wrye_bash_version</I></B>]
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>oblivion_version:</I></B> Version of Oblivion to for.  See <a href="#CompareObVersion">CompareObVersion</a> for the proper format of the string.
+  <p class=list-2>&bull;&nbsp; <B><I>obse_version:</I></B> Optional.  Version of OBSE to test for.  See <a href="#CompareOBSEVersion">CompareOBSEVersion</a> for the proper format of the string.
+  <p class=list-2>&bull;&nbsp; <B><I>obge_version:</I></B> Optional.  Version of OBGE to test for.  See <a href="#CompareOBGEVersion">CompareOBGEVersion</a> for the proper format of the string.
+  <p class=list-2>&bull;&nbsp; <B><I>wrye_bash_version:</I></B> Optional.  Version of Wrye Bash to test for.  See <a href="#CompareWBVersion">CompareWBVersion</a> for more info.
+  <p class=empty>&nbsp;</p>
+<h1><a name='Operators'>Operators</a></h1>
+  <p class=empty>&nbsp;</p>
+<h2><a name='AssignmentOperators'>Assignment Operators</a></h2>
+  <p class=empty>&nbsp;</p>
+<p>Assignment operators are how you assign values to variables.  The usage can either be to assign one variable a value, or multiple variables the same value:
+<p class=list-1>&bull;&nbsp; variable = value
+<p class=list-1>&bull;&nbsp; variable1 = variable2 = variable3 = value
+<p class=empty>&nbsp;</p>
+<h3><a name='Assignment'>Assignment (=)</a></h3>
+<p class=list-1>&bull;&nbsp; variable = value
+<p class=empty>&nbsp;</p>
+<h3><a name='CompoundAssignmentetc'>Compound Assignment (+=, -=, etc)</a></h3>
+<p>There are compound assignment operators for all of the math operators.  A compound assignment will first perform the math operation using the variable and the value, then assign the result to the variable.
+<p class=list-1>&bull;&nbsp; variable += value
+<p class=list-1>&bull;&nbsp; variable -= value
+<p class=list-1>&bull;&nbsp; variable *= value
+<p class=empty>&nbsp;</p>
+<h2><a name='MathOperators'>Math Operators</a></h2>
+<p class=empty>&nbsp;</p>
+<h3><a name='Addition'>Addition (+)</a></h3>
+<p>Adds two values, variables, etc together
+<p class=empty>&nbsp;</p>
+<h3><a name='Subtraction'>Subtraction (-)</a></h3>
+<p>Subtracts two values, variables, etc.
+<p class=empty>&nbsp;</p>
+<h3><a name='Multiplication'>Multiplication (*)</a></h3>
+<p>Multiplies two values, variables, etc together.
+<p class=empty>&nbsp;</p>
+<h3><a name='Division'>Division (/)</a></h3>
+<p>Divides two values, variables, etc.
+<p class=empty>&nbsp;</p>
+<h3><a name='Exponentiation'>Exponentiation (^)</a></h3>
+<p>Raised one value to the power of another value
+<p class=empty>&nbsp;</p>
+<h2><a name='BooleanOperators'>Boolean Operators</a></h2>
+<p>Used to test the Truth of values
+<p class=empty>&nbsp;</p>
+<h3><a name='Andand'>And (&, and)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left & right
+  <p class=list-2>&bull;&nbsp; left and right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if both <B><I>left</I></B> and <B><I>right</I></B> are <B><I>True</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Oror'>Or (|, or)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left | right
+  <p class=list-2>&bull;&nbsp; left or right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if either <B><I>left</I></B> or <B><I>right</I></B> is <B><I>True</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> if neither <B><I>left</I></B> nor <B><I>right</I></B> is <B><I>True</I></B>.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Notnot'>Not (!, not)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; !value
+  <p class=list-2>&bull;&nbsp; not value
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if value is <B><I>False</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> if value is <B><I>True</I></B>.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Inin'>In (in)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left in right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is contained in right.  For example <B>'hi' in 'this'</B> would return <B><I>True</I></B>.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h2><a name='ComparisonOperators'>Comparison Operators</a></h2>
+<p>Used to compare two values, variables, etc together.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Equal'>Equal (==)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left == right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is equal to right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='NotEqual'>Not Equal (!=)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left != right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left does not equal right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='GreaterThanorEqual'>Greater Than or Equal (>=)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left >= right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is greater than or equal to right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='GreaterThan'>Greater Than (>)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left > right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is greater than right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='LessThanorEqual'>Less Than or Equal (<=)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left <= right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is less than or equal to right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise.
+  <p class=empty>&nbsp;</p>
+<h3><a name='LessThan'>Less Than (<)</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; left < right
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True</I></B> if left is less than right.
+  <p class=list-2>&bull;&nbsp; <B><I>False</I></B> otherwise
+  <p class=empty>&nbsp;</p>
+<h1><a name='BuiltinConstants'>Built-in Constants</a></h1>
+<p>There are only a few constants that come defined in BAIN wizards.
+  <p class=empty>&nbsp;</p>
+<h3><a name='True'>True</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Value:</B> True (1)
+<p class=empty>&nbsp;</p>
+<h3><a name='False'>False</a></h3>
+<p class=list-1>&bull;&nbsp; <B>Value: </B> False (0)
+<p class=empty>&nbsp;</p>
+<h1><a name='EscapeSequences'>Escape Sequences</a></h1>
+<p>Escape sequences are special sequences of character you can put in a string to get a different character out when used in the wizard
+<p class=list-1>&bull;&nbsp; <B>'\t':</B> Insert a Tab
+<p class=list-1>&bull;&nbsp; <B>'\n':</B> Insert a newline character.
+<p class=empty>&nbsp;</p>
+</td></tr></table></body>
+</html>

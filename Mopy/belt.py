@@ -549,14 +549,14 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('<=', self.opLE, ScriptParser.OP.CO1)
         self.SetOperator('<' , self.opL, ScriptParser.OP.CO1)
         #Membership operators
-        self.SetOperator('in', self.opIn, ScriptParser.OP.MEM,passTokens=False)
+        self.SetOperator('in', self.opIn, ScriptParser.OP.MEM, passTokens=False)
         #Boolean
         self.SetOperator('&' , self.opAnd, ScriptParser.OP.AND)
         self.SetOperator('and', self.opAnd, ScriptParser.OP.AND)
         self.SetOperator('|', self.opOr, ScriptParser.OP.OR)
         self.SetOperator('or', self.opOr, ScriptParser.OP.OR)
-        self.SetOperator('!', self.opNot, ScriptParser.OP.UNA, ScriptParser.RIGHT)
-        self.SetOperator('not', self.opNot, ScriptParser.OP.UNA, ScriptParser.RIGHT)
+        self.SetOperator('!', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
+        self.SetOperator('not', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
         #Post-fix increment/decrement
         self.SetOperator('++', self.opInc, ScriptParser.OP.UNA)
         self.SetOperator('--', self.opDec, ScriptParser.OP.UNA)
@@ -574,6 +574,10 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
+        self.SetFunction('str', self.fnStr, 1)
+        self.SetFunction('int', self.fnInt, 1)
+        self.SetFunction('float', self.fnFloat, 1)
+        self.SetFunction('len', self.fnLen, 1)
         #--Keywords
         self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
         self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
@@ -618,9 +622,9 @@ class WryeParser(ScriptParser.Parser):
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
-                return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script:\n Line:%s\n Error:%s') % (newline.strip('\n'), e))
+                return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script:\n Line:\t%s\n Error:\t%s') % (newline.strip('\n'), e))
             except Exception, e:
-                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line:%s\n Error:%s') % (newline.strip('\n'), e))
+                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line:\t%s\n Error:\t%s') % (newline.strip('\n'), e))
             if self.page:
                 return self.page
         return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
@@ -716,9 +720,25 @@ class WryeParser(ScriptParser.Parser):
         return ret[0]
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
-        return cmp(wbHave, wbWant)
+        return cmp(wbHave, float(wbWant))
     def fnDataFileExists(self, filename):
         return bosh.dirs['mods'].join(filename).exists()
+    def fnStr(self, data): return str(data)
+    def fnInt(self, data):
+        try:
+            return int(data)
+        except:
+            return 0
+    def fnFloat(self, data):
+        try:
+            return float(data)
+        except:
+            return 0.0
+    def fnLen(self, data):
+        try:
+            return len(data)
+        except:
+            return 0
 
     # Keywords, mostly for flow control (If, Select, etc)
     def kwdIf(self, *args):
@@ -892,7 +912,7 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion_OBGE(obgeWant)
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
-        bWBOk = wbHave >= wbWant
+        bWBOk = wbHave >= float(wbWant)
 
         if not bObOk or not bOBSEOk or not bOBGEOk:
             self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge, bWBOk, wbHave, wbWant)
