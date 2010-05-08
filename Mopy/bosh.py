@@ -15854,7 +15854,6 @@ class ImportSpells(ImportPatcher):
         mod_count = {}
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
-                print record.full
                 changed = False
                 deltas = id_deltas.get(record.fid)
                 if not deltas: continue
@@ -15863,14 +15862,13 @@ class ImportSpells(ImportPatcher):
                     if removeItems:
                         #--Skip if some items to be removed have already been removed
                         if not removeItems.issubset(removable): continue
-                        record.items = [x for x in record.spells if x not in removeItems]
+                        record.spells = [x for x in record.spells if x not in removeItems]
                         removable -= removeItems
                         changed = True
                     if addEntries:
                         current = set(x for x in record.spells)
                         for entry in addEntries:
                             if entry not in current:
-                                print entry
                                 record.spells.append(entry)
                                 changed = True
                 if changed:
@@ -17202,6 +17200,71 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 #------------------------------------------------------------------------------
+class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
+    """Sets Cast When Used Enchantment number of uses."""
+#info: 'itemType','chargeAmount','enchantCost'
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and staffs"),
+            _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
+            'Number of uses:',
+            (_('1'), 1),
+            (_('5'), 5),
+            (_('10'), 10),
+            (_('20'), 20),
+            (_('30'), 30),
+            (_('40'), 40),
+            (_('50'), 50),
+            (_('80'), 80),
+            (_('100'), 100),
+            (_('250'), 250),
+            (_('500'), 500),
+            (_('Unlimited'), 0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreEnch,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreEnch,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.ENCH
+        id_records = patchBlock.id_records
+        for record in modFile.ENCH.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.itemType in [1,2]:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        uses = self.choiceValues[self.chosen][0]
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.ENCH.records:
+            if record.itemType in [1,2]:
+                if uses == 0:
+                    record.enchantCost = uses
+                else:
+                    record.enchantCost = max(record.chargeAmount/uses,1)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Set Enchantment Number of Uses'))
+        log(_('* Enchantments set: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+#------------------------------------------------------------------------------
+
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -17235,6 +17298,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_PotionWeight(),
         AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_StaffWeight(),
+        AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -19656,7 +19720,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
-    """Sets NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
+    """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
