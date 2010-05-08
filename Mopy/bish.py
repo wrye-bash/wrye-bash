@@ -704,6 +704,12 @@ def gmstIds(fileName=None):
             fids[eid] = maxId
             print '%08X  %08X %s' % (0,maxId,eid)
 			#--Source file
+    for eid in ['iAINumberActorsComplexScene']:
+        if eid not in fids:
+            maxId += 1
+            fids[eid] = maxId
+            print '%08X  %08X %s' % (0,maxId,eid)
+			#--Source file
     if fileName:
         init(3)
         sorter = lambda a: a.eid
