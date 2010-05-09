@@ -19700,7 +19700,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         spell = (GPath('Oblivion.esm'), 0x02B53F)
         for record in patchFile.CREA.records:
             if not record.full: continue #for unnamed creatures else next if crashes.
-            if 'imp' in record.full.lower():
+            if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
                 if 'imperial' in record.full.lower(): continue #avoids false positive.
                 if spell not in record.spells:
                     record.spells.append(spell)
@@ -19731,7 +19731,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.CREA.records:
             if not record.full: continue #for unnamed creatures else next if crashes.
-            if 'boar' in record.full.lower():
+            if 'boar' in record.full.lower() or 'boar' in record.model.modPath.lower() or 'boar' in record.eid.lower():
                 if spell not in record.spells:
                     record.spells.append(spell)
                     keep(record.fid)
