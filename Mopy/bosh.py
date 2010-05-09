@@ -19706,9 +19706,9 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
             if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
                 if 'imperial' in record.full.lower() or 'imperial' in record.eid.lower(): continue #avoids false positives.
                 if 'big' in self.choiceValues[self.chosen]:
-                    if 'impling' in record.full.lower() or record.baseScale < 0.6: continue
+                    if 'impling' in record.full.lower(): continue
                 elif 'small' in self.choiceValues[self.chosen]:
-                    if not 'impling' in record.full.lower(): continue
+                    if not 'impling' in record.full.lower() or record.baseScale < 0.6: continue
                 if spell not in record.spells:
                     record.spells.append(spell)
                     keep(record.fid)
