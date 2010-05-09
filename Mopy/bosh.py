@@ -7317,12 +7317,12 @@ class INIInfo(FileInfo):
                             text.append(' [%s] %s' % (key, item))
         if len(text) == 1:
             text.append(' None')
-        
-        log = bolt.LogFile(cStringIO.StringIO())                          
+
+        log = bolt.LogFile(cStringIO.StringIO())
         for line in text:
             log(line)
-        return bolt.winNewLines(log.out.getvalue())   
-        
+        return bolt.winNewLines(log.out.getvalue())
+
 
 class SaveInfo(FileInfo):
     def getFileInfos(self):
@@ -7715,7 +7715,7 @@ class INIInfos(FileInfos):
         FileInfos.__init__(self, dirs['mods'].join('INI Tweaks'),INIInfo)
 
     def rightFileType(self,fileName):
-        """Bool: File is a mod."""
+        """Bool: File is an ini."""
         return reINIExt.search(fileName.s)
 
     def getBashDir(self):
@@ -12394,7 +12394,7 @@ class CompleteItemData:
                     #--(weight, value)
                     zip((str,sfloat,int,str),fields[4:8]))
             elif type == 'LIGH':
-               lihts[longid] = (eid,) + tuple(func(field) for func,field in
+               lights[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, duration)
                     zip((str,sfloat,int,int,str),fields[4:9]))
             elif type == 'MISC':
