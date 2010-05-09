@@ -690,7 +690,10 @@ class List(wx.Panel):
 
     def MouseEnteredItem(self,item):
         """Handle mouse entered item by showing tip or similar."""
-        pass
+        text = self.mouseTexts.get(item) or ''
+        if text != self.mouseTextPrev:
+            statusBar.SetStatusText(text,1)
+            self.mouseTextPrev = text                
 
     #--Column Menu
     def DoColumnMenu(self,event):
@@ -1062,11 +1065,21 @@ class INIList(List):
         status = fileInfo.getStatus()
         #--Image
         checkMark = status > 0
-        icon = 0
-        if status == 10:
+        icon = 0    # Ok tweak, not applied
+        mousetext = ''
+        if status == 20:
+            # Valid tweak, applied
+            icon = 0
+            mousetext = _('Tweak is currently applied.')
+        elif status == 10:
+            # Ok tweak, some parts are applied, others not
             icon = 10
+            mousetext = _('Some settings in the tweak are applied.')
         elif status == -10:
+            # Bad tweak
             icon = 20
+            mousetext = _('Tweak is invalid')
+        self.mouseTexts[itemDex] = mousetext
         self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
         #--Font/BG Color
         item = self.list.GetItem(itemDex)
@@ -1373,13 +1386,6 @@ class ModList(List):
             self.items.sort(key=lambda x: x not in active)
 
     #--Events ---------------------------------------------
-    def MouseEnteredItem(self,item):
-        """Handle mouse entered item by showing tip or similar."""
-        text = self.mouseTexts.get(item) or ''
-        if text != self.mouseTextPrev:
-            statusBar.SetStatusText(text,1)
-            self.mouseTextPrev = text
-
     def OnDoubleClick(self,event):
         """Handle doubclick event."""
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
@@ -1788,6 +1794,11 @@ class INIPanel(NotebookPanel):
         sizer = hSizer(
             (iniList,1,wx.GROW))
         self.SetSizer(sizer)
+
+    def SetStatusCount(self):
+        """Sets mod count in last field."""
+        text = _("Tweaks: %d") % (len(bosh.iniInfos.data))
+        statusBar.SetStatusText(text,2)        
 
     def OnSize(self,event):
         wx.Window.Layout(self)
