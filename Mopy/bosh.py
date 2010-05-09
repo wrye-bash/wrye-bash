@@ -19691,7 +19691,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         MultiTweakItem.__init__(self,_('As Intended: Imps'),
             _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious imps!',
-            (_('All imps'),  'all'),
+            (_('All imps'), 'all'),
             (_('Only fullsize imps'), 'big'),
             (_('Only implings'), 'small'),
             )
@@ -19701,9 +19701,6 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         count = {}
         keep = patchFile.getKeeper()
         spell = (GPath('Oblivion.esm'), 0x02B53F)
-        print self.choiceValues
-        print '------------'
-        print self.choiceValues[self.chosen]
         for record in patchFile.CREA.records:
             if not record.full: continue #for unnamed creatures else next if crashes.
             if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
