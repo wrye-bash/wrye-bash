@@ -2049,6 +2049,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
   * 3 new GMST changers added to tweak settings
+  * NPC Tweaker changes:
+    * Renamed to Tweak Actors.
+    * 'No Bloody Creatures' tweak added.
+    * 'As Intended: Boars' tweak added.
+    * 'As Intended: Imps' tweak added.
 * Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 * BAIN:
   * Renaming now updates the 'Mods' and 'INI Edits' tabs
@@ -2058,11 +2063,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
-* NPC Tweaker changes:
-  * Renamed to Tweak Actors.
-  * 'No Bloody Creatures' tweak added.
-  * 'As Intended: Boars' tweak added.
-  * 'As Intended: Imps' tweak added.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
