@@ -19116,6 +19116,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
+            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags: 
+                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
@@ -19163,8 +19165,6 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                         tempRaceData[key] = getattr(race,key)
                 if 'R.AddSpells' in bashTags:
                     tempRaceData['AddSpells'] = race.spells
-                    if 'R.ChangeSpells' in bashTags: 
-                        print (_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
                 if 'R.ChangeSpells' in bashTags:
                     raceData['spellsOverride'] = race.spells
                 if 'R.Description' in bashTags:
@@ -19691,7 +19691,9 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         MultiTweakItem.__init__(self,_('As Intended: Imps'),
             _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious imps!',
-            ('1.0',  '1.0'),
+            (_('All imps'),  'all'),
+            (_('Only fullsize imps'), 'big'),
+            (_('Only implings'), 'small'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -19699,10 +19701,17 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         count = {}
         keep = patchFile.getKeeper()
         spell = (GPath('Oblivion.esm'), 0x02B53F)
+        print self.choiceValues
+        print '------------'
+        print self.choiceValues[self.chosen]
         for record in patchFile.CREA.records:
             if not record.full: continue #for unnamed creatures else next if crashes.
             if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
                 if 'imperial' in record.full.lower() or 'imperial' in record.eid.lower(): continue #avoids false positives.
+                if 'big' in self.choiceValues[self.chosen]:
+                    if 'impling' in record.full.lower() or record.baseScale < 0.6: continue
+                elif 'small' in self.choiceValues[self.chosen]:
+                    if not 'impling' in record.full.lower(): continue
                 if spell not in record.spells:
                     record.spells.append(spell)
                     keep(record.fid)
