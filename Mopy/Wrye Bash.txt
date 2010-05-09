@@ -183,6 +183,21 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 === Python Components
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 * __Components:__
+<<<<<<< .mine
+  * __Python 2.5__ 
+    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
+    * Download link: [[http://python.org/ftp/python/2.5.2/python-2.5.2.msi|Python 2.5.2]]
+  * __wxPython 2.8.7.1 ANSI__  
+    * Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 -- later versions of wxPython 2.8 are not compatible with Psyco.
+    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe|wxPython 2.8.7.1 ANSI for python 2.5]]. 
+  * __pyWin32__
+    * PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
+    * Download link: [[http://sourceforge.net/projects/pywin32/files/latest|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
+  * __ComTypes 0.5.2__ 
+    * ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
+  * __PIL 1.1.6__
+    * PIL (Python Imaging Library) is not currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
+=======
   * __Python 2.6__ 
     * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
     * Download link: [[http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi|Python 2.6.4]]
@@ -195,6 +210,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * __ComTypes 0.6.2__ 
     * Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
     * Download link:  [[http://pypi.python.org/pypi/comtypes/0.6.2|ComTypes]]
+>>>>>>> .r299
   * __Psyco 1.6__ 
     * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
     * Download link: [[http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0|Psyco 1.6-py25.exe]].
@@ -1050,7 +1066,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
   * Actors.Animations: Mod modifies Creature or NPC special Animations list ([[#|Import Actors]]).
   * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles ([[#|Import Actors]]). 
-  * Actors.DeathItems: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
+  * Actors.DeathItem: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
   * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
   * Body-F: Mod modifies female body definition ([[#|Race Records]]).
   * Body-M: Mod modifies male body definition ([[#|Race Records]]).
@@ -1078,8 +1094,14 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * NoMerge: Mod should not be merged even though they're technically mergeable.
   * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
   * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
+  * R.AddSpells: mod adds racial spells. ([[#|Race Records]]).
+  * R.Attributes-F mod changesrace attributes for females ([[#|Race Records]]).
+  * R.Attributes-M: mod changes race attributes for males ([[#|Race Records]]).
+  * R.Description: mod changes race description(s) ([[#|Race Records]]).
+  * R.ChangeSpells: Mod overwrites race spells list(s) ([[#|Race Records]]).
   * R.Mouth: Mod changes mouth/tongue ([[#|Race Records]]).
   * R.Relations: Mod changes race relationships ([[#|Race Records]]).
+  * R.Skills: mdo changes race skill bonuses ([[#|Race Records]]).
   * R.Teeth: Mod changes upper/lower teeth ([[#|Race Records]]).
   * Relev: Mod relevels items in ([[#|Leveled Lists]]).
   * Scripts: Mod modifies item, npc or object scripts ([[#|Import Scripts]]).
@@ -1149,21 +1171,21 @@ __Importers__ are components that import specific information from selected mods
 * Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
 * __Configuration__
   * Source mods for the main patcher ~~must~~ contain one (or more) of the following tags:
-    * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
+    * Actors.ACBS: Mod codifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     * Actors.AIData: Mod modifies Creature or NPC AI Data.
     * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
-    * Actors.DeathItems: Mod modifies Creature or NPC Death Item.
     * Actors.Stats: Mod modifies Creature or NPC stats.
-    * Creatures.Blood: Mod changes the creature blood subrecords.
-    * NPC.Class: Mod changes the designated classes of NPCs.
-  * There are also two secondary patchers:
-    * Actors.Animations: Mod changes the KFFZ subrecord of NPCs or Creatures.
-      * (note: direct import rather than merge - this will hopefully be fixed next version (279))
-    * Actors.AIPackages 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
+    * Creatures.Blood: Mod modifies the creature blood subrecords.
+    * NPC.Class: Mod modifies the designated classes of NPCs.
+  * There are also three secondary patchers:
+    * Actors.Animations: Mod modifies the KFFZ subrecord of NPCs or Creatures.
+      * (note: direct import rather than merge - this will hopefully be fixed next version (285))
+    * Actors.AIPackages: Mod modifies the AIPackages lists of NPCs or creatures. 
+      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 285)
+    * Actors.DeathItems: Mod modifies Creature or NPC Death Item.
 * __Usage__
-  * For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
-  * In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
+  * For selected mods, each of the tags will import the related information into the Bashed Patch if necessary. 
+  * In cases where two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch if properly tagged and selected. 
 
 === Import Cells
 * Allows certain changes to cell to be imported from source mods.
@@ -1217,7 +1239,7 @@ __Importers__ are components that import specific information from selected mods
   * Handles most named objects types (except lights). Does **not** handle GMSTs, cells, landmarks or dialogs. If source mods is fully covered (no GMSTs, cells, etc.) then it does not need to be loaded after merging.
 * __Guard Names__
   * A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
-  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123| Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
+;  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123| Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
 * __Rational Names__
   * A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   * Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -1311,6 +1333,15 @@ __Importers__ are components that import specific information from selected mods
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>SpellStats</code> [[#BashTags|tag]] in the mod description. 
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the [[#|Export/Import Spell Stats]] command will export files in this format.
+  
+=== Import Spells
+* This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>spellsOnly</code> [[#BashTags|tag]] will appear in the list.
+  * Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the inventory of creatures that have been changed by overhauls -- especially when you can't rely on the overhauls being present. 
+  * For a mod to override only the spells, the mod must be tagged with <code>spellsOnly</code> and must be merged into the patch (i.e. the mod must ~~not~~ be active when the patch is being built.) 
+* __Notes__
+  * Generally later loading source mods will dominate.
+    * If an early source replaces a resistance with a weakness, but a later source replaces the resistance with an nurfed resistance; then the patch will have the nurfed resistance but ~~not~~ the weakness.
+    * If a source tries to remove anything, but fails because that spell is already present or a later mod has already removed it, then none of the changes from the source will be applied.
 
 -------------------------------------------------------------------------------
 __Tweakers__ tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
@@ -1321,10 +1352,16 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Thieves Guild: Quest Misdemeanor Penalty:__ Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
 * __Timescale:__ Oblivion's timescale.
 
-=== NPC Tweaker
-* Changes to NPC record subrecords; such as skeleton.
+=== Tweak Actors
+* Changes to NPC or Creature record subrecords; such as skeleton.
+* __As Intended: Boars__
+  * Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, mod this is based off of made by Tejon).
+* __As Intended: Imps__
+  * Adds the Bethesda Imp Resistances spells to all imps (found by the UOP team, mod this is based off of made by Tejon).
 * __Mayu's Animation Overhaul Skeleton Tweaker__
   * Sets NPC skeletons paths to match that required for MAO to work.
+* __No Bloody Creatures__
+  * Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
 * __Redguard FGTS Nuller__
   * Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
 * __Vanilla Beast Skelton Tweaker__
@@ -1390,6 +1427,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 === Tweak Settings
 * __Overview__
 . Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
+* __AI: Max Active Actors:__ The maximum number of actors for AI to be processing at once - must be higher than __Combat: Max Actors:__.
 * __Arrow: Litter Count/Time:__ Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
 * __Arrow: Recovery from Actor:__ Your chance of recovering an arrow shot into an actor (including arrows shot into player). 
 * __Arrow Speed:__ Speed at which a full power arrow travels.
@@ -1481,12 +1519,18 @@ __Special__ patch components don't fit into the categories above. Two of them ([
     * Body-F: If specifying female body textures, height, or weight.
     * Eyes: If mod contributes eyes.
     * Hair: If contributing hair.
+    * R.AddSpells: if adding racial spells.
+    * R.Attributes-F if specifying race attributes for females.
+    * R.Attributes-M: if specifying race attributes for males.
+    * R.Description: if specifying race description(s).
+    * R.ChangeSpells: if totally overwriting race spells list(s).
     * R.Mouth: If specifying/changing mouth/tongue. (See [[http://www.tesnexus.com/downloads/file.php?id=10674|Merged Mouth]].)
     * R.Relations: If specifying race relations.
+    * R.Skills: if specifying race skill bonuses ([[#|Race Records]]).
     * R.Teeth: If specifying/changing upper/lower teeth. (See [[http://www.tesnexus.com/downloads/file.php?id=10674|Merged Teeth]].)
     * Voice-M: If specifying male voice.
     * Voice-F: If specifying female voice.
-  . E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
+    . E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
 * Merge Procedure
   * Body: The last mod tagged with Body-M (Body-F) will win for males (females). Note that "body" includes: body texture, height and weight -- i.e. the winning mod (for a given gender) will determine all of these factors (for that gender).
   * Hair: All hairs will be merged into final record.
@@ -1984,30 +2028,41 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 284 [12/12/2010] [Lojack,PacificMorrowind]
+=== 284 [12/12/2010] [Lojack,PacificMorrowind,Valda68k]
 * Incorrect italicization fixed.
 * Active mods with the 'Deactivate' tag will be highlighted in red.
 * Bashed Patch changes:
+  * Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues).
+  * New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   * RacePatcher changes:
+    * Left eye import fix (contributed by Valda68k)
     * R.Ears tag added; imports ears
-    * R.Attributes-F added; imports race attributes for females
-    * R.Attributes-M added; imports race attributes for males
-    * R.Skills added; imports race skill bonuses
-    * R.Description added; imports race description
+    * R.Attributes-F tag added; imports race attributes for females
+    * R.Attributes-M tag added; imports race attributes for males
+    * R.Skills tag added; imports race skill bonuses
+    * R.Description tag added; imports race description
+    * R.AddSpells tag added; imports race spells additions.
+    * R.ChangeSpells tag added; imports race spell as totally new list.
     * NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) __if__ hair length is 0.0 or None.
     * another not insignificant optimization.
   * Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
   * Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+  * 3 new GMST changers added to tweak settings
 * Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 * BAIN:
   * Renaming now updates the 'Mods' and 'INI Edits' tabs
   * 2 bugfixes dealing with filtering (reported by Vindicator)
   * Double or middle clicking on an image in a BAIN Wizard will open the full image.
   * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
-* comtypes is optional now.  It is only required for the PM Archive panel
+* comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
+* NPC Tweaker changes:
+  * Renamed to Tweak Actors.
+  * 'No Bloody Creatures' tweak added.
+  * 'As Intended: Boars' tweak added.
+  * 'As Intended: Imps' tweak added.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.

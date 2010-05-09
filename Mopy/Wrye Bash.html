@@ -126,8 +126,9 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportSound">Import Sound</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportStats">Import Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportSpellStats">Import Spell Stats</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ImportSpells">Import Spells</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#Globals">Globals</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#NPCTweaker">NPC Tweaker</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#TweakActors">Tweak Actors</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakAssorted">Tweak Assorted</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakClothes">Tweak Clothes</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#TweakNames">Tweak Names</a></p>
@@ -374,6 +375,21 @@
 <h3><a name='PythonComponents'>Python Components</a></h3>
 <p class=list-1>&bull;&nbsp; If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 <p class=list-1>&bull;&nbsp; <B>Components:</B>
+<<<<<<< .mine
+  <p class=list-2>&bull;&nbsp; <B>Python 2.5</B> 
+    <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://python.org/ftp/python/2.5.2/python-2.5.2.msi">Python 2.5.2</a>
+  <p class=list-2>&bull;&nbsp; <B>wxPython 2.8.7.1 ANSI</B>  
+    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 &#150; later versions of wxPython 2.8 are not compatible with Psyco.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe">wxPython 2.8.7.1 ANSI for python 2.5</a>. 
+  <p class=list-2>&bull;&nbsp; <B>pyWin32</B>
+    <p class=list-3>&bull;&nbsp; PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/projects/pywin32/files/latest">SourceForge pywin32</a>. <B>Be sure to install the version that matches the version of python you installed!</B> E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
+  <p class=list-2>&bull;&nbsp; <B>ComTypes 0.5.2</B> 
+    <p class=list-3>&bull;&nbsp; ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
+  <p class=list-2>&bull;&nbsp; <B>PIL 1.1.6</B>
+    <p class=list-3>&bull;&nbsp; PIL (Python Imaging Library) is not currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
+<h6><a name=''></a></h6>
   <p class=list-2>&bull;&nbsp; <B>Python 2.6</B> 
     <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
     <p class=list-3>&bull;&nbsp; Download link: <a href="http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi">Python 2.6.4</a>
@@ -386,6 +402,7 @@
   <p class=list-2>&bull;&nbsp; <B>ComTypes 0.6.2</B> 
     <p class=list-3>&bull;&nbsp; Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
     <p class=list-3>&bull;&nbsp; Download link:  <a href="http://pypi.python.org/pypi/comtypes/0.6.2">ComTypes</a>
+>>>>>>> .r299
   <p class=list-2>&bull;&nbsp; <B>Psyco 1.6</B> 
     <p class=list-3>&bull;&nbsp; <B><a href="http://psyco.sourceforge.net/">Psyco</a></B> provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
     <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0">Psyco 1.6-py25.exe</a>.
@@ -1241,7 +1258,7 @@
   <p class=list-2>&bull;&nbsp; Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Animations: Mod modifies Creature or NPC special Animations list (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles (<a href="#ImportActors">Import Actors</a>). 
-  <p class=list-2>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.DeathItem: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Body-F: Mod modifies female body definition (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Body-M: Mod modifies male body definition (<a href="#RaceRecords">Race Records</a>).
@@ -1269,8 +1286,14 @@
   <p class=list-2>&bull;&nbsp; NoMerge: Mod should not be merged even though they're technically mergeable.
   <p class=list-2>&bull;&nbsp; NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).
   <p class=list-2>&bull;&nbsp; NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).
+  <p class=list-2>&bull;&nbsp; R.AddSpells: mod adds racial spells. (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Attributes-F mod changesrace attributes for females (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Attributes-M: mod changes race attributes for males (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Description: mod changes race description(s) (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.ChangeSpells: Mod overwrites race spells list(s) (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Mouth: Mod changes mouth/tongue (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Relations: Mod changes race relationships (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Skills: mdo changes race skill bonuses (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).
@@ -1340,21 +1363,21 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Allows Certain changes to actors (creatures and NPCs) to be imported from source mods. One main patcher and a couple secondary patchers.
 <p class=list-1>&bull;&nbsp; <B>Configuration</B>
   <p class=list-2>&bull;&nbsp; Source mods for the main patcher <I>must</I> contain one (or more) of the following tags:
-    <p class=list-3>&bull;&nbsp; Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
+    <p class=list-3>&bull;&nbsp; Actors.ACBS: Mod codifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     <p class=list-3>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data.
     <p class=list-3>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
-    <p class=list-3>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item.
     <p class=list-3>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats.
-    <p class=list-3>&bull;&nbsp; Creatures.Blood: Mod changes the creature blood subrecords.
-    <p class=list-3>&bull;&nbsp; NPC.Class: Mod changes the designated classes of NPCs.
-  <p class=list-2>&bull;&nbsp; There are also two secondary patchers:
-    <p class=list-3>&bull;&nbsp; Actors.Animations: Mod changes the KFFZ subrecord of NPCs or Creatures.
-      <p class=list-4>&bull;&nbsp; (note: direct import rather than merge - this will hopefully be fixed next version (279))
-    <p class=list-3>&bull;&nbsp; Actors.AIPackages 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 280)
+    <p class=list-3>&bull;&nbsp; Creatures.Blood: Mod modifies the creature blood subrecords.
+    <p class=list-3>&bull;&nbsp; NPC.Class: Mod modifies the designated classes of NPCs.
+  <p class=list-2>&bull;&nbsp; There are also three secondary patchers:
+    <p class=list-3>&bull;&nbsp; Actors.Animations: Mod modifies the KFFZ subrecord of NPCs or Creatures.
+      <p class=list-4>&bull;&nbsp; (note: direct import rather than merge - this will hopefully be fixed next version (285))
+    <p class=list-3>&bull;&nbsp; Actors.AIPackages: Mod modifies the AIPackages lists of NPCs or creatures. 
+      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 285)
+    <p class=list-3>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item.
 <p class=list-1>&bull;&nbsp; <B>Usage</B>
-  <p class=list-2>&bull;&nbsp; For selected mods, each of that tags will import the related information into the Bashed Patch if necessary. 
-  <p class=list-2>&bull;&nbsp; In case two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch. 
+  <p class=list-2>&bull;&nbsp; For selected mods, each of the tags will import the related information into the Bashed Patch if necessary. 
+  <p class=list-2>&bull;&nbsp; In cases where two source mods modify the same Actor in the same way, then the later loading source mod will win. If they modify the same actor in different ways (e.g. one changes AIData, the other changes DeathItem), then both changes will be included in the patch if properly tagged and selected. 
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportCells'>Import Cells</a></h3>
 <p class=list-1>&bull;&nbsp; Allows certain changes to cell to be imported from source mods.
@@ -1408,7 +1431,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Handles most named objects types (except lights). Does <B><I>not</I></B> handle GMSTs, cells, landmarks or dialogs. If source mods is fully covered (no GMSTs, cells, etc.) then it does not need to be loaded after merging.
 <p class=list-1>&bull;&nbsp; <B>Guard Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
-  <p class=list-2>&bull;&nbsp; This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
+;  * This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
 <p class=list-1>&bull;&nbsp; <B>Rational Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   <p class=list-2>&bull;&nbsp; Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -1503,19 +1526,34 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>SpellStats</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the <a href="#ExportImportSpellStats">Export/Import Spell Stats</a> command will export files in this format.
   <p class=empty>&nbsp;</p>
+<h3><a name='ImportSpells'>Import Spells</a></h3>
+<p class=list-1>&bull;&nbsp; This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>spellsOnly</code> <a href="#BashTags">tag</a> will appear in the list.
+  <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150; especially when you can't rely on the overhauls being present. 
+  <p class=list-2>&bull;&nbsp; For a mod to override only the spells, the mod must be tagged with <code>spellsOnly</code> and must be merged into the patch (i.e. the mod must <I>not</I> be active when the patch is being built.) 
+<p class=list-1>&bull;&nbsp; <B>Notes</B>
+  <p class=list-2>&bull;&nbsp; Generally later loading source mods will dominate.
+    <p class=list-3>&bull;&nbsp; If an early source replaces a resistance with a weakness, but a later source replaces the resistance with an nurfed resistance; then the patch will have the nurfed resistance but <I>not</I> the weakness.
+    <p class=list-3>&bull;&nbsp; If a source tries to remove anything, but fails because that spell is already present or a later mod has already removed it, then none of the changes from the source will be applied.
+    <p class=empty>&nbsp;</p>
 <hr>
 <p><B>Tweakers</B> tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
-  <p class=empty>&nbsp;</p>
+    <p class=empty>&nbsp;</p>
 <h2><a name='Globals'>Globals</a></h2>
 <p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
 <p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
 <p class=list-1>&bull;&nbsp; <B>Thieves Guild: Quest Misdemeanor Penalty:</B> Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
 <p class=list-1>&bull;&nbsp; <B>Timescale:</B> Oblivion's timescale.
 <p class=empty>&nbsp;</p>
-<h3><a name='NPCTweaker'>NPC Tweaker</a></h3>
-<p class=list-1>&bull;&nbsp; Changes to NPC record subrecords; such as skeleton.
+<h3><a name='TweakActors'>Tweak Actors</a></h3>
+<p class=list-1>&bull;&nbsp; Changes to NPC or Creature record subrecords; such as skeleton.
+<p class=list-1>&bull;&nbsp; <B>As Intended: Boars</B>
+  <p class=list-2>&bull;&nbsp; Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, mod this is based off of made by Tejon).
+<p class=list-1>&bull;&nbsp; <B>As Intended: Imps</B>
+  <p class=list-2>&bull;&nbsp; Adds the Bethesda Imp Resistances spells to all imps (found by the UOP team, mod this is based off of made by Tejon).
 <p class=list-1>&bull;&nbsp; <B>Mayu's Animation Overhaul Skeleton Tweaker</B>
   <p class=list-2>&bull;&nbsp; Sets NPC skeletons paths to match that required for MAO to work.
+<p class=list-1>&bull;&nbsp; <B>No Bloody Creatures</B>
+  <p class=list-2>&bull;&nbsp; Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
 <p class=list-1>&bull;&nbsp; <B>Redguard FGTS Nuller</B>
   <p class=list-2>&bull;&nbsp; Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
 <p class=list-1>&bull;&nbsp; <B>Vanilla Beast Skelton Tweaker</B>
@@ -1581,6 +1619,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='TweakSettings'>Tweak Settings</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
+<p class=list-1>&bull;&nbsp; <B>AI: Max Active Actors:</B> The maximum number of actors for AI to be processing at once - must be higher than <B>Combat: Max Actors:</B>.
 <p class=list-1>&bull;&nbsp; <B>Arrow: Litter Count/Time:</B> Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
 <p class=list-1>&bull;&nbsp; <B>Arrow: Recovery from Actor:</B> Your chance of recovering an arrow shot into an actor (including arrows shot into player). 
 <p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
@@ -1672,12 +1711,18 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Body-F: If specifying female body textures, height, or weight.
     <p class=list-3>&bull;&nbsp; Eyes: If mod contributes eyes.
     <p class=list-3>&bull;&nbsp; Hair: If contributing hair.
+    <p class=list-3>&bull;&nbsp; R.AddSpells: if adding racial spells.
+    <p class=list-3>&bull;&nbsp; R.Attributes-F if specifying race attributes for females.
+    <p class=list-3>&bull;&nbsp; R.Attributes-M: if specifying race attributes for males.
+    <p class=list-3>&bull;&nbsp; R.Description: if specifying race description(s).
+    <p class=list-3>&bull;&nbsp; R.ChangeSpells: if totally overwriting race spells list(s).
     <p class=list-3>&bull;&nbsp; R.Mouth: If specifying/changing mouth/tongue. (See <a href="http://www.tesnexus.com/downloads/file.php?id=10674">Merged Mouth</a>.)
     <p class=list-3>&bull;&nbsp; R.Relations: If specifying race relations.
+    <p class=list-3>&bull;&nbsp; R.Skills: if specifying race skill bonuses (<a href="#RaceRecords">Race Records</a>).
     <p class=list-3>&bull;&nbsp; R.Teeth: If specifying/changing upper/lower teeth. (See <a href="http://www.tesnexus.com/downloads/file.php?id=10674">Merged Teeth</a>.)
     <p class=list-3>&bull;&nbsp; Voice-M: If specifying male voice.
     <p class=list-3>&bull;&nbsp; Voice-F: If specifying female voice.
-  <p class=list-2>&nbsp;&nbsp; E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
+    <p class=list-3>&nbsp;&nbsp; E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
 <p class=list-1>&bull;&nbsp; Merge Procedure
   <p class=list-2>&bull;&nbsp; Body: The last mod tagged with Body-M (Body-F) will win for males (females). Note that "body" includes: body texture, height and weight &#150; i.e. the winning mod (for a given gender) will determine all of these factors (for that gender).
   <p class=list-2>&bull;&nbsp; Hair: All hairs will be merged into final record.
@@ -2174,31 +2219,42 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='28412122010LojackPacificMorrowind'>284 [12/12/2010] [Lojack,PacificMorrowind]</a></h3>
+<h3><a name='28412122010LojackPacificMorrowindValda68k'>284 [12/12/2010] [Lojack,PacificMorrowind,Valda68k]</a></h3>
 <p class=list-1>&bull;&nbsp; Incorrect italicization fixed.
 <p class=list-1>&bull;&nbsp; Active mods with the 'Deactivate' tag will be highlighted in red.
 <p class=list-1>&bull;&nbsp; Bashed Patch changes:
+  <p class=list-2>&bull;&nbsp; Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues).
+  <p class=list-2>&bull;&nbsp; New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   <p class=list-2>&bull;&nbsp; RacePatcher changes:
+    <p class=list-3>&bull;&nbsp; Left eye import fix (contributed by Valda68k)
     <p class=list-3>&bull;&nbsp; R.Ears tag added; imports ears
-    <p class=list-3>&bull;&nbsp; R.Attributes-F added; imports race attributes for females
-    <p class=list-3>&bull;&nbsp; R.Attributes-M added; imports race attributes for males
-    <p class=list-3>&bull;&nbsp; R.Skills added; imports race skill bonuses
-    <p class=list-3>&bull;&nbsp; R.Description added; imports race description
+    <p class=list-3>&bull;&nbsp; R.Attributes-F tag added; imports race attributes for females
+    <p class=list-3>&bull;&nbsp; R.Attributes-M tag added; imports race attributes for males
+    <p class=list-3>&bull;&nbsp; R.Skills tag added; imports race skill bonuses
+    <p class=list-3>&bull;&nbsp; R.Description tag added; imports race description
+    <p class=list-3>&bull;&nbsp; R.AddSpells tag added; imports race spells additions.
+    <p class=list-3>&bull;&nbsp; R.ChangeSpells tag added; imports race spell as totally new list.
     <p class=list-3>&bull;&nbsp; NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) <B>if</B> hair length is 0.0 or None.
     <p class=list-3>&bull;&nbsp; another not insignificant optimization.
   <p class=list-2>&bull;&nbsp; Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
   <p class=list-2>&bull;&nbsp; Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   <p class=list-2>&bull;&nbsp; New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+  <p class=list-2>&bull;&nbsp; 3 new GMST changers added to tweak settings
 <p class=list-1>&bull;&nbsp; Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 <p class=list-1>&bull;&nbsp; BAIN:
   <p class=list-2>&bull;&nbsp; Renaming now updates the 'Mods' and 'INI Edits' tabs
   <p class=list-2>&bull;&nbsp; 2 bugfixes dealing with filtering (reported by Vindicator)
   <p class=list-2>&bull;&nbsp; Double or middle clicking on an image in a BAIN Wizard will open the full image.
   <p class=list-2>&bull;&nbsp; You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
-<p class=list-1>&bull;&nbsp; comtypes is optional now.  It is only required for the PM Archive panel
+<p class=list-1>&bull;&nbsp; comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 <p class=list-1>&bull;&nbsp; You can delete Installers and INI Edits with the Delete key now.
 <p class=list-1>&bull;&nbsp; You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
-<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; NPC Tweaker changes:
+  <p class=list-2>&bull;&nbsp; Renamed to Tweak Actors.
+  <p class=list-2>&bull;&nbsp; 'No Bloody Creatures' tweak added.
+  <p class=list-2>&bull;&nbsp; 'As Intended: Boars' tweak added.
+  <p class=list-2>&bull;&nbsp; 'As Intended: Imps' tweak added.
+  <p class=empty>&nbsp;</p>
 <h3><a name='28318042010LojackPacificMorrowindWarrudar'>283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]</a></h3>
 <p class=list-1>&bull;&nbsp; Taglist: updated to masterlist version 824 and a bunch of cruft removed.
 <p class=list-1>&bull;&nbsp; Fixes:
