@@ -19701,7 +19701,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         for record in patchFile.CREA.records:
             if not record.full: continue #for unnamed creatures else next if crashes.
             if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
-                if 'imperial' in record.full.lower(): continue #avoids false positive.
+                if 'imperial' in record.full.lower() or 'imperial' in record.eid.lower(): continue #avoids false positives.
                 if spell not in record.spells:
                     record.spells.append(spell)
                     keep(record.fid)
