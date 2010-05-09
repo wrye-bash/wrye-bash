@@ -12382,11 +12382,11 @@ class CompleteItemData:
                     #--(weight, value, echantPoints)
                     zip((str,sfloat,int,int,str),fields[4:9]))
             elif type == 'CLOT':
-                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                clothing[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, echantPoints)
                     zip((str,sfloat,int,int,str,str),fields[4:10]))
             elif type == 'INGR':
-                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                ingredients[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((str,sfloat,int,str),fields[4:8]))
             elif type == 'KEYM':
@@ -12394,19 +12394,19 @@ class CompleteItemData:
                     #--(weight, value)
                     zip((str,sfloat,int,str),fields[4:8]))
             elif type == 'LIGH':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
+               lihts[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, duration)
                     zip((str,sfloat,int,int,str),fields[4:9]))
             elif type == 'MISC':
-                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                misc[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((str,sfloat,int,str),fields[4:8]))
             elif type == 'SGST':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
+               sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, uses)
                     zip((str,sfloat,int,int,str),fields[4:9]))
             elif type == 'SLGM':
-                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                soulgems[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((str,sfloat,int),fields[4:8]))
             elif type == 'WEAP':
@@ -14874,7 +14874,7 @@ class KFFZPatcher(ImportPatcher):
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _('Import Actors: AIPackages')
-    text = _("Import Actor AIPackage links from source mods.")
+    text = _("Import Actor AIPackage links from source mods. WARNING: Currently has bugs in package ordering so may not work as desired in many cases.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Actors.AIPackages'
@@ -15108,7 +15108,6 @@ class DeathItemPatcher(ImportPatcher):
             if count: log("* %s: %d" % (type,count))
 
 #------------------------------------------------------------------------------
-
 class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _('Import Factions')
@@ -19164,6 +19163,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                         tempRaceData[key] = getattr(race,key)
                 if 'R.AddSpells' in bashTags:
                     tempRaceData['AddSpells'] = race.spells
+                    if 'R.ChangeSpells' in bashTags: 
+                        print (_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
                 if 'R.ChangeSpells' in bashTags:
                     raceData['spellsOverride'] = race.spells
                 if 'R.Description' in bashTags:
