@@ -16032,15 +16032,41 @@ class NpcFacePatcher(ImportPatcher):
         faceData = self.faceData
         loadFactory = LoadFactory(False,MreNpc)
         progress.setFull(len(self.faceMods))
+        cachedMasters = {}
         for index,faceMod in enumerate(self.faceMods):
             if faceMod not in modInfos: continue
+            temp_faceData = {}
             faceInfo = modInfos[faceMod]
             faceFile = ModFile(faceInfo,loadFactory)
+            masters = faceInfo.header.masters
             faceFile.load(True)
             faceFile.convertToLongFids(('NPC_',))
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] != faceMod:
-                    faceData[npc.fid] = (npc.fggs_p,npc.fgga_p,npc.fgts_p,npc.eye,npc.hair,npc.hairLength,npc.hairRed,npc.hairBlue,npc.hairGreen,npc.unused3)
+                    temp_faceData[npc.fid] = {}
+                    for attr in ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','unused3'):
+                        temp_faceData[npc.fid][attr] = npc.__getattribute__(attr)
+            for master in masters:
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(('NPC_',))
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                if 'NPC_' not in masterFile.tops: continue
+                for npc in masterFile.NPC_.getActiveRecords():
+                    if npc.fid not in temp_faceData: continue
+                    for attr, value in temp_faceData[npc.fid].iteritems():
+                        if value == npc.__getattribute__(attr): continue
+                        if npc.fid not in faceData: faceData[npc.fid] = dict()
+                        try:
+                            faceData[npc.fid][attr] = temp_faceData[npc.fid][attr]
+                        except KeyError:
+                            faceData[npc.fid].setdefault(attr,value)
             progress.plus()
 
     def getReadClasses(self):
@@ -16070,12 +16096,15 @@ class NpcFacePatcher(ImportPatcher):
         faceData, count = self.faceData, 0
         for npc in self.patchFile.NPC_.records:
             if npc.fid in faceData:
-                (npc.fggs_p, npc.fgga_p, npc.fgts_p, npc.eye,npc.hair,
-                    npc.hairLength, npc.hairRed, npc.hairBlue,
-                    npc.hairGreen, npc.unused3) = faceData[npc.fid]
-                npc.setChanged()
-                keep(npc.fid)
-                count += 1
+                changed = False
+                for attr, value in faceData[npc.fid].iteritems():
+                    if value != npc.__getattribute__(attr):
+                        npc.__setattr__(attr,value)
+                        changed = True
+                if changed:
+                    npc.setChanged()
+                    keep(npc.fid)
+                    count += 1
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
         for mod in self.faceMods:
@@ -19585,11 +19614,14 @@ class RedguardNPCPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            if record.race[1] == 0x00d43:
-                record.fgts_p = '\x00'*200
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+            try:
+                if record.race[1] == 0x00d43:
+                    record.fgts_p = '\x00'*200
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+                except TypeError:
+                    print (_('type error! from %s in npc record %s') %( srcMod.s, npc.full))
         #--Log
         log.setHeader(_('===Redguard FGTS Patcher'))
         log(_('* %d Redguard NPCs Tweaked') % (sum(count.values()),))
