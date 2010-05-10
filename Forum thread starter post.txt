@@ -65,23 +65,42 @@ For mod-makers:
 [/quote]
 
 Latest Version:
-[code]=== 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
-* Taglist: updated to masterlist version 824 and a bunch of cruft removed.
-* Fixes:
-  * Fixed untranslatable strings reported by ThreeD.
-  * Remaining scrolling issues in installers tab fixed.
-* BAIN Wizard strings now translateable.
-* INI Tweaks tab edits:
-  * Fixed sorting on the INI Tweaks tab.
-  * Added option to sort valid ini tweaks to the top.
-  * Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
-* Check added at start of patch build dialogue to detect (with warning and choice of proceeding or not) missing/delinquent masters.
-* Option to show/hide ruleset info from Mod Checker added.
-* Import Scripts can now add new scripts to the esp (optional).
-* Fixed major bug and a slight optimization in Race Patcher.
-* Slight optimization to translation feature (only affects you if you have a Non-English OS).
-* Some more random strings made translateable.
-* New tag __Deactivate__: suggests when you should import & deactivate.[/code]
+=== 284 (RC1) [09/05/2010] [Lojack,PacificMorrowind,Valda68k]
+[list][*] Incorrect italicization fixed.
+[*] Active mods with the 'Deactivate' tag will be highlighted in red.
+[*] Bashed Patch changes:[list]
+  [*] Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues).
+  [*] New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
+  [*] RacePatcher changes:[list]
+    [*] Left eye import fix (contributed by Valda68k)
+    [*] R.Ears tag added; imports ears
+    [*] R.Attributes-F tag added; imports race attributes for females
+    [*] R.Attributes-M tag added; imports race attributes for males
+    [*] R.Skills tag added; imports race skill bonuses
+    [*] R.Description tag added; imports race description
+    [*] R.AddSpells tag added; imports race spells additions.
+    [*] R.ChangeSpells tag added; imports race spell as totally new list.
+    [*] NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) __if__ hair length is 0.0 or None.
+    [*] another not insignificant optimization.[/list]
+  [*] Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
+  [*] Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
+  [*] New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+  [*] 3 new GMST changers added to tweak settings
+  [*] NPC Tweaker changes:[list]
+    [*] Renamed to Tweak Actors.
+    [*] 'No Bloody Creatures' tweak added.
+    [*] 'As Intended: Boars' tweak added.
+    [*] 'As Intended: Imps' tweak added.[/list][/list]
+[*] Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
+[*] BAIN:[list]
+  [*] Renaming now updates the 'Mods' and 'INI Edits' tabs
+  [*] 2 bugfixes dealing with filtering (reported by Vindicator)
+  [*] Double or middle clicking on an image in a BAIN Wizard will open the full image.
+  [*] You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.[/list]
+[*] comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
+[*] You can delete Installers and INI Edits with the Delete key now.
+[*] You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
+[/list]
 
 and just to repeat some links and news:
 Wrye4Fallout3.
