@@ -19634,8 +19634,8 @@ class RedguardNPCPatcher(BasalNPCTweaker):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-                except TypeError:
-                    print (_('type error! from %s in npc record %s') %( srcMod.s, npc.full))
+            except TypeError:
+                print (_('type error! from %s in npc record %s') %( srcMod.s, npc.full))
         #--Log
         log.setHeader(_('===Redguard FGTS Patcher'))
         log(_('* %d Redguard NPCs Tweaked') % (sum(count.values()),))
