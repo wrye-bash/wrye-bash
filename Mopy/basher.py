@@ -1029,9 +1029,18 @@ class INIList(List):
         #--Events
         #--ScrollPos
 
-    def SetBaseINI(self,file):
-        self.data.setBaseIni(file)
-        self.RefreshUI()
+    def CountTweakStatus(self):
+        applied = 0
+        mismatch = 0
+        not_applied = 0
+        invalid = 0
+        for tweak in self.data.keys():
+            status = self.data[tweak].status
+            if status == -10: invalid += 1
+            elif status == 0: not_applied += 1
+            elif status == 10: mismatch += 1
+            elif status == 20: applied += 1
+        return (applied,mismatch,not_applied,invalid)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -1057,7 +1066,6 @@ class INIList(List):
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
         cols = self.cols
-        settings = bosh.oblivionIni.getSettings()
         for colDex in range(self.numCols):
             col = cols[colDex]
             if col == 'File':
@@ -1090,9 +1098,10 @@ class INIList(List):
         #--Font/BG Color
         item = self.list.GetItem(itemDex)
         item.SetTextColour(wx.BLACK)
-        item.SetBackgroundColour(wx.WHITE)
         if status < 0:
             item.SetBackgroundColour(colors['bash.installers.outOfOrder'])
+        else:
+            item.SetBackgroundColour(wx.WHITE)
         self.list.SetItem(item)
         if fileName in selected:
             self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
@@ -1117,7 +1126,7 @@ class INIList(List):
         #--Valid Tweaks first?
         self.sortValid = settings['bash.ini.sortValid']
         if self.sortValid:
-            self.items.sort(key=lambda a: self.data[a].getStatus() < 0)
+            self.items.sort(key=lambda a: self.data[a].status < 0)
         
 
     def OnKeyUp(self,event):
@@ -1793,7 +1802,6 @@ class INIPanel(NotebookPanel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent,-1)
         global iniList
-        iniList = INIList(self)
         #--Remove from list button
         self.button = button(self,_('Remove'),onClick=self.OnRemove)
         #--Edit button
@@ -1805,6 +1813,7 @@ class INIPanel(NotebookPanel):
         self.lastDir = bosh.dirs['mods'].s
         sorted_choices = self.SortedINIs()
         self.SetBaseINI(self.choices[sorted_choices[self.choice]])
+        iniList = INIList(self)
         self.comboBox = wx.ComboBox(self,-1,value=sorted_choices[self.choice],choices=sorted_choices,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
@@ -1825,14 +1834,15 @@ class INIPanel(NotebookPanel):
 
     def SetBaseINI(self,path=None):
         if self.choice == 0:
-            iniList.SetBaseINI(bosh.oblivionIni)
+            bosh.iniInfos.setBaseIni(bosh.oblivionIni)
             self.button.Enable(False)
         else:
             if not path:
                 sorted_choices = self.SortedINIs()
                 path = self.choices[sorted_choices[self.choice]]
-            iniList.SetBaseINI(bosh.IniFile(path))
+            bosh.iniInfos.setBaseIni(bosh.BestIniFile(path))
             self.button.Enable(True)
+        if iniList is not None: iniList.RefreshUI()
 
     def OnRemove(self,event):
         selection = self.comboBox.GetValue()
@@ -1868,7 +1878,8 @@ class INIPanel(NotebookPanel):
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
-        text = _("Tweaks: %d") % (len(bosh.iniInfos.data))
+        stati = iniList.CountTweakStatus()
+        text = _("Tweaks: %d/%d") % (stati[0],sum(stati[:-1]))
         statusBar.SetStatusText(text,2)
 
     def OnSelectDropDown(self,event):
@@ -1891,6 +1902,7 @@ class INIPanel(NotebookPanel):
             self.comboBox.SetItems(self.SortedINIs())
             self.comboBox.SetSelection(self.choice)
         else:
+            if self.choice == event.GetInt(): return
             self.choice = event.GetInt()
         self.SetBaseINI(path)
         iniList.RefreshUI()
