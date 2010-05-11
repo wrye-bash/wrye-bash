@@ -205,6 +205,8 @@ settingDefaults = {
         'Installer':100,
         },
     'bash.ini.colAligns': {},
+    'bash.ini.choices': {},
+    'bash.ini.choice': None,
     #--Wrye Bash: Mods
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author'],
     'bash.mods.esmsFirst': 1,
@@ -1027,6 +1029,10 @@ class INIList(List):
         #--Events
         #--ScrollPos
 
+    def SetBaseINI(self,file):
+        self.data.setBaseIni(file)
+        self.RefreshUI()
+
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
         #--Details
@@ -1788,24 +1794,115 @@ class INIPanel(NotebookPanel):
         wx.Panel.__init__(self, parent,-1)
         global iniList
         iniList = INIList(self)
+        #--Remove from list button
+        self.button = button(self,_('Remove'),onClick=self.OnRemove)
+        #--Edit button
+        self.edit = button(self,_('Edit...'),onClick=self.OnEdit)
+        #--Choices
+        self.choices = settings['bash.ini.choices']
+        self.choice = settings['bash.ini.choice']
+        self.CheckINIs()
+        self.lastDir = bosh.dirs['mods'].s
+        sorted_choices = self.SortedINIs()
+        self.SetBaseINI(self.choices[sorted_choices[self.choice]])
+        self.comboBox = wx.ComboBox(self,-1,value=sorted_choices[self.choice],choices=sorted_choices,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
+        self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         #--Layout
-        sizer = hSizer(
-            (iniList,1,wx.GROW))
+        sizer = vSizer(
+            (hSizer(
+                (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
+                ((4,0),0),
+                (self.button,0,wx.ALIGN_TOP,0),
+                (self.edit,0,wx.ALIGN_TOP,0),
+             ),0,wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT|wx.GROW,4),
+            (hSizer(
+                (iniList,1,wx.GROW)
+                ),1,wx.GROW)
+            )
         self.SetSizer(sizer)
+
+    def SetBaseINI(self,path=None):
+        if self.choice == 0:
+            iniList.SetBaseINI(bosh.oblivionIni)
+            self.button.Enable(False)
+        else:
+            if not path:
+                sorted_choices = self.SortedINIs()
+                path = self.choices[sorted_choices[self.choice]]
+            iniList.SetBaseINI(bosh.IniFile(path))
+            self.button.Enable(True)
+
+    def OnRemove(self,event):
+        selection = self.comboBox.GetValue()
+        self.choice -= 1
+        del self.choices[selection]
+        self.comboBox.SetItems(self.SortedINIs())
+        self.comboBox.SetSelection(self.choice)
+        self.SetBaseINI()
+        iniList.RefreshUI()
+
+    def OnEdit(self,event):
+        selection = self.comboBox.GetValue()
+        self.choices[selection].start()
+
+    def CheckINIs(self):
+        for i in self.choices.keys():
+            if i == 'Browse...': continue
+            path = self.choices[i]
+            if not path.isfile():
+                del self.choices[i]
+        self.choices['Oblivion.ini'] = bosh.oblivionIni.path
+        self.choices['Browse...'] = None
+        if len(self.choices.keys()) <= self.choice:
+            self.choice = 0
+
+    def SortedINIs(self):
+        keys = self.choices.keys()
+        # Sort alphabetically
+        keys.sort()
+        # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
+        keys.sort(key=lambda a: (a != 'Oblivion.ini') + (a == 'Browse...'))
+        return keys
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
         text = _("Tweaks: %d") % (len(bosh.iniInfos.data))
-        statusBar.SetStatusText(text,2)        
+        statusBar.SetStatusText(text,2)
 
+    def OnSelectDropDown(self,event):
+        selection = event.GetString()
+        path = self.choices[selection]
+        if not path:
+            # 'Browse...'
+            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard='INI files (*.ini)|*.ini')
+            if not path:
+                self.comboBox.SetSelection(self.choice)
+                return
+            # Make sure the 'new' file isn't already in the list
+            if path.stail in self.choices:
+                self.comboBox.SetSelection(self.choice)
+                return
+            self.lastDir = path.shead
+            self.choices[path.stail] = path
+            keys = self.SortedINIs()
+            self.choice = keys.index(path.stail)
+            self.comboBox.SetItems(self.SortedINIs())
+            self.comboBox.SetSelection(self.choice)
+        else:
+            self.choice = event.GetInt()
+        self.SetBaseINI(path)
+        iniList.RefreshUI()
+        
     def OnSize(self,event):
         wx.Window.Layout(self)
         iniList.Layout()
 
     def OnCloseWindow(self):
         """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
+        settings['bash.ini.choices'] = self.choices
+        settings['bash.ini.choice'] = self.choice
         bosh.iniInfos.table.save()
 
 #------------------------------------------------------------------------------
@@ -7248,7 +7345,7 @@ class INI_Apply(Link):
         dir = self.window.data.dir
         for item in self.data:
             file = dir.join(item)
-            bosh.oblivionIni.applyTweakFile(file)
+            iniList.data.ini.applyTweakFile(file)
             iniList.RefreshUI()
 #------------------------------------------------------------------------------
 class Mods_EsmsFirst(Link):
@@ -11498,7 +11595,6 @@ def InitReplacerLinks():
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
-    INIList.mainMenu.append(Mods_OblivionIni())
     INIList.mainMenu.append(INI_SortValid())
 
     #--Item menu

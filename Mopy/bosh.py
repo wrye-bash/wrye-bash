@@ -6557,63 +6557,36 @@ class BsaFile:
         return (reset,inval,intxt)
 
 #--------------------------------------------------------------------------------
-class OblivionIni:
-    """Oblivion.ini file."""
-    bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
-
-    def __init__(self):
+class IniFile:
+    """Any old ini file."""
+    def __init__(self,path,defaultSection='General'):
         """Initialize."""
-        self.path = dirs['saveBase'].join('Oblivion.ini')
+        self.path = path
+        self.defaultSection = defaultSection
         self.isCorrupted = False
-
-    def ensureExists(self):
-        """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
-        if self.path.exists(): return
-        srcPath = dirs['app'].join('Oblivion_default.ini')
-        srcPath.copyTo(self.path)
 
     def getSetting(self,section,key,default=None):
         """Gets a single setting from the file."""
         section,key = map(bolt.LString,(section,key))
-        settings = self.getSettings()
-        if section in settings:
-            return settings[section].get(key,default)
+        ini_settings = self.getSettings()
+        if section in ini_settings:
+            return ini_settings[section].get(key,default)
         else:
             return default
 
     def getSettings(self):
         """Gets settings for self."""
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=(.*)')
-        #--Read ini file
-        self.ensureExists()
-        iniFile = self.path.open('r')
-        settings = {} #settings[section][key] = value (stripped!)
-        sectionSettings = None
-        for line in iniFile:
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            if maSection:
-                sectionSettings = settings[LString(maSection.group(1))] = {}
-            elif maSetting:
-                if sectionSettings == None:
-                    sectionSettings = settings.setdefault(LString('General'),{})
-                    self.isCorrupted = True
-                sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
-        iniFile.close()
-        return settings
+        return self.getTweakFileSettings(self.path,True)
 
-    def getTweakFileSettings(self,tweakPath):
+    def getTweakFileSettings(self,tweakPath,setCorrupted=False):
         """Gets settings in a tweak file."""
         reComment = re.compile(';.*')
         reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
         reSetting = re.compile(r'(.+?)\s*=(.*)')
         #--Read ini file
-        settings = {}
+        ini_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
-            return settings
+            return ini_settings
         iniFile = tweakPath.open('r')
         sectionSettings = None
         for line in iniFile:
@@ -6621,30 +6594,32 @@ class OblivionIni:
             maSection = reSection.match(stripped)
             maSetting = reSetting.match(stripped)
             if maSection:
-                sectionSettings = settings[LString(maSection.group(1))] = {}
+                sectionSettings = ini_settings[LString(maSection.group(1))] = {}
             elif maSetting:
                 if sectionSettings == None:
-                    sectionSettings = settings.setdefault(LString('General'),{})
+                    sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
+                    if setCorrupted: self.isCorrupted = True
                 sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
         iniFile.close()
-        return settings
+        return ini_settings
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
-        settings = {section:{key:value}}
-        self.saveSettings(settings)
+        ini_settings = {section:{key:value}}
+        self.saveSettings(ini_settings)
 
-    def saveSettings(self,settings):
+    def saveSettings(self,ini_settings):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
-            for x,y in settings.iteritems())
+        ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
+            for x,y in ini_settings.iteritems())
         reComment = re.compile(';.*')
         reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
         reSetting = re.compile(r'(.+?)\s*=')
         #--Read init, write temp
-        self.ensureExists()
+        if not self.path.exists() or not self.path.isfile():
+            return
         iniFile = self.path.open('r')
         tmpFile = self.path.temp.open('w')
         section = sectionSettings = None
@@ -6654,7 +6629,7 @@ class OblivionIni:
             maSetting = reSetting.match(stripped)
             if maSection:
                 section = LString(maSection.group(1))
-                sectionSettings = settings.get(section,{})
+                sectionSettings = ini_settings.get(section,{})
             elif maSetting and LString(maSetting.group(1)) in sectionSettings:
                 key = LString(maSetting.group(1))
                 value = sectionSettings[key]
@@ -6675,21 +6650,54 @@ class OblivionIni:
         reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
         reSetting = re.compile(r'(.+?)\s*=')
         #--Read Tweak file
-        self.ensureExists()
+        if not self.path.exists() or not self.path.isfile():
+            return
         tweakFile = tweakPath.open('r')
-        settings = {} #settings[section][key] = "key=value\n"
+        ini_settings = {}
         sectionSettings = None
         for line in tweakFile:
             stripped = reComment.sub('',line).strip()
             maSection = reSection.match(stripped)
             maSetting = reSetting.match(stripped)
             if maSection:
-                sectionSettings = settings[LString(maSection.group(1))] = {}
+                sectionSettings = ini_settings[LString(maSection.group(1))] = {}
             elif maSetting:
                 if line[-1:] != '\n': line += '\r\n' #--Make sure has trailing new line
                 sectionSettings[LString(maSetting.group(1))] = line
         tweakFile.close()
-        self.saveSettings(settings)
+        self.saveSettings(ini_settings)
+#-----------------------------------------------------------------------------------------------
+class OblivionIni(IniFile):
+    """Oblivion.ini file."""
+    bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
+
+    def __init__(self):
+        """Initialize."""
+        IniFile.__init__(self,dirs['saveBase'].join('Oblivion.ini'),'General')
+
+    def ensureExists(self):
+        """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
+        if self.path.exists(): return
+        srcPath = dirs['app'].join('Oblivion_default.ini')
+        srcPath.copyTo(self.path)
+
+    def getSettings(self):
+        """Gets settings for self."""
+        self.ensureExists()
+        return IniFile.getSettings(self)
+
+    def saveSettings(self,settings):
+        """Applies dictionary of settings to ini file.
+        Values in settings dictionary can be either actual values or
+        full key=value line ending in newline char."""
+        self.ensureExists()
+        IniFile.saveSettings(self,settings)
+
+    def applyTweakFile(self,tweakPath):
+        """Read Ini tweak file and apply its settings to oblivion.ini.
+        Note: Will ONLY apply settings that already exist."""
+        self.ensureExists()
+        IniFile.applyTweakFile(self,tweakPath)
 
     #--BSA Redirection --------------------------------------------------------
     def getBsaRedirection(self):
@@ -7277,8 +7285,9 @@ class INIInfo(FileInfo):
         0: not installed (white)
         -10: invalid tweak file (red)."""
         path = self.getPath()
-        tweak = oblivionIni.getTweakFileSettings(path)
-        settings = oblivionIni.getSettings()
+        ini = iniInfos.ini
+        tweak = ini.getTweakFileSettings(path)
+        settings = ini.getSettings()
         status = 20
         if len(tweak) == 0: status = -10
         for key in tweak:
@@ -7301,8 +7310,9 @@ class INIInfo(FileInfo):
         """Returns ini tweak errors as text."""
         #--Setup
         path = self.getPath()
-        tweak = oblivionIni.getTweakFileSettings(path)
-        settings = oblivionIni.getSettings()
+        ini = iniInfos.ini
+        tweak = ini.getTweakFileSettings(path)
+        settings = ini.getSettings()
         text = ['%s:' % path.stail]
 
         if len(tweak) == 0:
@@ -7713,10 +7723,14 @@ class ResourceReplacer:
 class INIInfos(FileInfos):
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'].join('INI Tweaks'),INIInfo)
+        self.ini = oblivionIni
 
     def rightFileType(self,fileName):
         """Bool: File is an ini."""
         return reINIExt.search(fileName.s)
+
+    def setBaseIni(self,ini):
+        self.ini = ini
 
     def getBashDir(self):
         """Return directory to save info."""
