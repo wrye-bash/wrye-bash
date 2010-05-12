@@ -6281,10 +6281,15 @@ class Installer_Anneal(InstallerLink):
 class Installer_Delete(balt.Tank_Delete):
     """Deletes selected file from tank."""
     def Execute(self,event):
-        balt.Tank_Delete.Execute(self,event)
-        self.data.refreshOrder()
+        deleted = balt.Tank_Delete.Execute(self,event)
+        if not deleted: return #nothing happened
+        if deleted == 'marker':
+            self.data.refresh(what='OS')
+            self.gTank.RefreshUI()
+            return
         self.data.refresh(what='ION')
         self.gTank.RefreshUI()
+        
 
 #------------------------------------------------------------------------------
 class Installer_Duplicate(InstallerLink):
