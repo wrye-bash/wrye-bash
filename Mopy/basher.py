@@ -206,7 +206,7 @@ settingDefaults = {
         },
     'bash.ini.colAligns': {},
     'bash.ini.choices': {},
-    'bash.ini.choice': None,
+    'bash.ini.choice': 0,
     #--Wrye Bash: Mods
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author'],
     'bash.mods.esmsFirst': 1,
