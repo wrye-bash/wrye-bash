@@ -24,6 +24,7 @@
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
+import bosh
 from bolt import _, GPath, deprint, delist
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 
@@ -1353,10 +1354,10 @@ class Tank(wx.Panel):
         columns = self.data.getParam('columns')
         self.SortItems(columns[event.GetColumn()],'INVERT')
 
-    def DoColumnMenu(self,event):
+    def DoColumnMenu(self,event,iColumn=None):
         """Show column menu."""
         if not self.mainMenu: return
-        iColumn = event.GetColumn()
+        if iColumn is None: iColumn = event.GetColumn()
         menu = wx.Menu()
         for item in self.mainMenu:
             item.AppendToMenu(menu,self,iColumn)
@@ -1365,9 +1366,11 @@ class Tank(wx.Panel):
 
     def DoItemMenu(self,event):
         """Show item menu."""
-        if not self.itemMenu: return
         selected = self.GetSelected()
-        if not selected: return
+        if not selected:
+            self.DoColumnMenu(event,0)
+            return
+        if not self.itemMenu: return
         menu = wx.Menu()
         for item in self.itemMenu:
             item.AppendToMenu(menu,self,selected)
@@ -1382,14 +1385,10 @@ class Tank(wx.Panel):
         message = _(r'Delete these items? This operation cannot be undone.')
         message += '\n* ' + '\n* '.join([self.data.getName(x) for x in items])
         if not askYes(self,message,_('Delete Items')): return False
-        marker = True
         for item in items:
             del self.data[item]
-            if not isinstance(item, bosh.InstallerMarker):
-                marker = False
         self.RefreshUI()
         self.data.setChanged()
-        return True
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1499,12 +1498,9 @@ class Tank_Delete(Link):
     def Execute(self,event):
         try:
             wx.BeginBusyCursor()
-            deleted = self.gTank.DeleteSelected()
+            self.gTank.DeleteSelected()
         finally:
             wx.EndBusyCursor()
-            if deleted:
-                return true
-
 #------------------------------------------------------------------------------
 class Tank_Open(Link):
     """Open selected file(s)."""
