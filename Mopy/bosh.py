@@ -7976,7 +7976,7 @@ class ModInfos(FileInfos):
 
     def autoGhost(self,force=False):
         """Automatically inactive files to ghost."""
-        hasChanged = False
+        changed = []
         allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
@@ -7986,8 +7986,9 @@ class ModInfos(FileInfos):
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
-                hasChanged |= (newGhost != oldGhost)
-        return hasChanged
+                if newGhost != oldGhost:
+                    changed.append(mod)
+        return changed
 
     def autoGroup(self):
         """Automatically assigns groups for currently ungrouped mods."""
