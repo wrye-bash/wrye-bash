@@ -1191,12 +1191,11 @@ class ModList(List):
             if GPath(thisFile) in bosh.modInfos.autoSorted:
                 balt.showError(self,_("Auto-ordered files cannot be manually moved."))
                 return
-
+        # Watch out for errors in range
         if newPos > indexes[0]:   inc = 1
         elif newPos < indexes[0]: inc = -1
         else: return
         howMany = indexes[-1]-indexes[0]
-
         # Make sure we don't go out of bounds
         target = indexes[0]
         thisFile = self.items[target]
@@ -1209,12 +1208,11 @@ class ModList(List):
             target += inc
         if inc == 1 and target + howMany <= indexes[-1]: return
         if inc == -1 and target >= indexes[0]: return
-
+        # Adjust for going up/down
         if inc > 0:
             target += howMany
         else:
             indexes.reverse()
-
         # Gather time codes
         i = indexes[0]
         times = []
@@ -1222,21 +1220,18 @@ class ModList(List):
             info = bosh.modInfos[self.items[i]]
             times.append(info.mtime)
             i += inc
-
         # Rearrange them for the new load order            
         times.reverse()
         newThisTimes = times[:howMany+1]
         newSwapTimes = times[howMany+1:]
         times = newSwapTimes + newThisTimes
-
         # Apply new times
         i = indexes[0]
         while i != target + inc:
             info = bosh.modInfos[self.items[i]]
             info.setmtime(times.pop())
             i += inc
-
-        # Refresh    
+        # Refresh
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
@@ -1447,7 +1442,8 @@ class ModList(List):
                         thisInfo.setmtime(swapTime)
                         swapInfo.setmtime(thisTime)
                         bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI()
+                        self.RefreshUI(refreshSaves=False)
+                    self.RefreshUI([],refreshSaves=True)
         event.Skip()
         
     def OnKeyUp(self,event):
@@ -10385,36 +10381,38 @@ class Screens_NextScreenShot(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Screen_ConvertToJpg(Link):
-    """Converts selected images to jpg files."""
+class Screen_ConvertTo(Link):
+    """Converts seleected images to another type."""
+    def __init__(self,ext,imageType,*args,**kwdargs):
+        Link.__init__(self,*args,**kwdargs)
+        self.ext = ext.lower()
+        self.imageType = imageType
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Convert to jpg'))
+        menuItem = wx.MenuItem(menu,self.id,_('Convert to %s') % self.ext)
         menu.AppendItem(menuItem)
-        convertable = [name for name in self.data if GPath(name).cext != '.jpg']
+        convertable = [name for name in self.data if GPath(name).cext != '.'+self.ext]
         menuItem.Enable(len(convertable) > 0)
 
     def Execute(self,event):
-        #--File Info
-        srcDir = self.window.data.dir
-        progress = balt.Progress(_("Converting to Jpg"))
+        srcDir = bosh.screensData.dir
+        progress = balt.Progress(_("Converting to %s") % self.ext)
         try:
             progress.setFull(len(self.data))
-            srcDir = bosh.screensData.dir
             for index,fileName in enumerate(self.data):
                 progress(index,fileName.s)
                 srcPath = srcDir.join(fileName)
-                destPath = srcPath.root+'.jpg'
+                destPath = srcPath.root+'.'+self.ext
                 if srcPath == destPath or destPath.exists(): continue
                 bitmap = wx.Bitmap(srcPath.s)
-                result = bitmap.SaveFile(destPath.s,wx.BITMAP_TYPE_JPEG)
+                result = bitmap.SaveFile(destPath.s,self.imageType)
                 if not result: continue
                 srcPath.remove()
         finally:
             if progress: progress.Destroy()
-            bosh.screensData.refresh()
+            self.window.data.refresh()
             self.window.RefreshUI()
-
 #------------------------------------------------------------------------------
 class Screen_Rename(Link):
     """Renames files by pattern."""
@@ -10426,7 +10424,7 @@ class Screen_Rename(Link):
 
     def Execute(self,event):
         #--File Info
-        rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(jpg|bmp))$',re.I)
+        rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(jpg|jpeg|png|tif|bmp))$',re.I)
         fileName0 = self.data[0]
         pattern = balt.askText(self.window,_("Enter new name. E.g. Screenshot 123.bmp"),
             _("Rename Files"),fileName0.s)
@@ -11873,7 +11871,13 @@ def InitScreenLinks():
     ScreensList.itemMenu.append(Screen_Rename())
     ScreensList.itemMenu.append(File_Delete())
     ScreensList.itemMenu.append(SeparatorLink())
-    ScreensList.itemMenu.append(Screen_ConvertToJpg())
+    if True: #--Convert
+        convertMenu = MenuLink(_('Convert'))
+        convertMenu.links.append(Screen_ConvertTo('jpg',wx.BITMAP_TYPE_JPEG))
+        convertMenu.links.append(Screen_ConvertTo('png',wx.BITMAP_TYPE_PNG))
+        convertMenu.links.append(Screen_ConvertTo('bmp',wx.BITMAP_TYPE_BMP))
+        convertMenu.links.append(Screen_ConvertTo('tif',wx.BITMAP_TYPE_TIF))
+        ScreensList.itemMenu.append(convertMenu)
 
 def InitMessageLinks():
     """Initialize messages tab menus."""
