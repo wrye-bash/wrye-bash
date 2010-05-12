@@ -73,13 +73,12 @@ from balt import colors, images, Image
 from balt import Links, Link, SeparatorLink, MenuLink
 from balt import ListCtrl
 
+# BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
-    if bosh.inisettings['enablewizard']:
-        import belt     #BAIN scripting
-except KeyError:
-    bosh.initDirs()
-    if bosh.inisettings['enablewizard']:
-        import belt     #BAIN scripting
+    import belt
+    bEnableWizard = True
+except:
+    bEnableWizard = False
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
@@ -5837,81 +5836,6 @@ class Installers_Enabled(Link):
             gInstallers.gList.gList.DeleteAllItems()
             gInstallers.RefreshDetails(None)
 #------------------------------------------------------------------------------
-class Installers_EnableWizard(Link):
-    """Flips wizard enabled status."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Enable Wizard Install'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(bosh.inisettings['enablewizard'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        path = bosh.dirs['mopy'].join('Wrye Bash Launcher.pyw')
-        path = path.s
-        path = path.replace('\\',os.sep)
-        if bosh.inisettings['enablewizard']:
-            message = (_("Disable wizard install system?\nThis will close and reopen Wrye Bash. Do you want to continue?"))
-            if not balt.askContinue(self.gTank,message,'bash.disablewiz.continue',
-                _('Disable Wizard Install System?')):
-                return
-            if not GPath('bash.ini').exists(): #Not possible >= v280, but older versions modified bosh.py to enable the wizard
-                shutil.copyfile( 'bash_default.ini', 'bash.ini')
-                file = bosh.dirs['mopy'].join(r'bosh.py').open("r")
-                lines = file.readlines()
-                file.close
-                if "    inisettings['enablewizard'] = 1\n" in lines:
-                    pos = lines.index("    inisettings['enablewizard'] = 1\n")
-                    lines[pos] = "    inisettings['enablewizard'] = False\n"
-                file = bosh.dirs['mopy'].join(r'bosh.py').open("w")
-                file.writelines(lines)
-                file.close
-            file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
-            lines = file.readlines()
-            file.close    
-            for i, line in enumerate(lines):
-                if line.lstrip().startswith('bEnableWizard='):
-                    lines[i] = "bEnableWizard=False\n"
-                    file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                    file.writelines(lines)
-                    file.close
-                    break
-            else:
-                for i, line in enumerate(lines):
-                    if line.lstrip().startswith('[Settings]'):
-                        lines.insert(i+1, "bEnableWizard=False\n")
-                        file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                        file.writelines(lines)
-                        file.close
-                        break
-        else:
-            message = (_("Enable wizard install system?\nThis will close and reopen Wrye Bash and will require the Python win32api to be installed or Bash will not start!\nYou can reset it by changing the line in the Bash ini as per the readme. Do you want to continue?"))
-            if not balt.askContinue(self.gTank,message,'bash.enablewiz.continue',
-                _('Enable Wizard Install System?')):
-                return
-            if not GPath('bash.ini').exists(): shutil.copyfile('bash_default.ini', 'bash.ini')
-            file = bosh.dirs['mopy'].join(r'bash.ini').open("r")
-            lines = file.readlines()
-            file.close    
-            for i, line in enumerate(lines):
-                if line.lstrip().startswith('bEnableWizard='):
-                    lines[i] = "bEnableWizard=True\n"
-                    file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                    file.writelines(lines)
-                    file.close
-                    break
-            else:
-                for i, line in enumerate(lines):
-                    if line.lstrip().startswith('[Settings]'):
-                        lines.insert(i+1, "bEnableWizard=True\n")
-                        file = bosh.dirs['mopy'].join(r'bash.ini').open("w")
-                        file.writelines(lines)
-                        file.close
-                        break
-        os.startfile(path)
-        bashFrame.Close()
- 
-#------------------------------------------------------------------------------
 class Installers_BsaRedirection(Link):
     """Toggle BSA Redirection."""
     def AppendToMenu(self,menu,window,data):
@@ -6289,7 +6213,6 @@ class Installer_Delete(balt.Tank_Delete):
             return
         self.data.refresh(what='ION')
         self.gTank.RefreshUI()
-        
 
 #------------------------------------------------------------------------------
 class Installer_Duplicate(InstallerLink):
@@ -11552,9 +11475,8 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_ShowReplacers())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AutoAnneal())
-    if bosh.inisettings['enablewizard']:
+    if bEnableWizard:
         InstallersPanel.mainMenu.append(Installers_AutoWizard())
-    InstallersPanel.mainMenu.append(Installers_EnableWizard())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersPanel.mainMenu.append(Installers_BsaRedirection())
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
@@ -11583,7 +11505,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_HasExtraData())
     InstallersPanel.itemMenu.append(Installer_SkipVoices())
     InstallersPanel.itemMenu.append(SeparatorLink())
-    if bosh.inisettings['enablewizard']:
+    if bEnableWizard:
         InstallersPanel.itemMenu.append(Installer_Wizard(False))
         InstallersPanel.itemMenu.append(Installer_Wizard(True))
         InstallersPanel.itemMenu.append(Installer_EditWizard())
