@@ -1030,6 +1030,9 @@ class INIList(List):
         #--ScrollPos
 
     def CountTweakStatus(self):
+        """Returns number of each type of tweak, in the
+        following format:
+        (applied,mismatched,not_applied,invalid)"""
         applied = 0
         mismatch = 0
         not_applied = 0
@@ -1050,6 +1053,8 @@ class INIList(List):
         else:
             selected = set([detail])
         #--Populate
+        if files == 'VALID':
+            files = [GPath(self.items[x]) for x in range(len(self.items)) if self.data[GPath(self.items[x])].status >= 0]
         if files == 'ALL':
             self.PopulateItems(selected=selected)
         elif isinstance(files,bolt.Path):
@@ -1078,16 +1083,18 @@ class INIList(List):
                 self.list.SetStringItem(itemDex, colDex, value)
         status = fileInfo.getStatus()
         #--Image
-        checkMark = status > 0
+        checkMark = 0
         icon = 0    # Ok tweak, not applied
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
             icon = 0
+            checkMark = 1
             mousetext = _('Tweak is currently applied.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon = 10
+            checkMark = 1
             mousetext = _('Some settings in the tweak are applied.')
         elif status == -10:
             # Bad tweak
@@ -7342,23 +7349,30 @@ class INI_Apply(Link):
 
         bEnable = True
         for i in data:
-            fileInfo = bosh.iniInfos[i]
-            if fileInfo.getStatus() < 0:
+            iniInfo = bosh.iniInfos[i]
+            if iniInfo.status < 0:
                 bEnable = False
                 break
         menuItem.Enable(bEnable)
 
     def Execute(self,event):
         """Handle applying INI Tweaks."""
-        window = getattr(self,'gTank',None) or self.window
-        message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
-        if not balt.askContinue(window,message,'bash.iniTweaks.continue',_("INI Tweaks")):
-            return
+        #-- If we're applying to Oblivion.ini, show the warning
+        if self.window.GetParent().comboBox.GetSelection() == 0:
+            message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
+            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_("INI Tweaks")):
+                return
         dir = self.window.data.dir
+        needsRefresh = False
         for item in self.data:
+            #--No point applying a tweak that's already applied
+            if bosh.iniInfos[item].status == 20: continue
+            needsRefresh = True
             file = dir.join(item)
             iniList.data.ini.applyTweakFile(file)
-            iniList.RefreshUI()
+        if needsRefresh:
+            #--Refresh status of all the tweaks valid for this ini
+            iniList.RefreshUI('VALID')
 #------------------------------------------------------------------------------
 class Mods_EsmsFirst(Link):
     """Sort esms to the top."""
