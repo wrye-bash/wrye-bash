@@ -7418,8 +7418,8 @@ class Mods_AutoGhost(Link):
 
     def Execute(self,event):
         settings['bash.mods.autoGhost'] ^= True
-        bosh.modInfos.autoGhost(True)
-        self.window.RefreshUI()
+        files = bosh.modInfos.autoGhost(True)
+        self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
 class Mods_AutoGroup(Link):
@@ -7545,20 +7545,6 @@ class Mods_LockTimes(Link):
         modList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Mods_OblivionIni(Link):
-    """Open Oblivion.ini."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Oblivion.ini...'))
-        menu.AppendItem(menuItem)
-        self.path = bosh.dirs['saveBase'].join('Oblivion.ini')
-        menuItem.Enable(self.path.exists())
-
-    def Execute(self,event):
-        """Handle selection."""
-        self.path.start()
-
-#------------------------------------------------------------------------------
 class Mods_OblivionVersion(Link):
     """Specify/set Oblivion version."""
     def __init__(self,key,setProfile=False):
@@ -7575,6 +7561,7 @@ class Mods_OblivionVersion(Link):
 
     def Execute(self,event):
         """Handle selection."""
+        if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
         modList.RefreshUI()
@@ -7976,6 +7963,7 @@ class Mod_AllowAllGhosting(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
+        files = []
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = True
@@ -7983,7 +7971,8 @@ class Mod_AllowAllGhosting(Link):
             toGhost = fileName not in bosh.modInfos.ordered
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
-                self.window.RefreshUI(fileName)
+                files.append(fileName)
+        self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
 class Mod_AllowNoGhosting(Link):
@@ -7993,6 +7982,7 @@ class Mod_AllowNoGhosting(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
+        files = []
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = False
@@ -8000,7 +7990,8 @@ class Mod_AllowNoGhosting(Link):
             toGhost = False
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
-                self.window.RefreshUI(fileName)
+                files.append(fileName)
+        self.window.RefreshUI(files)
      
 #------------------------------------------------------------------------------
 class Mod_AllowInvertGhosting(Link):
@@ -8010,6 +8001,7 @@ class Mod_AllowInvertGhosting(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
+        files = []
         for fileName in self.data:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = bosh.modInfos.table.getItem(fileName,'allowGhosting',True) ^ True
@@ -8017,7 +8009,8 @@ class Mod_AllowInvertGhosting(Link):
             toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
-                self.window.RefreshUI(fileName)
+                files.append(fileName)
+        self.window.RefreshUI(files)
      
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(Link):
