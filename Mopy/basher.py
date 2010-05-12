@@ -697,10 +697,10 @@ class List(wx.Panel):
             self.mouseTextPrev = text                
 
     #--Column Menu
-    def DoColumnMenu(self,event):
+    def DoColumnMenu(self,event,column = None):
         if not self.mainMenu: return
         #--Build Menu
-        column = event.GetColumn()
+        if column is None: column = event.GetColumn()
         menu = wx.Menu()
         for link in self.mainMenu:
             link.AppendToMenu(menu,self,column)
@@ -719,7 +719,9 @@ class List(wx.Panel):
     #--Item Menu
     def DoItemMenu(self,event):
         selected = self.GetSelected()
-        if not selected: return
+        if not selected:
+            self.DoColumnMenu(event,0)
+            return
         #--Build Menu
         menu = wx.Menu()
         for link in self.itemMenu:
@@ -1075,7 +1077,7 @@ class INIList(List):
             if col == 'File':
                 value = fileName.s
             elif col == 'Installer':
-                value = self.data.table.getItem(fileName.tail, 'installer', '')
+                value = self.data.table.getItem(fileName, 'installer', '')
             if mode and colDex == 0:
                 self.list.InsertStringItem(itemDex, value)
             else:
@@ -1087,14 +1089,18 @@ class INIList(List):
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
-            icon = 0
             checkMark = 1
             mousetext = _('Tweak is currently applied.')
+        elif status == 15:
+            # Valid tweak, some settings applied, others are
+            # overwritten by values in another tweak from same installer
+            checkMark = 3
+            mousetext = _('Some settings are applied.  Some are overwritten by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon = 10
-            checkMark = 1
-            mousetext = _('Some settings in the tweak are applied.')
+            checkMark = 3
+            mousetext = _('Some settings are changed.')
         elif status == -10:
             # Bad tweak
             icon = 20
@@ -6200,19 +6206,6 @@ class Installer_Anneal(InstallerLink):
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
-
-#------------------------------------------------------------------------------
-class Installer_Delete(balt.Tank_Delete):
-    """Deletes selected file from tank."""
-    def Execute(self,event):
-        deleted = balt.Tank_Delete.Execute(self,event)
-        if not deleted: return #nothing happened
-        if deleted == 'marker':
-            self.data.refresh(what='OS')
-            self.gTank.RefreshUI()
-            return
-        self.data.refresh(what='ION')
-        self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installer_Duplicate(InstallerLink):
@@ -11491,7 +11484,7 @@ def InitInstallerLinks():
     #--File
     InstallersPanel.itemMenu.append(Installer_Open())
     InstallersPanel.itemMenu.append(Installer_Duplicate())
-    InstallersPanel.itemMenu.append(Installer_Delete())
+    InstallersPanel.itemMenu.append(balt.Tank_Delete())
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
     #InstallersPanel.itemMenu.append(Installer_OpenSearch())
     InstallersPanel.itemMenu.append(Installer_OpenTESA())

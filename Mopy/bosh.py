@@ -7409,19 +7409,21 @@ class INIInfo(FileInfo):
 
     def getStatus(self):
         """Returns status of the ini tweak:
-        20: installed (green)
+        20: installed (green with check)
+        15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
         10: mismatches (yellow)
-        0: not installed (white)
+        0: not installed (green)
         -10: invalid tweak file (red).
         Also caches the value in self.status"""
         path = self.getPath()
-        ini = iniInfos.ini
+        infos = self.getFileInfos()
+        ini = infos.ini
         tweak = ini.getTweakFileSettings(path)
         if len(tweak) == 0:
             self._status = -10
             return -10
         match = False
-        mismatch = False
+        mismatch = 0
         settings = ini.getSettings()
         for key in tweak:
             if key not in settings:
@@ -7432,18 +7434,33 @@ class INIInfo(FileInfo):
                     self._status = -10
                     return -10
                 if tweak[key][item] != settings[key][item]:
-                    mismatch = True
+                    if mismatch < 2:
+                        # Check to see if the mismatch is from another
+                        # ini tweak that is applied, and from the same installer
+                        mismatch = 2
+                        for info in infos.data:
+                            if self is infos[info]: continue
+                            this = infos.table.getItem(path.tail,'installer')
+                            other = infos.table.getItem(info,'installer')
+                            if this == other:
+                                # It's from the same installer
+                                other_settings = ini.getTweakFileSettings(infos[info].getPath())
+                                value = other_settings.get(key,{}).get(item)
+                                if value == settings[key][item]:
+                                    # The other tweak has the setting we're worried about
+                                    mismatch = 1
+                                    break
                 else:
                     match = True
         if not match:
             self._status = 0
-            return 0
         elif not mismatch:
             self._status = 20
-            return 20
-        else:
+        elif mismatch == 1:
+            self._status = 15
+        elif mismatch == 2:
             self._status = 10
-            return 10
+        return self._status
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
