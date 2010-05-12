@@ -1823,21 +1823,27 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Update:</B> The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 <p class=empty>&nbsp;</p>
 <h2><a name='INIEditsTab'>INI Edits Tab</a></h2>
-<img src="images/INI Edits Tab.jpg" width="686" height="527" border="0" alt="INI Edits Tabl">
-<p class=list-1>&bull;&nbsp; This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain <I>only</I> the section/key settings that are to be changed.
+<img src="images/ini-oblivion.png" border="1" alt="INI Edits Tab">
+<img src="images/ini-all natural.png" border="1" alt="INI Edits Tab">
+<p class=list-1>&bull;&nbsp; This feature allows you to quickly modify an Ini file (such as Oblivion.ini) by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain <I>only</I> the section/key settings that are to be changed.
+<p class=list-1>&bull;&nbsp; Tweaks can also be applied to Ini files that contain scripts to configure mods.  These Ini tweak files are just like the script you're trying to tweak, except the contain <I>only</I> the settings that are to be changed.  Wrye Bash can modify any <B>set</B> or <B>setGS</B> commands in these script files.
 <p class=list-1>&bull;&nbsp; <B><I>Warning:</I></B> Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 <p class=list-1>&bull;&nbsp; <B><I>Note:</I></B> The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 <p class=list-1>&bull;&nbsp; <B>Checkbox Colors</B> 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
+  <img src="images/checkbox_yellow_on.png" width="16" height="16" border="0" alt="Yellow">
   <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
-  <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
-    <p class=list-3>&bull;&nbsp; Checkbox colors indicate the status of the ini tweak
-  <p class=list-2>&bull;&nbsp; Orange: Invalid; some or all variables set in the INI do not exist in Oblivion.ini
-  <p class=list-2>&bull;&nbsp; Green: Valid; all values exist in the oblivion.ini. But not 'Active' - as in not all changes in the tweak are applied.
-  <p class=list-2>&bull;&nbsp; Green with Check: Valid and Active.
-  <p class=empty>&nbsp;</p>
+  <img src="images/checkbox_orange_off.png" width="16" height="16" border="0" alt="Orange">
+  <p class=list-2>&bull;&nbsp; Checkbox colors indicate the status of the ini tweak
+    <p class=list-3>&bull;&nbsp; Orange: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
+    <p class=list-3>&bull;&nbsp; Green: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
+    <p class=list-3>&bull;&nbsp; Yellow with Check: Valid, some of the settings in target Ini are the same, but some are not.
+    <p class=list-3>&bull;&nbsp; Green with Check: Valid and Active.
+    <p class=empty>&nbsp;</p>
 <h3><a name='INITweaksOptions'>INI Tweaks Options</a></h3>
-<p class=list-1>&bull;&nbsp; <B>Oblivion.ini:</B> Opens the Oblivion.ini for editing/viewing.
+<p class=list-1>&bull;&nbsp; The drop down selection box chooses your target Ini file for applying the tweaks to.
+<p class=list-1>&bull;&nbsp; <B>Remove</B>: Removes the target Ini from the drop down selection box.
+<p class=list-1>&bull;&nbsp; <B>Edit</B>: Opens the target Ini file for editing. 
 <p class=list-1>&bull;&nbsp; <B>Valid Tweaks First:</B> If checked, invalid tweaks will be sorted to the bottom.
 <p class=empty>&nbsp;</p>
 <h3><a name='TweakFileCommands'>Tweak File Commands</a></h3>
@@ -2251,6 +2257,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; 2 bugfixes dealing with filtering (reported by Vindicator)
   <p class=list-2>&bull;&nbsp; Double or middle clicking on an image in a BAIN Wizard will open the full image.
   <p class=list-2>&bull;&nbsp; You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+<p class=list-1>&bull;&nbsp; INI Edits:
+  <p class=list-2>&bull;&nbsp; Now supports applying tweaks to any Ini
+  <p class=list-2>&bull;&nbsp; Supports script type Ini files.  Can modify any <B>set</B> or <B>setGS</B> command.
 <p class=list-1>&bull;&nbsp; comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 <p class=list-1>&bull;&nbsp; You can delete Installers and INI Edits with the Delete key now.
 <p class=list-1>&bull;&nbsp; You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
