@@ -12195,7 +12195,7 @@ class ItemStats:
                     #--(weight, value, health, strength)
                     zip((sfloat,int,int,int),fields[4:8]))
             elif type == 'BOOK':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
+                books[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, echantPoints)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'CLOT':
@@ -12203,7 +12203,7 @@ class ItemStats:
                     #--(weight, value, echantPoints)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'INGR':
-                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                ingredients[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((sfloat,int),fields[4:6]))
             elif type == 'KEYM':
@@ -12211,19 +12211,19 @@ class ItemStats:
                     #--(weight, value)
                     zip((sfloat,int),fields[4:6]))
             elif type == 'LIGH':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
+                lights[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, duration)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'MISC':
-                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                misc[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((sfloat,int),fields[4:6]))
             elif type == 'SGST':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
+                sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, uses)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'SLGM':
-                keys[longid] = (eid,) + tuple(func(field) for func,field in
+                soulgems[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((sfloat,int),fields[4:6]))
             elif type == 'WEAP':
