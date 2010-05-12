@@ -1631,21 +1631,27 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 
 == INI Edits Tab ==================================================================
-<img src="images/INI Edits Tab.jpg" width="686" height="527" border="0" alt="INI Edits Tabl">
-* This feature allows you to quickly modify Oblivion.ini by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
+<img src="images/ini-oblivion.png" border="1" alt="INI Edits Tab">
+<img src="images/ini-all natural.png" border="1" alt="INI Edits Tab">
+* This feature allows you to quickly modify an Ini file (such as Oblivion.ini) by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
+* Tweaks can also be applied to Ini files that contain scripts to configure mods.  These Ini tweak files are just like the script you're trying to tweak, except the contain ~~only~~ the settings that are to be changed.  Wrye Bash can modify any __set__ or __setGS__ commands in these script files.
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__ 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
+  <img src="images/checkbox_yellow_on.png" width="16" height="16" border="0" alt="Yellow">
   <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
-  <img src="images/checkbox_orange_on.png" width="16" height="16" border="0" alt="Orange">
-    * Checkbox colors indicate the status of the ini tweak
-  * Orange: Invalid; some or all variables set in the INI do not exist in Oblivion.ini
-  * Green: Valid; all values exist in the oblivion.ini. But not 'Active' - as in not all changes in the tweak are applied.
-  * Green with Check: Valid and Active.
+  <img src="images/checkbox_orange_off.png" width="16" height="16" border="0" alt="Orange">
+  * Checkbox colors indicate the status of the ini tweak
+    * Orange: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
+    * Green: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
+    * Yellow with Check: Valid, some of the settings in target Ini are the same, but some are not.
+    * Green with Check: Valid and Active.
 
 === INI Tweaks Options
-* __Oblivion.ini:__ Opens the Oblivion.ini for editing/viewing.
+* The drop down selection box chooses your target Ini file for applying the tweaks to.
+* __Remove__: Removes the target Ini from the drop down selection box.
+* __Edit__: Opens the target Ini file for editing. 
 * __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
 
 === Tweak File Commands
@@ -2060,6 +2066,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 2 bugfixes dealing with filtering (reported by Vindicator)
   * Double or middle clicking on an image in a BAIN Wizard will open the full image.
   * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+* INI Edits:
+  * Now supports applying tweaks to any Ini
+  * Supports script type Ini files.  Can modify any __set__ or __setGS__ command.
 * comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
