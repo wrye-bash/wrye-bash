@@ -1075,7 +1075,7 @@ class INIList(List):
             if col == 'File':
                 value = fileName.s
             elif col == 'Installer':
-                value = self.data.table.getItem(fileName.s, 'installer', '')
+                value = self.data.table.getItem(fileName.tail, 'installer', '')
             if mode and colDex == 0:
                 self.list.InsertStringItem(itemDex, value)
             else:
