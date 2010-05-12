@@ -6688,10 +6688,12 @@ class OBSEIniFile(IniFile):
     def __init__(self,path,defaultSection=''):
         """Change the default section to something that can't
         occur in a normal ini"""
-        IniFile.__init__(self,path,defaultSection)
+        IniFile.__init__(self,path,'')
 
     def getSetting(self,section,key,default=None):
-        section = self.defaultSection
+        lstr = LString(section)
+        if lstr == 'set': section = ']set['
+        elif lstr == 'setGS': section = ']setGS['
         return IniFile.getSetting(self,section,key,default)
 
     def getTweakFileSettings(self,tweakPath,setCorrupted=False):
@@ -6700,22 +6702,27 @@ class OBSEIniFile(IniFile):
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings
         reComment = re.compile(';.*')
-        reSet =     re.compile(r'\s*[Ss][Ee][Tt]\s*(.+?)\s*[Tt][Oo]\s*(.*)')
+        reSet =     re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
+        reSetGS =   re.compile(r'\s*(?i)setgs\s*(.+?)\s*(.*)')
         iniFile = tweakPath.open('r')
-        section = {}
         for line in iniFile:
             stripped = reComment.sub('',line).strip()
-            maSet = reSet.match(stripped)
+            maSet   = reSet.match(stripped)
+            maSetGS = reSetGS.match(stripped)
             if maSet:
-                if not section:
-                    section = ini_settings.setdefault(bolt.LString(self.defaultSection),{})
+                section = ini_settings.setdefault(bolt.LString(']set['),{})
                 section[LString(maSet.group(1))] = maSet.group(2).strip()
+            elif maSetGS:
+                section = ini_settings.setdefault(bolt.LString(']setGS['),{})
+                section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
         iniFile.close()
         return ini_settings
 
     def saveSetting(self,section,key,value):
-        ini_settings = {self.defaultSection:{key:value}}
-        self.saveSettings(ini_settings)
+        lstr = LString(section)
+        if lstr == 'set': section = ']set['
+        elif lstr == 'setGS': section = ']setGS['
+        IniFile.saveSetting(self,section,key,value)
 
     def saveSettings(self,ini_settings):
         if not self.path.exists() or not self.path.isfile():
@@ -6723,20 +6730,33 @@ class OBSEIniFile(IniFile):
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
         reComment = re.compile(';.*')
-        reSet =     re.compile(r'\s*[Ss][Ee][Tt]\s*(.+?)\s*[Tt][Oo]\s*(.*)')
+        reSet     = re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
+        reSetGS   = re.compile(r'\s*(?i)setGS\s*(.+?)\s*(.*)')
         iniFile = self.path.open('r')
         tmpFile = self.path.temp.open('w')
-        section = ini_settings.get(LString(self.defaultSection),{})
+        section = {}
         for line in iniFile:
             stripped = reComment.sub('',line).strip()
             maSet = reSet.match(stripped)
-            if maSet and LString(maSet.group(1)) in section:
-                key = LString(maSet.group(1))
-                value = section[key]
-                if isinstance(value,str) and value[-1] == '\n':
-                    line = value
-                else:
-                    line = 'Set %s to %s\n' % (key,value)
+            maSetGS = reSetGS.match(stripped)
+            if maSet:
+                section = ini_settings.setdefault(bolt.LString(']set['),{})
+                if LString(maSet.group(1)) in section:
+                    key = LString(maSet.group(1))
+                    value = section[key]
+                    if isinstance(value,str) and value[-1] == '\n':
+                        line = value
+                    else:
+                        line = 'Set %s to %s\n' % (key,value)
+            elif maSetGS:
+                section = ini_settings.setdefault(bolt.LString(']setGS['),{})
+                if LString(maSetGS.group(1)) in section:
+                    key = LString(maSet.group(1))
+                    value = section[key]
+                    if isinstance(value,str) and value[-1] == '\n':
+                        line = value
+                    else:
+                        line = 'SetGS %s %s' % (key,value)
             tmpFile.write(line)
         tmpFile.close()
         iniFile.close()
@@ -6748,18 +6768,22 @@ class OBSEIniFile(IniFile):
         if not tweakPath.exists() or not tweakPath.isfile():
             return
         reComent = re.compile(';.*')
-        reSet    = re.compile(r'\s*[Ss][Ee][Tt]\s*(.+?)\s*[Tt][Oo]\s*(.*)')
+        reSet    = re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
+        reSetGS  = re.compile(r'\s*(?i)setGS\s*(.+?)\s*(.*)')
         tweakFile = tweakPath.open('r')
         ini_settings = {}
-        section = None
         for line in tweakFile:
             stripped = reComment.sub('',line).strip()
             maSet = reSet.match(stripped)
+            maSetGS = reSetGS.match(stripped)
             if maSet:
-                if not section:
-                    section = ini_settings.setdefault(LString(self.defaultSection),{})
+                section = ini_settings.setdefault(LString(']set['),{})
                 if line[-1] != '\n': line += '\r\n'
                 section[LString(maSet.group(1))] = line
+            elif maSetGS:
+                section = ini_settings.setdefault(LString(']setGS['),{})
+                if line[-1] != '\n': line += '\r\n'
+                section[LString(maSetGS.group(1))] = line
         tweakFile.close()
         self.saveSettings(ini_settings)
 #--------------------------------------------------------------------------------
