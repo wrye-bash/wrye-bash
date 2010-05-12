@@ -1381,10 +1381,15 @@ class Tank(wx.Panel):
         if not items: return
         message = _(r'Delete these items? This operation cannot be undone.')
         message += '\n* ' + '\n* '.join([self.data.getName(x) for x in items])
-        if not askYes(self,message,_('Delete Items')): return
-        for item in items: del self.data[item]
+        if not askYes(self,message,_('Delete Items')): return False
+        marker = True
+        for item in items:
+            del self.data[item]
+            if not isinstance(item, bosh.InstallerMarker):
+                marker = False
         self.RefreshUI()
         self.data.setChanged()
+        return True
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1494,9 +1499,11 @@ class Tank_Delete(Link):
     def Execute(self,event):
         try:
             wx.BeginBusyCursor()
-            self.gTank.DeleteSelected()
+            deleted = self.gTank.DeleteSelected()
         finally:
             wx.EndBusyCursor()
+            if deleted:
+                return true
 
 #------------------------------------------------------------------------------
 class Tank_Open(Link):
