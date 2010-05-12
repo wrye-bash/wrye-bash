@@ -23,7 +23,7 @@ In particular, see:
 == Quick Tour
 <img src="images/WryeBash_04.png" width="686" height="527" border="0" alt="Saves Tab">
 
-* At the top are the main tabs: [[#InstallersTab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#INITweaksTab|INI Tweaks]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
+* At the top are the main tabs: [[#InstallersTab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
 * The file details for the currently selected savegame are shown to the right. File name, stats and savegame preview image are all shown. 
 * The __masters list__ for the savegame is shown at the bottom of the details. The masters for the savegame are just the mods (esps and esms) that the savegame depends on. 
@@ -1638,8 +1638,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__ 
-  <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green">
-  <img src="images/checkbox_yellow_on.png" width="16" height="16" border="0" alt="Yellow">
+  <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green with Check">
+  <img src="images/checkbox_yellow_on.png" width="16" height="16" border="0" alt="Yellow with Check">
   <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
   <img src="images/checkbox_orange_off.png" width="16" height="16" border="0" alt="Orange">
   * Checkbox colors indicate the status of the ini tweak
@@ -1893,7 +1893,7 @@ Right click on the column header to see these:
 === Screenshot Commands
 Right click on a screenshot to see these:
 * __Delete:__ Deletes selected files.
-* __Convert to jpg:__ Converts selected files to jpg format.
+* __Convert:__ Converts selected files to one of the following formats: JPG, PNG, BMP, TIF
   * If file by name new name already exists, then conversion will be skipped (for that file).
 * __Rename:__ Renames selected files according to format. 
   * If multiple files are selected, they'll be numbered sequentially after the first.
