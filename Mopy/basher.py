@@ -1817,12 +1817,12 @@ class INIPanel(NotebookPanel):
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
-        self.CheckINIs()
+        self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
-        sorted_choices = self.SortedINIs()
-        self.SetBaseINI(self.choices[sorted_choices[self.choice]])
+        self.SortChoices()
+        self.SetBaseIni(self.GetChoice())
         iniList = INIList(self)
-        self.comboBox = wx.ComboBox(self,-1,value=sorted_choices[self.choice],choices=sorted_choices,style=wx.CB_READONLY)
+        self.comboBox = wx.ComboBox(self,-1,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -1840,48 +1840,93 @@ class INIPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def SetBaseINI(self,path=None):
+    def GetChoice(self,index=None):
+        """ Return path for a given choice, or the
+        currently selected choice if index is None."""
+        if index is None:
+            return self.choices[self.sortKeys[self.choice]]
+        else:
+            return self.choices[self.sortKeys[index]]
+
+    def GetChoiceString(self,index=None):
+        """Return text for a given choice, or the
+        currently selected choice if index is None."""
+        if index is None:
+            return self.sortKeys[self.choice]
+        else:
+            return self.sortKeys[index]
+
+    def RefreshUI(self,what='ALL'):
+        if what == 'ALL' or what == 'TARGETS':
+            # Refresh the drop down list
+            path = self.GetChoice()
+            if path is None:
+                self.choice -= 1
+            elif not path.isfile():
+                del self.choices[self.GetChoiceString()]
+                self.choice -= 1
+                what = 'ALL'
+            self.SetBaseIni(self.GetChoice())
+            self.comboBox.SetItems(self.SortChoices())
+            self.comboBox.SetSelection(self.choice)
+        if what == 'ALL' or what == 'TWEAKS':
+            iniList.RefreshUI()
+
+    def SetBaseIni(self,path=None):
+        """Sets the target INI file."""
         if self.choice == 0:
             bosh.iniInfos.setBaseIni(bosh.oblivionIni)
             self.button.Enable(False)
         else:
             if not path:
-                sorted_choices = self.SortedINIs()
-                path = self.choices[sorted_choices[self.choice]]
+                path = self.GetChoice()
             bosh.iniInfos.setBaseIni(bosh.BestIniFile(path))
             self.button.Enable(True)
         if iniList is not None: iniList.RefreshUI()
 
     def OnRemove(self,event):
+        """Called when the 'Remove' button is pressed."""
         selection = self.comboBox.GetValue()
         self.choice -= 1
         del self.choices[selection]
-        self.comboBox.SetItems(self.SortedINIs())
+        self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
-        self.SetBaseINI()
+        self.SetBaseIni()
         iniList.RefreshUI()
 
     def OnEdit(self,event):
+        """Called when the 'Edit' button is pressed."""
         selection = self.comboBox.GetValue()
         self.choices[selection].start()
 
-    def CheckINIs(self):
+    def CheckTargets(self):
+        """Check the list of target INIs, remove any that don't exist"""
+        changed = False
         for i in self.choices.keys():
             if i == 'Browse...': continue
             path = self.choices[i]
             if not path.isfile():
                 del self.choices[i]
-        self.choices['Oblivion.ini'] = bosh.oblivionIni.path
-        self.choices['Browse...'] = None
-        if len(self.choices.keys()) <= self.choice:
+                changed = True
+        if 'Oblivion.ini' not in self.choices:
+            self.choices['Oblivion.ini'] = bosh.oblivionIni.path
+            changed = True
+        if 'Browse...' not in self.choices:
+            self.choices['Browse...'] = None
+            changed = True
+        if changed: self.SortChoices()
+        if len(self.choices.keys()) <= self.choice + 1:
             self.choice = 0
 
-    def SortedINIs(self):
+    def SortChoices(self):
+        """Sorts the list of target INIs alphabetically, but with
+        Oblivion.ini at the top and 'Browse...' at the bottom"""
         keys = self.choices.keys()
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
         keys.sort(key=lambda a: (a != 'Oblivion.ini') + (a == 'Browse...'))
+        self.sortKeys = keys
         return keys
 
     def SetStatusCount(self):
@@ -1891,6 +1936,7 @@ class INIPanel(NotebookPanel):
         statusBar.SetStatusText(text,2)
 
     def OnSelectDropDown(self,event):
+        """Called when the user selects a new target INI from the drop down."""
         selection = event.GetString()
         path = self.choices[selection]
         if not path:
@@ -1901,18 +1947,24 @@ class INIPanel(NotebookPanel):
                 return
             # Make sure the 'new' file isn't already in the list
             if path.stail in self.choices:
+                new_choice = self.sortKeys.index(path.stail)
+                refresh = new_choice != self.choice
+                self.choice = new_choice
                 self.comboBox.SetSelection(self.choice)
+                if refresh:
+                    self.SetBaseIni(path)
+                    iniList.RefreshUI()
                 return
             self.lastDir = path.shead
             self.choices[path.stail] = path
-            keys = self.SortedINIs()
-            self.choice = keys.index(path.stail)
-            self.comboBox.SetItems(self.SortedINIs())
+            self.SortChoices()
+            self.choice = self.sortKeys.index(path.stail)
+            self.comboBox.SetItems(self.sortKeys)
             self.comboBox.SetSelection(self.choice)
         else:
             if self.choice == event.GetInt(): return
             self.choice = event.GetInt()
-        self.SetBaseINI(path)
+        self.SetBaseIni(path)
         iniList.RefreshUI()
         
     def OnSize(self,event):
@@ -2529,7 +2581,9 @@ class InstallersPanel(SashTankPanel):
             bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
         if bosh.iniInfos.refresh():
-            iniList.RefreshUI('ALL')
+            iniList.GetParent().RefreshUI('ALL')
+        else:
+            iniList.GetParent().RefreshUI('TARGETS')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
