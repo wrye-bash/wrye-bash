@@ -1639,13 +1639,15 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__ 
   <img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Green with Check">
-  <img src="images/checkbox_yellow_on.png" width="16" height="16" border="0" alt="Yellow with Check">
+  <img src="images/checkbox_green_imp.png" width="16" height="16" border="0" alt="Green with Dot">
+  <img src="images/checkbox_yellow_imp.png" width="16" height="16" border="0" alt="Yellow with Dot">
   <img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Green">
   <img src="images/checkbox_orange_off.png" width="16" height="16" border="0" alt="Orange">
   * Checkbox colors indicate the status of the ini tweak
     * Orange: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
     * Green: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
-    * Yellow with Check: Valid, some of the settings in target Ini are the same, but some are not.
+    * Yellow with Dot: Valid, some of the settings in target Ini are the same, but some are not.
+    * Green with Dot: Valid, some of the settings in target Ini are the same, but some are not.  The ones that are not, ARE the same as another tweak file from the same installer.
     * Green with Check: Valid and Active.
 
 === INI Tweaks Options
