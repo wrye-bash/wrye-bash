@@ -174,6 +174,9 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * If, when installing wxPython, you did not see the usual installation wizard dialog, then you almost certainly downloaded a corrupted version of wxPython. Re-download it. Make sure that the downloaded file is larger than a few kB (actually, it should be about 8 Mb).
 * __The NTVDM CPU has encountered an illegal instruction.__
   * If an error message like this pops up (very rare) the problem is with your OS installation. For some reason the Microsoft utility that handles the installation of installer files is messed up. As far as I know, the only solution is to fix (maybe reinstall) your OS (the utility is part of the Windows OS).
+* __Generating comtypes__
+  * The very first time you run Bash after installing ComTypes, you may get a popup with six lines similar to: <code># Generating comtypes.gen.stdole</code>
+  * Close the popup and ignore it. It shouldn't appear again unless you reinstall ComTypes.
 * __UNCommon Problems__
   * If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump. Preferably, you should post the dump in the **Relz/Help** topic (see [[#WryeBash|Discussion]] link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.
   * **Hint:** Control-C does not work in the command line window, but you can still copy text from it by:
@@ -182,43 +185,44 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 
 === Python Components
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
+* There are two currently supported Python installations that you may choose between: an older "official" setup, and a newer alternative setup.
 * __Components:__
-<<<<<<< .mine
-  * __Python 2.5__ 
-    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
-    * Download link: [[http://python.org/ftp/python/2.5.2/python-2.5.2.msi|Python 2.5.2]]
-  * __wxPython 2.8.7.1 ANSI__  
-    * Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 -- later versions of wxPython 2.8 are not compatible with Psyco.
-    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe|wxPython 2.8.7.1 ANSI for python 2.5]]. 
-  * __pyWin32__
-    * PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-    * Download link: [[http://sourceforge.net/projects/pywin32/files/latest|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
-  * __ComTypes 0.5.2__ 
-    * ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
-  * __PIL 1.1.6__
-    * PIL (Python Imaging Library) is not currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
-=======
-  * __Python 2.6__ 
-    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
-    * Download link: [[http://www.python.org/ftp/python/2.6.4/python-2.6.4.msi|Python 2.6.4]]
-  * __wxPython 2.8.10.1 ANSI__  
-    * Python supports several different GUI libraries. Wrye Bash uses wxPython.
-    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe|wxPython 2.8.10.1 ANSI for Python 2.6]]. 
-  * __PyWin32__
-    * Optional component.  PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this to retreive version info for BAIN Wizards.
-    * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|PyWin32]].
-  * __ComTypes 0.6.2__ 
-    * Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
-    * Download link:  [[http://pypi.python.org/pypi/comtypes/0.6.2|ComTypes]]
->>>>>>> .r299
-  * __Psyco 1.6__ 
-    * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
-    * Download link: [[http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0|Psyco 1.6-py25.exe]].
+  * The old "official" setup:
+    * __Python 2.5__ 
+      * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
+      * Download link: [[http://python.org/ftp/python/2.5.2/python-2.5.2.msi|Python 2.5.2]]
+    * __wxPython 2.8.7.1 ANSI__  
+      * Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 -- later versions of wxPython 2.8 are not compatible with Psyco.
+      * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe|wxPython 2.8.7.1 ANSI for python 2.5]]. 
+    * __pyWin32__
+      * PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
+      * Download link: [[http://sourceforge.net/projects/pywin32/files/latest|SourceForge pywin32]]. __Be sure to install the version that matches the version of python you installed!__ E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
+    * __ComTypes 0.5.2__ 
+      * ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
+    * __PIL 1.1.6__
+      * PIL (Python Imaging Library) is not currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
+
+  * The newer alternative setup:
+    * __Python 2.6__ 
+      * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
+      * Download link: [[http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi|Python 2.6.5]]
+    * __wxPython 2.8.10.1 ANSI__  
+      * Python supports several different GUI libraries. Wrye Bash uses wxPython.
+      * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe|wxPython 2.8.10.1 ANSI for Python 2.6]]. 
+    * __PyWin32__
+      * Optional component.  PyWin32 provices access to windows registry info on user folders, etc. Wrye Bash uses this to retreive version info for BAIN Wizards.
+      * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|PyWin32]].
+    * __ComTypes 0.6.2__ 
+      * Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
+      * Download link:  [[http://pypi.python.org/pypi/comtypes/0.6.2|ComTypes]]
+    * __Psyco 1.6__ 
+      * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a peformance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
+      * Download link: [[http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0|Psyco 1.6-py25.exe]].
 * Wrye Python Debris
   * Wrye Python does **not** have an uninstall feature. Instead, run install for separate components. If you're uninstalling everything, then uninstall python ~~last~~.
   * After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
 * Alternate Python Installations
-  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for foreseeable future), python 2.5, wxPython 2.8.7.1, etc. are the preferred versions.
+  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), python 2.5, wxPython 2.8.7.1, etc. are the preferred versions.
 
 == Help! ======================================================================
 * __Startup Problems:__ See [[#|If Bash Won't Start]].
