@@ -12200,13 +12200,17 @@ class ItemStats:
             modName = GPath(modName)
             longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
             if type == 'ALCH':
-                alch[longid] = (eid,) + tuple(func(field) for func,field in
+                potions[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
                     zip((sfloat,int),fields[4:6]))
             elif type == 'AMMO':
                 ammo[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, damage, speed, enchantPoints)
                     zip((sfloat,int,int,sfloat,int),fields[4:9]))
+            elif type == 'APPA':
+                apparatus[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, quality)
+                    zip((sfloat,int,int),fields[4:7]))
             elif type == 'ARMO':
                 armor[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, health, strength)
@@ -12216,7 +12220,7 @@ class ItemStats:
                     #--(weight, value, echantPoints)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'CLOT':
-                armor[longid] = (eid,) + tuple(func(field) for func,field in
+                clothing[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, echantPoints)
                     zip((sfloat,int,int,),fields[4:7]))
             elif type == 'INGR':
