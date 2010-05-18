@@ -3,7 +3,7 @@
 === Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1089021-relz-wrye-bash-thread-no-41/|RELZ Topic]]
+* [[http://forums.bethsoft.com/index.php?/topic/1092258-relz-wrye-bash-thread-no-42/|RELZ Topic]]
 * Download: 
   * [[http://www.wryemusings.com/|Wrye Musings]]
   * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]] 
@@ -294,6 +294,9 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * [[http://www.mediamonkey.com/ | Media Monkey]]
   * [[http://notepad-plus.sourceforge.net/ | Notepad++]]
   * [[http://winmerge.org/ | WinMerge]]
+  * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]]
+  * [[http://filezilla-project.org/ | Filezilla]]
+  * [[http://www.egg-of-time.us/portal/index.php?option=com_content&view=article&id=1825 | Egg Translator]]
   * [[http://www.logitech.com/index.cfm/434/285&cl=za | Logitech G11 Keyboard Profiler]]
   * 18 Custom buttons
     * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
@@ -1041,8 +1044,9 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
     * Most components will try to automatically configure themselves, but you may still need to tweak their settings.
     * Some components do not need to be configured (e.g., [[#|Alchemical Catalogs]]). 
     * Configuration of specific components is covered below.
+    * the Select All button (where available) will select all items and if the item has a choice (ie in Tweak Settings) will select the first one in the list. 
 * __Build the Patch__
-  * Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel quit without updating the patch mod.
+  * Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel to quit without updating the patch mod.
 
 === Patch Notes
 * __Load Order__
@@ -1461,6 +1465,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Magic: Chameleon Refraction:__ Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
 * __Master of Mercantile Extra Gold Amount:__ The extra barter gold all vendor's have for a master of mercantile.
 * __Msg: Equip Misc. Item:__ sets the message on equiping a misc item to blank or either "." or "Hmm..."
+* __UOP Vampire Aging and Face Fix.esp:__ Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot.
 
 -------------------------------------------------------------------------------
 __Special__ patch components don't fit into the categories above. Two of them ([[#|Alchemical Catalogs]] and [[#|Power Exhaustion]]) are for use with specific mods. The remaining component, [[#|Leveled Lists]], is for general use.
@@ -2040,11 +2045,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 284 [12/12/2010] [Lojack,PacificMorrowind,Valda68k]
+=== 284 [09/05/2010] [Lojack,PacificMorrowind,ThreeD,Valda68k]
 * Incorrect italicization fixed.
+* BashIni changes:
+  * text colours for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.
 * Active mods with the 'Deactivate' tag will be highlighted in red.
 * Bashed Patch changes:
-  * Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues).
+  * Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release
   * New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   * RacePatcher changes:
     * Left eye import fix (contributed by Valda68k)
@@ -2060,12 +2067,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
   * Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
-  * 3 new GMST changers added to tweak settings
+  * 4 new GMST changers added to tweak settings
   * NPC Tweaker changes:
     * Renamed to Tweak Actors.
     * 'No Bloody Creatures' tweak added.
     * 'As Intended: Boars' tweak added.
     * 'As Intended: Imps' tweak added.
+    * Redguard FGTS Nuller now correctly handles npcs with no race assigned (very odd!) (reported by blake7791, specifically found in Skin Toned Mannequins) - just skips such NPCs instead of raising a fatal error in patch build.
+  * Select/Deselect All buttons on list/tweak patchers (ie everything except for a few special patcher such as SEWorld Tests etc.) added.
+  * All patchers no longer display mods that are loading after the patch.
 * Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 * BAIN:
   * Renaming now updates the 'Mods' and 'INI Edits' tabs
@@ -2078,6 +2088,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
+* German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
+* 3 new tool launchers added.
+* Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.

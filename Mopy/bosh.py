@@ -2106,7 +2106,7 @@ class MreBook(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreBsgn(MelRecord):
-    """Alchemical apparatus record."""
+    """Birthsign record."""
     classType = 'BSGN'
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -14059,6 +14059,7 @@ class Patcher:
     tip = None
     defaultConfig = {'isEnabled':False}
     iiMode = False
+    selectCommands = True
 
     def getName(self):
         """Returns patcher name."""
@@ -14138,6 +14139,7 @@ class ListPatcher(Patcher):
         self.choiceMenu = self.__class__.choiceMenu
         for modInfo in modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+                if modInfo.mtime > PatchFile.patchTime: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile('_('+('|'.join(autoKey))+r')\.csv$')
@@ -14334,6 +14336,16 @@ class ImportPatcher(ListPatcher):
         if self.isEnabled:
             importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return None
+        return self.srcClasses
 
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
@@ -14680,15 +14692,150 @@ class GraphicsPatcher(ImportPatcher):
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
 
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        id_data = None
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log("* %s: %d" % (type,count))
+
+#------------------------------------------------------------------------------
+class GraphicsPatcher(ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Import Graphics')
+    text = _("Import graphics (models, icons, etc.) from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Graphics'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        for recClass in (MreBsgn,MreLscr, MreClas, MreLtex, MreRegn):
+            recAttrs_class[recClass] = ('iconPath',)
+        for recClass in (MreActi, MreDoor, MreFlor, MreFurn, MreGras, MreStat):
+            recAttrs_class[recClass] = ('model',)
+        for recClass in (MreAlch, MreAmmo, MreAppa, MreBook, MreIngr, MreKeym, MreLigh, MreMisc, MreSgst, MreSlgm, MreWeap, MreTree):
+            recAttrs_class[recClass] = ('iconPath','model')
+        for recClass in (MreArmo, MreClot):
+            recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
+        for recClass in (MreCrea,):
+            recAttrs_class[recClass] = ('model','bodyParts','nift_p','bloodSprayPath','bloodDecalPath')
+        for recClass in (MreMgef,):
+            recAttrs_class[recClass] = ('iconPath','model','effectShader','enchantEffect','light')
+        for recClass in (MreEfsh,):
+            recAttrs_class[recClass] = ('particleTexture','fillTexture')
+        #--Needs Longs
+        self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in modInfos: continue
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+            for master in masters:
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
@@ -14841,16 +14988,6 @@ class ActorImporter(ImportPatcher):
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
-
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
         if not self.isActive: return
@@ -14982,16 +15119,6 @@ class KFFZPatcher(ImportPatcher):
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
@@ -15197,11 +15324,13 @@ class DeathItemPatcher(ImportPatcher):
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return
+        self.classestemp = set()
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
             if srcMod not in modInfos: continue
@@ -15244,18 +15373,9 @@ class DeathItemPatcher(ImportPatcher):
                                 except KeyError:
                                     id_data[fid].setdefault(attr,value)
             progress.plus()
+        temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
@@ -15605,16 +15725,6 @@ class ImportScripts(ImportPatcher):
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
-
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
         if not self.isActive: return
@@ -15763,16 +15873,6 @@ class ImportScriptContents(ImportPatcher):
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
@@ -16454,16 +16554,6 @@ class SoundPatcher(ImportPatcher):
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return None
-        return self.srcClasses
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return None
-        return self.srcClasses
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
@@ -17495,7 +17585,6 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 #------------------------------------------------------------------------------
-
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -18207,6 +18296,11 @@ class GmstTweaker(MultiTweaker):
             ('4000',4000),
             ('5000',5000),
             ('6000',6000),
+            ),
+        GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
+            _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
+            'iVampirismAgeOffset',
+            ('Fix it!',0),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -18923,6 +19017,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
+    selectCommands = False
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -19311,6 +19406,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         autoKey = set(self.__class__.autoKey)
         for modInfo in modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
+                if modInfo.mtime > PatchFile.patchTime: continue
                 autoItems.append(modInfo.name)
         return autoItems
 
@@ -19789,14 +19885,12 @@ class RedguardNPCPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            try:
-                if record.race[1] == 0x00d43:
-                    record.fgts_p = '\x00'*200
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-            except TypeError:
-                print (_('type error! from %s in npc record %s') %( srcMod.s, npc.full))
+            if not record.race: continue
+            if record.race[1] == 0x00d43:
+                record.fgts_p = '\x00'*200
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('===Redguard FGTS Patcher'))
         log(_('* %d Redguard NPCs Tweaked') % (sum(count.values()),))
@@ -19937,7 +20031,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         keep = patchFile.getKeeper()
         spell = (GPath('Oblivion.esm'), 0x02B53F)
         for record in patchFile.CREA.records:
-            if not record.full: continue #for unnamed creatures else next if crashes.
+            if not record.full or not record.model.modPath or not record.eid: continue #for unnamed creatures else next if crashes.
             if  'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
                 if 'imperial' in record.full.lower() or 'imperial' in record.eid.lower(): continue #avoids false positives.
                 if 'big' in self.choiceValues[self.chosen]:
@@ -20349,7 +20443,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
     tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
     tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
-    tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')    
+    tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')
+    tooldirs['FileZilla'] = GPath(r'C:\Program Files\FileZilla FTP Client\filezilla.exe')    
+    tooldirs['RADVideo'] = GPath(r'C:\Program Files\RADVideo\radvideo.exe')    
+    tooldirs['EggTranslator'] = GPath(r'C:\Program Files\Egg Translator\EggTranslator.exe')    
     tooldirs['Custom1'] = GPath(r'C:\not\a\valid\path.exe')
     tooldirs['Custom2'] = GPath(r'C:\not\a\valid\path.exe')
     tooldirs['Custom3'] = GPath(r'C:\not\a\valid\path.exe')
