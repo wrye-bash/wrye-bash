@@ -148,6 +148,7 @@ settingDefaults = {
         'Group': _('Group'),
         'Installer':_('Installer'),
         'Load Order': _('Load Order'),
+        'Current Order': _('Current LO'),
         'Modified': _('Modified'),
         'Num': _('MI'),
         'PlayTime':_('Hours'),
@@ -160,17 +161,18 @@ settingDefaults = {
         'Subject': _('Subject'),
         },
     #--Wrye Bash: Masters
-    'bash.masters.cols': ['File','Num'],
+    'bash.masters.cols': ['File','Num', 'Current Order'],
     'bash.masters.esmsFirst': 1,
     'bash.masters.selectedFirst': 0,
     'bash.masters.sort': 'Save Order',
     'bash.masters.colReverse': {},
     'bash.masters.colWidths': {
         'File':80,
-        'Num':20,
+        'Num':30,
+        'Current Order':60,
         },
     'bash.masters.colAligns': {
-        'Num':1,
+        'Save Order':1,
         },
     #--Wrye Bash: Mod Docs
     'bash.modDocs.show': False,
@@ -850,6 +852,9 @@ class MasterList(List):
                     if voCurrent: value += ' ['+voCurrent+']'
             elif col == 'Num':
                 value = '%02X' % (self.fileOrderItems.index(itemId),)
+            elif col == 'Current Order':
+                #print itemId
+                value = '%02X' % (self.loadOrderNames.index(masterName),)
             #--Insert/Set Value
             if mode and (colDex == 0):
                 self.list.InsertStringItem(itemDex, value)
@@ -901,9 +906,9 @@ class MasterList(List):
              self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',''))
         elif col == 'Modified':
             self.items.sort(key=lambda a: data[a].mtime)
-        elif col == 'Save Order':
+        elif col in ['Save Order','Num']:
             self.items.sort()
-        elif col == 'Load Order':
+        elif col in ['Load Order','Current Order']:
             loadOrderNames = self.loadOrderNames
             data = self.data
             self.items.sort(key=lambda a: loadOrderNames.index(data[a].name))
@@ -4937,6 +4942,20 @@ class Patcher:
         if self.gConfigPanel:
             self.gConfigPanel.Layout()
 
+    def SelectAll(self,event=None):
+        """'Select All' Button was pressed, update all configChecks states."""
+        tocheck = []
+        try: items = self.items
+        except AttributeError: items = self.tweaks
+        for index, item in enumerate(items):
+            self.gList.Check(index,True)
+        self.OnListCheck()
+
+    def DeselectAll(self,event=None):
+        """'Deselect All' Button was pressed, update all configChecks states."""
+        self.gList.SetChecked([])
+        self.OnListCheck()
+
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher,bosh.AliasesPatcher):
     """Basic patcher panel with no options."""
@@ -4988,12 +5007,13 @@ class ListPatcher(Patcher):
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
         self.forceItemCheck = self.__class__.forceItemCheck
+        self.selectCommands = self.__class__.selectCommands
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
         if self.forceItemCheck:
-            self.gList =wx.ListBox(gConfigPanel,-1)
+            self.gList = wx.ListBox(gConfigPanel,-1)
         else:
             self.gList =wx.CheckListBox(gConfigPanel,-1)
             self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
@@ -5018,6 +5038,14 @@ class ListPatcher(Patcher):
                 (self.gAdd,0,wx.TOP,12),
                 (self.gRemove,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
+        if self.selectCommands:
+            self.gSelectAll= button(gConfigPanel,_("Select All"),onClick=self.SelectAll)
+            self.gDeselectAll = button(gConfigPanel,_("Deselect All"),onClick=self.DeselectAll)
+            gSelectSizer = (vSizer(
+                (self.gSelectAll,0,wx.TOP,12),
+                (self.gDeselectAll,0,wx.TOP,4),
+                ),0,wx.EXPAND|wx.LEFT,4)
+        else: gSelectSizer = None 
         #--Init GUI
         self.SetItems(self.configItems)
         #--Layout
@@ -5026,7 +5054,7 @@ class ListPatcher(Patcher):
             (hsbSizer((gConfigPanel,-1,self.__class__.listLabel),
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
-                gManualSizer,
+                gManualSizer,gSelectSizer,
                 ),1,wx.EXPAND|wx.TOP,4),
             )
         gConfigPanel.SetSizer(gSizer)
@@ -5160,11 +5188,19 @@ class TweakPatcher(Patcher):
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
         self.mouseItem = -1
         self.mouseState = None
+        if self.selectCommands:
+            self.gSelectAll= button(gConfigPanel,_("Select All"),onClick=self.SelectAll)
+            self.gDeselectAll = button(gConfigPanel,_("Deselect All"),onClick=self.DeselectAll)
+            gSelectSizer = (vSizer(
+                (self.gSelectAll,0,wx.TOP,12),
+                (self.gDeselectAll,0,wx.TOP,4),
+                ),0,wx.EXPAND|wx.LEFT,4)
+        else: gSelectSizer = None
         #--Init GUI
         self.SetItems()
         #--Layout
         gSizer = vSizer(
-            (gText,),
+            (gText,), gSelectSizer,
             #(hsbSizer((gConfigPanel,-1,self.__class__.listLabel),
                 #((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
@@ -5183,7 +5219,7 @@ class TweakPatcher(Patcher):
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
-        for index,tweak in enumerate(self.tweaks):
+        for index, tweak in enumerate(self.tweaks):
             tweak.isEnabled = self.gList.IsChecked(index)
 
     def OnMouse(self,event):
@@ -11255,6 +11291,21 @@ def InitStatusBar():
             bosh.tooldirs['WinMerge'],
             Image(r'images/WinMerge'+bosh.inisettings['iconSize']+'.png'),
             _("Launch WinMerge")))
+    BashStatusBar.buttons.append( #FileZilla
+        App_Button(
+            bosh.tooldirs['FileZilla'],
+            Image(r'images/FileZilla'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch FileZilla")))
+    BashStatusBar.buttons.append( #EggTranslator
+        App_Button(
+            bosh.tooldirs['EggTranslator'],
+            Image(r'images/EggTranslator'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch Egg Translator")))
+    BashStatusBar.buttons.append( #RADVideoTools
+        App_Button(
+            bosh.tooldirs['RADVideo'],
+            Image(r'images/RADVideoTools'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch RAD Video Tools")))
     if bosh.inisettings['custom1opt']:
         BashStatusBar.buttons.append(
             App_Button(
