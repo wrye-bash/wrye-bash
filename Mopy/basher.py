@@ -8889,7 +8889,7 @@ class Mod_Patch_Update(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         unfiltered = [x for x in bosh.modInfos.ordered if 'Filter' in bosh.modInfos[x].getBashTags()]
-        noMerge = [x for x in bosh.modInfos.ordered if 'NoMerge' in bosh.modInfos[x].getBashTags()]
+        noMerge = [x for x in bosh.modInfos.ordered if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
         deactivate = [x for x in bosh.modInfos.ordered if 'Deactivate' in bosh.modInfos[x].getBashTags()]
         message = balt.fill(_("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in unfiltered),),80)
         if unfiltered and balt.askYes(self.window,message,_("Deactivate Filter Mods")):
