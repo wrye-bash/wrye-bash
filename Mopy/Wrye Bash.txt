@@ -2045,7 +2045,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 284 [09/05/2010] [Lojack,PacificMorrowind,ThreeD,Valda68k]
+=== 284 [09/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k]
 * Incorrect italicization fixed.
 * BashIni changes:
   * text colours for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.
@@ -2075,13 +2075,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * 'As Intended: Imps' tweak added.
     * Redguard FGTS Nuller now correctly handles npcs with no race assigned (very odd!) (reported by blake7791, specifically found in Skin Toned Mannequins) - just skips such NPCs instead of raising a fatal error in patch build.
   * Select/Deselect All buttons on list/tweak patchers (ie everything except for a few special patcher such as SEWorld Tests etc.) added.
-  * All patchers no longer display mods that are loading after the patch.
+  * All patchers no longer display mods that are loading after the patch (since they were not included in build anyways (even selected) this makes it much simpler and less confusing).
 * Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 * BAIN:
   * Renaming now updates the 'Mods' and 'INI Edits' tabs
   * 2 bugfixes dealing with filtering (reported by Vindicator)
   * Double or middle clicking on an image in a BAIN Wizard will open the full image.
   * You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+  * List Packages now has option to only export active packages 
+  * List Packages shows whether package is active or not. 
 * INI Edits:
   * Now supports applying tweaks to any Ini
   * Supports script type Ini files.  Can modify any __set__ or __setGS__ command.
@@ -2089,7 +2091,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
 * German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
-* 3 new tool launchers added.
+* 3 new tool launchers added (contributed by Metallicow).
 * Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
