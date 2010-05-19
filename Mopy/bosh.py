@@ -11453,7 +11453,8 @@ class InstallersData(bolt.TankData, DataDict):
         if not conflictsMode and not report and not srcInstaller.isActive:
             report = _("No Underrides. Mod is not completely un-installed.")
         return report
-    def getPackageList(self):
+        
+    def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
         log = bolt.LogFile(cStringIO.StringIO())
@@ -11467,8 +11468,10 @@ class InstallersData(bolt.TankData, DataDict):
             prefix = '%03d' % (self.data[package].order)
             if isinstance(self.data[package],InstallerMarker):
                 log('%s - %s' % (prefix,package.s))
-            else:
-                log('%s - %s (%08X)' % (prefix,package.s,self.data[package].crc))
+            elif self.data[package].isActive:
+                log('++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
+            elif showInactive:
+                log('-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
         log('[/code]')
         return bolt.winNewLines(log.out.getvalue())
 # Utilities -------------------------------------------------------------------

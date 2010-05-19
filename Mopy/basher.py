@@ -6521,7 +6521,10 @@ class Installer_ListPackages(InstallerLink):
 
     def Execute(self,event):
         #--Get masters list
-        text = self.data.getPackageList()
+        message = _(r'Only show Installed Packages?\n(Else shows all packages)')
+        if not balt.askYes(self.window,message,_('Only Show Installed?')):
+            text = self.data.getPackageList(False)
+        else: text = self.data.getPackageList() 
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
