@@ -4528,12 +4528,12 @@ class BashApp(wx.App):
         self.InitData(progress)
         progress.Update(70,_("Initializing Version"))
         self.InitVersion()
-        progress.Destroy()
         #--MWFrame
         progress.Update(80,_("Initializing Windows"))
         frame = BashFrame(
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
+        progress.Destroy()
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
