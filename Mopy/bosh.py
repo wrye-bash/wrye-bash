@@ -8362,7 +8362,7 @@ class ModInfos(FileInfos):
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
         sDelinquent = (_('----> Delinquent MASTER: '),_('  * __Delinquent Master:__ '))[wtxt]
         sImported = ('**','&bull; &bull;')[wtxt]
-        if not wtxt: log.out.write('[code]')
+        if not wtxt: log.out.write('[spoiler][code]')
         if fileInfo:
             masters = set(fileInfo.header.masters)
             missing = sorted([x for x in masters if x not in self])
@@ -8410,7 +8410,7 @@ class ModInfos(FileInfos):
                         log(sMissing+master2.s)
                     elif self.getOrdered((name,master2))[1] == master2:
                         log(sDelinquent+master2.s)
-        if not wtxt: log('[/code]')
+        if not wtxt: log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 
     #--Mod Specific ----------------------------------------------------------
@@ -10523,7 +10523,7 @@ class InstallerArchive(Installer):
         """Returns package structure as text."""
         #--Setup
         log = bolt.LogFile(cStringIO.StringIO())
-        log.out.write('[code]')
+        log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
 
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
@@ -10562,7 +10562,7 @@ class InstallerArchive(Installer):
                 log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
             else:
                 log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
-        log('[/code]')
+        log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())   
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -10752,12 +10752,12 @@ class InstallerProject(Installer):
                  log(' ' * depth + file)
         #--Setup
         log = bolt.LogFile(cStringIO.StringIO())
-        log.out.write('[code]')
+        log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
         apath = dirs['installers'].join(archive)
         
         walkPath(apath.s, 0)
-        log('[/code]')
+        log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
@@ -11458,7 +11458,7 @@ class InstallersData(bolt.TankData, DataDict):
         """Returns package list as text."""
         #--Setup
         log = bolt.LogFile(cStringIO.StringIO())
-        log.out.write('[code]')
+        log.out.write('[spoiler][code]')
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
         allPackages = sorted(self.data,key=orderKey)
@@ -11472,7 +11472,7 @@ class InstallersData(bolt.TankData, DataDict):
                 log('++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
             elif showInactive:
                 log('-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
-        log('[/code]')
+        log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -4458,7 +4458,7 @@ class ModChecker(wx.Frame):
 
     def OnCopyText(self,event=None):
         """Copies text of report to clipboard."""
-        text = '[code]'+self.text+'[/code]'
+        text = '[spoiler][code]'+self.text+'[/code][/spoiler]'
         text = re.sub(r'\[\[.+?\|\s*(.+?)\]\]',r'\1',text)
         text = re.sub('(__|\*\*|~~)','',text)
         text = re.sub('&bull; &bull;','**',text)
