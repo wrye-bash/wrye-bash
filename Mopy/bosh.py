@@ -18737,12 +18737,68 @@ class NamesTweak_Weapons(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 #------------------------------------------------------------------------------
+class NamesTweak_Dwarven(MultiTweakItem):
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+		self.activeTypes = ('ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
+			'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
+			'SLGM', 'SPEL','WEAP') 
+        MultiTweakItem.__init__(self,_("Lore Friendly Names: Dwarven -> Dwemer"),
+            _('Rename any thing that is named X Dwarven or Dwarven X to Dwemer X/X Dwemer to follow lore better.'),
+            'WEAP',
+            (('Lore Friendly Names: Dwarven -> Dwemer'),  'Dwemer'),
+            )
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        return (MreAlch,MreAmmo,MreAppa,MreBook,MreBsgn,MreClas,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreIngr,MreKeym,MrMisc,MreNpc,MreSgst,MreRace,MreSlgm,MreSpel, MreWeap)
+        """Returns load factory classes needed for reading."""
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreAlch,MreAmmo,MreAppa,MreBook,MreBsgn,MreClas,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreIngr,MreKeym,MrMisc,MreNpc,MreSgst,MreRace,MreSlgm,MreSpel, MreWeap)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        for blockType in self.activeTypes:
+            modBlock = getattr(modFile,blockType)
+            patchBlock = getattr(patchFile,blockType)
+            id_records = patchBlock.id_records
+            for record in modBlock.getActiveRecords():
+                if mapper(record.fid) not in id_records:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        count = {}
+        keep = self.patchFile.getKeeper()
+        for type in self.activeTypes:
+            if type not in patchFile.tops: continue
+            for record in patchFile.tops[type].records:
+                if not record.full: continue
+				if not 'dwarven' in record.full.lower(): continue
+				if 'dwarven' in record.full:
+					record.full = record.full.replace('dwarven','dwemer')
+                elif 'Dwarven' in record.full:
+					record.full = record.full.replace('Dwarven','Dwemer')
+				keep(record.fid)
+				srcMod = record.fid[0]
+				count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log(_('* %s: %d') % (self.label,sum(count.values())))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+#------------------------------------------------------------------------------
 class NamesTweaker(MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
     name = _('Tweak Names')
-    text = _("Tweak object names to show type and/or quality.")
+    text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
         NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
             (_('BL Leather Boots'),  '%s '),
@@ -18765,6 +18821,7 @@ class NamesTweaker(MultiTweaker):
         NamesTweak_Scrolls(),
         NamesTweak_Spells(),
         NamesTweak_Weapons(),
+		NamesTweak_Dwarven(),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,NamesTweak_BodyTags())
 
