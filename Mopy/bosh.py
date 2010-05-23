@@ -19543,6 +19543,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if 'R.Mouth' in bashTags:
                     for key in ('mouth','tongue'):
                         tempRaceData[key] = getattr(race,key)
+                if 'R.Head' in bashTags:
+                    tempRaceData['head'] = race.head
                 if 'R.Ears' in bashTags:
                     for key in ('maleEars','femaleEars'):
                         tempRaceData[key] = getattr(race,key)
@@ -19669,8 +19671,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if race.leftEye.modPath != raceData['leftEye'].modPath:
                     race.leftEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
-            #--Teeth/Mouth
-            for key in ('teethLower','teethUpper','mouth','tongue','text'):
+            #--Teeth/Mouth/head/description
+            for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
                 if key in raceData:
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
