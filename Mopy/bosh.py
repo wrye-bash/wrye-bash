@@ -9524,7 +9524,7 @@ class Installer(object):
     dataDirsMinus = set(('bash','obse','replacers')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
-    skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db'))
+    skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
     imageExts = set(('.gif','.jpg','.png'))
