@@ -2062,6 +2062,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * R.Description tag added; imports race description
     * R.AddSpells tag added; imports race spells additions.
     * R.ChangeSpells tag added; imports race spell as totally new list.
+    * R.Head added; imports race head record.
     * NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) __if__ hair length is 0.0 or None.
     * another not insignificant optimization.
   * Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
@@ -2095,8 +2096,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
 * 3 new tool launchers added (contributed by Metallicow).
 * Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
+* some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
 * 
-*
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
