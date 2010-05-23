@@ -17114,7 +17114,8 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
-			#If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
+        #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
+                if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): continue #probably truly shouldn't be playable
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
@@ -17264,7 +17265,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         log(_('* Books DarNified: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-
+        
 #------------------------------------------------------------------------------
 class AssortedTweak_FogFix(MultiTweakItem):
     """Fix fog in cell to be non-zero."""
@@ -18740,9 +18741,9 @@ class NamesTweak_Weapons(MultiTweakItem):
 class NamesTweak_Dwarven(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-		self.activeTypes = ('ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
-			'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-			'SLGM', 'SPEL','WEAP') 
+        self.activeTypes = ('ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
+            'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
+            'SLGM', 'SPEL','WEAP') 
         MultiTweakItem.__init__(self,_("Lore Friendly Names: Dwarven -> Dwemer"),
             _('Rename any thing that is named X Dwarven or Dwarven X to Dwemer X/X Dwemer to follow lore better.'),
             'WEAP',
@@ -18779,14 +18780,13 @@ class NamesTweak_Dwarven(MultiTweakItem):
             if type not in patchFile.tops: continue
             for record in patchFile.tops[type].records:
                 if not record.full: continue
-				if not 'dwarven' in record.full.lower(): continue
-				if 'dwarven' in record.full:
-					record.full = record.full.replace('dwarven','dwemer')
+                if not 'dwarven' in record.full.lower(): continue
+                if 'dwarven' in record.full:
+                    record.full = record.full.replace('dwarven','dwemer')
                 elif 'Dwarven' in record.full:
-					record.full = record.full.replace('Dwarven','Dwemer')
-				keep(record.fid)
-				srcMod = record.fid[0]
-				count[srcMod] = count.get(srcMod,0) + 1
+                    record.full = record.full.replace('Dwarven','Dwemer')
+                keep(record.fid)
+        count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log(_('* %s: %d') % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -18821,7 +18821,7 @@ class NamesTweaker(MultiTweaker):
         NamesTweak_Scrolls(),
         NamesTweak_Spells(),
         NamesTweak_Weapons(),
-		NamesTweak_Dwarven(),
+        NamesTweak_Dwarven(),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,NamesTweak_BodyTags())
 
@@ -19660,12 +19660,12 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     raceChanged = True
             #-- Eye paths:  
             if 'rightEye' in raceData:
-				if not race.rightEye: deprint(_('Very odd race % found - no right eye assigned') % (race.full))
+                if not race.rightEye: deprint(_('Very odd race % found - no right eye assigned') % (race.full))
                 if race.rightEye.modPath != raceData['rightEye'].modPath:
                     race.rightEye.modPath = raceData['rightEye'].modPath
                     raceChanged = True
             if 'leftEye' in raceData:
-				if not race.leftEye: deprint(_('Very odd race % found - no left eye assigned') % (race.full))
+                if not race.leftEye: deprint(_('Very odd race % found - no left eye assigned') % (race.full))
                 if race.leftEye.modPath != raceData['leftEye'].modPath:
                     race.leftEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
