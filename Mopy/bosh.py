@@ -12213,7 +12213,7 @@ class ItemStats:
             elif type == 'APPA':
                 apparatus[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, quality)
-                    zip((sfloat,int,int),fields[4:7]))
+                    zip((sfloat,int,sfloat),fields[4:7]))
             elif type == 'ARMO':
                 armor[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, health, strength)
@@ -12274,7 +12274,7 @@ class ItemStats:
                 ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
                 _('Editor Id'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'))) + '"\n')),
             #--Apparatus
-            ('APPA', bolt.csvFormat('sfii')+'\n',
+            ('APPA', bolt.csvFormat('sfif')+'\n',
                 ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
                 _('Editor Id'),_('Weight'),_('Value'),_('Quality'))) + '"\n')),
             #--Armor
@@ -12551,6 +12551,10 @@ class CompleteItemData:
                 ammo[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, damage, speed, enchantPoints)
                     zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
+            elif type == 'APPA':
+                appa[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight,value,quantity)
+                    zip((str,sfloat,int,sfloat,str),fields[4:9]))
             elif type == 'ARMO':
                 armor[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, health, strength)
@@ -12586,7 +12590,7 @@ class CompleteItemData:
             elif type == 'SLGM':
                 soulgems[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value)
-                    zip((str,sfloat,int),fields[4:8]))
+                    zip((str,sfloat,int,str),fields[4:8]))
             elif type == 'WEAP':
                 weapons[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(weight, value, health, damage, speed, reach, epoints)
@@ -12610,6 +12614,10 @@ class CompleteItemData:
             ('AMMO', bolt.csvFormat('ssfiifiss')+'\n',
                 ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
                 _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+            #--Apparatus
+            ('APPA', bolt.csvFormat('ssfifss')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
             #--Armor
             ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
                 ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
