@@ -2090,14 +2090,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * INI Edits:
   * Now supports applying tweaks to any Ini
   * Supports script type Ini files.  Can modify any __set__ or __setGS__ command.
+  * Files ending in '.ace','.tgz','.tar','.tar.gz','.omod' will no longer be installed by BAIN. (requested by myk002)
 * comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
 * German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
 * 3 new tool launchers added (contributed by Metallicow).
 * Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
-* some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
-* 
+* Some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
