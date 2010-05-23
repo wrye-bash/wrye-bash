@@ -2045,13 +2045,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 284 [09/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k]
+=== 284 [09/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
 * Incorrect italicization fixed.
 * BashIni changes:
   * text colours for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.
 * Active mods with the 'Deactivate' tag will be highlighted in red.
 * Bashed Patch changes:
-  * Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release
+  * Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release - reported by baphometal)
   * New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   * RacePatcher changes:
     * Left eye import fix (contributed by Valda68k)
@@ -2069,6 +2069,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
   * No warning about NoMerge tagged mods that are non-mergeable anyways.
   * 4 new GMST changers added to tweak settings
+  * New Names tweaker added: 'Lore Friendly Names: Dwarven -> Dwemer' added.
   * NPC Tweaker changes:
     * Renamed to Tweak Actors.
     * 'No Bloody Creatures' tweak added.
@@ -2094,6 +2095,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
 * 3 new tool launchers added (contributed by Metallicow).
 * Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
+* 
+*
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
