@@ -4768,6 +4768,8 @@ class PatchDialog(wx.Dialog):
         self.gExecute = button(self,id=wx.ID_OK,onClick=self.Execute)
         self.gSaveConfig = button(self,id=wx.ID_SAVE,onClick=self.SaveConfig)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,onClick=self.RevertConfig)
+        self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,onClick=self.SelectAll)
+        self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label='Deselect All',onClick=self.DeselectAll)
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -4791,6 +4793,8 @@ class PatchDialog(wx.Dialog):
             (hSizer(
                 spacer,
                 self.gExecute,
+                (self.gSelectAll,0,wx.LEFT,4),
+                (self.gDeselectAll,0,wx.LEFT,4),
                 (self.gSaveConfig,0,wx.LEFT,4),
                 (self.gRevertConfig,0,wx.LEFT,4),
                 (button(self,id=wx.ID_CANCEL),0,wx.LEFT,4),
@@ -4898,6 +4902,34 @@ class PatchDialog(wx.Dialog):
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
+            
+    def SelectAll(self,event=None):
+        """Select all patchers and entries in patchers with child entries."""
+        for index,patcher in enumerate(self.patchers):
+            self.gPatchers.Check(index,True)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue
+                for index, item in enumerate(patcher.items):
+                    patcher.gList.Check(index,True)
+                patcher.OnListCheck()
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    patcher.gList.Check(index,True)
+                patcher.OnListCheck()
+                
+    def DeselectAll(self,event=None):
+        """Deselect all patchers and entries in patchers with child entries."""
+        for index,patcher in enumerate(self.patchers):
+            self.gPatchers.Check(index,False)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue
+                for index, item in enumerate(patcher.items):
+                    patcher.gList.Check(index,False)
+                patcher.OnListCheck()
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    patcher.gList.Check(index,False)
+                patcher.OnListCheck()
             
     #--GUI --------------------------------
     def OnSize(self,event):
