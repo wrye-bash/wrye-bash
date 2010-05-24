@@ -16072,7 +16072,7 @@ class ImportSpells(ImportPatcher):
     """Merge changes to actor inventories."""
     name = _('Import Spells')
     text = _("Merges changes to NPC, creature spell lists.")
-    autoKey = ('Actors.Spells','spellsOnly')
+    autoKey = ('Actors.Spells','SpellsOnly')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     siMode = True
 
@@ -16083,8 +16083,8 @@ class ImportSpells(ImportPatcher):
         self.id_deltas = {}
         self.srcMods = self.getConfigChecked()
         self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
-        self.spellsOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set(('spellsOnly')) & modInfos[x].getBashTags()))
+        self.SpellsOnlyMods = set(x for x in self.srcMods if
+            (x in patchFile.mergeSet and set(('SpellsOnly')) & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.masters = set()
         for srcMod in self.srcMods:
@@ -16150,7 +16150,7 @@ class ImportSpells(ImportPatcher):
                 if deltas is None: deltas = self.id_deltas[fid] = []
                 deltas.append((removeItems,addEntries))
         #--Keep record?
-        if modFile.fileInfo.name not in self.spellsOnlyMods:
+        if modFile.fileInfo.name not in self.SpellsOnlyMods:
             for type in ('NPC_','CREA'):
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
@@ -18758,7 +18758,7 @@ class NamesTweak_Dwarven(MultiTweakItem):
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return (MreAlch,MreAmmo,MreAppa,MreBook,MreBsgn,MreClas,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreIngr,MreKeym,MrMisc,MreNpc,MreSgst,MreRace,MreSlgm,MreSpel, MreWeap)
+        return (MreAlch,MreAmmo,MreAppa,MreBook,MreBsgn,MreClas,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreIngr,MreKeym,MreMisc,MreNpc,MreSgst,MreRace,MreSlgm,MreSpel, MreWeap)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -18780,11 +18780,15 @@ class NamesTweak_Dwarven(MultiTweakItem):
             if type not in patchFile.tops: continue
             for record in patchFile.tops[type].records:
                 if not record.full: continue
-                if not 'dwarven' in record.full.lower(): continue
+                if not 'dwar' in record.full.lower(): continue
                 if 'dwarven' in record.full:
                     record.full = record.full.replace('dwarven','dwemer')
                 elif 'Dwarven' in record.full:
                     record.full = record.full.replace('Dwarven','Dwemer')
+                elif 'Dwarf' in record.full:
+                    record.full = record.full.replace('Dwarf','Dwemer')
+                elif 'dwarf' in record.full:
+                    record.full = record.full.replace('dwarf','dwemer')
                 keep(record.fid)
         count[srcMod] = count.get(srcMod,0) + 1
         #--Log
@@ -19461,7 +19465,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears',
+        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
         'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
         'R.AddSpells', 'R.ChangeSpells')
     forceAuto = True
