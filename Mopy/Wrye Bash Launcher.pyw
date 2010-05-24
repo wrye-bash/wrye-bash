@@ -93,14 +93,44 @@ elif os.path.exists('bash.ini'):
 personal = opts.get('-p')
 localAppData = opts.get('-l')
 bosh.initDirs(personal,localAppData,oblivionPath)
+pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
 import basher
 import bolt
+import atexit
 
+def exit():
+    pidpath.remove()
+
+def oneInstanceChecker():
+    atexit.register(exit)
+    if not os.path.isfile(pidpath.s):
+        pidfile = pidpath.open('w')
+        pidfile.write(str(os.getpid()))
+        return True
+    processlist = bosh.dirs['mopy'].join('temp.tmp')
+    pidfile = pidpath.open('r')
+    pidlist = pidfile.readlines()
+    os.system(r'tasklist > "%s"' % processlist.s)
+    processlistfile = processlist.open('r')
+    processlistcontents = processlistfile.readlines()
+    for pid in pidlist:
+        for line in processlistcontents:
+            if pid in line:
+                print 'already started'
+                return False
+    pidfile.close()
+    pidpath.open('w').write(' %s ' % str(os.getpid()))
+    processlistfile.close()
+    processlist.remove()
+    return True
+    
 # Main ------------------------------------------------------------------------
 def main():
     #import warnings
     #warnings.filterwarnings('error')
     #--More Initialization
+    if not oneInstanceChecker():
+        return False
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
@@ -121,3 +151,4 @@ if __name__ == '__main__':
     except:
         pass
     main()
+
