@@ -66,11 +66,13 @@ For mod-makers:
 [/quote]
 
 Latest Version:
-=== 284 (RC1) [09/05/2010] [Lojack,PacificMorrowind,Valda68k]
-[list][*] Incorrect italicization fixed.
+=== 284 [24/05/2010] (FULL)[Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar][list]
+[*] Incorrect italicization fixed.
+[*] BashIni changes:[list]
+  [*] text colours for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.[/list]
 [*] Active mods with the 'Deactivate' tag will be highlighted in red.
 [*] Bashed Patch changes:[list]
-  [*] Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues).
+  [*] Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release - reported by baphometal)
   [*] New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   [*] RacePatcher changes:[list]
     [*] Left eye import fix (contributed by Valda68k)
@@ -81,27 +83,47 @@ Latest Version:
     [*] R.Description tag added; imports race description
     [*] R.AddSpells tag added; imports race spells additions.
     [*] R.ChangeSpells tag added; imports race spell as totally new list.
+    [*] R.Head added; imports race head record.
     [*] NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) __if__ hair length is 0.0 or None.
     [*] another not insignificant optimization.[/list]
   [*] Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
   [*] Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   [*] New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
-  [*] 3 new GMST changers added to tweak settings
+  [*] No warning about NoMerge tagged mods that are non-mergeable anyways.
+  [*] 4 new GMST changers added to tweak settings
+  [*] New Names tweaker added: 'Lore Friendly Names: Dwarven -> Dwemer' added.
   [*] NPC Tweaker changes:[list]
     [*] Renamed to Tweak Actors.
     [*] 'No Bloody Creatures' tweak added.
     [*] 'As Intended: Boars' tweak added.
-    [*] 'As Intended: Imps' tweak added.[/list][/list]
+    [*] 'As Intended: Imps' tweak added.
+    [*] Redguard FGTS Nuller now correctly handles npcs with no race assigned (very odd!) (reported by blake7791, specifically found in Skin Toned Mannequins) - just skips such NPCs instead of raising a fatal error in patch build.[/list]
+  [*] Select/Deselect All buttons on list/tweak patchers (ie everything except for a few special patcher such as SEWorld Tests etc.) added.
+  [*] All patchers no longer display mods that are loading after the patch (since they were not included in build anyways (even selected) this makes it much simpler and less confusing).[/list]
 [*] Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported & deactivated.
 [*] BAIN:[list]
   [*] Renaming now updates the 'Mods' and 'INI Edits' tabs
   [*] 2 bugfixes dealing with filtering (reported by Vindicator)
   [*] Double or middle clicking on an image in a BAIN Wizard will open the full image.
-  [*] You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.[/list]
+  [*] You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+  [*] List Packages now has option to only export active packages 
+  [*] List Packages shows whether package is active or not. 
+  [*] Files ending in '.ace','.tgz','.tar','.tar.gz','.omod' will no longer be installed by BAIN. (requested by myk002)[/list]
+[*] INI Edits:[list]
+  [*] Now supports applying tweaks to any Ini
+  [*] Supports script type Ini files.  Can modify any __set__ or __setGS__ command.[/list]
 [*] comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 [*] You can delete Installers and INI Edits with the Delete key now.
 [*] You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
+[*] German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
+[*] 3 new tool launchers added (contributed by Metallicow).
+[*] Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
+[*] Some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
+[*] Fix so that it is impossible to open multiple copies of Wrye Bash at the same.
+[*] Added option in Patch dialogue to save configuration (ie then you can click cancel without loosing the configuration changes you've done).
+[*] Taglist updated to BOSS masterlist revision 943.
 [/list]
+*** Graphics patcher will print out a bit of junk this version sorry I left that in accidentally - Pacific Morrowind
 
 and just to repeat some links and news:
 Wrye4Fallout3.
