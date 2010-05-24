@@ -4767,6 +4767,7 @@ class PatchDialog(wx.Dialog):
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,onClick=self.Execute)
         self.gSaveConfig = button(self,id=wx.ID_SAVE,onClick=self.SaveConfig)
+        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,onClick=self.RevertConfig)
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -4789,7 +4790,9 @@ class PatchDialog(wx.Dialog):
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                self.gExecute,(self.gSaveConfig,0,wx.LEFT,4),
+                self.gExecute,
+                (self.gSaveConfig,0,wx.LEFT,4),
+                (self.gRevertConfig,0,wx.LEFT,4),
                 (button(self,id=wx.ID_CANCEL),0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
@@ -4887,6 +4890,14 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
         bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+    
+    def RevertConfig(self,event=None):
+        """Revert configuration back to saved"""
+        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
+        for patcher in self.patchers:
+            patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
+        for index,patcher in enumerate(self.patchers):
+            self.gPatchers.Check(index,patcher.isEnabled)
             
     #--GUI --------------------------------
     def OnSize(self,event):
