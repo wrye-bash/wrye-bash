@@ -102,7 +102,6 @@ def exit():
     pidpath.remove()
 
 def oneInstanceChecker():
-    atexit.register(exit)
     if not os.path.isfile(pidpath.s):
         pidfile = pidpath.open('w')
         pidfile.write(str(os.getpid()))
@@ -129,6 +128,9 @@ def main():
     #import warnings
     #warnings.filterwarnings('error')
     #--More Initialization
+    if not oneInstanceChecker():
+        return False
+    atexit.register(exit)
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
