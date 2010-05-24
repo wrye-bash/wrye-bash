@@ -2236,13 +2236,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='28409052010LojackMetallicowPacificMorrowindThreeDValda68k'>284 [09/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k]</a></h3>
+<h3><a name='28424052010LojackMetallicowPacificMorrowindThreeDValda68kWaruddar'>284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Incorrect italicization fixed.
 <p class=list-1>&bull;&nbsp; BashIni changes:
   <p class=list-2>&bull;&nbsp; text colours for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.
 <p class=list-1>&bull;&nbsp; Active mods with the 'Deactivate' tag will be highlighted in red.
 <p class=list-1>&bull;&nbsp; Bashed Patch changes:
-  <p class=list-2>&bull;&nbsp; Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release
+  <p class=list-2>&bull;&nbsp; Actors.DeathItems moved (back) to seperate patcher for better Warcry & FCOM ease of use (and similar issues). (with fixes in the full release - reported by baphometal)
   <p class=list-2>&bull;&nbsp; New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
   <p class=list-2>&bull;&nbsp; RacePatcher changes:
     <p class=list-3>&bull;&nbsp; Left eye import fix (contributed by Valda68k)
@@ -2253,12 +2253,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class=list-3>&bull;&nbsp; R.Description tag added; imports race description
     <p class=list-3>&bull;&nbsp; R.AddSpells tag added; imports race spells additions.
     <p class=list-3>&bull;&nbsp; R.ChangeSpells tag added; imports race spell as totally new list.
+    <p class=list-3>&bull;&nbsp; R.Head added; imports race head record.
     <p class=list-3>&bull;&nbsp; NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) <B>if</B> hair length is 0.0 or None.
     <p class=list-3>&bull;&nbsp; another not insignificant optimization.
   <p class=list-2>&bull;&nbsp; Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
   <p class=list-2>&bull;&nbsp; Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
   <p class=list-2>&bull;&nbsp; New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+  <p class=list-2>&bull;&nbsp; No warning about NoMerge tagged mods that are non-mergeable anyways.
   <p class=list-2>&bull;&nbsp; 4 new GMST changers added to tweak settings
+  <p class=list-2>&bull;&nbsp; New Names tweaker added: 'Lore Friendly Names: Dwarven -> Dwemer' added.
   <p class=list-2>&bull;&nbsp; NPC Tweaker changes:
     <p class=list-3>&bull;&nbsp; Renamed to Tweak Actors.
     <p class=list-3>&bull;&nbsp; 'No Bloody Creatures' tweak added.
@@ -2273,15 +2276,22 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; 2 bugfixes dealing with filtering (reported by Vindicator)
   <p class=list-2>&bull;&nbsp; Double or middle clicking on an image in a BAIN Wizard will open the full image.
   <p class=list-2>&bull;&nbsp; You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+  <p class=list-2>&bull;&nbsp; List Packages now has option to only export active packages 
+  <p class=list-2>&bull;&nbsp; List Packages shows whether package is active or not. 
 <p class=list-1>&bull;&nbsp; INI Edits:
   <p class=list-2>&bull;&nbsp; Now supports applying tweaks to any Ini
   <p class=list-2>&bull;&nbsp; Supports script type Ini files.  Can modify any <B>set</B> or <B>setGS</B> command.
+  <p class=list-2>&bull;&nbsp; Files ending in '.ace','.tgz','.tar','.tar.gz','.omod' will no longer be installed by BAIN. (requested by myk002)
 <p class=list-1>&bull;&nbsp; comtypes is optional now.  It is required for a couple function but most have work arounds enabled (ie Bashe Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 <p class=list-1>&bull;&nbsp; You can delete Installers and INI Edits with the Delete key now.
 <p class=list-1>&bull;&nbsp; You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
 <p class=list-1>&bull;&nbsp; German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
-<p class=list-1>&bull;&nbsp; 3 new tool launchers added.
+<p class=list-1>&bull;&nbsp; 3 new tool launchers added (contributed by Metallicow).
 <p class=list-1>&bull;&nbsp; Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
+<p class=list-1>&bull;&nbsp; Some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
+<p class=list-1>&bull;&nbsp; Fix so that it is impossible to open multiple copies of Wrye Bash at the same.
+<p class=list-1>&bull;&nbsp; Added option in Patch dialogue to save configuration (ie then you can click cancel without loosing the configuration changes you've done).
+<p class=list-1>&bull;&nbsp; Taglist updated to BOSS masterlist revision 943.
 <p class=empty>&nbsp;</p>
 <h3><a name='28318042010LojackPacificMorrowindWarrudar'>283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]</a></h3>
 <p class=list-1>&bull;&nbsp; Taglist: updated to masterlist version 824 and a bunch of cruft removed.

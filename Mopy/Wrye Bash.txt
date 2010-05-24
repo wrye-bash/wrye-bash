@@ -2100,6 +2100,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
 * Fix so that it is impossible to open multiple copies of Wrye Bash at the same.
 * Added option in Patch dialogue to save configuration (ie then you can click cancel without loosing the configuration changes you've done).
+* Taglist updated to BOSS masterlist revision 943.
 
 === 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
