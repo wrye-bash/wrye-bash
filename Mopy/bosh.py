@@ -17051,6 +17051,10 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
         #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
+                if not record.full: continue
+                if record.script: 
+                    deprint(record.fid) #if debug printing is enabled print that to make sure it is correct to get skipped.
+                    continue #test that anyways...
                 if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): continue #probably truly shouldn't be playable
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
