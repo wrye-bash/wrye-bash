@@ -15124,12 +15124,12 @@ class NPCAIPackagePatcher(ImportPatcher):
                         if not fid in data:
                             data[fid] = recordData
                         else:
-                            # and here it get even more ugly(!)
+                            # and here it gets even more ugly(!)
                             for pkg in recordData['deleted']:
-                                if not pkg in data['record']['deleted']:
-                                    data['record']['deleted'].append(pkg)
-                                if pkg in data[record]['merged']:
-                                    data[record]['merged'].remove(pkg)
+                                if not pkg in data[fid]['deleted']:
+                                    data[fid]['deleted'].append(pkg)
+                                if pkg in data[fid]['merged']:
+                                    data[fid]['merged'].remove(pkg)
                             for index, pkg in enumerate(recordData['merged']):
                                 if not pkg in data[fid]['merged']: # so needs to be added... 
                                     # find the correct position to add and add.
@@ -15138,17 +15138,61 @@ class NPCAIPackagePatcher(ImportPatcher):
                                         continue
                                     if index == 0: data[fid]['merged'].insert(0, pkg) #insert as first item
                                     elif index == len(recordData['merged']): data[fid]['merged'].append(pkg) #insert as last item
-                                    else:
-                                        prevpkg = recordData['merged'][(index - 1)]
-                                        slot = data[fid]['merged'].index(prevpkg)
-                                        data[fid]['merged'].insert(slot, pkg)
+                                    else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
+                                        slot = index
+                                        i = 1
+                                        while slot >= 0:
+                                            try:
+                                                slot = data[fid]['merged'].index(recordData['merged'][(index - i)])
+                                                data[fid]['merged'].insert(slot, pkg)
+                                                break
+                                            except (ValueError, IndexError):
+                                                i += 1
+                                                if (index-i) < 0:
+                                                    slot = index
+                                                    i = 1
+                                                    while slot <= len(recordData['merged']):
+                                                        try:
+                                                            slot = data[fid]['merged'].index(recordData['merged'][(index + i)])
+                                                        except (ValueError, IndexError):
+                                                            i += 1
+                                                            # If there are NO matching packages, just add it ot the end... see how that works anyways:
+                                                            if slot == len(recordData['merged']):
+                                                                data[fid]['merged'].append(pkg)
+                                                                slot = -1
+                                                                break
+                                                        data[fid]['merged'].insert(slot, pkg)
+                                                        slot = -1
+                                                        break
                                     continue # Done with this package
                                 if index == data[fid]['merged'].index(pkg): continue #pkg same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
                                     data[fid]['merged'].remove(pkg)
-                                    prevpkg = recordData['merged'][(index - 1)]
-                                    slot = data[fid]['merged'].index(prevpkg)
-                                    data[fid]['merged'].insert(slot, pkg)
+                                    slot = index
+                                    i = 1
+                                    while slot >= 0:
+                                        try:
+                                            slot = data[fid]['merged'].index(recordData['merged'][(index - i)])
+                                            data[fid]['merged'].insert(slot, pkg)
+                                            break
+                                        except (ValueError, IndexError):
+                                            i += 1
+                                            if (index-i) < 0:
+                                                slot = index
+                                                i = 1
+                                                while slot <= len(recordData['merged']):
+                                                    try:
+                                                        slot = data[fid]['merged'].index(recordData['merged'][(index + i)])
+                                                    except (ValueError, IndexError):
+                                                        i += 1
+                                                        # If there are NO matching packages, just add it ot the end... see how that works anyways:
+                                                        if (index+i) > len(recordData['merged']):
+                                                            data[fid]['merged'].append(pkg)
+                                                            slot = -1
+                                                            break
+                                                    data[fid]['merged'].insert(slot, pkg)
+                                                    slot = -1
+                                                    break
             progress.plus()
 
     def getReadClasses(self):
