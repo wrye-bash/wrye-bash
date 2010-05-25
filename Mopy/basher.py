@@ -4765,11 +4765,13 @@ class PatchDialog(wx.Dialog):
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
-        self.gExecute = button(self,id=wx.ID_OK,onClick=self.Execute)
+        self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
         self.gSaveConfig = button(self,id=wx.ID_SAVE,onClick=self.SaveConfig)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,onClick=self.RevertConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,onClick=self.SelectAll)
-        self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label='Deselect All',onClick=self.DeselectAll)
+        self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
+        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
+        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import Patch Configuration'),onClick=self.ImportConfig)
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -4792,13 +4794,18 @@ class PatchDialog(wx.Dialog):
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
                 spacer,
+                (self.gSaveConfig,0,wx.LEFT,4),
+                (self.gRevertConfig,0,wx.LEFT,4),
+                (self.gExportConfig,0,wx.LEFT,4),
+                (self.gImportConfig,0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
+            (hSizer(
+                spacer,
                 self.gExecute,
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),
-                (self.gSaveConfig,0,wx.LEFT,4),
-                (self.gRevertConfig,0,wx.LEFT,4),
                 (button(self,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             )
         self.SetSizer(sizer)
         #--Patcher panels
@@ -4894,43 +4901,98 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
         bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+        
+    def ExportConfig(self,event=None):
+        """Export the configuration to a user selected dat file."""
+        patchName = self.patchInfo.name + _('_Configuration.dat')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.parent,_('Export Bashed Patch configuration to:'),textDir,patchName, '*Configuration.dat')
+        if not textPath: return
+        pklPath = textPath+'.pkl'
+        table = bolt.Table(bosh.PickleDict(textPath, pklPath))
+        patchConfigs = {'ImportedMods':set()}
+        for patcher in self.patchers:
+            patcher.saveConfig(patchConfigs)
+        table.setItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',patchConfigs)
+        table.save()
+        
+    def ImportConfig(self,event=None):
+        """Import the configuration to a user selected dat file."""
+        patchName = self.patchInfo.name + _('_Configuration.dat')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askOpen(self.parent,_('Import Bashed Patch configuration from:'),textDir,patchName, '.dat')
+        if not textPath: return
+        pklPath = textPath+'.pkl'
+        table = bolt.Table(bosh.PickleDict(
+            textPath, pklPath))
+        patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
+        for index,patcher in enumerate(self.patchers):
+            patcher.getConfig(patchConfigs)
+            self.gPatchers.Check(index,patcher.isEnabled)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
+                for index, item in enumerate(patcher.items):
+                    try:
+                        patcher.gList.Check(index,patcher.configChecks[item])
+                    except KeyError: deprint(_('item %s not in saved configs') % (item))
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    try:
+                        patcher.gList.Check(index,item.isEnabled) 
+                    except: deprint(_('item %s not in saved configs') % (item))
+        self.SetOkEnable()
     
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
-        for patcher in self.patchers:
-            patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
         for index,patcher in enumerate(self.patchers):
+            patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
+                for index, item in enumerate(patcher.items):
+                    patcher.gList.Check(index,patcher.configChecks[item])
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    patcher.gList.Check(index,item.isEnabled)
+        self.SetOkEnable()
             
     def SelectAll(self,event=None):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
+            patcher.isEnabled = True
             if isinstance(patcher, ListPatcher):
                 if patcher.getName() == 'Leveled Lists': continue
                 for index, item in enumerate(patcher.items):
                     patcher.gList.Check(index,True)
-                patcher.OnListCheck()
+                    patcher.configChecks[item] = True
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     patcher.gList.Check(index,True)
-                patcher.OnListCheck()
+                    item.isEnabled = True
+            self.gExecute.Enable(True)
                 
     def DeselectAll(self,event=None):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
+            patcher.isEnabled = False
             if isinstance(patcher, ListPatcher):
                 if patcher.getName() == 'Leveled Lists': continue
                 for index, item in enumerate(patcher.items):
                     patcher.gList.Check(index,False)
-                patcher.OnListCheck()
+                    patcher.configChecks[item] = False
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     patcher.gList.Check(index,False)
-                patcher.OnListCheck()
-            
+                    item.isEnabled = False
+        self.gExecute.Enable(False)
+        
     #--GUI --------------------------------
     def OnSize(self,event):
         balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
@@ -8169,7 +8231,7 @@ class Mod_CreateBlank(Link):
 
 #------------------------------------------------------------------------------
 class Mod_FactionRelations_Export(Link):
-    """Export faction relationss from mod to text file."""
+    """Export faction relations from mod to text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Relations...'))
