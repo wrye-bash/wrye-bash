@@ -4805,7 +4805,7 @@ class PatchDialog(wx.Dialog):
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),
                 (button(self,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
         #--Patcher panels
@@ -4924,7 +4924,7 @@ class PatchDialog(wx.Dialog):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent,_('Import Bashed Patch configuration from:'),textDir,patchName, '.dat')
+        textPath = balt.askOpen(self.parent,_('Import Bashed Patch configuration from:'),textDir,patchName, '*.dat')
         if not textPath: return
         pklPath = textPath+'.pkl'
         table = bolt.Table(bosh.PickleDict(
