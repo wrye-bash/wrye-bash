@@ -14365,7 +14365,7 @@ class CellImporter(ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music','C.Maps')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -14433,20 +14433,25 @@ class CellImporter(ImportPatcher):
                     if tempCellData[fid+('flags',)][flag] != cellBlock.cell.flags.__getattr__(flag):
                         cellData[fid+('flags',)][flag] = tempCellData[fid+('flags',)][flag]
         cellData = self.cellData
-        tempCellData = {}
+        cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreCell,MreWrld)
         progress.setFull(len(self.sourceMods))
         cachedMasters = {}
         for srcMod in self.sourceMods:
             if srcMod not in modInfos: continue
+            tempCellData = {}
+            tempCellData['Maps'] = {}
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
             masters = srcInfo.header.masters
-            attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in srcInfo.getBashTags() if
-                bashKey in self.recAttrs)))
-            flags = tuple(self.recFlags[bashKey] for bashKey in srcInfo.getBashTags() if
+            bashTags = srcInfo.getBashTags()
+            try:
+                attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in bashTags if
+                    bashKey in self.recAttrs)))
+            except: attrs = set()
+            flags = tuple(self.recFlags[bashKey] for bashKey in bashTags if
                 bashKey in self.recAttrs and self.recFlags[bashKey] != '')
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
@@ -14455,6 +14460,9 @@ class CellImporter(ImportPatcher):
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
+                    if 'C.Maps' in bashTags:
+                        if worldBlock.world.mapPath:
+                            tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -14465,13 +14473,16 @@ class CellImporter(ImportPatcher):
                     masterFile.load(True)
                     masterFile.convertToLongFids(('CELL','WRLD'))
                     cachedMasters[master] = masterFile
-                if 'CELL' in srcFile.tops:
+                if 'CELL' in masterFile.tops:
                     for cellBlock in masterFile.CELL.cellBlocks:
                         checkMasterCellBlockData(cellBlock)
-                if 'WRLD' in srcFile.tops:
+                if 'WRLD' in masterFile.tops:
                     for worldBlock in masterFile.WRLD.worldBlocks:
                         for cellBlock in worldBlock.cellBlocks:
                             checkMasterCellBlockData(cellBlock)
+                        if worldBlock.world.fid in tempCellData['Maps']:
+                            if worldBlock.world.mapPath != tempCellData['Maps'][worldBlock.world.fid]:
+                                cellData['Maps'][worldBlock.world.fid] = tempCellData['Maps'][worldBlock.world.fid]
             tempCellData = {}
             progress.plus()
 
@@ -14495,7 +14506,8 @@ class CellImporter(ImportPatcher):
                         patchWorlds.setWorld(worldBlock.world)
                         patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(
                             cellBlock.cell)
-
+                    if worldBlock.world.fid in cellData['Maps']:
+                        patchWorlds.setWorld(worldBlock.world)
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
         def handleCellBlock(cellBlock):
@@ -14525,6 +14537,10 @@ class CellImporter(ImportPatcher):
                 if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
                     count.increment(cellBlock.cell.fid[0])
                     keepWorld = True
+            if worldBlock.world.fid in cellData['Maps']:
+                if worldBlock.world.mapPath != cellData['Maps'][worldBlock.world.fid]:
+                    worldBlock.world.mapPath = cellData['Maps'][worldBlock.world.fid]
+                    keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
 
@@ -14533,81 +14549,6 @@ class CellImporter(ImportPatcher):
         for mod in self.sourceMods:
             log("* " +mod.s)
         log(_("\n=== Cells Patched"))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log('* %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
-class MapImporter(ImportPatcher):
-    """Merges changes to cells (climate, lighting, and water.)"""
-    name = _('Import World Maps')
-    text = _("Import cells (climate, lighting, and water) from source mods.")
-    tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('W.Maps',)
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.cellData = {}
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
-        self.recAttrs = {
-            'W.Maps': ('mapPath',),
-            }
-        self.recFlags = {
-            'W.Maps': '',
-            }
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (None,(MreWrld,))[self.isActive]
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (None,(MreWrld,))[self.isActive]
-
-    def initData(self,progress):
-        """Get cells from source files."""
-        loadFactory = LoadFactory(False,MreWrld)
-        progress.setFull(len(self.sourceMods))
-        for srcMod in self.sourceMods:
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            srcFile.convertToLongFids(('WRLD',))
-            attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in srcInfo.getBashTags() if bashKey in self.recAttrs)))
-            flags = tuple(self.recFlags[bashKey] for bashKey in srcInfo.getBashTags() if
-                bashKey in self.recAttrs and self.recFlags[bashKey] != '')
-            if 'WRLD' in srcFile.tops:
-                for worldBlock in srcFile.WRLD.worldBlocks:
-                    progress.plus()
-
-    def scanModFile(self, modFile, progress):
-        """Add lists from modFile."""
-        modName = modFile.fileInfo.name
-        if not self.isActive or ('WRLD' not in modFile.tops):
-            return
-        patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('WRLD',))
-        if 'WRLD' in modFile.tops:
-            for worldBlock in modFile.WRLD.worldBlocks:
-                patchWorlds.setWorld(worldBlock.world)
-
-    def buildPatch(self,log,progress):
-        """Adds merged lists to patchfile."""
-        if not self.isActive: return
-        for srcWorldBlock in srcBlock.worldBlocks:
-            worldBlock = idGet(mapper(srcWorldBlock.world.fid))
-            if worldBlock:
-                worldBlock.updateRecords(srcWorldBlock,mapper,mergeIds)
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
-        for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Worlds Patched"))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('* %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -15057,21 +14998,6 @@ class NPCAIPackagePatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get data from source files."""
-        def prep_for_zip(self,list_x,list_y):
-            """adjusts two lists to be the same length so zip works nicely to deep compare them"""
-            x, y = len(list_x), len(list_y)
-            # now for some really bloody ugly code! - zip() truncates lists if one is longer than the other.
-            if x != y:
-                if x > y:
-                    x -= y
-                    while x:
-                        list_y.append('')
-                        x -= 1 
-                else:
-                    y -= x
-                    while y:
-                        list_x.append('')
-                        y -= 1
         longTypes = self.longTypes
         loadFactory = LoadFactory(False,MreCrea,MreNpc)
         progress.setFull(len(self.srcMods))
@@ -15083,14 +15009,16 @@ class NPCAIPackagePatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.header.masters
+            print srcMod
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass in (MreNpc,MreCrea):
+                if recClass.classType not in srcFile.tops: continue
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
-                    tempData[fid] = record.__getattribute__('aiPackages')
-            for master in masters:
+                    tempData[fid] = list(record.aiPackages)
+            for master in reversed(masters):
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
@@ -15101,98 +15029,97 @@ class NPCAIPackagePatcher(ImportPatcher):
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for block in (masterFile.CREA, masterFile.NPC_):
-                    for record in block.getActiveRecords():
+                for block in (MreNpc, MreCrea):
+                    if block.classType not in srcFile.tops: continue
+                    if block.classType not in masterFile.tops: continue
+                    for record in masterFile.tops[block.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
-                        if record.aiPackages == tempData[fid]: continue
+                        if list(record.aiPackages) == tempData[fid]:
+                            # if subrecord is identical to the most last master then we don't care about older masters.
+                            del tempData[fid]
+                            continue
                         if fid in data:
                             if tempData[fid] == data[fid]['merged']: continue                        
-                        recordData = {'deleted':[],'merged':[]}
-                        masterPkgList = record.aiPackages
-                        prep_for_zip(self,tempData[fid],masterPkgList)
-                        # some more ugly code... comparing the current importing list to the master's list!
-                        # basically just recording deletions.
-                        for index, pkg in enumerate(tempData[fid]):
-                            masterPkg = masterPkgList[index]
-                            if pkg:
-                                recordData['merged'].append(pkg)
-                            if not pkg == masterPkg:
-                                if not masterPkg: continue
-                                if not masterPkg in tempData[fid]:
-                                    recordData['deleted'].append(masterPkg)
+                        recordData = {'deleted':[],'merged':tempData[fid]}
+                        for pkg in list(record.aiPackages):
+                            if not pkg in tempData[fid]:
+                                recordData['deleted'].append(pkg)
                         if not fid in data:
                             data[fid] = recordData
                         else:
                             # and here it gets even more ugly(!)
                             for pkg in recordData['deleted']:
-                                if not pkg in data[fid]['deleted']:
-                                    data[fid]['deleted'].append(pkg)
                                 if pkg in data[fid]['merged']:
                                     data[fid]['merged'].remove(pkg)
+                                data[fid]['deleted'].append(pkg)
+                            if data[fid]['merged'] == []:
+                                for pkg in recordData['merged']:
+                                    if pkg in data[fid]['deleted']: continue
+                                    data[fid]['merged'].append(pkg)
+                                continue
                             for index, pkg in enumerate(recordData['merged']):
                                 if not pkg in data[fid]['merged']: # so needs to be added... 
                                     # find the correct position to add and add.
-                                    if pkg in data[fid]['deleted']: #previously deleted
-                                        pkg = recordData['merged'][(index - 1)]
-                                        continue
-                                    if index == 0: data[fid]['merged'].insert(0, pkg) #insert as first item
-                                    elif index == len(recordData['merged']): data[fid]['merged'].append(pkg) #insert as last item
+                                    if pkg in data[fid]['deleted']: continue #previously deleted
+                                    if index == 0:
+                                        #print 
+                                        print 'existing list' + str(data[fid]['merged'])
+                                        data[fid]['merged'].insert(0,pkg) #insert as first item
+                                        print 'new first item:' + str(pkg)
+                                        print 'result' + str(data[fid]['merged'])
+                                    elif index == (len(recordData['merged'])-1):
+                                        data[fid]['merged'].append(pkg) #insert as last item
+                                        print record.eid
+                                        print 15066
+                                        print data[fid]['merged']
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
-                                        slot = index
-                                        i = 1
-                                        while slot >= 0:
-                                            try:
-                                                slot = data[fid]['merged'].index(recordData['merged'][(index - i)])
+                                        i = index - 1
+                                        while i >= 0:
+                                            if recordData['merged'][i] in data[fid]['merged']:
+                                                slot = data[fid]['merged'].index(recordData['merged'][i])+1
+                                                print 'existing list' + str(data[fid]['merged'])
                                                 data[fid]['merged'].insert(slot, pkg)
+                                                print 'for record: %s, inserted pkg %s in slot #%d line 15083' % (record.eid,pkg,slot)
+                                                print 'result' + str(data[fid]['merged'])
                                                 break
-                                            except (ValueError, IndexError):
+                                            i -= 1
+                                        else:
+                                            i = index + 1
+                                            while i != len(recordData['merged']):
+                                                if recordData['merged'][i] in data[fid]['merged']:
+                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
+                                                    data[fid]['merged'].insert(slot, pkg)
+                                                    print 'for record: %s, inserted pkg %s in slot #%d line 15091/n' % (record.eid,pkg,slot)
+                                                    break
                                                 i += 1
-                                                if (index-i) < 0:
-                                                    slot = index
-                                                    i = 1
-                                                    while slot <= len(recordData['merged']):
-                                                        try:
-                                                            slot = data[fid]['merged'].index(recordData['merged'][(index + i)])
-                                                        except (ValueError, IndexError):
-                                                            i += 1
-                                                            # If there are NO matching packages, just add it ot the end... see how that works anyways:
-                                                            if slot == len(recordData['merged']):
-                                                                data[fid]['merged'].append(pkg)
-                                                                slot = -1
-                                                                break
-                                                        data[fid]['merged'].insert(slot, pkg)
-                                                        slot = -1
-                                                        break
                                     continue # Done with this package
-                                if index == data[fid]['merged'].index(pkg): continue #pkg same in both lists.
+                                elif index == data[fid]['merged'].index(pkg): continue #pkg same in both lists.
+                                elif (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(pkg)): continue #pkg same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
                                     data[fid]['merged'].remove(pkg)
-                                    slot = index
-                                    i = 1
-                                    while slot >= 0:
-                                        try:
-                                            slot = data[fid]['merged'].index(recordData['merged'][(index - i)])
-                                            data[fid]['merged'].insert(slot, pkg)
-                                            break
-                                        except (ValueError, IndexError):
-                                            i += 1
-                                            if (index-i) < 0:
-                                                slot = index
-                                                i = 1
-                                                while slot <= len(recordData['merged']):
-                                                    try:
-                                                        slot = data[fid]['merged'].index(recordData['merged'][(index + i)])
-                                                    except (ValueError, IndexError):
-                                                        i += 1
-                                                        # If there are NO matching packages, just add it ot the end... see how that works anyways:
-                                                        if (index+i) > len(recordData['merged']):
-                                                            data[fid]['merged'].append(pkg)
-                                                            slot = -1
-                                                            break
+                                    if index == 0:
+                                        data[fid]['merged'].insert(0,pkg) #insert as first item
+                                    elif index == (len(recordData['merged'])-1):
+                                        data[fid]['merged'].append(pkg) #insert as last item
+                                    else:
+                                        i = index - 1
+                                        while i >= 0:
+                                            if recordData['merged'][i] in data[fid]['merged']:
+                                                slot = data[fid]['merged'].index(recordData['merged'][i]) + 1
+                                                data[fid]['merged'].insert(slot, pkg)
+                                                break
+                                            i -= 1
+                                        else:
+                                            i = index + 1
+                                            while i != len(recordData['merged']):
+                                                if recordData['merged'][i] in data[fid]['merged']:
+                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
                                                     data[fid]['merged'].insert(slot, pkg)
-                                                    slot = -1
                                                     break
+                                                i += 1
+                                print str(record.eid) + '15121'            
+                                print data[fid]['merged']
             progress.plus()
 
     def getReadClasses(self):
@@ -15214,7 +15141,8 @@ class NPCAIPackagePatcher(ImportPatcher):
             for record in getattr(modFile,type).getActiveRecords():
                 fid = mapper(record.fid)
                 if fid in data:
-                    if record.aiPackages != data[fid]['merged']:
+                    if list(record.aiPackages) != data[fid]['merged']:
+                        # Already Messed up by here!
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
@@ -15228,7 +15156,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                 fid = record.fid
                 if not fid in data: continue
                 changed = False
-                if record.aiPackages != data[fid]['merged']:
+                if list(record.aiPackages) != data[fid]['merged']:
                     record.aiPackages = data[fid]['merged']
                     changed = True
                 if changed:
@@ -19617,7 +19545,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if race.leftEye.modPath != raceData['leftEye'].modPath:
                     race.leftEye.modPath = raceData['leftEye'].modPath
                     raceChanged = True
-            #--Teeth/Mouth/head/description
+            #--Teeth/Mouth/head/ears/description
             for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
                 if key in raceData:
                     if getattr(race,key) != raceData[key]:
@@ -19637,9 +19565,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
                         raceChanged = True
-            #--Gender info (voice, body data)
+            #--Gender info (voice, gender specific body data)
             for gender in ('male','female'):
-                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('ears','Voice'))))
+                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('Ears','Voice'))))
                 bodyKeys = [gender+key for key in bodyKeys]
                 for key in bodyKeys:
                     if key in raceData:
