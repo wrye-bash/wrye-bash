@@ -15009,7 +15009,6 @@ class NPCAIPackagePatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.header.masters
-            print srcMod
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -15063,25 +15062,15 @@ class NPCAIPackagePatcher(ImportPatcher):
                                     # find the correct position to add and add.
                                     if pkg in data[fid]['deleted']: continue #previously deleted
                                     if index == 0:
-                                        #print 
-                                        print 'existing list' + str(data[fid]['merged'])
                                         data[fid]['merged'].insert(0,pkg) #insert as first item
-                                        print 'new first item:' + str(pkg)
-                                        print 'result' + str(data[fid]['merged'])
                                     elif index == (len(recordData['merged'])-1):
                                         data[fid]['merged'].append(pkg) #insert as last item
-                                        print record.eid
-                                        print 15066
-                                        print data[fid]['merged']
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
                                         i = index - 1
                                         while i >= 0:
                                             if recordData['merged'][i] in data[fid]['merged']:
                                                 slot = data[fid]['merged'].index(recordData['merged'][i])+1
-                                                print 'existing list' + str(data[fid]['merged'])
                                                 data[fid]['merged'].insert(slot, pkg)
-                                                print 'for record: %s, inserted pkg %s in slot #%d line 15083' % (record.eid,pkg,slot)
-                                                print 'result' + str(data[fid]['merged'])
                                                 break
                                             i -= 1
                                         else:
@@ -15090,12 +15079,10 @@ class NPCAIPackagePatcher(ImportPatcher):
                                                 if recordData['merged'][i] in data[fid]['merged']:
                                                     slot = data[fid]['merged'].index(recordData['merged'][i])
                                                     data[fid]['merged'].insert(slot, pkg)
-                                                    print 'for record: %s, inserted pkg %s in slot #%d line 15091/n' % (record.eid,pkg,slot)
                                                     break
                                                 i += 1
                                     continue # Done with this package
-                                elif index == data[fid]['merged'].index(pkg): continue #pkg same in both lists.
-                                elif (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(pkg)): continue #pkg same in both lists.
+                                elif index == data[fid]['merged'].index(pkg) or (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(pkg)): continue #pkg same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
                                     data[fid]['merged'].remove(pkg)
                                     if index == 0:
@@ -15118,8 +15105,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                                                     data[fid]['merged'].insert(slot, pkg)
                                                     break
                                                 i += 1
-                                print str(record.eid) + '15121'            
-                                print data[fid]['merged']
             progress.plus()
 
     def getReadClasses(self):
