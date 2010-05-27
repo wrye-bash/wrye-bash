@@ -14365,7 +14365,7 @@ class CellImporter(ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music','C.Maps')
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')#,'C.Maps')
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -14433,7 +14433,7 @@ class CellImporter(ImportPatcher):
                     if tempCellData[fid+('flags',)][flag] != cellBlock.cell.flags.__getattr__(flag):
                         cellData[fid+('flags',)][flag] = tempCellData[fid+('flags',)][flag]
         cellData = self.cellData
-        cellData['Maps'] = {}
+       # cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreCell,MreWrld)
         progress.setFull(len(self.sourceMods))
         cachedMasters = {}
@@ -14446,7 +14446,8 @@ class CellImporter(ImportPatcher):
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
             masters = srcInfo.header.masters
-            bashTags = srcInfo.getBashTags()
+            # bashTags = srcInfo.getBashTags()
+            # print bashTags
             try:
                 attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in bashTags if
                     bashKey in self.recAttrs)))
@@ -14456,13 +14457,13 @@ class CellImporter(ImportPatcher):
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
-            if 'WRLD' in srcFile.tops:
+            if 'WRLD' in srcFile.tops::
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
-                    if 'C.Maps' in bashTags:
-                        if worldBlock.world.mapPath:
-                            tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
+                   # if 'C.Maps' in bashTags:
+                   #     if worldBlock.world.mapPath:
+                   #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -14480,9 +14481,9 @@ class CellImporter(ImportPatcher):
                     for worldBlock in masterFile.WRLD.worldBlocks:
                         for cellBlock in worldBlock.cellBlocks:
                             checkMasterCellBlockData(cellBlock)
-                        if worldBlock.world.fid in tempCellData['Maps']:
-                            if worldBlock.world.mapPath != tempCellData['Maps'][worldBlock.world.fid]:
-                                cellData['Maps'][worldBlock.world.fid] = tempCellData['Maps'][worldBlock.world.fid]
+                        # if worldBlock.world.fid in tempCellData['Maps']:
+                            # if worldBlock.world.mapPath != tempCellData['Maps'][worldBlock.world.fid]:
+                                # cellData['Maps'][worldBlock.world.fid] = tempCellData['Maps'][worldBlock.world.fid]
             tempCellData = {}
             progress.plus()
 
@@ -14506,8 +14507,9 @@ class CellImporter(ImportPatcher):
                         patchWorlds.setWorld(worldBlock.world)
                         patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(
                             cellBlock.cell)
-                    if worldBlock.world.fid in cellData['Maps']:
-                        patchWorlds.setWorld(worldBlock.world)
+                # if worldBlock.world.fid in cellData['Maps']:
+                    # patchWorlds.setWorld(worldBlock.world)
+                    
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
         def handleCellBlock(cellBlock):
@@ -14537,10 +14539,13 @@ class CellImporter(ImportPatcher):
                 if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
                     count.increment(cellBlock.cell.fid[0])
                     keepWorld = True
-            if worldBlock.world.fid in cellData['Maps']:
-                if worldBlock.world.mapPath != cellData['Maps'][worldBlock.world.fid]:
-                    worldBlock.world.mapPath = cellData['Maps'][worldBlock.world.fid]
-                    keepWorld = True
+            # if worldBlock.world.fid in cellData['Maps']:
+                # if worldBlock.world.mapPath != cellData['Maps'][worldBlock.world.fid]:
+                    # print worldBlock.world.mapPath
+                    # worldBlock.world.mapPath = cellData['Maps'][worldBlock.world.fid]
+                    # print worldBlock.world.mapPath
+                    # worldBlock.world.setChanged()
+                    # keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
 
@@ -14548,7 +14553,7 @@ class CellImporter(ImportPatcher):
         log(_("=== Source Mods"))
         for mod in self.sourceMods:
             log("* " +mod.s)
-        log(_("\n=== Cells Patched"))
+        log(_("\n=== Cells/Worlds Patched"))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('* %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -14983,7 +14988,7 @@ class KFFZPatcher(ImportPatcher):
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _('Import Actors: AIPackages')
-    text = _("Import Actor AIPackage links from source mods. WARNING: Currently has bugs in package ordering so may not work as desired in many cases.")
+    text = _("Import Actor AIPackage links from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Actors.AIPackages'
@@ -15035,7 +15040,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
                         if list(record.aiPackages) == tempData[fid]:
-                            # if subrecord is identical to the most last master then we don't care about older masters.
+                            # if subrecord is identical to the last master then we don't care about older masters. - ei so no problem importing both OO.esm and OOO.esp
                             del tempData[fid]
                             continue
                         if fid in data:
@@ -15047,7 +15052,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                         if not fid in data:
                             data[fid] = recordData
                         else:
-                            # and here it gets even more ugly(!)
                             for pkg in recordData['deleted']:
                                 if pkg in data[fid]['merged']:
                                     data[fid]['merged'].remove(pkg)

@@ -2048,11 +2048,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 285 [12/12/2010] [PacificMorrowind]
 * Bashed Patch Changes:
   * Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
-  * Export/Import Config buttons added
-  * Save config button removed (due to bug it caused - use Export/Import instead)
-  * Actors.AIPackages totally refactored
+  * Export/Import Config buttons added.
+  * Save config button removed (due to bug it caused - use Export/Import instead).
+  * Actors.AIPackages totally refactored (as in it works properly now)
+  * R.Ears fixed
   * Misc Tweaks:
-    * fix (reported by Blade of Mercy) and improvement to All Clothes playable tweak 
+    * fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
+*
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
 * Incorrect italicization fixed.
