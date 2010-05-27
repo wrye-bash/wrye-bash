@@ -150,10 +150,10 @@ class InstallerWizard(wiz.Wizard):
         installer = link.data[path]
         bArchive = link.isSingleArchive()
         if bArchive:
-            installer.unpackToTemp(path, ['wizard.txt'])
-            self.wizard_file = installer.tempDir.join('wizard.txt')
+            installer.unpackToTemp(path, [installer.hasWizard])
+            self.wizard_file = installer.tempDir.join(installer.hasWizard)
         else:
-            self.wizard_file = link.data.dir.join(path.s, 'wizard.txt')
+            self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
         self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
 
         #Intercept the changing event so we can implement 'blockChange'        
@@ -720,7 +720,7 @@ class WryeParser(ScriptParser.Parser):
         return ret[0]
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
-        return cmp(wbHave, float(wbWant))
+        return cmp(float(wbHave), float(wbWant))
     def fnDataFileExists(self, filename):
         return bosh.dirs['mods'].join(filename).exists()
     def fnStr(self, data): return str(data)
@@ -912,7 +912,7 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion_OBGE(obgeWant)
         bOBGEOk = ret[0] >= 0
         obgeHave = ret[1]
-        bWBOk = wbHave >= float(wbWant)
+        bWBOk = float(wbHave) >= float(wbWant)
 
         if not bObOk or not bOBSEOk or not bOBGEOk:
             self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge, bWBOk, wbHave, wbWant)

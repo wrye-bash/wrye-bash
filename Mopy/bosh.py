@@ -9810,7 +9810,7 @@ class Installer(object):
             elif skipScreenshots and fileLower[:11] == 'screenshots':
                 continue
             elif fileLower == 'wizard.txt':
-                self.hasWizard = True
+                self.hasWizard = full
                 continue
             elif skipImages and fileExt in imageExts:
                 continue
