@@ -6311,14 +6311,14 @@ class Installer_EditWizard(InstallerLink):
         menuItem = wx.MenuItem(menu, self.id, _('Edit Wizard...'))
         menu.AppendItem(menuItem)
         if self.isSingleProject():
-            menuItem.Enable(self.data[self.selected[0]].hasWizard)
+            menuItem.Enable(self.data[self.selected[0]].hasWizard != False)
         else:
             menuItem.Enable(False)
 
     def Execute(self, event):
         path = self.selected[0]
         dir = self.data.dir
-        dir.join(path.s, 'wizard.txt').start()
+        dir.join(path.s, self.data[path].hasWizard).start()
 
      
 class Installer_Wizard(InstallerLink):
@@ -6339,7 +6339,7 @@ class Installer_Wizard(InstallerLink):
         menu.AppendItem(menuItem)
         if self.isSingle():
             installer = self.data[self.selected[0]]
-            menuItem.Enable(installer.hasWizard)
+            menuItem.Enable(installer.hasWizard != False)
         else:
             menuItem.Enable(False)
 
