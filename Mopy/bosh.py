@@ -20013,7 +20013,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
         spell = (GPath('Oblivion.esm'), 0x02B54E)
         keep = patchFile.getKeeper()
         for record in patchFile.CREA.records:
-            if not record.full: continue #for unnamed creatures else next if crashes.
+            if not record.full or not record.eid or not record.model.modPath: continue #for unnamed creatures else next if crashes.
             if 'boar' in record.full.lower() or 'boar' in record.model.modPath.lower() or 'boar' in record.eid.lower():
                 if spell not in record.spells:
                     record.spells.append(spell)
