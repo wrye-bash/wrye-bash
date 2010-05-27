@@ -14457,7 +14457,7 @@ class CellImporter(ImportPatcher):
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
-            if 'WRLD' in srcFile.tops::
+            if 'WRLD' in srcFile.tops:
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
@@ -14991,7 +14991,7 @@ class NPCAIPackagePatcher(ImportPatcher):
     text = _("Import Actor AIPackage links from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.AIPackages'
+    autoKey = ('Actors.AIPackages','Actors.AIPackagesForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15003,6 +15003,10 @@ class NPCAIPackagePatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get data from source files."""
+        OOOandUOP = False
+        if GPath("Oscuro's_Oblivion_Overhaul.esm") in self.srcMods or GPath("Oscuro's_Oblivion_Overhaul.esp") in self.srcMods:
+            if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
+                OOOandUOP = True
         longTypes = self.longTypes
         loadFactory = LoadFactory(False,MreCrea,MreNpc)
         progress.setFull(len(self.srcMods))
@@ -15014,6 +15018,7 @@ class NPCAIPackagePatcher(ImportPatcher):
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.header.masters
+            bashTags = srcInfo.getBashTags()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -15051,6 +15056,10 @@ class NPCAIPackagePatcher(ImportPatcher):
                                 recordData['deleted'].append(pkg)
                         if not fid in data:
                             data[fid] = recordData
+                            if OOOandUOP:
+                                for pkg in recordData['merged']:
+                                    if str(pkg) in [str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40671)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23922)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23921)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40669)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12893)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12894)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12895)),str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12892))]:
+                                        data[fid]['merged'].remove(pkg)
                         else:
                             for pkg in recordData['deleted']:
                                 if pkg in data[fid]['merged']:
@@ -15062,9 +15071,11 @@ class NPCAIPackagePatcher(ImportPatcher):
                                     data[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
+                                if OOOandUOP:
+                                    if str(pkg) in [str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40671)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23922)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23921)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40669)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12893)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12894)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12895)),str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12892))]: continue 
                                 if not pkg in data[fid]['merged']: # so needs to be added... 
                                     # find the correct position to add and add.
-                                    if pkg in data[fid]['deleted']: continue #previously deleted
+                                    if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
                                         data[fid]['merged'].insert(0,pkg) #insert as first item
                                     elif index == (len(recordData['merged'])-1):
@@ -15110,6 +15121,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                                                     break
                                                 i += 1
             progress.plus()
+            
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
