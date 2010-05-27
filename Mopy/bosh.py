@@ -14446,7 +14446,7 @@ class CellImporter(ImportPatcher):
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
             masters = srcInfo.header.masters
-            # bashTags = srcInfo.getBashTags()
+            bashTags = srcInfo.getBashTags()
             # print bashTags
             try:
                 attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in bashTags if
@@ -15164,8 +15164,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
-                if record.eid == 'HaulsRopesFaster':
-                    print record.aiPackages
         #--Log
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
