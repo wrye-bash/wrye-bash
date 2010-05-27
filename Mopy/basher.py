@@ -4766,7 +4766,6 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
-        self.gSaveConfig = button(self,id=wx.ID_SAVE,onClick=self.SaveConfig)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,onClick=self.RevertConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
@@ -4794,7 +4793,6 @@ class PatchDialog(wx.Dialog):
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (self.gSaveConfig,0,wx.LEFT,4),
                 (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
@@ -4819,7 +4817,7 @@ class PatchDialog(wx.Dialog):
     def SetOkEnable(self):
         """Sets enable state for Ok button."""
         for patcher in self.patchers:
-            if patcher.isEnabled:
+            if patcher.isEnabled:                
                 return self.gExecute.Enable(True)
         self.gExecute.Enable(False)
 
@@ -6729,11 +6727,12 @@ class Installer_OpenSearch(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         message = _("Open a search for this on Google?")
-        if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open at search')):
-            #fileName = bosh.reBaseName(self.selected[0].s).group(1)
+        if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open a search')):
+            fileName = self.selected[0].s
+            print fileName
             #filename = 'Wrye Bash'
-            filename = bosh.reSplitOnNonAlphaNumeric.split(self.selected[0].s)
-            print filename+len(filename)
+            filename = filename.strip('0123456789')
+            print filename+str(len(filename))
             os.startfile('http://www.google.com/search?hl=en&q='+filename+'aq=f&oq=&aqi=')
 
 class Installer_OpenTESA(InstallerLink):
