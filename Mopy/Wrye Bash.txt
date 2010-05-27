@@ -2051,9 +2051,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Export/Import Config buttons added.
   * Save config button removed (due to bug it caused - use Export/Import instead).
   * Actors.AIPackages totally refactored (as in it works properly now)
+    * Also removes the OOO duplicate version of UOP AI Package fixes if you are using both of them.
   * R.Ears fixed
   * Misc Tweaks:
     * fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
+  * Rebuilding doesn't complain about missing masters for the bash patch now (truly!)
 *
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
