@@ -15044,8 +15044,8 @@ class NPCAIPackagePatcher(ImportPatcher):
                     for record in masterFile.tops[block.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
-                        if list(record.aiPackages) == tempData[fid]:
-                            # if subrecord is identical to the last master then we don't care about older masters. - ei so no problem importing both OO.esm and OOO.esp
+                        if record.aiPackages == tempData[fid] and not 'Actors.AIPackagesForceAdd' in bashTags:
+                            # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
                         if fid in data:
@@ -15056,10 +15056,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                                 recordData['deleted'].append(pkg)
                         if not fid in data:
                             data[fid] = recordData
-                            if OOOandUOP:
-                                for pkg in recordData['merged']:
-                                    if str(pkg) in [str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40671)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23922)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23921)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40669)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12893)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12894)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12895)),str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12892))]:
-                                        data[fid]['merged'].remove(pkg)
                         else:
                             for pkg in recordData['deleted']:
                                 if pkg in data[fid]['merged']:
@@ -15067,13 +15063,11 @@ class NPCAIPackagePatcher(ImportPatcher):
                                 data[fid]['deleted'].append(pkg)
                             if data[fid]['merged'] == []:
                                 for pkg in recordData['merged']:
-                                    if pkg in data[fid]['deleted']: continue
+                                    if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue
                                     data[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if OOOandUOP:
-                                    if str(pkg) in [str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40671)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23922)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 23921)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 40669)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12893)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12894)), str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12895)),str((bolt.Path("Oscuro's_Oblivion_Overhaul.esm"), 12892))]: continue 
-                                if not pkg in data[fid]['merged']: # so needs to be added... 
+                                if not pkg in data[fid]['merged']: # so needs to be added... (unless deleted that is) 
                                     # find the correct position to add and add.
                                     if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
@@ -15120,6 +15114,12 @@ class NPCAIPackagePatcher(ImportPatcher):
                                                     data[fid]['merged'].insert(slot, pkg)
                                                     break
                                                 i += 1
+                        if OOOandUOP:
+                            for pkg in recordData['merged']:
+                                if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
+                                    if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
+                                        if pkg in data[fid]['merged']:
+                                            data[fid]['merged'].remove(pkg)
             progress.plus()
             
 
@@ -15164,6 +15164,8 @@ class NPCAIPackagePatcher(ImportPatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
+                if record.eid == 'HaulsRopesFaster':
+                    print record.aiPackages
         #--Log
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
