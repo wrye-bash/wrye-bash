@@ -392,6 +392,19 @@ def askText(parent,message,title='',default=''):
         value = dialog.GetValue()
         dialog.Destroy()
         return value
+        
+#------------------------------------------------------------------------------
+def askNumber(parent,message,prompt='',title='',value=0,min=0,max=10000):
+    """Shows a text entry dialog and returns result or None if canceled."""
+    dialog = wx.NumberEntryDialog(parent,message,prompt,title,value,min,max)
+    if dialog.ShowModal() != wx.ID_OK:
+        dialog.Destroy()
+        return None
+
+    else:
+        value = dialog.GetValue()
+        dialog.Destroy()
+        return value
 
 # Message Dialogs -------------------------------------------------------------
 def askStyled(parent,message,title,style):
