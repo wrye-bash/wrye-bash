@@ -9984,7 +9984,26 @@ class Save_EditPCSpells(Link):
         dialog = balt.ListEditor(self.window,-1,_('Player Spells'),data)
         dialog.ShowModal()
         dialog.Destroy()
+        
+#------------------------------------------------------------------------------
+class Save_EditCreatedEnchantmentCosts(Link):
+    """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
+    def AppendToMenu(self,menu,window,data):
+        """Append to menu."""
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Set Cost for Weapon Enchantments...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) == 1)
 
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = self.window.data[fileName]
+        dialog = balt.askNumber(self.window,_('Enter the number of uses you desire per recharge for all custom made enchantements.\n(Enter 0 for unlimited uses)'),prompt='Uses',title='Number of Uses',value=50,min=0,max=10000)
+        if not dialog: return
+        self.Enchantments = bosh.SaveEnchantments(fileInfo)
+        self.Enchantments.load()
+        self.Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
+        
 #------------------------------------------------------------------------------
 class Save_Move:
     """Moves or copies selected files to alternate profile."""
@@ -11939,6 +11958,7 @@ def InitSaveLinks():
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_EditPCSpells())
+    SaveList.itemMenu.append(Save_EditCreatedEnchantmentCosts())
     SaveList.itemMenu.append(Save_ImportFace())
     SaveList.itemMenu.append(Save_EditCreated('ENCH'))
     SaveList.itemMenu.append(Save_EditCreated('ALCH'))

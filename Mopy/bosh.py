@@ -11515,6 +11515,7 @@ class ActorFactions:
                 if record.factions:
                     id_eid[longid] = record.eid
                     id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
+                    
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
@@ -13781,6 +13782,58 @@ class SaveSpells:
             npc.spells = [iref for iref in npc.spells if iref not in spellsToRemove]
             self.saveFile.setRecord(npc.getTuple(fid,version))
             self.saveFile.safeSave()
+
+#------------------------------------------------------------------------------
+class SaveEnchantments:
+    """Player enchantments of a savegame."""
+
+    def __init__(self,saveInfo):
+        """Initialize."""
+        self.saveInfo = saveInfo
+        self.saveFile = None
+        self.createdEnchantments = []
+
+    def load(self,progress=None):
+        """Loads savegame and and extracts created enchantments from it."""
+        progress = progress or bolt.Progress()
+        saveFile = self.saveFile = SaveFile(self.saveInfo)
+        saveFile.load(SubProgress(progress,0,0.4))
+        #--Extract created enchantments
+        createdEnchantments = self.createdEnchantments
+        saveName = self.saveInfo.name
+        progress(progress.full-1,saveName.s)
+        for index,record in enumerate(saveFile.created):
+            if record.recType == 'ENCH':
+                record = record.getTypeCopy()
+                record.getSize() #--Since type copy makes it changed.
+                saveFile.created[index] = record
+                self.createdEnchantments.append((index,record))
+            # elif record.recType in recordTypes:
+                # record = record.getTypeCopy()
+                # if not record.full: continue
+                
+                # if record.full not in data: data[record.full] = (record.full,[])
+                # data[record.full][1].append(record)
+        # for record in saveFile.created:
+            # if record.recType == 'ENCH':
+                # createdEnchantments[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
+
+    def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
+        """Sets Cast When Used Enchantment number of uses (via editing the enchat cost)."""
+        count = 0
+        for (index, record) in self.createdEnchantments:
+            if record.itemType in [1,2]:
+                if uses == 0:
+                    if record.enchantCost == 0: continue 
+                    record.enchantCost = 0
+                else:
+                    if record.enchantCost == max(record.chargeAmount/uses,1): continue
+                    record.enchantCost = max(record.chargeAmount/uses,1)
+                record.setChanged()
+                record.getSize()
+                count += 1
+        self.saveFile.safeSave()
+
 
 # Patchers 1 ------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -16877,6 +16930,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         patchRecords = patchFile.NPC_
         for record in modFile.NPC_.getActiveRecords():
             record = record.getTypeCopy(mapper)
+            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
             model = record.model.modPath
             if model.lower() == r'characters\_male\skeleton.nif':
                 patchRecords.setRecord(record)
@@ -16886,6 +16940,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
+            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
             record.model.modPath = "Characters\_Male\SkeletonBeast.nif"
             keep(record.fid)
             srcMod = record.fid[0]
@@ -19861,6 +19916,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
+            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
             model = record.model.modPath
             if model.lower() == r'characters\_male\skeletonsesheogorath.nif':
                 record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
