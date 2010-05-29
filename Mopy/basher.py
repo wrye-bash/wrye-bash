@@ -9991,7 +9991,7 @@ class Save_EditCreatedEnchantmentCosts(Link):
     def AppendToMenu(self,menu,window,data):
         """Append to menu."""
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Set Cost for Weapon Enchantments...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Set Number of Uses for Weapon Enchantments...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(data) == 1)
 
