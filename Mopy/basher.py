@@ -953,9 +953,9 @@ class MasterList(List):
         pass #--Don't do column head sort.
 
     #--Column Menu
-    def DoColumnMenu(self,event):
+    def DoColumnMenu(self,event,column=None):
         if not self.fileInfo: return
-        List.DoColumnMenu(self,event)
+        List.DoColumnMenu(self,event,column)
 
     #--Item Menu
     def DoItemMenu(self,event):
