@@ -1786,6 +1786,9 @@ These are the commands found on context menu for saves...
 === Import NPC Levels
 * **Deprecated.** Use [[#|Update NPC Levels]] instead. 
 
+=== Set Number of Uses for Weapon Enchantments
+* This allows you to set the number of uses for any cast when used enchantments you have created in-game.
+
 === Rename Enchanted
 * This allows you to rename any enchanted items that you have created in-game.
 
@@ -2056,7 +2059,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Misc Tweaks:
     * fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
   * Rebuilding doesn't complain about missing masters for the bash patch now (truly!)
-*
+* New Save Game Tweaker: Set Number of Uses for Weapon Enchantments
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
 * Incorrect italicization fixed.

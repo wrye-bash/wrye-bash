@@ -13808,15 +13808,6 @@ class SaveEnchantments:
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record
                 self.createdEnchantments.append((index,record))
-            # elif record.recType in recordTypes:
-                # record = record.getTypeCopy()
-                # if not record.full: continue
-                
-                # if record.full not in data: data[record.full] = (record.full,[])
-                # data[record.full][1].append(record)
-        # for record in saveFile.created:
-            # if record.recType == 'ENCH':
-                # createdEnchantments[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
 
     def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
         """Sets Cast When Used Enchantment number of uses (via editing the enchat cost)."""
