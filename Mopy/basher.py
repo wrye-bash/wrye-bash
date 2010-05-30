@@ -2490,7 +2490,7 @@ class InstallersPanel(SashTankPanel):
         self.espms = []
         self.gEspmList = wx.CheckListBox(right,-1)
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+       ## self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu) #since can't get this to work, commenting it out for now.
         #--Comments
         self.gComments = wx.TextCtrl(right,-1,style=wx.TE_MULTILINE)
         #--Events
@@ -2739,13 +2739,13 @@ class InstallersPanel(SashTankPanel):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.data)
-        subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
+     #   subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
      #   espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
-        self.gList.RefreshUI(self.detailsItem)
+     #   self.gList.RefreshUI(self.detailsItem)
      #   self.gEspmList.ScrollLines(-len(self.espms))
-        self.gSubList.ScrollLines(-self.gSubList.GetCount())
+     #   self.gSubList.ScrollLines(-self.gSubList.GetCount())
      #   self.gEspmList.ScrollLines(espmScrollPos)
-        self.gSubList.ScrollLines(subScrollPos)
+     #   self.gSubList.ScrollLines(subScrollPos)
      #   self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
      #   self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
 
@@ -2754,6 +2754,8 @@ class InstallersPanel(SashTankPanel):
         installer = self.data[self.detailsItem]
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
+        index = event.GetSelection()
+        self.gSubList.SetSelection(index) 
         self.refreshCurrent(installer)
         
     def SelectionMenu(self,event):
@@ -2768,8 +2770,6 @@ class InstallersPanel(SashTankPanel):
         #--Show/Destroy Menu
         self.gEspmList.PopupMenu(menu)
         menu.Destroy()
-        balt.setCheckListItems(self.gEspmList, [x.s for x in self.espms],
-            [x not in self.data[self.detailsItem].espmNots for x in self.espms])
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
@@ -6851,8 +6851,14 @@ class Installer_Espm_SelectAll(InstallerLink):
         """Handle selection."""
         espmNots = self.data.data[self.data.detailsItem].espmNots
         espmNots = set()
-        #for espm in self.data.espms):
-        #    espmNots.discard(espm)
+        newchecked = []
+        for i in range(len(self.data.espms)):
+            newchecked.append(i)
+        print newchecked
+        self.data.gEspmList.SetChecked(newchecked)
+        print str(self.data.gEspmList.IsChecked(0))+'6856'
+        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])
+        print str(self.data.gEspmList.IsChecked(0))+'6859'
 
 class Installer_Espm_DeselectAll(InstallerLink):
     """Select All Esp/ms in instalelr for installation."""
@@ -6863,10 +6869,12 @@ class Installer_Espm_DeselectAll(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        espmNots = self.data.data[self.data.detailsItem].espmNots
-        espmNots = set(espm for espm in self.data.espms)
-       # for espm in self.data.espms:
-       #     espmNots.add(espm)        
+        self.data.data[self.data.detailsItem].espmNots
+        espmNots = set(self.data.espms)
+        print self.data.gEspmList.IsChecked(0)
+        self.data.gEspmList.SetChecked([])
+        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])    
+        print self.data.gEspmList.IsChecked(0)        
 
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -9069,7 +9077,7 @@ class Mod_Patch_Update(Link):
                 bosh.modInfos.unselect(mod,False)
             bosh.modInfos.refreshInfoLists()
             bosh.modInfos.plugins.save()
-        message = balt.fill(_("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in noMerge),),80)
+        message = balt.fill(_("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s\n\nDeactivate those mods now?") % ('\n* '.join(x.s for x in noMerge),),80)
         if noMerge and balt.askYes(self.window,message,_("Deactivate 'NoMerge' tagged Mods")):
             for mod in noMerge:
                 bosh.modInfos.unselect(mod,False)
