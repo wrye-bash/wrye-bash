@@ -1933,6 +1933,22 @@ class MreHasEffects:
                 actorValue = 0
             effectsAppend((mgef,actorValue))
         return effects
+        
+    def getSpellSchool(self,mgef_school=bush.mgef_school):
+        """Returns the school based on the highest cost spell efect."""
+        spellSchool = [0,0]
+        for effect in self.effects:
+            school = mgef_school[effect.name]
+            effectValue = bush.mgef_basevalue[effect.name]
+            if effect.magnitude:
+                effectValue *=  effect.magnitude
+            if effect.area:
+                effectValue *=  (effect.area/10)
+            if effect.duration:
+                effectValue *=  effect.duration
+            if spellSchool[0] < effectValue: 
+                spellSchool = [effectValue,school]        
+        return spellSchool[1]
 
     def getEffectsSummary(self,mgef_school=None,mgef_name=None):
         """Return a text description of magic effects."""
@@ -1943,7 +1959,7 @@ class MreHasEffects:
         aValues = bush.actorValues
         buffWrite = buff.write
         if self.effects:
-            school = mgef_school[self.effects[0].name]
+            school = self.getSpellSchool(mgef_school)
             buffWrite(bush.actorValues[20+school] + '\n')
         for index,effect in enumerate(self.effects):
             if effect.scriptEffect:

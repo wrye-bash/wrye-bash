@@ -2490,6 +2490,7 @@ class InstallersPanel(SashTankPanel):
         self.espms = []
         self.gEspmList = wx.CheckListBox(right,-1)
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
         self.gComments = wx.TextCtrl(right,-1,style=wx.TE_MULTILINE)
         #--Events
@@ -2739,10 +2740,14 @@ class InstallersPanel(SashTankPanel):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.data)
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
+     #   espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         self.gList.RefreshUI(self.detailsItem)
+     #   self.gEspmList.ScrollLines(-len(self.espms))
+        self.gSubList.ScrollLines(-self.gSubList.GetCount())
+     #   self.gEspmList.ScrollLines(espmScrollPos)
         self.gSubList.ScrollLines(subScrollPos)
-        self.gEspmList.ScrollLines(espmScrollPos)
+     #   self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
+     #   self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
@@ -2750,16 +2755,33 @@ class InstallersPanel(SashTankPanel):
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
         self.refreshCurrent(installer)
+        
+    def SelectionMenu(self,event):
+        """Handle right click in espm list."""
+        #--Build Menu
+        self.espmlinks = Links()
+        self.espmlinks.append(Installer_Espm_DeselectAll())
+        self.espmlinks.append(Installer_Espm_SelectAll())
+        menu = wx.Menu()
+        for link in self.espmlinks:
+            link.AppendToMenu(menu,self,self)
+        #--Show/Destroy Menu
+        self.gEspmList.PopupMenu(menu)
+        menu.Destroy()
+        balt.setCheckListItems(self.gEspmList, [x.s for x in self.espms],
+            [x not in self.data[self.detailsItem].espmNots for x in self.espms])
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
         installer = self.data[self.detailsItem]
         espmNots = installer.espmNots
-        for index,espm in enumerate(self.espms):
-            if self.gEspmList.IsChecked(index):
-                espmNots.discard(espm)
-            else:
-                espmNots.add(espm)
+        index = event.GetSelection()
+        espm = GPath(self.gEspmList.GetString(index))
+        if self.gEspmList.IsChecked(index):
+            espmNots.discard(espm)
+        else:
+            espmNots.add(espm)
+        self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
         self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
@@ -6814,6 +6836,37 @@ class Installer_Uninstall(InstallerLink):
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
+
+# InstallerDetails Links ------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class Installer_Espm_SelectAll(InstallerLink):
+    """Select All Esp/ms in installer for installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Select All'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle selection."""
+        espmNots = self.data.data[self.data.detailsItem].espmNots
+        espmNots = set()
+        #for espm in self.data.espms):
+        #    espmNots.discard(espm)
+
+class Installer_Espm_DeselectAll(InstallerLink):
+    """Select All Esp/ms in instalelr for installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Deselect All'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle selection."""
+        espmNots = self.data.data[self.data.detailsItem].espmNots
+        espmNots = set(espm for espm in self.data.espms)
+       # for espm in self.data.espms:
+       #     espmNots.add(espm)        
 
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
