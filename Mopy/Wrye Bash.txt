@@ -2059,10 +2059,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Misc Tweaks:
     * fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
   * Rebuilding doesn't complain about missing masters for the bash patch now (truly!)
+  * NoMerge tag warning text updated to be clearer (as suggested by Sartivarg)
 * New Save Game Tweaker: Set Number of Uses for Weapon Enchantments.
 * BAIN Changes:
   * fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position
-  * Select All/Deselect All right click options for esp/m list. (not yet working but commited anyways -- fixing it shortly)
+  * above fix also applied to subpackages list.
 * Magic Effect school for Spells/enchantments with more than one effect based on highest cost not first effect (so inline with in game values)
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
