@@ -70,7 +70,6 @@ defId = -1
 defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
-currentWindow = None
 
 wxListAligns = {
     'LEFT':   wx.LIST_FORMAT_LEFT,
