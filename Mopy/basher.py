@@ -5409,6 +5409,11 @@ class TweakPatcher(Patcher):
         for index,label in enumerate(choiceLabels):
             if label == '----':
                 menu.AppendSeparator()
+            elif label == 'Custom':
+                menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
+                menu.AppendItem(menuItem)
+                if index == chosen: menuItem.Check()
+                wx.EVT_MENU(self.gList,index,self.OnTweakCustomChoice)
             else:
                 menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
@@ -5423,6 +5428,16 @@ class TweakPatcher(Patcher):
         tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = event.GetId()
         self.gList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
+        
+    def OnTweakCustomChoice(self,event):
+        """Handle choice menu selection."""
+        tweakIndex = self.rightClickTweakIndex
+        index = event.GetId()
+        self.tweaks[tweakIndex].chosen = index
+        value = balt.askNumber(self.gConfigPanel,_('Enter the desired custom tweak value'),prompt=_('Value'),title=_('Custom Tweak Value'),value=0,min=0,max=10000)
+        if not value: value = 0
+        self.tweaks[tweakIndex].choiceValues[index] = (value,)
+        self.gList.SetString(tweakIndex,(self.tweaks[tweakIndex].getListLabel()+' %d ' % value))
 
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):

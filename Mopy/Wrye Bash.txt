@@ -2063,6 +2063,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * suggestion to deactivate and merge mergeable mods added to rebuild patch checks.
   * NoMerge/Mergeable/Deactivate/Filter warnings/questions merged into one scrollable and much more legible text warning/question window.
   * Patch Dialogue now has an icon assigned (the Wrye Monkey Icon).
+  * For tweaks with options that take numbers as value (ie tweak settings) new 'Custom' entry option; enter your own number. (currently not saved between rebuilds, so each rebuild you have to enter your chosen number for any custom ones)
 * New Save Game Tweaker: Set Number of Uses for Weapon Enchantments.
 * BAIN Changes:
   * fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position.
