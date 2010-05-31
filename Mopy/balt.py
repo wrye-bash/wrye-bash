@@ -70,6 +70,7 @@ defId = -1
 defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
+currentWindow = None
 
 wxListAligns = {
     'LEFT':   wx.LIST_FORMAT_LEFT,
@@ -462,8 +463,26 @@ def showLogClose(evt=None):
         _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
+    
+def showQuestionLogCloseYes(Event,window):
+    """Handle log message closing."""
+    if window:
+        if not window.IsIconized() and not window.IsMaximized():
+            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
+            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+        window.Destroy()
+    bosh.question = True
+    
+def showQuestionLogCloseNo(Event,window):
+    """Handle log message closing."""
+    if window:
+        if not window.IsIconized() and not window.IsMaximized():
+            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
+            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+        window.Destroy()
+    bosh.question = False
 
-def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=None,size=True):
+def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=None,size=True,question=False):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -489,22 +508,40 @@ def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=
         #fixedStyle.SetFlags(0x4|0x80)
         fixedStyle.SetFont(fixedFont)
         textCtrl.SetStyle(0,textCtrl.GetLastPosition(),fixedStyle)
-    #--Buttons
-    gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
-    gOkButton.SetDefault()
-    #--Layout
-    window.SetSizer(
-        vSizer(
-            (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-            (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+    if question:
+        bosh.question = False
+        #--Buttons
+        gYesButton = button(window,id=wx.ID_YES)
+        gYesButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseYes(evt, temp) )
+        gYesButton.SetDefault()
+        gNoButton = button(window,id=wx.ID_NO)
+        gNoButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseNo(evt, temp) )
+        #--Layout
+        window.SetSizer(
+            vSizer(
+                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                hSizer((gYesButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+                    (gNoButton,0,wx.ALIGN_RIGHT|wx.ALL,4))
+                )
             )
-        )
+    else:
+        #--Buttons
+        gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
+        gOkButton.SetDefault()
+        #--Layout
+        window.SetSizer(
+            vSizer(
+                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+                )
+            )
     #--Show
     if asDialog:
         window.ShowModal()
         window.Destroy()
     else:
         window.Show()
+    return bosh.question
 
 #------------------------------------------------------------------------------
 def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
