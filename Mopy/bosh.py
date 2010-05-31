@@ -16455,7 +16455,6 @@ class SoundPatcher(ImportPatcher):
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
             for recClass,recAttrs in recAttrs_class.iteritems():
-                print [attr for attr in recAttrs]
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
