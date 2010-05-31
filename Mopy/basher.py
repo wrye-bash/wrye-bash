@@ -9078,11 +9078,16 @@ class Mod_Patch_Update(Link):
         """Handle activation event."""
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
+        if not bosh.modInfos.ordered:
+            balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
+            return
+        bosh.PatchFile.patchTime = fileInfo.mtime
         message = ""
-        unfiltered = [x for x in bosh.modInfos.ordered if 'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in bosh.modInfos.ordered if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-        noMerge = [x for x in bosh.modInfos.ordered if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-        deactivate = [x for x in bosh.modInfos.ordered if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
+        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
+        unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in ActivePriortoPatch if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
+        noMerge = [x for x in ActivePriortoPatch if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
+        deactivate = [x for x in ActivePriortoPatch if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
         if deactivate: message += _("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s") % ('\n* '.join(x.s for x in deactivate)) + '\n\n'
         if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
         if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
@@ -9126,10 +9131,6 @@ class Mod_Patch_Update(Link):
             warning = balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
             if not warning:
                 return
-        if not bosh.modInfos.ordered:
-            balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
-            return
-        bosh.PatchFile.patchTime = fileInfo.mtime
         patchDialog = PatchDialog(self.window,fileInfo)
         patchDialog.ShowModal()
         self.window.RefreshUI(detail=fileName)
