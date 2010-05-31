@@ -9081,6 +9081,9 @@ class Mod_Patch_Update(Link):
                 if unfiltered:
                     for mod in unfiltered:
                         bosh.modInfos.unselect(mod,False)
+                if merge:
+                    for mod in merge:
+                        bosh.modInfos.unselect(mod,False)
                 if noMerge:
                     for mod in noMerge:
                         bosh.modInfos.unselect(mod,False)
