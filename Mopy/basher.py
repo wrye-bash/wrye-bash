@@ -9062,27 +9062,32 @@ class Mod_Patch_Update(Link):
         """Handle activation event."""
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
+        message = ""
         unfiltered = [x for x in bosh.modInfos.ordered if 'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in bosh.modInfos.ordered if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
         noMerge = [x for x in bosh.modInfos.ordered if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-        deactivate = [x for x in bosh.modInfos.ordered if 'Deactivate' in bosh.modInfos[x].getBashTags()]
-        message = balt.fill(_("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in unfiltered),),80)
-        if unfiltered and balt.askYes(self.window,message,_("Deactivate Filter Mods")):
-            for mod in unfiltered:
-                bosh.modInfos.unselect(mod,False)
-            bosh.modInfos.refreshInfoLists()
-            bosh.modInfos.plugins.save()
-        message = balt.fill(_("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s\n\nDeactivate the mods now?") % ('\n* '.join(x.s for x in deactivate),),80)
-        if deactivate and balt.askYes(self.window,message,_("Deactivate 'Deactivate' tagged Mods")):
-            for mod in deactivate:
-                bosh.modInfos.unselect(mod,False)
-            bosh.modInfos.refreshInfoLists()
-            bosh.modInfos.plugins.save()
-        message = balt.fill(_("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s\n\nDeactivate those mods now?") % ('\n* '.join(x.s for x in noMerge),),80)
-        if noMerge and balt.askYes(self.window,message,_("Deactivate 'NoMerge' tagged Mods")):
-            for mod in noMerge:
-                bosh.modInfos.unselect(mod,False)
-            bosh.modInfos.refreshInfoLists()
-            bosh.modInfos.plugins.save()
+        deactivate = [x for x in bosh.modInfos.ordered if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
+        if deactivate: message += _("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s") % ('\n* '.join(x.s for x in deactivate)) + '\n\n'
+        if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
+        if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
+        if noMerge: message += _("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s") % ('\n* '.join(x.s for x in noMerge)) + '\n\n'
+        if message:
+            message += 'Automatically deactivate those mods now?'
+            if balt.showLog(self.window,message,_('Deactivate Suggested Mods?'),icons=bashBlue,question=True):
+                wx.BeginBusyCursor()              
+                if deactivate:
+                    for mod in deactivate:
+                        bosh.modInfos.unselect(mod,False)
+                if unfiltered:
+                    for mod in unfiltered:
+                        bosh.modInfos.unselect(mod,False)
+                if noMerge:
+                    for mod in noMerge:
+                        bosh.modInfos.unselect(mod,False)
+                bosh.modInfos.refreshInfoLists()
+                bosh.modInfos.plugins.save()
+                self.window.RefreshUI(detail=fileName)
+                wx.EndBusyCursor() 
         previousMods = set()
         text = ''
         for mod in bosh.modInfos.ordered:
