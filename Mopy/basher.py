@@ -4569,8 +4569,8 @@ class BashApp(wx.App):
     def InitResources(self):
         """Init application resources."""
         global bashBlue, bashRed, bashDocBrowser
+        bashBlue = bashBlue.GetIconBundle
         bashRed = bashRed.GetIconBundle()
-        bashBlue = bashBlue.GetIconBundle()
         bashDocBrowser = bashDocBrowser.GetIconBundle()
 
     def InitData(self,progress):
@@ -4828,6 +4828,7 @@ class PatchDialog(wx.Dialog):
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
+        self.SetIcon(Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG).GetIcon())
         #--Patcher panels
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
@@ -11211,6 +11212,9 @@ def InitImages():
     images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
     images['bash.16.blue'] = Image(r'images/bash_16_blue.png',wx.BITMAP_TYPE_PNG)
     images['bash.32.blue'] = Image(r'images/bash_32_blue.png',wx.BITMAP_TYPE_PNG)
+    #--Bash Patch Dialogue
+   # images['monkey.16'] = Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG)
+  #  images['monkey.32'] = Image(r'images/wryemonkey32.jpg',wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
     images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)

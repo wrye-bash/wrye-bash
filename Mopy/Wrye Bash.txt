@@ -2053,20 +2053,21 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
   * Export/Import Config buttons added.
   * Save config button removed (due to bug it caused - use Export/Import instead).
-  * Actors.AIPackages totally refactored (as in it works properly now)
+  * Actors.AIPackages totally refactored (as in it works properly now).
     * Also removes the OOO duplicate version of UOP AI Package fixes if you are using both of them (except for one on HaulsHisRopes but that shouldn't cause any problems).
-  * R.Ears fixed
+  * R.Ears fixed.
   * Misc Tweaks:
     * fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
-  * Rebuilding doesn't complain about missing masters for the bash patch now (truly!)
-  * NoMerge tag warning text updated to be clearer (contributed by Sartivarg)
-  * suggestion to deactivate and merge mergeable mods added to rebuild patch checks
-  * NoMerge/Mergeable/Deactivate/Filter warnings merged into one scrollable and much more legible text warning window
+  * Rebuilding doesn't complain about missing masters for the bash patch now (truly!).
+  * NoMerge tag warning text updated to be clearer (contributed by Sartivarg).
+  * suggestion to deactivate and merge mergeable mods added to rebuild patch checks.
+  * NoMerge/Mergeable/Deactivate/Filter warnings/questions merged into one scrollable and much more legible text warning/question window.
+  * Patch Dialogue now has an icon assigned (the Wrye Monkey Icon).
 * New Save Game Tweaker: Set Number of Uses for Weapon Enchantments.
 * BAIN Changes:
-  * fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position
+  * fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position.
   * above fix also applied to subpackages list.
-* Magic Effect school for Spells/enchantments with more than one effect based on highest cost not first effect (so inline with in game values)
+* Magic Effect school for Spells/enchantments with more than one effect based on highest cost not first effect (so inline with in game values).
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
 * Incorrect italicization fixed.
