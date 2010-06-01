@@ -171,6 +171,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#DeleteSpells">Delete Spells</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportFace">Import Face</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportNPCLevels">Import NPC Levels</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#SetNumberofUsesforWeaponEnchantments">Set Number of Uses for Weapon Enchantments</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#RenameEnchanted">Rename Enchanted</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#RenamePotions">Rename Potions</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#RenameSpells">Rename Spells</a></p>
@@ -1978,6 +1979,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a name='ImportNPCLevels'>Import NPC Levels</a></h3>
 <p class=list-1>&bull;&nbsp; <B><I>Deprecated.</I></B> Use <a href="#UpdateNPCLevels">Update NPC Levels</a> instead. 
 <p class=empty>&nbsp;</p>
+<h3><a name='SetNumberofUsesforWeaponEnchantments'>Set Number of Uses for Weapon Enchantments</a></h3>
+<p class=list-1>&bull;&nbsp; This allows you to set the number of uses for any cast when used enchantments you have created in-game.
+<p class=empty>&nbsp;</p>
 <h3><a name='RenameEnchanted'>Rename Enchanted</a></h3>
 <p class=list-1>&bull;&nbsp; This allows you to rename any enchanted items that you have created in-game.
 <p class=empty>&nbsp;</p>
@@ -2235,6 +2239,36 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=empty>&nbsp;</p>
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
+  <p class=empty>&nbsp;</p>
+<h3><a name='28512122010LojackMetallicowPacificMorrowindWaruddar'>285 [12/12/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]</a></h3>
+<p class=list-1>&bull;&nbsp; Bashed Patch Changes:
+  <p class=list-2>&bull;&nbsp; Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
+  <p class=list-2>&bull;&nbsp; Export/Import Config buttons added.
+  <p class=list-2>&bull;&nbsp; Save config button removed (due to bug it caused - use Export/Import instead).
+  <p class=list-2>&bull;&nbsp; Actors.AIPackages totally refactored (as in it works properly now).
+    <p class=list-3>&bull;&nbsp; Also removes the OOO duplicate version of UOP AI Package fixes if you are using both of them (except for one on HaulsHisRopes but that shouldn't cause any problems).
+  <p class=list-2>&bull;&nbsp; R.Ears fixed.
+  <p class=list-2>&bull;&nbsp; Misc Tweaks:
+    <p class=list-3>&bull;&nbsp; fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
+  <p class=list-2>&bull;&nbsp; Rebuilding doesn't complain about missing masters for the bash patch now (truly!).
+  <p class=list-2>&bull;&nbsp; NoMerge tag warning text updated to be clearer (contributed by Sartivarg).
+  <p class=list-2>&bull;&nbsp; suggestion to deactivate and merge mergeable mods added to rebuild patch checks.
+  <p class=list-2>&bull;&nbsp; NoMerge/Mergeable/Deactivate/Filter warnings/questions merged into one scrollable and much more legible text warning/question window.
+  <p class=list-2>&bull;&nbsp; Patch Dialogue now has an icon assigned (the Wrye Monkey Icon).
+  <p class=list-2>&bull;&nbsp; For tweaks with options that take numbers as value (ie tweak settings) new 'Custom' entry option; select custom and enter your own number in the prompt following any directions there.
+<p class=list-1>&bull;&nbsp; New Save Game Tweaker: Set Number of Uses for Weapon Enchantments.
+<p class=list-1>&bull;&nbsp; BAIN Changes:
+  <p class=list-2>&bull;&nbsp; fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position.
+  <p class=list-2>&bull;&nbsp; above fix also applied to subpackages list.
+  <p class=list-2>&bull;&nbsp; Wizards changes:
+    <p class=list-3>&bull;&nbsp; DataFileExists properly documents
+    <p class=list-3>&bull;&nbsp; newline error fixed in textboxes
+<p class=list-1>&bull;&nbsp; Magic Effect school for Spells/enchantments with more than one effect based on highest cost not first effect (so inline with in game values).
+<p class=list-1>&bull;&nbsp; Bash.ini typos fixed, prettied and sorted a bit better (contributed by Metallicow)
+<p class=list-1>&bull;&nbsp; Start of the CBash implementation into Wrye Bash:
+  <p class=list-2>&bull;&nbsp; CBash.dll included as Rename_CBash.dll; it will only be used if renamed to just 'CBash.dll'
+  <p class=list-2>&bull;&nbsp; Bunch of Import/Export functions modifed to use that if available: EditorID, Names, Npclevels, Scripts (though leaves a whole lot of backup files on import).
+  <p class=empty>&nbsp;</p>
   <p class=empty>&nbsp;</p>
 <h3><a name='28424052010LojackMetallicowPacificMorrowindThreeDValda68kWaruddar'>284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Incorrect italicization fixed.
