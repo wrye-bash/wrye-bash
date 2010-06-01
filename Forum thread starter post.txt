@@ -2,7 +2,7 @@ Download: [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] 
 Readme: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (at time a fair bit outdated... most up to date readme in the download - the file named Wrye Bash.html in the mopy folder)
 Wrye Bash Wiki: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 Screenshots: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-Previous Topic: [url=http://forums.bethsoft.com/index.php?/topic/1092258-relz-wrye-bash-thread-no-42/][RELZ] Wrye Bash #42[/url]
+Previous Topic: [url=http://forums.bethsoft.com/index.php?/topic/1094021-relz-wrye-bash-thread-43/][RELZ] Wrye Bash #43[/url]
 Requirements
 Python 2.5.4 and wxpython 2.8.7.1 ansi (the old "official" setup) - if using this best to just download the Wrye Python 01 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 or
