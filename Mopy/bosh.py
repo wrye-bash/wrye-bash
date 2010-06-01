@@ -11555,9 +11555,10 @@ class ActorFactions:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
-            
+
+            types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
             mapper = modFile.MakeLongFid
-            for type,block in dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_))).iteritems():
+            for type,block in types.iteritems():
                 id_factions = type_id_factions[type]
                 for record in block:
                     longid = record.longFid
@@ -11651,71 +11652,142 @@ class ActorLevels:
     @staticmethod
     def dumpText(modInfo,outPath,progress=None):
         """Export NPC level data to text file."""
-        progress = progress or bolt.Progress()
-        #--Mod levels
-        progress(0,_('Loading ')+modInfo.name.s)
-        loadFactory= LoadFactory(False,MreNpc)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        offsetFlag = 0x80
-        npcLevels = {}
-        for npc in modFile.NPC_.records:
-            if npc.flags.pcLevelOffset:
-                npcLevels[npc.fid] = (npc.eid,npc.level,npc.calcMin, npc.calcMax)
-        #--Oblivion Levels (for comparison)
-        progress(0.25,_('Loading Oblivion.esm'))
-        obFactory= LoadFactory(False,MreNpc)
-        obInfo = modInfos[GPath('Oblivion.esm')]
-        obFile = ModFile(obInfo,obFactory)
-        obFile.load(True)
-        obNPCs = {}
-        for npc in obFile.NPC_.records:
-            obNPCs[npc.fid] = npc
-        #--File, column headings
-        progress(0.75,_('Writing ')+outPath.stail)
-        out = outPath.open('w')
-        headings = (_('Fid'),_('EditorId'),_('Offset'),_('CalcMin'),_('CalcMax'),_(''),
-            _('Old bOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax'),)
-        out.write('"'+('","'.join(headings))+'"\n')
-        #--Sort by eid and print
-        for fid in sorted(npcLevels.keys(),key=lambda a: npcLevels[a][0]):
-            npcLevel = npcLevels[fid]
-            out.write('"0x%08X","%s",%d,%d,%d' % ((fid,)+npcLevel))
-            obNPC = obNPCs.get(fid,None)
-            if obNPC:
-                flagged = (obNPC.flags.pcLevelOffset and offsetFlag) and 1 or 0
-                out.write(',,%d,%d,%d,%d' % (flagged,obNPC.level,obNPC.calcMin,obNPC.calcMax))
-            out.write('\n')
-        out.close()
-        progress(1,_('Done'))
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            progress = progress or bolt.Progress()
+            #--Mod levels
+            progress(0,_('Loading ')+modInfo.name.s)
+            loadFactory= LoadFactory(False,MreNpc)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            offsetFlag = 0x80
+            npcLevels = {}
+            for npc in modFile.NPC_.records:
+                if npc.flags.pcLevelOffset:
+                    npcLevels[npc.fid] = (npc.eid,npc.level,npc.calcMin, npc.calcMax)
+            #--Oblivion Levels (for comparison)
+            progress(0.25,_('Loading Oblivion.esm'))
+            obFactory= LoadFactory(False,MreNpc)
+            obInfo = modInfos[GPath('Oblivion.esm')]
+            obFile = ModFile(obInfo,obFactory)
+            obFile.load(True)
+            obNPCs = {}
+            for npc in obFile.NPC_.records:
+                obNPCs[npc.fid] = npc
+            #--File, column headings
+            progress(0.75,_('Writing ')+outPath.stail)
+            out = outPath.open('w')
+            headings = (_('Fid'),_('EditorId'),_('Offset'),_('CalcMin'),_('CalcMax'),_(''),
+                _('Old bOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax'),)
+            out.write('"'+('","'.join(headings))+'"\n')
+            #--Sort by eid and print
+            for fid in sorted(npcLevels.keys(),key=lambda a: npcLevels[a][0]):
+                npcLevel = npcLevels[fid]
+                out.write('"0x%08X","%s",%d,%d,%d' % ((fid,)+npcLevel))
+                obNPC = obNPCs.get(fid,None)
+                if obNPC:
+                    flagged = (obNPC.flags.pcLevelOffset and offsetFlag) and 1 or 0
+                    out.write(',,%d,%d,%d,%d' % (flagged,obNPC.level,obNPC.calcMin,obNPC.calcMax))
+                out.write('\n')
+            out.close()
+            progress(1,_('Done'))
+        else:
+            progress = progress or bolt.Progress()
+            #--Mod levels
+            progress(0,_('Loading:')+modInfo.name.s)
+            Current = Collection(ModsPath=dirs['mods'].s)
+            obFile = Current.addMod('Oblivion.esm')
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+            
+            offsetFlag = 0x80
+            npcLevels = {}
+            for npc in modFile.NPC_:
+                if npc.IsPCLevelOffset:
+                    npcLevels[npc.fid] = (npc.eid,npc.level,npc.calcMin, npc.calcMax)
+            #--Oblivion Levels (for comparison)
+            obNPCs = {}
+            for npc in obFile.NPC_:
+                obNPCs[npc.fid] = npc
+            #--File, column headings
+            progress(0.75,_('Writing ')+outPath.stail)
+            out = outPath.open('w')
+            headings = (_('Fid'),_('EditorId'),_('Offset'),_('CalcMin'),_('CalcMax'),_(''),
+                _('Old bOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax'),)
+            out.write('"'+('","'.join(headings))+'"\n')
+            #--Sort by eid and print
+            for fid in sorted(npcLevels.keys(),key=lambda a: npcLevels[a][0]):
+                npcLevel = npcLevels[fid]
+                out.write('"0x%08X","%s",%d,%d,%d' % ((fid,)+npcLevel))
+                obNPC = obNPCs.get(fid,None)
+                if obNPC:
+                    flagged = (obNPC.IsPCLevelOffset and offsetFlag) and 1 or 0
+                    out.write(',,%d,%d,%d,%d' % (flagged,obNPC.level,obNPC.calcMin,obNPC.calcMax))
+                out.write('\n')
+            out.close()
+            progress(1,_('Done'))
 
     @staticmethod
     def loadText(modInfo,inPath,progress=None):
         """Import NPC level data from text file."""
-        inPath = GPath(inPath)
-        progress = progress or bolt.Progress()
-        #--Sort and print
-        progress(0,_('Reading ')+inPath.stail)
-        inNPCs = {}
-        ins = bolt.CsvReader(inPath)
-        for fields in ins:
-            if '0x' not in fields[0]: continue
-            inNPCs[int(fields[0],0)] = tuple(map(int,fields[2:5]))
-        ins.close()
-        #--Load Mod
-        progress(0.25,_('Loading ')+modInfo.name.s)
-        loadFactory= LoadFactory(True,MreNpc)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        offsetFlag = 0x80
-        npcLevels = {}
-        for npc in modFile.NPC_.records:
-            if npc.fid in inNPCs:
-                (npc.level, npc.calcMin, npc.calcMax) = inNPCs[npc.fid]
-                npc.setChanged()
-        progress(0.5,_('Saving ')+modInfo.name.s)
-        modFile.safeSave()
-        progress(1.0,_('Done'))
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            inPath = GPath(inPath)
+            progress = progress or bolt.Progress()
+            #--Sort and print
+            progress(0,_('Reading ')+inPath.stail)
+            inNPCs = {}
+            ins = bolt.CsvReader(inPath)
+            for fields in ins:
+                if '0x' not in fields[0]: continue
+                inNPCs[int(fields[0],0)] = tuple(map(int,fields[2:5]))
+            ins.close()
+            #--Load Mod
+            progress(0.25,_('Loading ')+modInfo.name.s)
+            loadFactory= LoadFactory(True,MreNpc)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            offsetFlag = 0x80
+            npcLevels = {}
+            for npc in modFile.NPC_.records:
+                if npc.fid in inNPCs:
+                    (npc.level, npc.calcMin, npc.calcMax) = inNPCs[npc.fid]
+                    npc.setChanged()
+            progress(0.5,_('Saving ')+modInfo.name.s)
+            modFile.safeSave()
+            progress(1.0,_('Done'))
+        else:
+            inPath = GPath(inPath)
+            progress = progress or bolt.Progress()
+            #--Sort and print
+            progress(0,_('Reading ')+inPath.stail)
+            inNPCs = {}
+            ins = bolt.CsvReader(inPath)
+            for fields in ins:
+                if '0x' not in fields[0]: continue
+                inNPCs[int(fields[0],0)] = tuple(map(int,fields[2:5]))
+            ins.close()
+            #--Load Mod
+            progress(0.25,_('Loading ')+modInfo.name.s)
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.fullLoad(LoadMasters=False)
+            
+            offsetFlag = 0x80
+            npcLevels = {}
+            changed = []
+            for npc in modFile.NPC_:
+                if npc.fid in inNPCs:
+                    level, calcMin, calcMax = inNPCs[npc.fid]
+                    if((npc.level, npc.calcMin, npc.calcMax) != (level, calcMin, calcMax)):
+                        (npc.level, npc.calcMin, npc.calcMax) = (level, calcMin, calcMax)
+                        changed.append(npc.fid)
+            if(changed):
+                progress(0.5,_('Saving ')+modInfo.name.s)
+                modFile.safeCloseSave()
+            progress(1.0,_('Done'))
+
+            
 
 #------------------------------------------------------------------------------
 class EditorIds:
@@ -12654,6 +12726,8 @@ class CompleteItemData:
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
+        ###Remove from Bash after CBash integrated
+##        if(CBash == None):
         loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -12676,9 +12750,38 @@ class CompleteItemData:
                         self.Fmodel[longid] = record.femaleBody.modPath
                     if record.femaleWorld:
                         self.FGndmodel[longid] = record.femaleWorld.modPath
+##        else:
+##            Current = Collection(ModsPath=dirs['mods'].s)
+##            modFile = Current.addMod(modInfo.name.s)
+##            Current.minimalLoad(LoadMasters=False)
+##            
+##            mapper = modFile.MakeLongFid
+##            for type,stats in self.type_stats.iteritems():
+##                attrs = self.type_attrs[type]
+##                for record in getattr(modFile,type):
+##                    longid = record.longFid
+##                    recordGetAttr = record.__getattribute__
+##                    stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+##                    if type in ['ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']:
+##                        model = record.modPath
+##                        if model: self.model[longid] = model
+##                    elif type in ['CLOT','ARMO']:
+##                        model = record.maleBody.modPath
+##                        if model: self.Mmodel[longid] = model
+##                        
+##                        model = record.maleWorld.modPath
+##                        if model: self.MGndmodel[longid] = model
+##                        
+##                        model = record.femaleBody.modPath
+##                        if model: self.Fmodel[longid] = model
+##                            
+##                        model = record.femaleWorld.modPath
+##                        if model: self.FGndmodel[longid] = model
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
+        ###Remove from Bash after CBash integrated
+##        if(CBash == None):
         loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -12695,6 +12798,25 @@ class CompleteItemData:
                 changed[longid[0]] = 1 + changed.get(longid[0],0)
         if changed: modFile.safeSave()
         return changed
+##        else:
+##            Current = Collection(ModsPath=dirs['mods'].s)
+##            modFile = Current.addMod(modInfo.name.s)
+##            Current.fullLoad(LoadMasters=False)
+##            
+##            mapper = modFile.MakeLongFid
+##            changed = {} #--changed[modName] = numChanged
+##            for type,stats in self.type_stats.iteritems():
+##                attrs = self.type_attrs[type]
+##                for record in getattr(modFile,type):
+##                    longid = record.longFid
+##                    itemStats = stats.get(longid,None)
+##                    if not itemStats: continue
+##                    for attr,stat in attrs,itemStats:
+##                        if(stat != "NONE"):
+##                            setattr(record,attr,stat)
+##                    changed[longid[0]] = 1 + changed.get(longid[0],0)
+##            if changed: modFile.safeCloseSave()
+##            return changed
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
