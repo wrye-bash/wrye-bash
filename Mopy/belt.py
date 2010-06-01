@@ -305,7 +305,7 @@ class PageSelect(PageInstaller):
 
     def Selection(self, index):
         self.index = index
-        self.textItem.SetLabel(self.descs[index])
+        self.textItem.SetValue(self.descs[index])
         file = self.images[index]
         if file.exists() and not file.isdir():
             image = wx.Image( file.s )
