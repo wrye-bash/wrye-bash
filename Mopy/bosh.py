@@ -12981,53 +12981,101 @@ class ScriptText:
 
     def readFromMod(self,modInfo,file):
         """Reads stats from specified mod."""
-        loadFactory= LoadFactory(False,MreScpt)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        progress = balt.Progress(_("Export Scripts"))
-        for type in self.type_stats:
-            y = len(getattr(modFile,type).getActiveRecords())
-            z = 0
-            ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                z +=1
-                progress((0.5/y*z),_("reading scripts in %s.")%(file))
-                longid = mapper(record.fid)
-                recordGetAttr = record.__getattribute__
-                ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-                #return stats
-        progress = progress.Destroy()
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            loadFactory= LoadFactory(False,MreScpt)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            progress = balt.Progress(_("Export Scripts"))
+            for type in self.type_stats:
+                y = len(getattr(modFile,type).getActiveRecords())
+                z = 0
+                ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
+                for record in getattr(modFile,type).getActiveRecords():
+                    z +=1
+                    progress((0.5/y*z),_("reading scripts in %s.")%(file))
+                    longid = mapper(record.fid)
+                    recordGetAttr = record.__getattribute__
+                    ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                    #return stats
+            progress = progress.Destroy()
+        else:
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+            
+            mapper = modFile.MakeLongFid
+            progress = balt.Progress(_("Export Scripts"))
+            for type in self.type_stats:
+                records = getattr(modFile,type)
+                y = len(records)
+                z = 0
+                ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
+                for record in records:
+                    z +=1
+                    progress((0.5/y*z),_("reading scripts in %s.")%(file))
+                    longid = record.longFid
+                    recordGetAttr = record.__getattribute__
+                    ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                    #return stats
+            progress = progress.Destroy()
 
     def writeToMod(self,modInfo,eid,newScriptText,makeNew=False):
         """Writes scripts to specified mod."""
-        loadFactory = LoadFactory(True,MreScpt)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in self.type_stats:
-            scriptData, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                if record.eid == eid:
-                    if str(record.scriptText) != str(newScriptText):
-                        record.scriptText = newScriptText
-                        record.setChanged()
-                        modFile.safeSave()
-                        return True
-                    else:
-                        return False
-            if makeNew:
-                tes4 = modFile.tes4
-                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
-                newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
-                newScript.eid = eid
-                newScript.scriptText = newScriptText
-                newScript.setChanged()
-                modFile.SCPT.records.append(newScript)
-                modFile.safeSave()
-                return True
-            #print "eid %s doesn't match any record." %(eid)
-            return False
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            loadFactory = LoadFactory(True,MreScpt)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for type in self.type_stats:
+                scriptData, attrs = self.type_stats[type], self.type_attrs[type]
+                for record in getattr(modFile,type).getActiveRecords():
+                    if record.eid == eid:
+                        if str(record.scriptText) != str(newScriptText):
+                            record.scriptText = newScriptText
+                            record.setChanged()
+                            modFile.safeSave()
+                            return True
+                        else:
+                            return False
+                if makeNew:
+                    tes4 = modFile.tes4
+                    scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                    newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
+                    newScript.eid = eid
+                    newScript.scriptText = newScriptText
+                    newScript.setChanged()
+                    modFile.SCPT.records.append(newScript)
+                    modFile.safeSave()
+                    return True
+                #print "eid %s doesn't match any record." %(eid)
+                return False
+        else:
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.fullLoad(LoadMasters=False)
+            
+            mapper = modFile.MakeLongFid
+            for type in self.type_stats:
+                scriptData, attrs = self.type_stats[type], self.type_attrs[type]
+                for record in getattr(modFile,type):
+                    if record.eid == eid:
+                        if str(record.scriptText) != str(newScriptText):
+                            record.scriptText = newScriptText
+                            modFile.safeCloseSave()
+                            return True
+                        else:
+                            return False
+                if makeNew:
+                    newScript = modFile.createSCPTRecord()
+                    newScript.eid = eid
+                    newScript.scriptText = newScriptText
+                    modFile.safeCloseSave()
+                    return True
+                #print "eid %s doesn't match any record." %(eid)
+                return False
 
     def readFromText(self,textPath,modInfo,makeNew):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
