@@ -2740,15 +2740,15 @@ class InstallersPanel(SashTankPanel):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.data)
-     #   subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-     #   espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
-     #   self.gList.RefreshUI(self.detailsItem)
-     #   self.gEspmList.ScrollLines(-len(self.espms))
-     #   self.gSubList.ScrollLines(-self.gSubList.GetCount())
-     #   self.gEspmList.ScrollLines(espmScrollPos)
-     #   self.gSubList.ScrollLines(subScrollPos)
-     #   self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
-     #   self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
+        subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
+        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
+        self.gList.RefreshUI(self.detailsItem)
+    #    self.gEspmList.ScrollLines(-len(self.espms))
+    #    self.gSubList.ScrollLines(-self.gSubList.GetCount())
+    #    self.gEspmList.ScrollLines(espmScrollPos)
+    #    self.gSubList.ScrollLines(subScrollPos)
+        self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
+        self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
@@ -4574,7 +4574,7 @@ class BashApp(wx.App):
     def InitResources(self):
         """Init application resources."""
         global bashBlue, bashRed, bashDocBrowser
-        bashBlue = bashBlue.GetIconBundle
+        bashBlue = bashBlue.GetIconBundle()
         bashRed = bashRed.GetIconBundle()
         bashDocBrowser = bashDocBrowser.GetIconBundle()
 
@@ -5354,7 +5354,10 @@ class TweakPatcher(Patcher):
         """Set item to specified set of items."""
         self.gList.Clear()
         for index,tweak in enumerate(self.tweaks):
-            self.gList.Insert(tweak.getListLabel(),index)
+            label = tweak.getListLabel()
+            if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith('Custom'):
+                label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
+            self.gList.Insert(label,index)
             self.gList.Check(index,tweak.isEnabled)
 
     def OnListCheck(self,event=None):
@@ -5415,7 +5418,8 @@ class TweakPatcher(Patcher):
             if label == '----':
                 menu.AppendSeparator()
             elif label.startswith('Custom'):
-                menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
+                menulabel = label + ' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
+                menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
                 wx.EVT_MENU(self.gList,index,self.OnTweakCustomChoice)
@@ -5438,11 +5442,15 @@ class TweakPatcher(Patcher):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
         index = event.GetId()
-        self.tweaks[tweakIndex].chosen = index
-        value = balt.askNumber(self.gConfigPanel,_('Enter the desired custom tweak value'),prompt=_('Value'),title=_('Custom Tweak Value'),value=0,min=0,max=10000)
-        if not value: value = 0
+        tweak = self.tweaks[tweakIndex]
+        tweak.chosen = index
+        if tweak.float: label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
+        else: label = _('Enter the desired custom tweak value.')
+        value = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][0],min=-10000,max=10000)
+        if not value: value = self.tweaks[tweakIndex].choiceValues[index][0]
+        if tweak.float: value = float(value) / 10
         self.tweaks[tweakIndex].choiceValues[index] = (value,)
-        self.gList.SetString(tweakIndex,(self.tweaks[tweakIndex].getListLabel()+' %d ' % value))
+        self.gList.SetString(tweakIndex,(self.tweaks[tweakIndex].getListLabel()+' %4.2f ' % (value)))
 
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
