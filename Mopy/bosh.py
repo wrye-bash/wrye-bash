@@ -12091,46 +12091,88 @@ class FullNames:
 
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
-        type_id_name,types = self.type_id_name, self.types
-        classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory= LoadFactory(False,*classes)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in types:
-            typeBlock = modFile.tops.get(type,None)
-            if not typeBlock: continue
-            if type not in type_id_name: type_id_name[type] = {}
-            id_name = type_id_name[type]
-            for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
-                full = record.full or (type != 'LIGH' and 'NO NAME')
-                if record.eid and full:
-                    id_name[longid] = (record.eid,full)
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            type_id_name,types = self.type_id_name, self.types
+            classes = [MreRecord.type_class[x] for x in self.types]
+            loadFactory= LoadFactory(False,*classes)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for type in types:
+                typeBlock = modFile.tops.get(type,None)
+                if not typeBlock: continue
+                if type not in type_id_name: type_id_name[type] = {}
+                id_name = type_id_name[type]
+                for record in typeBlock.getActiveRecords():
+                    longid = mapper(record.fid)
+                    full = record.full or (type != 'LIGH' and 'NO NAME')
+                    if record.eid and full:
+                        id_name[longid] = (record.eid,full)
+        else:
+            type_id_name = self.type_id_name
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+            
+            mapper = modFile.MakeLongFid
+            for type,block in modFile.aggregates.iteritems():
+                if type not in type_id_name: type_id_name[type] = {}
+                id_name = type_id_name[type]
+                for record in block:
+                    longid = record.longFid
+                    if(hasattr(record, 'full')):
+                        full = record.full or (type != 'LIGH' and 'NO NAME')
+                        eid = record.eid
+                        if eid and full:
+                            id_name[longid] = (eid,full)
+
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
-        type_id_name,types = self.type_id_name,self.types
-        classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory= LoadFactory(True,*classes)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        changed = {}
-        for type in types:
-            id_name = type_id_name.get(type,None)
-            typeBlock = modFile.tops.get(type,None)
-            if not id_name or not typeBlock: continue
-            for record in typeBlock.records:
-                longid = mapper(record.fid)
-                full = record.full
-                eid,newFull = id_name.get(longid,(0,0))
-                if newFull and newFull not in (full,'NO NAME'):
-                    record.full = newFull
-                    record.setChanged()
-                    changed[eid] = (full,newFull)
-        if changed: modFile.safeSave()
-        return changed
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            type_id_name,types = self.type_id_name,self.types
+            classes = [MreRecord.type_class[x] for x in self.types]
+            loadFactory= LoadFactory(True,*classes)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            changed = {}
+            for type in types:
+                id_name = type_id_name.get(type,None)
+                typeBlock = modFile.tops.get(type,None)
+                if not id_name or not typeBlock: continue
+                for record in typeBlock.records:
+                    longid = mapper(record.fid)
+                    full = record.full
+                    eid,newFull = id_name.get(longid,(0,0))
+                    if newFull and newFull not in (full,'NO NAME'):
+                        record.full = newFull
+                        record.setChanged()
+                        changed[eid] = (full,newFull)
+            if changed: modFile.safeSave()
+            return changed
+        else:
+            type_id_name = self.type_id_name
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.fullLoad(LoadMasters=False)
+            
+            mapper = modFile.MakeLongFid
+            changed = {}
+            for type,block in modFile.aggregates.iteritems():
+                id_name = type_id_name.get(type,None)
+                if not id_name: continue
+                for record in block:
+                    longid = record.longFid
+                    full = record.full
+                    eid,newFull = id_name.get(longid,(0,0))
+                    if newFull and newFull not in (full,'NO NAME'):
+                        record.full = newFull
+                        changed[eid] = (full,newFull)
+            if changed: modFile.safeCloseSave()
+            return changed
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
