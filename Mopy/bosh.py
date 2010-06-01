@@ -76,6 +76,7 @@ import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 from bolt import _, LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
+from cint import *
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -11702,89 +11703,164 @@ class EditorIds:
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        type_id_eid,types = self.type_id_eid,self.types
-        classes = [MreRecord.type_class[x] for x in types]
-        loadFactory= LoadFactory(False,*classes)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in types:
-            typeBlock = modFile.tops.get(type)
-            if not typeBlock: continue
-            if type not in type_id_eid: type_id_eid[type] = {}
-            id_eid = type_id_eid[type]
-            for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
-                if record.eid: id_eid[longid] = record.eid
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            type_id_eid,types = self.type_id_eid,self.types
+            classes = [MreRecord.type_class[x] for x in types]
+            loadFactory= LoadFactory(False,*classes)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for type in types:
+                typeBlock = modFile.tops.get(type)
+                if not typeBlock: continue
+                if type not in type_id_eid: type_id_eid[type] = {}
+                id_eid = type_id_eid[type]
+                for record in typeBlock.getActiveRecords():
+                    longid = mapper(record.fid)
+                    if record.eid: id_eid[longid] = record.eid
+        else:
+            type_id_eid = self.type_id_eid
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+        
+            for type,block in modFile.aggregates.iteritems():
+                if type not in type_id_eid: type_id_eid[type] = {}
+                id_eid = type_id_eid[type]
+                for record in block:
+                    longid = record.longFid
+                    if record.eid: id_eid[longid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        type_id_eid,types = self.type_id_eid,self.types
-        classes = [MreRecord.type_class[x] for x in types]
-        loadFactory= LoadFactory(True,*classes)
-        loadFactory.addClass(MreScpt)
-        loadFactory.addClass(MreQust)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        changed = []
-        for type in types:
-            id_eid = type_id_eid.get(type,None)
-            typeBlock = modFile.tops.get(type,None)
-            if not id_eid or not typeBlock: continue
-            for record in typeBlock.records:
-                longid = mapper(record.fid)
-                newEid = id_eid.get(longid)
-                oldEid = record.eid
-                if newEid and record.eid and newEid != oldEid:
-                    record.eid = newEid
-                    record.setChanged()
-                    changed.append((oldEid,newEid))
-        #--Update scripts
-        old_new = dict(self.old_new)
-        old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
-        changed.extend(self.changeScripts(modFile,old_new))
-        #--Done
-        if changed: modFile.safeSave()
-        return changed
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            type_id_eid,types = self.type_id_eid,self.types
+            classes = [MreRecord.type_class[x] for x in types]
+            loadFactory= LoadFactory(True,*classes)
+            loadFactory.addClass(MreScpt)
+            loadFactory.addClass(MreQust)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            changed = []
+            for type in types:
+                id_eid = type_id_eid.get(type,None)
+                typeBlock = modFile.tops.get(type,None)
+                if not id_eid or not typeBlock: continue
+                for record in typeBlock.records:
+                    longid = mapper(record.fid)
+                    newEid = id_eid.get(longid)
+                    oldEid = record.eid
+                    if newEid and record.eid and newEid != oldEid:
+                        record.eid = newEid
+                        record.setChanged()
+                        changed.append((oldEid,newEid))
+            #--Update scripts
+            old_new = dict(self.old_new)
+            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+            changed.extend(self.changeScripts(modFile,old_new))
+            #--Done
+            if changed: modFile.safeSave()
+            return changed
+        else:
+            type_id_eid = self.type_id_eid
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.fullLoad(LoadMasters=False)
+
+            changed = []
+            for type,block in modFile.aggregates.iteritems():
+                id_eid = type_id_eid.get(type,None)
+                if not id_eid: continue
+                for record in block:
+                    longid = record.longFid
+                    newEid = id_eid.get(longid)
+                    oldEid = record.eid
+                    if newEid and newEid != oldEid:
+                        record.eid = newEid
+                        changed.append((oldEid,newEid))
+            #--Update scripts
+            old_new = dict(self.old_new)
+            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+            changed.extend(self.changeScripts(modFile,old_new))
+            #--Done
+            if changed: modFile.safeCloseSave()
+            return changed
 
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
-        changed = []
-        if not old_new: return changed
-        reWord = re.compile('\w+')
-        def subWord(match):
-            word = match.group(0)
-            newWord = old_new.get(word.lower())
-            if not newWord:
-                return word
-            else:
-                return newWord
-        #--Scripts
-        for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
-            if not script.scriptText: continue
-            newText = reWord.sub(subWord,script.scriptText)
-            if newText != script.scriptText:
-                header = '\r\n\r\n; %s %s\r\n' % (script.eid,'-'*(77-len(script.eid)))
-                script.scriptText = newText
-                script.setChanged()
-                changed.append((_("Script"),script.eid))
-        #--Quest Scripts
-        for quest in sorted(modFile.QUST.records,key=attrgetter('eid')):
-            questChanged = False
-            for stage in quest.stages:
-                for entry in stage.entries:
-                    oldScript = entry.scriptText
-                    if not oldScript: continue
-                    newScript = reWord.sub(subWord,oldScript)
-                    if newScript != oldScript:
-                        entry.scriptText = newScript
-                        questChanged = True
-            if questChanged:
-                changed.append((_("Quest"),quest.eid))
-                quest.setChanged()
-        #--Done
-        return changed
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            changed = []
+            if not old_new: return changed
+            reWord = re.compile('\w+')
+            def subWord(match):
+                word = match.group(0)
+                newWord = old_new.get(word.lower())
+                if not newWord:
+                    return word
+                else:
+                    return newWord
+            #--Scripts
+            for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
+                if not script.scriptText: continue
+                newText = reWord.sub(subWord,script.scriptText)
+                if newText != script.scriptText:
+                    header = '\r\n\r\n; %s %s\r\n' % (script.eid,'-'*(77-len(script.eid)))
+                    script.scriptText = newText
+                    script.setChanged()
+                    changed.append((_("Script"),script.eid))
+            #--Quest Scripts
+            for quest in sorted(modFile.QUST.records,key=attrgetter('eid')):
+                questChanged = False
+                for stage in quest.stages:
+                    for entry in stage.entries:
+                        oldScript = entry.scriptText
+                        if not oldScript: continue
+                        newScript = reWord.sub(subWord,oldScript)
+                        if newScript != oldScript:
+                            entry.scriptText = newScript
+                            questChanged = True
+                if questChanged:
+                    changed.append((_("Quest"),quest.eid))
+                    quest.setChanged()
+            #--Done
+            return changed
+        else:
+            changed = []
+            if not old_new: return changed
+            reWord = re.compile('\w+')
+            def subWord(match):
+                word = match.group(0)
+                newWord = old_new.get(word.lower())
+                if not newWord:
+                    return word
+                else:
+                    return newWord
+            #--Scripts
+            for script in sorted(modFile.SCPT,key=attrgetter('eid')):
+                if not script.scriptText: continue
+                newText = reWord.sub(subWord,script.scriptText)
+                if newText != script.scriptText:
+                    script.scriptText = newText
+                    changed.append((_("Script"),script.eid))
+            #--Quest Scripts
+            for quest in sorted(modFile.QUST,key=attrgetter('eid')):
+                questChanged = False
+                for stage in quest.stages:
+                    for entry in stage.entries:
+                        oldScript = entry.scriptText
+                        if not oldScript: continue
+                        newScript = reWord.sub(subWord,oldScript)
+                        if newScript != oldScript:
+                            entry.scriptText = newScript
+                            questChanged = True
+                if questChanged:
+                    changed.append((_("Quest"),quest.eid))
+            #--Done
+            return changed
 
     def readFromText(self,textPath):
         """Imports eids from specified text file."""
@@ -11820,7 +11896,6 @@ class EditorIds:
             for id in sorted(id_eid,key = lambda a: id_eid[a]):
                 out.write(rowFormat % (type,id[0].s,id[1],id_eid[id]))
         out.close()
-
 #------------------------------------------------------------------------------
 class FactionRelations:
     """Faction relations."""
