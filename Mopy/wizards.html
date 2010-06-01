@@ -43,6 +43,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#CompareOBSEVersion">CompareOBSEVersion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CompareOBGEVersion">CompareOBGEVersion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CompareWBVersion">CompareWBVersion</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#str">str</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#int">int</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#float">float</a></p>
@@ -211,6 +212,17 @@
   <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> Installed Wrye Bash version is less than the version specified in <B><I>version_number</I></B>.
   <p class=list-2>&bull;&nbsp; <B><I>0:</I></B> Installed Wrye Bash version is the same as the version specified in <B><I>version_number</I></B>.
   <p class=list-2>&bull;&nbsp; <B><I>1:</I></B> Installed Wrye Bash version is higher than the version specified in <B><I>version_number</I></B>.
+  <p class=empty>&nbsp;</p>
+<h2><a name='DataFileExists'>DataFileExists</a></h2>
+<p>Tests for the existance of a file in the Data directory.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>DataFileExists(<B><I>file_name</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>file_name:</I></B> a string or variable holding a string, specifying the path relative to the Data directory to test.  For example using <B>"testesp.esp"</B> would test for <B>"...path to oblivion...\Data\testesp.esp"</B>
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>True:</I></B> The file exists
+  <p class=list-2>&bull;&nbsp; <B><I>False:</I></B> The file does not exist
   <p class=empty>&nbsp;</p>
 <h2><a name='str'>str</a></h2>
 <p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.

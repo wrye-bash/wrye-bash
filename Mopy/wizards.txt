@@ -118,6 +118,17 @@ Used to test the current version of Wrye Bash agains one you specify.
   * **0:** Installed Wrye Bash version is the same as the version specified in **version_number**.
   * **1:** Installed Wrye Bash version is higher than the version specified in **version_number**.
 
+== DataFileExists
+Tests for the existance of a file in the Data directory.
+
+* __Usage:__
+  * __DataFileExists(**file_name**)__
+* __Arguments:__
+  * **file_name:** a string or variable holding a string, specifying the path relative to the Data directory to test.  For example using __"testesp.esp"__ would test for __"...path to oblivion...\Data\testesp.esp"__
+* __Return:__
+  * **True:** The file exists
+  * **False:** The file does not exist
+
 == str
 Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 
