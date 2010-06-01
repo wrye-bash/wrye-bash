@@ -1189,7 +1189,7 @@ __Importers__ are components that import specific information from selected mods
     * Actors.Animations: Mod modifies the KFFZ subrecord of NPCs or Creatures.
       * (note: direct import rather than merge - this will hopefully be fixed next version (285))
     * Actors.AIPackages: Mod modifies the AIPackages lists of NPCs or creatures. 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 285)
+      * Merges change likes Import Inventory but for the AIPackage list.
     * Actors.DeathItems: Mod modifies Creature or NPC Death Item.
 * __Usage__
   * For selected mods, each of the tags will import the related information into the Bashed Patch if necessary. 
