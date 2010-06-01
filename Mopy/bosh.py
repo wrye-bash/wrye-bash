@@ -17310,6 +17310,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
             (_('0.2'),  0.2),
             (_('0.4'),  0.4),
             (_('0.6'),  0.6),
+            (_('Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -17364,6 +17365,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
             (_('2'),  2),
             (_('3'),  3),
             (_('4'),  4),
+            (_('Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -17422,6 +17424,7 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
             (_('6'),  6),
             (_('7'),  7),
             (_('8'),  8),
+            (_('Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -17484,6 +17487,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
             (_('250'), 250),
             (_('500'), 500),
             (_('Unlimited'), 0),
+            (_('Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -17792,6 +17796,7 @@ class ClothesTweaker(MultiTweaker):
             (_('0.1'),0.1),
             (_('0.2'),0.2),
             (_('0.5'),0.5),
+            (_('Custom'),0),
             ),
         ClothesTweak_MaxWeight(_("Max Weight Rings"),
             _('Ring weight will be capped.'),
@@ -17800,6 +17805,7 @@ class ClothesTweaker(MultiTweaker):
             (_('0.1'),0.1),
             (_('0.2'),0.2),
             (_('0.5'),0.5),
+            (_('Custom'),0),
             ),
         ClothesTweak_MaxWeight(_("Max Weight Hoods"),
             _('Hood weight will be capped.'),
@@ -17807,6 +17813,7 @@ class ClothesTweaker(MultiTweaker):
             (_('0.2'),0.2),
             (_('0.5'),0.5),
             (_('1.0'),1.0),
+            (_('Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
 

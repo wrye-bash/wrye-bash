@@ -5409,7 +5409,7 @@ class TweakPatcher(Patcher):
         for index,label in enumerate(choiceLabels):
             if label == '----':
                 menu.AppendSeparator()
-            elif label == 'Custom':
+            elif label.startswith('Custom'):
                 menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
