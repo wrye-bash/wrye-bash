@@ -9271,42 +9271,6 @@ class Mod_ShowReadme(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
-class Mod_Stats_Export(Link):
-    """Export armor and weapon stats from mod to text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Stats...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
-
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+_('_Stats.csv')
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_('Export stats to:'),
-            textDir, textName, '*Stats.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        progress = balt.Progress(_("Export Stats"))
-        try:
-            itemStats = bosh.ItemStats()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_("Reading %s.") % (fileName.s,))
-                itemStats.readFromMod(fileInfo)
-            progress(0.8,_("Exporting to %s.") % (textName.s,))
-            itemStats.writeToText(textPath)
-            progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
-
-#------------------------------------------------------------------------------
 class Mod_Scripts_Export(Link):
     """Export scripts from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -9374,6 +9338,42 @@ class Mod_Scripts_Import(Link):
             balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
         else:
             balt.showLog(self.window,importedScripts,_('Import Scripts'),icons=bashBlue)
+
+#------------------------------------------------------------------------------
+class Mod_Stats_Export(Link):
+    """Export armor and weapon stats from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Stats...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Stats.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export stats to:'),
+            textDir, textName, '*Stats.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Stats"))
+        try:
+            itemStats = bosh.ItemStats()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                itemStats.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            itemStats.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
