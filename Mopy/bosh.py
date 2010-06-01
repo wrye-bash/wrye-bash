@@ -15506,7 +15506,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                                             data[fid]['merged'].remove(pkg)
             progress.plus()
             
-
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return (None,(MreNpc,MreCrea))[self.isActive]
@@ -15527,7 +15526,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                 fid = mapper(record.fid)
                 if fid in data:
                     if list(record.aiPackages) != data[fid]['merged']:
-                        # Already Messed up by here!
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
@@ -19104,7 +19102,7 @@ class NamesTweaker(MultiTweaker):
     name = _('Tweak Names')
     text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
-        NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
+        NamesTweak_Body(False,_("Armor"),_("Rename armor to sort by type."),'ARMO',
             (_('BL Leather Boots'),  '%s '),
             (_('BL. Leather Boots'), '%s. '),
             (_('BL - Leather Boots'),'%s - '),
@@ -19115,7 +19113,7 @@ class NamesTweaker(MultiTweaker):
             (_('BL02 - Leather Boots'),'%s%02d - '),
             (_('(BL02) Leather Boots'),'(%s%02d) '),
             ),
-        NamesTweak_Body(_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
+        NamesTweak_Body(False,_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
             (_('P Grey Trowsers'),  '%s '),
             (_('P. Grey Trowsers'), '%s. '),
             (_('P - Grey Trowsers'),'%s - '),
