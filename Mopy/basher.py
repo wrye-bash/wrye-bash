@@ -43,6 +43,7 @@ import bolt
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 from bolt import _, LString,GPath, SubProgress, deprint, delist
+from cint import *
 
 #--Python
 import ConfigParser
@@ -3950,7 +3951,11 @@ class BashFrame(wx.Frame):
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
         if not title:
-            title = "Wrye Bash %s: " % (settings['bash.readme'][1],)
+            ###Remove from Bash after CBash integrated
+            if(CBash == None):
+                title = "Wrye Bash %s: " % (settings['bash.readme'][1],)
+            else:
+                title = "Wrye Bash %s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], CBash.GetMajor(), CBash.GetMinor(), CBash.GetRevision())
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
