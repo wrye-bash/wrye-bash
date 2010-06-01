@@ -18,6 +18,7 @@ class PrintFormID(object):
         if(self._FormID): return "%08X" % self._FormID
         return "None"
 
+
 class BaseRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
         self._CollectionIndex = CollectionIndex
@@ -16453,6 +16454,12 @@ class ModFile(object):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
         self.type_class = {}
+    def MakeLongFid(self, fid):
+        if(fid == None): return (None,None)
+        masterIndex = int(fid >> 24)
+        object = int(fid & 0xFFFFFFL)
+        master = CBash.GetModName(self._CollectionIndex, masterIndex)
+        return (GPath(master),object)
     def createGMSTRecord(self, recordID):
         if(CBash.CreateGMSTRecord(self._CollectionIndex, self._ModName, recordID)):
             return GMSTRecord(self._CollectionIndex, self._ModName, recordID)

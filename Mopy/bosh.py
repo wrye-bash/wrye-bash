@@ -11506,34 +11506,64 @@ class ActorFactions:
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
-        loadFactory= LoadFactory(False,MreFact)
-        for modName in (modInfo.header.masters + [modInfo.name]):
-            if modName in self.gotFactions: continue
-            modFile = ModFile(modInfos[modName],loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for record in modFile.FACT.getActiveRecords():
-                self.id_eid[mapper(record.fid)] = record.eid
-            self.gotFactions.add(modName)
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            loadFactory= LoadFactory(False,MreFact)
+            for modName in (modInfo.header.masters + [modInfo.name]):
+                if modName in self.gotFactions: continue
+                modFile = ModFile(modInfos[modName],loadFactory)
+                modFile.load(True)
+                mapper = modFile.getLongMapper()
+                for record in modFile.FACT.getActiveRecords():
+                    self.id_eid[mapper(record.fid)] = record.eid
+                self.gotFactions.add(modName)
+        else:
+            for modName in (modInfo.header.masters + [modInfo.name]):
+                if modName in self.gotFactions: continue
+                
+                Current = Collection(ModsPath=dirs['mods'].s)
+                modFile = Current.addMod(modName.s)
+                Current.minimalLoad(LoadMasters=False)
+            
+                for record in modFile.FACT:
+                    self.id_eid[record.longFid] = record.eid
+                self.gotFactions.add(modName)
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        self.readFactionEids(modInfo)
-        type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
-        loadFactory= LoadFactory(False,*types)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in (x.classType for x in types):
-            typeBlock = modFile.tops.get(type,None)
-            if not typeBlock: continue
-            id_factions = type_id_factions[type]
-            for record in typeBlock.getActiveRecords():
-                longid = mapper(record.fid)
-                if record.factions:
-                    id_eid[longid] = record.eid
-                    id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
-                    
+        ###Remove from Bash after CBash integrated
+        if(CBash == None):
+            self.readFactionEids(modInfo)
+            type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
+            loadFactory= LoadFactory(False,*types)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for type in (x.classType for x in types):
+                typeBlock = modFile.tops.get(type,None)
+                if not typeBlock: continue
+                id_factions = type_id_factions[type]
+                for record in typeBlock.getActiveRecords():
+                    longid = mapper(record.fid)
+                    if record.factions:
+                        id_eid[longid] = record.eid
+                        id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
+        else:
+            self.readFactionEids(modInfo)
+            type_id_factions,id_eid = self.type_id_factions,self.id_eid
+
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+            
+            mapper = modFile.MakeLongFid
+            for type,block in dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_))).iteritems():
+                id_factions = type_id_factions[type]
+                for record in block:
+                    longid = record.longFid
+                    if record.factions:
+                        id_eid[longid] = record.eid
+                        id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
