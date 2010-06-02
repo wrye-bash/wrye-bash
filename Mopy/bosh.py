@@ -12630,22 +12630,31 @@ class ItemPrices:
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
             attrs = self.attrs
-            changes = {}
+            changed = {}
             for type in self.type_stats:
                 id_values = self.type_stats[type]
                 for record in getattr(modFile,type):
-                    longid = record.longid
+                    longid = record.longFid
                     if longid in id_values:
-                        if record.value != id_values[longid][0]:
-                            record.value = id_values[longid][0]
-                            print longid
+                        if record.value != id_values[longid]:
+                            record.value = id_values[longid]
                             changed[longid[0]] = changed.get(longid[0],0) + 1
-                            
-
-            if len(changed):
-                modFile.safeCloseSave()                
+            if changed:
+                modFile.safeCloseSave()
             return changed
 
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 3 or not fields[1].startswith('0x'): continue
+            modName,objectStr,eid,type = fields[0],fields[1],fields[4],fields[5]
+            modName = GPath(modName)
+            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+            self.type_stats[type][longid] = int(fields[2])
+        ins.close()
+        
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         out = textPath.open('w')
@@ -12654,66 +12663,14 @@ class ItemPrices:
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        for type,format,header in (
-            #--Alch
-            ('ALCH', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Ammo
-            ('AMMO', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #--Apparatus
-            ('APPA', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #--Armor
-            ('ARMO', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Books
-            ('BOOK', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Clothing
-            ('CLOT', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Ingredients
-            ('INGR', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #--Keys
-            ('KEYM', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Lights
-            ('LIGH', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #--Misc
-            ('MISC', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Sigilstones
-            ('SGST', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #Soulgems
-            ('SLGM', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            #--Weapons
-            ('WEAP', bolt.csvFormat('iss')+'\n',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Value'),_('Editor Id'),_('Name'))) + '"\n')),
-            ):
+        format,header = bolt.csvFormat('iss'),('"' + '","'.join((_('Mod Name'),_('ObjectIndex'), _('Value'),_('Editor Id'),_('Name'),_('Type'))) + '"\n')
+        for type in self.type_stats:
             stats = self.type_stats[type]
             if not stats: continue
             out.write(header)
             for longid in getSortedIds(stats):
                 out.write('"%s","0x%06X",' % (longid[0].s,longid[1]))
-                out.write(format % stats[longid])
+                out.write(format % stats[longid] + ',%s\n' % type)
         out.close()
 
 #------------------------------------------------------------------------------
