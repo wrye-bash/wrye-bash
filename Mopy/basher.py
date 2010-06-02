@@ -9307,7 +9307,7 @@ class Mod_Scripts_Export(Link):
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = balt.askDirectory(self.window,
-            _('Choose directory to import scripts from'),defaultPath)
+            _('Choose directory to export scripts to'),defaultPath)
         if not textDir == defaultPath:
             for asDir,sDirs,sFiles in os.walk(defaultPath.s):
                 if not (sDirs or sFiles):
@@ -9348,10 +9348,10 @@ class Mod_Scripts_Import(Link):
         ScriptText.readFromText(textDir.s,fileInfo)
         changed = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log
-        if not changed:
+        if not len(changed):
             balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
         else:
-            changedScripts = (_('Imported %d changed scripts from %s:\n%s') % (changed[0],textDir.s,'\n*'.join(sorted(changed[1]))))
+            changedScripts = (_('Imported %d changed scripts from %s:\n%s') % (len(changed),textDir.s,'*'+'\n*'.join(sorted(changed))))
             balt.showLog(self.window,changedScripts,_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
