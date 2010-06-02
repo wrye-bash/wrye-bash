@@ -9332,7 +9332,7 @@ class Mod_Scripts_Import(Link):
         menuItem.Enable(len(self.data)==1)
 
     def Execute(self,event):
-        message = (_("Import script from a text file. This will replace existing scripts and is not reversible!"))
+        message = (_("Import script from a text file. This will replace existing scripts and is not reversible (except by restoring from backup)!"))
         if not balt.askContinue(self.window,message,'bash.scripts.import.continue',
             _('Import Scripts')):
             return
@@ -9345,15 +9345,15 @@ class Mod_Scripts_Import(Link):
             return
         message = _("Import scripts that don't exist in the esp as new scripts?\n(If not they will just be skipped).")
         makeNew = balt.askYes(self.window,message,_('Import Scripts'),icon=wx.ICON_QUESTION)
-        #try:
         ScriptText = bosh.ScriptText()
-        importedScripts=ScriptText.readFromText(textDir.s,fileInfo,makeNew)
-    #finally:
+        ScriptText.readFromText(textDir.s,fileInfo)
+        changed = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log
-        if not importedScripts:
+        if not changed:
             balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
         else:
-            balt.showLog(self.window,importedScripts,_('Import Scripts'),icons=bashBlue)
+            changedScripts = (_('Imported %d changed scripts from %s:\n%s') % (changed[0],textDir.s,'\n*'.join(sorted(changed[1]))))
+            balt.showLog(self.window,changedScripts,_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Export(Link):
