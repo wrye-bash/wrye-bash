@@ -9549,7 +9549,7 @@ class Mod_Prices_Export(Link):
         textDir.makedirs()
         #--File dialog
         textPath = balt.askSave(self.window,_('Export prices to:'),
-            textDir, textName, '*prices.csv')
+            textDir, textName, '*Prices.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
@@ -9567,6 +9567,59 @@ class Mod_Prices_Export(Link):
             progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
+
+#------------------------------------------------------------------------------
+class Mod_Prices_Import(Link):
+    """Import prices from text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(False)###len(self.data)==1)
+    ## Not implemented yet (no readtext defined in bosh.ItemPrices()
+    def Execute(self,event):
+        message = (_("Import item prices from a text file. This will replace existing prices and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.prices.import.continue',
+            _('Import prices')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Prices.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import prices from:'),
+            textDir, textName, '*Prices.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext not in ['.csv','.ghost','.esm','.esp']:
+            balt.showError(self.window,_('Source file must be a Prices.csv file or esp/m.'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Prices"))
+        changed = None
+        try:
+            itemPrices = bosh.ItemPrices()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            if ext == '.csv':
+                itemPrices.readFromText(textPath)
+            else:
+                srcInfo = bosh.ModInfo(textDir,textName)
+                itemPrices.readFromMod(srcInfo)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = itemPrices.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant prices to import."),_("Import Prices"))
+        else:
+            buff = cStringIO.StringIO()
+            for modName in sorted(changed):
+                buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+            balt.showLog(self.window,buff.getvalue(),_('Import Prices'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
@@ -11979,11 +12032,11 @@ def InitModLinks():
         exportMenu.links.append(Mod_ItemData_Export())
         exportMenu.links.append(Mod_FullNames_Export())
         exportMenu.links.append(Mod_ActorLevels_Export())
+        exportMenu.links.append(Mod_Prices_Export())
         exportMenu.links.append(Mod_Scripts_Export())
         exportMenu.links.append(Mod_Stats_Export())
         exportMenu.links.append(SeparatorLink())
         exportMenu.links.append(Mod_Factions_Export())
-        exportMenu.links.append(Mod_Prices_Export())
         exportMenu.links.append(Mod_FactionRelations_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
@@ -11993,6 +12046,7 @@ def InitModLinks():
         importMenu.links.append(Mod_ItemData_Import())
         importMenu.links.append(Mod_FullNames_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
+        importMenu.links.append(Mod_Prices_Import())
         importMenu.links.append(Mod_Scripts_Import())
         importMenu.links.append(Mod_Stats_Import())
         importMenu.links.append(SeparatorLink())
