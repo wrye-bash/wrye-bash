@@ -1072,9 +1072,12 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) ([[#|Import Actors]])
   * Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
   * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
+  * Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed ([[#|Import Actors]]).
   * Actors.Animations: Mod modifies Creature or NPC special Animations list ([[#|Import Actors]]).
   * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles ([[#|Import Actors]]). 
   * Actors.DeathItem: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
+  * Actors.Spells: Mod modifies Creature or NPC Spell list ([[#|Import Spells]]).
+  * Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed([[#|Import Spells]]).
   * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
   * Body-F: Mod modifies female body definition ([[#|Race Records]]).
   * Body-M: Mod modifies male body definition ([[#|Race Records]]).
@@ -1343,13 +1346,10 @@ __Importers__ are components that import specific information from selected mods
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the [[#|Export/Import Spell Stats]] command will export files in this format.
   
 === Import Spells
-* This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>spellsOnly</code> [[#BashTags|tag]] will appear in the list.
-  * Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the inventory of creatures that have been changed by overhauls -- especially when you can't rely on the overhauls being present. 
-  * For a mod to override only the spells, the mod must be tagged with <code>spellsOnly</code> and must be merged into the patch (i.e. the mod must ~~not~~ be active when the patch is being built.) 
-* __Notes__
-  * Generally later loading source mods will dominate.
-    * If an early source replaces a resistance with a weakness, but a later source replaces the resistance with an nurfed resistance; then the patch will have the nurfed resistance but ~~not~~ the weakness.
-    * If a source tries to remove anything, but fails because that spell is already present or a later mod has already removed it, then none of the changes from the source will be applied.
+* This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>Actors.SpellsForceAdd</code> [[#BashTags|tag]] will appear in the list.
+  * Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the spells of creatures that have been changed by overhauls -- especially when you can't rely on the overhauls being present. 
+  * For a mod to override only the spells, the mod must be tagged with one of those two tags and must be inactive during build and only imported into the patch (ie if mergeable also tag NoMerge or tag Deactivate to make sure that happens). 
+  * Only tag with <code>Actors.SpellsForceAdd</code> if the mod is readding spells that previously in the LO had been removed (ie MMMforOOO.esp or FCOM_Convergence.esp).
 
 -------------------------------------------------------------------------------
 __Tweakers__ tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
@@ -2052,6 +2052,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bashed Patch Changes:
   * Tweak Names Armor/Clothes fixed
   * MAO Tweaker fixed to not fail when dealing with unnamed NPCs
+  * Actor Spell Importer significantly refactored.
+    * SpellsOnly tag replaced with Actors.SpellsForceAdd.
 * Import/Export Scripts from/to mod/csv optimized/significantly enhanced.
 * Import Prices from cvs file added
 * Further CBash Integration:
