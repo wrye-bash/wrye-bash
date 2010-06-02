@@ -4925,7 +4925,6 @@ class PatchDialog(wx.Dialog):
             raise
         ###Remove from Bash after CBash integrated
         finally:
-            global CBash
             CBash = wasCBash
 
     def SaveConfig(self,event=None):
