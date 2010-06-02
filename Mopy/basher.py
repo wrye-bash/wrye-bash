@@ -2743,10 +2743,6 @@ class InstallersPanel(SashTankPanel):
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         self.gList.RefreshUI(self.detailsItem)
-    #    self.gEspmList.ScrollLines(-len(self.espms))
-    #    self.gSubList.ScrollLines(-self.gSubList.GetCount())
-    #    self.gEspmList.ScrollLines(espmScrollPos)
-    #    self.gSubList.ScrollLines(subScrollPos)
         self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
         self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
 
@@ -9575,7 +9571,7 @@ class Mod_Prices_Import(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(False)###len(self.data)==1)
+        menuItem.Enable(len(self.data)==1)
     ## Not implemented yet (no readtext defined in bosh.ItemPrices()
     def Execute(self,event):
         message = (_("Import item prices from a text file. This will replace existing prices and is not reversible!"))
@@ -9618,7 +9614,7 @@ class Mod_Prices_Import(Link):
         else:
             buff = cStringIO.StringIO()
             for modName in sorted(changed):
-                buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+                buff.write('Imported Prices:\n* %s: %d\n' % (modName.s,changed[modName]))
             balt.showLog(self.window,buff.getvalue(),_('Import Prices'),icons=bashBlue)
 
 #------------------------------------------------------------------------------

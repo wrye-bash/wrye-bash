@@ -2048,7 +2048,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 285 [12/12/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]
+=== 286 [12/12/2010] [PacificMorrowind,Waruddar]
+* Bashed Patch Changes:
+  * Tweak Names Armor/Clothes fixed
+  * MAO Tweaker fixed to not fail when dealing with unnamed NPCs
+* Import/Export Scripts from/to mod/csv optimized/significantly enhanced.
+* Import Prices from cvs file added
+* Further CBash Integration:
+  * Import/Export Prices to/from mod/csv
+  
+
+=== 285 [01/06/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]
 * Bashed Patch Changes:
   * Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
   * Export/Import Config buttons added.
