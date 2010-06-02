@@ -11789,8 +11789,6 @@ class ActorLevels:
                 modFile.safeCloseSave()
             progress(1.0,_('Done'))
 
-            
-
 #------------------------------------------------------------------------------
 class EditorIds:
     """Editor ids for records, with functions for importing/exporting from/to mod/text file."""
@@ -12203,7 +12201,6 @@ class FullNames:
                             id_name[longid] = (eid,full)
                     record.UnloadRecord()
 
-
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         ###Remove from Bash after CBash integrated
@@ -12570,64 +12567,84 @@ class ItemStats:
 
 #------------------------------------------------------------------------------
 class ItemPrices:
-    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+    """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        #--type_stats[type] = ...
-        #--AMMO: (eid, weight, value, damage, speed, epoints)
-        #--ARMO: (eid, weight, value, health, strength)
-        #--WEAP: (eid, weight, value, health, damage, speed, reach, epoints)
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
-        self.type_attrs = {
-            'ALCH':('value', 'eid', 'full'),
-            'AMMO':('value', 'eid', 'full'),
-            'APPA':('value', 'eid', 'full'),
-            'ARMO':('value', 'eid', 'full'),
-            'BOOK':('value', 'eid', 'full'),
-            'CLOT':('value', 'eid', 'full'),
-            'INGR':('value', 'eid', 'full'),
-            'KEYM':('value', 'eid', 'full'),
-            'LIGH':('value', 'eid', 'full'),
-            'MISC':('value', 'eid', 'full'),
-            'SGST':('value', 'eid', 'full'),
-            'SLGM':('value', 'eid', 'full'),
-            'WEAP':('value', 'eid', 'full'),
-            }
+        self.attrs = ('value', 'eid', 'full') 
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
-        """Reads stats from specified mod."""
-        loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                recordGetAttr = record.__getattribute__
-                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-
+        """Reads data from specified mod."""
+        ###Remove from Bash after CBash integrated
+        if CBash == None:
+            loadFactory = LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            attrs = self.attrs
+            for type in self.type_stats:
+                stats = self.type_stats[type]
+                for record in getattr(modFile,type).getActiveRecords():
+                    longid = mapper(record.fid)
+                    recordGetAttr = record.__getattribute__
+                    stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+        else:
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.getPath().stail)
+            Current.minimalLoad(LoadMasters=False)
+            mapper = modFile.MakeLongFid
+            types = self.type_stats
+            attrs = self.attrs
+            for type in types:
+                if not hasattr(modFile,type): continue
+                for record in getattr(modFile,type):
+                    id_value = types[type]
+                    longid = record.longFid
+                    id_value[longid] = tuple(getattr(record, attr) for attr in attrs)
+                    record.UnloadRecord()
+                    
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
-        for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                itemStats = stats.get(longid,None)
-                if not itemStats: continue
-                map(record.__setattr__,attrs,itemStats)
-                record.setChanged()
-                changed[longid[0]] = 1 + changed.get(longid[0],0)
-        if changed: modFile.safeSave()
-        return changed
+        if CBash == None:
+            loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            changed = {} 
+            attrs = self.attrs
+            for type in self.type_stats:
+                stats = self.type_stats[type]
+                for record in getattr(modFile,type).getActiveRecords():
+                    longid = mapper(record.fid)
+                    itemStats = stats.get(longid,None)
+                    if not itemStats: continue
+                    map(record.__setattr__,attrs,itemStats)
+                    record.setChanged()
+                    changed[longid[0]] = 1 + changed.get(longid[0],0)
+            if changed: modFile.safeSave()
+            return changed
+        else:
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.getPath().stail)
+            Current.fullLoad(LoadMasters=False)
+            attrs = self.attrs
+            changes = {}
+            for type in self.type_stats:
+                id_values = self.type_stats[type]
+                for record in getattr(modFile,type):
+                    longid = record.longid
+                    if longid in id_values:
+                        if record.value != id_values[longid][0]:
+                            record.value = id_values[longid][0]
+                            print longid
+                            changed[longid[0]] = changed.get(longid[0],0) + 1
+                            
 
+            if len(changed):
+                modFile.safeCloseSave()                
+            return changed
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
