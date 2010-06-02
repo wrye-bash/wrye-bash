@@ -15349,7 +15349,7 @@ class KFFZPatcher(ImportPatcher):
 
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
+    """Merges changes to the AI Packages of Actors."""
     name = _('Import Actors: AIPackages')
     text = _("Import Actor AIPackage links from source mods.")
     tip = text
@@ -16293,46 +16293,133 @@ class ImportInventory(ImportPatcher):
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
 #------------------------------------------------------------------------------
-class ImportSpells(ImportPatcher):
-    """Merge changes to actor inventories."""
-    name = _('Import Spells')
-    text = _("Merges changes to NPC, creature spell lists.")
-    autoKey = ('Actors.Spells','SpellsOnly')
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-    siMode = True
+class ImportActorsSpells(ImportPatcher):
+    """Merges changes to the AI Packages of Actors."""
+    name = _('Import Actors: Spells')
+    text = _("Merges changes to NPC and creature spell lists.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Actors.Spells','Actors.SpellsForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_deltas = {}
         self.srcMods = self.getConfigChecked()
-        self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
-        self.SpellsOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set(('SpellsOnly')) & modInfos[x].getBashTags()))
-        self.isActive = bool(self.srcMods)
-        self.masters = set()
-        for srcMod in self.srcMods:
-            self.masters |= set(modInfos[srcMod].header.masters)
-        self.allMods = self.masters | set(self.srcMods)
-        self.mod_id_entries = {}
-        self.touched = set()
+        self.data = {}
+        self.longTypes = set(('CREA','NPC_'))
 
     def initData(self,progress):
         """Get data from source files."""
-        if not self.isActive or not self.srcMods: return
-        loadFactory = LoadFactory(False,'CREA','NPC_')
+        longTypes = self.longTypes
+        loadFactory = LoadFactory(False,MreCrea,MreNpc)
         progress.setFull(len(self.srcMods))
+        cachedMasters = {}
+        data = self.data
         for index,srcMod in enumerate(self.srcMods):
+            tempData = {}
+            if srcMod not in modInfos: continue
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            bashTags = srcInfo.getBashTags()
             srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
-            for block in (srcFile.CREA, srcFile.NPC_):
-                for record in block.getActiveRecords():
-                    self.touched.add(mapper(record.fid))
+            for recClass in (MreNpc,MreCrea):
+                if recClass.classType not in srcFile.tops: continue
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    tempData[fid] = list(record.spells)
+            for master in reversed(masters):
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for block in (MreNpc, MreCrea):
+                    if block.classType not in srcFile.tops: continue
+                    if block.classType not in masterFile.tops: continue
+                    for record in masterFile.tops[block.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if not fid in tempData: continue
+                        if record.spells == tempData[fid] and not 'Actors.SpellsForceAdd' in bashTags:
+                            # if subrecord is identical to the last master then we don't care about older masters.
+                            del tempData[fid]
+                            continue
+                        if fid in data:
+                            if tempData[fid] == data[fid]['merged']: continue                        
+                        recordData = {'deleted':[],'merged':tempData[fid]}
+                        for spell in list(record.spells):
+                            if not spell in tempData[fid]:
+                                recordData['deleted'].append(spell)
+                        if not fid in data:
+                            data[fid] = recordData
+                        else:
+                            for spell in recordData['deleted']:
+                                if spell in data[fid]['merged']:
+                                    data[fid]['merged'].remove(spell)
+                                data[fid]['deleted'].append(spell)
+                            if data[fid]['merged'] == []:
+                                for spell in recordData['merged']:
+                                    if spell in data[fid]['deleted'] and not 'Actors.SpellsForceAdd' in bashTags: continue
+                                    data[fid]['merged'].append(spell)
+                                continue
+                            for index, spell in enumerate(recordData['merged']):
+                                if not spell in data[fid]['merged']: # so needs to be added... (unless deleted that is) 
+                                    # find the correct position to add and add.
+                                    if spell in data[fid]['deleted'] and not 'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
+                                    if index == 0:
+                                        data[fid]['merged'].insert(0,spell) #insert as first item
+                                    elif index == (len(recordData['merged'])-1):
+                                        data[fid]['merged'].append(spell) #insert as last item
+                                    else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
+                                        i = index - 1
+                                        while i >= 0:
+                                            if recordData['merged'][i] in data[fid]['merged']:
+                                                slot = data[fid]['merged'].index(recordData['merged'][i])+1
+                                                data[fid]['merged'].insert(slot, spell)
+                                                break
+                                            i -= 1
+                                        else:
+                                            i = index + 1
+                                            while i != len(recordData['merged']):
+                                                if recordData['merged'][i] in data[fid]['merged']:
+                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
+                                                    data[fid]['merged'].insert(slot, spell)
+                                                    break
+                                                i += 1
+                                    continue # Done with this package
+                                elif index == data[fid]['merged'].index(spell) or (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(spell)): continue #spell same in both lists.
+                                else: #this import is later loading so we'll assume it is better order
+                                    data[fid]['merged'].remove(spell)
+                                    if index == 0:
+                                        data[fid]['merged'].insert(0,spell) #insert as first item
+                                    elif index == (len(recordData['merged'])-1):
+                                        data[fid]['merged'].append(spell) #insert as last item
+                                    else:
+                                        i = index - 1
+                                        while i >= 0:
+                                            if recordData['merged'][i] in data[fid]['merged']:
+                                                slot = data[fid]['merged'].index(recordData['merged'][i]) + 1
+                                                data[fid]['merged'].insert(slot, spell)
+                                                break
+                                            i -= 1
+                                        else:
+                                            i = index + 1
+                                            while i != len(recordData['merged']):
+                                                if recordData['merged'][i] in data[fid]['merged']:
+                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
+                                                    data[fid]['merged'].insert(slot, spell)
+                                                    break
+                                                i += 1
             progress.plus()
-
+            
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return (None,(MreNpc,MreCrea))[self.isActive]
@@ -16344,71 +16431,31 @@ class ImportSpells(ImportPatcher):
     def scanModFile(self, modFile, progress):
         """Add record from modFile."""
         if not self.isActive: return
-        touched = self.touched
-        id_deltas = self.id_deltas
-        mod_id_entries = self.mod_id_entries
+        data = self.data
         mapper = modFile.getLongMapper()
         modName = modFile.fileInfo.name
-        #--Master or source?
-        if modName in self.allMods:
-            id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(('NPC_','CREA'))
-            for type in ('NPC_','CREA'):
-                for record in getattr(modFile,type).getActiveRecords():
-                    if record.fid in touched:
-                        id_entries[record.fid] = record.spells[:]
-        #--Source mod?
-        if modName in self.srcMods:
-            id_entries = {}
-            for master in modFile.tes4.masters:
-                if master in mod_id_entries:
-                    id_entries.update(mod_id_entries[master])
-            for fid,entries in mod_id_entries[modName].iteritems():
-                masterEntries = id_entries.get(fid)
-                if masterEntries is None: continue
-                masterItems = set(x for x in masterEntries)
-                modItems = set(x for x in entries)
-                removeItems = masterItems - modItems
-                addItems = modItems - masterItems
-                addEntries = [x for x in entries if x in addItems]
-                deltas = self.id_deltas.get(fid)
-                if deltas is None: deltas = self.id_deltas[fid] = []
-                deltas.append((removeItems,addEntries))
-        #--Keep record?
-        if modFile.fileInfo.name not in self.SpellsOnlyMods:
-            for type in ('NPC_','CREA'):
-                patchBlock = getattr(self.patchFile,type)
-                id_records = patchBlock.id_records
-                for record in getattr(modFile,type).getActiveRecords():
-                    fid = mapper(record.fid)
-                    if fid in touched and fid not in id_records:
+        for type in ('NPC_','CREA'):
+            patchBlock = getattr(self.patchFile,type)
+            for record in getattr(modFile,type).getActiveRecords():
+                fid = mapper(record.fid)
+                if fid in data:
+                    if list(record.spells) != data[fid]['merged']:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        id_deltas = self.id_deltas
+        data = self.data
         mod_count = {}
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
+                fid = record.fid
+                if not fid in data: continue
                 changed = False
-                deltas = id_deltas.get(record.fid)
-                if not deltas: continue
-                removable = set(x for x in record.spells)
-                for removeItems,addEntries in reversed(deltas):
-                    if removeItems:
-                        #--Skip if some items to be removed have already been removed
-                        if not removeItems.issubset(removable): continue
-                        record.spells = [x for x in record.spells if x not in removeItems]
-                        removable -= removeItems
-                        changed = True
-                    if addEntries:
-                        current = set(x for x in record.spells)
-                        for entry in addEntries:
-                            if entry not in current:
-                                record.spells.append(entry)
-                                changed = True
+                if list(record.spells) != data[fid]['merged']:
+                    record.spells = data[fid]['merged']
+                    changed = True
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
@@ -16418,7 +16465,7 @@ class ImportSpells(ImportPatcher):
         log(_("=== Source Mods"))
         for mod in self.srcMods:
             log("* " +mod.s)
-        log(_("\n=== Spell lists Changed: %d") % (sum(mod_count.values()),))
+        log(_("\n=== Spell Lists Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
 #------------------------------------------------------------------------------

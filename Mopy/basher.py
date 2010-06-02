@@ -5478,7 +5478,7 @@ class ImportRelations(bosh.ImportRelations,ListPatcher): pass
 
 class ImportInventory(bosh.ImportInventory,ListPatcher): pass
 
-class ImportActorSpells(bosh.ImportSpells,ListPatcher): pass
+class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
 
 class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
 
@@ -5548,12 +5548,12 @@ PatchDialog.patchers.extend((
     GraphicsPatcher(),
     ImportFactions(),
     ImportInventory(),
-    ImportActorSpells(),
+    ImportSpells(),
     TweakActors(),
     ImportRelations(),
     ImportScripts(),
     ImportScriptContents(),
-    ImportSpells(),
+    ImportActorsSpells(),
     ListsMerger(),
     MFactMarker(),
     NamesPatcher(),
