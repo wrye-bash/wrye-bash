@@ -4863,6 +4863,10 @@ class PatchDialog(wx.Dialog):
 
     def Execute(self,event=None):
         """Do the patch."""
+        ###Remove from Bash after CBash integrated
+        global CBash
+        wasCBash = CBash
+        CBash = None
         self.EndModal(wx.ID_OK)
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'))
@@ -4919,6 +4923,10 @@ class PatchDialog(wx.Dialog):
         except:
             progress.Destroy()
             raise
+        ###Remove from Bash after CBash integrated
+        finally:
+            global CBash
+            CBash = wasCBash
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
