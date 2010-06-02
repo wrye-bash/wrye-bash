@@ -11520,13 +11520,14 @@ class ActorFactions:
         else:
             for modName in (modInfo.header.masters + [modInfo.name]):
                 if modName in self.gotFactions: continue
-                
+                modInfo = modInfos[modName]
                 Current = Collection(ModsPath=dirs['mods'].s)
-                modFile = Current.addMod(modName.s)
+                modFile = Current.addMod(modInfo.getPath().stail)
                 Current.minimalLoad(LoadMasters=False)
             
                 for record in modFile.FACT:
                     self.id_eid[record.longFid] = record.eid
+                    record.UnloadRecord()
                 self.gotFactions.add(modName)
 
     def readFromMod(self,modInfo):
@@ -11553,7 +11554,7 @@ class ActorFactions:
             type_id_factions,id_eid = self.type_id_factions,self.id_eid
 
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
 
             types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
@@ -11565,6 +11566,7 @@ class ActorFactions:
                     if record.factions:
                         id_eid[longid] = record.eid
                         id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
+                    record.UnloadRecord()
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
@@ -11697,7 +11699,7 @@ class ActorLevels:
             progress(0,_('Loading:')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
             obFile = Current.addMod('Oblivion.esm')
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11770,7 +11772,7 @@ class ActorLevels:
             #--Load Mod
             progress(0.25,_('Loading ')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11824,7 +11826,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
         
             for type,block in modFile.aggregates.iteritems():
@@ -11833,6 +11835,7 @@ class EditorIds:
                 for record in block:
                     longid = record.longFid
                     if record.eid: id_eid[longid] = record.eid
+                    record.UnloadRecord()
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
@@ -11869,7 +11872,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
 
             changed = []
@@ -12184,7 +12187,7 @@ class FullNames:
         else:
             type_id_name = self.type_id_name
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
@@ -12198,6 +12201,7 @@ class FullNames:
                         eid = record.eid
                         if eid and full:
                             id_name[longid] = (eid,full)
+                    record.UnloadRecord()
 
 
     def writeToMod(self,modInfo):
@@ -12228,7 +12232,7 @@ class FullNames:
         else:
             type_id_name = self.type_id_name
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
@@ -13002,7 +13006,7 @@ class ScriptText:
             progress = progress.Destroy()
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
@@ -13018,6 +13022,7 @@ class ScriptText:
                     longid = record.longFid
                     recordGetAttr = record.__getattribute__
                     ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                    record.UnloadRecord()
                     #return stats
             progress = progress.Destroy()
 
@@ -13054,7 +13059,7 @@ class ScriptText:
                 return False
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
