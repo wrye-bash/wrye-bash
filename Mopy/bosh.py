@@ -12982,6 +12982,7 @@ class ScriptText:
             'SCPT':('eid', 'scriptText'),
             }
         self.aliases = aliases or {} #--For aliasing mod names
+        self.importscripts = {}
 
     def readFromMod(self,modInfo,file):
         """Reads stats from specified mod."""
@@ -13026,7 +13027,7 @@ class ScriptText:
                     #return stats
             progress = progress.Destroy()
 
-    def writeToMod(self,modInfo,eid,newScriptText,makeNew=False):
+    def writeToMod(self,modInfo,makeNew=False):
         """Writes scripts to specified mod."""
         ###Remove from Bash after CBash integrated
         if(CBash == None):
@@ -13034,59 +13035,73 @@ class ScriptText:
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
+            num_imported = 0
+            eids_imported = []
+            changed = False
             for type in self.type_stats:
                 scriptData, attrs = self.type_stats[type], self.type_attrs[type]
                 for record in getattr(modFile,type).getActiveRecords():
-                    if record.eid == eid:
-                        if str(record.scriptText) != str(newScriptText):
-                            record.scriptText = newScriptText
+                    if record.eid in importscripts:
+                        if str(record.scriptText) != importscripts[record.eid]:
+                            record.scriptText = importscripts[record.eid]
                             record.setChanged()
-                            modFile.safeSave()
-                            return True
-                        else:
-                            return False
-                if makeNew:
+                            del importscripts[record.eid]
+                            num_imported += 1
+                            eids_imported.append(record.eid)
+                            changed = True
+                if makeNew and importscripts:
                     tes4 = modFile.tes4
-                    scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
-                    newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
-                    newScript.eid = eid
-                    newScript.scriptText = newScriptText
-                    newScript.setChanged()
-                    modFile.SCPT.records.append(newScript)
-                    modFile.safeSave()
-                    return True
-                #print "eid %s doesn't match any record." %(eid)
-                return False
+                    for eid in importscripts:
+                        scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                        newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
+                        newScript.eid = eid
+                        newScript.scriptText = importscripts[eid]
+                        newScript.setChanged()
+                        modFile.SCPT.records.append(newScript)
+                        num_imported += 1
+                        eids_imported.append(eid)
+                        changed = True
+            if changed:
+                modFile.safeSave()                
+                return (num_imported,eids_imported)
+            return False
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.fullLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
+            importscripts = self.importscripts
+            num_imported = 0
+            eids_imported = []
+            changed = False
             for type in self.type_stats:
-                scriptData, attrs = self.type_stats[type], self.type_attrs[type]
+                attrs = self.type_attrs[type]
                 for record in getattr(modFile,type):
-                    if record.eid == eid:
-                        if str(record.scriptText) != str(newScriptText):
-                            record.scriptText = newScriptText
-                            modFile.safeCloseSave()
-                            return True
-                        else:
-                            return False
-                if makeNew:
-                    newScript = modFile.createSCPTRecord()
-                    newScript.eid = eid
-                    newScript.scriptText = newScriptText
-                    modFile.safeCloseSave()
-                    return True
-                #print "eid %s doesn't match any record." %(eid)
-                return False
+                    if record.eid in importscripts:
+                        if str(record.scriptText) != importscripts[record.eid]:
+                            record.scriptText = importscripts[record.eid]
+                            del importscripts[record.eid]
+                            num_imported += 1
+                            eids_imported.append(record.eid)
+                            changed = True
+                if makeNew and importscripts:
+                    for eid in importscripts:
+                        newScript = modFile.createSCPTRecord()
+                        newScript.eid = eid
+                        newScript.scriptText = importscripts[eid]
+                        num_imported += 1
+                        eids_imported.append(eid)
+                        changed = True
+            if changed:
+                modFile.safeCloseSave()                
+                return (num_imported,eids_imported)
+            return False
 
-    def readFromText(self,textPath,modInfo,makeNew):
+    def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         aliases = self.aliases
-        changedScripts = ''
-        num = 0
+        importscripts = self.importscripts
         progress = balt.Progress(_("Import Scripts"))
         for root, dirs, files in os.walk(textPath):
             y = len(files)
@@ -13101,15 +13116,10 @@ class ScriptText:
                 for line in lines[3:]:
                     scriptText = (scriptText+line)
                 text.close()
-                changed = self.writeToMod(modInfo,eid,scriptText,makeNew)
-                if changed:
-                    num += 1
-                    changedScripts += eid+'\r\n'
+                importscripts[eid] = scriptText.replace('\n','\r\n') #because the cs writes it in \r\n format.
         progress = progress.Destroy()
-        if num == 0:
-            return False
-        changedScripts = (_('Imported %d changed scripts from %s:\n') % (num,textPath)+changedScripts)
-        return changedScripts
+        if importscripts: return True
+        return False
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
         """Writes stats to specified text file."""
@@ -20295,7 +20305,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         for record in patchFile.NPC_.records:
             if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
             model = record.model.modPath
-            if record.full.lower() == 'bendu olo': continue
+            if record.full and record.full.lower() == 'bendu olo': continue
             if model.lower() == r'characters\_male\skeletonsesheogorath.nif':
                 record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
                 keep(record.fid)
