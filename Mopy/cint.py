@@ -44,7 +44,7 @@ class BaseRecord(object):
     def set_longFid(self, nValue):
         if not isinstance(nValue,tuple): return
         fid = CBash.GetCorrectedFID(self._CollectionIndex, nValue[0].s, nValue[1])
-        if(fid == None): return
+        if(fid == 0): return
         self.fid = fid
     longFid = property(get_longFid, set_longFid)
 
@@ -284,7 +284,7 @@ class GMSTRecord(object):
     def set_longFid(self, nValue):
         if not isinstance(nValue,tuple): return
         fid = CBash.GetCorrectedFID(self._CollectionIndex, nValue[0].s, nValue[1])
-        if(fid == None): return
+        if(fid == 0): return
         self.fid = fid
     longFid = property(get_longFid, set_longFid)
     def CopyAsOverride(self, targetMod):
@@ -16460,6 +16460,11 @@ class ModFile(object):
         object = int(fid & 0xFFFFFFL)
         master = CBash.GetModName(self._CollectionIndex, masterIndex)
         return (GPath(master),object)
+    def MakeShortFid(self, longFid):
+        if not isinstance(longFid, tuple): return longFid
+        fid = CBash.GetCorrectedFID(self._CollectionIndex, nValue[0].s, nValue[1])
+        if(fid == 0): return None
+        return fid
     def createGMSTRecord(self, recordID):
         if(CBash.CreateGMSTRecord(self._CollectionIndex, self._ModName, recordID)):
             return GMSTRecord(self._CollectionIndex, self._ModName, recordID)
