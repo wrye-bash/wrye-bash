@@ -11773,7 +11773,7 @@ class ActorLevels:
             progress(0.25,_('Loading ')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
-            Current.fullLoad(LoadMasters=False)
+            Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
             npcLevels = {}
@@ -11871,7 +11871,7 @@ class EditorIds:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
-            Current.fullLoad(LoadMasters=False)
+            Current.minimalLoad(LoadMasters=False)
 
             changed = []
             for type,block in modFile.aggregates.iteritems():
@@ -12230,7 +12230,7 @@ class FullNames:
             type_id_name = self.type_id_name
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
-            Current.fullLoad(LoadMasters=False)
+            Current.minimalLoad(LoadMasters=False)
             
             mapper = modFile.MakeLongFid
             changed = {}
@@ -12628,7 +12628,7 @@ class ItemPrices:
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
-            Current.fullLoad(LoadMasters=False)
+            Current.minimalLoad(LoadMasters=False)
             attrs = self.attrs
             changed = {}
             for type in self.type_stats:
@@ -12779,7 +12779,7 @@ class CompleteItemData:
 ##        else:
 ##            Current = Collection(ModsPath=dirs['mods'].s)
 ##            modFile = Current.addMod(modInfo.name.s)
-##            Current.fullLoad(LoadMasters=False)
+##            Current.minimalLoad(LoadMasters=False)
 ##            
 ##            mapper = modFile.MakeLongFid
 ##            changed = {} #--changed[modName] = numChanged
@@ -13035,7 +13035,7 @@ class ScriptText:
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
-            Current.fullLoad(LoadMasters=False)
+            Current.minimalLoad(LoadMasters=False)
             
             importscripts = self.importscripts
             eids_imported = []
