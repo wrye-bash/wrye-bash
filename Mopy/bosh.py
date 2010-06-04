@@ -11507,7 +11507,7 @@ class ActorFactions:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             loadFactory= LoadFactory(False,MreFact)
             for modName in (modInfo.header.masters + [modInfo.name]):
                 if modName in self.gotFactions: continue
@@ -11533,7 +11533,7 @@ class ActorFactions:
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             self.readFactionEids(modInfo)
             type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
             loadFactory= LoadFactory(False,*types)
@@ -11655,7 +11655,7 @@ class ActorLevels:
     def dumpText(modInfo,outPath,progress=None):
         """Export NPC level data to text file."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             progress = progress or bolt.Progress()
             #--Mod levels
             progress(0,_('Loading ')+modInfo.name.s)
@@ -11733,7 +11733,7 @@ class ActorLevels:
     def loadText(modInfo,inPath,progress=None):
         """Import NPC level data from text file."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             inPath = GPath(inPath)
             progress = progress or bolt.Progress()
             #--Sort and print
@@ -11806,7 +11806,7 @@ class EditorIds:
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             type_id_eid,types = self.type_id_eid,self.types
             classes = [MreRecord.type_class[x] for x in types]
             loadFactory= LoadFactory(False,*classes)
@@ -11838,7 +11838,7 @@ class EditorIds:
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             type_id_eid,types = self.type_id_eid,self.types
             classes = [MreRecord.type_class[x] for x in types]
             loadFactory= LoadFactory(True,*classes)
@@ -11895,7 +11895,7 @@ class EditorIds:
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             changed = []
             if not old_new: return changed
             reWord = re.compile('\w+')
@@ -12165,7 +12165,7 @@ class FullNames:
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             type_id_name,types = self.type_id_name, self.types
             classes = [MreRecord.type_class[x] for x in self.types]
             loadFactory= LoadFactory(False,*classes)
@@ -12204,7 +12204,7 @@ class FullNames:
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             type_id_name,types = self.type_id_name,self.types
             classes = [MreRecord.type_class[x] for x in self.types]
             loadFactory= LoadFactory(True,*classes)
@@ -12578,7 +12578,7 @@ class ItemPrices:
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
         ###Remove from Bash after CBash integrated
-        if CBash == None:
+        if not CBash:
             loadFactory = LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
@@ -12607,7 +12607,7 @@ class ItemPrices:
                     
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        if CBash == None:
+        if not CBash:
             loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
@@ -12681,8 +12681,8 @@ class CompleteItemData:
         """Initialize."""
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
         self.type_attrs = {
-            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath'),
-            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath'),
+            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath', 'modPath','IsFood','IsNoAutoCalc','script','effects'), #TODO: proper effects export
+            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath','modPath','script','enchantment','IsNormal'),
             'APPA':('eid', 'full', 'weight', 'value', 'quality', 'iconPath'),
             'ARMO':('eid', 'full', 'weight', 'value', 'health', 'strength', 'maleIconPath', 'femaleIconPath'),
             'BOOK':('eid', 'full', 'weight', 'value', 'enchantPoints', 'iconPath'),
@@ -12696,65 +12696,53 @@ class CompleteItemData:
             'WEAP':('eid', 'full', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints', 'iconPath'),
             }
         self.aliases = aliases or {} #--For aliasing mod fulls
-        self.model = {}
-        self.Mmodel = {}
-        self.Fmodel = {}
-        self.MGndmodel = {}
-        self.FGndmodel = {}
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         ###Remove from Bash after CBash integrated
-##        if(CBash == None):
-        loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                recordGetAttr = record.__getattribute__
-                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-                if type in ['ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']:
-                    if record.model:
-                        self.model[longid] = record.model.modPath
-                elif type in ['CLOT','ARMO']:
-                    if record.maleBody:
-                        self.Mmodel[longid] = record.maleBody.modPath
-                    if record.maleWorld:
-                        self.MGndmodel[longid] = record.maleWorld.modPath
-                    if record.femaleBody:
-                        self.Fmodel[longid] = record.femaleBody.modPath
-                    if record.femaleWorld:
-                        self.FGndmodel[longid] = record.femaleWorld.modPath
-##        else:
-##            Current = Collection(ModsPath=dirs['mods'].s)
-##            modFile = Current.addMod(modInfo.name.s)
-##            Current.minimalLoad(LoadMasters=False)
-##            
-##            mapper = modFile.MakeLongFid
-##            for type,stats in self.type_stats.iteritems():
-##                attrs = self.type_attrs[type]
-##                for record in getattr(modFile,type):
-##                    longid = record.longFid
-##                    recordGetAttr = record.__getattribute__
-##                    stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-##                    if type in ['ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']:
-##                        model = record.modPath
-##                        if model: self.model[longid] = model
-##                    elif type in ['CLOT','ARMO']:
-##                        model = record.maleBody.modPath
-##                        if model: self.Mmodel[longid] = model
-##                        
-##                        model = record.maleWorld.modPath
-##                        if model: self.MGndmodel[longid] = model
-##                        
-##                        model = record.femaleBody.modPath
-##                        if model: self.Fmodel[longid] = model
-##                            
-##                        model = record.femaleWorld.modPath
-##                        if model: self.FGndmodel[longid] = model
+        if not CBash: #very lame though
+            self.model = {}
+            self.Mmodel = {}
+            self.Fmodel = {}
+            self.MGndmodel = {}
+            self.FGndmodel = {}
+            loadFactory= LoadFactory(False,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for type in self.type_stats:
+                stats, attrs = self.type_stats[type], self.type_attrs[type]
+                for record in getattr(modFile,type).getActiveRecords():
+                    longid = mapper(record.fid)
+                    recordGetAttr = record.__getattribute__
+                    stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+                    if type in ['ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']:
+                        if record.model:
+                            self.model[longid] = record.model.modPath
+                    elif type in ['CLOT','ARMO']:
+                        if record.maleBody:
+                            self.Mmodel[longid] = record.maleBody.modPath
+                        if record.maleWorld:
+                            self.MGndmodel[longid] = record.maleWorld.modPath
+                        if record.femaleBody:
+                            self.Fmodel[longid] = record.femaleBody.modPath
+                        if record.femaleWorld:
+                            self.FGndmodel[longid] = record.femaleWorld.modPath
+        else:
+            Current = Collection(ModsPath=dirs['mods'].s)
+            modFile = Current.addMod(modInfo.name.s)
+            Current.minimalLoad(LoadMasters=False)
+            mapper = modFile.MakeLongFid
+            for type,stats in self.type_stats.iteritems():
+                if type in ['KEYM',]:
+                    for record in getattr(modFile,type):
+                        longid = record.longFid
+                        stats[longid] = record.Export()
+                if type not in ['ALCH',]: continue
+                attrs = self.type_attrs[type]
+                for record in getattr(modFile,type):
+                    longid = record.longFid
+                    stats[longid] = tuple(getattr(record,attr) for attr in attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -12870,80 +12858,154 @@ class CompleteItemData:
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        for type,format,header in (
-            #--Alch
-            ('ALCH', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Ammo
-            ('AMMO', bolt.csvFormat('ssfiifiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Apparatus
-            ('APPA', bolt.csvFormat('ssfifss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Armor
-            ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
-                _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-            #Books
-            ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Clothing
-            ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
-                _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-            #Ingredients
-            ('INGR', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Keys
-            ('KEYM', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Lights
-            ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Misc
-            ('MISC', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Sigilstones
-            ('SGST', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Soulgems
-            ('SLGM', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Weapons
-            ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
-                _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            ):
-            stats = self.type_stats[type]
-            if not stats: continue
-            out.write('\n'+header)
-            for longid in getSortedIds(stats):
-                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-                tempstats = list(stats[longid])
-                if type == 'ARMO' or type == 'CLOT':
-                    tempstats.append(self.Mmodel.get(longid, 'NONE'))
-                    tempstats.append(self.Fmodel.get(longid, 'NONE'))
-                    tempstats.append(self.MGndmodel.get(longid, 'NONE'))
-                    tempstats.append(self.FGndmodel.get(longid, 'NONE'))
+        if not CBash: 
+            for type,format,header in (
+                #--Alch
+                ('ALCH', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Ammo
+                ('AMMO', bolt.csvFormat('ssfiifiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Apparatus
+                ('APPA', bolt.csvFormat('ssfifss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Armor
+                ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
+                    _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                    _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+                #Books
+                ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Clothing
+                ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
+                    _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                    _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+                #Ingredients
+                ('INGR', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Keys
+                ('KEYM', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Lights
+                ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Misc
+                ('MISC', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Sigilstones
+                ('SGST', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Soulgems
+                ('SLGM', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Weapons
+                ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
+                    _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+                ):
+                stats = self.type_stats[type]
+                if not stats: continue
+                out.write('\n'+header)
+                for longid in getSortedIds(stats):
+                    out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                    tempstats = list(stats[longid])
+                    if type == 'ARMO' or type == 'CLOT':
+                        tempstats.append(self.Mmodel.get(longid, 'NONE'))
+                        tempstats.append(self.Fmodel.get(longid, 'NONE'))
+                        tempstats.append(self.MGndmodel.get(longid, 'NONE'))
+                        tempstats.append(self.FGndmodel.get(longid, 'NONE'))
+                    else:
+                        tempstats.append(self.model.get(longid, 'NONE'))
+                    finalstats = tuple(tempstats)
+                    out.write(format % finalstats)
+        else:
+            for type,format,header in (
+                ('ALCH', bolt.csvFormat('ssfissssss')+'\n', #--Potions
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),
+                    _('modPath'),_('IsFood'),_('IsNoAutoCalc'),_('Script'),_('Effects'))) + '"\n')),
+                ('AMMO', bolt.csvFormat('ssfiifisssss')+'\n', #--Ammo
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed')
+                    ,_('Enchant Points'),_('Icon Path'),_('Model'),_('Script'),_('Enchantment'),_('Normal Weapon'))) + '"\n')),
+                #--Apparatus
+                ('APPA', bolt.csvFormat('ssfifss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Armor
+                ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
+                    _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                    _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+                #Books
+                ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Clothing
+                ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
+                    _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
+                    _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
+                #Ingredients
+                ('INGR', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                ('KEYM', bolt.csvFormat('sssssssss')+'\n',     #--Keys
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Value'),_('Weight'),_('Model'),_('Icon'),_('Script'),_('MODB'),_('MODT_P'))) + '"\n')),
+
+                #Lights
+                ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Misc
+                ('MISC', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Sigilstones
+                ('SGST', bolt.csvFormat('ssfiiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
+                #Soulgems
+                ('SLGM', bolt.csvFormat('ssfiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
+                #--Weapons
+                ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
+                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                    _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
+                    _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
+                ):
+                stats = self.type_stats[type]
+                if not stats: continue
+                out.write('\n'+header)
+                if type != 'KEYM':
+                    for longid in getSortedIds(stats):
+                        out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                        out.write(format % stats[longid])
                 else:
-                    tempstats.append(self.model.get(longid, 'NONE'))
-                finalstats = tuple(tempstats)
-                out.write(format % finalstats)
+                    format = bolt.csvFormat('sssssssss')
+                    for longid in getSortedIds(stats):
+                        out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                        out.write(format % stats[longid])
+                        out.write('\n')
         out.close()
 
 #------------------------------------------------------------------------------
@@ -12961,7 +13023,7 @@ class ScriptText:
     def readFromMod(self, modInfo, file):
         """Reads stats from specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             loadFactory= LoadFactory(False,MreScpt)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
@@ -13003,7 +13065,7 @@ class ScriptText:
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
         ###Remove from Bash after CBash integrated
-        if(CBash == None):
+        if not CBash:
             loadFactory = LoadFactory(True,MreScpt)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
@@ -13179,7 +13241,7 @@ class SpellRecords:
             if type == 'SPEL':
                 Spells[longid] = (eid,) + tuple(func(field) for func,field in
                     #--(name, cost, level, spelltype)
-                    zip((sfloat,sfloat,int,int,sfloat,),fields[4:9]))
+                    zip((str,str,int,int,sfloat,),fields[4:9]))
         ins.close()
 
     def writeToText(self,textPath):
@@ -15881,7 +15943,6 @@ class ImportRelations(ImportPatcher):
         for file in self.srcFiles:
             log("* " +file.s)
         log(_("\n=== Modified Factions: %d") % type_count['FACT'])
-
 #------------------------------------------------------------------------------
 class ImportScripts(ImportPatcher):
     """Imports attached scripts on objects."""
@@ -16567,7 +16628,6 @@ class NamesPatcher(ImportPatcher):
         log(_("\n=== Renamed Items"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
-
 #------------------------------------------------------------------------------
 class NpcFacePatcher(ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
@@ -18565,14 +18625,14 @@ class GmstTweaker(MultiTweaker):
         GmstTweak(False,_('Combat: Alchemy'),
             _("Allow alchemy during combat."),
             'iAllowAlchemyDuringCombat',
-            ('Allow',1),
-            ('[Disallow]',0),
+            (_('Allow'),1),
+            (_('[Disallow]'),0),
             ),
         GmstTweak(False,_('Combat: Repair'),
             _("Allow repairing armor/weapons during combat."),
             'iAllowRepairDuringCombat',
-            ('Allow',1),
-            ('[Disallow]',0),
+            (_('Allow'),1),
+            (_('[Disallow]'),0),
             ),
         GmstTweak(False,_('Companions: Max Number'),
             _("Maximum number of actors following the player"),
