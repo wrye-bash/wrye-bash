@@ -1112,7 +1112,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * R.ChangeSpells: Mod overwrites race spells list(s) ([[#|Race Records]]).
   * R.Mouth: Mod changes mouth/tongue ([[#|Race Records]]).
   * R.Relations: Mod changes race relationships ([[#|Race Records]]).
-  * R.Skills: mdo changes race skill bonuses ([[#|Race Records]]).
+  * R.Skills: Mod changes race skill bonuses ([[#|Race Records]]).
   * R.Teeth: Mod changes upper/lower teeth ([[#|Race Records]]).
   * Relev: Mod relevels items in ([[#|Leveled Lists]]).
   * Scripts: Mod modifies item, npc or object scripts ([[#|Import Scripts]]).

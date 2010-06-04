@@ -1909,7 +1909,7 @@ class INIPanel(NotebookPanel):
         """Check the list of target INIs, remove any that don't exist"""
         changed = False
         for i in self.choices.keys():
-            if i == 'Browse...': continue
+            if i == _('Browse...'): continue
             path = self.choices[i]
             if not path.isfile():
                 del self.choices[i]
@@ -1917,8 +1917,8 @@ class INIPanel(NotebookPanel):
         if 'Oblivion.ini' not in self.choices:
             self.choices['Oblivion.ini'] = bosh.oblivionIni.path
             changed = True
-        if 'Browse...' not in self.choices:
-            self.choices['Browse...'] = None
+        if _('Browse...') not in self.choices:
+            self.choices[_('Browse...')] = None
             changed = True
         if changed: self.SortChoices()
         if len(self.choices.keys()) <= self.choice + 1:
@@ -1931,7 +1931,7 @@ class INIPanel(NotebookPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        keys.sort(key=lambda a: (a != 'Oblivion.ini') + (a == 'Browse...'))
+        keys.sort(key=lambda a: (a != 'Oblivion.ini') + (a == _('Browse...')))
         self.sortKeys = keys
         return keys
 
@@ -3948,7 +3948,7 @@ class BashFrame(wx.Frame):
         """Set title. Set to default if no title supplied."""
         if not title:
             ###Remove from Bash after CBash integrated
-            if(CBash == None):
+            if not CBash:
                 title = "Wrye Bash %s: " % (settings['bash.readme'][1],)
             else:
                 title = "Wrye Bash %s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], CBash.GetMajor(), CBash.GetMinor(), CBash.GetRevision())
@@ -4789,8 +4789,8 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
-        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,onClick=self.RevertConfig)
-        self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,onClick=self.SelectAll)
+        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
+        self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
         self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import Patch Configuration'),onClick=self.ImportConfig)
@@ -4825,7 +4825,7 @@ class PatchDialog(wx.Dialog):
                 self.gExecute,
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),
-                (button(self,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                (button(self,id=wx.ID_CANCEL,label=_('Cancel')),0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
@@ -5420,7 +5420,7 @@ class TweakPatcher(Patcher):
         for index,label in enumerate(choiceLabels):
             if label == '----':
                 menu.AppendSeparator()
-            elif label.startswith('Custom'):
+            elif label.startswith(_('Custom')):
                 menulabel = label + ' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
                 menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
