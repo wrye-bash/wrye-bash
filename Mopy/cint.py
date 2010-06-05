@@ -54,7 +54,6 @@ class BaseRecord(object):
         if(fid == 0): return
         self.fid = fid
     longFid = property(get_longFid, set_longFid)
-
     def CopyAsOverride(self, targetMod):
         CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
         return
@@ -159,25 +158,12 @@ class BaseRecord(object):
         if (nValue == True): self.flags1 |= 0x00080000
         else: self.flags1 &= ~0x00080000
     IsCantWait = property(get_IsCantWait, set_IsCantWait)
-    
+    baseattrs = ['flags1', 'flags2', 'eid']
+
 class TES4Record(object):
     def __init__(self, CollectionIndex, ModName):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-    def get_recType(self):
-        CBash.ReadTES4Field.restype = POINTER(c_uint)
-        retValue = CBash.ReadTES4Field(self._CollectionIndex, self._ModName, 0)
-        if(retValue): return retValue.contents.value
-        return None
-    def set_recType(self, nValue):
-        CBash.SetTES4FieldUI(self._CollectionIndex, self._ModName, 0, nValue)
-    recType = property(get_recType, set_recType)
-    @property
-    def size(self):
-        CBash.ReadTES4Field.restype = POINTER(c_ulong)
-        retValue = CBash.ReadTES4Field(self._CollectionIndex, self._ModName, 1)
-        if(retValue): return retValue.contents.value
-        return None
     def get_flags1(self):
         CBash.ReadTES4Field.restype = POINTER(c_uint)
         retValue = CBash.ReadTES4Field(self._CollectionIndex, self._ModName, 2)
@@ -273,6 +259,7 @@ class TES4Record(object):
         if (nValue == True): self.flags1 |= 0x00000001
         else: self.flags1 &= ~0x00000001
     IsESM = property(get_IsESM, set_IsESM)
+    attrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject', 'author', 'description', 'masters']
     
 class GMSTRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
@@ -304,20 +291,6 @@ class GMSTRecord(object):
         if(recID): return GMSTRecord(self._CollectionIndex, targetMod._ModName, self._recordID)
         return None
 
-    def get_recType(self):
-        CBash.ReadGMSTField.restype = POINTER(c_int)
-        retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 0)
-        if(retValue): return retValue.contents.value
-        return None
-    def set_recType(self, nValue):
-        CBash.SetGMSTFieldUI(self._CollectionIndex, self._ModName, self._recordID, 0, nValue)
-    recType = property(get_recType, set_recType)
-    @property
-    def size(self):
-        CBash.ReadGMSTField.restype = POINTER(c_ulong)
-        retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 1)
-        if(retValue): return retValue.contents.value
-        return None
     def get_flags1(self):
         CBash.ReadGMSTField.restype = POINTER(c_int)
         retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 2)
@@ -346,7 +319,7 @@ class GMSTRecord(object):
     flags2 = property(get_flags2, set_flags2)
     @property
     def eid(self):
-        #eid, unsettable due to conflicts with GMST_ModFile_Record
+        #eid, unsettable due to conflicts with GMST_ModFile_Record. Will be fixed.
         CBash.ReadGMSTField.restype = c_char_p
         return CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 5)
     def get_value(self):
@@ -372,6 +345,7 @@ class GMSTRecord(object):
         elif(rFormat == 3 and type(nValue) is str):
             CBash.SetGMSTFieldStr(self._CollectionIndex, self._ModName, self._recordID, 6, nValue)
     value = property(get_value, set_value)
+    attrs = ['flags1', 'flags2', 'eid', 'value']
 
 class GLOBRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -398,6 +372,7 @@ class GLOBRecord(BaseRecord):
     def set_value(self, nValue):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 7, c_float(nValue))
     value = property(get_value, set_value)
+    attrs = baseattrs + ['format', 'value']
     
 class CLASRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -654,7 +629,10 @@ class CLASRecord(BaseRecord):
         if (nValue == True): self.services |= 0x00020000
         else: self.services &= ~0x00020000
     IsServicesRepair = property(get_IsServicesRepair, set_IsServicesRepair)
-    
+    attrs = baseattrs + ['full', 'description', 'iconPath', 'primary1', 'primary2', 'specialization',
+                         'major1', 'major2', 'major3', 'major4', 'major5', 'major6', 'major7',
+                         'flags', 'services', 'trainSkill', 'trainLevel']
+
 class FACTRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
         FID = CBash.CopyFACTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
@@ -803,6 +781,7 @@ class FACTRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000004
         else: self.flags &= ~0x00000004
     IsSpecialCombat = property(get_IsSpecialCombat, set_IsSpecialCombat)
+    attrs = baseattrs + ['full', 'relations', 'flags', 'crimeGoldMultiplier', 'ranks']
     
 class HAIRRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -892,6 +871,7 @@ class HAIRRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000008
         else: self.flags &= ~0x00000008
     IsFixedColor = property(get_IsFixedColor, set_IsFixedColor)
+    attrs = baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath', 'flags']
     
 class EYESRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -928,6 +908,7 @@ class EYESRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000001
         else: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
+    attrs = baseattrs + ['full', 'iconPath', 'flags']
 
 class RACERecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -1420,36 +1401,105 @@ class RACERecord(BaseRecord):
     def set_femaleLuck(self, nValue):
         CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 52, c_ubyte(nValue))
     femaleLuck = property(get_femaleLuck, set_femaleLuck)
-    @property
-    def head(self):
+    def get_head(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 53)
-    @property
-    def maleEars(self):
+    def set_head(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.head
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    head = property(get_head, set_head)
+    def get_maleEars(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 57)
-    @property
-    def femaleEars(self):
+    def set_maleEars(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.maleEars
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    maleEars = property(get_maleEars, set_maleEars)
+    def get_femaleEars(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 61)
-    @property
-    def mouth(self):
+    def set_femaleEars(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.femaleEars
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    femaleEars = property(get_femaleEars, set_femaleEars)
+    def get_mouth(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 65)
-    @property
-    def teethLower(self):
+    def set_mouth(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.mouth
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    mouth = property(get_mouth, set_mouth)
+    def get_teethLower(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 69)
-    @property
-    def teethUpper(self):
+    def set_teethLower(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.teethLower
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    teethLower = property(get_teethLower, set_teethLower)
+    def get_teethUpper(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 73)
-    @property
-    def tongue(self):
+    def set_teethUpper(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.teethUpper
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    teethUpper = property(get_teethUpper, set_teethUpper)
+    def get_tongue(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 77)
-    @property
-    def leftEye(self):
+    def set_tongue(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.tongue
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    tongue = property(get_tongue, set_tongue)
+    def get_leftEye(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 81)
-    @property
-    def rightEye(self):
+    def set_leftEye(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.leftEye
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    leftEye = property(get_leftEye, set_leftEye)
+    def get_rightEye(self):
         return self.RaceModel(self._CollectionIndex, self._ModName, self._recordID, 85)
-    @property
-    def maleTailModel(self):
+    def set_rightEye(self, nValue):
+        if not isinstance(nValue, self.RaceModel): return
+        thisModel = self.rightEye
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.iconPath = nValue.iconPath
+        thisModel.modt_p = nValue.modt_p
+    rightEye = property(get_rightEye, set_rightEye)
+    def get_maleTailModel(self):
         return self.Model(self._CollectionIndex, self._ModName, self._recordID, 89)
+    def set_maleTailModel(self, nValue):
+        if not isinstance(nValue, self.Model): return
+        thisModel = self.maleTailModel
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.modt_p = nValue.modt_p
+    maleTailModel = property(get_maleTailModel, set_maleTailModel)
     def get_maleUpperBodyPath(self):
         CBash.ReadFIDField.restype = c_char_p
         return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 92)
@@ -1480,9 +1530,15 @@ class RACERecord(BaseRecord):
     def set_maleTailPath(self, nValue):
         CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 96, nValue)
     maleTailPath = property(get_maleTailPath, set_maleTailPath)
-    @property
-    def femaleTailModel(self):
+    def get_femaleTailModel(self):
         return self.Model(self._CollectionIndex, self._ModName, self._recordID, 97)
+    def set_femaleTailModel(self, nValue):
+        if not isinstance(nValue, self.Model): return
+        thisModel = self.femaleTailModel
+        thisModel.modPath = nValue.modPath
+        thisModel.modb = nValue.modb
+        thisModel.modt_p = nValue.modt_p
+    femaleTailModel = property(get_femaleTailModel, set_femaleTailModel)
     def get_femaleUpperBodyPath(self):
         CBash.ReadFIDField.restype = c_char_p
         return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 100)
@@ -1587,6 +1643,26 @@ class RACERecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000001
         else: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
+    attrs = baseattrs + ['full', 'text', 'spells', 'relations', 
+                         'skill1', 'skill1Boost', 'skill2', 'skill2Boost',
+                         'skill3', 'skill3Boost', 'skill4', 'skill4Boost',
+                         'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
+                         'skill7', 'skill7Boost', 'maleHeight', 'femaleHeight',
+                         'maleWeight', 'femaleWeight', 'flags', 'maleVoice',
+                         'femaleVoice', 'defaultHairMale', 'defaultHairFemale',
+                         'defaultHairColor', 'mainClamp', 'faceClamp', 'maleStrength',
+                         'maleIntelligence', 'maleAgility', 'maleSpeed',
+                         'maleEndurance', 'malePersonality', 'maleLuck',
+                         'femaleStrength', 'femaleIntelligence', 'femaleWillpower',
+                         'femaleAgility', 'femaleSpeed', 'femaleEndurance',
+                         'femalePersonality', 'femaleLuck', 'head', 'maleEars',
+                         'femaleEars', 'mouth', 'teethLower', 'teethUpper',
+                         'tongue', 'leftEye', 'rightEye', 'maleTailModel',
+                         'maleUpperBodyPath', 'maleLowerBodyPath', 'maleHandPath',
+                         'maleFootPath', 'maleTailPath', 'femaleTailModel',
+                         'femaleUpperBodyPath', 'femaleLowerBodyPath',
+                         'femaleHandPath', 'femaleFootPath', 'femaleTailPath',
+                         'hairs', 'eyes', 'fggs_p', 'fgga_p', 'fgts_p', 'snam']
 
 class SOUNRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
