@@ -372,7 +372,7 @@ class GLOBRecord(BaseRecord):
     def set_value(self, nValue):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 7, c_float(nValue))
     value = property(get_value, set_value)
-    attrs = baseattrs + ['format', 'value']
+    attrs = BaseRecord.baseattrs + ['format', 'value']
     
 class CLASRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -629,7 +629,7 @@ class CLASRecord(BaseRecord):
         if (nValue == True): self.services |= 0x00020000
         else: self.services &= ~0x00020000
     IsServicesRepair = property(get_IsServicesRepair, set_IsServicesRepair)
-    attrs = baseattrs + ['full', 'description', 'iconPath', 'primary1', 'primary2', 'specialization',
+    attrs = BaseRecord.baseattrs + ['full', 'description', 'iconPath', 'primary1', 'primary2', 'specialization',
                          'major1', 'major2', 'major3', 'major4', 'major5', 'major6', 'major7',
                          'flags', 'services', 'trainSkill', 'trainLevel']
 
@@ -781,7 +781,7 @@ class FACTRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000004
         else: self.flags &= ~0x00000004
     IsSpecialCombat = property(get_IsSpecialCombat, set_IsSpecialCombat)
-    attrs = baseattrs + ['full', 'relations', 'flags', 'crimeGoldMultiplier', 'ranks']
+    attrs = BaseRecord.baseattrs + ['full', 'relations', 'flags', 'crimeGoldMultiplier', 'ranks']
     
 class HAIRRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -871,7 +871,7 @@ class HAIRRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000008
         else: self.flags &= ~0x00000008
     IsFixedColor = property(get_IsFixedColor, set_IsFixedColor)
-    attrs = baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath', 'flags']
+    attrs = BaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath', 'flags']
     
 class EYESRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -908,7 +908,7 @@ class EYESRecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000001
         else: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
-    attrs = baseattrs + ['full', 'iconPath', 'flags']
+    attrs = BaseRecord.baseattrs + ['full', 'iconPath', 'flags']
 
 class RACERecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
@@ -1643,7 +1643,7 @@ class RACERecord(BaseRecord):
         if (nValue == True): self.flags |= 0x00000001
         else: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
-    attrs = baseattrs + ['full', 'text', 'spells', 'relations', 
+    attrs = BaseRecord.baseattrs + ['full', 'text', 'spells', 'relations', 
                          'skill1', 'skill1Boost', 'skill2', 'skill2Boost',
                          'skill3', 'skill3Boost', 'skill4', 'skill4Boost',
                          'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
