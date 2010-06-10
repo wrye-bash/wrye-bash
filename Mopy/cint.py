@@ -25,6 +25,7 @@ class BaseRecord(object):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
         self._recordID = recordID
+        self._Type = BaseRecord
     def LoadRecord(self):
         CBash.LoadRecord(self._CollectionIndex, self._ModName, self._recordID)
         return
@@ -39,6 +40,13 @@ class BaseRecord(object):
         if not isinstance(origFid, int): return 0
         if not isinstance(newFid, int): return 0
         return CBash.UpdateReferences(self._CollectionIndex, self._ModName, self._recordID, origFid, newFid)
+    def Conflicts(self):
+        numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._ModName, self._recordID)
+        if(numRecords > 1):
+            cModNames = (POINTER(c_char_p) * numRecords)()
+            CBash.GetFIDConflicts(self._CollectionIndex, self._ModName, self._recordID, cModNames)
+            return [self._Type(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
+        return []
     def get_longFid(self):
         fid = self.fid
         if(fid == None): return (None,None)
@@ -98,70 +106,92 @@ class BaseRecord(object):
         CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 5, nValue)
     eid = property(get_eid, set_eid)
     def get_IsDeleted(self):
-        return (self.flags1 & 0x00000020) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000020) != 0
     def set_IsDeleted(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000020
-        else: self.flags1 &= ~0x00000020
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000020
+            else: self.flags1 = 0x00000020
+        elif self.flags1: self.flags1 &= ~0x00000020
     IsDeleted = property(get_IsDeleted, set_IsDeleted)
     def get_IsBorderRegion(self):
-        return (self.flags1 & 0x00000040) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000040) != 0
     def set_IsBorderRegion(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000040
-        else: self.flags1 &= ~0x00000040
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000040
+            else: self.flags1 = 0x00000040
+        elif self.flags1: self.flags1 &= ~0x00000040
     IsBorderRegion = property(get_IsBorderRegion, set_IsBorderRegion)
     def get_IsTurnOffFire(self):
-        return (self.flags1 & 0x00000080) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000080) != 0
     def set_IsTurnOffFire(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000080
-        else: self.flags1 &= ~0x00000080
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000080
+            else: self.flags1 = 0x00000080
+        elif self.flags1: self.flags1 &= ~0x00000080
     IsTurnOffFire = property(get_IsTurnOffFire, set_IsTurnOffFire)
     def get_IsCastsShadows(self):
-        return (self.flags1 & 0x00000200) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000200) != 0
     def set_IsCastsShadows(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000200
-        else: self.flags1 &= ~0x00000200
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000200
+            else: self.flags1 = 0x00000200
+        elif self.flags1: self.flags1 &= ~0x00000200
     IsCastsShadows = property(get_IsCastsShadows, set_IsCastsShadows)
     def get_IsQuestOrPersistent(self):
-        return (self.flags1 & 0x00000400) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000400) != 0
     def set_IsQuestOrPersistent(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000400
-        else: self.flags1 &= ~0x00000400
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000400
+            else: self.flags1 = 0x00000400
+        elif self.flags1: self.flags1 &= ~0x00000400
     IsPersistent = IsQuest = IsQuestOrPersistent = property(get_IsQuestOrPersistent, set_IsQuestOrPersistent)
     def get_IsInitiallyDisabled(self):
-        return (self.flags1 & 0x00000800) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000800) != 0
     def set_IsInitiallyDisabled(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000800
-        else: self.flags1 &= ~0x00000800
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000800
+            else: self.flags1 = 0x00000800
+        elif self.flags1: self.flags1 &= ~0x00000800
     IsInitiallyDisabled = property(get_IsInitiallyDisabled, set_IsInitiallyDisabled)
     def get_IsIgnored(self):
-        return (self.flags1 & 0x00001000) != 0
+        return self.flags1 != None and (self.flags1 & 0x00001000) != 0
     def set_IsIgnored(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00001000
-        else: self.flags1 &= ~0x00001000
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00001000
+            else: self.flags1 = 0x00001000
+        elif self.flags1: self.flags1 &= ~0x00001000
     IsIgnored = property(get_IsIgnored, set_IsIgnored)
     def get_IsVisibleWhenDistant(self):
-        return (self.flags1 & 0x00008000) != 0
+        return self.flags1 != None and (self.flags1 & 0x00008000) != 0
     def set_IsVisibleWhenDistant(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00008000
-        else: self.flags1 &= ~0x00008000
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00008000
+            else: self.flags1 = 0x00008000
+        elif self.flags1: self.flags1 &= ~0x00008000
     IsVWD = IsVisibleWhenDistant = property(get_IsVisibleWhenDistant, set_IsVisibleWhenDistant)
     def get_IsDangerousOrOffLimits(self):
-        return (self.flags1 & 0x00020000) != 0
+        return self.flags1 != None and (self.flags1 & 0x00020000) != 0
     def set_IsDangerousOrOffLimits(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00020000
-        else: self.flags1 &= ~0x00020000
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00020000
+            else: self.flags1 = 0x00020000
+        elif self.flags1: self.flags1 &= ~0x00020000
     IsDangerousOrOffLimits = property(get_IsDangerousOrOffLimits, set_IsDangerousOrOffLimits)
     def get_IsCompressed(self):
-        return (self.flags1 & 0x00040000) != 0
+        return self.flags1 != None and (self.flags1 & 0x00040000) != 0
     def set_IsCompressed(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00040000
-        else: self.flags1 &= ~0x00040000
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00040000
+            else: self.flags1 = 0x00040000
+        elif self.flags1: self.flags1 &= ~0x00040000
     IsCompressed = property(get_IsCompressed, set_IsCompressed)
     def get_IsCantWait(self):
-        return (self.flags1 & 0x00080000) != 0
+        return self.flags1 != None and (self.flags1 & 0x00080000) != 0
     def set_IsCantWait(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00080000
-        else: self.flags1 &= ~0x00080000
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00080000
+            else: self.flags1 = 0x00080000
+        elif self.flags1: self.flags1 &= ~0x00080000
     IsCantWait = property(get_IsCantWait, set_IsCantWait)
     baseattrs = ['flags1','flags2','eid']
 
@@ -269,10 +299,12 @@ class TES4Record(object):
     def DATA(self):
         return 0
     def get_IsESM(self):
-        return (self.flags1 & 0x00000001) != 0
+        return self.flags1 != None and (self.flags1 & 0x00000001) != 0
     def set_IsESM(self, nValue):
-        if (nValue == True): self.flags1 |= 0x00000001
-        else: self.flags1 &= ~0x00000001
+        if nValue:
+            if self.flags1: self.flags1 |= 0x00000001
+            else: self.flags1 = 0x00000001
+        elif self.flags1: self.flags1 &= ~0x00000001
     IsESM = property(get_IsESM, set_IsESM)
     copyattrs = ['flags1','flags2','version','numRecords','nextObject','author','description','masters']
 
@@ -574,100 +606,132 @@ class CLASRecord(BaseRecord):
         CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 23, struct.pack('2B', *nValue), 2)
     unused1 = property(get_unused1, set_unused1)
     def get_IsPlayable(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
     def get_IsGuard(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsGuard(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsGuard = property(get_IsGuard, set_IsGuard)
     def get_IsServicesWeapons(self):
-        return (self.services & 0x00000001) != 0
+        return self.services != None and (self.services & 0x00000001) != 0
     def set_IsServicesWeapons(self, nValue):
-        if (nValue == True): self.services |= 0x00000001
-        else: self.services &= ~0x00000001
+        if nValue:
+            if self.services: self.services |= 0x00000001
+            else: self.services = 0x00000001
+        elif self.services: self.services &= ~0x00000001
     IsServicesWeapons = property(get_IsServicesWeapons, set_IsServicesWeapons)
     def get_IsServicesArmor(self):
-        return (self.services & 0x00000002) != 0
+        return self.services != None and (self.services & 0x00000002) != 0
     def set_IsServicesArmor(self, nValue):
-        if (nValue == True): self.services |= 0x00000002
-        else: self.services &= ~0x00000002
+        if nValue:
+            if self.services: self.services |= 0x00000002
+            else: self.services = 0x00000002
+        elif self.services: self.services &= ~0x00000002
     IsServicesArmor = property(get_IsServicesArmor, set_IsServicesArmor)
     def get_IsServicesClothing(self):
-        return (self.services & 0x00000004) != 0
+        return self.services != None and (self.services & 0x00000004) != 0
     def set_IsServicesClothing(self, nValue):
-        if (nValue == True): self.services |= 0x00000004
-        else: self.services &= ~0x00000004
+        if nValue:
+            if self.services: self.services |= 0x00000004
+            else: self.services = 0x00000004
+        elif self.services: self.services &= ~0x00000004
     IsServicesClothing = property(get_IsServicesClothing, set_IsServicesClothing)
     def get_IsServicesBooks(self):
-        return (self.services & 0x00000008) != 0
+        return self.services != None and (self.services & 0x00000008) != 0
     def set_IsServicesBooks(self, nValue):
-        if (nValue == True): self.services |= 0x00000008
-        else: self.services &= ~0x00000008
+        if nValue:
+            if self.services: self.services |= 0x00000008
+            else: self.services = 0x00000008
+        elif self.services: self.services &= ~0x00000008
     IsServicesBooks = property(get_IsServicesBooks, set_IsServicesBooks)
     def get_IsServicesIngredients(self):
-        return (self.services & 0x00000010) != 0
+        return self.services != None and (self.services & 0x00000010) != 0
     def set_IsServicesIngredients(self, nValue):
-        if (nValue == True): self.services |= 0x00000010
-        else: self.services &= ~0x00000010
+        if nValue:
+            if self.services: self.services |= 0x00000010
+            else: self.services = 0x00000010
+        elif self.services: self.services &= ~0x00000010
     IsServicesIngredients = property(get_IsServicesIngredients, set_IsServicesIngredients)
     def get_IsServicesLights(self):
-        return (self.services & 0x00000080) != 0
+        return self.services != None and (self.services & 0x00000080) != 0
     def set_IsServicesLights(self, nValue):
-        if (nValue == True): self.services |= 0x00000080
-        else: self.services &= ~0x00000080
+        if nValue:
+            if self.services: self.services |= 0x00000080
+            else: self.services = 0x00000080
+        elif self.services: self.services &= ~0x00000080
     IsServicesLights = property(get_IsServicesLights, set_IsServicesLights)
     def get_IsServicesApparatus(self):
-        return (self.services & 0x00000100) != 0
+        return self.services != None and (self.services & 0x00000100) != 0
     def set_IsServicesApparatus(self, nValue):
-        if (nValue == True): self.services |= 0x00000100
-        else: self.services &= ~0x00000100
+        if nValue:
+            if self.services: self.services |= 0x00000100
+            else: self.services = 0x00000100
+        elif self.services: self.services &= ~0x00000100
     IsServicesApparatus = property(get_IsServicesApparatus, set_IsServicesApparatus)
     def get_IsServicesMiscItems(self):
-        return (self.services & 0x00000400) != 0
+        return self.services != None and (self.services & 0x00000400) != 0
     def set_IsServicesMiscItems(self, nValue):
-        if (nValue == True): self.services |= 0x00000400
-        else: self.services &= ~0x00000400
+        if nValue:
+            if self.services: self.services |= 0x00000400
+            else: self.services = 0x00000400
+        elif self.services: self.services &= ~0x00000400
     IsServicesMiscItems = property(get_IsServicesMiscItems, set_IsServicesMiscItems)
     def get_IsServicesSpells(self):
-        return (self.services & 0x00000800) != 0
+        return self.services != None and (self.services & 0x00000800) != 0
     def set_IsServicesSpells(self, nValue):
-        if (nValue == True): self.services |= 0x00000800
-        else: self.services &= ~0x00000800
+        if nValue:
+            if self.services: self.services |= 0x00000800
+            else: self.services = 0x00000800
+        elif self.services: self.services &= ~0x00000800
     IsServicesSpells = property(get_IsServicesSpells, set_IsServicesSpells)
     def get_IsServicesMagicItems(self):
-        return (self.services & 0x00001000) != 0
+        return self.services != None and (self.services & 0x00001000) != 0
     def set_IsServicesMagicItems(self, nValue):
-        if (nValue == True): self.services |= 0x00001000
-        else: self.services &= ~0x00001000
+        if nValue:
+            if self.services: self.services |= 0x00001000
+            else: self.services = 0x00001000
+        elif self.services: self.services &= ~0x00001000
     IsServicesMagicItems = property(get_IsServicesMagicItems, set_IsServicesMagicItems)
     def get_IsServicesPotions(self):
-        return (self.services & 0x00002000) != 0
+        return self.services != None and (self.services & 0x00002000) != 0
     def set_IsServicesPotions(self, nValue):
-        if (nValue == True): self.services |= 0x00002000
-        else: self.services &= ~0x00002000
+        if nValue:
+            if self.services: self.services |= 0x00002000
+            else: self.services = 0x00002000
+        elif self.services: self.services &= ~0x00002000
     IsServicesPotions = property(get_IsServicesPotions, set_IsServicesPotions)
     def get_IsServicesTraining(self):
-        return (self.services & 0x00004000) != 0
+        return self.services != None and (self.services & 0x00004000) != 0
     def set_IsServicesTraining(self, nValue):
-        if (nValue == True): self.services |= 0x00004000
-        else: self.services &= ~0x00004000
+        if nValue:
+            if self.services: self.services |= 0x00004000
+            else: self.services = 0x00004000
+        elif self.services: self.services &= ~0x00004000
     IsServicesTraining = property(get_IsServicesTraining, set_IsServicesTraining)
     def get_IsServicesRecharge(self):
-        return (self.services & 0x00010000) != 0
+        return self.services != None and (self.services & 0x00010000) != 0
     def set_IsServicesRecharge(self, nValue):
-        if (nValue == True): self.services |= 0x00010000
-        else: self.services &= ~0x00010000
+        if nValue:
+            if self.services: self.services |= 0x00010000
+            else: self.services = 0x00010000
+        elif self.services: self.services &= ~0x00010000
     IsServicesRecharge = property(get_IsServicesRecharge, set_IsServicesRecharge)
     def get_IsServicesRepair(self):
-        return (self.services & 0x00020000) != 0
+        return self.services != None and (self.services & 0x00020000) != 0
     def set_IsServicesRepair(self, nValue):
-        if (nValue == True): self.services |= 0x00020000
-        else: self.services &= ~0x00020000
+        if nValue:
+            if self.services: self.services |= 0x00020000
+            else: self.services = 0x00020000
+        elif self.services: self.services &= ~0x00020000
     IsServicesRepair = property(get_IsServicesRepair, set_IsServicesRepair)
     copyattrs = BaseRecord.baseattrs + ['full','description','iconPath','primary1','primary2','specialization',
                          'major1','major2','major3','major4','major5','major6','major7',
@@ -815,22 +879,28 @@ class FACTRecord(BaseRecord):
             oRank.rank, oRank.male, oRank.female, oRank.insigniaPath = nValue
     ranks = property(get_ranks, set_ranks)
     def get_IsHiddenFromPC(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsHiddenFromPC(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsHiddenFromPC = property(get_IsHiddenFromPC, set_IsHiddenFromPC)
     def get_IsEvil(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsEvil(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsEvil = property(get_IsEvil, set_IsEvil)
     def get_IsSpecialCombat(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsSpecialCombat(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsSpecialCombat = property(get_IsSpecialCombat, set_IsSpecialCombat)
     copyattrs = BaseRecord.baseattrs + ['full','relations','flags','crimeGoldMultiplier','ranks']
 
@@ -895,16 +965,20 @@ class HAIRRecord(BaseRecord):
         CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 11, c_ubyte(nValue))
     flags = property(get_flags, set_flags)
     def get_IsPlayable(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
     def get_IsNotMale(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsNotMale(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsNotMale = property(get_IsNotMale, set_IsNotMale)
     def get_IsMale(self):
         return not self.get_IsNotMale()
@@ -912,10 +986,12 @@ class HAIRRecord(BaseRecord):
         set_IsNotMale(not nValue)
     IsMale = property(get_IsMale, set_IsMale)
     def get_IsNotFemale(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsNotFemale(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsNotFemale = property(get_IsNotFemale, set_IsNotFemale)
     def get_IsFemale(self):
         return not self.get_IsNotFemale()
@@ -923,10 +999,12 @@ class HAIRRecord(BaseRecord):
         set_IsNotFemale(not nValue)
     IsFemale = property(get_IsFemale, set_IsFemale)
     def get_IsFixedColor(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsFixedColor(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsFixedColor = property(get_IsFixedColor, set_IsFixedColor)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p','iconPath','flags']
 
@@ -963,10 +1041,12 @@ class EYESRecord(BaseRecord):
         CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 8, c_ubyte(nValue))
     flags = property(get_flags, set_flags)
     def get_IsPlayable(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
     copyattrs = BaseRecord.baseattrs + ['full','iconPath','flags']
 
@@ -1781,10 +1861,12 @@ class RACERecord(BaseRecord):
         CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 110, struct.pack('B' * length, *nValue), length)
     snam = property(get_snam, set_snam)
     def get_IsPlayable(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsPlayable = property(get_IsPlayable, set_IsPlayable)
     copyattrs = BaseRecord.baseattrs + ['full','text','spells','relations',
                          'skill1','skill1Boost','skill2','skill2Boost',
@@ -1907,52 +1989,68 @@ class SOUNRecord(BaseRecord):
         CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 15, c_ubyte(nValue))
     startTime = property(get_startTime, set_startTime)
     def get_IsRandomFrequencyShift(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsRandomFrequencyShift(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsRandomFrequencyShift = property(get_IsRandomFrequencyShift, set_IsRandomFrequencyShift)
     def get_IsPlayAtRandom(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsPlayAtRandom(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsPlayAtRandom = property(get_IsPlayAtRandom, set_IsPlayAtRandom)
     def get_IsEnvironmentIgnored(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsEnvironmentIgnored(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsEnvironmentIgnored = property(get_IsEnvironmentIgnored, set_IsEnvironmentIgnored)
     def get_IsRandomLocation(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsRandomLocation(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsRandomLocation = property(get_IsRandomLocation, set_IsRandomLocation)
     def get_IsLoop(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsLoop(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsLoop = property(get_IsLoop, set_IsLoop)
     def get_IsMenuSound(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsMenuSound(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsMenuSound = property(get_IsMenuSound, set_IsMenuSound)
     def get_Is2D(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_Is2D(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     Is2D = property(get_Is2D, set_Is2D)
     def get_Is360LFE(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_Is360LFE(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     Is360LFE = property(get_Is360LFE, set_Is360LFE)
     copyattrs = BaseRecord.baseattrs + ['soundFile','minDistance','maxDistance',
                                         'freqAdjustment','flags','staticAtten',
@@ -2293,127 +2391,167 @@ class MGEFRecord(BaseRecord):
         CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 29, struct.pack('I' * len(nValue), *nValue), len(nValue))
     counterEffects = property(get_counterEffects, set_counterEffects)
     def get_IsHostile(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsHostile(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsHostile = property(get_IsHostile, set_IsHostile)
     def get_IsRecover(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsRecover(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsRecover = property(get_IsRecover, set_IsRecover)
     def get_IsDetrimental(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsDetrimental(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsDetrimental = property(get_IsDetrimental, set_IsDetrimental)
     def get_IsMagnitude(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsMagnitude(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsMagnitude = property(get_IsMagnitude, set_IsMagnitude)
     def get_IsSelf(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsSelf(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsSelf = property(get_IsSelf, set_IsSelf)
     def get_IsTouch(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsTouch(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsTouch = property(get_IsTouch, set_IsTouch)
     def get_IsTarget(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsTarget(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsTarget = property(get_IsTarget, set_IsTarget)
     def get_IsNoDuration(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsNoDuration(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsNoDuration = property(get_IsNoDuration, set_IsNoDuration)
     def get_IsNoMagnitude(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsNoMagnitude(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsNoMagnitude = property(get_IsNoMagnitude, set_IsNoMagnitude)
     def get_IsNoArea(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsNoArea(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsNoArea = property(get_IsNoArea, set_IsNoArea)
     def get_IsFXPersist(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsFXPersist(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsFXPersist = property(get_IsFXPersist, set_IsFXPersist)
     def get_IsSpellmaking(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsSpellmaking(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsSpellmaking = property(get_IsSpellmaking, set_IsSpellmaking)
     def get_IsEnchanting(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsEnchanting(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsEnchanting = property(get_IsEnchanting, set_IsEnchanting)
     def get_IsNoIngredient(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsNoIngredient(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsNoIngredient = property(get_IsNoIngredient, set_IsNoIngredient)
     def get_IsUseWeapon(self):
-        return (self.flags & 0x00010000) != 0
+        return self.flags != None and (self.flags & 0x00010000) != 0
     def set_IsUseWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00010000
-        else: self.flags &= ~0x00010000
+        if nValue:
+            if self.flags: self.flags |= 0x00010000
+            else: self.flags = 0x00010000
+        elif self.flags: self.flags &= ~0x00010000
     IsUseWeapon = property(get_IsUseWeapon, set_IsUseWeapon)
     def get_IsUseArmor(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsUseArmor(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsUseArmor = property(get_IsUseArmor, set_IsUseArmor)
     def get_IsUseCreature(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00040000) != 0
     def set_IsUseCreature(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00040000
+            else: self.flags = 0x00040000
+        elif self.flags: self.flags &= ~0x00040000
     IsUseCreature = property(get_IsUseCreature, set_IsUseCreature)
     def get_IsUseSkill(self):
-        return (self.flags & 0x00080000) != 0
+        return self.flags != None and (self.flags & 0x00080000) != 0
     def set_IsUseSkill(self, nValue):
-        if (nValue == True): self.flags |= 0x00080000
-        else: self.flags &= ~0x00080000
+        if nValue:
+            if self.flags: self.flags |= 0x00080000
+            else: self.flags = 0x00080000
+        elif self.flags: self.flags &= ~0x00080000
     IsUseSkill = property(get_IsUseSkill, set_IsUseSkill)
     def get_IsUseAttr(self):
-        return (self.flags & 0x00100000) != 0
+        return self.flags != None and (self.flags & 0x00100000) != 0
     def set_IsUseAttr(self, nValue):
-        if (nValue == True): self.flags |= 0x00100000
-        else: self.flags &= ~0x00100000
+        if nValue:
+            if self.flags: self.flags |= 0x00100000
+            else: self.flags = 0x00100000
+        elif self.flags: self.flags &= ~0x00100000
     IsUseAttr = IsUseAttribute = property(get_IsUseAttr, set_IsUseAttr)
     def get_IsUseAV(self):
-        return (self.flags & 0x01000000) != 0
+        return self.flags != None and (self.flags & 0x01000000) != 0
     def set_IsUseAV(self, nValue):
-        if (nValue == True): self.flags |= 0x01000000
-        else: self.flags &= ~0x01000000
+        if nValue:
+            if self.flags: self.flags |= 0x01000000
+            else: self.flags = 0x01000000
+        elif self.flags: self.flags &= ~0x01000000
     IsUseAV = IsUseActorValue = property(get_IsUseAV, set_IsUseAV)
     def get_IsSprayType(self):
-        return (self.flags & 0x02000000) != 0 and (self.flags & 0x04000000) == 0
+        return self.flags != None and (self.flags & 0x02000000) != 0 and (self.flags & 0x04000000) == 0
     def set_IsSprayType(self, nValue):
         if (nValue == True):
             self.flags &= ~0x06000000
@@ -2422,7 +2560,7 @@ class MGEFRecord(BaseRecord):
             self.IsBallType = True
     IsSprayType = property(get_IsSprayType, set_IsSprayType)
     def get_IsBoltType(self):
-        return (self.flags & 0x04000000) != 0 and (self.flags & 0x02000000) == 0
+        return self.flags != None and (self.flags & 0x04000000) != 0 and (self.flags & 0x02000000) == 0
     def set_IsBoltType(self, nValue):
         if (nValue == True):
             self.flags &= ~0x06000000
@@ -2447,10 +2585,12 @@ class MGEFRecord(BaseRecord):
             self.IsBoltType = True
     IsBallType = property(get_IsBallType, set_IsBallType)
     def get_IsNoHitEffect(self):
-        return (self.flags & 0x08000000) != 0
+        return self.flags != None and (self.flags & 0x08000000) != 0
     def set_IsNoHitEffect(self, nValue):
-        if (nValue == True): self.flags |= 0x08000000
-        else: self.flags &= ~0x08000000
+        if nValue:
+            if self.flags: self.flags |= 0x08000000
+            else: self.flags = 0x08000000
+        elif self.flags: self.flags &= ~0x08000000
     IsNoHitEffect = property(get_IsNoHitEffect, set_IsNoHitEffect)
     copyattrs = BaseRecord.baseattrs + ['school','associated','baseCost','flags',
                                         'modt_p','modb','modPath','iconPath','text',
@@ -2522,10 +2662,12 @@ class SCPTRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5, nValue)
         name = property(get_name, set_name)
         def get_IsLongOrShort(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsLongOrShort(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsLongOrShort = property(get_IsLongOrShort, set_IsLongOrShort)
     class Reference(object):
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
@@ -2728,94 +2870,124 @@ class LTEXRecord(BaseRecord):
         CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 11, cRecords, length)
     grass = property(get_grass, set_grass)
     def get_IsStone(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsStone(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsStone = property(get_IsStone, set_IsStone)
     def get_IsCloth(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsCloth(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsCloth = property(get_IsCloth, set_IsCloth)
     def get_IsDirt(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsDirt(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsDirt = property(get_IsDirt, set_IsDirt)
     def get_IsGlass(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsGlass(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsGlass = property(get_IsGlass, set_IsGlass)
     def get_IsGrass(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsGrass(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsGrass = property(get_IsGrass, set_IsGrass)
     def get_IsMetal(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsMetal(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsMetal = property(get_IsMetal, set_IsMetal)
     def get_IsOrganic(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsOrganic(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsOrganic = property(get_IsOrganic, set_IsOrganic)
     def get_IsSkin(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsSkin(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsSkin = property(get_IsSkin, set_IsSkin)
     def get_IsWater(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsWater(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsWater = property(get_IsWater, set_IsWater)
     def get_IsWood(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsWood(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsWood = property(get_IsWood, set_IsWood)
     def get_IsHeavyStone(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsHeavyStone(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsHeavyStone = property(get_IsHeavyStone, set_IsHeavyStone)
     def get_IsHeavyMetal(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsHeavyMetal(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsHeavyMetal = property(get_IsHeavyMetal, set_IsHeavyMetal)
     def get_IsHeavyWood(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsHeavyWood(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsHeavyWood = property(get_IsHeavyWood, set_IsHeavyWood)
     def get_IsChain(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsChain(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsChain = property(get_IsChain, set_IsChain)
     def get_IsSnow(self):
-        return (self.flags & 0x00004000) != 0
+        return self.flags != None and (self.flags & 0x00004000) != 0
     def set_IsSnow(self, nValue):
-        if (nValue == True): self.flags |= 0x00004000
-        else: self.flags &= ~0x00004000
+        if nValue:
+            if self.flags: self.flags |= 0x00004000
+            else: self.flags = 0x00004000
+        elif self.flags: self.flags &= ~0x00004000
     IsSnow = property(get_IsSnow, set_IsSnow)
     copyattrs = BaseRecord.baseattrs + ['iconPath','flags','friction','restitution','specular','grass']
 class ENCHRecord(BaseRecord):
@@ -2953,10 +3125,12 @@ class ENCHRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 13, nValue)
         full = property(get_full, set_full)
         def get_IsHostile(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsHostile(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsHostile = property(get_IsHostile, set_IsHostile)
 
     def newEffectsElement(self):
@@ -3036,10 +3210,12 @@ class ENCHRecord(BaseRecord):
             oEffect.index, oEffect.unused1, oEffect.flags, oEffect.unused2, oEffect.name = nValue
     effects = property(get_effects, set_effects)
     def get_IsNoAutoCalc(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNoAutoCalc(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNoAutoCalc = property(get_IsNoAutoCalc, set_IsNoAutoCalc)
     def get_IsScroll(self):
         return (self.itemType == 0)
@@ -3202,10 +3378,12 @@ class SPELRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 13, nValue)
         full = property(get_full, set_full)
         def get_IsHostile(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsHostile(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsHostile = property(get_IsHostile, set_IsHostile)
     def newEffectsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 12)
@@ -3284,46 +3462,60 @@ class SPELRecord(BaseRecord):
             oEffect.index, oEffect.unused1, oEffect.flags, oEffect.unused2, oEffect.name = nValue
     effects = property(get_effects, set_effects)
     def get_IsManualCost(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsManualCost(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsManualCost = property(get_IsManualCost, set_IsManualCost)
     def get_IsStartSpell(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsStartSpell(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsStartSpell = property(get_IsStartSpell, set_IsStartSpell)
     def get_IsSilenceImmune(self):
-        return (self.flags & 0x0000000A) != 0
+        return self.flags != None and (self.flags & 0x0000000A) != 0
     def set_IsSilenceImmune(self, nValue):
-        if (nValue == True): self.flags |= 0x0000000A
-        else: self.flags &= ~0x0000000A
+        if nValue:
+            if self.flags: self.flags |= 0x0000000A
+            else: self.flags = 0x0000000A
+        elif self.flags: self.flags &= ~0x0000000A
     IsSilenceImmune = property(get_IsSilenceImmune, set_IsSilenceImmune)
     def get_IsAreaEffectIgnoresLOS(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsAreaEffectIgnoresLOS(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsAEIgnoresLOS = IsAreaEffectIgnoresLOS = property(get_IsAreaEffectIgnoresLOS, set_IsAreaEffectIgnoresLOS)
     def get_IsScriptAlwaysApplies(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsScriptAlwaysApplies(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsScriptAlwaysApplies = property(get_IsScriptAlwaysApplies, set_IsScriptAlwaysApplies)
     def get_IsDisallowAbsorbReflect(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsDisallowAbsorbReflect(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsDisallowAbsorb = IsDisallowReflect = IsDisallowAbsorbReflect = property(get_IsDisallowAbsorbReflect, set_IsDisallowAbsorbReflect)
     def get_IsTouchExplodesWOTarget(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsTouchExplodesWOTarget(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsTouchExplodes = IsTouchExplodesWOTarget = property(get_IsTouchExplodesWOTarget, set_IsTouchExplodesWOTarget)
     def get_IsSpell(self):
         return (self.spellType == 0)
@@ -3803,124 +3995,164 @@ class ARMORecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 28, c_float(nValue))
     weight = property(get_weight, set_weight)
     def get_IsHead(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsHead(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsHead = property(get_IsHead, set_IsHead)
     def get_IsHair(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsHair(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsHair = property(get_IsHair, set_IsHair)
     def get_IsUpperBody(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsUpperBody(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsUpperBody = property(get_IsUpperBody, set_IsUpperBody)
     def get_IsLowerBody(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsLowerBody(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsLowerBody = property(get_IsLowerBody, set_IsLowerBody)
     def get_IsHand(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsHand(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsHand = property(get_IsHand, set_IsHand)
     def get_IsFoot(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsFoot(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsFoot = property(get_IsFoot, set_IsFoot)
     def get_IsRightRing(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsRightRing(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsRightRing = property(get_IsRightRing, set_IsRightRing)
     def get_IsLeftRing(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsLeftRing(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsLeftRing = property(get_IsLeftRing, set_IsLeftRing)
     def get_IsAmulet(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsAmulet(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsAmulet = property(get_IsAmulet, set_IsAmulet)
     def get_IsWeapon(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsWeapon = property(get_IsWeapon, set_IsWeapon)
     def get_IsBackWeapon(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsBackWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsBackWeapon = property(get_IsBackWeapon, set_IsBackWeapon)
     def get_IsSideWeapon(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsSideWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsSideWeapon = property(get_IsSideWeapon, set_IsSideWeapon)
     def get_IsQuiver(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsQuiver(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsQuiver = property(get_IsQuiver, set_IsQuiver)
     def get_IsShield(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsShield(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsShield = property(get_IsShield, set_IsShield)
     def get_IsTorch(self):
-        return (self.flags & 0x00004000) != 0
+        return self.flags != None and (self.flags & 0x00004000) != 0
     def set_IsTorch(self, nValue):
-        if (nValue == True): self.flags |= 0x00004000
-        else: self.flags &= ~0x00004000
+        if nValue:
+            if self.flags: self.flags |= 0x00004000
+            else: self.flags = 0x00004000
+        elif self.flags: self.flags &= ~0x00004000
     IsTorch = property(get_IsTorch, set_IsTorch)
     def get_IsTail(self):
-        return (self.flags & 0x00008000) != 0
+        return self.flags != None and (self.flags & 0x00008000) != 0
     def set_IsTail(self, nValue):
-        if (nValue == True): self.flags |= 0x00008000
-        else: self.flags &= ~0x00008000
+        if nValue:
+            if self.flags: self.flags |= 0x00008000
+            else: self.flags = 0x00008000
+        elif self.flags: self.flags &= ~0x00008000
     IsTail = property(get_IsTail, set_IsTail)
     def get_IsHideRings(self):
-        return (self.flags & 0x00010000) != 0
+        return self.flags != None and (self.flags & 0x00010000) != 0
     def set_IsHideRings(self, nValue):
-        if (nValue == True): self.flags |= 0x00010000
-        else: self.flags &= ~0x00010000
+        if nValue:
+            if self.flags: self.flags |= 0x00010000
+            else: self.flags = 0x00010000
+        elif self.flags: self.flags &= ~0x00010000
     IsHideRings = property(get_IsHideRings, set_IsHideRings)
     def get_IsHideAmulets(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsHideAmulets(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsHideAmulets = property(get_IsHideAmulets, set_IsHideAmulets)
     def get_IsNonPlayable(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00400000) != 0
     def set_IsNonPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00040000
+            else: self.flags = 0x00040000
+        elif self.flags: self.flags &= ~0x00400000
     IsNonPlayable = property(get_IsNonPlayable, set_IsNonPlayable)
     def get_IsHeavyArmor(self):
-        return (self.flags & 0x00080000) != 0
+        return self.flags != None and (self.flags & 0x00800000) != 0
     def set_IsHeavyArmor(self, nValue):
-        if (nValue == True): self.flags |= 0x00080000
-        else: self.flags &= ~0x00080000
+        if nValue:
+            if self.flags: self.flags |= 0x00800000
+            else: self.flags = 0x00800000
+        elif self.flags: self.flags &= ~0x00800000
     IsHeavyArmor = property(get_IsHeavyArmor, set_IsHeavyArmor)
     copyattrs = BaseRecord.baseattrs + ['full','script','enchantment','enchantPoints',
                                         'flags','maleBody','maleWorld','maleIconPath',
@@ -4049,16 +4281,20 @@ class BOOKRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 18, c_float(nValue))
     weight = property(get_weight, set_weight)
     def get_IsScroll(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsScroll(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsScroll = property(get_IsScroll, set_IsScroll)
     def get_IsFixed(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsFixed(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsFixed = property(get_IsFixed, set_IsFixed)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p',
                                         'iconPath','text','script',
@@ -4224,118 +4460,156 @@ class CLOTRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 26, c_float(nValue))
     weight = property(get_weight, set_weight)
     def get_IsHead(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsHead(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsHead = property(get_IsHead, set_IsHead)
     def get_IsHair(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsHair(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsHair = property(get_IsHair, set_IsHair)
     def get_IsUpperBody(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsUpperBody(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsUpperBody = property(get_IsUpperBody, set_IsUpperBody)
     def get_IsLowerBody(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsLowerBody(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsLowerBody = property(get_IsLowerBody, set_IsLowerBody)
     def get_IsHand(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsHand(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsHand = property(get_IsHand, set_IsHand)
     def get_IsFoot(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsFoot(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsFoot = property(get_IsFoot, set_IsFoot)
     def get_IsRightRing(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsRightRing(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsRightRing = property(get_IsRightRing, set_IsRightRing)
     def get_IsLeftRing(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsLeftRing(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsLeftRing = property(get_IsLeftRing, set_IsLeftRing)
     def get_IsAmulet(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsAmulet(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsAmulet = property(get_IsAmulet, set_IsAmulet)
     def get_IsWeapon(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsWeapon = property(get_IsWeapon, set_IsWeapon)
     def get_IsBackWeapon(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsBackWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsBackWeapon = property(get_IsBackWeapon, set_IsBackWeapon)
     def get_IsSideWeapon(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsSideWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsSideWeapon = property(get_IsSideWeapon, set_IsSideWeapon)
     def get_IsQuiver(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsQuiver(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsQuiver = property(get_IsQuiver, set_IsQuiver)
     def get_IsShield(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsShield(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsShield = property(get_IsShield, set_IsShield)
     def get_IsTorch(self):
-        return (self.flags & 0x00004000) != 0
+        return self.flags != None and (self.flags & 0x00004000) != 0
     def set_IsTorch(self, nValue):
-        if (nValue == True): self.flags |= 0x00004000
-        else: self.flags &= ~0x00004000
+        if nValue:
+            if self.flags: self.flags |= 0x00004000
+            else: self.flags = 0x00004000
+        elif self.flags: self.flags &= ~0x00004000
     IsTorch = property(get_IsTorch, set_IsTorch)
     def get_IsTail(self):
-        return (self.flags & 0x00008000) != 0
+        return self.flags != None and (self.flags & 0x00008000) != 0
     def set_IsTail(self, nValue):
-        if (nValue == True): self.flags |= 0x00008000
-        else: self.flags &= ~0x00008000
+        if nValue:
+            if self.flags: self.flags |= 0x00008000
+            else: self.flags = 0x00008000
+        elif self.flags: self.flags &= ~0x00008000
     IsTail = property(get_IsTail, set_IsTail)
     def get_IsHideRings(self):
-        return (self.flags & 0x00010000) != 0
+        return self.flags != None and (self.flags & 0x00010000) != 0
     def set_IsHideRings(self, nValue):
-        if (nValue == True): self.flags |= 0x00010000
-        else: self.flags &= ~0x00010000
+        if nValue:
+            if self.flags: self.flags |= 0x00010000
+            else: self.flags = 0x00010000
+        elif self.flags: self.flags &= ~0x00010000
     IsHideRings = property(get_IsHideRings, set_IsHideRings)
     def get_IsHideAmulets(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsHideAmulets(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsHideAmulets = property(get_IsHideAmulets, set_IsHideAmulets)
     def get_IsNonPlayable(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00400000) != 0
     def set_IsNonPlayable(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00400000
+            else: self.flags = 0x00400000
+        elif self.flags: self.flags &= ~0x00400000
     IsNonPlayable = property(get_IsNonPlayable, set_IsNonPlayable)
     copyattrs = BaseRecord.baseattrs + ['full','script','enchantment','enchantPoints',
                                         'flags','maleBody','maleWorld','maleIconPath',
@@ -4478,10 +4752,12 @@ class CONTRecord(BaseRecord):
         CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 15, c_uint(nValue))
     soundClose = property(get_soundClose, set_soundClose)
     def get_IsRespawn(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsRespawn(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsRespawn = property(get_IsRespawn, set_IsRespawn)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p',
                                         'script','items','flags','weight',
@@ -4590,28 +4866,36 @@ class DOORRecord(BaseRecord):
         CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 15, cRecords, length)
     destinations = property(get_destinations, set_destinations)
     def get_IsOblivionGate(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsOblivionGate(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsOblivionGate = property(get_IsOblivionGate, set_IsOblivionGate)
     def get_IsAutomatic(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsAutomatic(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsAutomatic = property(get_IsAutomatic, set_IsAutomatic)
     def get_IsHidden(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsHidden(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsHidden = property(get_IsHidden, set_IsHidden)
     def get_IsMinimalUse(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsMinimalUse(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsMinimalUse = property(get_IsMinimalUse, set_IsMinimalUse)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p','script','soundOpen','soundClose','soundLoop','flags','destinations']
 
@@ -4750,10 +5034,12 @@ class INGRRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 13, nValue)
         full = property(get_full, set_full)
         def get_IsHostile(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsHostile(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsHostile = property(get_IsHostile, set_IsHostile)
     def newEffectsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 16)
@@ -4866,16 +5152,20 @@ class INGRRecord(BaseRecord):
             oEffect.name0, oEffect.name, oEffect.magnitude, oEffect.area, oEffect.duration, oEffect.recipient, oEffect.actorValue, oEffect.script, oEffect.school, oEffect.visual, oEffect.flags, oEffect.unused1, oEffect.full = nValue
     effects = property(get_effects, set_effects)
     def get_IsNoAutoCalc(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNoAutoCalc(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNoAutoCalc = property(get_IsNoAutoCalc, set_IsNoAutoCalc)
     def get_IsFood(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsFood(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsFood = property(get_IsFood, set_IsFood)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p',
                                         'iconPath','script','weight',
@@ -5061,64 +5351,84 @@ class LIGHRecord(BaseRecord):
         CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 24, c_uint(nValue))
     sound = property(get_sound, set_sound)
     def get_IsDynamic(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsDynamic(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsDynamic = property(get_IsDynamic, set_IsDynamic)
     def get_IsCanTake(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsCanTake(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsCanTake = property(get_IsCanTake, set_IsCanTake)
     def get_IsNegative(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsNegative(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsNegative = property(get_IsNegative, set_IsNegative)
     def get_IsFlickers(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsFlickers(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsFlickers = property(get_IsFlickers, set_IsFlickers)
     def get_IsOffByDefault(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsOffByDefault(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsOffByDefault = property(get_IsOffByDefault, set_IsOffByDefault)
     def get_IsFlickerSlow(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsFlickerSlow(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsFlickerSlow = property(get_IsFlickerSlow, set_IsFlickerSlow)
     def get_IsPulse(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsPulse(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsPulse = property(get_IsPulse, set_IsPulse)
     def get_IsPulseSlow(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsPulseSlow(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsPulseSlow = property(get_IsPulseSlow, set_IsPulseSlow)
     def get_IsSpotLight(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsSpotLight(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsSpotLight = property(get_IsSpotLight, set_IsSpotLight)
     def get_IsSpotShadow(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsSpotShadow(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsSpotShadow = property(get_IsSpotShadow, set_IsSpotShadow)
     copyattrs = BaseRecord.baseattrs + ['modPath','modb','modt_p','script',
                                         'full','iconPath','duration','radius',
@@ -5407,22 +5717,28 @@ class GRASRecord(BaseRecord):
         CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 21, struct.pack('3B', *nValue), 3)
     unused3 = property(get_unused3, set_unused3)
     def get_IsVLighting(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsVLighting(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsVLighting = property(get_IsVLighting, set_IsVLighting)
     def get_IsUScaling(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsUScaling(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsUScaling = property(get_IsUScaling, set_IsUScaling)
     def get_IsFitSlope(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsFitSlope(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsFitSlope = property(get_IsFitSlope, set_IsFitSlope)
     copyattrs = BaseRecord.baseattrs + ['modPath','modb','modt_p','density',
                                         'minSlope','maxSlope','waterDistance',
@@ -5745,187 +6061,247 @@ class FURNRecord(BaseRecord):
         CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 11, nValue)
     flags = property(get_flags, set_flags)
     def get_IsAnim01(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsAnim01(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsAnim01 = property(get_IsAnim01, set_IsAnim01)
     def get_IsAnim02(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsAnim02(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsAnim02 = property(get_IsAnim02, set_IsAnim02)
     def get_IsAnim03(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsAnim03(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsAnim03 = property(get_IsAnim03, set_IsAnim03)
     def get_IsAnim04(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsAnim04(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsAnim04 = property(get_IsAnim04, set_IsAnim04)
     def get_IsAnim05(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsAnim05(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsAnim05 = property(get_IsAnim05, set_IsAnim05)
     def get_IsAnim06(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsAnim06(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsAnim06 = property(get_IsAnim06, set_IsAnim06)
     def get_IsAnim07(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsAnim07(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsAnim07 = property(get_IsAnim07, set_IsAnim07)
     def get_IsAnim08(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsAnim08(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsAnim08 = property(get_IsAnim08, set_IsAnim08)
     def get_IsAnim09(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsAnim09(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsAnim09 = property(get_IsAnim09, set_IsAnim09)
     def get_IsAnim10(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsAnim10(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsAnim10 = property(get_IsAnim10, set_IsAnim10)
     def get_IsAnim11(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsAnim11(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsAnim11 = property(get_IsAnim11, set_IsAnim11)
     def get_IsAnim12(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsAnim12(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsAnim12 = property(get_IsAnim12, set_IsAnim12)
     def get_IsAnim13(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsAnim13(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsAnim13 = property(get_IsAnim13, set_IsAnim13)
     def get_IsAnim14(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsAnim14(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsAnim14 = property(get_IsAnim14, set_IsAnim14)
     def get_IsAnim15(self):
-        return (self.flags & 0x00004000) != 0
+        return self.flags != None and (self.flags & 0x00004000) != 0
     def set_IsAnim15(self, nValue):
-        if (nValue == True): self.flags |= 0x00004000
-        else: self.flags &= ~0x00004000
+        if nValue:
+            if self.flags: self.flags |= 0x00004000
+            else: self.flags = 0x00004000
+        elif self.flags: self.flags &= ~0x00004000
     IsAnim15 = property(get_IsAnim15, set_IsAnim15)
     def get_IsAnim16(self):
-        return (self.flags & 0x00008000) != 0
+        return self.flags != None and (self.flags & 0x00008000) != 0
     def set_IsAnim16(self, nValue):
-        if (nValue == True): self.flags |= 0x00008000
-        else: self.flags &= ~0x00008000
+        if nValue:
+            if self.flags: self.flags |= 0x00008000
+            else: self.flags = 0x00008000
+        elif self.flags: self.flags &= ~0x00008000
     IsAnim16 = property(get_IsAnim16, set_IsAnim16)
     def get_IsAnim17(self):
-        return (self.flags & 0x00010000) != 0
+        return self.flags != None and (self.flags & 0x00010000) != 0
     def set_IsAnim17(self, nValue):
-        if (nValue == True): self.flags |= 0x00010000
-        else: self.flags &= ~0x00010000
+        if nValue:
+            if self.flags: self.flags |= 0x00010000
+            else: self.flags = 0x00010000
+        elif self.flags: self.flags &= ~0x00010000
     IsAnim17 = property(get_IsAnim17, set_IsAnim17)
     def get_IsAnim18(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsAnim18(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsAnim18 = property(get_IsAnim18, set_IsAnim18)
     def get_IsAnim19(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00040000) != 0
     def set_IsAnim19(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00040000
+            else: self.flags = 0x00040000
+        elif self.flags: self.flags &= ~0x00040000
     IsAnim19 = property(get_IsAnim19, set_IsAnim19)
     def get_IsAnim20(self):
-        return (self.flags & 0x00080000) != 0
+        return self.flags != None and (self.flags & 0x00080000) != 0
     def set_IsAnim20(self, nValue):
-        if (nValue == True): self.flags |= 0x00080000
-        else: self.flags &= ~0x00080000
+        if nValue:
+            if self.flags: self.flags |= 0x00080000
+            else: self.flags = 0x00080000
+        elif self.flags: self.flags &= ~0x00080000
     IsAnim20 = property(get_IsAnim20, set_IsAnim20)
     def get_IsAnim21(self):
-        return (self.flags & 0x00100000) != 0
+        return self.flags != None and (self.flags & 0x00100000) != 0
     def set_IsAnim21(self, nValue):
-        if (nValue == True): self.flags |= 0x00100000
-        else: self.flags &= ~0x00100000
+        if nValue:
+            if self.flags: self.flags |= 0x00100000
+            else: self.flags = 0x00100000
+        elif self.flags: self.flags &= ~0x00100000
     IsAnim21 = property(get_IsAnim21, set_IsAnim21)
     def get_IsAnim22(self):
-        return (self.flags & 0x00200000) != 0
+        return self.flags != None and (self.flags & 0x00200000) != 0
     def set_IsAnim22(self, nValue):
-        if (nValue == True): self.flags |= 0x00200000
-        else: self.flags &= ~0x00200000
+        if nValue:
+            if self.flags: self.flags |= 0x00200000
+            else: self.flags = 0x00200000
+        elif self.flags: self.flags &= ~0x00200000
     IsAnim22 = property(get_IsAnim22, set_IsAnim22)
     def get_IsAnim23(self):
-        return (self.flags & 0x00400000) != 0
+        return self.flags != None and (self.flags & 0x00400000) != 0
     def set_IsAnim23(self, nValue):
-        if (nValue == True): self.flags |= 0x00400000
-        else: self.flags &= ~0x00400000
+        if nValue:
+            if self.flags: self.flags |= 0x00400000
+            else: self.flags = 0x00400000
+        elif self.flags: self.flags &= ~0x00400000
     IsAnim23 = property(get_IsAnim23, set_IsAnim23)
     def get_IsAnim24(self):
-        return (self.flags & 0x00800000) != 0
+        return self.flags != None and (self.flags & 0x00800000) != 0
     def set_IsAnim24(self, nValue):
-        if (nValue == True): self.flags |= 0x00800000
-        else: self.flags &= ~0x00800000
+        if nValue:
+            if self.flags: self.flags |= 0x00800000
+            else: self.flags = 0x00800000
+        elif self.flags: self.flags &= ~0x00800000
     IsAnim24 = property(get_IsAnim24, set_IsAnim24)
     def get_IsAnim25(self):
-        return (self.flags & 0x01000000) != 0
+        return self.flags != None and (self.flags & 0x01000000) != 0
     def set_IsAnim25(self, nValue):
-        if (nValue == True): self.flags |= 0x01000000
-        else: self.flags &= ~0x01000000
+        if nValue:
+            if self.flags: self.flags |= 0x01000000
+            else: self.flags = 0x01000000
+        elif self.flags: self.flags &= ~0x01000000
     IsAnim25 = property(get_IsAnim25, set_IsAnim25)
     def get_IsAnim26(self):
-        return (self.flags & 0x02000000) != 0
+        return self.flags != None and (self.flags & 0x02000000) != 0
     def set_IsAnim26(self, nValue):
-        if (nValue == True): self.flags |= 0x02000000
-        else: self.flags &= ~0x02000000
+        if nValue:
+            if self.flags: self.flags |= 0x02000000
+            else: self.flags = 0x02000000
+        elif self.flags: self.flags &= ~0x02000000
     IsAnim26 = property(get_IsAnim26, set_IsAnim26)
     def get_IsAnim27(self):
-        return (self.flags & 0x04000000) != 0
+        return self.flags != None and (self.flags & 0x04000000) != 0
     def set_IsAnim27(self, nValue):
-        if (nValue == True): self.flags |= 0x04000000
-        else: self.flags &= ~0x04000000
+        if nValue:
+            if self.flags: self.flags |= 0x04000000
+            else: self.flags = 0x04000000
+        elif self.flags: self.flags &= ~0x04000000
     IsAnim27 = property(get_IsAnim27, set_IsAnim27)
     def get_IsAnim28(self):
-        return (self.flags & 0x08000000) != 0
+        return self.flags != None and (self.flags & 0x08000000) != 0
     def set_IsAnim28(self, nValue):
-        if (nValue == True): self.flags |= 0x08000000
-        else: self.flags &= ~0x08000000
+        if nValue:
+            if self.flags: self.flags |= 0x08000000
+            else: self.flags = 0x08000000
+        elif self.flags: self.flags &= ~0x08000000
     IsAnim28 = property(get_IsAnim28, set_IsAnim28)
     def get_IsAnim29(self):
-        return (self.flags & 0x10000000) != 0
+        return self.flags != None and (self.flags & 0x10000000) != 0
     def set_IsAnim29(self, nValue):
-        if (nValue == True): self.flags |= 0x10000000
-        else: self.flags &= ~0x10000000
+        if nValue:
+            if self.flags: self.flags |= 0x10000000
+            else: self.flags = 0x10000000
+        elif self.flags: self.flags &= ~0x10000000
     IsAnim29 = property(get_IsAnim29, set_IsAnim29)
     def get_IsAnim30(self):
-        return (self.flags & 0x20000000) != 0
+        return self.flags != None and (self.flags & 0x20000000) != 0
     def set_IsAnim30(self, nValue):
-        if (nValue == True): self.flags |= 0x20000000
-        else: self.flags &= ~0x20000000
+        if nValue:
+            if self.flags: self.flags |= 0x20000000
+            else: self.flags = 0x20000000
+        elif self.flags: self.flags &= ~0x20000000
     IsAnim30 = property(get_IsAnim30, set_IsAnim30)
     def get_IsSitAnim(self):
-        return (self.flags & 0x40000000) != 0
+        return self.flags != None and (self.flags & 0x40000000) != 0
     def set_IsSitAnim(self, nValue):
         if (nValue == True):
             self.flags |= 0x40000000
@@ -5935,7 +6311,7 @@ class FURNRecord(BaseRecord):
             self.flags |= 0x80000000
     IsSitAnim = property(get_IsSitAnim, set_IsSitAnim)
     def get_IsSleepAnim(self):
-        return (self.flags & 0x80000000) != 0
+        return self.flags != None and (self.flags & 0x80000000) != 0
     def set_IsSleepAnim(self, nValue):
         if (nValue == True):
             self.flags &= ~0x40000000
@@ -6097,10 +6473,12 @@ class WEAPRecord(BaseRecord):
         CBash.SetFIDFieldUS(self._CollectionIndex, self._ModName, self._recordID, 21, c_ushort(nValue))
     damage = property(get_damage, set_damage)
     def get_IsNotNormalWeapon(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNotNormalWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNotNormal = IsNotNormalWeapon = property(get_IsNotNormalWeapon, set_IsNotNormalWeapon)
     def get_IsNormalWeapon(self):
         return (self.flags & 0x00000001) == 0
@@ -6276,10 +6654,12 @@ class AMMORecord(BaseRecord):
         CBash.SetFIDFieldUS(self._CollectionIndex, self._ModName, self._recordID, 18, c_ushort(nValue))
     damage = property(get_damage, set_damage)
     def get_IsNotNormalWeapon(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNotNormalWeapon(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNotNormal = IsNotNormalWeapon = property(get_IsNotNormalWeapon, set_IsNotNormalWeapon)
     def get_IsNormalWeapon(self):
         return (self.flags & 0x00000001) == 0
@@ -7046,10 +7426,12 @@ class NPC_Record(BaseRecord):
         CBash.SetFIDFieldUS(self._CollectionIndex, self._ModName, self._recordID, 76, c_ushort(nValue))
     fnam = property(get_fnam, set_fnam)
     def get_IsFemale(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsFemale(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsFemale = property(get_IsFemale, set_IsFemale)
     def get_IsMale(self):
         return not self.get_IsFemale()
@@ -7058,34 +7440,44 @@ class NPC_Record(BaseRecord):
         else: self.flags |= 0x00000001
     IsMale = property(get_IsMale, set_IsMale)
     def get_IsEssential(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsEssential(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsEssential = property(get_IsEssential, set_IsEssential)
     def get_IsRespawn(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsRespawn(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsRespawn = property(get_IsRespawn, set_IsRespawn)
     def get_IsAutoCalc(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsAutoCalc(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsAutoCalc = property(get_IsAutoCalc, set_IsAutoCalc)
     def get_IsPCLevelOffset(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsPCLevelOffset(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsPCLevelOffset = property(get_IsPCLevelOffset, set_IsPCLevelOffset)
     def get_IsNoLowLevel(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsNoLowLevel(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsNoLowLevel = property(get_IsNoLowLevel, set_IsNoLowLevel)
     def get_IsLowLevel(self):
         return not self.get_IsNoLowLevel()
@@ -7094,10 +7486,12 @@ class NPC_Record(BaseRecord):
         else: self.flags |= 0x00000200
     IsLowLevel = property(get_IsLowLevel, set_IsLowLevel)
     def get_IsNoRumors(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsNoRumors(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsNoRumors = property(get_IsNoRumors, set_IsNoRumors)
     def get_IsRumors(self):
         return not self.get_IsNoRumors()
@@ -7106,16 +7500,20 @@ class NPC_Record(BaseRecord):
         else: self.flags |= 0x00002000
     IsRumors = property(get_IsRumors, set_IsRumors)
     def get_IsSummonable(self):
-        return (self.flags & 0x00004000) != 0
+        return self.flags != None and (self.flags & 0x00004000) != 0
     def set_IsSummonable(self, nValue):
-        if (nValue == True): self.flags |= 0x00004000
-        else: self.flags &= ~0x00004000
+        if nValue:
+            if self.flags: self.flags |= 0x00004000
+            else: self.flags = 0x00004000
+        elif self.flags: self.flags &= ~0x00004000
     IsSummonable = property(get_IsSummonable, set_IsSummonable)
     def get_IsNoPersuasion(self):
-        return (self.flags & 0x00008000) != 0
+        return self.flags != None and (self.flags & 0x00008000) != 0
     def set_IsNoPersuasion(self, nValue):
-        if (nValue == True): self.flags |= 0x00008000
-        else: self.flags &= ~0x00008000
+        if nValue:
+            if self.flags: self.flags |= 0x00008000
+            else: self.flags = 0x00008000
+        elif self.flags: self.flags &= ~0x00008000
     IsNoPersuasion = property(get_IsNoPersuasion, set_IsNoPersuasion)
     def get_IsPersuasion(self):
         return not self.get_IsNoPersuasion()
@@ -7124,94 +7522,124 @@ class NPC_Record(BaseRecord):
         else: self.flags |= 0x00008000
     IsPersuasion = property(get_IsPersuasion, set_IsPersuasion)
     def get_IsCanCorpseCheck(self):
-        return (self.flags & 0x00100000) != 0
+        return self.flags != None and (self.flags & 0x00100000) != 0
     def set_IsCanCorpseCheck(self, nValue):
-        if (nValue == True): self.flags |= 0x00100000
-        else: self.flags &= ~0x00100000
+        if nValue:
+            if self.flags: self.flags |= 0x00100000
+            else: self.flags = 0x00100000
+        elif self.flags: self.flags &= ~0x00100000
     IsCanCorpseCheck = property(get_IsCanCorpseCheck, set_IsCanCorpseCheck)
     def get_IsServicesWeapons(self):
-        return (self.services & 0x00000001) != 0
+        return self.services != None and (self.services & 0x00000001) != 0
     def set_IsServicesWeapons(self, nValue):
-        if (nValue == True): self.services |= 0x00000001
-        else: self.services &= ~0x00000001
+        if nValue:
+            if self.services: self.services |= 0x00000001
+            else: self.services = 0x00000001
+        elif self.services: self.services &= ~0x00000001
     IsServicesWeapons = property(get_IsServicesWeapons, set_IsServicesWeapons)
     def get_IsServicesArmor(self):
-        return (self.services & 0x00000002) != 0
+        return self.services != None and (self.services & 0x00000002) != 0
     def set_IsServicesArmor(self, nValue):
-        if (nValue == True): self.services |= 0x00000002
-        else: self.services &= ~0x00000002
+        if nValue:
+            if self.services: self.services |= 0x00000002
+            else: self.services = 0x00000002
+        elif self.services: self.services &= ~0x00000002
     IsServicesArmor = property(get_IsServicesArmor, set_IsServicesArmor)
     def get_IsServicesClothing(self):
-        return (self.services & 0x00000004) != 0
+        return self.services != None and (self.services & 0x00000004) != 0
     def set_IsServicesClothing(self, nValue):
-        if (nValue == True): self.services |= 0x00000004
-        else: self.services &= ~0x00000004
+        if nValue:
+            if self.services: self.services |= 0x00000004
+            else: self.services = 0x00000004
+        elif self.services: self.services &= ~0x00000004
     IsServicesClothing = property(get_IsServicesClothing, set_IsServicesClothing)
     def get_IsServicesBooks(self):
-        return (self.services & 0x00000008) != 0
+        return self.services != None and (self.services & 0x00000008) != 0
     def set_IsServicesBooks(self, nValue):
-        if (nValue == True): self.services |= 0x00000008
-        else: self.services &= ~0x00000008
+        if nValue:
+            if self.services: self.services |= 0x00000008
+            else: self.services = 0x00000008
+        elif self.services: self.services &= ~0x00000008
     IsServicesBooks = property(get_IsServicesBooks, set_IsServicesBooks)
     def get_IsServicesIngredients(self):
-        return (self.services & 0x00000010) != 0
+        return self.services != None and (self.services & 0x00000010) != 0
     def set_IsServicesIngredients(self, nValue):
-        if (nValue == True): self.services |= 0x00000010
-        else: self.services &= ~0x00000010
+        if nValue:
+            if self.services: self.services |= 0x00000010
+            else: self.services = 0x00000010
+        elif self.services: self.services &= ~0x00000010
     IsServicesIngredients = property(get_IsServicesIngredients, set_IsServicesIngredients)
     def get_IsServicesLights(self):
-        return (self.services & 0x00000080) != 0
+        return self.services != None and (self.services & 0x00000080) != 0
     def set_IsServicesLights(self, nValue):
-        if (nValue == True): self.services |= 0x00000080
-        else: self.services &= ~0x00000080
+        if nValue:
+            if self.services: self.services |= 0x00000080
+            else: self.services = 0x00000080
+        elif self.services: self.services &= ~0x00000080
     IsServicesLights = property(get_IsServicesLights, set_IsServicesLights)
     def get_IsServicesApparatus(self):
-        return (self.services & 0x00000100) != 0
+        return self.services != None and (self.services & 0x00000100) != 0
     def set_IsServicesApparatus(self, nValue):
-        if (nValue == True): self.services |= 0x00000100
-        else: self.services &= ~0x00000100
+        if nValue:
+            if self.services: self.services |= 0x00000100
+            else: self.services = 0x00000100
+        elif self.services: self.services &= ~0x00000100
     IsServicesApparatus = property(get_IsServicesApparatus, set_IsServicesApparatus)
     def get_IsServicesMiscItems(self):
-        return (self.services & 0x00000400) != 0
+        return self.services != None and (self.services & 0x00000400) != 0
     def set_IsServicesMiscItems(self, nValue):
-        if (nValue == True): self.services |= 0x00000400
-        else: self.services &= ~0x00000400
+        if nValue:
+            if self.services: self.services |= 0x00000400
+            else: self.services = 0x00000400
+        elif self.services: self.services &= ~0x00000400
     IsServicesMiscItems = property(get_IsServicesMiscItems, set_IsServicesMiscItems)
     def get_IsServicesSpells(self):
-        return (self.services & 0x00000800) != 0
+        return self.services != None and (self.services & 0x00000800) != 0
     def set_IsServicesSpells(self, nValue):
-        if (nValue == True): self.services |= 0x00000800
-        else: self.services &= ~0x00000800
+        if nValue:
+            if self.services: self.services |= 0x00000800
+            else: self.services = 0x00000800
+        elif self.services: self.services &= ~0x00000800
     IsServicesSpells = property(get_IsServicesSpells, set_IsServicesSpells)
     def get_IsServicesMagicItems(self):
-        return (self.services & 0x00001000) != 0
+        return self.services != None and (self.services & 0x00001000) != 0
     def set_IsServicesMagicItems(self, nValue):
-        if (nValue == True): self.services |= 0x00001000
-        else: self.services &= ~0x00001000
+        if nValue:
+            if self.services: self.services |= 0x00001000
+            else: self.services = 0x00001000
+        elif self.services: self.services &= ~0x00001000
     IsServicesMagicItems = property(get_IsServicesMagicItems, set_IsServicesMagicItems)
     def get_IsServicesPotions(self):
-        return (self.services & 0x00002000) != 0
+        return self.services != None and (self.services & 0x00002000) != 0
     def set_IsServicesPotions(self, nValue):
-        if (nValue == True): self.services |= 0x00002000
-        else: self.services &= ~0x00002000
+        if nValue:
+            if self.services: self.services |= 0x00002000
+            else: self.services = 0x00002000
+        elif self.services: self.services &= ~0x00002000
     IsServicesPotions = property(get_IsServicesPotions, set_IsServicesPotions)
     def get_IsServicesTraining(self):
-        return (self.services & 0x00004000) != 0
+        return self.services != None and (self.services & 0x00004000) != 0
     def set_IsServicesTraining(self, nValue):
-        if (nValue == True): self.services |= 0x00004000
-        else: self.services &= ~0x00004000
+        if nValue:
+            if self.services: self.services |= 0x00004000
+            else: self.services = 0x00004000
+        elif self.services: self.services &= ~0x00004000
     IsServicesTraining = property(get_IsServicesTraining, set_IsServicesTraining)
     def get_IsServicesRecharge(self):
-        return (self.services & 0x00010000) != 0
+        return self.services != None and (self.services & 0x00010000) != 0
     def set_IsServicesRecharge(self, nValue):
-        if (nValue == True): self.services |= 0x00010000
-        else: self.services &= ~0x00010000
+        if nValue:
+            if self.services: self.services |= 0x00010000
+            else: self.services = 0x00010000
+        elif self.services: self.services &= ~0x00010000
     IsServicesRecharge = property(get_IsServicesRecharge, set_IsServicesRecharge)
     def get_IsServicesRepair(self):
-        return (self.services & 0x00020000) != 0
+        return self.services != None and (self.services & 0x00020000) != 0
     def set_IsServicesRepair(self, nValue):
-        if (nValue == True): self.services |= 0x00020000
-        else: self.services &= ~0x00020000
+        if nValue:
+            if self.services: self.services |= 0x00020000
+            else: self.services = 0x00020000
+        elif self.services: self.services &= ~0x00020000
     IsServicesRepair = property(get_IsServicesRepair, set_IsServicesRepair)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p',
                                         'flags','baseSpell','fatigue',
@@ -7879,58 +8307,76 @@ class CREARecord(BaseRecord):
             oSound.type, oSound.sound, oSound.chance = nValue
     sounds = property(get_sounds, set_sounds)
     def get_IsBiped(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsBiped(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsBiped = property(get_IsBiped, set_IsBiped)
     def get_IsEssential(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsEssential(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsEssential = property(get_IsEssential, set_IsEssential)
     def get_IsWeaponAndShield(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsWeaponAndShield(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsWeaponAndShield = property(get_IsWeaponAndShield, set_IsWeaponAndShield)
     def get_IsRespawn(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsRespawn(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsRespawn = property(get_IsRespawn, set_IsRespawn)
     def get_IsSwims(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsSwims(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsSwims = property(get_IsSwims, set_IsSwims)
     def get_IsFlies(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsFlies(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsFlies = property(get_IsFlies, set_IsFlies)
     def get_IsWalks(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsWalks(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsWalks = property(get_IsWalks, set_IsWalks)
     def get_IsPCLevelOffset(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsPCLevelOffset(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsPCLevelOffset = property(get_IsPCLevelOffset, set_IsPCLevelOffset)
     def get_IsNoLowLevel(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsNoLowLevel(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsNoLowLevel = property(get_IsNoLowLevel, set_IsNoLowLevel)
     def get_IsLowLevel(self):
         return not self.get_IsNoLowLevel()
@@ -7939,10 +8385,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00000200
     IsLowLevel = property(get_IsLowLevel, set_IsLowLevel)
     def get_IsNoBloodSpray(self):
-        return (self.flags & 0x00000800) != 0
+        return self.flags != None and (self.flags & 0x00000800) != 0
     def set_IsNoBloodSpray(self, nValue):
-        if (nValue == True): self.flags |= 0x00000800
-        else: self.flags &= ~0x00000800
+        if nValue:
+            if self.flags: self.flags |= 0x00000800
+            else: self.flags = 0x00000800
+        elif self.flags: self.flags &= ~0x00000800
     IsNoBloodSpray = property(get_IsNoBloodSpray, set_IsNoBloodSpray)
     def get_IsBloodSpray(self):
         return not self.get_IsNoBloodSpray()
@@ -7951,10 +8399,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00000800
     IsBloodSpray = property(get_IsBloodSpray, set_IsBloodSpray)
     def get_IsNoBloodDecal(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsNoBloodDecal(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsNoBloodDecal = property(get_IsNoBloodDecal, set_IsNoBloodDecal)
     def get_IsBloodDecal(self):
         return not self.get_IsNoBloodDecal()
@@ -7963,10 +8413,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00001000
     IsBloodDecal = property(get_IsBloodDecal, set_IsBloodDecal)
     def get_IsNoHead(self):
-        return (self.flags & 0x00008000) != 0
+        return self.flags != None and (self.flags & 0x00008000) != 0
     def set_IsNoHead(self, nValue):
-        if (nValue == True): self.flags |= 0x00008000
-        else: self.flags &= ~0x00008000
+        if nValue:
+            if self.flags: self.flags |= 0x00008000
+            else: self.flags = 0x00008000
+        elif self.flags: self.flags &= ~0x00008000
     IsNoHead = property(get_IsNoHead, set_IsNoHead)
     def get_IsHead(self):
         return not self.get_IsNoHead()
@@ -7975,10 +8427,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00008000
     IsHead = property(get_IsHead, set_IsHead)
     def get_IsNoRightArm(self):
-        return (self.flags & 0x00010000) != 0
+        return self.flags != None and (self.flags & 0x00010000) != 0
     def set_IsNoRightArm(self, nValue):
-        if (nValue == True): self.flags |= 0x00010000
-        else: self.flags &= ~0x00010000
+        if nValue:
+            if self.flags: self.flags |= 0x00010000
+            else: self.flags = 0x00010000
+        elif self.flags: self.flags &= ~0x00010000
     IsNoRightArm = property(get_IsNoRightArm, set_IsNoRightArm)
     def get_IsRightArm(self):
         return not self.get_IsNoRightArm()
@@ -7987,10 +8441,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00010000
     IsRightArm = property(get_IsRightArm, set_IsRightArm)
     def get_IsNoLeftArm(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsNoLeftArm(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsNoLeftArm = property(get_IsNoLeftArm, set_IsNoLeftArm)
     def get_IsLeftArm(self):
         return not self.get_IsNoLeftArm()
@@ -7999,10 +8455,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00020000
     IsLeftArm = property(get_IsLeftArm, set_IsLeftArm)
     def get_IsNoCombatInWater(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00040000) != 0
     def set_IsNoCombatInWater(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00040000
+            else: self.flags = 0x00040000
+        elif self.flags: self.flags &= ~0x00040000
     IsNoCombatInWater = property(get_IsNoCombatInWater, set_IsNoCombatInWater)
     def get_IsCombatInWater(self):
         return not self.get_IsNoCombatInWater()
@@ -8011,10 +8469,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00040000
     IsCombatInWater = property(get_IsCombatInWater, set_IsCombatInWater)
     def get_IsNoShadow(self):
-        return (self.flags & 0x00080000) != 0
+        return self.flags != None and (self.flags & 0x00080000) != 0
     def set_IsNoShadow(self, nValue):
-        if (nValue == True): self.flags |= 0x00080000
-        else: self.flags &= ~0x00080000
+        if nValue:
+            if self.flags: self.flags |= 0x00080000
+            else: self.flags = 0x00080000
+        elif self.flags: self.flags &= ~0x00080000
     IsNoShadow = property(get_IsNoShadow, set_IsNoShadow)
     def get_IsShadow(self):
         return not self.get_IsNoShadow()
@@ -8023,10 +8483,12 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00080000
     IsShadow = property(get_IsShadow, set_IsShadow)
     def get_IsNoCorpseCheck(self):
-        return (self.flags & 0x00100000) != 0
+        return self.flags != None and (self.flags & 0x00100000) != 0
     def set_IsNoCorpseCheck(self, nValue):
-        if (nValue == True): self.flags |= 0x00100000
-        else: self.flags &= ~0x00100000
+        if nValue:
+            if self.flags: self.flags |= 0x00100000
+            else: self.flags = 0x00100000
+        elif self.flags: self.flags &= ~0x00100000
     IsNoCorpseCheck = property(get_IsNoCorpseCheck, set_IsNoCorpseCheck)
     def get_IsCorpseCheck(self):
         return not self.get_IsNoCorpseCheck()
@@ -8035,88 +8497,116 @@ class CREARecord(BaseRecord):
         else: self.flags |= 0x00100000
     IsCorpseCheck = property(get_IsCorpseCheck, set_IsCorpseCheck)
     def get_IsServicesWeapons(self):
-        return (self.services & 0x00000001) != 0
+        return self.services != None and (self.services & 0x00000001) != 0
     def set_IsServicesWeapons(self, nValue):
-        if (nValue == True): self.services |= 0x00000001
-        else: self.services &= ~0x00000001
+        if nValue:
+            if self.services: self.services |= 0x00000001
+            else: self.services = 0x00000001
+        elif self.services: self.services &= ~0x00000001
     IsServicesWeapons = property(get_IsServicesWeapons, set_IsServicesWeapons)
     def get_IsServicesArmor(self):
-        return (self.services & 0x00000002) != 0
+        return self.services != None and (self.services & 0x00000002) != 0
     def set_IsServicesArmor(self, nValue):
-        if (nValue == True): self.services |= 0x00000002
-        else: self.services &= ~0x00000002
+        if nValue:
+            if self.services: self.services |= 0x00000002
+            else: self.services = 0x00000002
+        elif self.services: self.services &= ~0x00000002
     IsServicesArmor = property(get_IsServicesArmor, set_IsServicesArmor)
     def get_IsServicesClothing(self):
-        return (self.services & 0x00000004) != 0
+        return self.services != None and (self.services & 0x00000004) != 0
     def set_IsServicesClothing(self, nValue):
-        if (nValue == True): self.services |= 0x00000004
-        else: self.services &= ~0x00000004
+        if nValue:
+            if self.services: self.services |= 0x00000004
+            else: self.services = 0x00000004
+        elif self.services: self.services &= ~0x00000004
     IsServicesClothing = property(get_IsServicesClothing, set_IsServicesClothing)
     def get_IsServicesBooks(self):
-        return (self.services & 0x00000008) != 0
+        return self.services != None and (self.services & 0x00000008) != 0
     def set_IsServicesBooks(self, nValue):
-        if (nValue == True): self.services |= 0x00000008
-        else: self.services &= ~0x00000008
+        if nValue:
+            if self.services: self.services |= 0x00000008
+            else: self.services = 0x00000008
+        elif self.services: self.services &= ~0x00000008
     IsServicesBooks = property(get_IsServicesBooks, set_IsServicesBooks)
     def get_IsServicesIngredients(self):
-        return (self.services & 0x00000010) != 0
+        return self.services != None and (self.services & 0x00000010) != 0
     def set_IsServicesIngredients(self, nValue):
-        if (nValue == True): self.services |= 0x00000010
-        else: self.services &= ~0x00000010
+        if nValue:
+            if self.services: self.services |= 0x00000010
+            else: self.services = 0x00000010
+        elif self.services: self.services &= ~0x00000010
     IsServicesIngredients = property(get_IsServicesIngredients, set_IsServicesIngredients)
     def get_IsServicesLights(self):
-        return (self.services & 0x00000080) != 0
+        return self.services != None and (self.services & 0x00000080) != 0
     def set_IsServicesLights(self, nValue):
-        if (nValue == True): self.services |= 0x00000080
-        else: self.services &= ~0x00000080
+        if nValue:
+            if self.services: self.services |= 0x00000080
+            else: self.services = 0x00000080
+        elif self.services: self.services &= ~0x00000080
     IsServicesLights = property(get_IsServicesLights, set_IsServicesLights)
     def get_IsServicesApparatus(self):
-        return (self.services & 0x00000100) != 0
+        return self.services != None and (self.services & 0x00000100) != 0
     def set_IsServicesApparatus(self, nValue):
-        if (nValue == True): self.services |= 0x00000100
-        else: self.services &= ~0x00000100
+        if nValue:
+            if self.services: self.services |= 0x00000100
+            else: self.services = 0x00000100
+        elif self.services: self.services &= ~0x00000100
     IsServicesApparatus = property(get_IsServicesApparatus, set_IsServicesApparatus)
     def get_IsServicesMiscItems(self):
-        return (self.services & 0x00000400) != 0
+        return self.services != None and (self.services & 0x00000400) != 0
     def set_IsServicesMiscItems(self, nValue):
-        if (nValue == True): self.services |= 0x00000400
-        else: self.services &= ~0x00000400
+        if nValue:
+            if self.services: self.services |= 0x00000400
+            else: self.services = 0x00000400
+        elif self.services: self.services &= ~0x00000400
     IsServicesMiscItems = property(get_IsServicesMiscItems, set_IsServicesMiscItems)
     def get_IsServicesSpells(self):
-        return (self.services & 0x00000800) != 0
+        return self.services != None and (self.services & 0x00000800) != 0
     def set_IsServicesSpells(self, nValue):
-        if (nValue == True): self.services |= 0x00000800
-        else: self.services &= ~0x00000800
+        if nValue:
+            if self.services: self.services |= 0x00000800
+            else: self.services = 0x00000800
+        elif self.services: self.services &= ~0x00000800
     IsServicesSpells = property(get_IsServicesSpells, set_IsServicesSpells)
     def get_IsServicesMagicItems(self):
-        return (self.services & 0x00001000) != 0
+        return self.services != None and (self.services & 0x00001000) != 0
     def set_IsServicesMagicItems(self, nValue):
-        if (nValue == True): self.services |= 0x00001000
-        else: self.services &= ~0x00001000
+        if nValue:
+            if self.services: self.services |= 0x00001000
+            else: self.services = 0x00001000
+        elif self.services: self.services &= ~0x00001000
     IsServicesMagicItems = property(get_IsServicesMagicItems, set_IsServicesMagicItems)
     def get_IsServicesPotions(self):
-        return (self.services & 0x00002000) != 0
+        return self.services != None and (self.services & 0x00002000) != 0
     def set_IsServicesPotions(self, nValue):
-        if (nValue == True): self.services |= 0x00002000
-        else: self.services &= ~0x00002000
+        if nValue:
+            if self.services: self.services |= 0x00002000
+            else: self.services = 0x00002000
+        elif self.services: self.services &= ~0x00002000
     IsServicesPotions = property(get_IsServicesPotions, set_IsServicesPotions)
     def get_IsServicesTraining(self):
-        return (self.services & 0x00004000) != 0
+        return self.services != None and (self.services & 0x00004000) != 0
     def set_IsServicesTraining(self, nValue):
-        if (nValue == True): self.services |= 0x00004000
-        else: self.services &= ~0x00004000
+        if nValue:
+            if self.services: self.services |= 0x00004000
+            else: self.services = 0x00004000
+        elif self.services: self.services &= ~0x00004000
     IsServicesTraining = property(get_IsServicesTraining, set_IsServicesTraining)
     def get_IsServicesRecharge(self):
-        return (self.services & 0x00010000) != 0
+        return self.services != None and (self.services & 0x00010000) != 0
     def set_IsServicesRecharge(self, nValue):
-        if (nValue == True): self.services |= 0x00010000
-        else: self.services &= ~0x00010000
+        if nValue:
+            if self.services: self.services |= 0x00010000
+            else: self.services = 0x00010000
+        elif self.services: self.services &= ~0x00010000
     IsServicesRecharge = property(get_IsServicesRecharge, set_IsServicesRecharge)
     def get_IsServicesRepair(self):
-        return (self.services & 0x00020000) != 0
+        return self.services != None and (self.services & 0x00020000) != 0
     def set_IsServicesRepair(self, nValue):
-        if (nValue == True): self.services |= 0x00020000
-        else: self.services &= ~0x00020000
+        if nValue:
+            if self.services: self.services |= 0x00020000
+            else: self.services = 0x00020000
+        elif self.services: self.services &= ~0x00020000
     IsServicesRepair = property(get_IsServicesRepair, set_IsServicesRepair)
     def get_IsCreature(self):
         return (self.creatureType == 0)
@@ -8315,7 +8805,7 @@ class LVLRecord(BaseRecord):
             oEntry.level, oEntry.unused1, oEntry.listId, oEntry.count, oEntry.unused2 = nValue
     entries = property(get_entries, set_entries)
     def get_IsCalcFromAllLevels(self):
-        return (self.flags & 0x00000001) != 0 or (chanceNone & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0 or (chanceNone & 0x00000080) != 0
     def set_IsCalcFromAllLevels(self, nValue):
         if (nValue == True):
             chanceNone &= ~0x00000080
@@ -8325,16 +8815,20 @@ class LVLRecord(BaseRecord):
             flags &= ~0x00000001
     IsCalcFromAllLevels = property(get_IsCalcFromAllLevels, set_IsCalcFromAllLevels)
     def get_IsCalcForEachItem(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsCalcForEachItem(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsCalcForEachItem = property(get_IsCalcForEachItem, set_IsCalcForEachItem)
     def get_IsUseAllSpells(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsUseAllSpells(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsUseAllSpells = property(get_IsUseAllSpells, set_IsUseAllSpells)
     copyattrs = BaseRecord.baseattrs + ['chanceNone','flags','entries']
 
@@ -8638,7 +9132,7 @@ class ALCHRecord(BaseRecord):
             self._listIndex = listIndex
         ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
         def get_name0(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
@@ -8647,7 +9141,7 @@ class ALCHRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
         name0 = property(get_name0, set_name0)
         def get_name(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
@@ -8755,10 +9249,12 @@ class ALCHRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 13, nValue)
         full = property(get_full, set_full)
         def get_IsHostile(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsHostile(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsHostile = property(get_IsHostile, set_IsHostile)
     def newEffectsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 16)
@@ -8871,16 +9367,20 @@ class ALCHRecord(BaseRecord):
             oEffect.name0, oEffect.name, oEffect.magnitude, oEffect.area, oEffect.duration, oEffect.recipient, oEffect.actorValue, oEffect.script, oEffect.school, oEffect.visual, oEffect.flags, oEffect.unused1, oEffect.full = nValue
     effects = property(get_effects, set_effects)
     def get_IsNoAutoCalc(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNoAutoCalc(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNoAutoCalc = property(get_IsNoAutoCalc, set_IsNoAutoCalc)
     def get_IsFood(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsFood(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsFood = property(get_IsFood, set_IsFood)
     copyattrs = BaseRecord.baseattrs + ['full','modPath','modb','modt_p',
                                         'iconPath','script','weight',
@@ -9059,10 +9559,12 @@ class SGSTRecord(BaseRecord):
             CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 13, nValue)
         full = property(get_full, set_full)
         def get_IsHostile(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsHostile(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsHostile = property(get_IsHostile, set_IsHostile)
     def newEffectsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 12)
@@ -9998,7 +10500,7 @@ class WTHRRecord(BaseRecord):
             self.weatherType &= ~0x00000008
     IsNone = property(get_IsNone, set_IsNone)
     def get_IsPleasant(self):
-        return (self.weatherType & 0x00000001) != 0
+        return self.weatherType != None and (self.weatherType & 0x00000001) != 0
     def set_IsPleasant(self, nValue):
         if (nValue == True):
             self.weatherType |= 0x00000001
@@ -10012,7 +10514,7 @@ class WTHRRecord(BaseRecord):
             self.weatherType &= ~0x00000008
     IsPleasant = property(get_IsPleasant, set_IsPleasant)
     def get_IsCloudy(self):
-        return (self.weatherType & 0x00000002) != 0
+        return self.weatherType != None and (self.weatherType & 0x00000002) != 0
     def set_IsCloudy(self, nValue):
         if (nValue == True):
             self.weatherType &= ~0x00000001
@@ -10026,7 +10528,7 @@ class WTHRRecord(BaseRecord):
             self.weatherType &= ~0x00000008
     IsCloudy = property(get_IsCloudy, set_IsCloudy)
     def get_IsRainy(self):
-        return (self.weatherType & 0x00000004) != 0
+        return self.weatherType != None and (self.weatherType & 0x00000004) != 0
     def set_IsRainy(self, nValue):
         if (nValue == True):
             self.weatherType &= ~0x00000001
@@ -10040,7 +10542,7 @@ class WTHRRecord(BaseRecord):
             self.weatherType &= ~0x00000008
     IsRainy = property(get_IsRainy, set_IsRainy)
     def get_IsSnow(self):
-        return (self.weatherType & 0x00000008) != 0
+        return self.weatherType != None and (self.weatherType & 0x00000008) != 0
     def set_IsSnow(self, nValue):
         if (nValue == True):
             self.weatherType &= ~0x00000001
@@ -10054,16 +10556,20 @@ class WTHRRecord(BaseRecord):
             self.weatherType &= ~0x00000008
     IsSnow = property(get_IsSnow, set_IsSnow)
     def get_IsUnk1(self):
-        return (self.weatherType & 0x01000000) != 0
+        return self.weatherType != None and (self.weatherType & 0x01000000) != 0
     def set_IsUnk1(self, nValue):
-        if (nValue == True): self.weatherType |= 0x01000000
-        else: self.weatherType &= ~0x01000000
+        if nValue:
+            if self.weatherType: self.weatherType |= 0x01000000
+            else: self.weatherType = 0x01000000
+        elif self.weatherType: self.weatherType &= ~0x01000000
     IsUnk1 = property(get_IsUnk1, set_IsUnk1)
     def get_IsUnk2(self):
-        return (self.weatherType & 0x10000000) != 0
+        return self.weatherType != None and (self.weatherType & 0x10000000) != 0
     def set_IsUnk2(self, nValue):
-        if (nValue == True): self.weatherType |= 0x10000000
-        else: self.weatherType &= ~0x10000000
+        if nValue:
+            if self.weatherType: self.weatherType |= 0x10000000
+            else: self.weatherType = 0x10000000
+        elif self.weatherType: self.weatherType &= ~0x10000000
     IsUnk2 = property(get_IsUnk2, set_IsUnk2)
     copyattrs = BaseRecord.baseattrs + ['lowerLayer','upperLayer','modPath',
                                         'modb','modt_p','upperSky','fog',
@@ -10504,52 +11010,68 @@ class REGNRecord(BaseRecord):
                 CBash.SetFIDListX2FieldR(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5, self._listX2Index, 20, struct.pack('4B', *nValue), 4)
             unk2 = property(get_unk2, set_unk2)
             def get_IsConformToSlope(self):
-                return (self.flags & 0x00000001) != 0
+                return self.flags != None and (self.flags & 0x00000001) != 0
             def set_IsConformToSlope(self, nValue):
-                if (nValue == True): self.flags |= 0x00000001
-                else: self.flags &= ~0x00000001
+                if nValue:
+                    if self.flags: self.flags |= 0x00000001
+                    else: self.flags = 0x00000001
+                elif self.flags: self.flags &= ~0x00000001
             IsConformToSlope = property(get_IsConformToSlope, set_IsConformToSlope)
             def get_IsPaintVertices(self):
-                return (self.flags & 0x00000002) != 0
+                return self.flags != None and (self.flags & 0x00000002) != 0
             def set_IsPaintVertices(self, nValue):
-                if (nValue == True): self.flags |= 0x00000002
-                else: self.flags &= ~0x00000002
+                if nValue:
+                    if self.flags: self.flags |= 0x00000002
+                    else: self.flags = 0x00000002
+                elif self.flags: self.flags &= ~0x00000002
             IsPaintVertices = property(get_IsPaintVertices, set_IsPaintVertices)
             def get_IsSizeVariance(self):
-                return (self.flags & 0x00000004) != 0
+                return self.flags != None and (self.flags & 0x00000004) != 0
             def set_IsSizeVariance(self, nValue):
-                if (nValue == True): self.flags |= 0x00000004
-                else: self.flags &= ~0x00000004
+                if nValue:
+                    if self.flags: self.flags |= 0x00000004
+                    else: self.flags = 0x00000004
+                elif self.flags: self.flags &= ~0x00000004
             IsSizeVariance = property(get_IsSizeVariance, set_IsSizeVariance)
             def get_IsXVariance(self):
-                return (self.flags & 0x00000008) != 0
+                return self.flags != None and (self.flags & 0x00000008) != 0
             def set_IsXVariance(self, nValue):
-                if (nValue == True): self.flags |= 0x00000008
-                else: self.flags &= ~0x00000008
+                if nValue:
+                    if self.flags: self.flags |= 0x00000008
+                    else: self.flags = 0x00000008
+                elif self.flags: self.flags &= ~0x00000008
             IsXVariance = property(get_IsXVariance, set_IsXVariance)
             def get_IsYVariance(self):
-                return (self.flags & 0x00000010) != 0
+                return self.flags != None and (self.flags & 0x00000010) != 0
             def set_IsYVariance(self, nValue):
-                if (nValue == True): self.flags |= 0x00000010
-                else: self.flags &= ~0x00000010
+                if nValue:
+                    if self.flags: self.flags |= 0x00000010
+                    else: self.flags = 0x00000010
+                elif self.flags: self.flags &= ~0x00000010
             IsYVariance = property(get_IsYVariance, set_IsYVariance)
             def get_IsZVariance(self):
-                return (self.flags & 0x00000020) != 0
+                return self.flags != None and (self.flags & 0x00000020) != 0
             def set_IsZVariance(self, nValue):
-                if (nValue == True): self.flags |= 0x00000020
-                else: self.flags &= ~0x00000020
+                if nValue:
+                    if self.flags: self.flags |= 0x00000020
+                    else: self.flags = 0x00000020
+                elif self.flags: self.flags &= ~0x00000020
             IsZVariance = property(get_IsZVariance, set_IsZVariance)
             def get_IsTree(self):
-                return (self.flags & 0x00000040) != 0
+                return self.flags != None and (self.flags & 0x00000040) != 0
             def set_IsTree(self, nValue):
-                if (nValue == True): self.flags |= 0x00000040
-                else: self.flags &= ~0x00000040
+                if nValue:
+                    if self.flags: self.flags |= 0x00000040
+                    else: self.flags = 0x00000040
+                elif self.flags: self.flags &= ~0x00000040
             IsTree = property(get_IsTree, set_IsTree)
             def get_IsHugeRock(self):
-                return (self.flags & 0x00000080) != 0
+                return self.flags != None and (self.flags & 0x00000080) != 0
             def set_IsHugeRock(self, nValue):
-                if (nValue == True): self.flags |= 0x00000080
-                else: self.flags &= ~0x00000080
+                if nValue:
+                    if self.flags: self.flags |= 0x00000080
+                    else: self.flags = 0x00000080
+                elif self.flags: self.flags &= ~0x00000080
             IsHugeRock = property(get_IsHugeRock, set_IsHugeRock)
 
         class Grass(object):
@@ -10615,28 +11137,36 @@ class REGNRecord(BaseRecord):
             chance = property(get_chance, set_chance)
 
             def get_IsPleasant(self):
-                return (self.flags & 0x00000001) != 0
+                return self.flags != None and (self.flags & 0x00000001) != 0
             def set_IsPleasant(self, nValue):
-                if (nValue == True): self.flags |= 0x00000001
-                else: self.flags &= ~0x00000001
+                if nValue:
+                    if self.flags: self.flags |= 0x00000001
+                    else: self.flags = 0x00000001
+                elif self.flags: self.flags &= ~0x00000001
             IsPleasant = property(get_IsPleasant, set_IsPleasant)
             def get_IsCloudy(self):
-                return (self.flags & 0x00000002) != 0
+                return self.flags != None and (self.flags & 0x00000002) != 0
             def set_IsCloudy(self, nValue):
-                if (nValue == True): self.flags |= 0x00000002
-                else: self.flags &= ~0x00000002
+                if nValue:
+                    if self.flags: self.flags |= 0x00000002
+                    else: self.flags = 0x00000002
+                elif self.flags: self.flags &= ~0x00000002
             IsCloudy = property(get_IsCloudy, set_IsCloudy)
             def get_IsRainy(self):
-                return (self.flags & 0x00000004) != 0
+                return self.flags != None and (self.flags & 0x00000004) != 0
             def set_IsRainy(self, nValue):
-                if (nValue == True): self.flags |= 0x00000004
-                else: self.flags &= ~0x00000004
+                if nValue:
+                    if self.flags: self.flags |= 0x00000004
+                    else: self.flags = 0x00000004
+                elif self.flags: self.flags &= ~0x00000004
             IsRainy = property(get_IsRainy, set_IsRainy)
             def get_IsSnowy(self):
-                return (self.flags & 0x00000008) != 0
+                return self.flags != None and (self.flags & 0x00000008) != 0
             def set_IsSnowy(self, nValue):
-                if (nValue == True): self.flags |= 0x00000008
-                else: self.flags &= ~0x00000008
+                if nValue:
+                    if self.flags: self.flags |= 0x00000008
+                    else: self.flags = 0x00000008
+                elif self.flags: self.flags &= ~0x00000008
             IsSnowy = property(get_IsSnowy, set_IsSnowy)
         class Weather(object):
             def __init__(self, CollectionIndex, ModName, recordID, listIndex, listX2Index):
@@ -10819,10 +11349,12 @@ class REGNRecord(BaseRecord):
                 oWeather.weather, oWeather.chance = nValue
         weathers = property(get_weathers, set_weathers)
         def get_IsOverride(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsOverride(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsOverride = property(get_IsOverride, set_IsOverride)
         def get_IsObject(self):
             return (self.entryType == 2)
@@ -11043,19 +11575,20 @@ class REGNRecord(BaseRecord):
     copyattrs = BaseRecord.baseattrs + ['iconPath','mapRed','mapGreen','mapBlue','worldspace','areas','entries']
 
 class CELLRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, target, isWorldCell=False):
-        if isinstance(target, ModFile):
-            FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, 0, c_bool(True), c_bool(False))
-        else:
-            FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, target._recordID, c_bool(True), c_bool(isWorldCell))
-        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID)
+        if isinstance(target, CBashModFile): targetID = self._parentID
+        else: targetID = target._recordID
+        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, c_bool(True), c_bool(isWorldCell))
+        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
         return None
     def CopyAsNew(self, target, isWorldCell=False):
-        if isinstance(target, ModFile):
-            FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, 0, c_bool(False), c_bool(False))
-        else:
-            FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, target._recordID, c_bool(False), c_bool(isWorldCell))
-        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID)
+        if isinstance(target, CBashModFile): targetID = self._parentID
+        else: targetID = target._recordID
+        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, c_bool(False), c_bool(isWorldCell))
+        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
         return None
     def DeleteRecord(self, parent=None):
         if(parent == None):
@@ -11427,51 +11960,65 @@ class CELLRecord(BaseRecord):
         curLAND.vertexTextures = nLAND.vertexTextures
     LAND = property(get_LAND, set_LAND)
     def get_IsInterior(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsInterior(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsInterior = property(get_IsInterior, set_IsInterior)
     def get_HasWater(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_HasWater(self, nValue):
         if nValue is None: return
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     HasWater = property(get_HasWater, set_HasWater)
     def get_InvertFastTravel(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_InvertFastTravel(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     InvertFastTravel = property(get_InvertFastTravel, set_InvertFastTravel)
     def get_ForceHideLand(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_ForceHideLand(self, nValue):
         if nValue is None: return
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     ForceHideLand = property(get_ForceHideLand, set_ForceHideLand)
     def get_PublicPlace(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_PublicPlace(self, nValue):
         if nValue is None: return
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     PublicPlace = property(get_PublicPlace, set_PublicPlace)
     def get_HandChanged(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_HandChanged(self, nValue):
         if nValue is None: return
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     HandChanged = property(get_HandChanged, set_HandChanged)
     def get_BehaveLikeExterior(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_BehaveLikeExterior(self, nValue):
         if nValue is None: return
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     BehaveLikeExterior = property(get_BehaveLikeExterior, set_BehaveLikeExterior)
     def get_IsDefault(self):
         return (self.music == 0)
@@ -11685,10 +12232,12 @@ class ACHRRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 24, c_float(nValue))
     rotZ = property(get_rotZ, set_rotZ)
     def get_IsOppositeParent(self):
-        return (self.parentFlags & 0x00000001) != 0
+        return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
-        if (nValue == True): self.parentFlags |= 0x00000001
-        else: self.parentFlags &= ~0x00000001
+        if nValue:
+            if self.parentFlags: self.parentFlags |= 0x00000001
+            else: self.parentFlags = 0x00000001
+        elif self.parentFlags: self.parentFlags &= ~0x00000001
     IsOppositeParent = property(get_IsOppositeParent, set_IsOppositeParent)
     copyattrs = BaseRecord.baseattrs + ['base','unknownXPCIFormID','unknownXPCIString',
                                         'lod1','lod2','lod3','parent','parentFlags',
@@ -11848,10 +12397,12 @@ class ACRERecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 20, c_float(nValue))
     rotZ = property(get_rotZ, set_rotZ)
     def get_IsOppositeParent(self):
-        return (self.parentFlags & 0x00000001) != 0
+        return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
-        if (nValue == True): self.parentFlags |= 0x00000001
-        else: self.parentFlags &= ~0x00000001
+        if nValue:
+            if self.parentFlags: self.parentFlags |= 0x00000001
+            else: self.parentFlags = 0x00000001
+        elif self.parentFlags: self.parentFlags &= ~0x00000001
     IsOppositeParent = property(get_IsOppositeParent, set_IsOppositeParent)
     copyattrs = BaseRecord.baseattrs + ['base','owner','rank','globalVariable','parent',
                                         'parentFlags','xrgd_p','scale',
@@ -12290,52 +12841,68 @@ class REFRRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 50, c_float(nValue))
     rotZ = property(get_rotZ, set_rotZ)
     def get_IsOppositeParent(self):
-        return (self.parentFlags & 0x00000001) != 0
+        return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
-        if (nValue == True): self.parentFlags |= 0x00000001
-        else: self.parentFlags &= ~0x00000001
+        if nValue:
+            if self.parentFlags: self.parentFlags |= 0x00000001
+            else: self.parentFlags = 0x00000001
+        elif self.parentFlags: self.parentFlags &= ~0x00000001
     IsOppositeParent = property(get_IsOppositeParent, set_IsOppositeParent)
     def get_IsVisible(self):
-        return (self.markerFlags & 0x00000001) != 0
+        return self.markerFlags != None and (self.markerFlags & 0x00000001) != 0
     def set_IsVisible(self, nValue):
-        if (nValue == True): self.markerFlags |= 0x00000001
-        else: self.markerFlags &= ~0x00000001
+        if nValue:
+            if self.markerFlags: self.markerFlags |= 0x00000001
+            else: self.markerFlags = 0x00000001
+        elif self.markerFlags: self.markerFlags &= ~0x00000001
     IsVisible = property(get_IsVisible, set_IsVisible)
     def get_IsCanTravelTo(self):
-        return (self.markerFlags & 0x00000002) != 0
+        return self.markerFlags != None and (self.markerFlags & 0x00000002) != 0
     def set_IsCanTravelTo(self, nValue):
-        if (nValue == True): self.markerFlags |= 0x00000002
-        else: self.markerFlags &= ~0x00000002
+        if nValue:
+            if self.markerFlags: self.markerFlags |= 0x00000002
+            else: self.markerFlags = 0x00000002
+        elif self.markerFlags: self.markerFlags &= ~0x00000002
     IsCanTravelTo = property(get_IsCanTravelTo, set_IsCanTravelTo)
     def get_IsUseDefault(self):
-        return (self.actionFlags & 0x00000001) != 0
+        return self.actionFlags != None and (self.actionFlags & 0x00000001) != 0
     def set_IsUseDefault(self, nValue):
-        if (nValue == True): self.actionFlags |= 0x00000001
-        else: self.actionFlags &= ~0x00000001
+        if nValue:
+            if self.actionFlags: self.actionFlags |= 0x00000001
+            else: self.actionFlags = 0x00000001
+        elif self.actionFlags: self.actionFlags &= ~0x00000001
     IsUseDefault = property(get_IsUseDefault, set_IsUseDefault)
     def get_IsActivate(self):
-        return (self.actionFlags & 0x00000002) != 0
+        return self.actionFlags != None and (self.actionFlags & 0x00000002) != 0
     def set_IsActivate(self, nValue):
-        if (nValue == True): self.actionFlags |= 0x00000002
-        else: self.actionFlags &= ~0x00000002
+        if nValue:
+            if self.actionFlags: self.actionFlags |= 0x00000002
+            else: self.actionFlags = 0x00000002
+        elif self.actionFlags: self.actionFlags &= ~0x00000002
     IsActivate = property(get_IsActivate, set_IsActivate)
     def get_IsOpen(self):
-        return (self.actionFlags & 0x00000004) != 0
+        return self.actionFlags != None and (self.actionFlags & 0x00000004) != 0
     def set_IsOpen(self, nValue):
-        if (nValue == True): self.actionFlags |= 0x00000004
-        else: self.actionFlags &= ~0x00000004
+        if nValue:
+            if self.actionFlags: self.actionFlags |= 0x00000004
+            else: self.actionFlags = 0x00000004
+        elif self.actionFlags: self.actionFlags &= ~0x00000004
     IsOpen = property(get_IsOpen, set_IsOpen)
     def get_IsOpenByDefault(self):
-        return (self.actionFlags & 0x00000008) != 0
+        return self.actionFlags != None and (self.actionFlags & 0x00000008) != 0
     def set_IsOpenByDefault(self, nValue):
-        if (nValue == True): self.actionFlags |= 0x00000008
-        else: self.actionFlags &= ~0x00000008
+        if nValue:
+            if self.actionFlags: self.actionFlags |= 0x00000008
+            else: self.actionFlags = 0x00000008
+        elif self.actionFlags: self.actionFlags &= ~0x00000008
     IsOpenByDefault = property(get_IsOpenByDefault, set_IsOpenByDefault)
     def get_IsLeveledLock(self):
-        return (self.lockFlags & 0x00000004) != 0
+        return self.lockFlags != None and (self.lockFlags & 0x00000004) != 0
     def set_IsLeveledLock(self, nValue):
-        if (nValue == True): self.lockFlags |= 0x00000004
-        else: self.lockFlags &= ~0x00000004
+        if nValue:
+            if self.lockFlags: self.lockFlags |= 0x00000004
+            else: self.lockFlags = 0x00000004
+        elif self.lockFlags: self.lockFlags &= ~0x00000004
     IsLeveledLock = property(get_IsLeveledLock, set_IsLeveledLock)
     def get_IsMarkerNone(self):
         if(self.markerType == None): return True
@@ -12731,11 +13298,11 @@ class WRLDRecord(BaseRecord):
         return None
     def createWorldCELLRecord(self):
         FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, c_bool(True))
-        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createCELLRecord(self):
         FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, c_bool(False))
-        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createROADRecord(self):
         FID = CBash.CreateROADRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -12921,7 +13488,7 @@ class WRLDRecord(BaseRecord):
     def get_CELL(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 25)
-        if(retValue): return CELLRecord(self._CollectionIndex, self._ModName, retValue.contents.value)
+        if(retValue): return CELLRecord(self._CollectionIndex, self._ModName, retValue.contents.value, self._recordID)
         return None
     def set_CELL(self, nCELL):
         if nCELL is None: return
@@ -12973,20 +13540,24 @@ class WRLDRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 26, byref(cRecords))
-            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
         return []
 
     def get_IsSmallWorld(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsSmallWorld(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsSmallWorld = property(get_IsSmallWorld, set_IsSmallWorld)
     def get_IsNoFastTravel(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsNoFastTravel(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsNoFastTravel = property(get_IsNoFastTravel, set_IsNoFastTravel)
     def get_IsFastTravel(self):
         return not self.get_IsNoFastTravel()
@@ -12995,16 +13566,20 @@ class WRLDRecord(BaseRecord):
         else: self.flags |= 0x00000002
     IsFastTravel = property(get_IsFastTravel, set_IsFastTravel)
     def get_IsOblivionWorldspace(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsOblivionWorldspace(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsOblivionWorldspace = property(get_IsOblivionWorldspace, set_IsOblivionWorldspace)
     def get_IsNoLODWater(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsNoLODWater(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsNoLODWater = property(get_IsNoLODWater, set_IsNoLODWater)
     def get_IsLODWater(self):
         return not self.get_IsNoLODWater()
@@ -14107,89 +14682,112 @@ class INFORecord(BaseRecord):
             CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, struct.pack('4B', *nValue), 4)
         unused2 = property(get_unused2, set_unused2)
         def get_IsEqual(self):
-            return ((self.operType & 0xF0) == 0x00000000)
+            return self.operType and ((self.operType & 0xF0) == 0x00000000)
         def set_IsEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000000
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000000
+                else: self.operType = 0x00000000
             elif(self.get_IsEqual()): self.IsNotEqual = True
         IsEqual = property(get_IsEqual, set_IsEqual)
         def get_IsNotEqual(self):
-            return ((self.operType & 0xF0) == 0x00000020)
+            return self.operType and ((self.operType & 0xF0) == 0x00000020)
         def set_IsNotEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000020
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000020
+                else: self.operType = 0x00000020
             elif(self.get_IsNotEqual()): self.IsEqual = True
         IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
         def get_IsGreater(self):
-            return ((self.operType & 0xF0) == 0x00000040)
+            return self.operType and ((self.operType & 0xF0) == 0x00000040)
         def set_IsGreater(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000040
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000040
+                else: self.operType = 0x00000040
             elif(self.get_IsGreater()): self.IsEqual = True
         IsGreater = property(get_IsGreater, set_IsGreater)
         def get_IsGreaterOrEqual(self):
-            return ((self.operType & 0xF0) == 0x00000060)
+            return self.operType and ((self.operType & 0xF0) == 0x00000060)
         def set_IsGreaterOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000060
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000060
+                else: self.operType = 0x00000060
             elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
         IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
         def get_IsLess(self):
-            return ((self.operType & 0xF0) == 0x00000080)
+            return self.operType and ((self.operType & 0xF0) == 0x00000080)
         def set_IsLess(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000080
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000080
+                else: self.operType = 0x00000080
             elif(self.get_IsLess()): self.IsEqual = True
         IsLess = property(get_IsLess, set_IsLess)
         def get_IsLessOrEqual(self):
-            return ((self.operType & 0xF0) == 0x000000A0)
+            return self.operType and ((self.operType & 0xF0) == 0x000000A0)
         def set_IsLessOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x000000A0
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x000000A0
+                else: self.operType = 0x000000A0
             elif(self.get_IsLessOrEqual()): self.IsEqual = True
         IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
         def IsType(self, nValue):
-            return ((self.operType & 0xF0) == (nValue & 0xF0))
+            return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
         def SetType(self, nValue):
             nValue &= 0xF0
-            self.operType &= 0x0F
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0x0F
+                self.operType |= nValue
+            else: self.operType = nValue
         def get_IsNone(self):
-            return ((self.operType & 0x0F) == 0x00000000)
+            return self.operType and ((self.operType & 0x0F) == 0x00000000)
         def set_IsNone(self, nValue):
-            if (nValue == True): self.operType &= 0xF0
+            if (nValue == True) and self.operType: self.operType &= 0xF0
         IsNone = property(get_IsNone, set_IsNone)
         def get_IsOr(self):
-            return ((self.operType & 0x0F) == 0x00000001)
+            return self.operType and ((self.operType & 0x0F) == 0x00000001)
         def set_IsOr(self, nValue):
-            if (nValue == True): self.operType |= 0x00000001
-            else: self.operType &= ~0x00000001
+            if nValue:
+                if self.operType: self.operType |= 0x00000001
+                else: self.operType = 0x00000001
+            elif self.operType: self.operType &= ~0x00000001
         IsOr = property(get_IsOr, set_IsOr)
         def get_IsRunOnTarget(self):
-            return ((self.operType & 0x0F) == 0x00000002)
+            return self.operType and ((self.operType & 0x0F) == 0x00000002)
         def set_IsRunOnTarget(self, nValue):
-            if (nValue == True): self.operType |= 0x00000002
-            else: self.operType &= ~0x00000002
+            if nValue:
+                if self.operType: self.operType |= 0x00000002
+                else: self.operType = 0x00000002
+            elif self.operType: self.operType &= ~0x00000002
         IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
         def get_IsUseGlobal(self):
-            return ((self.operType & 0x0F) == 0x00000004)
+            return self.operType and ((self.operType & 0x0F) == 0x00000004)
         def set_IsUseGlobal(self, nValue):
-            if (nValue == True): self.operType |= 0x00000004
-            else: self.operType &= ~0x00000004
+            if nValue:
+                if self.operType: self.operType |= 0x00000004
+                else: self.operType = 0x00000004
+            elif self.operType: self.operType &= ~0x00000004
         IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
         def IsFlagMask(self, nValue, Exact=False):
+            if not self.operType: return False
             if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
             return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
         def SetFlagMask(self, nValue):
             nValue &= 0x0F
-            self.operType &= 0xF0
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0xF0
+                self.operType |= nValue
+            else: self.operType = nValue
 
     class Reference(object):
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
@@ -14478,40 +15076,52 @@ class INFORecord(BaseRecord):
         elif(self.get_IsMisc()): self.IsTopic = True
     IsMisc = property(get_IsMisc, set_IsMisc)
     def get_IsGoodbye(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsGoodbye(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsGoodbye = property(get_IsGoodbye, set_IsGoodbye)
     def get_IsRandom(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsRandom(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsRandom = property(get_IsRandom, set_IsRandom)
     def get_IsSayOnce(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsSayOnce(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsSayOnce = property(get_IsSayOnce, set_IsSayOnce)
     def get_IsInfoRefusal(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsInfoRefusal(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsInfoRefusal = property(get_IsInfoRefusal, set_IsInfoRefusal)
     def get_IsRandomEnd(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsRandomEnd(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsRandomEnd = property(get_IsRandomEnd, set_IsRandomEnd)
     def get_IsRunForRumors(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsRunForRumors(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsRunForRumors = property(get_IsRunForRumors, set_IsRunForRumors)
     copyattrs = BaseRecord.baseattrs + ['dialType','flags','quest','topic',
                                         'prevInfo','addTopics','responses',
@@ -14603,89 +15213,112 @@ class QUSTRecord(BaseRecord):
             CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, struct.pack('4B', *nValue), 4)
         unused2 = property(get_unused2, set_unused2)
         def get_IsEqual(self):
-            return ((self.operType & 0xF0) == 0x00000000)
+            return self.operType and ((self.operType & 0xF0) == 0x00000000)
         def set_IsEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000000
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000000
+                else: self.operType = 0x00000000
             elif(self.get_IsEqual()): self.IsNotEqual = True
         IsEqual = property(get_IsEqual, set_IsEqual)
         def get_IsNotEqual(self):
-            return ((self.operType & 0xF0) == 0x00000020)
+            return self.operType and ((self.operType & 0xF0) == 0x00000020)
         def set_IsNotEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000020
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000020
+                else: self.operType = 0x00000020
             elif(self.get_IsNotEqual()): self.IsEqual = True
         IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
         def get_IsGreater(self):
-            return ((self.operType & 0xF0) == 0x00000040)
+            return self.operType and ((self.operType & 0xF0) == 0x00000040)
         def set_IsGreater(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000040
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000040
+                else: self.operType = 0x00000040
             elif(self.get_IsGreater()): self.IsEqual = True
         IsGreater = property(get_IsGreater, set_IsGreater)
         def get_IsGreaterOrEqual(self):
-            return ((self.operType & 0xF0) == 0x00000060)
+            return self.operType and ((self.operType & 0xF0) == 0x00000060)
         def set_IsGreaterOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000060
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000060
+                else: self.operType = 0x00000060
             elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
         IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
         def get_IsLess(self):
-            return ((self.operType & 0xF0) == 0x00000080)
+            return self.operType and ((self.operType & 0xF0) == 0x00000080)
         def set_IsLess(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000080
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000080
+                else: self.operType = 0x00000080
             elif(self.get_IsLess()): self.IsEqual = True
         IsLess = property(get_IsLess, set_IsLess)
         def get_IsLessOrEqual(self):
-            return ((self.operType & 0xF0) == 0x000000A0)
+            return self.operType and ((self.operType & 0xF0) == 0x000000A0)
         def set_IsLessOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x000000A0
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x000000A0
+                else: self.operType = 0x000000A0
             elif(self.get_IsLessOrEqual()): self.IsEqual = True
         IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
         def IsType(self, nValue):
-            return ((self.operType & 0xF0) == (nValue & 0xF0))
+            return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
         def SetType(self, nValue):
             nValue &= 0xF0
-            self.operType &= 0x0F
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0x0F
+                self.operType |= nValue
+            else: self.operType = nValue
         def get_IsNone(self):
-            return ((self.operType & 0x0F) == 0x00000000)
+            return self.operType and ((self.operType & 0x0F) == 0x00000000)
         def set_IsNone(self, nValue):
-            if (nValue == True): self.operType &= 0xF0
+            if (nValue == True) and self.operType: self.operType &= 0xF0
         IsNone = property(get_IsNone, set_IsNone)
         def get_IsOr(self):
-            return ((self.operType & 0x0F) == 0x00000001)
+            return self.operType and ((self.operType & 0x0F) == 0x00000001)
         def set_IsOr(self, nValue):
-            if (nValue == True): self.operType |= 0x00000001
-            else: self.operType &= ~0x00000001
+            if nValue:
+                if self.operType: self.operType |= 0x00000001
+                else: self.operType = 0x00000001
+            elif self.operType: self.operType &= ~0x00000001
         IsOr = property(get_IsOr, set_IsOr)
         def get_IsRunOnTarget(self):
-            return ((self.operType & 0x0F) == 0x00000002)
+            return self.operType and ((self.operType & 0x0F) == 0x00000002)
         def set_IsRunOnTarget(self, nValue):
-            if (nValue == True): self.operType |= 0x00000002
-            else: self.operType &= ~0x00000002
+            if nValue:
+                if self.operType: self.operType |= 0x00000002
+                else: self.operType = 0x00000002
+            elif self.operType: self.operType &= ~0x00000002
         IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
         def get_IsUseGlobal(self):
-            return ((self.operType & 0x0F) == 0x00000004)
+            return self.operType and ((self.operType & 0x0F) == 0x00000004)
         def set_IsUseGlobal(self, nValue):
-            if (nValue == True): self.operType |= 0x00000004
-            else: self.operType &= ~0x00000004
+            if nValue:
+                if self.operType: self.operType |= 0x00000004
+                else: self.operType = 0x00000004
+            elif self.operType: self.operType &= ~0x00000004
         IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
         def IsFlagMask(self, nValue, Exact=False):
+            if not self.operType: return False
             if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
             return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
         def SetFlagMask(self, nValue):
             nValue &= 0x0F
-            self.operType &= 0xF0
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0xF0
+                self.operType |= nValue
+            else: self.operType = nValue
     class Stage(object):
         class Entry(object):
             class Condition(object):
@@ -14766,89 +15399,112 @@ class QUSTRecord(BaseRecord):
                     CBash.SetFIDListX3FieldR(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 2, self._listX2Index, 2, self._listX3Index, 7, struct.pack('4B', *nValue), 4)
                 unused2 = property(get_unused2, set_unused2)
                 def get_IsEqual(self):
-                    return ((self.operType & 0xF0) == 0x00000000)
+                    return self.operType and ((self.operType & 0xF0) == 0x00000000)
                 def set_IsEqual(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x00000000
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x00000000
+                        else: self.operType = 0x00000000
                     elif(self.get_IsEqual()): self.IsNotEqual = True
                 IsEqual = property(get_IsEqual, set_IsEqual)
                 def get_IsNotEqual(self):
-                    return ((self.operType & 0xF0) == 0x00000020)
+                    return self.operType and ((self.operType & 0xF0) == 0x00000020)
                 def set_IsNotEqual(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x00000020
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x00000020
+                        else: self.operType = 0x00000020
                     elif(self.get_IsNotEqual()): self.IsEqual = True
                 IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
                 def get_IsGreater(self):
-                    return ((self.operType & 0xF0) == 0x00000040)
+                    return self.operType and ((self.operType & 0xF0) == 0x00000040)
                 def set_IsGreater(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x00000040
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x00000040
+                        else: self.operType = 0x00000040
                     elif(self.get_IsGreater()): self.IsEqual = True
                 IsGreater = property(get_IsGreater, set_IsGreater)
                 def get_IsGreaterOrEqual(self):
-                    return ((self.operType & 0xF0) == 0x00000060)
+                    return self.operType and ((self.operType & 0xF0) == 0x00000060)
                 def set_IsGreaterOrEqual(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x00000060
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x00000060
+                        else: self.operType = 0x00000060
                     elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
                 IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
                 def get_IsLess(self):
-                    return ((self.operType & 0xF0) == 0x00000080)
+                    return self.operType and ((self.operType & 0xF0) == 0x00000080)
                 def set_IsLess(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x00000080
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x00000080
+                        else: self.operType = 0x00000080
                     elif(self.get_IsLess()): self.IsEqual = True
                 IsLess = property(get_IsLess, set_IsLess)
                 def get_IsLessOrEqual(self):
-                    return ((self.operType & 0xF0) == 0x000000A0)
+                    return self.operType and ((self.operType & 0xF0) == 0x000000A0)
                 def set_IsLessOrEqual(self, nValue):
                     if (nValue == True):
-                        self.operType &= 0x0F
-                        self.operType |= 0x000000A0
+                        if self.operType:
+                            self.operType &= 0x0F
+                            self.operType |= 0x000000A0
+                        else: self.operType = 0x000000A0
                     elif(self.get_IsLessOrEqual()): self.IsEqual = True
                 IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
                 def IsType(self, nValue):
-                    return ((self.operType & 0xF0) == (nValue & 0xF0))
+                    return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
                 def SetType(self, nValue):
                     nValue &= 0xF0
-                    self.operType &= 0x0F
-                    self.operType |= nValue
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= nValue
+                    else: self.operType = nValue
                 def get_IsNone(self):
-                    return ((self.operType & 0x0F) == 0x00000000)
+                    return self.operType and ((self.operType & 0x0F) == 0x00000000)
                 def set_IsNone(self, nValue):
-                    if (nValue == True): self.operType &= 0xF0
+                    if (nValue == True) and self.operType: self.operType &= 0xF0
                 IsNone = property(get_IsNone, set_IsNone)
                 def get_IsOr(self):
-                    return ((self.operType & 0x0F) == 0x00000001)
+                    return self.operType and ((self.operType & 0x0F) == 0x00000001)
                 def set_IsOr(self, nValue):
-                    if (nValue == True): self.operType |= 0x00000001
-                    else: self.operType &= ~0x00000001
+                    if nValue:
+                        if self.operType: self.operType |= 0x00000001
+                        else: self.operType = 0x00000001
+                    elif self.operType: self.operType &= ~0x00000001
                 IsOr = property(get_IsOr, set_IsOr)
                 def get_IsRunOnTarget(self):
-                    return ((self.operType & 0x0F) == 0x00000002)
+                    return self.operType and ((self.operType & 0x0F) == 0x00000002)
                 def set_IsRunOnTarget(self, nValue):
-                    if (nValue == True): self.operType |= 0x00000002
-                    else: self.operType &= ~0x00000002
+                    if nValue:
+                        if self.operType: self.operType |= 0x00000002
+                        else: self.operType = 0x00000002
+                    elif self.operType: self.operType &= ~0x00000002
                 IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
                 def get_IsUseGlobal(self):
-                    return ((self.operType & 0x0F) == 0x00000004)
+                    return self.operType and ((self.operType & 0x0F) == 0x00000004)
                 def set_IsUseGlobal(self, nValue):
-                    if (nValue == True): self.operType |= 0x00000004
-                    else: self.operType &= ~0x00000004
+                    if nValue:
+                        if self.operType: self.operType |= 0x00000004
+                        else: self.operType = 0x00000004
+                    elif self.operType: self.operType &= ~0x00000004
                 IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
                 def IsFlagMask(self, nValue, Exact=False):
+                    if not self.operType: return False
                     if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
                     return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
                 def SetFlagMask(self, nValue):
                     nValue &= 0x0F
-                    self.operType &= 0xF0
-                    self.operType |= nValue
+                    if self.operType:
+                        self.operType &= 0xF0
+                        self.operType |= nValue
+                    else: self.operType = nValue
 
             class Reference(object):
                 def __init__(self, CollectionIndex, ModName, recordID, listIndex, listX2Index, listX3Index):
@@ -15017,10 +15673,12 @@ class QUSTRecord(BaseRecord):
                     oReference.reference, oReference.IsSCRO = nValue
             references = property(get_references, set_references)
             def get_IsCompletes(self):
-                return (self.flags & 0x00000001) != 0
+                return self.flags != None and (self.flags & 0x00000001) != 0
             def set_IsCompletes(self, nValue):
-                if (nValue == True): self.flags |= 0x00000001
-                else: self.flags &= ~0x00000001
+                if nValue:
+                    if self.flags: self.flags |= 0x00000001
+                    else: self.flags = 0x00000001
+                elif self.flags: self.flags &= ~0x00000001
             IsCompletes = property(get_IsCompletes, set_IsCompletes)
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -15163,89 +15821,112 @@ class QUSTRecord(BaseRecord):
                 CBash.SetFIDListX2FieldR(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 4, self._listX2Index, 7, struct.pack('4B', *nValue), 4)
             unused2 = property(get_unused2, set_unused2)
             def get_IsEqual(self):
-                return ((self.operType & 0xF0) == 0x00000000)
+                return self.operType and ((self.operType & 0xF0) == 0x00000000)
             def set_IsEqual(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x00000000
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x00000000
+                    else: self.operType = 0x00000000
                 elif(self.get_IsEqual()): self.IsNotEqual = True
             IsEqual = property(get_IsEqual, set_IsEqual)
             def get_IsNotEqual(self):
-                return ((self.operType & 0xF0) == 0x00000020)
+                return self.operType and ((self.operType & 0xF0) == 0x00000020)
             def set_IsNotEqual(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x00000020
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x00000020
+                    else: self.operType = 0x00000020
                 elif(self.get_IsNotEqual()): self.IsEqual = True
             IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
             def get_IsGreater(self):
-                return ((self.operType & 0xF0) == 0x00000040)
+                return self.operType and ((self.operType & 0xF0) == 0x00000040)
             def set_IsGreater(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x00000040
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x00000040
+                    else: self.operType = 0x00000040
                 elif(self.get_IsGreater()): self.IsEqual = True
             IsGreater = property(get_IsGreater, set_IsGreater)
             def get_IsGreaterOrEqual(self):
-                return ((self.operType & 0xF0) == 0x00000060)
+                return self.operType and ((self.operType & 0xF0) == 0x00000060)
             def set_IsGreaterOrEqual(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x00000060
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x00000060
+                    else: self.operType = 0x00000060
                 elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
             IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
             def get_IsLess(self):
-                return ((self.operType & 0xF0) == 0x00000080)
+                return self.operType and ((self.operType & 0xF0) == 0x00000080)
             def set_IsLess(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x00000080
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x00000080
+                    else: self.operType = 0x00000080
                 elif(self.get_IsLess()): self.IsEqual = True
             IsLess = property(get_IsLess, set_IsLess)
             def get_IsLessOrEqual(self):
-                return ((self.operType & 0xF0) == 0x000000A0)
+                return self.operType and ((self.operType & 0xF0) == 0x000000A0)
             def set_IsLessOrEqual(self, nValue):
                 if (nValue == True):
-                    self.operType &= 0x0F
-                    self.operType |= 0x000000A0
+                    if self.operType:
+                        self.operType &= 0x0F
+                        self.operType |= 0x000000A0
+                    else: self.operType = 0x000000A0
                 elif(self.get_IsLessOrEqual()): self.IsEqual = True
             IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
             def IsType(self, nValue):
-                return ((self.operType & 0xF0) == (nValue & 0xF0))
+                return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
             def SetType(self, nValue):
                 nValue &= 0xF0
-                self.operType &= 0x0F
-                self.operType |= nValue
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= nValue
+                else: self.operType = nValue
             def get_IsNone(self):
-                return ((self.operType & 0x0F) == 0x00000000)
+                return self.operType and ((self.operType & 0x0F) == 0x00000000)
             def set_IsNone(self, nValue):
-                if (nValue == True): self.operType &= 0xF0
+                if (nValue == True) and self.operType: self.operType &= 0xF0
             IsNone = property(get_IsNone, set_IsNone)
             def get_IsOr(self):
-                return ((self.operType & 0x0F) == 0x00000001)
+                return self.operType and ((self.operType & 0x0F) == 0x00000001)
             def set_IsOr(self, nValue):
-                if (nValue == True): self.operType |= 0x00000001
-                else: self.operType &= ~0x00000001
+                if nValue:
+                    if self.operType: self.operType |= 0x00000001
+                    else: self.operType = 0x00000001
+                elif self.operType: self.operType &= ~0x00000001
             IsOr = property(get_IsOr, set_IsOr)
             def get_IsRunOnTarget(self):
-                return ((self.operType & 0x0F) == 0x00000002)
+                return self.operType and ((self.operType & 0x0F) == 0x00000002)
             def set_IsRunOnTarget(self, nValue):
-                if (nValue == True): self.operType |= 0x00000002
-                else: self.operType &= ~0x00000002
+                if nValue:
+                    if self.operType: self.operType |= 0x00000002
+                    else: self.operType = 0x00000002
+                elif self.operType: self.operType &= ~0x00000002
             IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
             def get_IsUseGlobal(self):
-                return ((self.operType & 0x0F) == 0x00000004)
+                return self.operType and ((self.operType & 0x0F) == 0x00000004)
             def set_IsUseGlobal(self, nValue):
-                if (nValue == True): self.operType |= 0x00000004
-                else: self.operType &= ~0x00000004
+                if nValue:
+                    if self.operType: self.operType |= 0x00000004
+                    else: self.operType = 0x00000004
+                elif self.operType: self.operType &= ~0x00000004
             IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
             def IsFlagMask(self, nValue, Exact=False):
+                if not self.operType: return False
                 if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
                 return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
             def SetFlagMask(self, nValue):
                 nValue &= 0x0F
-                self.operType &= 0xF0
-                self.operType |= nValue
+                if self.operType:
+                    self.operType &= 0xF0
+                    self.operType |= nValue
+                else: self.operType = nValue
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
             self._CollectionIndex = CollectionIndex
             self._ModName = ModName
@@ -15302,10 +15983,12 @@ class QUSTRecord(BaseRecord):
                 oCondition.operType, oCondition.unused1, oCondition.compValue, oCondition.ifunc, oCondition.param1, oCondition.param2, oCondition.unused2 = nValue
         conditions = property(get_conditions, set_conditions)
         def get_IsIgnoresLocks(self):
-            return (self.flags & 0x00000001) != 0
+            return self.flags != None and (self.flags & 0x00000001) != 0
         def set_IsIgnoresLocks(self, nValue):
-            if (nValue == True): self.flags |= 0x00000001
-            else: self.flags &= ~0x00000001
+            if nValue:
+                if self.flags: self.flags |= 0x00000001
+                else: self.flags = 0x00000001
+            elif self.flags: self.flags &= ~0x00000001
         IsIgnoresLocks = property(get_IsIgnoresLocks, set_IsIgnoresLocks)
     def newConditionsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 11)
@@ -15458,22 +16141,28 @@ class QUSTRecord(BaseRecord):
                 oCondition.operType, oCondition.unused1, oCondition.compValue, oCondition.ifunc, oCondition.param1, oCondition.param2, oCondition.unused2 = eValue
     targets = property(get_targets, set_targets)
     def get_IsStartEnabled(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsStartEnabled(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsStartEnabled = property(get_IsStartEnabled, set_IsStartEnabled)
     def get_IsRepeatedTopics(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsRepeatedTopics(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsRepeatedTopics = property(get_IsRepeatedTopics, set_IsRepeatedTopics)
     def get_IsRepeatedStages(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsRepeatedStages(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsRepeatedStages = property(get_IsRepeatedStages, set_IsRepeatedStages)
     copyattrs = BaseRecord.baseattrs + ['script','full','iconPath','flags',
                                         'priority','conditions','stages','targets']
@@ -15562,89 +16251,112 @@ class IDLERecord(BaseRecord):
             CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, struct.pack('4B', *nValue), 4)
         unused2 = property(get_unused2, set_unused2)
         def get_IsEqual(self):
-            return ((self.operType & 0xF0) == 0x00000000)
+            return self.operType and ((self.operType & 0xF0) == 0x00000000)
         def set_IsEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000000
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000000
+                else: self.operType = 0x00000000
             elif(self.get_IsEqual()): self.IsNotEqual = True
         IsEqual = property(get_IsEqual, set_IsEqual)
         def get_IsNotEqual(self):
-            return ((self.operType & 0xF0) == 0x00000020)
+            return self.operType and ((self.operType & 0xF0) == 0x00000020)
         def set_IsNotEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000020
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000020
+                else: self.operType = 0x00000020
             elif(self.get_IsNotEqual()): self.IsEqual = True
         IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
         def get_IsGreater(self):
-            return ((self.operType & 0xF0) == 0x00000040)
+            return self.operType and ((self.operType & 0xF0) == 0x00000040)
         def set_IsGreater(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000040
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000040
+                else: self.operType = 0x00000040
             elif(self.get_IsGreater()): self.IsEqual = True
         IsGreater = property(get_IsGreater, set_IsGreater)
         def get_IsGreaterOrEqual(self):
-            return ((self.operType & 0xF0) == 0x00000060)
+            return self.operType and ((self.operType & 0xF0) == 0x00000060)
         def set_IsGreaterOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000060
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000060
+                else: self.operType = 0x00000060
             elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
         IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
         def get_IsLess(self):
-            return ((self.operType & 0xF0) == 0x00000080)
+            return self.operType and ((self.operType & 0xF0) == 0x00000080)
         def set_IsLess(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000080
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000080
+                else: self.operType = 0x00000080
             elif(self.get_IsLess()): self.IsEqual = True
         IsLess = property(get_IsLess, set_IsLess)
         def get_IsLessOrEqual(self):
-            return ((self.operType & 0xF0) == 0x000000A0)
+            return self.operType and ((self.operType & 0xF0) == 0x000000A0)
         def set_IsLessOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x000000A0
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x000000A0
+                else: self.operType = 0x000000A0
             elif(self.get_IsLessOrEqual()): self.IsEqual = True
         IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
         def IsType(self, nValue):
-            return ((self.operType & 0xF0) == (nValue & 0xF0))
+            return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
         def SetType(self, nValue):
             nValue &= 0xF0
-            self.operType &= 0x0F
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0x0F
+                self.operType |= nValue
+            else: self.operType = nValue
         def get_IsNone(self):
-            return ((self.operType & 0x0F) == 0x00000000)
+            return self.operType and ((self.operType & 0x0F) == 0x00000000)
         def set_IsNone(self, nValue):
-            if (nValue == True): self.operType &= 0xF0
+            if (nValue == True) and self.operType: self.operType &= 0xF0
         IsNone = property(get_IsNone, set_IsNone)
         def get_IsOr(self):
-            return ((self.operType & 0x0F) == 0x00000001)
+            return self.operType and ((self.operType & 0x0F) == 0x00000001)
         def set_IsOr(self, nValue):
-            if (nValue == True): self.operType |= 0x00000001
-            else: self.operType &= ~0x00000001
+            if nValue:
+                if self.operType: self.operType |= 0x00000001
+                else: self.operType = 0x00000001
+            elif self.operType: self.operType &= ~0x00000001
         IsOr = property(get_IsOr, set_IsOr)
         def get_IsRunOnTarget(self):
-            return ((self.operType & 0x0F) == 0x00000002)
+            return self.operType and ((self.operType & 0x0F) == 0x00000002)
         def set_IsRunOnTarget(self, nValue):
-            if (nValue == True): self.operType |= 0x00000002
-            else: self.operType &= ~0x00000002
+            if nValue:
+                if self.operType: self.operType |= 0x00000002
+                else: self.operType = 0x00000002
+            elif self.operType: self.operType &= ~0x00000002
         IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
         def get_IsUseGlobal(self):
-            return ((self.operType & 0x0F) == 0x00000004)
+            return self.operType and ((self.operType & 0x0F) == 0x00000004)
         def set_IsUseGlobal(self, nValue):
-            if (nValue == True): self.operType |= 0x00000004
-            else: self.operType &= ~0x00000004
+            if nValue:
+                if self.operType: self.operType |= 0x00000004
+                else: self.operType = 0x00000004
+            elif self.operType: self.operType &= ~0x00000004
         IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
         def IsFlagMask(self, nValue, Exact=False):
+            if not self.operType: return False
             if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
             return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
         def SetFlagMask(self, nValue):
             nValue &= 0x0F
-            self.operType &= 0xF0
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0xF0
+                self.operType |= nValue
+            else: self.operType = nValue
     def newConditionsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 9)
         if(listIndex == -1): return None
@@ -15785,10 +16497,12 @@ class IDLERecord(BaseRecord):
         self.group &= 0xF0
         self.group |= nValue
     def get_IsNotReturnFile(self):
-        return (self.group & 0x00000080) != 0
+        return self.group != None and (self.group & 0x00000080) != 0
     def set_IsNotReturnFile(self, nValue):
-        if (nValue == True): self.group |= 0x00000080
-        else: self.group &= ~0x00000080
+        if nValue:
+            if self.group: self.group |= 0x00000080
+            else: self.group = 0x00000080
+        elif self.group: self.group &= ~0x00000080
     IsNotReturnFile = property(get_IsNotReturnFile, set_IsNotReturnFile)
     def get_IsReturnFile(self):
         return not self.get_IsNotReturnFile()
@@ -15797,6 +16511,7 @@ class IDLERecord(BaseRecord):
         else: self.group |= 0x00000080
     IsReturnFile = property(get_IsReturnFile, set_IsReturnFile)
     def IsFlagMask(self, nValue, Exact=False):
+        if not self.group: return False
         if(Exact): return ((self.group & 0xF0) & (nValue & 0xF0)) == nValue
         return ((self.group & 0xF0) & (nValue & 0xF0)) != 0
     def SetFlagMask(self, nValue):
@@ -15890,89 +16605,112 @@ class PACKRecord(BaseRecord):
             CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, struct.pack('4B', *nValue), 4)
         unused2 = property(get_unused2, set_unused2)
         def get_IsEqual(self):
-            return ((self.operType & 0xF0) == 0x00000000)
+            return self.operType and ((self.operType & 0xF0) == 0x00000000)
         def set_IsEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000000
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000000
+                else: self.operType = 0x00000000
             elif(self.get_IsEqual()): self.IsNotEqual = True
         IsEqual = property(get_IsEqual, set_IsEqual)
         def get_IsNotEqual(self):
-            return ((self.operType & 0xF0) == 0x00000020)
+            return self.operType and ((self.operType & 0xF0) == 0x00000020)
         def set_IsNotEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000020
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000020
+                else: self.operType = 0x00000020
             elif(self.get_IsNotEqual()): self.IsEqual = True
         IsNotEqual = property(get_IsNotEqual, set_IsNotEqual)
         def get_IsGreater(self):
-            return ((self.operType & 0xF0) == 0x00000040)
+            return self.operType and ((self.operType & 0xF0) == 0x00000040)
         def set_IsGreater(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000040
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000040
+                else: self.operType = 0x00000040
             elif(self.get_IsGreater()): self.IsEqual = True
         IsGreater = property(get_IsGreater, set_IsGreater)
         def get_IsGreaterOrEqual(self):
-            return ((self.operType & 0xF0) == 0x00000060)
+            return self.operType and ((self.operType & 0xF0) == 0x00000060)
         def set_IsGreaterOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000060
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000060
+                else: self.operType = 0x00000060
             elif(self.get_IsGreaterOrEqual()): self.IsEqual = True
         IsGreaterOrEqual = property(get_IsGreaterOrEqual, set_IsGreaterOrEqual)
         def get_IsLess(self):
-            return ((self.operType & 0xF0) == 0x00000080)
+            return self.operType and ((self.operType & 0xF0) == 0x00000080)
         def set_IsLess(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x00000080
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x00000080
+                else: self.operType = 0x00000080
             elif(self.get_IsLess()): self.IsEqual = True
         IsLess = property(get_IsLess, set_IsLess)
         def get_IsLessOrEqual(self):
-            return ((self.operType & 0xF0) == 0x000000A0)
+            return self.operType and ((self.operType & 0xF0) == 0x000000A0)
         def set_IsLessOrEqual(self, nValue):
             if (nValue == True):
-                self.operType &= 0x0F
-                self.operType |= 0x000000A0
+                if self.operType:
+                    self.operType &= 0x0F
+                    self.operType |= 0x000000A0
+                else: self.operType = 0x000000A0
             elif(self.get_IsLessOrEqual()): self.IsEqual = True
         IsLessOrEqual = property(get_IsLessOrEqual, set_IsLessOrEqual)
         def IsType(self, nValue):
-            return ((self.operType & 0xF0) == (nValue & 0xF0))
+            return self.operType and ((self.operType & 0xF0) == (nValue & 0xF0))
         def SetType(self, nValue):
             nValue &= 0xF0
-            self.operType &= 0x0F
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0x0F
+                self.operType |= nValue
+            else: self.operType = nValue
         def get_IsNone(self):
-            return ((self.operType & 0x0F) == 0x00000000)
+            return self.operType and ((self.operType & 0x0F) == 0x00000000)
         def set_IsNone(self, nValue):
-            if (nValue == True): self.operType &= 0xF0
+            if (nValue == True) and self.operType: self.operType &= 0xF0
         IsNone = property(get_IsNone, set_IsNone)
         def get_IsOr(self):
-            return ((self.operType & 0x0F) == 0x00000001)
+            return self.operType and ((self.operType & 0x0F) == 0x00000001)
         def set_IsOr(self, nValue):
-            if (nValue == True): self.operType |= 0x00000001
-            else: self.operType &= ~0x00000001
+            if nValue:
+                if self.operType: self.operType |= 0x00000001
+                else: self.operType = 0x00000001
+            elif self.operType: self.operType &= ~0x00000001
         IsOr = property(get_IsOr, set_IsOr)
         def get_IsRunOnTarget(self):
-            return ((self.operType & 0x0F) == 0x00000002)
+            return self.operType and ((self.operType & 0x0F) == 0x00000002)
         def set_IsRunOnTarget(self, nValue):
-            if (nValue == True): self.operType |= 0x00000002
-            else: self.operType &= ~0x00000002
+            if nValue:
+                if self.operType: self.operType |= 0x00000002
+                else: self.operType = 0x00000002
+            elif self.operType: self.operType &= ~0x00000002
         IsRunOnTarget = property(get_IsRunOnTarget, set_IsRunOnTarget)
         def get_IsUseGlobal(self):
-            return ((self.operType & 0x0F) == 0x00000004)
+            return self.operType and ((self.operType & 0x0F) == 0x00000004)
         def set_IsUseGlobal(self, nValue):
-            if (nValue == True): self.operType |= 0x00000004
-            else: self.operType &= ~0x00000004
+            if nValue:
+                if self.operType: self.operType |= 0x00000004
+                else: self.operType = 0x00000004
+            elif self.operType: self.operType &= ~0x00000004
         IsUseGlobal = property(get_IsUseGlobal, set_IsUseGlobal)
         def IsFlagMask(self, nValue, Exact=False):
+            if not self.operType: return False
             if(Exact): return ((self.operType & 0x0F) & (nValue & 0x0F)) == nValue
             return ((self.operType & 0x0F) & (nValue & 0x0F)) != 0
         def SetFlagMask(self, nValue):
             nValue &= 0x0F
-            self.operType &= 0xF0
-            self.operType |= nValue
+            if self.operType:
+                self.operType &= 0xF0
+                self.operType |= nValue
+            else: self.operType = nValue
     def newConditionsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 20)
         if(listIndex == -1): return None
@@ -16123,130 +16861,172 @@ class PACKRecord(BaseRecord):
             oCondition.operType, oCondition.unused1, oCondition.compValue, oCondition.ifunc, oCondition.param1, oCondition.param2, oCondition.unused2 = nValue
     conditions = property(get_conditions, set_conditions)
     def get_IsOffersServices(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsOffersServices(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsOffersServices = property(get_IsOffersServices, set_IsOffersServices)
     def get_IsMustReachLocation(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsMustReachLocation(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsMustReachLocation = property(get_IsMustReachLocation, set_IsMustReachLocation)
     def get_IsMustComplete(self):
-        return (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x00000004) != 0
     def set_IsMustComplete(self, nValue):
-        if (nValue == True): self.flags |= 0x00000004
-        else: self.flags &= ~0x00000004
+        if nValue:
+            if self.flags: self.flags |= 0x00000004
+            else: self.flags = 0x00000004
+        elif self.flags: self.flags &= ~0x00000004
     IsMustComplete = property(get_IsMustComplete, set_IsMustComplete)
     def get_IsLockAtStart(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsLockAtStart(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsLockAtStart = property(get_IsLockAtStart, set_IsLockAtStart)
     def get_IsLockAtEnd(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsLockAtEnd(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsLockAtEnd = property(get_IsLockAtEnd, set_IsLockAtEnd)
     def get_IsLockAtLocation(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsLockAtLocation(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsLockAtLocation = property(get_IsLockAtLocation, set_IsLockAtLocation)
     def get_IsUnlockAtStart(self):
-        return (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x00000040) != 0
     def set_IsUnlockAtStart(self, nValue):
-        if (nValue == True): self.flags |= 0x00000040
-        else: self.flags &= ~0x00000040
+        if nValue:
+            if self.flags: self.flags |= 0x00000040
+            else: self.flags = 0x00000040
+        elif self.flags: self.flags &= ~0x00000040
     IsUnlockAtStart = property(get_IsUnlockAtStart, set_IsUnlockAtStart)
     def get_IsUnlockAtEnd(self):
-        return (self.flags & 0x00000080) != 0
+        return self.flags != None and (self.flags & 0x00000080) != 0
     def set_IsUnlockAtEnd(self, nValue):
-        if (nValue == True): self.flags |= 0x00000080
-        else: self.flags &= ~0x00000080
+        if nValue:
+            if self.flags: self.flags |= 0x00000080
+            else: self.flags = 0x00000080
+        elif self.flags: self.flags &= ~0x00000080
     IsUnlockAtEnd = property(get_IsUnlockAtEnd, set_IsUnlockAtEnd)
     def get_IsUnlockAtLocation(self):
-        return (self.flags & 0x00000100) != 0
+        return self.flags != None and (self.flags & 0x00000100) != 0
     def set_IsUnlockAtLocation(self, nValue):
-        if (nValue == True): self.flags |= 0x00000100
-        else: self.flags &= ~0x00000100
+        if nValue:
+            if self.flags: self.flags |= 0x00000100
+            else: self.flags = 0x00000100
+        elif self.flags: self.flags &= ~0x00000100
     IsUnlockAtLocation = property(get_IsUnlockAtLocation, set_IsUnlockAtLocation)
     def get_IsContinueIfPcNear(self):
-        return (self.flags & 0x00000200) != 0
+        return self.flags != None and (self.flags & 0x00000200) != 0
     def set_IsContinueIfPcNear(self, nValue):
-        if (nValue == True): self.flags |= 0x00000200
-        else: self.flags &= ~0x00000200
+        if nValue:
+            if self.flags: self.flags |= 0x00000200
+            else: self.flags = 0x00000200
+        elif self.flags: self.flags &= ~0x00000200
     IsContinueIfPcNear = property(get_IsContinueIfPcNear, set_IsContinueIfPcNear)
     def get_IsOncePerDay(self):
-        return (self.flags & 0x00000400) != 0
+        return self.flags != None and (self.flags & 0x00000400) != 0
     def set_IsOncePerDay(self, nValue):
-        if (nValue == True): self.flags |= 0x00000400
-        else: self.flags &= ~0x00000400
+        if nValue:
+            if self.flags: self.flags |= 0x00000400
+            else: self.flags = 0x00000400
+        elif self.flags: self.flags &= ~0x00000400
     IsOncePerDay = property(get_IsOncePerDay, set_IsOncePerDay)
     def get_IsSkipFallout(self):
-        return (self.flags & 0x00001000) != 0
+        return self.flags != None and (self.flags & 0x00001000) != 0
     def set_IsSkipFallout(self, nValue):
-        if (nValue == True): self.flags |= 0x00001000
-        else: self.flags &= ~0x00001000
+        if nValue:
+            if self.flags: self.flags |= 0x00001000
+            else: self.flags = 0x00001000
+        elif self.flags: self.flags &= ~0x00001000
     IsSkipFallout = property(get_IsSkipFallout, set_IsSkipFallout)
     def get_IsAlwaysRun(self):
-        return (self.flags & 0x00002000) != 0
+        return self.flags != None and (self.flags & 0x00002000) != 0
     def set_IsAlwaysRun(self, nValue):
-        if (nValue == True): self.flags |= 0x00002000
-        else: self.flags &= ~0x00002000
+        if nValue:
+            if self.flags: self.flags |= 0x00002000
+            else: self.flags = 0x00002000
+        elif self.flags: self.flags &= ~0x00002000
     IsAlwaysRun = property(get_IsAlwaysRun, set_IsAlwaysRun)
     def get_IsAlwaysSneak(self):
-        return (self.flags & 0x00020000) != 0
+        return self.flags != None and (self.flags & 0x00020000) != 0
     def set_IsAlwaysSneak(self, nValue):
-        if (nValue == True): self.flags |= 0x00020000
-        else: self.flags &= ~0x00020000
+        if nValue:
+            if self.flags: self.flags |= 0x00020000
+            else: self.flags = 0x00020000
+        elif self.flags: self.flags &= ~0x00020000
     IsAlwaysSneak = property(get_IsAlwaysSneak, set_IsAlwaysSneak)
     def get_IsAllowSwimming(self):
-        return (self.flags & 0x00040000) != 0
+        return self.flags != None and (self.flags & 0x00040000) != 0
     def set_IsAllowSwimming(self, nValue):
-        if (nValue == True): self.flags |= 0x00040000
-        else: self.flags &= ~0x00040000
+        if nValue:
+            if self.flags: self.flags |= 0x00040000
+            else: self.flags = 0x00040000
+        elif self.flags: self.flags &= ~0x00040000
     IsAllowSwimming = property(get_IsAllowSwimming, set_IsAllowSwimming)
     def get_IsAllowFalls(self):
-        return (self.flags & 0x00080000) != 0
+        return self.flags != None and (self.flags & 0x00080000) != 0
     def set_IsAllowFalls(self, nValue):
-        if (nValue == True): self.flags |= 0x00080000
-        else: self.flags &= ~0x00080000
+        if nValue:
+            if self.flags: self.flags |= 0x00080000
+            else: self.flags = 0x00080000
+        elif self.flags: self.flags &= ~0x00080000
     IsAllowFalls = property(get_IsAllowFalls, set_IsAllowFalls)
     def get_IsUnequipArmor(self):
-        return (self.flags & 0x00100000) != 0
+        return self.flags != None and (self.flags & 0x00100000) != 0
     def set_IsUnequipArmor(self, nValue):
-        if (nValue == True): self.flags |= 0x00100000
-        else: self.flags &= ~0x00100000
+        if nValue:
+            if self.flags: self.flags |= 0x00100000
+            else: self.flags = 0x00100000
+        elif self.flags: self.flags &= ~0x00100000
     IsUnequipArmor = property(get_IsUnequipArmor, set_IsUnequipArmor)
     def get_IsUnequipWeapons(self):
-        return (self.flags & 0x00200000) != 0
+        return self.flags != None and (self.flags & 0x00200000) != 0
     def set_IsUnequipWeapons(self, nValue):
-        if (nValue == True): self.flags |= 0x00200000
-        else: self.flags &= ~0x00200000
+        if nValue:
+            if self.flags: self.flags |= 0x00200000
+            else: self.flags = 0x00200000
+        elif self.flags: self.flags &= ~0x00200000
     IsUnequipWeapons = property(get_IsUnequipWeapons, set_IsUnequipWeapons)
     def get_IsDefensiveCombat(self):
-        return (self.flags & 0x00400000) != 0
+        return self.flags != None and (self.flags & 0x00400000) != 0
     def set_IsDefensiveCombat(self, nValue):
-        if (nValue == True): self.flags |= 0x00400000
-        else: self.flags &= ~0x00400000
+        if nValue:
+            if self.flags: self.flags |= 0x00400000
+            else: self.flags = 0x00400000
+        elif self.flags: self.flags &= ~0x00400000
     IsDefensiveCombat = property(get_IsDefensiveCombat, set_IsDefensiveCombat)
     def get_IsUseHorse(self):
-        return (self.flags & 0x00800000) != 0
+        return self.flags != None and (self.flags & 0x00800000) != 0
     def set_IsUseHorse(self, nValue):
-        if (nValue == True): self.flags |= 0x00800000
-        else: self.flags &= ~0x00800000
+        if nValue:
+            if self.flags: self.flags |= 0x00800000
+            else: self.flags = 0x00800000
+        elif self.flags: self.flags &= ~0x00800000
     IsUseHorse = property(get_IsUseHorse, set_IsUseHorse)
     def get_IsNoIdleAnims(self):
-        return (self.flags & 0x01000000) != 0
+        return self.flags != None and (self.flags & 0x01000000) != 0
     def set_IsNoIdleAnims(self, nValue):
-        if (nValue == True): self.flags |= 0x01000000
-        else: self.flags &= ~0x01000000
+        if nValue:
+            if self.flags: self.flags |= 0x01000000
+            else: self.flags = 0x01000000
+        elif self.flags: self.flags &= ~0x01000000
     IsNoIdleAnims = property(get_IsNoIdleAnims, set_IsNoIdleAnims)
     def get_IsAIFind(self):
         return (self.aiType == 0)
@@ -16986,58 +17766,76 @@ class CSTYRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 69, c_float(nValue))
     pAtkFMult = property(get_pAtkFMult, set_pAtkFMult)
     def get_IsUseAdvanced(self):
-        return (self.flagsA & 0x00000001) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000001) != 0
     def set_IsUseAdvanced(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000001
-        else: self.flagsA &= ~0x00000001
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000001
+            else: self.flagsA = 0x00000001
+        elif self.flagsA: self.flagsA &= ~0x00000001
     IsUseAdvanced = property(get_IsUseAdvanced, set_IsUseAdvanced)
     def get_IsUseChanceForAttack(self):
-        return (self.flagsA & 0x00000002) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000002) != 0
     def set_IsUseChanceForAttack(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000002
-        else: self.flagsA &= ~0x00000002
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000002
+            else: self.flagsA = 0x00000002
+        elif self.flagsA: self.flagsA &= ~0x00000002
     IsUseChanceForAttack = property(get_IsUseChanceForAttack, set_IsUseChanceForAttack)
     def get_IsIgnoreAllies(self):
-        return (self.flagsA & 0x00000004) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000004) != 0
     def set_IsIgnoreAllies(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000004
-        else: self.flagsA &= ~0x00000004
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000004
+            else: self.flagsA = 0x00000004
+        elif self.flagsA: self.flagsA &= ~0x00000004
     IsIgnoreAllies = property(get_IsIgnoreAllies, set_IsIgnoreAllies)
     def get_IsWillYield(self):
-        return (self.flagsA & 0x00000008) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000008) != 0
     def set_IsWillYield(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000008
-        else: self.flagsA &= ~0x00000008
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000008
+            else: self.flagsA = 0x00000008
+        elif self.flagsA: self.flagsA &= ~0x00000008
     IsWillYield = property(get_IsWillYield, set_IsWillYield)
     def get_IsRejectsYields(self):
-        return (self.flagsA & 0x00000010) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000010) != 0
     def set_IsRejectsYields(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000010
-        else: self.flagsA &= ~0x00000010
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000010
+            else: self.flagsA = 0x00000010
+        elif self.flagsA: self.flagsA &= ~0x00000010
     IsRejectsYields = property(get_IsRejectsYields, set_IsRejectsYields)
     def get_IsFleeingDisabled(self):
-        return (self.flagsA & 0x00000020) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000020) != 0
     def set_IsFleeingDisabled(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000020
-        else: self.flagsA &= ~0x00000020
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000020
+            else: self.flagsA = 0x00000020
+        elif self.flagsA: self.flagsA &= ~0x00000020
     IsFleeingDisabled = property(get_IsFleeingDisabled, set_IsFleeingDisabled)
     def get_IsPrefersRanged(self):
-        return (self.flagsA & 0x00000040) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000040) != 0
     def set_IsPrefersRanged(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000040
-        else: self.flagsA &= ~0x00000040
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000040
+            else: self.flagsA = 0x00000040
+        elif self.flagsA: self.flagsA &= ~0x00000040
     IsPrefersRanged = property(get_IsPrefersRanged, set_IsPrefersRanged)
     def get_IsMeleeAlertOK(self):
-        return (self.flagsA & 0x00000080) != 0
+        return self.flagsA != None and (self.flagsA & 0x00000080) != 0
     def set_IsMeleeAlertOK(self, nValue):
-        if (nValue == True): self.flagsA |= 0x00000080
-        else: self.flagsA &= ~0x00000080
+        if nValue:
+            if self.flagsA: self.flagsA |= 0x00000080
+            else: self.flagsA = 0x00000080
+        elif self.flagsA: self.flagsA &= ~0x00000080
     IsMeleeAlertOK = property(get_IsMeleeAlertOK, set_IsMeleeAlertOK)
     def get_IsDoNotAcquire(self):
-        return (self.flagsB & 0x00000001) != 0
+        return self.flagsB != None and (self.flagsB & 0x00000001) != 0
     def set_IsDoNotAcquire(self, nValue):
-        if (nValue == True): self.flagsB |= 0x00000001
-        else: self.flagsB &= ~0x00000001
+        if nValue:
+            if self.flagsB: self.flagsB |= 0x00000001
+            else: self.flagsB = 0x00000001
+        elif self.flagsB: self.flagsB &= ~0x00000001
     IsDoNotAcquire = property(get_IsDoNotAcquire, set_IsDoNotAcquire)
     copyattrs = BaseRecord.baseattrs + ['dodgeChance','lrChance','lrTimerMin','lrTimerMax',
                                         'forTimerMin','forTimerMax','backTimerMin',
@@ -17612,16 +18410,20 @@ class WATRRecord(BaseRecord):
         CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 49, nValue)
     underWater = property(get_underWater, set_underWater)
     def get_IsCausesDamage(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsCausesDamage(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsCausesDmg = IsCausesDamage = property(get_IsCausesDamage, set_IsCausesDamage)
     def get_IsReflective(self):
-        return (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x00000002) != 0
     def set_IsReflective(self, nValue):
-        if (nValue == True): self.flags |= 0x00000002
-        else: self.flags &= ~0x00000002
+        if nValue:
+            if self.flags: self.flags |= 0x00000002
+            else: self.flags = 0x00000002
+        elif self.flags: self.flags &= ~0x00000002
     IsReflective = property(get_IsReflective, set_IsReflective)
     copyattrs = BaseRecord.baseattrs + ['texture','opacity','flags','material','sound',
                                         'windVelocity','windDirection','waveAmp','waveFreq',
@@ -18319,28 +19121,36 @@ class EFSHRecord(BaseRecord):
         CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 79, c_float(nValue))
     key3Time = property(get_key3Time, set_key3Time)
     def get_IsNoMembraneShader(self):
-        return (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x00000001) != 0
     def set_IsNoMembraneShader(self, nValue):
-        if (nValue == True): self.flags |= 0x00000001
-        else: self.flags &= ~0x00000001
+        if nValue:
+            if self.flags: self.flags |= 0x00000001
+            else: self.flags = 0x00000001
+        elif self.flags: self.flags &= ~0x00000001
     IsNoMemShader = IsNoMembraneShader = property(get_IsNoMembraneShader, set_IsNoMembraneShader)
     def get_IsNoParticleShader(self):
-        return (self.flags & 0x00000008) != 0
+        return self.flags != None and (self.flags & 0x00000008) != 0
     def set_IsNoParticleShader(self, nValue):
-        if (nValue == True): self.flags |= 0x00000008
-        else: self.flags &= ~0x00000008
+        if nValue:
+            if self.flags: self.flags |= 0x00000008
+            else: self.flags = 0x00000008
+        elif self.flags: self.flags &= ~0x00000008
     IsNoPartShader = IsNoParticleShader = property(get_IsNoParticleShader, set_IsNoParticleShader)
     def get_IsEdgeEffectInverse(self):
-        return (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x00000010) != 0
     def set_IsEdgeEffectInverse(self, nValue):
-        if (nValue == True): self.flags |= 0x00000010
-        else: self.flags &= ~0x00000010
+        if nValue:
+            if self.flags: self.flags |= 0x00000010
+            else: self.flags = 0x00000010
+        elif self.flags: self.flags &= ~0x00000010
     IsEdgeInverse = IsEdgeEffectInverse = property(get_IsEdgeEffectInverse, set_IsEdgeEffectInverse)
     def get_IsMembraneShaderSkinOnly(self):
-        return (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x00000020) != 0
     def set_IsMembraneShaderSkinOnly(self, nValue):
-        if (nValue == True): self.flags |= 0x00000020
-        else: self.flags &= ~0x00000020
+        if nValue:
+            if self.flags: self.flags |= 0x00000020
+            else: self.flags = 0x00000020
+        elif self.flags: self.flags &= ~0x00000020
     IsMemSkinOnly = IsMembraneShaderSkinOnly= property(get_IsMembraneShaderSkinOnly, set_IsMembraneShaderSkinOnly)
     copyattrs = BaseRecord.baseattrs + ['fillTexture','particleTexture','flags','memSBlend','memBlendOp',
                                         'memZFunc','fillRed','fillGreen','fillBlue','fillAIn','fillAFull',
@@ -18356,11 +19166,10 @@ class EFSHRecord(BaseRecord):
                                         'key3Red','key3Green','key3Blue','key1A','key2A','key3A',
                                         'key1Time','key2Time','key3Time']
 
-class ModFile(object):
+class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.type_class = {}
     def MakeLongFid(self, fid):
         if(fid == None): return (None,None)
         masterIndex = int(fid >> 24)
@@ -19198,7 +20007,7 @@ class Collection:
 
     def addMod(self, ModName, CreateIfNotExist=False):
         if(CBash.AddMod(self._CollectionIndex, ModName, CreateIfNotExist) != -1):
-            return ModFile(self._CollectionIndex, ModName)
+            return CBashModFile(self._CollectionIndex, ModName)
         return None
 
     def minimalLoad(self, LoadMasters=False):
@@ -19235,13 +20044,15 @@ class Collection:
         self._ModIndex = self._ModIndex + 1
         if self._ModIndex >= CBash.GetNumMods(self._CollectionIndex):
             raise StopIteration
-        return ModFile(self._CollectionIndex, CBash.GetModName(self._CollectionIndex, self._ModIndex))
+        return CBashModFile(self._CollectionIndex, CBash.GetModName(self._CollectionIndex, self._ModIndex))
 
     def __getitem__(self, ModIndex):
+        if(ModIndex < 0):
+            ModIndex = CBash.GetNumMods(self._CollectionIndex) + ModIndex + 1
         if(ModIndex < 0 or ModIndex >= CBash.GetNumMods(self._CollectionIndex)):
             raise IndexError
         else:
-            return ModFile(self._CollectionIndex, CBash.GetModName(self._CollectionIndex, ModIndex))
+            return CBashModFile(self._CollectionIndex, CBash.GetModName(self._CollectionIndex, ModIndex))
 
     def getChangedMods(self):
         return CBash.GetChangedMods(self._CollectionIndex)
