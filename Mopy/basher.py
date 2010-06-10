@@ -4829,7 +4829,7 @@ class PatchDialog(wx.Dialog):
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
-        self.SetIcon(Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG).GetIcon())
+        self.SetIcon(images['monkey.16'].GetIcon())
         #--Patcher panels
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
@@ -4859,69 +4859,128 @@ class PatchDialog(wx.Dialog):
 
     def Execute(self,event=None):
         """Do the patch."""
-        ###Remove from Bash after CBash integrated
-        global CBash
-        wasCBash = CBash
-        CBash = None
         self.EndModal(wx.ID_OK)
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'))
-        try:
-            #--Save configs
-            patchConfigs = {'ImportedMods':set()}
-            for patcher in self.patchers:
-                patcher.saveConfig(patchConfigs)
-            bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
-            #--Do it
-            log = bolt.LogFile(cStringIO.StringIO())
-            nullProgress = bolt.Progress()
-            patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-            patchFile = bosh.PatchFile(self.patchInfo,patchers)
-            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
-            patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
-            patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
-            patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            #--Save
-            progress(0.9,patchName.s+_('\nSaving...'))
-            patchFile.safeSave()
-            #--Cleanup
-            self.patchInfo.refresh()
-            modList.RefreshUI(patchName)
-            #--Done
-            progress.Destroy()
-            #--Readme and log
-            log.setHeader(None)
-            log('{{CSS:wtxt_sand_small.css}}')
-            logValue = log.out.getvalue()
-            readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
-            readme.open('w').write(logValue)
-            bosh.modInfos.table.setItem(patchName,'doc',readme)
-            #--Convert log/readme to wtxt and show log
-            docsDir = bosh.modInfos.dir.join('Docs')
-            bolt.WryeText.genHtml(readme,None,docsDir)
-            balt.showWryeLog(self.parent,readme.root+'.html',patchName.s,icons=bashBlue)
-            #--Select?
-            message = _("Activate %s?") % (patchName.s,)
-            if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
-                try:
-                    oldFiles = bosh.modInfos.ordered[:]
-                    bosh.modInfos.select(patchName)
-                    changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
-                    if len(changedFiles) > 1:
-                        statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
-                except bosh.PluginsFullError:
-                    balt.showError(self,_("Unable to add mod %s because load list is full." )
-                        % (fileName.s,))
-                modList.RefreshUI()
-        except bosh.FileEditError, error:
-            progress.Destroy()
-            balt.showError(self,str(error),_("File Edit Error"))
-        except:
-            progress.Destroy()
-            raise
         ###Remove from Bash after CBash integrated
-        finally:
-            CBash = wasCBash
+        if not CBash:
+            try:
+                #--Save configs
+                patchConfigs = {'ImportedMods':set()}
+                for patcher in self.patchers:
+                    patcher.saveConfig(patchConfigs)
+                bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+                #--Do it
+                log = bolt.LogFile(cStringIO.StringIO())
+                nullProgress = bolt.Progress()
+                patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
+                patchFile = bosh.PatchFile(self.patchInfo,patchers)
+                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+                patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
+                patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
+                patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+                #--Save
+                progress(0.9,patchName.s+_('\nSaving...'))
+                patchFile.safeSave()
+                #--Cleanup
+                self.patchInfo.refresh()
+                modList.RefreshUI(patchName)
+                #--Done
+                progress.Destroy()
+                #--Readme and log
+                log.setHeader(None)
+                log('{{CSS:wtxt_sand_small.css}}')
+                logValue = log.out.getvalue()
+                readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
+                readme.open('w').write(logValue)
+                bosh.modInfos.table.setItem(patchName,'doc',readme)
+                #--Convert log/readme to wtxt and show log
+                docsDir = bosh.modInfos.dir.join('Docs')
+                bolt.WryeText.genHtml(readme,None,docsDir)
+                balt.showWryeLog(self.parent,readme.root+'.html',patchName.s,icons=bashBlue)
+                #--Select?
+                message = _("Activate %s?") % (patchName.s,)
+                if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
+                    try:
+                        oldFiles = bosh.modInfos.ordered[:]
+                        bosh.modInfos.select(patchName)
+                        changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                        if len(changedFiles) > 1:
+                            statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
+                    except bosh.PluginsFullError:
+                        balt.showError(self,_("Unable to add mod %s because load list is full." )
+                            % (fileName.s,))
+                    modList.RefreshUI()
+            except bosh.FileEditError, error:
+                progress.Destroy()
+                balt.showError(self,str(error),_("File Edit Error"))
+            except:
+                progress.Destroy()
+                raise
+        else:
+            try:
+                #--Save configs
+                patchConfigs = {'ImportedMods':set()}
+                for patcher in self.patchers:
+                    patcher.saveConfig(patchConfigs)
+                bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+                #--Do it
+                log = bolt.LogFile(cStringIO.StringIO())
+                nullProgress = bolt.Progress()
+                patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
+                Current = Collection(ModsPath=bosh.dirs['mods'].s)
+                for name in bosh.modInfos.ordered:
+                    if bosh.modInfos[name].mtime < bosh.CBash_PatchFile.patchTime:
+                        Current.addMod(name.s)
+                patchName.temp.remove()
+                patchFile = Current.addMod(patchName.temp.s, True)
+                Current.minimalLoad(LoadMasters=True)
+                patchFile = bosh.CBash_PatchFile(Current,patchFile,patchers)
+                
+                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+                patchFile.buildPatch(SubProgress(progress,0.2,0.8)) #try to speed this up!
+                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+                #--Save
+                progress(0.9,patchName.s+_('\nSaving...'))
+                patchFile.safeCloseSave()
+                time = patchName.mtime
+                patchName.untemp()
+                patchName.mtime = time
+                #--Cleanup
+                self.patchInfo.refresh()
+                modList.RefreshUI(patchName)
+                #--Done
+                progress.Destroy()
+                #--Readme and log
+                log.setHeader(None)
+                log('{{CSS:wtxt_sand_small.css}}')
+                logValue = log.out.getvalue()
+                readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
+                readme.open('w').write(logValue)
+                bosh.modInfos.table.setItem(patchName,'doc',readme)
+                #--Convert log/readme to wtxt and show log
+                docsDir = bosh.modInfos.dir.join('Docs')
+                bolt.WryeText.genHtml(readme,None,docsDir)
+                balt.showWryeLog(self.parent,readme.root+'.html',patchName.s,icons=bashBlue)
+                #--Select?
+                message = _("Activate %s?") % (patchName.s,)
+                if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
+                    try:
+                        oldFiles = bosh.modInfos.ordered[:]
+                        bosh.modInfos.select(patchName)
+                        changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                        if len(changedFiles) > 1:
+                            statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
+                    except bosh.PluginsFullError:
+                        balt.showError(self,_("Unable to add mod %s because load list is full." )
+                            % (fileName.s,))
+                    modList.RefreshUI()
+            except bosh.FileEditError, error:
+                progress.Destroy()
+                balt.showError(self,str(error),_("File Edit Error"))
+            except:
+                progress.Destroy()
+                raise
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
@@ -5140,6 +5199,45 @@ class AliasesPatcher(Patcher,bosh.AliasesPatcher):
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
 
+class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
+    """Basic patcher panel with no options."""
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+        """Show config."""
+        if self.gConfigPanel: return self.gConfigPanel
+        #--Else...
+        #--Tip
+        self.gTipText = gTipText
+        gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
+        text = fill(self.__class__.text,70)
+        gText = staticText(gConfigPanel,text)
+        #gExample = staticText(gConfigPanel,
+        #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
+        #--Aliases Text
+        self.gAliases = wx.TextCtrl(gConfigPanel,-1,'',style=wx.TE_MULTILINE)
+        self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
+        self.SetAliasText()
+        #--Sizing
+        gSizer = vSizer(
+            gText,
+            #(gExample,0,wx.EXPAND|wx.TOP,8),
+            (self.gAliases,1,wx.EXPAND|wx.TOP,4))
+        gConfigPanel.SetSizer(gSizer)
+        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
+        return self.gConfigPanel
+
+    def SetAliasText(self):
+        """Sets alias text according to current aliases."""
+        self.gAliases.SetValue('\n'.join([
+            '%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())]))
+
+    def OnEditAliases(self,event):
+        text = self.gAliases.GetValue()
+        self.aliases.clear()
+        for line in text.split('\n'):
+            fields = map(string.strip,line.split('>>'))
+            if len(fields) != 2 or not fields[0] or not fields[1]: continue
+            self.aliases[GPath(fields[0])] = GPath(fields[1])
+        self.SetAliasText()
 #------------------------------------------------------------------------------
 class ListPatcher(Patcher):
     """Patcher panel with option to select source elements."""
@@ -5501,6 +5599,7 @@ class ImportSpells(bosh.SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
 class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
+class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
 
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 
@@ -5531,43 +5630,48 @@ class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
-PatchDialog.patchers.extend((
-    AliasesPatcher(),
-    AssortedTweaker(),
-    PatchMerger(),
-    AlchemicalCatalogs(),
-    ActorAnimPatcher(),
-    ActorImporter(),
-    DeathItemPatcher(),
-    NPCAIPackagePatcher(),
-    CoblExhaustion(),
-    CellImporter(),
-    ClothesTweaker(),
-    GlobalsTweaker(),
-    GmstTweaker(),
-    GraphicsPatcher(),
-    ImportFactions(),
-    ImportInventory(),
-    ImportSpells(),
-    TweakActors(),
-    ImportRelations(),
-    ImportScripts(),
-    ImportScriptContents(),
-    ImportActorsSpells(),
-    ListsMerger(),
-    MFactMarker(),
-    NamesPatcher(),
-    NamesTweaker(),
-    NpcFacePatcher(),
-    PowerExhaustion(),
-    RacePatcher(),
-    RoadImporter(),
-    SoundPatcher(),
-    StatsPatcher(),
-    SEWorldEnforcer(),
-    ContentsChecker(),
-    ))
-
+if not CBash:
+    PatchDialog.patchers.extend((
+        AliasesPatcher(),
+        AssortedTweaker(),
+        PatchMerger(),
+        AlchemicalCatalogs(),
+        ActorAnimPatcher(),
+        ActorImporter(),
+        DeathItemPatcher(),
+        NPCAIPackagePatcher(),
+        CoblExhaustion(),
+        CellImporter(),
+        ClothesTweaker(),
+        GlobalsTweaker(),
+        GmstTweaker(),
+        GraphicsPatcher(),
+        ImportFactions(),
+        ImportInventory(),
+        ImportSpells(),
+        TweakActors(),
+        ImportRelations(),
+        ImportScripts(),
+        ImportScriptContents(),
+        ImportActorsSpells(),
+        ListsMerger(),
+        MFactMarker(),
+        NamesPatcher(),
+        NamesTweaker(),
+        NpcFacePatcher(),
+        PowerExhaustion(),
+        RacePatcher(),
+        RoadImporter(),
+        SoundPatcher(),
+        StatsPatcher(),
+        SEWorldEnforcer(),
+        ContentsChecker(),
+        ))
+else:
+    PatchDialog.patchers.extend((
+        CBash_AliasesPatcher(),
+        CBash_AssortedTweaker(),
+        ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Files_Open(Link):
@@ -9097,7 +9201,10 @@ class Mod_Patch_Update(Link):
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
             return
-        bosh.PatchFile.patchTime = fileInfo.mtime
+        if not CBash:
+            bosh.PatchFile.patchTime = fileInfo.mtime
+        else:
+            bosh.CBash_PatchFile.patchTime = fileInfo.mtime
         message = ""
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
         unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
@@ -11298,7 +11405,7 @@ def InitImages():
     images['bash.16.blue'] = Image(r'images/bash_16_blue.png',wx.BITMAP_TYPE_PNG)
     images['bash.32.blue'] = Image(r'images/bash_32_blue.png',wx.BITMAP_TYPE_PNG)
     #--Bash Patch Dialogue
-   # images['monkey.16'] = Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG)
+    images['monkey.16'] = Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG)
   #  images['monkey.32'] = Image(r'images/wryemonkey32.jpg',wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
     images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
