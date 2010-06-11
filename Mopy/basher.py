@@ -4928,20 +4928,13 @@ class PatchDialog(wx.Dialog):
                 log = bolt.LogFile(cStringIO.StringIO())
                 nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-                Current = Collection(ModsPath=bosh.dirs['mods'].s)
-                for name in bosh.modInfos.ordered:
-                    if bosh.modInfos[name].mtime < bosh.CBash_PatchFile.patchTime:
-                        Current.addMod(name.s)
-                patchName.temp.remove()
-                patchFile = Current.addMod(patchName.temp.s, True)
-                Current.minimalLoad(LoadMasters=True)
-                patchFile = bosh.CBash_PatchFile(Current,patchFile,patchers)
-                
+
+                patchFile = bosh.CBash_PatchFile(patchName,patchers)
                 patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
-                patchFile.buildPatch(SubProgress(progress,0.2,0.8)) #try to speed this up!
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+                patchFile.buildPatch(SubProgress(progress,0.1,0.9)) #try to speed this up!
+                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
-                progress(0.9,patchName.s+_('\nSaving...'))
+                progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.safeCloseSave()
                 time = patchName.mtime
                 patchName.untemp()
@@ -5556,7 +5549,8 @@ class TweakPatcher(Patcher):
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
     listLabel = _("Mergeable Mods")
-
+class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
+    listLabel = _("Mergeable Mods")
 # Patchers 20 ------------------------------------------------------------------
 class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 
@@ -5671,6 +5665,7 @@ else:
     PatchDialog.patchers.extend((
         CBash_AliasesPatcher(),
         CBash_AssortedTweaker(),
+        CBash_PatchMerger(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -47,6 +47,12 @@ class BaseRecord(object):
             CBash.GetFIDConflicts(self._CollectionIndex, self._ModName, self._recordID, cModNames)
             return [self._Type(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
+    def mergeFilter(self,modFile,modSet):
+        """This method is called by the bashed patch mod merger. The intention is
+        to allow a record to be filtered according to the specified modSet. E.g.
+        for a list record, items coming from mods not in the modSet could be
+        removed from the list."""
+        pass
     def get_longFid(self):
         fid = self.fid
         if(fid == None): return (None,None)
@@ -4625,6 +4631,11 @@ class CONTRecord(BaseRecord):
         FID = CBash.CopyCONTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
         if(FID): return CONTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
+    def mergeFilter(self,modFile,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters items."""
+        mapper = modFile.MakeLongFID
+        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
     class Item(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -6681,6 +6692,13 @@ class NPC_Record(BaseRecord):
         FID = CBash.CopyNPC_Record(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
         if(FID): return NPC_Record(self._CollectionIndex, targetMod._ModName, FID)
         return None
+    def mergeFilter(self,modFile,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters spells, factions and items."""
+        mapper = modFile.MakeLongFID
+        self.spells = [x for x in self.spells if mapper(x)[0] in modSet]
+        self.factions = [x for x in self.factions if mapper(x.faction)[0] in modSet]
+        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
     class Faction(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -7673,6 +7691,13 @@ class CREARecord(BaseRecord):
         FID = CBash.CopyCREARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
         if(FID): return CREARecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
+    def mergeFilter(self,modFile,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters spells, factions and items."""
+        mapper = modFile.MakeLongFID
+        self.spells = [x for x in self.spells if mapper(x)[0] in modSet]
+        self.factions = [x for x in self.factions if mapper(x.faction)[0] in modSet]
+        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
     class Faction(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -8709,6 +8734,11 @@ class LVLRecord(BaseRecord):
         FID = CBash.CopyLVLRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
         if(FID): return LVLRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
+    def mergeFilter(self,modFile,modSet):
+        """Filter out items that don't come from specified modSet."""
+        mapper = modFile.MakeLongFID
+        self.entries = [entry for entry in self.entries if mapper(entry.listId)[0] in modSet]
+
     class Entry(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -11590,27 +11620,24 @@ class CELLRecord(BaseRecord):
         FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, c_bool(False), c_bool(isWorldCell))
         if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent=None):
-        if(parent == None):
-            CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, 0)
-        else:
-            CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     def createACHRRecord(self):
         FID = CBash.CreateACHRRecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return ACHRRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return ACHRRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createACRERecord(self):
         FID = CBash.CreateACRERecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return ACRERecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return ACRERecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createREFRRecord(self):
         FID = CBash.CreateREFRRecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return REFRRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return REFRRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createPGRDRecord(self):
         FID = CBash.CreatePGRDRecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return PGRDRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return PGRDRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createLANDRecord(self):
         FID = CBash.CreateLANDRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -11898,7 +11925,7 @@ class CELLRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 36, byref(cRecords))
-            return [ACHRRecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [ACHRRecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
         return []
     @property
     def ACRE(self):
@@ -11906,7 +11933,7 @@ class CELLRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 37, byref(cRecords))
-            return [ACRERecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [ACRERecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
         return []
     @property
     def REFR(self):
@@ -11914,12 +11941,12 @@ class CELLRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 38, byref(cRecords))
-            return [REFRRecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [REFRRecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
         return []
     def get_PGRD(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 39)
-        if(retValue): return PGRDRecord(self._CollectionIndex, self._ModName, retValue.contents.value)
+        if(retValue): return PGRDRecord(self._CollectionIndex, self._ModName, retValue.contents.value, self._recordID)
         return None
     def set_PGRD(self, nPGRD):
         if nPGRD is None: return
@@ -11939,7 +11966,7 @@ class CELLRecord(BaseRecord):
     def get_LAND(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 40)
-        if(retValue): return LANDRecord(self._CollectionIndex, self._ModName, retValue.contents.value)
+        if(retValue): return LANDRecord(self._CollectionIndex, self._ModName, retValue.contents.value, self._recordID)
         return None
     def set_LAND(self, nLAND):
         if nLAND is None: return
@@ -12046,16 +12073,23 @@ class CELLRecord(BaseRecord):
                                         'climate','waterHeight','regions','posX','posY','water']
 
 class ACHRRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetCELL):
-        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(True))
-        if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
-        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(False))
-        if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     def get_base(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
@@ -12245,16 +12279,23 @@ class ACHRRecord(BaseRecord):
                                         'posX','posY','posZ','rotX','rotY','rotZ']
 
 class ACRERecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetCELL):
-        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(True))
-        if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
-        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(False))
-        if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     def get_base(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
@@ -12409,16 +12450,23 @@ class ACRERecord(BaseRecord):
                                         'posX','posY','posZ','rotX','rotY','rotZ']
 
 class REFRRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetCELL):
-        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(True))
-        if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
-        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(False))
-        if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     def get_base(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
@@ -13043,16 +13091,23 @@ class REFRRecord(BaseRecord):
                                         'posX','posY','posZ','rotX','rotY','rotZ']
 
 class PGRDRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetCELL):
-        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(True))
-        if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
-        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(False))
-        if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     class PGRPRecord(object):
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
@@ -13306,7 +13361,7 @@ class WRLDRecord(BaseRecord):
         return None
     def createROADRecord(self):
         FID = CBash.CreateROADRecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return ROADRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return ROADRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def get_full(self):
         CBash.ReadFIDField.restype = c_char_p
@@ -13472,7 +13527,7 @@ class WRLDRecord(BaseRecord):
     def get_ROAD(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 24)
-        if(retValue): return ROADRecord(self._CollectionIndex, self._ModName, retValue.contents.value)
+        if(retValue): return ROADRecord(self._CollectionIndex, self._ModName, retValue.contents.value, self._recordID)
         return None
     def set_ROAD(self, nROAD):
         if nROAD is None: return
@@ -13611,16 +13666,23 @@ class WRLDRecord(BaseRecord):
                                         'unknown90','unknown91','sound','ofst_p','ROAD','CELL']
 
 class ROADRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetWRLD):
-        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetWRLD._recordID, c_bool(True))
-        if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID)
+        if isinstance(targetWRLD, CBashModFile): targetID = self._parentID
+        else: targetID = targetWRLD._recordID
+        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, c_bool(True))
+        if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetWRLD):
-        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetWRLD._recordID, c_bool(False))
-        if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID)
+        if isinstance(targetWRLD, CBashModFile): targetID = self._parentID
+        else: targetID = targetWRLD._recordID
+        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, c_bool(False))
+        if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     class PGRPRecord(object):
         def __init__(self, CollectionIndex, ModName, recordID, listIndex):
@@ -13753,16 +13815,23 @@ class ROADRecord(BaseRecord):
     copyattrs = BaseRecord.baseattrs + ['PGRP','PGRR']
 
 class LANDRecord(BaseRecord):
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetCELL):
-        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(True))
-        if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
-        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetCELL._recordID, c_bool(False))
-        if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID)
+        if isinstance(targetCELL, CBashModFile): targetID = self._parentID
+        else: targetID = targetCELL._recordID
+        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
-    def DeleteRecord(self, parent):
-        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
+    def DeleteRecord(self):
+        CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
         return
     class Normal(object):
         def __init__(self, CollectionIndex, ModName, recordID, listIndex, listX2Index):
@@ -19872,7 +19941,7 @@ class CBashModFile(object):
             CBash.GetEFSHRecords(self._CollectionIndex, self._ModName, cRecords)
             return [EFSHRecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
         return []
-    ##Aggregate properties. Useful for reading, and basic editting, but not so much for copying since it doesn't keep track of parenting
+    ##Aggregate properties. Useful for iterating through all records without going through the parent records.
     @property
     def CELLS(self):
         cells = self.CELL
@@ -19986,8 +20055,8 @@ class CBashModFile(object):
                      ("NPC_", self.NPC_),("CREA", self.CREA),("LVLC", self.LVLC),("SLGM", self.SLGM),
                      ("KEYM", self.KEYM),("ALCH", self.ALCH),("SBSP", self.SBSP),("SGST", self.SGST),
                      ("LVLI", self.LVLI),("WTHR", self.WTHR),("CLMT", self.CLMT),("REGN", self.REGN),
-                     ("CELL", self.CELLS),("ACHR", self.ACHRS),("ACRE", self.ACRES),("REFR", self.REFRS),
-                     ("PGRD", self.PGRDS),("LAND", self.LANDS),("WRLD", self.WRLD),("ROAD", self.ROADS),
+                     ("WRLD", self.WRLD),("CELL", self.CELLS),("ACHR", self.ACHRS),("ACRE", self.ACRES),
+                     ("REFR", self.REFRS),("PGRD", self.PGRDS),("LAND", self.LANDS),("ROAD", self.ROADS),
                      ("DIAL", self.DIAL),("INFO", self.INFOS),("QUST", self.QUST),("IDLE", self.IDLE),
                      ("PACK", self.PACK),("CSTY", self.CSTY),("LSCR", self.LSCR),("LVSP", self.LVSP),
                      ("ANIO", self.ANIO),("WATR", self.WATR),("EFSH", self.EFSH)))
@@ -20009,7 +20078,10 @@ class Collection:
         if(CBash.AddMod(self._CollectionIndex, ModName, CreateIfNotExist) != -1):
             return CBashModFile(self._CollectionIndex, ModName)
         return None
-
+    def addMergeMod(self, ModName):
+        if(CBash.AddMergeMod(self._CollectionIndex, ModName) != -1):
+            return CBashModFile(self._CollectionIndex, ModName)
+        return None
     def minimalLoad(self, LoadMasters=False):
         CBash.MinimalLoad(self._CollectionIndex, LoadMasters)
 

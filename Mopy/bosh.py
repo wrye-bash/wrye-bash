@@ -8332,10 +8332,16 @@ class ModInfos(FileInfos):
             if modInfo.header.author != 'BASHED PATCH': continue
             patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
             if not patchConfigs: continue
-            if patchConfigs.get('PatchMerger',nullDict).get('isEnabled'):
-                configChecks = patchConfigs['PatchMerger']['configChecks']
-                for modName in configChecks:
-                    if configChecks[modName]: merged.add(modName)
+            if not CBash:
+                if patchConfigs.get('PatchMerger',nullDict).get('isEnabled'):
+                    configChecks = patchConfigs['PatchMerger']['configChecks']
+                    for modName in configChecks:
+                        if configChecks[modName]: merged.add(modName)
+            else:
+                if patchConfigs.get('CBash_PatchMerger',nullDict).get('isEnabled'):
+                    configChecks = patchConfigs['CBash_PatchMerger']['configChecks']
+                    for modName in configChecks:
+                        if configChecks[modName]: merged.add(modName)
             imported.update(patchConfigs.get('ImportedMods',tuple()))
         return (merged,imported)
 
@@ -14483,12 +14489,9 @@ class CBash_PatchFile(CBashModFile):
     """Defines and executes patcher configuration."""
 
     #--Instance
-    def __init__(self, Current, modFile, patchers):
+    def __init__(self, patchName, patchers):
         """Initialization."""
-        CBashModFile.__init__(self, modFile._CollectionIndex, modFile._ModName)
-        self.TES4.author = 'BASHED PATCH'
-##        self.TES4.masters = ['Oblivion.esm']
-        self.Collection = Current
+        self.patchName = patchName
         #--New attrs
         self.aliases = {} #--Aliases from one mod name to another. Used by text file patchers.
         self.patchers = patchers
@@ -14498,6 +14501,7 @@ class CBash_PatchFile(CBashModFile):
         self.worldOrphanMods = []
         self.unFilteredMods = []
         self.compiledAllMods = []
+        self.type_patchers = {}
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
@@ -14520,19 +14524,88 @@ class CBash_PatchFile(CBashModFile):
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
             progress(index,_("Preparing\n%s") % patcher.getName())
-            patcher.initData(SubProgress(progress,index))
+            patcher.initData(self.type_patchers,SubProgress(progress,index))
         progress(progress.full,_('Patchers prepared.'))
+
+    def mergeModFile(self,modFile,progress,doFilter,iiMode):
+        """Copies contents of modFile into self."""
+        mergeIds = self.mergeIds
+        loadSet = self.loadSet
+        badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
+        for blockType, block in modFile.aggregates.iteritems():
+            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
+            #--Make sure block type is also in read and write factories
+            filtered = []
+            for record in block:
+                conflicts = record.Conflicts()
+                IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
+                if record.longFid == badForm: continue
+                #--Include this record?
+                if IsNewest and (not doFilter or record.longFid[0] in loadSet):
+                    filtered.append(record)
+                    if doFilter: record.mergeFilter(loadSet)
+                    if iiSkipMerge: continue
+                    override = record.CopyAsOverride(self)
+                    if override:
+                        mergeIds.add(override.longFid)
 
     def buildPatch(self,progress):
         ##simplified, does not support II mode, error checking, etc. Will be added later.
         """Scans load+merge mods."""
         if not len(self.loadMods): return
         nullProgress = bolt.Progress()
-        progress = progress.setFull(len(self.patchers))
 
-        for index, patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
-            progress(index,_("%s\nApplying...") % (patcher.name))
-            patcher.buildPatch(nullProgress)
+        self.Collection = Collection(ModsPath=dirs['mods'].s)
+        for name in self.loadSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.Collection.addMod(name.s)
+        for name in self.mergeSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.Collection.addMergeMod(name.s)
+        self.patchName.temp.remove()
+        patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, True)
+        CBashModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModName)
+        self.Collection.minimalLoad(LoadMasters=True)
+
+        self.TES4.author = 'BASHED PATCH'
+        
+        progress = progress.setFull(len(self.allMods))
+        type_patchers = self.type_patchers
+        for index,modName in enumerate(self.allMods):
+            if modName == self.patchName: continue
+            bashTags = modInfos[modName].getBashTags()
+            if modName in self.loadMods and 'Filter' in bashTags:
+                self.unFilteredMods.append(modName)
+            isMerged = modName in self.mergeSet
+            doFilter = isMerged and 'Filter' in bashTags
+            #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
+            iiMode = isMerged and bool(set(('InventOnly','IIM')) & bashTags)
+            modFile = CBashModFile(patchFile._CollectionIndex, modName.s)
+            if isMerged:
+                progress(index,_("%s\nMerging...") % modFile._ModName)
+                self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
+            #--Error checks
+            gls = SCPTRecord(modFile._CollectionIndex, modFile._ModName, 0x00025811)
+            if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != 'Oblivion.esm':
+                self.compiledAllMods.append(modName)
+            pstate = 0
+            subProgress = SubProgress(progress,index)
+            subProgress.setFull(max(len(type_patchers),1))
+            for type, patchers in type_patchers.iteritems():
+                subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
+                pstate = pstate + 1
+                for record in getattr(modFile, type):
+                    if isMerged: record._ModName = patchFile._ModName
+                    #If conflicts is > 0, it will include all conflicts, even the record that called it
+                    #(i.e. len(conflicts) will never equal 1)
+                    #The winning record is at position 0, and the last record is the one most overridden
+                    conflicts = record.Conflicts()
+                    IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
+                    for patcher in sorted(patchers,key=attrgetter('scanOrder')):
+                        if iiMode and not patcher.iiMode: continue
+                        patcher.buildPatch(self, modFile, record, IsNewest)
+                    record.UnloadRecord()
+                self.TES4.version = max(modFile.TES4.version, self.TES4.version)
 
         progress(progress.full,_('Patchers applied.'))
 
@@ -14700,11 +14773,11 @@ class CBash_Patcher:
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
 
-    def initData(self,progress):
+    def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         pass
 
-    def buildPatch(self,progress):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         pass
 
@@ -14791,6 +14864,91 @@ class ListPatcher(Patcher):
         self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
         self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
         Patcher.saveConfig(self,configs)
+
+    #--Patch Phase ------------------------------------------------------------
+    def getConfigChecked(self):
+        """Returns checked config items in list order."""
+        return [item for item in self.configItems if self.configChecks[item]]
+
+class CBash_ListPatcher(CBash_Patcher):
+    """Subclass for patchers that have GUI lists of objects."""
+    #--Get/Save Config
+    choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
+    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    forceItemCheck = False #--Force configChecked to True for all items
+    autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
+    autoKey = None
+    forceAuto = True
+
+    #--Config Phase -----------------------------------------------------------
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        autoRe = self.__class__.autoRe
+        autoKey = self.__class__.autoKey
+        if isinstance(autoKey,str):
+            autoKey = set((autoKey,))
+        autoKey = set(autoKey)
+        self.choiceMenu = self.__class__.choiceMenu
+        for modInfo in modInfos.data.values():
+            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+                if modInfo.mtime > CBash_PatchFile.patchTime: continue
+                autoItems.append(modInfo.name)
+                if self.choiceMenu: self.getChoice(modInfo.name)
+        reFile = re.compile('_('+('|'.join(autoKey))+r')\.csv$')
+        for fileName in sorted(dirs['patches'].list()):
+            if reFile.search(fileName.s):
+                autoItems.append(fileName)
+        return autoItems
+
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        CBash_Patcher.getConfig(self,configs)
+        if self.forceAuto:
+            self.autoIsChecked = True
+        #--Verify file existence
+        newConfigItems = []
+        patchesDir = dirs['patches'].list()
+        for srcPath in self.configItems:
+            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
+                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                    newConfigItems.append(srcPath)
+        self.configItems = newConfigItems
+        if self.__class__.forceItemCheck:
+            for item in self.configItems:
+                self.configChecks[item] = True
+        #--Make sure configChoices are set (if choiceMenu exists).
+        if self.choiceMenu:
+            for item in self.configItems:
+                self.getChoice(item)
+        #--AutoItems?
+        if self.autoIsChecked:
+            self.getAutoItems()
+
+    def getChoice(self,item):
+        """Get default config choice."""
+        return self.configChoices.setdefault(item,self.choiceMenu[0])
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        if isinstance(item,bolt.Path): item = item.s
+        if self.choiceMenu:
+            return '%s [%s]' % (item,self.getChoice(item))
+        else:
+            return item
+
+    def sortConfig(self,items):
+        """Return sorted items. Default assumes mods and sorts by load order."""
+        return modInfos.getOrdered(items,False)
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        listSet = set(self.configItems)
+        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
+        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
+        CBash_Patcher.saveConfig(self,configs)
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -14964,6 +15122,33 @@ class PatchMerger(ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
+        #--WARNING: Since other patchers may rely on the following update during
+        #  their initPatchFile section, it's important that PatchMerger first or near first.
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None,self.getConfigChecked())
+class CBash_PatchMerger(CBash_ListPatcher):
+    """Merges specified patches into Bashed Patch."""
+    scanOrder = 10
+    editOrder = 10
+    group = _('General')
+    name = _('Merge Patches')
+    text = _("Merge patch mods into Bashed Patch.")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Merge'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        for modInfo in modInfos.data.values():
+            if modInfo.name in modInfos.mergeable and 'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < CBash_PatchFile.patchTime:
+                autoItems.append(modInfo.name)
+        return autoItems
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         #--WARNING: Since other patchers may rely on the following update during
         #  their initPatchFile section, it's important that PatchMerger first or near first.
         if self.isEnabled: #--Since other mods may rely on this
@@ -17437,6 +17622,9 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
 
 class CBash_AssortedTweak_ArmorShows(MultiTweakItem):
     """Fix armor to show amulets/rings."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Armor Tweaks')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,float,label,tip,key):
@@ -17445,25 +17633,22 @@ class CBash_AssortedTweak_ArmorShows(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'ARMO'
+    def getTypes(self):
+        return ['ARMO']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
             return
-        conflicts = record.Conflicts()
-        #If conflicts is > 0, it will include all conflicts, even the record that called it (i.e. len(conflicts) will never equal 1)
-        #The winning record is at position 0, and the last record is the one most overridden (likely Oblivion.esm's)
-        #So if there are no conflicts, and we're changing the record, copy it
-        #If there are conflicts, only copy the record if its the winning record
-        #Other options would be to merge the conflicting records, but it isn't appropriate for this tweak
-        if getattr(record, self.hideFlag) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+
+        if IsNewest and (getattr(record, self.hideFlag)):
             override = record.CopyAsOverride(patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17521,6 +17706,9 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
 
 class CBash_AssortedTweak_ClothingShows(MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Clothing Tweaks')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,float,label,tip,key):
@@ -17529,25 +17717,21 @@ class CBash_AssortedTweak_ClothingShows(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'CLOT'
+    def getTypes(self):
+        return ['CLOT']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
             return
-        conflicts = record.Conflicts()
-        #If conflicts is > 0, it will include all conflicts, even the record that called it (i.e. len(conflicts) will never equal 1)
-        #The winning record is at position 0, and the last record is the one most overridden (likely Oblivion.esm's)
-        #So if there are no conflicts, and we're changing the record, copy it
-        #If there are conflicts, only copy the record if its the winning record
-        #Other options would be to merge the conflicting records, but it isn't appropriate for this tweak
-        if getattr(record, self.hideFlag) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (getattr(record, self.hideFlag)):
             override = record.CopyAsOverride(patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17606,6 +17790,9 @@ class AssortedTweak_BowReach(MultiTweakItem):
 
 class CBash_AssortedTweak_BowReach(MultiTweakItem):
     """Fix bows to have reach = 1.0."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Bow Reach Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -17617,19 +17804,20 @@ class CBash_AssortedTweak_BowReach(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'WEAP'
+    def getTypes(self):
+        return ['WEAP']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         count = self.count
-        conflicts = record.Conflicts()
         
-        if record.weaponType == 5 and record.reach <= 0 and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (record.weaponType == 5 and record.reach <= 0):
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.reach = 1
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17641,54 +17829,6 @@ class CBash_AssortedTweak_BowReach(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
         self.count = {}
 
-#------------------------------------------------------------------------------
-class VanillaNPCSkeletonPatcher(MultiTweakItem):
-    """Changes all NPCs to use the vanilla beast race skeleton."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
-            'Vanilla Skeleton',
-            ('1.0',  '1.0'),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (MreNpc,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (MreNpc,)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-            model = record.model.modPath
-            if model.lower() == r'characters\_male\skeleton.nif':
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-            record.model.modPath = "Characters\_Male\SkeletonBeast.nif"
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(_('===Vanilla Beast Skeleton'))
-        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class AssortedTweak_ConsistentRings(MultiTweakItem):
     """Sets rings to all work on same finger."""
@@ -17738,6 +17878,9 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_AssortedTweak_ConsistentRings(MultiTweakItem):
     """Sets rings to all work on same finger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Right Hand Rings')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -17749,19 +17892,20 @@ class CBash_AssortedTweak_ConsistentRings(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'CLOT'
+    def getTypes(self):
+        return ['CLOT']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
-        if record.IsLeftRing and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and record.IsLeftRing:
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.IsLeftRing = False
                 override.IsRightRing = True
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17827,6 +17971,9 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
+    scanOrder = 31 #Run before the show clothing tweaks
+    editOrder = 31
+    name = _('Playable Clothes')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -17838,14 +17985,13 @@ class CBash_AssortedTweak_ClothingPlayable(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'CLOT'
+    def getTypes(self):
+        return ['CLOT']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
-        if record.IsNonPlayable and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and record.IsNonPlayable:
             if not record.full: return
             if record.script: return
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
@@ -17854,7 +18000,9 @@ class CBash_AssortedTweak_ClothingPlayable(MultiTweakItem):
                 override = record.CopyAsOverride(patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17916,6 +18064,9 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
+    scanOrder = 31 #Run before the show armor tweaks
+    editOrder = 31
+    name = _('Playable Armor')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -17927,14 +18078,13 @@ class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'ARMO'
+    def getTypes(self):
+        return ['ARMO']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
-        if record.IsNonPlayable and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and record.IsNonPlayable:
             if not record.full: return
             if record.script: return
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
@@ -17943,7 +18093,9 @@ class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
                 override = record.CopyAsOverride(patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17958,6 +18110,8 @@ class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_DarnBooks(MultiTweakItem):
     """DarNifies books."""
+    scanOrder = 32
+    editOrder = 32
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18048,6 +18202,9 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         
 class CBash_AssortedTweak_DarnBooks(MultiTweakItem):
     """DarNifies books."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Books DarNified')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18059,13 +18216,12 @@ class CBash_AssortedTweak_DarnBooks(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'BOOK'
+    def getTypes(self):
+        return ['BOOK']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         count = self.count
-        conflicts = record.Conflicts()
 
         reColor = re.compile(r'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
         reTagInWord = re.compile(r'([a-z])<font face=1>',re.M)
@@ -18085,36 +18241,37 @@ class CBash_AssortedTweak_DarnBooks(MultiTweakItem):
         def replaceAlign(mo):
             return '<div align=%s>' % align_text[mo.group(1)]
         
-        if (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
-            if record.text and not record.enchantment:
-                text = record.text
-                if reHead2.match(text):
-                    inBold = False
-                    text = reHead2.sub(r'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
-                    text = reHead3.sub(r'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
-                    text = reAlign.sub(replaceAlign,text)
-                    text = reBold.sub(replaceBold,text)
-                    text = re.sub(r'\r\n',r'<br>\r\n',text)
+        if IsNewest and record.text and not record.enchantment:
+            text = record.text
+            if reHead2.match(text):
+                inBold = False
+                text = reHead2.sub(r'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
+                text = reHead3.sub(r'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
+                text = reAlign.sub(replaceAlign,text)
+                text = reBold.sub(replaceBold,text)
+                text = re.sub(r'\r\n',r'<br>\r\n',text)
+            else:
+                maColor = reColor.search(text)
+                if maColor:
+                    color = maColor.group(1)
+                elif record.IsScroll:
+                    color = '000000'
                 else:
-                    maColor = reColor.search(text)
-                    if maColor:
-                        color = maColor.group(1)
-                    elif record.IsScroll:
-                        color = '000000'
-                    else:
-                        color = '444444'
-                    fontFace = '<font face=3 color='+color+'>'
-                    text = reTagInWord.sub(r'\1',text)
-                    text.lower()
-                    if reDiv.search(text) and not reFont.search(text):
-                        text = fontFace+text
-                    else:
-                        text = reFont1.sub(fontFace,text)
-                if text != record.text:
-                    override = record.CopyAsOverride(patchFile)
-                    if override:
-                        override.text = text
-                        count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                    color = '444444'
+                fontFace = '<font face=3 color='+color+'>'
+                text = reTagInWord.sub(r'\1',text)
+                text.lower()
+                if reDiv.search(text) and not reFont.search(text):
+                    text = fontFace+text
+                else:
+                    text = reFont1.sub(fontFace,text)
+            if text != record.text:
+                override = record.CopyAsOverride(patchFile)
+                if override:
+                    override.text = text
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18176,6 +18333,9 @@ class AssortedTweak_FogFix(MultiTweakItem):
 
 class CBash_AssortedTweak_FogFix(MultiTweakItem):
     """Fix fog in cell to be non-zero."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Nvidia Fog Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18187,19 +18347,20 @@ class CBash_AssortedTweak_FogFix(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'CELL' #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
+    def getTypes(self):
+        return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
 
-    def buildPatch(self,record,patchFile,parent=None):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         count = self.count
-        conflicts = record.Conflicts()
 
-        if not (record.fogNear or record.fogFar or record.fogClip) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and not (record.fogNear or record.fogFar or record.fogClip):
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.fogNear = 0.0001
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18264,6 +18425,9 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
 
 class CBash_AssortedTweak_NoLightFlicker(MultiTweakItem):
     """Remove light flickering for low end machines."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('No Light Flicker')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18275,22 +18439,23 @@ class CBash_AssortedTweak_NoLightFlicker(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'LIGH'
+    def getTypes(self):
+        return ['LIGH']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
 
-        if(record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow):
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.IsFlickers = False
                 override.IsFlickerSlow = False
                 override.IsPulse = False
                 override.IsPulseSlow = False
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
 
     def buildPatchLog(self,log):
@@ -18360,6 +18525,9 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_PotionWeight(MultiTweakItem):
     """Reweighs standard potions down to 0.1."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Potions Max Weight')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18375,23 +18543,24 @@ class CBash_AssortedTweak_PotionWeight(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'ALCH'
+    def getTypes(self):
+        return ['ALCH']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if(record.weight > maxWeight and record.weight < 1.0) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (record.weight > maxWeight and record.weight < 1.0):
             for effect in record.effects:
                 if effect.name == 'SEFF':
                     return
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.weight = maxWeight
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18459,6 +18628,9 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
 
 class CBash_AssortedTweak_PotionWeightMinimum(MultiTweakItem):
     """Reweighs any potions up to 4."""
+    scanOrder = 33 #Have it run after the max weight for consistent results
+    editOrder = 33
+    name = _('Potions Min Weight')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18474,20 +18646,20 @@ class CBash_AssortedTweak_PotionWeightMinimum(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'ALCH'
+    def getTypes(self):
+        return ['ALCH']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
         minWeight = self.choiceValues[self.chosen][0]
-        
-        if(record.weight < minWeight) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (record.weight < minWeight):
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.weight = minWeight
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18560,6 +18732,9 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_StaffWeight(MultiTweakItem):
     """Reweighs staffs."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Reweigh Staffs')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18579,20 +18754,21 @@ class CBash_AssortedTweak_StaffWeight(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'WEAP'
+    def getTypes(self):
+        return ['WEAP']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if(record.weaponType == 4 and record.weight > maxWeight) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+        if IsNewest and (record.weaponType == 4 and record.weight > maxWeight):
             override = record.CopyAsOverride(patchFile)
             if override:
                 override.weight = maxWeight
-                count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18671,6 +18847,9 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Set Enchantment Number of Uses')
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -18694,23 +18873,26 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
-    def getType(self):
-        return 'ENCH'
+    def getTypes(self):
+        return ['ENCH']
 
-    def buildPatch(self,record,patchFile):
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
         count = self.count
-        conflicts = record.Conflicts()
         uses = self.choiceValues[self.chosen][0]
-        
-        if(record.itemType in [1,2]) and (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+
+        if IsNewest and (record.itemType in [1,2]):
             if uses != 0:
                 uses = max(record.chargeAmount/uses,1)
             if record.enchantCost != uses:
                 override = record.CopyAsOverride(patchFile)
                 if override:
                     override.enchantCost = uses
-                    count[GPath(record._ModName)] = count.get(GPath(record._ModName),0) + 1
+                    if override.chargeAmount < uses:
+                        override.chargeAmount = uses
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18823,32 +19005,67 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-
-        type_tweaks = {}
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         for tweak in self.enabledTweaks:
-            tweaks = type_tweaks.get(tweak.getType(),[])
-            tweaks.append(tweak)
-            type_tweaks[tweak.getType()] = tweaks
-
-        for modFile in reversed(self.patchFile.Collection):
-            if modFile._ModName == self.patchFile._ModName: continue
-            for type, tweaks in type_tweaks.iteritems():
-                for record in getattr(modFile, type):
-                    for tweak in tweaks:
-                        tweak.buildPatch(record, self.patchFile)
-                    record.UnloadRecord()
+            for type in tweak.getTypes():
+                type_patchers.setdefault(type,[]).append(tweak)
 
     def buildPatchLog(self,log):
-        """Applies individual clothes tweaks."""
+        """Will write to log."""
         if not self.isActive: return
         log.setHeader('= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
+#------------------------------------------------------------------------------
+class VanillaNPCSkeletonPatcher(MultiTweakItem):
+    """Changes all NPCs to use the vanilla beast race skeleton."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Vanilla Beast Skeleton Tweaker"),
+            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            'Vanilla Skeleton',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreNpc,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreNpc,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.NPC_
+        for record in modFile.NPC_.getActiveRecords():
+            record = record.getTypeCopy(mapper)
+            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+            model = record.model.modPath
+            if model.lower() == r'characters\_male\skeleton.nif':
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.NPC_.records:
+            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+            record.model.modPath = "Characters\_Male\SkeletonBeast.nif"
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===Vanilla Beast Skeleton'))
+        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class GlobalsTweak(MultiTweakItem):
     """set a global to specified value"""
