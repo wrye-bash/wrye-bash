@@ -14492,7 +14492,7 @@ class CBash_PatchFile(CBashModFile):
     """Defines and executes patcher configuration."""
 
     #--Class
-    noMergeTypes = ('GMST', 'CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
+    noMergeTypes = ('CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
     @staticmethod
     def modIsMergeable(modInfo,progress=None):
         """Returns True or error message indicating whether specified mod is mergeable."""
@@ -14527,6 +14527,7 @@ class CBash_PatchFile(CBashModFile):
         for type,block in modFile.tops.iteritems():
             for record in getattr(modFile, type):
                 isEmpty = False
+                if type == 'GMST': break
                 if record.fid >> 24 >= lenMasters:
                     newblocks.append(type)
                     break
