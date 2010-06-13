@@ -324,6 +324,13 @@ class GMSTRecord(object):
         return
     def UpdateReferences(self, origFid, newFid):
         return 0
+    def Conflicts(self):
+        numRecords = CBash.GetNumGMSTConflicts(self._CollectionIndex, self._ModName, self._recordID)
+        if(numRecords > 1):
+            cModNames = (POINTER(c_char_p) * numRecords)()
+            CBash.GetGMSTConflicts(self._CollectionIndex, self._ModName, self._recordID, cModNames)
+            return [GMSTRecord(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
+        return []
     def get_longFid(self):
         fid = self.fid
         if(fid == None): return (None,None)
