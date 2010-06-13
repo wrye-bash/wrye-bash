@@ -8139,7 +8139,10 @@ class ModInfos(FileInfos):
         for index,name in enumerate(names):
             progress(index,name.s)
             modInfo = self[name]
-            canMerge = PatchFile.modIsMergeable(modInfo) == True
+            if not CBash:
+                canMerge = PatchFile.modIsMergeable(modInfo) == True
+            else:
+                canMerge = CBash_PatchFile.modIsMergeable(modInfo) == True
             if canMerge:
                 self.mergeable.add(name)
                 name_mergeInfo[name] = (modInfo.size,True)
@@ -14488,6 +14491,52 @@ class PatchFile(ModFile):
 class CBash_PatchFile(CBashModFile):
     """Defines and executes patcher configuration."""
 
+    #--Class
+    noMergeTypes = ('GMST', 'CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
+    @staticmethod
+    def modIsMergeable(modInfo,progress=None):
+        """Returns True or error message indicating whether specified mod is mergeable."""
+        reasons = ''
+        if reEsmExt.search(modInfo.name.s):
+            reasons += _("\n.    Is esm.")
+        #--Bashed Patch
+        if modInfo.header.author == "BASHED PATCH":
+            reasons += _("\n.    Is Bashed Patch.")
+        #--Bsa?
+        reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
+        for file in modInfos.dir.list():
+            if reBsa.match(file.s):
+                reasons += _("\n.    Has BSA archive.")
+                break
+        #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
+        #--Load test
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.name.s)
+        Current.minimalLoad(LoadMasters=False)
+        noTypes = []
+        for type in CBash_PatchFile.noMergeTypes:
+            if len(getattr(modFile, type, [])):
+                noTypes.append(type)
+        #--Skipped over types?
+        if len(noTypes):
+            reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(noTypes))+'.')
+        isEmpty = True
+        lenMasters = len(modFile.TES4.masters)
+        newblocks = []
+        for type,block in modFile.tops.iteritems():
+            for record in getattr(modFile, type):
+                isEmpty = False
+                if record.fid >> 24 >= lenMasters:
+                    newblocks.append(type)
+                    break
+        #--Empty mod
+        if isEmpty:
+            reasons += _("\n.    Empty mod.")
+        #--New record
+        if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
+        if reasons: return reasons
+        return True
     #--Instance
     def __init__(self, patchName, patchers):
         """Initialization."""

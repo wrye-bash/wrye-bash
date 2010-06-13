@@ -433,6 +433,7 @@ installercons.data.extend({
 bashRed = None
 bashBlue = None
 bashDocBrowser = None
+bashMonkey = None
 
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -4569,10 +4570,11 @@ class BashApp(wx.App):
 
     def InitResources(self):
         """Init application resources."""
-        global bashBlue, bashRed, bashDocBrowser
+        global bashBlue, bashRed, bashDocBrowser, bashMonkey
         bashBlue = bashBlue.GetIconBundle()
         bashRed = bashRed.GetIconBundle()
         bashDocBrowser = bashDocBrowser.GetIconBundle()
+        bashMonkey = bashMonkey.GetIconBundle()
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
@@ -4829,7 +4831,7 @@ class PatchDialog(wx.Dialog):
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
-        self.SetIcon(images['monkey.16'].GetIcon())
+        self.SetIcons(bashMonkey)
         #--Patcher panels
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
@@ -8522,7 +8524,10 @@ class Mod_MarkMergeable(Link):
             if descTags and 'Merge' in descTags:
                 descTags.discard('Merge')
                 fileInfo.setBashTagsDesc(descTags)
-            canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+            if not CBash:
+                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+            else:
+                canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
             if canMerge == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
@@ -11419,6 +11424,9 @@ def InitImages():
     bashDocBrowser = balt.ImageBundle()
     bashDocBrowser.Add(images['doc.16'])
     bashDocBrowser.Add(images['doc.32'])
+    global bashMonkey
+    bashMonkey = balt.ImageBundle()
+    bashMonkey.Add(images['monkey.16'])
 
 def InitStatusBar():
     """Initialize status bar links."""
