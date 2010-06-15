@@ -14492,7 +14492,8 @@ class CBash_PatchFile(CBashModFile):
     """Defines and executes patcher configuration."""
 
     #--Class
-    noMergeTypes = ('CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
+##    noMergeTypes = ('CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
+    noMergeTypes = ()
     @staticmethod
     def modIsMergeable(modInfo,progress=None):
         """Returns True or error message indicating whether specified mod is mergeable."""
@@ -14524,8 +14525,8 @@ class CBash_PatchFile(CBashModFile):
         isEmpty = True
         lenMasters = len(modFile.TES4.masters)
         newblocks = []
-        for type,block in modFile.tops.iteritems():
-            for record in getattr(modFile, type):
+        for type, block in modFile.aggregates.iteritems():
+            for record in block:
                 isEmpty = False
                 if type == 'GMST': break
                 if record.fid >> 24 >= lenMasters:
@@ -14538,6 +14539,7 @@ class CBash_PatchFile(CBashModFile):
         if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
         if reasons: return reasons
         return True
+
     #--Instance
     def __init__(self, patchName, patchers):
         """Initialization."""
@@ -14552,6 +14554,9 @@ class CBash_PatchFile(CBashModFile):
         self.unFilteredMods = []
         self.compiledAllMods = []
         self.type_patchers = {}
+        self.indexMGEFs = False
+        self.mgef_school = bush.mgef_school.copy()
+        self.mgef_name = bush.mgef_name.copy()
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
@@ -14572,6 +14577,8 @@ class CBash_PatchFile(CBashModFile):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
+        if self.indexMGEFs:
+            self.patchers.append(CBash_MGEFIndexer())
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
             progress(index,_("Preparing\n%s") % patcher.getName())
             patcher.initData(self.type_patchers,SubProgress(progress,index))
@@ -14621,6 +14628,7 @@ class CBash_PatchFile(CBashModFile):
         
         progress = progress.setFull(len(self.allMods))
         type_patchers = self.type_patchers
+        maxVersion = 0
         for index,modName in enumerate(self.allMods):
             if modName == self.patchName: continue
             bashTags = modInfos[modName].getBashTags()
@@ -14655,8 +14663,18 @@ class CBash_PatchFile(CBashModFile):
                         if iiMode and not patcher.iiMode: continue
                         patcher.buildPatch(self, modFile, record, IsNewest)
                     record.UnloadRecord()
-                self.TES4.version = max(modFile.TES4.version, self.TES4.version)
-
+            maxVersion = max(modFile.TES4.version, maxVersion)
+        self.TES4.version = maxVersion
+        #Finish the patch
+        modFile = self
+        subProgress = SubProgress(progress,len(self.allMods))
+        subProgress.setFull(max(len(type_patchers),1))
+        pstate = 0
+        for type, patchers in type_patchers.iteritems():
+            subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
+            pstate = pstate + 1
+            for patcher in sorted(patchers,key=attrgetter('scanOrder')):
+                patcher.finishPatch(self)
         progress(progress.full,_('Patchers applied.'))
 
     def buildPatchLog(self,patchName,log,progress):
@@ -14823,14 +14841,23 @@ class CBash_Patcher:
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
 
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return []
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        pass
+        if not self.isActive: return
+        for type in self.getTypes():
+            type_patchers.setdefault(type,[]).append(tweak)
 
     def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired."""
         pass
 
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        pass
     def buildPatchLog(self,log):
         """Write to log."""
         pass
@@ -15050,6 +15077,53 @@ class MultiTweakItem:
         else: value = None
         configs[self.key] = self.isEnabled,value
 
+class CBash_MultiTweakItem:
+    """A tweak item, optionally with configuration choices."""
+    def __init__(self,float,label,tip,key,*choices):
+        """Initialize."""
+        self.label = label
+        self.tip = tip
+        self.key = key
+        self.float = float
+        self.choiceLabels = []
+        self.choiceValues = []
+        for choice in choices:
+            self.choiceLabels.append(choice[0])
+            self.choiceValues.append(choice[1:])
+        #--Config
+        self.isEnabled = False
+        self.chosen = 0
+
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        self.isEnabled,self.chosen = False,0
+        if self.key in configs:
+            self.isEnabled,value = configs[self.key]
+            if value in self.choiceValues:
+                self.chosen = self.choiceValues.index(value)
+            else:
+                for label in self.choiceLabels:
+                    if label.startswith('Custom'):
+                        self.chosen = self.choiceLabels.index(label)
+                        self.choiceValues[self.chosen] = value
+
+    def getListLabel(self):
+        """Returns label to be used in list"""
+        label = self.label
+        if len(self.choiceLabels) > 1:
+            label += ' [' + self.choiceLabels[self.chosen] + ']'
+        return label
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        if self.choiceValues: value = self.choiceValues[self.chosen]
+        else: value = None
+        configs[self.key] = self.isEnabled,value
+
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        pass
 #------------------------------------------------------------------------------
 class MultiTweaker(Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
@@ -15149,6 +15223,31 @@ class CBash_AliasesPatcher(CBash_Patcher):
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
 #------------------------------------------------------------------------------
+class CBash_MGEFIndexer(CBash_Patcher):
+    """Indexes magic effect records for other patchers."""
+    scanOrder = 10
+    editOrder = 10
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+            type_patchers.setdefault(type,[]).append(self)
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['MGEF']
+
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
+        """Indexes magic effect records for other patchers."""
+        full = record.full
+        eid = record.eid
+        if IsNewest and (full and eid):
+            patchFile.mgef_school[eid] = record.school
+            patchFile.mgef_name[eid] = full
+
+#------------------------------------------------------------------------------
 class PatchMerger(ListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
@@ -15199,6 +15298,8 @@ class CBash_PatchMerger(CBash_ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = bool(self.getConfigChecked())
+        if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update during
         #  their initPatchFile section, it's important that PatchMerger first or near first.
         if self.isEnabled: #--Since other mods may rely on this
@@ -17674,7 +17775,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ArmorShows(MultiTweakItem):
+class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     """Fix armor to show amulets/rings."""
     scanOrder = 32
     editOrder = 32
@@ -17682,12 +17783,13 @@ class CBash_AssortedTweak_ArmorShows(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,float,label,tip,key):
-        MultiTweakItem.__init__(self,float,label,tip,key)
+        CBash_MultiTweakItem.__init__(self,float,label,tip,key)
         self.hideFlag = {'armorShowsRings':'IsHideRings','armorShowsAmulets':'IsHideAmulets'}[key]
         self.count = {}
 
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
+        """Returns the group types that this patcher checks"""
         return ['ARMO']
 
     def buildPatch(self,patchFile,modFile,record,IsNewest):
@@ -17758,7 +17860,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ClothingShows(MultiTweakItem):
+class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
     scanOrder = 32
     editOrder = 32
@@ -17766,7 +17868,7 @@ class CBash_AssortedTweak_ClothingShows(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,float,label,tip,key):
-        MultiTweakItem.__init__(self,float,label,tip,key)
+        CBash_MultiTweakItem.__init__(self,float,label,tip,key)
         self.hideFlag = {'ClothingShowsRings':'IsHideRings','ClothingShowsAmulets':'IsHideAmulets'}[key]
         self.count = {}
 
@@ -17842,7 +17944,7 @@ class AssortedTweak_BowReach(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_BowReach(MultiTweakItem):
+class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
     """Fix bows to have reach = 1.0."""
     scanOrder = 32
     editOrder = 32
@@ -17850,7 +17952,7 @@ class CBash_AssortedTweak_BowReach(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Bow Reach Fix"),
+        CBash_MultiTweakItem.__init__(self,False,_("Bow Reach Fix"),
             _('Fix bows with zero reach. (Zero reach causes CTDs.)'),
             'BowReach',
             ('1.0',  '1.0'),
@@ -17930,7 +18032,7 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
         log(_('* Rings fixed: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_AssortedTweak_ConsistentRings(MultiTweakItem):
+class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
     """Sets rings to all work on same finger."""
     scanOrder = 32
     editOrder = 32
@@ -17938,7 +18040,7 @@ class CBash_AssortedTweak_ConsistentRings(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Right Hand Rings"),
+        CBash_MultiTweakItem.__init__(self,False,_("Right Hand Rings"),
             _('Fixes rings to unequip consistently by making them prefer the right hand.'),
             'ConsistentRings',
             ('1.0',  '1.0'),
@@ -18023,7 +18125,7 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         log(_('* Clothes set as playable: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_AssortedTweak_ClothingPlayable(MultiTweakItem):
+class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     """Sets all clothes to playable"""
     scanOrder = 31 #Run before the show clothing tweaks
     editOrder = 31
@@ -18031,7 +18133,7 @@ class CBash_AssortedTweak_ClothingPlayable(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("All Clothing Playable"),
+        CBash_MultiTweakItem.__init__(self,False,_("All Clothing Playable"),
             _('Sets all clothing to be playable.'),
             'PlayableClothing',
             ('1.0',  '1.0'),
@@ -18116,7 +18218,7 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         log(_('* Armor pieces set as playable: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
+class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     """Sets all armors to be playable"""
     scanOrder = 31 #Run before the show armor tweaks
     editOrder = 31
@@ -18124,7 +18226,7 @@ class CBash_AssortedTweak_ArmorPlayable(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("All Armor Playable"),
+        CBash_MultiTweakItem.__init__(self,False,_("All Armor Playable"),
             _('Sets all armor to be playable.'),
             'PlayableArmor',
             ('1.0',  '1.0'),
@@ -18254,7 +18356,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
         
-class CBash_AssortedTweak_DarnBooks(MultiTweakItem):
+class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     """DarNifies books."""
     scanOrder = 32
     editOrder = 32
@@ -18262,7 +18364,7 @@ class CBash_AssortedTweak_DarnBooks(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("DarNified Books"),
+        CBash_MultiTweakItem.__init__(self,False,_("DarNified Books"),
             _('Books will be reformatted for DarN UI.'),
             'DarnBooks',
             ('default',  'default'),
@@ -18385,7 +18487,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_FogFix(MultiTweakItem):
+class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
     """Fix fog in cell to be non-zero."""
     scanOrder = 32
     editOrder = 32
@@ -18393,7 +18495,7 @@ class CBash_AssortedTweak_FogFix(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Nvidia Fog Fix"),
+        CBash_MultiTweakItem.__init__(self,False,_("Nvidia Fog Fix"),
             _('Fix fog related Nvidia black screen problems.'),
             'FogFix',
             ('0.0001',  '0.0001'),
@@ -18477,7 +18579,7 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_NoLightFlicker(MultiTweakItem):
+class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
     scanOrder = 32
     editOrder = 32
@@ -18485,7 +18587,7 @@ class CBash_AssortedTweak_NoLightFlicker(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("No Light Flicker"),
+        CBash_MultiTweakItem.__init__(self,False,_("No Light Flicker"),
             _('Remove flickering from lights. For use on low-end machines.'),
             'NoLightFlicker',
             ('1.0',  '1.0'),
@@ -18577,7 +18679,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_PotionWeight(MultiTweakItem):
+class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     """Reweighs standard potions down to 0.1."""
     scanOrder = 32
     editOrder = 32
@@ -18585,7 +18687,7 @@ class CBash_AssortedTweak_PotionWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Max Weight Potions"),
+        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Potions"),
             _('Potion weight will be capped.'),
             'MaximumPotionWeight',
             (_('0.1'),  0.1),
@@ -18680,7 +18782,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_PotionWeightMinimum(MultiTweakItem):
+class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
     """Reweighs any potions up to 4."""
     scanOrder = 33 #Have it run after the max weight for consistent results
     editOrder = 33
@@ -18688,7 +18790,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Minimum Weight Potions"),
+        CBash_MultiTweakItem.__init__(self,True,_("Minimum Weight Potions"),
             _('Potion weight will be floored.'),
             'MinimumPotionWeight',
             (_('1'),  1),
@@ -18784,7 +18886,7 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_StaffWeight(MultiTweakItem):
+class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     """Reweighs staffs."""
     scanOrder = 32
     editOrder = 32
@@ -18792,7 +18894,7 @@ class CBash_AssortedTweak_StaffWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
+        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
             _('Staff weight will be capped.'),
             'StaffWeight',
             (_('1'),  1),
@@ -18899,7 +19001,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
+class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     scanOrder = 32
     editOrder = 32
@@ -18907,7 +19009,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Number of uses for pre-enchanted weapons and staffs"),
+        CBash_MultiTweakItem.__init__(self,True,_("Number of uses for pre-enchanted weapons and staffs"),
             _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
@@ -18932,18 +19034,19 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 
     def buildPatch(self,patchFile,modFile,record,IsNewest):
         """Edits patch file as desired. """
-        count = self.count
-        uses = self.choiceValues[self.chosen][0]
 
         if IsNewest and (record.itemType in [1,2]):
+            uses = int(self.choiceValues[self.chosen][0])
+            cost = uses
             if uses != 0:
-                uses = max(record.chargeAmount/uses,1)
-            if record.enchantCost != uses:
+                cost = max(record.chargeAmount/uses,1)
+            amount = cost * uses
+            if record.enchantCost != cost or record.chargeAmount != amount:
                 override = record.CopyAsOverride(patchFile)
                 if override:
-                    override.enchantCost = uses
-                    if override.chargeAmount < uses:
-                        override.chargeAmount = uses
+                    override.enchantCost = cost
+                    override.chargeAmount = amount
+                    count = self.count
                     count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
@@ -18957,7 +19060,6 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
         self.count = {}
-
 #------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
@@ -19061,6 +19163,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     #--Patch Phase ------------------------------------------------------------
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
         for tweak in self.enabledTweaks:
             for type in tweak.getTypes():
                 type_patchers.setdefault(type,[]).append(tweak)
@@ -20472,6 +20575,103 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         log.setHeader('= '+self.__class__.name)
         log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
         log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
+    """Updates COBL alchemical catalogs."""
+    name = _('Cobl Catalogs')
+    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        self.isActive = (GPath('COBL Main.esm') in loadMods)
+        if self.isActive:
+            patchFile.indexMGEFs = True
+        self.id_ingred = {}
+        self.effect_ingred = {}
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    #--Patch Phase ------------------------------------------------------------
+
+    
+    def getTypes(self):
+        return ['INGR']
+
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
+        """Edits patch file as desired. """
+        if IsNewest and (record.full):
+            for effect in record.effects:
+                if effect.name == 'SEFF':
+                    return
+            self.id_ingred[record.fid] = (record.eid, record.full, record.effects)
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        id_ingred = self.id_ingred
+        effect_ingred = self.effect_ingred
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
+        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        #--Setup
+        mgef_name = patchFile.mgef_name
+        for mgef in mgef_name:
+            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
+        actorEffects = bush.actorValueEffects
+        actorNames = bush.actorValues
+        #--Book generator
+        def getBook(patchFile, objectId):
+            fid = patchFile.MakeShortFid((GPath('Cobl Main.esm'),objectId))
+            book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
+            book = book.CopyAsOverride(patchFile)
+            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
+            return book
+        #--Ingredients Catalog
+        id_ingred = self.id_ingred
+        for (num,objectId,full,value) in bush.ingred_alchem:
+            book = getBook(patchFile, objectId)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
+                buff.write(full+'\r\n')
+                for effect in effects[:num]:
+                    mgef = effect.name
+                    effectName = mgef_name[mgef]
+                    if mgef in actorEffects: effectName += actorNames[effect.actorValue]
+                    buff.write('  '+effectName+'\r\n')
+                buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+        #--Get Ingredients by Effect
+        effect_ingred = self.effect_ingred = {}
+        for fid,(eid,full,effects) in id_ingred.iteritems():
+            for index,effect in enumerate(effects):
+                mgef, actorValue = effect.name, effect.actorValue
+                effectName = mgef_name[mgef]
+                if mgef in actorEffects: effectName += actorNames[actorValue]
+                if effectName not in effect_ingred: effect_ingred[effectName] = []
+                effect_ingred[effectName].append((index,full))
+        #--Effect catalogs
+        for (num,objectId,full,value) in bush.effect_alchem:
+            book = getBook(patchFile,objectId)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for effectName in sorted(effect_ingred.keys()):
+                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
+                if effects:
+                    buff.write(effectName+'\r\n')
+                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
+                        exSpace = ('',' ')[index == 0]
+                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
+                    buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
 
 #------------------------------------------------------------------------------
 class CoblExhaustion(SpecialPatcher,ListPatcher):
