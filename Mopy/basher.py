@@ -5609,6 +5609,7 @@ class TweakActors(bosh.TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
+class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
 
 class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
 
@@ -5668,6 +5669,7 @@ else:
         CBash_AliasesPatcher(),
         CBash_AssortedTweaker(),
         CBash_PatchMerger(),
+        CBash_AlchemicalCatalogs(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

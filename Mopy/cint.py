@@ -3021,7 +3021,7 @@ class ENCHRecord(BaseRecord):
             self._listIndex = listIndex
         ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
         def get_name0(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
@@ -3030,7 +3030,7 @@ class ENCHRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
         name0 = property(get_name0, set_name0)
         def get_name(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
@@ -3274,7 +3274,7 @@ class SPELRecord(BaseRecord):
             self._listIndex = listIndex
         ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
         def get_name0(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
@@ -3283,7 +3283,7 @@ class SPELRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
         name0 = property(get_name0, set_name0)
         def get_name(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
@@ -4935,7 +4935,7 @@ class INGRRecord(BaseRecord):
             self._listIndex = listIndex
         ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
         def get_name0(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
@@ -4944,7 +4944,7 @@ class INGRRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
         name0 = property(get_name0, set_name0)
         def get_name(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
@@ -9479,7 +9479,7 @@ class SGSTRecord(BaseRecord):
             self._listIndex = listIndex
         ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
         def get_name0(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
@@ -9488,7 +9488,7 @@ class SGSTRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
         name0 = property(get_name0, set_name0)
         def get_name(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
@@ -19256,7 +19256,7 @@ class CBashModFile(object):
         return (master,object)
     def MakeShortFid(self, longFid):
         if not isinstance(longFid, tuple): return longFid
-        fid = CBash.GetCorrectedFID(self._CollectionIndex, nValue[0].s, nValue[1])
+        fid = CBash.GetCorrectedFID(self._CollectionIndex, longFid[0].s, longFid[1])
         if(fid == 0): return None
         return fid
     def UpdateReferences(self, origFid, newFid):
