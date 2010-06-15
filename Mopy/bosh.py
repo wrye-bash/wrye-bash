@@ -14661,7 +14661,7 @@ class CBash_PatchFile(CBashModFile):
                     IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                     for patcher in sorted(patchers,key=attrgetter('scanOrder')):
                         if iiMode and not patcher.iiMode: continue
-                        patcher.buildPatch(self, modFile, record, IsNewest)
+                        patcher.buildPatch(self, modFile, record, bashTags, IsNewest)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -14851,7 +14851,7 @@ class CBash_Patcher:
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(tweak)
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         pass
 
@@ -15239,7 +15239,7 @@ class CBash_MGEFIndexer(CBash_Patcher):
         """Returns the group types that this patcher checks"""
         return ['MGEF']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Indexes magic effect records for other patchers."""
         full = record.full
         eid = record.eid
@@ -15848,6 +15848,93 @@ class ActorImporter(ImportPatcher):
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
 
+
+
+class CBash_ActorImporter(CBash_ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Import Actors')
+    text = _("Import Actor components from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood')
+    count = {}
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_attrs = {} #--Names keyed by long fid.
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.count = {}
+        class_tag_attrs = self.class_tag_attrs = {}
+        class_tag_attrs['NPC_'] = {
+                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                'Actors.Stats': ('armorer','athletics','blade','block','blunt','h2h','heavyArmor','alchemy',
+                                 'alteration','conjuration','destruction','illusion','mysticism','restoration',
+                                 'acrobatics','lightArmor','marksman','mercantile','security','sneak','speechcraft',
+                                 'health',
+                                 'strength','intelligence','willpower','agility','speed','endurance','personality','luck',),
+                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','IsFemale','IsEssential',
+                                'IsRespawn','IsAutoCalc','IsPCLevelOffset','IsNoLowLevel','IsNoRumors','IsSummonable',
+                                'IsNoPersuasion','IsCanCorpseCheck'),
+                'NPC.Class': ('iclass',),
+                'Actors.CombatStyle': ('combatStyle',),
+                'Creatures.Blood': (),
+                }
+        class_tag_attrs['CREA'] = {
+                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower',
+                                 'agility','speed','endurance','personality','luck'),
+                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','IsBiped','IsEssential',
+                                'IsWeaponAndShield','IsRespawn','IsSwims','IsFlies','IsWalks','IsPCLevelOffset',
+                                'IsNoLowLevel','IsNoBloodSpray','IsNoBloodDecal','IsNoHead','IsNoRightArm',
+                                'IsNoLeftArm','IsNoCombatInWater','IsNoShadow','IsNoCorpseCheck'),
+                'NPC.Class': (),
+                'Actors.CombatStyle': ('combatStyle',),
+                'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                }
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if(record.fid in self.id_attrs):
+                attrs = reduce(operator.add, (self.class_tag_attrs[record._Type][bashKey] for bashKey in bashTags if bashKey in self.class_tag_attrs[record._Type]))
+                prevAttrs = self.id_attrs[record.fid]
+                recAttrs = [getattr(record, attr) for attr in attrs]
+                if recAttrs != prevAttrs:
+                    override = record.CopyAsOverride(patchFile)
+                    if override:
+                        for attr, value in zip(attrs, prevAttrs):
+                            setattr(override, attr, value)
+                        count = self.count
+                        count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                        record.UnloadRecord()
+                        record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            attrs = reduce(operator.add, (self.class_tag_attrs[record._Type][bashKey] for bashKey in bashTags if bashKey in self.class_tag_attrs[record._Type]))
+            self.id_attrs[record.fid] = [getattr(record, attr) for attr in attrs]
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Imported Components: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
+
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -16007,7 +16094,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
             if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
@@ -17867,7 +17954,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         """Returns the group types that this patcher checks"""
         return ['ARMO']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
@@ -17951,7 +18038,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
@@ -18038,7 +18125,7 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         
@@ -18126,7 +18213,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsLeftRing:
@@ -18219,7 +18306,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsNonPlayable:
@@ -18312,7 +18399,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ARMO']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsNonPlayable:
@@ -18450,7 +18537,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     def getTypes(self):
         return ['BOOK']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
 
@@ -18581,7 +18668,7 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
 
@@ -18673,7 +18760,7 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
     def getTypes(self):
         return ['LIGH']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
 
@@ -18777,7 +18864,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
@@ -18880,7 +18967,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         minWeight = self.choiceValues[self.chosen][0]
@@ -18988,7 +19075,7 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
@@ -19107,7 +19194,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ENCH']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
 
         if IsNewest and (record.itemType in [1,2]):
@@ -20676,7 +20763,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     def getTypes(self):
         return ['INGR']
 
-    def buildPatch(self,patchFile,modFile,record,IsNewest):
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         if IsNewest and (record.full):
             for effect in record.effects:

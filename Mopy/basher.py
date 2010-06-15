@@ -5562,6 +5562,7 @@ class CBash_ActorAnimPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 
 class ActorImporter(bosh.ActorImporter,ListPatcher): pass
+class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
 
 class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
 
@@ -5672,6 +5673,7 @@ else:
         CBash_PatchMerger(),
         CBash_AlchemicalCatalogs(),
         CBash_ActorAnimPatcher(),
+        CBash_ActorImporter(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
