@@ -14658,6 +14658,10 @@ class CBash_PatchFile(CBashModFile):
                     #(i.e. len(conflicts) will never equal 1)
                     #The winning record is at position 0, and the last record is the one most overridden
                     conflicts = record.Conflicts()
+##                    if isMerged and (conflicts[0]._ModName == patchFile._ModName):
+##                        record._ModName = patchFile._ModName
+##                        IsNewest = True
+##                    else:
                     IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                     for patcher in sorted(patchers,key=attrgetter('scanOrder')):
                         if iiMode and not patcher.iiMode: continue
@@ -15862,7 +15866,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_attrs = {} #--Names keyed by long fid.
+        self.id_attrs = {}
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.count = {}
@@ -16079,7 +16083,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_animations = {} #--Names keyed by long fid.
+        self.id_animations = {}
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.count = {}
@@ -16439,6 +16443,57 @@ class DeathItemPatcher(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.items()):
             if count: log("* %s: %d" % (type,count))
+class CBash_DeathItemPatcher(CBash_ImportPatcher):
+    """Imports actor death items."""
+    name = _('Import Actors: Death Items')
+    text = _("Import Actor death items from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Actors.DeathItem'
+    count = {}
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_deathItem = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
+                override = record.CopyAsOverride(patchFile)
+                if override:
+                    override.deathItem = self.id_deathItem[record.fid]
+                    count = self.count
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            self.id_deathItem[record.fid] = record.deathItem
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Imported Death Items: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class ImportFactions(ImportPatcher):
