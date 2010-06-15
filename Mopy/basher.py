@@ -5565,6 +5565,7 @@ class ActorImporter(bosh.ActorImporter,ListPatcher): pass
 class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
 
 class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
+class CBash_DeathItemPatcher(bosh.CBash_DeathItemPatcher,ListPatcher): pass
 
 class CellImporter(bosh.CellImporter,ListPatcher): pass
 
@@ -5674,6 +5675,7 @@ else:
         CBash_AlchemicalCatalogs(),
         CBash_ActorAnimPatcher(),
         CBash_ActorImporter(),
+        CBash_DeathItemPatcher(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
