@@ -234,6 +234,29 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * First, Read this readme! Helps to use the search feature of your browser.
   * Second, visit [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]].
 
+== Backing Up =================================================================
+If you are looking to back up your Bash installation, Bash stores files in a variety of locations.
+
+__Overview:__
+  * "Oblivion\Mopy"
+    * Contains Bash itself.
+    * Does not need to be backed up since you can simply reinstall Bash.
+  * "Oblivion\Data\Bash Patches"
+    * Contains various csv files used by the export/import functions.
+    * Only needs backing up if you've exported any csv files that you want to keep.
+  * "Oblivion\Data\Docs"
+    * Contains all the documents from mods installed by BAIN.
+    * Does not typically need to be backed up since you can anneal any packages to reinstall their readmes.
+  * "Oblivion\Data\INI Tweaks"
+    * Contains the various INI tweaks that can be applied by Bash.
+    * Only needs backing up if you have custom INI tweaks you've added.
+  * "Documents\My Games\Oblivion" (same place the Oblivion saves are stored)
+    * Contains bash settings.
+    * Important to backup.
+  * "Oblivion Mods" (one directory prior to Oblivion)
+    * Contains BAIN packages, and other bash settings.
+    * Important to backup.
+
 == Launch Buttons =============================================================
 At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications (if they're installed). You'll also find one or two toggle buttons. 
 
@@ -455,7 +478,7 @@ Bain Conversion Files (BCFs) allow modders to essentially repackage existing arc
   * Add all of the source archives to Bain
   * Create a new project, and rearrange the files until you are satisfied
   * Right-click on the project, and choose "Pack to Archive..."
-  * Name the new archive, and choose whether to use solid compression. Solid compression will improve performance (at the cost of disk space), so it is only really recommended for archives such at Qarl's Texture Pack 3. The name will be used as the default suggestion for the BCF name. If this archive uses solid compression, the converted archive will too.
+  * Name the new archive, and choose whether to use solid compression. Solid compression will result in a smaller file size, but will also reduce performance, so it is only really recommended for large archives that won't need to be annealed very often. The name will be used as the default suggestion for the BCF name. If this archive uses solid compression, the converted archive will too.
   * Set any options on the new archive package that you wish to be initially set whenever the BCF is applied.
   * Select all of the source archives in the Installers Tab, right-click and choose "Create..." under the "Conversions" menu. Select the target archive (that you just created and setup), and name the BCF.
   * Look over the result log, and make sure that it looks alright. If there is a large number of contained files in the BCF, you may have chosen the wrong source or target archive.
