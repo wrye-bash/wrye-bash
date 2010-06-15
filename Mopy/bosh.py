@@ -15331,6 +15331,29 @@ class ImportPatcher(ListPatcher):
         if not self.isActive: return None
         return self.srcClasses
 
+class CBash_ImportPatcher(CBash_ListPatcher):
+    """Subclass for patchers in group Importer."""
+    group = _('Importers')
+    scanOrder = 20
+    editOrder = 20
+    masters = {}
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        CBash_ListPatcher.saveConfig(self,configs)
+        if self.isEnabled:
+            importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
+            configs['ImportedMods'].update(importedMods)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return None
+        return self.srcClasses
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return None
+        return self.srcClasses
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -15956,6 +15979,58 @@ class KFFZPatcher(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
+class CBash_KFFZPatcher(CBash_ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Import Actors: Animations')
+    text = _("Import Actor animations from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Actors.Anims'
+    count = {}
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_animations = {} #--Names keyed by long fid.
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,patchFile,modFile,record,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
+                override = record.CopyAsOverride(patchFile)
+                if override:
+                    override.animations = self.id_animations[record.fid]
+                    count = self.count
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            self.id_animations[record.fid] = record.animations
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Imported Animations: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):

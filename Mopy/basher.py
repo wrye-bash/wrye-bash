@@ -5557,6 +5557,7 @@ class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
 class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 
 class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
+class CBash_ActorAnimPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
 
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 
@@ -5670,6 +5671,7 @@ else:
         CBash_AssortedTweaker(),
         CBash_PatchMerger(),
         CBash_AlchemicalCatalogs(),
+        CBash_ActorAnimPatcher(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
