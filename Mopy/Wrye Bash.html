@@ -42,6 +42,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#CommonProblems">Common Problems</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#PythonComponents">Python Components</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#Help">Help!</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#BackingUp">Backing Up</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#LaunchButtons">Launch Buttons</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ApplicationButtons">Application Buttons</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#BashOptionButtons">Bash Option Buttons</a></p>
@@ -427,9 +428,32 @@
   <p class=list-2>&bull;&nbsp; First, Read this readme! Helps to use the search feature of your browser.
   <p class=list-2>&bull;&nbsp; Second, visit <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash">How To's and FAQs</a>.
   <p class=empty>&nbsp;</p>
+<h2><a name='BackingUp'>Backing Up</a></h2>
+<p>If you are looking to back up your Bash installation, Bash stores files in a variety of locations.
+  <p class=empty>&nbsp;</p>
+<p><B>Overview:</B>
+  <p class=list-2>&bull;&nbsp; "Oblivion\Mopy"
+    <p class=list-3>&bull;&nbsp; Contains Bash itself.
+    <p class=list-3>&bull;&nbsp; Does not need to be backed up since you can simply reinstall Bash.
+  <p class=list-2>&bull;&nbsp; "Oblivion\Data\Bash Patches"
+    <p class=list-3>&bull;&nbsp; Contains various csv files used by the export/import functions.
+    <p class=list-3>&bull;&nbsp; Only needs backing up if you've exported any csv files that you want to keep.
+  <p class=list-2>&bull;&nbsp; "Oblivion\Data\Docs"
+    <p class=list-3>&bull;&nbsp; Contains all the documents from mods installed by BAIN.
+    <p class=list-3>&bull;&nbsp; Does not typically need to be backed up since you can anneal any packages to reinstall their readmes.
+  <p class=list-2>&bull;&nbsp; "Oblivion\Data\INI Tweaks"
+    <p class=list-3>&bull;&nbsp; Contains the various INI tweaks that can be applied by Bash.
+    <p class=list-3>&bull;&nbsp; Only needs backing up if you have custom INI tweaks you've added.
+  <p class=list-2>&bull;&nbsp; "Documents\My Games\Oblivion" (same place the Oblivion saves are stored)
+    <p class=list-3>&bull;&nbsp; Contains bash settings.
+    <p class=list-3>&bull;&nbsp; Important to backup.
+  <p class=list-2>&bull;&nbsp; "Oblivion Mods" (one directory prior to Oblivion)
+    <p class=list-3>&bull;&nbsp; Contains BAIN packages, and other bash settings.
+    <p class=list-3>&bull;&nbsp; Important to backup.
+    <p class=empty>&nbsp;</p>
 <h2><a name='LaunchButtons'>Launch Buttons</a></h2>
 <p>At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications (if they're installed). You'll also find one or two toggle buttons. 
-  <p class=empty>&nbsp;</p>
+    <p class=empty>&nbsp;</p>
 <h3><a name='ApplicationButtons'>Application Buttons</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview:</B>
   <p class=list-2>&bull;&nbsp; Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory or in the directory specified in the bash.ini.
@@ -648,7 +672,7 @@
   <p class=list-2>&bull;&nbsp; Add all of the source archives to Bain
   <p class=list-2>&bull;&nbsp; Create a new project, and rearrange the files until you are satisfied
   <p class=list-2>&bull;&nbsp; Right-click on the project, and choose "Pack to Archive..."
-  <p class=list-2>&bull;&nbsp; Name the new archive, and choose whether to use solid compression. Solid compression will improve performance (at the cost of disk space), so it is only really recommended for archives such at Qarl's Texture Pack 3. The name will be used as the default suggestion for the BCF name. If this archive uses solid compression, the converted archive will too.
+  <p class=list-2>&bull;&nbsp; Name the new archive, and choose whether to use solid compression. Solid compression will result in a smaller file size, but will also reduce performance, so it is only really recommended for large archives that won't need to be annealed very often. The name will be used as the default suggestion for the BCF name. If this archive uses solid compression, the converted archive will too.
   <p class=list-2>&bull;&nbsp; Set any options on the new archive package that you wish to be initially set whenever the BCF is applied.
   <p class=list-2>&bull;&nbsp; Select all of the source archives in the Installers Tab, right-click and choose "Create..." under the "Conversions" menu. Select the target archive (that you just created and setup), and name the BCF.
   <p class=list-2>&bull;&nbsp; Look over the result log, and make sure that it looks alright. If there is a large number of contained files in the BCF, you may have chosen the wrong source or target archive.
@@ -1265,9 +1289,12 @@
   <p class=list-2>&bull;&nbsp; Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)
   <p class=list-2>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Animations: Mod modifies Creature or NPC special Animations list (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles (<a href="#ImportActors">Import Actors</a>). 
   <p class=list-2>&bull;&nbsp; Actors.DeathItem: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.Spells: Mod modifies Creature or NPC Spell list (<a href="#ImportSpells">Import Spells</a>).
+  <p class=list-2>&bull;&nbsp; Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed(<a href="#ImportSpells">Import Spells</a>).
   <p class=list-2>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Body-F: Mod modifies female body definition (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Body-M: Mod modifies male body definition (<a href="#RaceRecords">Race Records</a>).
@@ -1302,7 +1329,7 @@
   <p class=list-2>&bull;&nbsp; R.ChangeSpells: Mod overwrites race spells list(s) (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Mouth: Mod changes mouth/tongue (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Relations: Mod changes race relationships (<a href="#RaceRecords">Race Records</a>).
-  <p class=list-2>&bull;&nbsp; R.Skills: mdo changes race skill bonuses (<a href="#RaceRecords">Race Records</a>).
+  <p class=list-2>&bull;&nbsp; R.Skills: Mod changes race skill bonuses (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Teeth: Mod changes upper/lower teeth (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).
   <p class=list-2>&bull;&nbsp; Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).
@@ -1382,7 +1409,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Actors.Animations: Mod modifies the KFFZ subrecord of NPCs or Creatures.
       <p class=list-4>&bull;&nbsp; (note: direct import rather than merge - this will hopefully be fixed next version (285))
     <p class=list-3>&bull;&nbsp; Actors.AIPackages: Mod modifies the AIPackages lists of NPCs or creatures. 
-      *(merges change likes Import Inventory) (note: some instances in which it does not import for an unknown reason - works 90% or more of the time but sometimes will skip records - hopefully will be fixed in version 285)
+      <p class=list-4>&bull;&nbsp; Merges change likes Import Inventory but for the AIPackage list.
     <p class=list-3>&bull;&nbsp; Actors.DeathItems: Mod modifies Creature or NPC Death Item.
 <p class=list-1>&bull;&nbsp; <B>Usage</B>
   <p class=list-2>&bull;&nbsp; For selected mods, each of the tags will import the related information into the Bashed Patch if necessary. 
@@ -1536,17 +1563,14 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Spells.csv</code>. Note that the <a href="#ExportImportSpellStats">Export/Import Spell Stats</a> command will export files in this format.
   <p class=empty>&nbsp;</p>
 <h3><a name='ImportSpells'>Import Spells</a></h3>
-<p class=list-1>&bull;&nbsp; This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>spellsOnly</code> <a href="#BashTags">tag</a> will appear in the list.
-  <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150; especially when you can't rely on the overhauls being present. 
-  <p class=list-2>&bull;&nbsp; For a mod to override only the spells, the mod must be tagged with <code>spellsOnly</code> and must be merged into the patch (i.e. the mod must <I>not</I> be active when the patch is being built.) 
-<p class=list-1>&bull;&nbsp; <B>Notes</B>
-  <p class=list-2>&bull;&nbsp; Generally later loading source mods will dominate.
-    <p class=list-3>&bull;&nbsp; If an early source replaces a resistance with a weakness, but a later source replaces the resistance with an nurfed resistance; then the patch will have the nurfed resistance but <I>not</I> the weakness.
-    <p class=list-3>&bull;&nbsp; If a source tries to remove anything, but fails because that spell is already present or a later mod has already removed it, then none of the changes from the source will be applied.
-    <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; This option will merge changes to npc, and creature spells lists from the selected mods. Only mods marked with the <code>Actors.Spells</code> or <code>Actors.SpellsForceAdd</code> <a href="#BashTags">tag</a> will appear in the list.
+  <p class=list-2>&bull;&nbsp; Sometimes it's desirable to change only the spells of an actor. This is desirable when modifying the spells of creatures that have been changed by overhauls &#150; especially when you can't rely on the overhauls being present. 
+  <p class=list-2>&bull;&nbsp; For a mod to override only the spells, the mod must be tagged with one of those two tags and must be inactive during build and only imported into the patch (ie if mergeable also tag NoMerge or tag Deactivate to make sure that happens). 
+  <p class=list-2>&bull;&nbsp; Only tag with <code>Actors.SpellsForceAdd</code> if the mod is readding spells that previously in the LO had been removed (ie MMMforOOO.esp or FCOM_Convergence.esp).
+  <p class=empty>&nbsp;</p>
 <hr>
 <p><B>Tweakers</B> tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
-    <p class=empty>&nbsp;</p>
+  <p class=empty>&nbsp;</p>
 <h2><a name='Globals'>Globals</a></h2>
 <p class=list-1>&bull;&nbsp; Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
 <p class=list-1>&bull;&nbsp; <B>Crime: Force Jail:</B> The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
@@ -2240,7 +2264,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='28512122010LojackMetallicowPacificMorrowindWaruddar'>285 [12/12/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]</a></h3>
+<h3><a name='28612122010PacificMorrowindWaruddar'>286 [12/12/2010] [PacificMorrowind,Waruddar]</a></h3>
+<p class=list-1>&bull;&nbsp; Bashed Patch Changes:
+  <p class=list-2>&bull;&nbsp; Tweak Names Armor/Clothes fixed
+  <p class=list-2>&bull;&nbsp; MAO Tweaker fixed to not fail when dealing with unnamed NPCs
+  <p class=list-2>&bull;&nbsp; Actor Spell Importer significantly refactored.
+    <p class=list-3>&bull;&nbsp; SpellsOnly tag replaced with Actors.SpellsForceAdd.
+<p class=list-1>&bull;&nbsp; Import/Export Scripts from/to mod/csv optimized/significantly enhanced.
+<p class=list-1>&bull;&nbsp; Import Prices from cvs file added
+<p class=list-1>&bull;&nbsp; Further CBash Integration:
+  <p class=list-2>&bull;&nbsp; Import/Export Prices to/from mod/csv
+  <p class=empty>&nbsp;</p>
+  <p class=empty>&nbsp;</p>
+<h3><a name='28501062010LojackMetallicowPacificMorrowindWaruddar'>285 [01/06/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch Changes:
   <p class=list-2>&bull;&nbsp; Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
   <p class=list-2>&bull;&nbsp; Export/Import Config buttons added.
