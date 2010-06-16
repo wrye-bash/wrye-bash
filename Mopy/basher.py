@@ -5603,6 +5603,7 @@ class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
 class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
 
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
+class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
 
 class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
 
@@ -5682,7 +5683,7 @@ else:
 ##        CBash_NPCAIPackagePatcher(),
         CBash_CoblExhaustion(),
         CBash_CellImporter(),
-##        CBash_ClothesTweaker(),
+        CBash_ClothesTweaker(),
 ##        CBash_GlobalsTweaker(),
 ##        CBash_GmstTweaker(),
 ##        CBash_GraphicsPatcher(),
