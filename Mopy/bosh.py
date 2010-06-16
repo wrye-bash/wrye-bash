@@ -15940,10 +15940,10 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_attrs = {}
+        self.id_tag_attrs = {}
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
-        self.count = {}
+        self.class_mod_count = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -15985,33 +15985,41 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if(record.fid in self.id_attrs):
-                attrs = reduce(operator.add, (self.class_tag_attrs[record._Type][bashKey] for bashKey in bashTags if bashKey in self.class_tag_attrs[record._Type]))
-                prevAttrs = self.id_attrs[record.fid]
-                recAttrs = [getattr(record, attr) for attr in attrs]
+            if(record.fid in self.id_tag_attrs):
+                attrs = []
+                prevAttrs = []
+                recAttrs = []
+                for bashKey in self.class_tag_attrs[record._Type]:
+                    if bashKey in bashTags: continue
+                    attrs += self.class_tag_attrs[record._Type][bashKey]
+                    tagAttrs = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
+                    prevAttrs += self.id_tag_attrs[record.fid].get(bashKey, tagAttrs)
+                    recAttrs += tagAttrs
                 if recAttrs != prevAttrs:
                     override = record.CopyAsOverride(self.patchFile)
                     if override:
                         for attr, value in zip(attrs, prevAttrs):
                             setattr(override, attr, value)
-                        count = self.count
-                        count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                        class_mod_count = self.class_mod_count
+                        class_mod_count.setdefault(record._Type,{})[GPath(modFile._ModName)] = class_mod_count.setdefault(record._Type,{}).get(GPath(modFile._ModName),0) + 1
                         record.UnloadRecord()
                         record._ModName = override._ModName
         elif GPath(modFile._ModName) in self.srcMods:
-            attrs = reduce(operator.add, (self.class_tag_attrs[record._Type][bashKey] for bashKey in bashTags if bashKey in self.class_tag_attrs[record._Type]))
-            self.id_attrs[record.fid] = [getattr(record, attr) for attr in attrs]
+            for bashKey in self.class_tag_attrs[record._Type]:
+                if bashKey in bashTags:
+                    self.id_tag_attrs.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
 
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        count = self.count
+        class_mod_count = self.class_mod_count
         log.setHeader('=== ' +self.__class__.name)
-        log(_('* Imported Components: %d') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
-        self.count = {}
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
@@ -16175,6 +16183,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
+            if autoKey in bashTags: return
             if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -16639,6 +16648,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
+            if autoKey in bashTags: return
             if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
