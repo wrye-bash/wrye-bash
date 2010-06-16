@@ -14578,7 +14578,9 @@ class CBash_PatchFile(CBashModFile):
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
         if self.indexMGEFs:
-            self.patchers.append(CBash_MGEFIndexer())
+            patcher = CBash_MGEFIndexer()
+            patcher.initPatchFile(self,self.loadMods)
+            self.patchers.append(patcher)
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
             progress(index,_("Preparing\n%s") % patcher.getName())
             patcher.initData(self.type_patchers,SubProgress(progress,index))
@@ -16183,7 +16185,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if autoKey in bashTags: return
+            if self.autoKey in bashTags: return
             if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -16648,7 +16650,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if autoKey in bashTags: return
+            if self.autoKey in bashTags: return
             if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -19553,7 +19555,13 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         ],key=lambda a: a.label.lower())
 
-    #--Patch Phase ------------------------------------------------------------
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        self.patchFile = patchFile
+        for tweak in self.tweaks:
+            tweak.patchFile = patchFile
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -19561,6 +19569,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
             for type in tweak.getTypes():
                 type_patchers.setdefault(type,[]).append(tweak)
 
+    #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
@@ -19755,7 +19764,35 @@ class ClothesTweak(MultiTweakItem):
             (recTypeFlags == myTypeFlags) or
             (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags))
             )
+class CBash_ClothesTweak(CBash_MultiTweakItem):
+    flags = {
+        'hoods':    0x00000002,
+        'shirts':   0x00000004,
+        'pants':    0x00000008,
+        'gloves':   0x00000010,
+        'amulets':  0x00000100,
+        'rings2':   0x00010000,
+        'amulets2': 0x00020000,
+        #--Multi
+        'robes':    0x0000000C,
+        'rings':    0x000000C0,
+        }
 
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self,float,label,tip,key,*choices):
+        CBash_MultiTweakItem.__init__(self,float,label,tip,key,*choices)
+        typeKey = key[:key.find('.')]
+        self.orTypeFlags = typeKey == 'rings'
+        self.typeFlags = self.__class__.flags[typeKey]
+
+    def isMyType(self,record):
+        """Returns true to save record for late processing."""
+        recTypeFlags = int(record.flags) & 0xFFFF
+        myTypeFlags = self.typeFlags
+        return (
+            (recTypeFlags == myTypeFlags) or
+            (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags))
+            )
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):
     """Enforce a max weight for specified clothes."""
@@ -19772,6 +19809,56 @@ class ClothesTweak_MaxWeight(ClothesTweak):
                 keep(record.fid)
                 tweakCount += 1
         log('* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
+
+
+class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
+    """Enforce a max weight for specified clothes."""
+    #--Patch Phase ------------------------------------------------------------
+    scanOrder = 32
+    editOrder = 32
+    name = _('Reweigh Clothes')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self,float,label,tip,key,*choices):
+        CBash_ClothesTweak.__init__(self,float,label,tip,key,*choices)
+        self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
+                         'rings.maxWeight':('IsRightRing','IsLeftRing'),
+                         'hoods.maxWeight':('IsHair',)
+                         }[key]
+        self.count = {}
+
+    #--Patch Phase ------------------------------------------------------------
+    def getTypes(self):
+        return ['CLOT']
+
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired. """
+        count = self.count
+        maxWeight = self.choiceValues[self.chosen][0]
+        
+        if IsNewest and (record.weight > maxWeight) and self.isMyType(record):
+            for attr in self.matchFlags:
+                if(getattr(record, attr)):
+                    break
+            else:
+                return
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.weight = maxWeight
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        count = self.count
+        maxWeight = self.choiceValues[self.chosen][0]
+        log.setHeader('=== %s' % self.label)
+        log(_('* Clothes Reweighed: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class ClothesTweak_Unblock(ClothesTweak):
@@ -19791,6 +19878,53 @@ class ClothesTweak_Unblock(ClothesTweak):
                 keep(record.fid)
                 tweakCount += 1
         log('* %s: %d' % (self.label,tweakCount))
+class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
+    """Unlimited rings, amulets."""
+    scanOrder = 31
+    editOrder = 31
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self,float,label,tip,key):
+        CBash_ClothesTweak.__init__(self,float,label,tip,key)
+        self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
+                         'robes.show.amulets2':('IsHideAmulets',),
+                         'rings.unblock.rings':('IsRightRing','IsLeftRing'),
+                         'gloves.unblock.rings2':('IsHideRings',),
+                         'robes.unblock.pants':('IsLowerBody',)
+                         }[key]
+        self.count = {}
+
+    #--Patch Phase ------------------------------------------------------------
+    def getTypes(self):
+        return ['CLOT']
+
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        count = self.count
+        if record.IsNonPlayable:
+            return
+        if IsNewest and self.isMyType(record):
+            for flag in self.hideFlags:
+                if(getattr(record, flag)):
+                    break
+            else:
+                return
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for attr in self.hideFlags:
+                    setattr(override, attr, False)
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        log.setHeader('=== '+self.label)
+        log(_('* Clothing Pieces Tweaked: %d') % (sum(self.count.values()),))
+        for srcMod in modInfos.getOrdered(self.count.keys()):
+            log('  * %s: %d' % (srcMod.s,self.count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class ClothesTweaker(MultiTweaker):
@@ -19874,6 +20008,80 @@ class ClothesTweaker(MultiTweaker):
         log.setHeader('= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
+class CBash_ClothesTweaker(CBash_MultiTweaker):
+    """Patches clothes in miscellaneous ways."""
+    scanOrder = 31
+    editOrder = 31
+    name = _('Tweak Clothes')
+    text = _("Tweak clothing weight and blocking.")
+    tweaks = sorted([
+        CBash_ClothesTweak_Unblock(False,_("Unlimited Amulets"),
+            _("Wear unlimited number of amulets - but they won't display."),
+            'amulets.unblock.amulets'),
+        CBash_ClothesTweak_Unblock(False,_("Unlimited Rings"),
+            _("Wear unlimited number of rings - but they won't display."),
+            'rings.unblock.rings'),
+        CBash_ClothesTweak_Unblock(False,_("Gloves Show Rings"),
+            _("Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
+            'gloves.unblock.rings2'),
+        CBash_ClothesTweak_Unblock(False,_("Robes Show Pants"),
+            _("Robes will allow pants, greaves, skirts - but they'll clip."),
+            'robes.unblock.pants'),
+        CBash_ClothesTweak_Unblock(False,_("Robes Show Amulets"),
+            _("Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
+            'robes.show.amulets2'),
+        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Amulets"),
+            _("Amulet weight will be capped."),
+            'amulets.maxWeight',
+            (_('0.0'),0),
+            (_('0.1'),0.1),
+            (_('0.2'),0.2),
+            (_('0.5'),0.5),
+            (_('Custom'),0),
+            ),
+        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Rings"),
+            _('Ring weight will be capped.'),
+            'rings.maxWeight',
+            (_('0.0'),0),
+            (_('0.1'),0.1),
+            (_('0.2'),0.2),
+            (_('0.5'),0.5),
+            (_('Custom'),0),
+            ),
+        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Hoods"),
+            _('Hood weight will be capped.'),
+            'hoods.maxWeight',
+            (_('0.2'),0.2),
+            (_('0.5'),0.5),
+            (_('1.0'),1.0),
+            (_('Custom'),0),
+            ),
+        ],key=lambda a: a.label.lower())
+
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        self.patchFile = patchFile
+        for tweak in self.tweaks:
+            tweak.patchFile = patchFile
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for tweak in self.enabledTweaks:
+            for type in tweak.getTypes():
+                type_patchers.setdefault(type,[]).append(tweak)
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        log.setHeader('= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatchLog(log)
+
+
 
 #------------------------------------------------------------------------------
 class GmstTweak(MultiTweakItem):
@@ -20976,6 +21184,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.isActive = (GPath('COBL Main.esm') in loadMods)
         if self.isActive:
             patchFile.indexMGEFs = True
