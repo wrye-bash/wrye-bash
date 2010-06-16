@@ -12049,59 +12049,59 @@ class CELLRecord(BaseRecord):
             else: self.flags = 0x00000001
         elif self.flags: self.flags &= ~0x00000001
     IsInterior = property(get_IsInterior, set_IsInterior)
-    def get_HasWater(self):
+    def get_IsHasWater(self):
         return self.flags != None and (self.flags & 0x00000002) != 0
-    def set_HasWater(self, nValue):
+    def set_IsHasWater(self, nValue):
         if nValue is None: return
         if nValue:
             if self.flags: self.flags |= 0x00000002
             else: self.flags = 0x00000002
         elif self.flags: self.flags &= ~0x00000002
-    HasWater = property(get_HasWater, set_HasWater)
-    def get_InvertFastTravel(self):
+    IsHasWater = property(get_IsHasWater, set_IsHasWater)
+    def get_IsInvertFastTravel(self):
         return self.flags != None and (self.flags & 0x00000004) != 0
-    def set_InvertFastTravel(self, nValue):
+    def set_IsInvertFastTravel(self, nValue):
         if nValue:
             if self.flags: self.flags |= 0x00000004
             else: self.flags = 0x00000004
         elif self.flags: self.flags &= ~0x00000004
-    InvertFastTravel = property(get_InvertFastTravel, set_InvertFastTravel)
-    def get_ForceHideLand(self):
+    IsInvertFastTravel = property(get_IsInvertFastTravel, set_IsInvertFastTravel)
+    def get_IsForceHideLand(self):
         return self.flags != None and (self.flags & 0x00000008) != 0
-    def set_ForceHideLand(self, nValue):
+    def set_IsForceHideLand(self, nValue):
         if nValue is None: return
         if nValue:
             if self.flags: self.flags |= 0x00000008
             else: self.flags = 0x00000008
         elif self.flags: self.flags &= ~0x00000008
-    ForceHideLand = property(get_ForceHideLand, set_ForceHideLand)
-    def get_PublicPlace(self):
+    IsForceHideLand = property(get_IsForceHideLand, set_IsForceHideLand)
+    def get_IsPublicPlace(self):
         return self.flags != None and (self.flags & 0x00000020) != 0
-    def set_PublicPlace(self, nValue):
+    def set_IsPublicPlace(self, nValue):
         if nValue is None: return
         if nValue:
             if self.flags: self.flags |= 0x00000020
             else: self.flags = 0x00000020
         elif self.flags: self.flags &= ~0x00000020
-    PublicPlace = property(get_PublicPlace, set_PublicPlace)
-    def get_HandChanged(self):
+    IsPublicPlace = property(get_IsPublicPlace, set_IsPublicPlace)
+    def get_IsHandChanged(self):
         return self.flags != None and (self.flags & 0x00000040) != 0
-    def set_HandChanged(self, nValue):
+    def set_IsHandChanged(self, nValue):
         if nValue is None: return
         if nValue:
             if self.flags: self.flags |= 0x00000040
             else: self.flags = 0x00000040
         elif self.flags: self.flags &= ~0x00000040
-    HandChanged = property(get_HandChanged, set_HandChanged)
-    def get_BehaveLikeExterior(self):
+    IsHandChanged = property(get_IsHandChanged, set_IsHandChanged)
+    def get_IsBehaveLikeExterior(self):
         return self.flags != None and (self.flags & 0x00000080) != 0
-    def set_BehaveLikeExterior(self, nValue):
+    def set_IsBehaveLikeExterior(self, nValue):
         if nValue is None: return
         if nValue:
             if self.flags: self.flags |= 0x00000080
             else: self.flags = 0x00000080
         elif self.flags: self.flags &= ~0x00000080
-    BehaveLikeExterior = property(get_BehaveLikeExterior, set_BehaveLikeExterior)
+    IsBehaveLikeExterior = property(get_IsBehaveLikeExterior, set_IsBehaveLikeExterior)
     def get_IsDefault(self):
         return (self.music == 0)
     def set_IsDefault(self, nValue):

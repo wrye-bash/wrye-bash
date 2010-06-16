@@ -15552,6 +15552,84 @@ class CellImporter(ImportPatcher):
         log(_("\n=== Cells/Worlds Patched"))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('* %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_CellImporter(CBash_ImportPatcher):
+    """Merges changes to cells (climate, lighting, and water.)"""
+    name = _('Import Cells')
+    text = _("Import cells (climate, lighting, and water) from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')#,'C.Maps')
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    count = {}
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.id_tag_attrs = {}
+        self.count = {}
+        self.tag_attrs = {
+            'C.Climate': ('climate','IsBehaveLikeExterior'),
+            'C.Music': ('music',),
+            'C.Name': ('full',),
+            'C.Owner': ('owner','rank','globalVariable','IsPublicPlace'),
+            'C.Water': ('water','waterHeight','IsHasWater'),
+            'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
+                        'directionalRed','directionalGreen','directionalBlue','unused2',
+                        'fogRed','fogGreen','fogBlue','unused3',
+                        'fogNear','fogFar','directionalXY','directionalZ',
+                        'directionalFade','fogClip'),
+            'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+            }
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CELLS']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if(record.fid in self.id_tag_attrs):
+                attrs = []
+                prevAttrs = []
+                recAttrs = []
+                for bashKey in self.tag_attrs:
+                    if bashKey in bashTags: continue
+                    attrs += self.tag_attrs[bashKey]
+                    tagAttrs = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+                    prevAttrs += self.id_tag_attrs[record.fid].get(bashKey, tagAttrs)
+                    recAttrs += tagAttrs
+                if recAttrs != prevAttrs:
+                    override = record.CopyAsOverride(self.patchFile)
+                    if override:
+                        for attr, value in zip(attrs, prevAttrs):
+                            setattr(override, attr, value)
+                        count = self.count
+                        count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                        record.UnloadRecord()
+                        record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            for bashKey in self.tag_attrs:
+                if bashKey in bashTags:
+                    self.id_tag_attrs.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Cells/Worlds Patched: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class GraphicsPatcher(ImportPatcher):
