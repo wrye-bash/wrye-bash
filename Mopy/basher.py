@@ -5560,6 +5560,7 @@ class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
 class CBash_ActorAnimPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
 
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
+class CBash_NPCAIPackagePatcher(bosh.CBash_NPCAIPackagePatcher,ListPatcher): pass
 
 class ActorImporter(bosh.ActorImporter,ListPatcher): pass
 class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
@@ -5615,6 +5616,7 @@ class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
 class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
 
 class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
+class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
 
 class ListsMerger(bosh.ListsMerger,ListPatcher):
     listLabel = _("Override Delev/Relev Tags")
@@ -5676,6 +5678,8 @@ else:
         CBash_ActorAnimPatcher(),
         CBash_ActorImporter(),
         CBash_DeathItemPatcher(),
+##        CBash_NPCAIPackagePatcher(),
+        CBash_CoblExhaustion(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

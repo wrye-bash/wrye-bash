@@ -14658,14 +14658,10 @@ class CBash_PatchFile(CBashModFile):
                     #(i.e. len(conflicts) will never equal 1)
                     #The winning record is at position 0, and the last record is the one most overridden
                     conflicts = record.Conflicts()
-##                    if isMerged and (conflicts[0]._ModName == patchFile._ModName):
-##                        record._ModName = patchFile._ModName
-##                        IsNewest = True
-##                    else:
                     IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                     for patcher in sorted(patchers,key=attrgetter('scanOrder')):
                         if iiMode and not patcher.iiMode: continue
-                        patcher.buildPatch(self, modFile, record, bashTags, IsNewest)
+                        patcher.buildPatch(modFile, record, bashTags, IsNewest)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -14855,7 +14851,7 @@ class CBash_Patcher:
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(tweak)
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         pass
 
@@ -15243,13 +15239,13 @@ class CBash_MGEFIndexer(CBash_Patcher):
         """Returns the group types that this patcher checks"""
         return ['MGEF']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Indexes magic effect records for other patchers."""
         full = record.full
         eid = record.eid
         if IsNewest and (full and eid):
-            patchFile.mgef_school[eid] = record.school
-            patchFile.mgef_name[eid] = full
+            self.patchFile.mgef_school[eid] = record.school
+            self.patchFile.mgef_name[eid] = full
 
 #------------------------------------------------------------------------------
 class PatchMerger(ListPatcher):
@@ -15908,7 +15904,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
             if(record.fid in self.id_attrs):
@@ -15916,7 +15912,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 prevAttrs = self.id_attrs[record.fid]
                 recAttrs = [getattr(record, attr) for attr in attrs]
                 if recAttrs != prevAttrs:
-                    override = record.CopyAsOverride(patchFile)
+                    override = record.CopyAsOverride(self.patchFile)
                     if override:
                         for attr, value in zip(attrs, prevAttrs):
                             setattr(override, attr, value)
@@ -16098,11 +16094,11 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
             if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.animations = self.id_animations[record.fid]
                     count = self.count
@@ -16311,6 +16307,98 @@ class NPCAIPackagePatcher(ImportPatcher):
         log(_("\n=== AI Package Lists Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
+class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
+    """Merges changes to the AI Packages of Actors."""
+    name = _('Import Actors: AIPackages')
+    text = _("Import Actor AIPackage links from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Actors.AIPackages','Actors.AIPackagesForceAdd')
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.id_Added = {}
+        self.id_Deleted = {}
+        self.id_Moved = {}
+        self.previousPackages = {}
+        self.count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest and (record.fid in self.id_Added or record.fid in self.id_Deleted or record.fid in self.id_Moved):
+            if (GPath(modFile._ModName) in self.srcMods):
+                return
+            merged = record.aiPackages
+            merged += [package for package in self.id_Added.get(record.fid, {}).keys() if package not in merged]
+            merged = [package for package in merged if package not in self.id_Deleted.get(record.fid, {}).keys()]
+                
+            if(record.aiPackages != merged):
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+##                    print override.aiPackages
+##                    print merged
+                    override.aiPackages = merged
+                    count = self.count
+                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            newPackages = record.aiPackages
+            oldPackages = self.previousPackages.get(record.fid, [])
+            if oldPackages == []:
+                oldPackages = newPackages
+                return
+##            merged = [] * len(oldPackages)
+            for oldIndex, oldPackage in enumerate(oldPackages):
+                for newIndex, newPackage in enumerate(newPackages):
+                    if oldPackage == newPackage:
+                        if newIndex == oldIndex:
+                            break
+                        else:
+                            test = self.id_Moved.setdefault(record.fid,{})
+                            test[oldPackage] = (oldIndex, newIndex)
+                            break
+                else:
+                    test = self.id_Deleted.setdefault(record.fid,{})
+                    test[oldPackage] = (oldIndex, oldIndex)
+
+            for newIndex, newPackage in enumerate(newPackages):
+                for oldIndex, oldPackage in enumerate(oldPackages):
+                    if newPackage == oldPackage:
+                        break
+                else:
+                    if newPackage not in self.id_Deleted.get(record.fid, {}):
+                        test = self.id_Added.setdefault(record.fid,{})
+                        test[newPackage] = (newIndex, newIndex)
+            self.previousPackages[record.fid] = newPackages
+        else:
+            self.previousPackages[record.fid] = record.aiPackages
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* AI Package Lists Changed: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
+
 #------------------------------------------------------------------------------
 class DeathItemPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -16470,11 +16558,11 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
             if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.deathItem = self.id_deathItem[record.fid]
                     count = self.count
@@ -18009,14 +18097,14 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         """Returns the group types that this patcher checks"""
         return ['ARMO']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
             return
 
         if IsNewest and (getattr(record, self.hideFlag)):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18093,13 +18181,13 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         if record.IsNonPlayable:
             return
         if IsNewest and (getattr(record, self.hideFlag)):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18180,12 +18268,12 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
         
         if IsNewest and (record.weaponType == 5 and record.reach <= 0):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18268,11 +18356,11 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsLeftRing:
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.IsLeftRing = False
                 override.IsRightRing = True
@@ -18361,7 +18449,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsNonPlayable:
@@ -18370,7 +18458,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
             #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
             if record.IsLeftRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail:
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
                     count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18454,7 +18542,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ARMO']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         if IsNewest and record.IsNonPlayable:
@@ -18463,7 +18551,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
             #If no body flags are set it is probably a token.
             if record.IsLeftRing or record.IsRightRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail or record.IsShield:
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
                     count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18592,7 +18680,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     def getTypes(self):
         return ['BOOK']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
 
@@ -18639,7 +18727,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
                 else:
                     text = reFont1.sub(fontFace,text)
             if text != record.text:
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.text = text
                     count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18723,12 +18811,12 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
     def getTypes(self):
         return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         count = self.count
 
         if IsNewest and not (record.fogNear or record.fogFar or record.fogClip):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fogNear = 0.0001
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -18815,12 +18903,12 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
     def getTypes(self):
         return ['LIGH']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
 
         if IsNewest and (record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.IsFlickers = False
                 override.IsFlickerSlow = False
@@ -18919,7 +19007,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
@@ -18928,7 +19016,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
             for effect in record.effects:
                 if effect.name == 'SEFF':
                     return
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -19022,12 +19110,12 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         minWeight = self.choiceValues[self.chosen][0]
         if IsNewest and (record.weight < minWeight):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = minWeight
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -19130,13 +19218,13 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
         
         if IsNewest and (record.weaponType == 4 and record.weight > maxWeight):
-            override = record.CopyAsOverride(patchFile)
+            override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
                 count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -19249,7 +19337,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
     def getTypes(self):
         return ['ENCH']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
 
         if IsNewest and (record.itemType in [1,2]):
@@ -19259,7 +19347,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
                 cost = max(record.chargeAmount/uses,1)
             amount = cost * uses
             if record.enchantCost != cost or record.chargeAmount != amount:
-                override = record.CopyAsOverride(patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.enchantCost = cost
                     override.chargeAmount = amount
@@ -20813,12 +20901,10 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
              type_patchers.setdefault(type,[]).append(self)
 
     #--Patch Phase ------------------------------------------------------------
-
-    
     def getTypes(self):
         return ['INGR']
 
-    def buildPatch(self,patchFile,modFile,record,bashTags,IsNewest):
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired. """
         if IsNewest and (record.full):
             for effect in record.effects:
@@ -20848,7 +20934,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         def getBook(patchFile, objectId):
             fid = patchFile.MakeShortFid((GPath('Cobl Main.esm'),objectId))
             book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
-            book = book.CopyAsOverride(patchFile)
+            book = book.CopyAsOverride(self.patchFile)
             book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
             return book
         #--Ingredients Catalog
@@ -20994,6 +21080,94 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
         log(_('* Powers Tweaked: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
+    """Modifies most Greater power to work with Cobl's power exhaustion feature."""
+    name = _('Cobl Exhaustion')
+    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
+    autoKey = 'Exhaust'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcFiles = self.getConfigChecked()
+        self.cobl = GPath('Cobl Main.esm')
+        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
+        self.id_exhaustion = {}
+        self.count = {}
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesDir = dirs['patches'].list()
+            if srcPath not in patchesDir: continue
+            self.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['SPEL']
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        aliases = self.patchFile.aliases
+        id_exhaustion = self.id_exhaustion
+        textPath = GPath(textPath)
+        ins = bolt.CsvReader(textPath)
+        reNum = re.compile(r'\d+')
+        for fields in ins:
+            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
+            mod,objectIndex,eid,time = fields[:4]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            id_exhaustion[longid] = int(time)
+        ins.close()
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired. """
+        if IsNewest and (record.spellType == 2):
+            #--Skip this one?
+            duration = self.id_exhaustion.get(record.longFid,0)
+            if not duration: return
+            exhaustId = self.patchFile.MakeShortFid((self.cobl,0x05139B))
+            for effect in record.effects:
+                if effect.name == 'SEFF' and effect.script == exhaustId:
+                    return
+            #--Okay, do it
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = '+'+override.full
+                override.spellType = 3 #--Lesser power
+                effect = override.newEffectsElement()
+                effect.name = 'SEFF'
+                effect.duration = duration
+                effect.full = _("Power Exhaustion")
+                effect.script = exhaustId
+                effect.school = 2
+                effect.visual = null4
+                effect.IsHostile = False
+
+                count = self.count
+                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        count = self.count
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        self.count = {}
 
 #------------------------------------------------------------------------------
 class ListsMerger(SpecialPatcher,ListPatcher):

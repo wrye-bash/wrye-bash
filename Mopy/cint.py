@@ -1,9 +1,10 @@
 from ctypes import *
 import struct
 from os.path import exists
-if(exists(".\\bolt.py")):
+try:
     from bolt import GPath
-
+except:
+    pass
 if(exists(".\\CBash.dll")):
     CBash = CDLL("CBash.dll")
 else:
@@ -58,9 +59,7 @@ class BaseRecord(object):
         masterIndex = int(fid >> 24)
         object = int(fid & 0xFFFFFFL)
         master = CBash.GetModName(self._CollectionIndex, masterIndex)
-        if(exists(".\\bolt.py")):
-            return (GPath(master),object)
-        return (master,object)
+        return (GPath(master),object)
     def set_longFid(self, nValue):
         if nValue is None: return
         if not isinstance(nValue,tuple): return
@@ -107,8 +106,8 @@ class BaseRecord(object):
         CBash.ReadFIDField.restype = c_char_p
         return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 5)
     def set_eid(self, nValue):
-        if nValue is None: return
-        CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 5, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 5)
+        else: CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 5, nValue)
     eid = property(get_eid, set_eid)
     def get_IsDeleted(self):
         return self.flags1 != None and (self.flags1 & 0x00000020) != 0
@@ -338,9 +337,7 @@ class GMSTRecord(object):
         masterIndex = int(fid >> 24)
         object = int(fid & 0xFFFFFFL)
         master = CBash.GetModName(self._CollectionIndex, masterIndex)
-        if(exists(".\\bolt.py")):
-            return (GPath(master),object)
-        return (master,object)
+        return (GPath(master),object)
     def set_longFid(self, nValue):
         if nValue is None: return
         if not isinstance(nValue,tuple): return
@@ -3040,7 +3037,7 @@ class ENCHRecord(BaseRecord):
             return None
         def set_name0(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, cast(nValue, POINTER(c_uint)).contents.value)
         name0 = property(get_name0, set_name0)
         def get_name(self):
             CBash.ReadFIDListField.restype = POINTER(c_char * 4)
@@ -3049,7 +3046,7 @@ class ENCHRecord(BaseRecord):
             return None
         def set_name(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, cast(nValue, POINTER(c_uint)).contents.value)
         name = property(get_name, set_name)
         def get_magnitude(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -3115,13 +3112,13 @@ class ENCHRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 9, nValue)
         school = property(get_school, set_school)
         def get_visual(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10)
             if(retValue): return retValue.contents.value
             return None
         def set_visual(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, cast(nValue, POINTER(c_uint)).contents.value)
         visual = property(get_visual, set_visual)
         def get_flags(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
@@ -3294,7 +3291,7 @@ class SPELRecord(BaseRecord):
             return None
         def set_name0(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, cast(nValue, POINTER(c_uint)).contents.value)
         name0 = property(get_name0, set_name0)
         def get_name(self):
             CBash.ReadFIDListField.restype = POINTER(c_char * 4)
@@ -3303,7 +3300,7 @@ class SPELRecord(BaseRecord):
             return None
         def set_name(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, cast(nValue, POINTER(c_uint)).contents.value)
         name = property(get_name, set_name)
         def get_magnitude(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -3369,13 +3366,13 @@ class SPELRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 9, nValue)
         school = property(get_school, set_school)
         def get_visual(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype =POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10)
             if(retValue): return retValue.contents.value
             return None
         def set_visual(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, cast(nValue, POINTER(c_uint)).contents.value)
         visual = property(get_visual, set_visual)
         def get_flags(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
@@ -4964,7 +4961,7 @@ class INGRRecord(BaseRecord):
             return None
         def set_name0(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, cast(nValue, POINTER(c_uint)).contents.value)
         name0 = property(get_name0, set_name0)
         def get_name(self):
             CBash.ReadFIDListField.restype = POINTER(c_char * 4)
@@ -4973,7 +4970,7 @@ class INGRRecord(BaseRecord):
             return None
         def set_name(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, cast(nValue, POINTER(c_uint)).contents.value)
         name = property(get_name, set_name)
         def get_magnitude(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -5039,13 +5036,13 @@ class INGRRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 9, nValue)
         school = property(get_school, set_school)
         def get_visual(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10)
             if(retValue): return retValue.contents.value
             return None
         def set_visual(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, cast(nValue, POINTER(c_uint)).contents.value)
         visual = property(get_visual, set_visual)
         def get_flags(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
@@ -9219,7 +9216,7 @@ class ALCHRecord(BaseRecord):
             return None
         def set_name0(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, cast(nValue, POINTER(c_uint)).contents.value)
         name0 = property(get_name0, set_name0)
         def get_name(self):
             CBash.ReadFIDListField.restype = POINTER(c_char * 4)
@@ -9228,7 +9225,7 @@ class ALCHRecord(BaseRecord):
             return None
         def set_name(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, cast(nValue, POINTER(c_uint)).contents.value)
         name = property(get_name, set_name)
         def get_magnitude(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -9294,13 +9291,13 @@ class ALCHRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 9, nValue)
         school = property(get_school, set_school)
         def get_visual(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10)
             if(retValue): return retValue.contents.value
             return None
         def set_visual(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, cast(nValue, POINTER(c_uint)).contents.value)
         visual = property(get_visual, set_visual)
         def get_flags(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
@@ -9531,7 +9528,7 @@ class SGSTRecord(BaseRecord):
             return None
         def set_name0(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 1, cast(nValue, POINTER(c_uint)).contents.value)
         name0 = property(get_name0, set_name0)
         def get_name(self):
             CBash.ReadFIDListField.restype = POINTER(c_char * 4)
@@ -9540,7 +9537,7 @@ class SGSTRecord(BaseRecord):
             return None
         def set_name(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, cast(nValue, POINTER(c_uint)).contents.value)
         name = property(get_name, set_name)
         def get_magnitude(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -9606,13 +9603,13 @@ class SGSTRecord(BaseRecord):
             CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 9, nValue)
         school = property(get_school, set_school)
         def get_visual(self):
-            CBash.ReadFIDListField.restype = POINTER(c_uint)
+            CBash.ReadFIDListField.restype = POINTER(c_char * 4)
             retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10)
             if(retValue): return retValue.contents.value
             return None
         def set_visual(self, nValue):
             if nValue is None: return
-            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, nValue)
+            CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 10, cast(nValue, POINTER(c_uint)).contents.value)
         visual = property(get_visual, set_visual)
         def get_flags(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
@@ -19320,9 +19317,7 @@ class CBashModFile(object):
         masterIndex = int(fid >> 24)
         object = int(fid & 0xFFFFFFL)
         master = CBash.GetModName(self._CollectionIndex, masterIndex)
-        if(exists(".\\bolt.py")):
-            return (GPath(master),object)
-        return (master,object)
+        return (GPath(master),object)
     def MakeShortFid(self, longFid):
         if not isinstance(longFid, tuple): return longFid
         fid = CBash.GetCorrectedFID(self._CollectionIndex, longFid[0].s, longFid[1])
