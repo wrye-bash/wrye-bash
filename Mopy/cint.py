@@ -204,6 +204,8 @@ class TES4Record(object):
     def __init__(self, CollectionIndex, ModName):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+    def UnloadRecord(self):
+        pass
     def get_flags1(self):
         CBash.ReadTES4Field.restype = POINTER(c_uint)
         retValue = CBash.ReadTES4Field(self._CollectionIndex, self._ModName, 2)
@@ -319,6 +321,8 @@ class GMSTRecord(object):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
         self._recordID = recordID
+    def UnloadRecord(self):
+        pass
     def DeleteRecord(self):
         CBash.DeleteGMSTRecord(self._CollectionIndex, self._ModName, self._recordID)
         return
