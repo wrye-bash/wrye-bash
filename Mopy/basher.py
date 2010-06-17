@@ -5609,6 +5609,7 @@ class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
 class CBash_GlobalsTweaker(bosh.CBash_GlobalsTweaker,TweakPatcher): pass
 
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
+class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
 
@@ -5686,7 +5687,7 @@ else:
         CBash_CellImporter(),
         CBash_ClothesTweaker(),
         CBash_GlobalsTweaker(),
-##        CBash_GmstTweaker(),
+        CBash_GmstTweaker(),
 ##        CBash_GraphicsPatcher(),
 ##        CBash_ImportFactions(),
 ##        CBash_ImportInventory(),
