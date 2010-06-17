@@ -19637,6 +19637,34 @@ class GlobalsTweak(MultiTweakItem):
                 record.value = value
                 keep(record.fid)
         log('* %s set to: %4.2f' % (self.label,value))
+class CBash_GlobalsTweak(CBash_MultiTweakItem):
+    """Sets a global to specified value"""
+    scanOrder = 29
+    editOrder = 29
+    #--Config Phase -----------------------------------------------------------
+    def getTypes(self):
+        return ['GLOB']
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired. """
+        if IsNewest and (record.eid.lower() == self.key):
+            value = self.value = self.choiceValues[self.chosen][0]
+            if record.value != value:
+                self.count = 1
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.value = value
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        if self.count:
+            log('  * %s set to: %4.2f' % (self.label,self.value))
+
+
 
 #------------------------------------------------------------------------------
 class GlobalsTweaker(MultiTweaker):
@@ -19732,6 +19760,90 @@ class GlobalsTweaker(MultiTweaker):
         log.setHeader('= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
+class CBash_GlobalsTweaker(CBash_MultiTweaker):
+    """Select values to set various globals to."""
+    scanOrder = 29
+    editOrder = 29
+    name = _('Globals')
+    text = _("Set globals to various values")
+    tweaks = sorted([
+        CBash_GlobalsTweak(False,_("Timescale"),
+            _("Timescale will be set to:"),
+            'timescale',
+            (_('1'),1),
+            (_('8'),8),
+            (_('10'),10),
+            (_('12'),12),
+            (_('18'),18),
+            (_('24'),24),
+            (_('[30]'),30),
+            (_('40'),40),
+            (_('Custom'),0),
+            ),
+        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Stealing Penalty"),
+            _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            'tgpricesteal',
+            (_('100'),100),
+            (_('150'),150),
+            (_('[200]'),200),
+            (_('300'),300),
+            (_('400'),400),
+            (_('Custom'),0),
+            ),
+        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Killing Penalty"),
+            _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            'tgpriceperkill',
+            (_('250'),250),
+            (_('500'),500),
+            (_('[1000]'),1000),
+            (_('1500'),1500),
+            (_('2000'),2000),
+            (_('Custom'),0),
+            ),
+        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Attacking Penalty"),
+            _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            'tgpriceattack',
+            (_('100'),100),
+            (_('250'),250),
+            (_('[500]'),500),
+            (_('750'),750),
+            (_('1000'),1000),
+            (_('Custom'),0),
+            ),
+        CBash_GlobalsTweak(False,_("Crime: Force Jail"),
+            _("The amount of Bounty at which a jail sentence is mandatory"),
+            'crimeforcejail',
+            (_('1000'),1000),
+            (_('2500'),2500),
+            (_('[5000]'),5000),
+            (_('7500'),7500),
+            (_('10000'),10000),
+            (_('Custom'),0),
+            ),
+        ],key=lambda a: a.label.lower())
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        self.patchFile = patchFile
+        for tweak in self.tweaks:
+            tweak.patchFile = patchFile
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for tweak in self.enabledTweaks:
+            for type in tweak.getTypes():
+                type_patchers.setdefault(type,[]).append(tweak)
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        log.setHeader('= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatchLog(log)
+
 
 #------------------------------------------------------------------------------
 class ClothesTweak(MultiTweakItem):
