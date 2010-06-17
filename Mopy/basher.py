@@ -5606,6 +5606,7 @@ class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
 
 class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
+class CBash_GlobalsTweaker(bosh.CBash_GlobalsTweaker,TweakPatcher): pass
 
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 
@@ -5684,7 +5685,7 @@ else:
         CBash_CoblExhaustion(),
         CBash_CellImporter(),
         CBash_ClothesTweaker(),
-##        CBash_GlobalsTweaker(),
+        CBash_GlobalsTweaker(),
 ##        CBash_GmstTweaker(),
 ##        CBash_GraphicsPatcher(),
 ##        CBash_ImportFactions(),
