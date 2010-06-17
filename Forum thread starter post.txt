@@ -2,7 +2,7 @@ Download: [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] 
 Readme: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (at time a fair bit outdated... most up to date readme in the download - the file named Wrye Bash.html in the mopy folder)
 Wrye Bash Wiki: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 Screenshots: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-Previous Topic: [url=http://forums.bethsoft.com/index.php?/topic/1094021-relz-wrye-bash-thread-43/][RELZ] Wrye Bash #43[/url]
+Previous Topic: [url=http://forums.bethsoft.com/index.php?/topic/1095482-relz-wrye-bash-thread-44/][RELZ] Wrye Bash #44[/url]
 Requirements
 Python 2.5.4 and wxpython 2.8.7.1 ansi (the old "official" setup) - if using this best to just download the Wrye Python 01 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 or
@@ -12,34 +12,38 @@ or
 Wrye Bash has a lot of features. I mean a LOT. It's like twenty tools rolled into one. It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has. [s]Except installation. It's the "everything but installation" tool![/s] Now with installation too! 
 
 Bain
-* Install/uninstall mods from zip, 7z, archives, etc. No OMODs required!
+[list][*]Install/uninstall mods from zip, 7z, archives, etc. No OMODs required!
+[/list]
 
 Bashed Patchers
-* Configure and build a custom patch mod to...
-* Merge leveled lists
-* Merge TNR faces over other changes to npcs
-* Merge race eye/hair/body/voice changes over other changes to races
-* Tweak clothes: Show amulets with robes, zero weight rings and amulets, etc.
-* Tweak misc. GMST settings.
+[list][*]Configure and build a custom patch mod to...
+[*]Merge leveled lists
+[*]Merge TNR faces over other changes to npcs
+[*]Merge race eye/hair/body/voice changes over other changes to races
+[*]Tweak clothes: Show amulets with robes, zero weight rings and amulets, etc.
+[*]Tweak misc. GMST settings.
+[/list]
 
 Repair/Edit Stuff
-* Repair animation bug (various animations freezing)
-* Repair hair bug (game ctds when viewing race menu after removing a hair mod)
-* Remove spells from spell list
-* Rename created spells, enchanted items
-* Remove bloating (one use of this reduced a 158 Mb savegame to 2.5 Mb)
-* Import NPC levels into an existing savegame (essential when switching to/from OOO, Frans, etc.)
-* Import PC face from other savegame or any mod (e.g., import any of TNR's faces into game)
-* Easily generate html readmes using wiki-like syntax.
+[list][*]Repair animation bug (various animations freezing)
+[*]Repair hair bug (game ctds when viewing race menu after removing a hair mod)
+[*]Remove spells from spell list
+[*]Rename created spells, enchanted items
+[*]Remove bloating (one use of this reduced a 158 Mb savegame to 2.5 Mb)
+[*]Import NPC levels into an existing savegame (essential when switching to/from OOO, Frans, etc.)
+[*]Import PC face from other savegame or any mod (e.g., import any of TNR's faces into game)
+[*]Easily generate html readmes using wiki-like syntax.
+[/list]
 
 Mod, Savegame, Screenshot Management
-* Auto-Ghost mods to reduce espm thrashing.
-* Launch Oblivion and TESCS (with or without OBSE).
-* Mod, save, screenshot file management. (Rename, duplicate, etc.)
-* Save Profiles: Have different sets of saves for different npcs with different loadlists, etc.
-* Screenshots: View, delete, batch rename, open, etc.
-* Readme Browser: Quickly view readme of currently selected mod.
-* Quick/Autoswap between SI and pre-SI versions of Oblivion.esm.
+[list][*]Auto-Ghost mods to reduce espm thrashing.
+[*]Launch Oblivion and TESCS (with or without OBSE).
+[*]Mod, save, screenshot file management. (Rename, duplicate, etc.)
+[*]Save Profiles: Have different sets of saves for different npcs with different loadlists, etc.
+[*]Screenshots: View, delete, batch rename, open, etc.
+[*]Readme Browser: Quickly view readme of currently selected mod.
+[*]Quick/Autoswap between SI and pre-SI versions of Oblivion.esm.
+[/list]
 
 Installation: First time installation is still a little difficult, but later updates are easy (just unzip latest version into Oblivion directory). However, for first time installation you have to preinstall two other packages and then (sometimes) tweak a shortcut. You can't just download and press the pretty buttons -- you have to follow the readme instructions. If you have followed the instructions and still have problems, post the bugdump. If you've havent followed the instructions and whine that it won't work without posting the bugdump, Wrye will bite your fingers off (it's a monkey thing). Otherwise he's quite helpful.
 
@@ -49,20 +53,22 @@ Linking: If you'd like to link to Bash from somewhere else, please do! But be su
 You should add a few more things to that list, Wrye. Almost none of the items from my list of the most compelling features in Wrye Bash are on your list:
 
 For everyone:
-* Accurately and quickly managing your load order (correctly sorts ESMs)
-* Locking your load order (so updated mods automatically load in the exact same spot as the old version)
-* Checking your load list for problems (missing mod dependencies)
-* Checking savegames against load list and syncing load list to savegame
-* Cleaning bloated savegames
-* Archive Invalidation (now supports BSA-alteration BSA-redirection method)
-* Replacers (install/remove texture replacement mods -- really any mod, too)
-* Change master entry in savegame (to avoid losing items, quest progress, etc. when the name of a mod has changed)
+[list][*]Accurately and quickly managing your load order (correctly sorts ESMs)
+[*]Locking your load order (so updated mods automatically load in the exact same spot as the old version)
+[*]Checking your load list for problems (missing mod dependencies)
+[*]Checking savegames against load list and syncing load list to savegame
+[*]Cleaning bloated savegames
+[*]Archive Invalidation (now supports BSA-alteration BSA-redirection method)
+[*]Replacers (install/remove texture replacement mods -- really any mod, too)
+[*]Change master entry in savegame (to avoid losing items, quest progress, etc. when the name of a mod has changed)
+[/list]
 
 For mod-makers:
-* Add a master to a plugin (for mod de-isolation)
-* Change master entry in plugin (for mod de-isolation)
-* Locking your load order (so changes you make don't move the plugin to the end of your load list)
-* Savegame profiles (so you can easily test with only your mod active, then easily switch back to playing with all your mods active)
+[list][*]Add a master to a plugin (for mod de-isolation)
+[*]Change master entry in plugin (for mod de-isolation)
+[*]Locking your load order (so changes you make don't move the plugin to the end of your load list)
+[*]Savegame profiles (so you can easily test with only your mod active, then easily switch back to playing with all your mods active)
+[/list]
 [/quote]
 
 Latest Version:
