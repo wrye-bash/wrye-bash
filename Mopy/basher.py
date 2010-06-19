@@ -5555,6 +5555,7 @@ class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
     listLabel = _("Mergeable Mods")
 # Patchers 20 ------------------------------------------------------------------
 class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
+class CBash_GraphicsPatcher(bosh.CBash_GraphicsPatcher,ListPatcher): pass
 
 class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
 class CBash_ActorAnimPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
@@ -5688,7 +5689,7 @@ else:
         CBash_ClothesTweaker(),
         CBash_GlobalsTweaker(),
         CBash_GmstTweaker(),
-##        CBash_GraphicsPatcher(),
+        CBash_GraphicsPatcher(),
 ##        CBash_ImportFactions(),
 ##        CBash_ImportInventory(),
 ##        CBash_ImportSpells(),
