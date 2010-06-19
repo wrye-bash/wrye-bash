@@ -14851,7 +14851,7 @@ class CBash_Patcher:
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(tweak)
+            type_patchers.setdefault(type,[]).append(self)
 
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
@@ -15569,7 +15569,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
-        self.id_tag_attrs = {}
+        self.id_tag_values = {}
         self.count = {}
         self.tag_attrs = {
             'C.Climate': ('climate','IsBehaveLikeExterior'),
@@ -15598,20 +15598,20 @@ class CBash_CellImporter(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if(record.fid in self.id_tag_attrs):
+            if(record.fid in self.id_tag_values):
                 attrs = []
-                prevAttrs = []
-                recAttrs = []
+                prevValues = []
+                recValues = []
                 for bashKey in self.tag_attrs:
                     if bashKey in bashTags: continue
                     attrs += self.tag_attrs[bashKey]
-                    tagAttrs = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
-                    prevAttrs += self.id_tag_attrs[record.fid].get(bashKey, tagAttrs)
-                    recAttrs += tagAttrs
-                if recAttrs != prevAttrs:
+                    tagValues = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+                    prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
+                    recValues += tagValues
+                if recValues != prevValues:
                     override = record.CopyAsOverride(self.patchFile)
                     if override:
-                        for attr, value in zip(attrs, prevAttrs):
+                        for attr, value in zip(attrs, prevValues):
                             setattr(override, attr, value)
                         count = self.count
                         count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
@@ -15620,7 +15620,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
         elif GPath(modFile._ModName) in self.srcMods:
             for bashKey in self.tag_attrs:
                 if bashKey in bashTags:
-                    self.id_tag_attrs.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+                    self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -15668,7 +15668,7 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreEfsh,):
             recAttrs_class[recClass] = ('particleTexture','fillTexture')
         #--Needs Longs
-        self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
+        self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -15777,6 +15777,98 @@ class GraphicsPatcher(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+class CBash_GraphicsPatcher(CBash_ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Import Graphics')
+    text = _("Import graphics (models, icons, etc.) from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Graphics'
+    count = {}
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_values = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.class_mod_count = {}
+        class_attrs = self.class_attrs = {}
+        model = ('modPath','modb','modt_p')
+        icon = ('iconPath',)
+        class_attrs['BSGN'] = icon
+        class_attrs['LSCR'] = icon
+        class_attrs['CLAS'] = icon
+        class_attrs['LTEX'] = icon
+        class_attrs['REGN'] = icon
+        class_attrs['ACTI'] = model
+        class_attrs['DOOR'] = model
+        class_attrs['FLOR'] = model
+        class_attrs['FURN'] = model
+        class_attrs['GRAS'] = model
+        class_attrs['STAT'] = model        
+        class_attrs['ALCH'] = icon + model
+        class_attrs['AMMO'] = icon + model
+        class_attrs['APPA'] = icon + model
+        class_attrs['BOOK'] = icon + model
+        class_attrs['INGR'] = icon + model
+        class_attrs['KEYM'] = icon + model
+        class_attrs['LIGH'] = icon + model
+        class_attrs['MISC'] = icon + model
+        class_attrs['SGST'] = icon + model
+        class_attrs['SLGM'] = icon + model
+        class_attrs['WEAP'] = icon + model
+        class_attrs['TREE'] = icon + model
+
+        class_attrs['ARMO'] = ('maleBody.modPath', 'maleBody.modb', 'maleBody.modt_p',
+                               'maleWorld.modPath', 'maleWorld.modb', 'maleWorld.modt_p',
+                               'maleIconPath',
+                               'femaleBody.modPath', 'femaleBody.modb', 'femaleBody.modt_p',
+                               'femaleWorld.modPath', 'femaleWorld.modb', 'femaleWorld.modt_p',
+                               'femaleIconPath', 'flags')
+        class_attrs['CLOT'] = class_attrs['ARMO']
+
+        class_attrs['CREA'] = model + ('bodyParts', 'nift_p','bloodSprayPath','bloodDecalPath')
+        class_attrs['MGEF'] = icon + model + ('effectShader','enchantEffect','light')
+        class_attrs['EFSH'] = ('particleTexture','fillTexture')
+        
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if(record.fid in self.id_values):
+                if self.autoKey in bashTags:
+                    return
+                attrs = self.class_attrs[record._Type]
+                prevValues = self.id_values[record.fid]
+                recValues = [getattr_deep(record,attr) for attr in attrs]
+                if recValues != prevValues:
+                    override = record.CopyAsOverride(self.patchFile)
+                    if override:
+                        for attr, value in zip(attrs, prevValues):
+                            setattr_deep(override,attr,value)
+                        class_mod_count = self.class_mod_count
+                        class_mod_count.setdefault(record._Type,{})[GPath(modFile._ModName)] = class_mod_count.setdefault(record._Type,{}).get(GPath(modFile._ModName),0) + 1
+                        record.UnloadRecord()
+                        record._ModName = override._ModName
+        elif GPath(modFile._ModName) in self.srcMods:
+            self.id_values[record.fid] = [getattr_deep(record,attr) for attr in self.class_attrs[record._Type]]
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
@@ -15931,7 +16023,7 @@ class ActorImporter(ImportPatcher):
 
 
 class CBash_ActorImporter(CBash_ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
+    """Merges changes to actors."""
     name = _('Import Actors')
     text = _("Import Actor components from source mods.")
     tip = text
@@ -15942,7 +16034,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_tag_attrs = {}
+        self.id_tag_values = {}
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
@@ -15974,11 +16066,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 }
         
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -15987,20 +16074,20 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if(record.fid in self.id_tag_attrs):
+            if(record.fid in self.id_tag_values):
                 attrs = []
-                prevAttrs = []
-                recAttrs = []
+                prevValues = []
+                recValues = []
                 for bashKey in self.class_tag_attrs[record._Type]:
                     if bashKey in bashTags: continue
                     attrs += self.class_tag_attrs[record._Type][bashKey]
-                    tagAttrs = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
-                    prevAttrs += self.id_tag_attrs[record.fid].get(bashKey, tagAttrs)
-                    recAttrs += tagAttrs
-                if recAttrs != prevAttrs:
+                    tagValues = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
+                    prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
+                    recValues += tagValues
+                if recValues != prevValues:
                     override = record.CopyAsOverride(self.patchFile)
                     if override:
-                        for attr, value in zip(attrs, prevAttrs):
+                        for attr, value in zip(attrs, prevValues):
                             setattr(override, attr, value)
                         class_mod_count = self.class_mod_count
                         class_mod_count.setdefault(record._Type,{})[GPath(modFile._ModName)] = class_mod_count.setdefault(record._Type,{}).get(GPath(modFile._ModName),0) + 1
@@ -16009,7 +16096,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         elif GPath(modFile._ModName) in self.srcMods:
             for bashKey in self.class_tag_attrs[record._Type]:
                 if bashKey in bashTags:
-                    self.id_tag_attrs.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
+                    self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -18522,8 +18609,8 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     """Sets all clothes to playable"""
-    scanOrder = 31 #Run before the show clothing tweaks
-    editOrder = 31
+    scanOrder = 29 #Run before the show clothing tweaks
+    editOrder = 29
     name = _('Playable Clothes')
 
     #--Config Phase -----------------------------------------------------------
@@ -18615,8 +18702,8 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     """Sets all armors to be playable"""
-    scanOrder = 31 #Run before the show armor tweaks
-    editOrder = 31
+    scanOrder = 29 #Run before the show armor tweaks
+    editOrder = 29
     name = _('Playable Armor')
 
     #--Config Phase -----------------------------------------------------------
