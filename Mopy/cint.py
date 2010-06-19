@@ -32,6 +32,7 @@ class Model(object):
     def __init__(self, CollectionIndex, ModName, recordID, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
         self._listIndex = listIndex
     def get_modPath(self):
@@ -67,6 +68,7 @@ class Item(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -92,6 +94,7 @@ class Condition(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -273,6 +276,7 @@ class Effect(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -406,6 +410,7 @@ class Faction(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -444,6 +449,7 @@ class BaseRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
     def LoadRecord(self):
         CBash.LoadRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -623,6 +629,7 @@ class TES4Record(object):
     def __init__(self, CollectionIndex, ModName):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
     def UnloadRecord(self):
         pass
     def get_flags1(self):
@@ -742,6 +749,7 @@ class GMSTRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
         self._recordID = recordID
     def UnloadRecord(self):
         pass
@@ -3812,7 +3820,10 @@ class CREARecord(BaseRecord):
         if nFactions is None or nFactions == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 20)
         else:
             diffLength = len(nFactions) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 20)
-            nValues = [(faction.faction,faction.rank,faction.unused1) for faction in nFactions]
+            if isinstance(nFactions[0], tuple):
+                nValues = nFactions
+            else:
+                nValues = [(faction.faction,faction.rank,faction.unused1) for faction in nFactions]
             while(diffLength < 0):
                 CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 20)
                 diffLength += 1
@@ -10156,7 +10167,10 @@ class NPC_Record(BaseRecord):
         if nFactions is None or nFactions == []:  CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
         else:
             diffLength = len(nFactions) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 17)
-            nValues = [(faction.faction,faction.rank,faction.unused1) for faction in nFactions]
+            if isinstance(nFactions[0], tuple):
+                nValues = nFactions
+            else:
+                nValues = [(faction.faction,faction.rank,faction.unused1) for faction in nFactions]
             while(diffLength < 0):
                 CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 17)
                 diffLength += 1
@@ -18105,6 +18119,7 @@ class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
+        self.GName = GPath(ModName)
     def MakeLongFid(self, fid):
         if(fid == None): return (None,None)
         masterIndex = int(fid >> 24)

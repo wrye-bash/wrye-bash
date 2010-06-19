@@ -5573,6 +5573,7 @@ class CellImporter(bosh.CellImporter,ListPatcher): pass
 class CBash_CellImporter(bosh.CBash_CellImporter,ListPatcher): pass
 
 class ImportFactions(bosh.ImportFactions,ListPatcher): pass
+class CBash_ImportFactions(bosh.CBash_ImportFactions,ListPatcher): pass
 
 class ImportRelations(bosh.ImportRelations,ListPatcher): pass
 
@@ -5690,7 +5691,7 @@ else:
         CBash_GlobalsTweaker(),
         CBash_GmstTweaker(),
         CBash_GraphicsPatcher(),
-##        CBash_ImportFactions(),
+        CBash_ImportFactions(),
 ##        CBash_ImportInventory(),
 ##        CBash_ImportSpells(),
 ##        CBash_TweakActors(),
@@ -8521,7 +8522,10 @@ class Mod_Factions_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Factions"))
         try:
-            actorFactions = bosh.ActorFactions()
+            if CBash:
+                actorFactions = bosh.CBash_ActorFactions()
+            else:
+                actorFactions = bosh.ActorFactions()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
