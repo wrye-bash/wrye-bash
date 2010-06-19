@@ -11515,67 +11515,33 @@ class ActorFactions:
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            loadFactory= LoadFactory(False,MreFact)
-            for modName in (modInfo.header.masters + [modInfo.name]):
-                if modName in self.gotFactions: continue
-                modFile = ModFile(modInfos[modName],loadFactory)
-                modFile.load(True)
-                mapper = modFile.getLongMapper()
-                for record in modFile.FACT.getActiveRecords():
-                    self.id_eid[mapper(record.fid)] = record.eid
-                self.gotFactions.add(modName)
-        else:
-            for modName in (modInfo.header.masters + [modInfo.name]):
-                if modName in self.gotFactions: continue
-                modInfo = modInfos[modName]
-                Current = Collection(ModsPath=dirs['mods'].s)
-                modFile = Current.addMod(modInfo.getPath().stail)
-                Current.minimalLoad(LoadMasters=False)
-            
-                for record in modFile.FACT:
-                    self.id_eid[record.longFid] = record.eid
-                    record.UnloadRecord()
-                self.gotFactions.add(modName)
+        loadFactory= LoadFactory(False,MreFact)
+        for modName in (modInfo.header.masters + [modInfo.name]):
+            if modName in self.gotFactions: continue
+            modFile = ModFile(modInfos[modName],loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for record in modFile.FACT.getActiveRecords():
+                self.id_eid[mapper(record.fid)] = record.eid
+            self.gotFactions.add(modName)
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            self.readFactionEids(modInfo)
-            type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
-            loadFactory= LoadFactory(False,*types)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for type in (x.classType for x in types):
-                typeBlock = modFile.tops.get(type,None)
-                if not typeBlock: continue
-                id_factions = type_id_factions[type]
-                for record in typeBlock.getActiveRecords():
-                    longid = mapper(record.fid)
-                    if record.factions:
-                        id_eid[longid] = record.eid
-                        id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
-        else:
-            self.readFactionEids(modInfo)
-            type_id_factions,id_eid = self.type_id_factions,self.id_eid
-
-            Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-
-            types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
-            mapper = modFile.MakeLongFid
-            for type,block in types.iteritems():
-                id_factions = type_id_factions[type]
-                for record in block:
-                    longid = record.longFid
-                    if record.factions:
-                        id_eid[longid] = record.eid
-                        id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
-                    record.UnloadRecord()
+        self.readFactionEids(modInfo)
+        type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
+        loadFactory= LoadFactory(False,*types)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in (x.classType for x in types):
+            typeBlock = modFile.tops.get(type,None)
+            if not typeBlock: continue
+            id_factions = type_id_factions[type]
+            for record in typeBlock.getActiveRecords():
+                longid = mapper(record.fid)
+                if record.factions:
+                    id_eid[longid] = record.eid
+                    id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
@@ -11655,7 +11621,121 @@ class ActorFactions:
                     factionEid = id_eid.get(faction,'Unknown')
                     out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
+class CBash_ActorFactions:
+    """Factions for npcs and creatures with functions for importing/exporting from/to mod/text file."""
+    def __init__(self,aliases=None):
+        """Initialize."""
+        self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions = type_id_factions[type][longid]
+        self.id_eid = {}
+        self.aliases = aliases or {}
+        self.gotFactions = set()
 
+    def readFactionEids(self,modInfo):
+        """Extracts faction editor ids from modInfo and its masters."""
+        Current = Collection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=True)
+        for modFile in Current:
+            if modFile._ModName in self.gotFactions: continue
+            for record in modFile.FACT:
+                self.id_eid[record.longFid] = record.eid
+                record.UnloadRecord()
+            self.gotFactions.add(modFile._ModName)
+
+    def readFromMod(self,modInfo):
+        """Imports eids from specified mod."""
+        self.readFactionEids(modInfo)
+        type_id_factions,id_eid = self.type_id_factions,self.id_eid
+
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
+        mapper = modFile.MakeLongFid
+        for type,block in types.iteritems():
+            id_factions = type_id_factions[type]
+            for record in block:
+                longid = record.longFid
+                if record.factions:
+                    id_eid[longid] = record.eid
+                    id_factions[longid] = [(mapper(x.faction),x.rank,None) for x in record.factions]
+                record.UnloadRecord()
+
+    def writeToMod(self,modInfo):
+        """Exports eids to specified mod."""
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        changed = {'CREA':0,'NPC_':0}
+        types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
+        mapper = modFile.MakeLongFid
+        shortMapper = modFile.MakeShortFid
+        for type,block in types.iteritems():
+            id_factions = type_id_factions.get(type,None)
+            for record in block:
+                if record.longFid not in id_factions: continue
+                newFactions = set(id_factions[longid])
+                curFactions = set((mapper(x.faction),x.rank,None) for x in record.factions)
+                changed = newFactions - curFactions
+                if not changed: continue
+                for faction,rank,unused1 in changed:
+                    faction = shortMapper(faction)
+                    for entry in record.factions:
+                        if entry.faction == faction:
+                            entry.rank = rank
+                            break
+                    else:
+                        entry = record.newFactionsElement()
+                        entry.faction = faction
+                        entry.rank = rank
+                        entry.unused1 = unused1
+                changed[type] += 1
+        #--Done
+        if sum(changed.values()): modFile.safeCloseSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports eids from specified text file."""
+        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 8 or fields[3][:2] != '0x': continue
+            type,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
+            amod = GPath(amod)
+            fmod = GPath(fmod)
+            aid = (aliases.get(amod,amod),int(aobj[2:],16))
+            fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
+            rank = int(rank)
+            id_factions = type_id_factions[type]
+            factions = id_factions.get(aid)
+            if factions is None:
+                factions = id_factions[aid] = []
+            for index,entry in enumerate(factions):
+                if entry[0] == fid:
+                    factions[index] = (fid,rank,None)
+                    break
+            else:
+                factions.append((fid,rank,None))
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports eids to specified text file."""
+        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')))
+        for type in sorted(type_id_factions):
+            id_factions = type_id_factions[type]
+            for id in sorted(id_factions,key = lambda x: id_eid.get(x)):
+                actorEid = id_eid.get(id,'Unknown')
+                for faction, rank in sorted(id_factions[id],key=lambda x: id_eid.get(x[0])):
+                    factionEid = id_eid.get(faction,'Unknown')
+                    out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
+        out.close()
 #------------------------------------------------------------------------------
 class ActorLevels:
     """Package: Functions for manipulating actor levels."""
@@ -15603,7 +15683,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
                 prevValues = []
                 recValues = []
                 for bashKey in self.tag_attrs:
-                    if bashKey in bashTags: continue
+                    if bashKey in bashTags and modFile.GName in self.srcMods: continue
                     attrs += self.tag_attrs[bashKey]
                     tagValues = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
                     prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
@@ -15614,10 +15694,10 @@ class CBash_CellImporter(CBash_ImportPatcher):
                         for attr, value in zip(attrs, prevValues):
                             setattr(override, attr, value)
                         count = self.count
-                        count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                        count[modFile.GName] = count.get(modFile.GName,0) + 1
                         record.UnloadRecord()
                         record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             for bashKey in self.tag_attrs:
                 if bashKey in bashTags:
                     self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
@@ -15841,8 +15921,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if IsNewest:
             if(record.fid in self.id_values):
-                if self.autoKey in bashTags:
-                    return
+                if self.autoKey in bashTags and modFile.GName in self.srcMods: return
                 attrs = self.class_attrs[record._Type]
                 prevValues = self.id_values[record.fid]
                 recValues = [getattr_deep(record,attr) for attr in attrs]
@@ -15852,10 +15931,10 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                         for attr, value in zip(attrs, prevValues):
                             setattr_deep(override,attr,value)
                         class_mod_count = self.class_mod_count
-                        class_mod_count.setdefault(record._Type,{})[GPath(modFile._ModName)] = class_mod_count.setdefault(record._Type,{}).get(GPath(modFile._ModName),0) + 1
+                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                         record.UnloadRecord()
                         record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             self.id_values[record.fid] = [getattr_deep(record,attr) for attr in self.class_attrs[record._Type]]
 
     def buildPatchLog(self,log):
@@ -16079,7 +16158,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 prevValues = []
                 recValues = []
                 for bashKey in self.class_tag_attrs[record._Type]:
-                    if bashKey in bashTags: continue
+                    if bashKey in bashTags and modFile.GName in self.srcMods: continue
                     attrs += self.class_tag_attrs[record._Type][bashKey]
                     tagValues = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
                     prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
@@ -16090,10 +16169,10 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                         for attr, value in zip(attrs, prevValues):
                             setattr(override, attr, value)
                         class_mod_count = self.class_mod_count
-                        class_mod_count.setdefault(record._Type,{})[GPath(modFile._ModName)] = class_mod_count.setdefault(record._Type,{}).get(GPath(modFile._ModName),0) + 1
+                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                         record.UnloadRecord()
                         record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             for bashKey in self.class_tag_attrs[record._Type]:
                 if bashKey in bashTags:
                     self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
@@ -16272,16 +16351,16 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if self.autoKey in bashTags: return
+            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
             if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.animations = self.id_animations[record.fid]
                     count = self.count
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             self.id_animations[record.fid] = record.animations
 
     def buildPatchLog(self,log):
@@ -16516,7 +16595,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest and (record.fid in self.id_Added or record.fid in self.id_Deleted or record.fid in self.id_Moved):
-            if (GPath(modFile._ModName) in self.srcMods):
+            if (modFile.GName in self.srcMods):
                 return
             merged = record.aiPackages
             merged += [package for package in self.id_Added.get(record.fid, {}).keys() if package not in merged]
@@ -16529,10 +16608,10 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 ##                    print merged
                     override.aiPackages = merged
                     count = self.count
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             newPackages = record.aiPackages
             oldPackages = self.previousPackages.get(record.fid, [])
             if oldPackages == []:
@@ -16737,16 +16816,16 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     def buildPatch(self,modFile,record,bashTags,IsNewest):
         """Edits patch file as desired."""
         if IsNewest:
-            if self.autoKey in bashTags: return
+            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
             if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.deathItem = self.id_deathItem[record.fid]
                     count = self.count
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
-        elif GPath(modFile._ModName) in self.srcMods:
+        elif modFile.GName in self.srcMods:
             self.id_deathItem[record.fid] = record.deathItem
 
     def buildPatchLog(self,log):
@@ -16873,6 +16952,88 @@ class ImportFactions(ImportPatcher):
         log(_("\n=== Refactioned Actors"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+class CBash_ImportFactions(CBash_ImportPatcher):
+    """Import factions to creatures and NPCs."""
+    name = _('Import Factions')
+    text = _("Import factions from source mods/files.")
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    autoKey = 'Factions'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_factions = {}
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.class_mod_count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+        actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcFiles))
+        patchesDir = dirs['patches'].list()
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesDir: continue
+                actorFactions.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+        #--Finish
+        id_factions= self.id_factions
+        for type,aFid_factions in actorFactions.type_id_factions.iteritems():
+            if type not in ('CREA','NPC_'): continue
+            for longid,factions in aFid_factions.iteritems():
+                self.id_factions[longid] = factions
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatch(self,modFile,record,bashTags,IsNewest):
+        """Edits patch file as desired."""
+        if IsNewest:
+            if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+            if(record.longFid in self.id_factions):
+                mapper = modFile.MakeLongFid
+                shortMapper = modFile.MakeShortFid
+                newFactions = set(self.id_factions[record.longFid])
+                curFactions = set((mapper(entry.faction),entry.rank,None) for entry in record.factions)
+                changed = newFactions - curFactions
+                if changed:
+                    override = record.CopyAsOverride(self.patchFile)
+                    if override:
+                        for faction,rank,unused1 in changed:
+                            faction = shortMapper(faction)
+                            for entry in override.factions:
+                                if entry.faction == faction:
+                                    entry.rank = rank
+                                    break
+                            else:
+                                entry = override.newFactionsElement()
+                                entry.faction,entry.rank,entry.unused1 = faction,rank,unused1
+                        class_mod_count = self.class_mod_count
+                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                        record.UnloadRecord()
+                        record._ModName = override._ModName
+        elif modFile.GName in self.srcFiles:
+            mapper = modFile.MakeLongFid
+            self.id_factions[record.longFid] = [(mapper(entry.faction),entry.rank,None) for entry in record.factions]
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        for type in class_mod_count.keys():
+            log(_('* Refactioned %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportRelations(ImportPatcher):
@@ -18284,7 +18445,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -18367,7 +18528,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -18453,7 +18614,7 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -18541,7 +18702,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
             if override:
                 override.IsLeftRing = False
                 override.IsRightRing = True
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -18638,7 +18799,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
 
@@ -18731,7 +18892,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
 
@@ -18907,7 +19068,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.text = text
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
 
@@ -18996,7 +19157,7 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fogNear = 0.0001
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -19091,7 +19252,7 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
                 override.IsFlickerSlow = False
                 override.IsPulse = False
                 override.IsPulseSlow = False
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -19196,7 +19357,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -19295,7 +19456,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = minWeight
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -19404,7 +19565,7 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -19529,7 +19690,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
                     override.enchantCost = cost
                     override.chargeAmount = amount
                     count = self.count
-                    count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
 
@@ -20044,7 +20205,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -20112,7 +20273,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
             if override:
                 for attr in self.hideFlags:
                     setattr(override, attr, False)
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -22137,7 +22298,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
                 effect.IsHostile = False
 
                 count = self.count
-                count[GPath(modFile._ModName)] = count.get(GPath(modFile._ModName),0) + 1
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
