@@ -5578,6 +5578,7 @@ class CBash_ImportFactions(bosh.CBash_ImportFactions,ListPatcher): pass
 class ImportRelations(bosh.ImportRelations,ListPatcher): pass
 
 class ImportInventory(bosh.ImportInventory,ListPatcher): pass
+class CBash_ImportInventory(bosh.CBash_ImportInventory,ListPatcher): pass
 
 class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
 
@@ -5692,7 +5693,7 @@ else:
         CBash_GmstTweaker(),
         CBash_GraphicsPatcher(),
         CBash_ImportFactions(),
-##        CBash_ImportInventory(),
+        CBash_ImportInventory(),
 ##        CBash_ImportSpells(),
 ##        CBash_TweakActors(),
 ##        CBash_ImportRelations(),
