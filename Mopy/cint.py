@@ -3554,7 +3554,10 @@ class CONTRecord(BaseRecord):
         if nItems is None or nItems == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
         else:
             diffLength = len(nItems) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 11)
-            nValues = [(item.item, item.count) for item in nItems]
+            if isinstance(nItems[0], tuple):
+                nValues = nItems
+            else:
+                nValues = [(item.item, item.count) for item in nItems]
             while(diffLength < 0):
                 CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 11)
                 diffLength += 1
@@ -3859,7 +3862,10 @@ class CREARecord(BaseRecord):
         if nItems is None or nItems == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
         else:
             diffLength = len(nItems) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 23)
-            nValues = [(item.item, item.count) for item in nItems]
+            if isinstance(nItems[0], tuple):
+                nValues = nItems
+            else:
+                nValues = [(item.item, item.count) for item in nItems]
             while(diffLength < 0):
                 CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 23)
                 diffLength += 1
@@ -10226,7 +10232,10 @@ class NPC_Record(BaseRecord):
         if nItems is None or nItems == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
         else:
             diffLength = len(nItems) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 22)
-            nValues = [(item.item, item.count) for item in nItems]
+            if isinstance(nItems[0], tuple):
+                nValues = nItems
+            else:
+                nValues = [(item.item, item.count) for item in nItems]
             while(diffLength < 0):
                 CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 22)
                 diffLength += 1

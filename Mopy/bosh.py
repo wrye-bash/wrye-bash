@@ -14741,9 +14741,14 @@ class CBash_PatchFile(CBashModFile):
                     #The winning record is at position 0, and the last record is the one most overridden
                     conflicts = record.Conflicts()
                     IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
-                    for patcher in sorted(patchers,key=attrgetter('scanOrder')):
-                        if iiMode and not patcher.iiMode: continue
-                        patcher.buildPatch(modFile, record, bashTags, IsNewest)
+                    if IsNewest:
+                        for patcher in sorted(patchers,key=attrgetter('editOrder')):
+                            if iiMode and not patcher.iiMode: continue
+                            patcher.apply(modFile, record, bashTags)
+                    else:
+                        for patcher in sorted(patchers,key=attrgetter('scanOrder')):
+                            if iiMode and not patcher.iiMode: continue
+                            patcher.scan(modFile, record, bashTags)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -14933,13 +14938,19 @@ class CBash_Patcher:
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(self)
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        pass
+
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         pass
 
     def finishPatch(self,patchFile):
         """Edits the bashed patch file directly."""
         pass
+
     def buildPatchLog(self,log):
         """Write to log."""
         pass
@@ -15203,6 +15214,14 @@ class CBash_MultiTweakItem:
         else: value = None
         configs[self.key] = self.isEnabled,value
 
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        pass
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        pass
+
     def finishPatch(self,patchFile):
         """Edits the bashed patch file directly."""
         pass
@@ -15321,11 +15340,11 @@ class CBash_MGEFIndexer(CBash_Patcher):
         """Returns the group types that this patcher checks"""
         return ['MGEF']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    def apply(self,modFile,record,bashTags):
         """Indexes magic effect records for other patchers."""
         full = record.full
         eid = record.eid
-        if IsNewest and (full and eid):
+        if (full and eid):
             self.patchFile.mgef_school[eid] = record.school
             self.patchFile.mgef_name[eid] = full
 
@@ -15675,32 +15694,34 @@ class CBash_CellImporter(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CELLS']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if(record.fid in self.id_tag_values):
-                attrs = []
-                prevValues = []
-                recValues = []
-                for bashKey in self.tag_attrs:
-                    if bashKey in bashTags and modFile.GName in self.srcMods: continue
-                    attrs += self.tag_attrs[bashKey]
-                    tagValues = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
-                    prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
-                    recValues += tagValues
-                if recValues != prevValues:
-                    override = record.CopyAsOverride(self.patchFile)
-                    if override:
-                        for attr, value in zip(attrs, prevValues):
-                            setattr(override, attr, value)
-                        count = self.count
-                        count[modFile.GName] = count.get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             for bashKey in self.tag_attrs:
                 if bashKey in bashTags:
                     self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if(record.fid in self.id_tag_values):
+            attrs = []
+            prevValues = []
+            recValues = []
+            for bashKey in self.tag_attrs:
+                if bashKey in bashTags and modFile.GName in self.srcMods: continue
+                attrs += self.tag_attrs[bashKey]
+                tagValues = [getattr(record, attr) for attr in self.tag_attrs[bashKey]]
+                prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
+                recValues += tagValues
+            if recValues != prevValues:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for attr, value in zip(attrs, prevValues):
+                        setattr(override, attr, value)
+                    count = self.count
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -15917,25 +15938,27 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if(record.fid in self.id_values):
-                if self.autoKey in bashTags and modFile.GName in self.srcMods: return
-                attrs = self.class_attrs[record._Type]
-                prevValues = self.id_values[record.fid]
-                recValues = [getattr_deep(record,attr) for attr in attrs]
-                if recValues != prevValues:
-                    override = record.CopyAsOverride(self.patchFile)
-                    if override:
-                        for attr, value in zip(attrs, prevValues):
-                            setattr_deep(override,attr,value)
-                        class_mod_count = self.class_mod_count
-                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             self.id_values[record.fid] = [getattr_deep(record,attr) for attr in self.class_attrs[record._Type]]
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if(record.fid in self.id_values):
+            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+            attrs = self.class_attrs[record._Type]
+            prevValues = self.id_values[record.fid]
+            recValues = [getattr_deep(record,attr) for attr in attrs]
+            if recValues != prevValues:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for attr, value in zip(attrs, prevValues):
+                        setattr_deep(override,attr,value)
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16150,32 +16173,34 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if(record.fid in self.id_tag_values):
-                attrs = []
-                prevValues = []
-                recValues = []
-                for bashKey in self.class_tag_attrs[record._Type]:
-                    if bashKey in bashTags and modFile.GName in self.srcMods: continue
-                    attrs += self.class_tag_attrs[record._Type][bashKey]
-                    tagValues = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
-                    prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
-                    recValues += tagValues
-                if recValues != prevValues:
-                    override = record.CopyAsOverride(self.patchFile)
-                    if override:
-                        for attr, value in zip(attrs, prevValues):
-                            setattr(override, attr, value)
-                        class_mod_count = self.class_mod_count
-                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             for bashKey in self.class_tag_attrs[record._Type]:
                 if bashKey in bashTags:
                     self.id_tag_values.setdefault(record.fid,{})[bashKey] = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if(record.fid in self.id_tag_values):
+            attrs = []
+            prevValues = []
+            recValues = []
+            for bashKey in self.class_tag_attrs[record._Type]:
+                if bashKey in bashTags and modFile.GName in self.srcMods: continue
+                attrs += self.class_tag_attrs[record._Type][bashKey]
+                tagValues = [getattr(record, attr) for attr in self.class_tag_attrs[record._Type][bashKey]]
+                prevValues += self.id_tag_values[record.fid].get(bashKey, tagValues)
+                recValues += tagValues
+            if recValues != prevValues:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for attr, value in zip(attrs, prevValues):
+                        setattr(override, attr, value)
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16348,20 +16373,22 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
-            if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.animations = self.id_animations[record.fid]
-                    count = self.count
-                    count[modFile.GName] = count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             self.id_animations[record.fid] = record.animations
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        if(record.fid in self.id_animations and record.animations != self.id_animations[record.fid]):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.animations = self.id_animations[record.fid]
+                count = self.count
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16592,26 +16619,9 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest and (record.fid in self.id_Added or record.fid in self.id_Deleted or record.fid in self.id_Moved):
-            if (modFile.GName in self.srcMods):
-                return
-            merged = record.aiPackages
-            merged += [package for package in self.id_Added.get(record.fid, {}).keys() if package not in merged]
-            merged = [package for package in merged if package not in self.id_Deleted.get(record.fid, {}).keys()]
-                
-            if(record.aiPackages != merged):
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-##                    print override.aiPackages
-##                    print merged
-                    override.aiPackages = merged
-                    count = self.count
-                    count[modFile.GName] = count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             newPackages = record.aiPackages
             oldPackages = self.previousPackages.get(record.fid, [])
             if oldPackages == []:
@@ -16642,6 +16652,26 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             self.previousPackages[record.fid] = newPackages
         else:
             self.previousPackages[record.fid] = record.aiPackages
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if (record.fid in self.id_Added or record.fid in self.id_Deleted or record.fid in self.id_Moved):
+            if (modFile.GName in self.srcMods):
+                return
+            merged = record.aiPackages
+            merged += [package for package in self.id_Added.get(record.fid, {}).keys() if package not in merged]
+            merged = [package for package in merged if package not in self.id_Deleted.get(record.fid, {}).keys()]
+                
+            if(record.aiPackages != merged):
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+##                    print override.aiPackages
+##                    print merged
+                    override.aiPackages = merged
+                    count = self.count
+                    count[modFile.GName] = count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16813,20 +16843,22 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
-            if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.deathItem = self.id_deathItem[record.fid]
-                    count = self.count
-                    count[modFile.GName] = count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
-        elif modFile.GName in self.srcMods:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods:
             self.id_deathItem[record.fid] = record.deathItem
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        if(record.fid in self.id_deathItem and record.deathItem != self.id_deathItem[record.fid]):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.deathItem = self.id_deathItem[record.fid]
+                count = self.count
+                count[modFile.GName] = count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16993,35 +17025,37 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        if IsNewest:
-            if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
-            if(record.longFid in self.id_factions):
-                mapper = modFile.MakeLongFid
-                shortMapper = modFile.MakeShortFid
-                newFactions = set(self.id_factions[record.longFid])
-                curFactions = set((mapper(entry.faction),entry.rank,None) for entry in record.factions)
-                changed = newFactions - curFactions
-                if changed:
-                    override = record.CopyAsOverride(self.patchFile)
-                    if override:
-                        for faction,rank,unused1 in changed:
-                            faction = shortMapper(faction)
-                            for entry in override.factions:
-                                if entry.faction == faction:
-                                    entry.rank = rank
-                                    break
-                            else:
-                                entry = override.newFactionsElement()
-                                entry.faction,entry.rank,entry.unused1 = faction,rank,unused1
-                        class_mod_count = self.class_mod_count
-                        class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModName = override._ModName
-        elif modFile.GName in self.srcFiles:
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcFiles:
             mapper = modFile.MakeLongFid
             self.id_factions[record.longFid] = [(mapper(entry.faction),entry.rank,None) for entry in record.factions]
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        if(record.longFid in self.id_factions):
+            mapper = modFile.MakeLongFid
+            shortMapper = modFile.MakeShortFid
+            newFactions = set(self.id_factions[record.longFid])
+            curFactions = set((mapper(entry.faction),entry.rank,None) for entry in record.factions)
+            changed = newFactions - curFactions
+            if changed:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for faction,rank,unused1 in changed:
+                        faction = shortMapper(faction)
+                        for entry in override.factions:
+                            if entry.faction == faction:
+                                entry.rank = rank
+                                break
+                        else:
+                            entry = override.newFactionsElement()
+                            entry.faction,entry.rank,entry.unused1 = faction,rank,unused1
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -17546,6 +17580,114 @@ class ImportInventory(ImportPatcher):
         log(_("\n=== Inventories Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
+class CBash_ImportInventory(CBash_ImportPatcher):
+    """Merge changes to actor inventories."""
+    name = _('Import Inventory')
+    text = _("Merges changes to NPC, creature and container inventories.")
+    autoKey = ('Invent','InventOnly')
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    iiMode = True
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_deltas = {}
+        self.srcMods = [x for x in self.getConfigChecked() if (x in modInfos and x in patchFile.allMods)]
+        self.inventOnlyMods = set(x for x in self.srcMods if
+            (x in patchFile.mergeSet and set(('InventOnly','IIM')) & modInfos[x].getBashTags()))
+        self.isActive = bool(self.srcMods)
+        self.masters = set()
+        for srcMod in self.srcMods:
+            self.masters |= set(modInfos[srcMod].header.masters)
+        self.allMods = self.masters | set(self.srcMods)
+        self.mod_id_entries = {}
+##        self.touched = set()
+        self.class_mod_count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_','CONT']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        mod_id_entries = self.mod_id_entries
+        #--Master or source?
+        if modFile.GName in self.allMods:
+            mod_id_entries.setdefault(modFile._ModName,{})[record.longFid] = [(entry.item,entry.count) for entry in record.items]
+        #--Source mod?
+        if modFile.GName in self.srcMods:
+            longFid = record.longFid
+            id_entries = mod_id_entries[modFile._ModName]
+            masterEntries = []
+            hasMasters = False
+            for master in modFile.TES4.masters:
+                if master in mod_id_entries:
+                    masterEntry = mod_id_entries[master].get(longFid)
+                    if masterEntry is not None:
+                        masterEntries.extend(masterEntry)
+                        hasMasters = True
+            #disable hasMasters check?
+            if not hasMasters: return
+            entries = id_entries[longFid]
+            masterItems = set(item for item,count in masterEntries)
+            modItems = set(item for item,count in entries)
+            removeItems = masterItems - modItems
+            addItems = modItems - masterItems
+            addEntries = [(item,count) for item,count in entries if item in addItems]
+            id_deltas = self.id_deltas
+            deltas = id_deltas.get(longFid)
+            if deltas is None: deltas = id_deltas[longFid] = []
+            deltas.append((removeItems,addEntries))
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
+        deltas = self.id_deltas.get(record.longFid)
+        if not deltas: return
+
+        removable = set(x.item for x in record.items)
+        for removeItems,addEntries in reversed(deltas):
+            items = [(entry.item,entry.count) for entry in record.items]
+            changed = False
+            if removeItems:
+                #--Skip if some items to be removed have already been removed
+                if not removeItems.issubset(removable): return
+                items = [(item,count) for item,count in items if item not in removeItems]
+                removable -= removeItems
+                changed = True
+            if addEntries:
+                current = set(item for item,count in items)
+                for item,count in addEntries:
+                    if item not in current:
+                        items.append((item,count))
+                        changed = True
+            if changed:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.items = items
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        for type in class_mod_count.keys():
+            log(_('* %s Inventories Changed: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
@@ -18430,21 +18572,21 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         self.hideFlag = {'armorShowsRings':'IsHideRings','armorShowsAmulets':'IsHideAmulets'}[key]
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['ARMO']
-
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        count = self.count
         if record.IsNonPlayable:
             return
 
-        if IsNewest and (getattr(record, self.hideFlag)):
+        if (getattr(record, self.hideFlag)):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -18515,19 +18657,19 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         self.hideFlag = {'ClothingShowsRings':'IsHideRings','ClothingShowsAmulets':'IsHideAmulets'}[key]
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        count = self.count
         if record.IsNonPlayable:
             return
-        if IsNewest and (getattr(record, self.hideFlag)):
+        if (getattr(record, self.hideFlag)):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -18602,18 +18744,17 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        count = self.count
-        
-        if IsNewest and (record.weaponType == 5 and record.reach <= 0):
+        if (record.weaponType == 5 and record.reach <= 0):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -18690,18 +18831,18 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
-        if IsNewest and record.IsLeftRing:
+        if record.IsLeftRing:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.IsLeftRing = False
                 override.IsRightRing = True
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -18783,14 +18924,13 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['CLOT']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
-        if IsNewest and record.IsNonPlayable:
+        if record.IsNonPlayable:
             if not record.full: return
             if record.script: return
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
@@ -18799,6 +18939,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
+                    count = self.count
                     count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
@@ -18876,14 +19017,13 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['ARMO']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
-        if IsNewest and record.IsNonPlayable:
+        if record.IsNonPlayable:
             if not record.full: return
             if record.script: return
             if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): return #probably truly shouldn't be playable
@@ -18892,6 +19032,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
+                    count = self.count
                     count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
@@ -19014,25 +19155,12 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['BOOK']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        count = self.count
-
-        reColor = re.compile(r'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-        reTagInWord = re.compile(r'([a-z])<font face=1>',re.M)
-        reFont1 = re.compile(r'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I+re.M)
-        reDiv = re.compile(r'<div',re.I+re.M)
-        reFont = re.compile(r'<font',re.I+re.M)
-        reHead2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-        reHead3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-        reBold = re.compile(r'(__|\*\*|~~)')
-        reAlign = re.compile(r'^(<<|\^\^|>>)',re.M)
-        align_text = {'^^':'center','<<':'left','>>':'right'}
-        self.inBold = False
         def replaceBold(mo):
             self.inBold = not self.inBold
             str = '<font face=3 color=%s>' % ('444444','440000')[self.inBold]
@@ -19040,10 +19168,21 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         def replaceAlign(mo):
             return '<div align=%s>' % align_text[mo.group(1)]
         
-        if IsNewest and record.text and not record.enchantment:
+        if record.text and not record.enchantment:
             text = record.text
+
+            reColor = re.compile(r'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
+            reTagInWord = re.compile(r'([a-z])<font face=1>',re.M)
+            reFont1 = re.compile(r'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I+re.M)
+            reDiv = re.compile(r'<div',re.I+re.M)
+            reFont = re.compile(r'<font',re.I+re.M)
+            reHead2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
+            reHead3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
+            reBold = re.compile(r'(__|\*\*|~~)')
+            reAlign = re.compile(r'^(<<|\^\^|>>)',re.M)
+            align_text = {'^^':'center','<<':'left','>>':'right'}
+            self.inBold = False
             if reHead2.match(text):
-                inBold = False
                 text = reHead2.sub(r'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
                 text = reHead3.sub(r'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
                 text = reAlign.sub(replaceAlign,text)
@@ -19068,6 +19207,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.text = text
+                    count = self.count
                     count[modFile.GName] = count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
@@ -19145,18 +19285,17 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        count = self.count
-
-        if IsNewest and not (record.fogNear or record.fogFar or record.fogClip):
+        if not (record.fogNear or record.fogFar or record.fogClip):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fogNear = 0.0001
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -19237,21 +19376,20 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['LIGH']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
-
-        if IsNewest and (record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow):
+        if (record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.IsFlickers = False
                 override.IsFlickerSlow = False
                 override.IsPulse = False
                 override.IsPulseSlow = False
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -19341,22 +19479,22 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if IsNewest and (record.weight > maxWeight and record.weight < 1.0):
+        if (record.weight > maxWeight and record.weight < 1.0):
             for effect in record.effects:
                 if effect.name == 'SEFF':
                     return
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -19444,18 +19582,18 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['ALCH']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
         minWeight = self.choiceValues[self.chosen][0]
-        if IsNewest and (record.weight < minWeight):
+        if (record.weight < minWeight):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = minWeight
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -19552,19 +19690,19 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['WEAP']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if IsNewest and (record.weaponType == 4 and record.weight > maxWeight):
+        if (record.weaponType == 4 and record.weight > maxWeight):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -19671,14 +19809,14 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
             )
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['ENCH']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
 
-        if IsNewest and (record.itemType in [1,2]):
+        if (record.itemType in [1,2]):
             uses = self.choiceValues[self.chosen][0]
             cost = uses
             if uses != 0:
@@ -19894,9 +20032,9 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
         return ['GLOB']
 
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if IsNewest and (record.eid.lower() == self.key):
+        if (record.eid.lower() == self.key):
             value = self.value = self.choiceValues[self.chosen][0]
             if record.value != value:
                 self.count = 1
@@ -20187,16 +20325,15 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          }[key]
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
+
     def getTypes(self):
         return ['CLOT']
-
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        count = self.count
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if IsNewest and (record.weight > maxWeight) and self.isMyType(record):
+        if (record.weight > maxWeight) and self.isMyType(record):
             for attr in self.matchFlags:
                 if(getattr(record, attr)):
                     break
@@ -20205,6 +20342,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -20254,16 +20392,15 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                          }[key]
         self.count = {}
 
-    #--Patch Phase ------------------------------------------------------------
+
     def getTypes(self):
         return ['CLOT']
-
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
-        """Edits patch file as desired."""
-        count = self.count
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-        if IsNewest and self.isMyType(record):
+        if self.isMyType(record):
             for flag in self.hideFlags:
                 if(getattr(record, flag)):
                     break
@@ -20273,6 +20410,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
             if override:
                 for attr in self.hideFlags:
                     setattr(override, attr, False)
+                count = self.count
                 count[modFile.GName] = count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
@@ -20470,23 +20608,22 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         return ['GMST']
 
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if IsNewest:
-            values = self.values = self.choiceValues[self.chosen]
-            for eid,value in zip(self.key,values):
-                if eid == record.eid:
-                    newValue = value
-                    break
-            else:
-                return
-            self.eid_count[eid] = 1
-            if record.value != newValue:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.value = value
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
+        values = self.values = self.choiceValues[self.chosen]
+        for eid,value in zip(self.key,values):
+            if eid == record.eid:
+                newValue = value
+                break
+        else:
+            return
+        self.eid_count[eid] = 1
+        if record.value != newValue:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.value = value
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def finishPatch(self,patchFile):
         """Edits the bashed patch file directly."""
@@ -22044,13 +22181,13 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for type in self.getTypes():
              type_patchers.setdefault(type,[]).append(self)
 
-    #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         return ['INGR']
 
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if IsNewest and (record.full):
+        if (record.full):
             for effect in record.effects:
                 if effect.name == 'SEFF':
                     return
@@ -22273,9 +22410,9 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         ins.close()
 
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,modFile,record,bashTags,IsNewest):
+    def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if IsNewest and (record.spellType == 2):
+        if (record.spellType == 2):
             #--Skip this one?
             duration = self.id_exhaustion.get(record.longFid,0)
             if not duration: return
