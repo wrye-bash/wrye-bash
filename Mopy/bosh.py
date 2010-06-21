@@ -12166,7 +12166,75 @@ class FactionRelations:
                 otherEid = id_eid.get(other,'Unknown')
                 out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
         out.close()
+class CBash_FactionRelations:
+    """Faction relations."""
+    def __init__(self,aliases=None):
+        """Initialize."""
+        self.id_faction_mod = {}
+        self.id_eid = {} #--For all factions.
+        self.aliases = aliases or {}
+        self.gotFactions = set()
+        
+    def readFactionEids(self,modInfo):
+        """Extracts faction editor ids from modInfo and its masters."""
+        Current = Collection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=True)
+        for modFile in Current:
+            if modFile._ModName in self.gotFactions: continue
+            for record in modFile.FACT:
+                self.id_eid[record.longFid] = record.eid
+                record.UnloadRecord()
+            self.gotFactions.add(modFile._ModName)
 
+    def readFromMod(self,modInfo):
+        """Imports eids from specified mod."""
+        self.readFactionEids(modInfo)
+        id_faction_mod,id_eid = self.id_faction_mod,self.id_eid
+
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        mapper = modFile.MakeLongFid
+        for record in modFile.FACT:
+            longid = record.longFid
+            relations = record.relations
+            if relations:
+                id_eid[longid] = record.eid
+                faction_mod = id_faction_mod.setdefault(longid,{})
+                faction_mod.update((mapper(relation.faction),relation.mod) for relation in relations)
+            record.UnloadRecord()
+
+    def readFromText(self,textPath):
+        """Imports eids from specified text file."""
+        id_faction_mod,id_eid = self.id_faction_mod, self.id_eid
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 7 or fields[2][:2] != '0x': continue
+            med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
+            mid = (GPath(aliases.get(mmod,mmod)),int(mobj[2:],16))
+            oid = (GPath(aliases.get(omod,omod)),int(oobj[2:],16))
+            disp = int(disp)
+            faction_mod = id_faction_mod.setdefault(mid,{})
+            faction_mod[oid] = disp
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports eids to specified text file."""
+        id_faction_mod,id_eid = self.id_faction_mod, self.id_eid
+        headFormat = '"%s","%s","%s","%s","%s","%s","%s"\n'
+        rowFormat = '"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')))
+        for main in sorted(id_faction_mod,key = lambda x: id_eid.get(x)):
+            mainEid = id_eid.get(main,'Unknown')
+            faction_mod = id_faction_mod[main]
+            for other, disp in sorted(faction_mod.items(),key=lambda x: id_eid.get(x[0])):
+                otherEid = id_eid.get(other,'Unknown')
+                out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
+        out.close()
 #------------------------------------------------------------------------------
 class FidReplacer:
     """Replaces one set of fids with another."""
@@ -17260,6 +17328,92 @@ class ImportRelations(ImportPatcher):
         for file in self.srcFiles:
             log("* " +file.s)
         log(_("\n=== Modified Factions: %d") % type_count['FACT'])
+class CBash_ImportRelations(CBash_ImportPatcher):
+    """Import faction relations to factions."""
+    name = _('Import Relations')
+    text = _("Import relations from source mods/files.")
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    autoKey = 'Relations'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_faction_mod = {}
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.mod_count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+        factionRelations = CBash_FactionRelations(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcFiles))
+        patchesDir = dirs['patches'].list()
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesDir: continue
+                factionRelations.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+        #--Finish
+        self.id_faction_mod.update(factionRelations.id_faction_mod)
+##        for longid,faction_mod in factionRelations.id_faction_mod.iteritems():
+##            id_relations[longid] = faction_mod
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['FACT']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcFiles:
+            relations = record.relations
+            if relations:
+                mapper = modFile.MakeLongFid
+                faction_mod = self.id_faction_mod.setdefault(record.longFid,{})
+                faction_mod.update((mapper(relation.faction),relation.mod) for relation in relations)
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
+##        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        if(record.longFid in self.id_faction_mod):
+            mapper = modFile.MakeLongFid
+            shortMapper = modFile.MakeShortFid
+            newRelations = set(self.id_faction_mod[record.longFid].iteritems())
+            curRelations = set((mapper(relation.faction),relation.mod) for relation in record.relations)
+            changed = newRelations - curRelations
+            if changed:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for faction,mod in changed:
+                        faction = shortMapper(faction)
+                        for relation in override.relations:
+                            if relation.faction == faction:
+                                relation.mod = mod
+                                break
+                        else:
+                            relation = override.newRelationsElement()
+                            relation.faction,relation.mod = faction,mod
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Re-Relationed Records: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class ImportScripts(ImportPatcher):
     """Imports attached scripts on objects."""
@@ -23593,22 +23747,21 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record._recordID != 0x00000007: #skip player record
-            oldModPath = record.modPath
-            newModPath = r"Characters\_Male\SkeletonBeast.nif"
-            try:
-                if oldModPath.lower() != r'characters\_male\skeleton.nif':
-                    return
-            except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
-                pass
-            if newModPath != oldModPath:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.modPath = newModPath
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
+        oldModPath = record.modPath
+        newModPath = r"Characters\_Male\SkeletonBeast.nif"
+        try:
+            if oldModPath.lower() != r'characters\_male\skeleton.nif':
+                return
+        except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
+            pass
+        if newModPath != oldModPath:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.modPath = newModPath
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -23909,7 +24062,6 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-##        reImp  = re.compile(r'(\bimpling\b|\bimp\b|\bgargoyle\b)',re.I)
         if not re.search(r'(boar)\\.',record.modPath or '',re.I): return
         
         reBoar  = re.compile(r'(boar)',re.I)

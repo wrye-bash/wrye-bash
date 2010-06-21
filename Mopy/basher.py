@@ -5582,6 +5582,7 @@ class ImportFactions(bosh.ImportFactions,ListPatcher): pass
 class CBash_ImportFactions(bosh.CBash_ImportFactions,ListPatcher): pass
 
 class ImportRelations(bosh.ImportRelations,ListPatcher): pass
+class CBash_ImportRelations(bosh.CBash_ImportRelations,ListPatcher): pass
 
 class ImportInventory(bosh.ImportInventory,ListPatcher): pass
 class CBash_ImportInventory(bosh.CBash_ImportInventory,ListPatcher): pass
@@ -5704,7 +5705,7 @@ else:
         CBash_ImportInventory(),
         CBash_ImportSpells(),
         CBash_TweakActors(),
-##        CBash_ImportRelations(),
+        CBash_ImportRelations(),
 ##        CBash_ImportScripts(),
 ##        CBash_ImportScriptContents(),
 ##        CBash_ImportActorsSpells(),
@@ -8496,7 +8497,10 @@ class Mod_FactionRelations_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Relations"))
         try:
-            factionRelations = bosh.FactionRelations()
+            if not CBash:
+                factionRelations = bosh.FactionRelations()
+            else:
+                factionRelations = bosh.CBash_FactionRelations()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
