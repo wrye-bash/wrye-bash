@@ -23886,6 +23886,60 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
         log(_('* %d Boars Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
+    """Set all imps to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("As Intended: Boars")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_('As Intended: Boars'),
+            _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
+            'vicious boars!',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+        self.spell = (GPath('Oblivion.esm'), 0x02B54E)
+
+    def getTypes(self):
+        return ['CREA']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+##        reImp  = re.compile(r'(\bimpling\b|\bimp\b|\bgargoyle\b)',re.I)
+        if not re.search(r'(boar)\\.',record.modPath or '',re.I): return
+        
+        reBoar  = re.compile(r'(boar)',re.I)
+        for bodyPart in record.bodyParts:
+            if reBoar.search(bodyPart):
+                break
+        else:
+            return
+
+        spells = record.spells
+        newSpell = modFile.MakeShortFid(self.spell)
+        if newSpell not in spells:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                spells.append(newSpell)
+                override.spells = spells
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Boars Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 #------------------------------------------------------------------------------
 class RWALKNPCAnimationPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
@@ -23994,7 +24048,7 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_RedguardNPCPatcher(),
         CBash_NoBloodCreaturesPatcher(),
         CBash_AsIntendedImpsPatcher(),
-####        AsIntendedBoarsPatcher(),
+        CBash_AsIntendedBoarsPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
