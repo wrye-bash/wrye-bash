@@ -23822,16 +23822,15 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
 ##        reImp  = re.compile(r'(\bimpling\b|\bimp\b|\bgargoyle\b)',re.I)
-        reImp  = re.compile(r'(imp(?!erial)|gargoyle)(?:\\.|\.nif)',re.I)
-
-        if not reImp.search(record.modPath or ''): return
+        if not re.search(r'(imp(?!erial)|gargoyle)\\.',record.modPath or '',re.I): return
         
+        reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
         for bodyPart in record.bodyParts:
             if reImp.search(bodyPart):
                 break
         else:
             return
-        if record.baseScale < 0.5:
+        if record.baseScale < 0.4:
             if 'big' in self.choiceValues[self.chosen]:
                 return
         elif 'small' in self.choiceValues[self.chosen]:

@@ -1377,7 +1377,7 @@ __Importers__ are components that import specific information from selected mods
 -------------------------------------------------------------------------------
 __Tweakers__ tweak records in the currently active set of mods in specified ways. All tweakers have several specific features which can be individually turned off. Features whose name ends with bracketed text (e.g., "Max Potion Weight [0.1]) can be configured by right clicking on the feature and selecting an option from the pop up menu.
 
-== Globals
+=== Globals
 * Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).
 * __Crime: Force Jail:__ The bounty value you must have to have a jail term be non-optional (ie can't pay the fine).
 * __Thieves Guild: Quest Misdemeanor Penalty:__ Sets the cost if you commit the specified misdemeanor while completing a Thieves Guild Quest
@@ -1386,9 +1386,9 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 === Tweak Actors
 * Changes to NPC or Creature record subrecords; such as skeleton.
 * __As Intended: Boars__
-  * Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, mod this is based off of made by Tejon).
+  * Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, based off of a mod made by Tejon).
 * __As Intended: Imps__
-  * Adds the Bethesda Imp Resistances spells to all imps (found by the UOP team, mod this is based off of made by Tejon).
+  * Adds the Bethesda Imp Resistances spells to all imps (found by the UOP team, based off of a mod made by Tejon).
 * __Mayu's Animation Overhaul Skeleton Tweaker__
   * Sets NPC skeletons paths to match that required for MAO to work.
 * __No Bloody Creatures__
@@ -1405,7 +1405,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Clothing Shows Amulets/Rings__
   * Modifies clothing to prevent hiding of amulets/rings.
 * __Bow Reach Fix__
-  * Some of the bows in Oblivion (and a few in user mods) have a reach of zero. Due to a bug in the Oblivion engine, if these bows are equipped by an NPC, the game will crash. This patch changes bows with zero reach to have reach == 1. (Note this is also fixed for vanilla Oblivion by the Unofficial Oblivion Patch. However, Shivering Isles introduces more bows with the same problem.)
+  * Some of the bows in Oblivion (and a few in user mods) have a reach of zero. Due to a bug in the Oblivion engine, if these bows are equipped by an NPC, the game will crash. This patch changes bows with zero reach to have reach == 1. (Note this is also fixed for vanilla Oblivion by the Unofficial Oblivion Patch.  However, Shivering Isles introduces more bows with the same problem.)
 * __Darnified Books__
   * Tweak book coloring and font for use with Darnified UI.
   * Wtxt formatting (applied if first line looks like <code>== title ==</code>
