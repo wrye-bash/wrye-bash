@@ -5322,28 +5322,39 @@ class DIALRecord(BaseRecord):
         if nValue is None or nValue == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 6)
         else: CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 6, struct.pack('I' * len(nValue), *nValue), len(nValue))
     quests = property(get_quests, set_quests)
+    def get_removedQuests(self):
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 7)
+        if(numRecords > 0):
+            cRecords = (POINTER(c_uint) * numRecords)()
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 7, byref(cRecords))
+            return [cRecords[x].contents.value for x in range(0, numRecords)]
+        return []
+    def set_removedQuests(self, nValue):
+        if nValue is None or nValue == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
+        else: CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 7, struct.pack('I' * len(nValue), *nValue), len(nValue))
+    removedQuests = property(get_removedQuests, set_removedQuests)
     def get_full(self):
         CBash.ReadFIDField.restype = c_char_p
-        return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
+        return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
     def set_full(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
-        else: CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 7, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
+        else: CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 8, nValue)
     full = property(get_full, set_full)
     def get_dialType(self):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
         if(retValue): return retValue.contents.value
         return None
     def set_dialType(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
-        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 8, c_ubyte(nValue))
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
+        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 9, c_ubyte(nValue))
     dialType = property(get_dialType, set_dialType)
     @property
     def INFO(self):
-        numSubRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 9)
+        numSubRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 10)
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 9, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 10, byref(cRecords))
             return [INFORecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
         return []
     def get_IsTopic(self):
@@ -5388,7 +5399,7 @@ class DIALRecord(BaseRecord):
         if (nValue == True): self.dialType = 6
         elif(self.get_IsMisc()): self.IsTopic = True
     IsMisc = property(get_IsMisc, set_IsMisc)
-    copyattrs = BaseRecord.baseattrs + ['quests','full','dialType']
+    copyattrs = BaseRecord.baseattrs + ['quests','removedQuests','full','dialType']
 
 class DOORRecord(BaseRecord):
     _Type = 'DOOR'
