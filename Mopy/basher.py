@@ -1548,7 +1548,13 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water', 'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound', 'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims', 'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd'))
+        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
+                               'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent',
+                               'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
+                               'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
+                               'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
+                               'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
+                               'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd'))
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -5600,6 +5606,7 @@ class ImportScripts(bosh.ImportScripts,ListPatcher):pass
 class ImportScriptContents(bosh.ImportScriptContents,ListPatcher):pass
 
 class ImportSpells(bosh.SpellsPatcher,ListPatcher):pass
+class CBash_ImportSpells(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
 class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
@@ -5617,6 +5624,7 @@ class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
 
 class TweakActors(bosh.TweakActors,TweakPatcher): pass
+class CBash_TweakActors(bosh.CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
@@ -5694,8 +5702,8 @@ else:
         CBash_GraphicsPatcher(),
         CBash_ImportFactions(),
         CBash_ImportInventory(),
-##        CBash_ImportSpells(),
-##        CBash_TweakActors(),
+        CBash_ImportSpells(),
+        CBash_TweakActors(),
 ##        CBash_ImportRelations(),
 ##        CBash_ImportScripts(),
 ##        CBash_ImportScriptContents(),
