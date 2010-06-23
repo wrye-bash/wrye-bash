@@ -5591,6 +5591,7 @@ class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
 ##class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
 
 class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
+class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
 
@@ -5717,7 +5718,7 @@ else:
 ##        CBash_ImportActorsSpells(),
         CBash_ListsMerger(),
         CBash_MFactMarker(),
-##        CBash_NamesPatcher(),
+        CBash_NamesPatcher(),
 ##        CBash_NamesTweaker(),
 ##        CBash_NpcFacePatcher(),
 ##        CBash_PowerExhaustion(),
@@ -9178,7 +9179,10 @@ class Mod_FullNames_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Names"))
         try:
-            fullNames = bosh.FullNames()
+            if not CBash:
+                fullNames = bosh.FullNames()
+            else:
+                fullNames = bosh.CBash_FullNames()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -9223,7 +9227,10 @@ class Mod_FullNames_Import(Link):
         progress = balt.Progress(_("Import Names"))
         renamed = None
         try:
-            fullNames = bosh.FullNames()
+            if not CBash:
+                fullNames = bosh.FullNames()
+            else:
+                fullNames = bosh.CBash_FullNames()
             progress(0.1,_("Reading %s.") % (textName.s,))
             if ext == '.csv':
                 fullNames.readFromText(textPath)
