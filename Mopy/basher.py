@@ -5588,6 +5588,7 @@ class ImportInventory(bosh.ImportInventory,ListPatcher): pass
 class CBash_ImportInventory(bosh.CBash_ImportInventory,ListPatcher): pass
 
 class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
+##class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
 
 class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
 
@@ -5603,8 +5604,10 @@ class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
 class StatsPatcher(bosh.StatsPatcher,ListPatcher): pass
 
 class ImportScripts(bosh.ImportScripts,ListPatcher):pass
+class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
 
 class ImportScriptContents(bosh.ImportScriptContents,ListPatcher):pass
+##class CBash_ImportScriptContents(bosh.CBash_ImportScriptContents,ListPatcher):pass
 
 class ImportSpells(bosh.SpellsPatcher,ListPatcher):pass
 class CBash_ImportSpells(bosh.CBash_SpellsPatcher,ListPatcher):pass
@@ -5635,6 +5638,8 @@ class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
 class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
 
 class ListsMerger(bosh.ListsMerger,ListPatcher):
+    listLabel = _("Override Delev/Relev Tags")
+class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
     listLabel = _("Override Delev/Relev Tags")
 
 class MFactMarker(bosh.MFactMarker,ListPatcher): pass
@@ -5706,10 +5711,10 @@ else:
         CBash_ImportSpells(),
         CBash_TweakActors(),
         CBash_ImportRelations(),
-##        CBash_ImportScripts(),
+        CBash_ImportScripts(),
 ##        CBash_ImportScriptContents(),
 ##        CBash_ImportActorsSpells(),
-##        CBash_ListsMerger(),
+        CBash_ListsMerger(),
 ##        CBash_MFactMarker(),
 ##        CBash_NamesPatcher(),
 ##        CBash_NamesTweaker(),
