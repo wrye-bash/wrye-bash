@@ -12321,89 +12321,47 @@ class FullNames:
 
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            type_id_name,types = self.type_id_name, self.types
-            classes = [MreRecord.type_class[x] for x in self.types]
-            loadFactory= LoadFactory(False,*classes)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for type in types:
-                typeBlock = modFile.tops.get(type,None)
-                if not typeBlock: continue
-                if type not in type_id_name: type_id_name[type] = {}
-                id_name = type_id_name[type]
-                for record in typeBlock.getActiveRecords():
-                    longid = mapper(record.fid)
-                    full = record.full or (type != 'LIGH' and 'NO NAME')
-                    if record.eid and full:
-                        id_name[longid] = (record.eid,full)
-        else:
-            type_id_name = self.type_id_name
-            Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-            
-            mapper = modFile.MakeLongFid
-            for type,block in modFile.aggregates.iteritems():
-                if type not in type_id_name: type_id_name[type] = {}
-                id_name = type_id_name[type]
-                for record in block:
-                    longid = record.longFid
-                    if(hasattr(record, 'full')):
-                        full = record.full or (type != 'LIGH' and 'NO NAME')
-                        eid = record.eid
-                        if eid and full:
-                            id_name[longid] = (eid,full)
-                    record.UnloadRecord()
+        type_id_name,types = self.type_id_name, self.types
+        classes = [MreRecord.type_class[x] for x in self.types]
+        loadFactory= LoadFactory(False,*classes)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in types:
+            typeBlock = modFile.tops.get(type,None)
+            if not typeBlock: continue
+            if type not in type_id_name: type_id_name[type] = {}
+            id_name = type_id_name[type]
+            for record in typeBlock.getActiveRecords():
+                longid = mapper(record.fid)
+                full = record.full or (type != 'LIGH' and 'NO NAME')
+                if record.eid and full:
+                    id_name[longid] = (record.eid,full)
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            type_id_name,types = self.type_id_name,self.types
-            classes = [MreRecord.type_class[x] for x in self.types]
-            loadFactory= LoadFactory(True,*classes)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            changed = {}
-            for type in types:
-                id_name = type_id_name.get(type,None)
-                typeBlock = modFile.tops.get(type,None)
-                if not id_name or not typeBlock: continue
-                for record in typeBlock.records:
-                    longid = mapper(record.fid)
-                    full = record.full
-                    eid,newFull = id_name.get(longid,(0,0))
-                    if newFull and newFull not in (full,'NO NAME'):
-                        record.full = newFull
-                        record.setChanged()
-                        changed[eid] = (full,newFull)
-            if changed: modFile.safeSave()
-            return changed
-        else:
-            type_id_name = self.type_id_name
-            Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-            
-            mapper = modFile.MakeLongFid
-            changed = {}
-            for type,block in modFile.aggregates.iteritems():
-                id_name = type_id_name.get(type,None)
-                if not id_name: continue
-                for record in block:
-                    longid = record.longFid
-                    full = record.full
-                    eid,newFull = id_name.get(longid,(0,0))
-                    if newFull and newFull not in (full,'NO NAME'):
-                        record.full = newFull
-                        changed[eid] = (full,newFull)
-            if changed: modFile.safeCloseSave()
-            return changed
-
+        type_id_name,types = self.type_id_name,self.types
+        classes = [MreRecord.type_class[x] for x in self.types]
+        loadFactory= LoadFactory(True,*classes)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = {}
+        for type in types:
+            id_name = type_id_name.get(type,None)
+            typeBlock = modFile.tops.get(type,None)
+            if not id_name or not typeBlock: continue
+            for record in typeBlock.records:
+                longid = mapper(record.fid)
+                full = record.full
+                eid,newFull = id_name.get(longid,(0,0))
+                if newFull and newFull not in (full,'NO NAME'):
+                    record.full = newFull
+                    record.setChanged()
+                    changed[eid] = (full,newFull)
+        if changed: modFile.safeSave()
+        return changed
+ 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         textPath = GPath(textPath)
@@ -12438,6 +12396,94 @@ class FullNames:
                 eid,name = id_name[longid]
                 out.write(rowFormat % (type,longid[0].s,longid[1],eid,name))
         out.close()
+
+class CBash_FullNames:
+    """Names for records, with functions for importing/exporting from/to mod/text file."""
+    defaultTypes = set((
+        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
+        'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
+        'SLGM', 'SPEL','WEAP',))
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
+        self.types = types or FullNames.defaultTypes
+        self.aliases = aliases or {}
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        type_id_name = self.type_id_name
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        mapper = modFile.MakeLongFid
+        for type,block in modFile.aggregates.iteritems():
+            if type not in type_id_name: type_id_name[type] = {}
+            id_name = type_id_name[type]
+            for record in block:
+                longid = record.longFid
+                if(hasattr(record, 'full')):
+                    full = record.full or (type != 'LIGH' and 'NO NAME')
+                    eid = record.eid
+                    if eid and full:
+                        id_name[longid] = (eid,full)
+                record.UnloadRecord()
+
+    def writeToMod(self,modInfo):
+        """Exports type_id_name to specified mod."""
+        type_id_name = self.type_id_name
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+        
+        mapper = modFile.MakeLongFid
+        changed = {}
+        for type,block in modFile.aggregates.iteritems():
+            id_name = type_id_name.get(type,None)
+            if not id_name: continue
+            for record in block:
+                longid = record.longFid
+                full = record.full
+                eid,newFull = id_name.get(longid,(0,0))
+                if newFull and newFull not in (full,'NO NAME'):
+                    record.full = newFull
+                    changed[eid] = (full,newFull)
+        if changed: modFile.safeCloseSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        textPath = GPath(textPath)
+        type_id_name = self.type_id_name
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 5 or fields[2][:2] != '0x': continue
+            type,mod,objectIndex,eid,full = fields[:5]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            type_id_name.setdefault(type, {})[longid] = (eid,full)
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports type_id_name to specified text file."""
+        textPath = GPath(textPath)
+        type_id_name = self.type_id_name
+        headFormat = '"%s","%s","%s","%s","%s"\n'
+        rowFormat = '"%s","%s","0x%06X","%s","%s"\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')))
+        for type in sorted(type_id_name):
+            id_name = type_id_name[type]
+            longids = id_name.keys()
+            longids.sort(key=lambda a: id_name[a][0])
+            longids.sort(key=itemgetter(0))
+            for longid in longids:
+                eid,name = id_name[longid]
+                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name))
+        out.close()
+
 #------------------------------------------------------------------------------
 class SigilStoneDetails:
     """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
@@ -18252,6 +18298,91 @@ class NamesPatcher(ImportPatcher):
         log(_("\n=== Renamed Items"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
+class CBash_NamesPatcher(CBash_ImportPatcher):
+    """Import names from source mods/files."""
+    name = _('Import Names')
+    text = _("Import names from source mods/files.")
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    autoRe = re.compile(r"^Oblivion.esm$",re.I)
+    autoKey = 'Names'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.activeTypes = set() #--Types ('ALCH', etc.) of data actually provided by src mods/files.
+        self.id_full = {}
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.class_mod_count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcFiles))
+        patchesDir = dirs['patches'].list()
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesDir: continue
+                fullNames.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+        #--Finish
+        id_full = self.id_full
+        activeAdd = self.activeTypes.add
+        for type,id_name in fullNames.type_id_name.iteritems():
+            if type not in validTypes: continue
+            activeAdd(type)
+            for longid,(eid,name) in id_name.iteritems():
+                if name != 'NO NAME':
+                    id_full[longid] = name
+        self.isActive = bool(self.activeTypes)
+
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return self.activeTypes
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcFiles:
+            self.id_full[record.longFid] = record.full
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        recordId = record.longFid
+        id_full = self.id_full
+        if(recordId in id_full and record.full != id_full[recordId]):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = id_full[recordId]
+                class_mod_count = self.class_mod_count
+                class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods/Files"))
+        for file in self.srcFiles:
+            log("* " +file.s)
+        log(_("\n=== Renamed Items"))
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
+    
 #------------------------------------------------------------------------------
 class NpcFacePatcher(ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
@@ -23858,7 +23989,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
 class MFactMarker(SpecialPatcher,ListPatcher):
     """Mark factions that player can acquire while morphing."""
     name = _('Morph Factions')
-    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 2.18 and Wrye Morph or similar.")
+    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'MFact'
 

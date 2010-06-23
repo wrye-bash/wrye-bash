@@ -11,6 +11,15 @@ else:
     CBash = None
 
 #Helper functions
+validTypes = set(["GMST","GLOB","CLAS","FACT","HAIR","EYES","RACE",
+                  "SOUN","SKIL","MGEF","SCPT","LTEX","ENCH","SPEL",
+                  "BSGN","ACTI","APPA","ARMO","BOOK","CLOT","CONT",
+                  "DOOR","INGR","LIGH","MISC","STAT","GRAS","TREE",
+                  "FLOR","FURN","WEAP","AMMO","NPC_","CREA","LVLC",
+                  "SLGM","KEYM","ALCH","SBSP","SGST","LVLI","WTHR",
+                  "CLMT","REGN","WRLD","CELL","ACHR","ACRE","REFR",
+                  "PGRD","LAND","ROAD","DIAL","INFO","QUST","IDLE",
+                  "PACK","CSTY","LSCR","LVSP","ANIO","WATR","EFSH"])
 class PrintFormID(object):
     def __init__(self, formID):
         self._FormID = formID
@@ -18974,8 +18983,6 @@ class CBashModFile(object):
                      ("DIAL", self.DIAL),("INFO", self.INFOS),("QUST", self.QUST),("IDLE", self.IDLE),
                      ("PACK", self.PACK),("CSTY", self.CSTY),("LSCR", self.LSCR),("LVSP", self.LVSP),
                      ("ANIO", self.ANIO),("WATR", self.WATR),("EFSH", self.EFSH)))
-
-
 
 class Collection:
     """Collection of esm/esp's."""
