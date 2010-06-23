@@ -22811,6 +22811,8 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     scanOrder = 32
     editOrder = 32
     name = _("As Intended: Imps")
+    reImpModPath  = re.compile(r'(imp(?!erial)|gargoyle)\\.',re.I)
+    reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -22831,9 +22833,9 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
 ##        reImp  = re.compile(r'(\bimpling\b|\bimp\b|\bgargoyle\b)',re.I)
-        if not re.search(r'(imp(?!erial)|gargoyle)\\.',record.modPath or '',re.I): return
+        if not self.reImpModPath.search(record.modPath or ''): return
         
-        reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
+        reImp  = self.reImp
         for bodyPart in record.bodyParts:
             if reImp.search(bodyPart):
                 break
@@ -22901,6 +22903,8 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     scanOrder = 32
     editOrder = 32
     name = _("As Intended: Boars")
+    reBoarModPath  = re.compile(r'(boar)\\.',re.I)
+    reBoar  = re.compile(r'(boar)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -22918,9 +22922,9 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if not re.search(r'(boar)\\.',record.modPath or '',re.I): return
+        if not self.reBoarModPath.search(record.modPath or ''): return
         
-        reBoar  = re.compile(r'(boar)',re.I)
+        reBoar  = self.reBoar
         for bodyPart in record.bodyParts:
             if reBoar.search(bodyPart):
                 break
@@ -23965,6 +23969,121 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         log(_("\n=== Morphable Factions"))
         for mod in sorted(changed):
             log("* %s: %d" % (mod.s,changed[mod]))
+
+class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
+    """Mark factions that player can acquire while morphing."""
+    name = _('Morph Factions')
+    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'MFact'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcFiles = self.getConfigChecked()
+        self.cobl = GPath('Cobl Main.esm')
+        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.27)
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.mFactLong = (self.cobl,0x33FB)
+        self.mod_count = {}
+        self.mFactable = set()
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesDir = dirs['patches'].list()
+            if srcPath not in patchesDir: continue
+            self.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['FACT']
+
+    def readFromText(self,textPath):
+        """Imports id_info from specified text file."""
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        textPath = GPath(textPath)
+        if not textPath.exists(): return
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 6 or fields[1][:2] != '0x':
+                continue
+            mod,objectIndex = fields[:2]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex,0))
+            morphName = fields[4].strip()
+            rankName = fields[5].strip()
+            if not morphName: continue
+            if not rankName: rankName = _('Member')
+            id_info[longid] = (morphName,rankName)
+        ins.close()
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        id_info = self.id_info
+        recordId = record.longFid
+        mFactLong = self.mFactLong
+        if recordId in id_info and recordId != mFactLong:
+            mFactId = modFile.MakeShortFid(mFactLong)
+            self.mFactable.add(record.fid)
+            if mFactId not in [relation.faction for relation in record.relations]:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.IsHiddenFromPC = False
+                    relation = override.newRelationsElement()
+                    relation.faction = mFactId
+                    relation.mod = 10
+                    mname,rankName = id_info[recordId]
+                    override.full = mname
+                    ranks = override.ranks
+                    if not ranks:
+                        ranks = [override.newRanksElement()]
+                    for rank in ranks:
+                        if not rank.male: rank.male = rankName
+                        if not rank.female: rank.female = rank.male
+                        if not rank.insigniaPath:
+                            rank.insigniaPath = r'Menus\Stats\Cobl\generic%02d.dds' % rank.rank
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+                    
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        mFactable = self.mFactable
+        if not mFactable: return
+        mFactLong = self.mFactLong
+        record = FACTRecord(patchFile._CollectionIndex, mFactLong[0].s, patchFile.MakeShortFid(mFactLong))
+        override = record.CopyAsOverride(patchFile)
+        if override:
+            override.relations = None
+            for faction in mFactable:
+                relation = override.newRelationsElement()
+                relation.faction = faction
+                relation.mod = 10
+        mFactable.clear()
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods/Files"))
+        for file in self.srcFiles:
+            log("* " +file.s)
+        log(_("\n=== Morphable Factions"))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log("* %s: %d" % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class PowerExhaustion(SpecialPatcher,Patcher):

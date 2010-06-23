@@ -5643,6 +5643,7 @@ class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
     listLabel = _("Override Delev/Relev Tags")
 
 class MFactMarker(bosh.MFactMarker,ListPatcher): pass
+class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
 
 class PowerExhaustion(bosh.PowerExhaustion,Patcher): pass
 
@@ -5715,7 +5716,7 @@ else:
 ##        CBash_ImportScriptContents(),
 ##        CBash_ImportActorsSpells(),
         CBash_ListsMerger(),
-##        CBash_MFactMarker(),
+        CBash_MFactMarker(),
 ##        CBash_NamesPatcher(),
 ##        CBash_NamesTweaker(),
 ##        CBash_NpcFacePatcher(),
