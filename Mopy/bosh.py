@@ -14886,14 +14886,20 @@ class CBash_PatchFile(CBashModFile):
             gls = SCPTRecord(modFile._CollectionIndex, modFile._ModName, 0x00025811)
             if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != 'Oblivion.esm':
                 self.compiledAllMods.append(modName)
-            pstate = 0
+            pstate = -1
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(type_patchers),1))
             for type, patchers in type_patchers.iteritems():
+                pstate += 1
+                if iiMode:
+                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode]
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode]
+                    #See if all the patchers were filtered out
+                    if not (applyPatchers or scanPatchers): continue
+                else:
+                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply')]
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan')]
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
-                editPatchers = sorted(patchers,key=attrgetter('editOrder'))
-                scanPatchers = sorted(patchers,key=attrgetter('scanOrder'))
-                pstate = pstate + 1
                 for record in getattr(modFile, type):
                     if isMerged: record._ModName = patchFile._ModName
                     #If conflicts is > 0, it will include all conflicts, even the record that called it
@@ -14901,14 +14907,12 @@ class CBash_PatchFile(CBashModFile):
                     #The winning record is at position 0, and the last record is the one most overridden
                     conflicts = record.Conflicts()
 ##                    IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
-                    if (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
-                        for patcher in editPatchers:
-                            if iiMode and not patcher.iiMode: continue
-                            patcher.apply(modFile, record, bashTags)
+                    if (not conflicts or conflicts[0]._ModName == record._ModName):
+                        curPatchers = applyPatchers
                     else:
-                        for patcher in scanPatchers:
-                            if iiMode and not patcher.iiMode: continue
-                            patcher.scan(modFile, record, bashTags)
+                        curPatchers = scanPatchers
+                    for patcher in curPatchers:
+                        patcher(modFile, record, bashTags)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -14918,10 +14922,11 @@ class CBash_PatchFile(CBashModFile):
 ##        subProgress.setFull(max(len(type_patchers),1))
 ##        pstate = 0
         for type, patchers in type_patchers.iteritems():
+            finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
 ##            subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
 ##            pstate = pstate + 1
-            for patcher in sorted(patchers,key=attrgetter('editOrder')):
-                patcher.finishPatch(self)
+            for patcher in finishPatchers:
+                patcher(self)
         progress(progress.full,_('Patchers applied.'))
 
     def buildPatchLog(self,patchName,log,progress):
@@ -15097,19 +15102,6 @@ class CBash_Patcher:
         if not self.isActive: return
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(self)
-
-
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        pass
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        pass
-
-    def finishPatch(self,patchFile):
-        """Edits the bashed patch file directly."""
-        pass
 
     def buildPatchLog(self,log):
         """Write to log."""
@@ -15374,17 +15366,6 @@ class CBash_MultiTweakItem:
         else: value = None
         configs[self.key] = self.isEnabled,value
 
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        pass
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        pass
-
-    def finishPatch(self,patchFile):
-        """Edits the bashed patch file directly."""
-        pass
 #------------------------------------------------------------------------------
 class MultiTweaker(Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
@@ -15886,7 +15867,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Cells/Worlds Patched: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -16126,7 +16107,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -16367,7 +16348,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -16555,7 +16536,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Imported Animations: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -16838,7 +16819,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* AI Package Lists Changed: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -17025,7 +17006,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Imported Death Items: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -17222,7 +17203,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         for type in class_mod_count.keys():
             log(_('* Refactioned %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -17410,7 +17391,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Re-Relationed Records: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -17600,7 +17581,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -17988,7 +17969,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         for type in class_mod_count.keys():
             log(_('* %s Inventories Changed: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -18892,7 +18873,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Modified SPEL Stats: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22546,7 +22527,7 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22642,7 +22623,7 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22713,7 +22694,7 @@ class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Redguard NPCs Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22783,7 +22764,7 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22879,7 +22860,7 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Imps Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -22962,7 +22943,7 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader('=== '+self.__class__.name)
         log(_('* Boars Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -23863,7 +23844,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== ' +self.__class__.name)
+        log.setHeader('= ' +self.__class__.name)
         log(_('* Modified LVL: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
