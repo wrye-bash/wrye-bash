@@ -9508,8 +9508,8 @@ class LVLRecord(BaseRecord):
         if(retValue): return retValue.contents.value
         return None
     def set_chanceNone(self, nValue):
-        if nValue is None: return
-        CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 6, c_ubyte(nValue))
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 6)
+        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 6, c_ubyte(nValue))
     chanceNone = property(get_chanceNone, set_chanceNone)
     def get_flags(self):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
@@ -9517,26 +9517,41 @@ class LVLRecord(BaseRecord):
         if(retValue): return retValue.contents.value
         return None
     def set_flags(self, nValue):
-        if nValue is None: return
-        CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 7, c_ubyte(nValue))
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
+        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 7, c_ubyte(nValue))
     flags = property(get_flags, set_flags)
+    def get_script(self):
+        return None
+    def set_script(self, nValue):
+        return
+    script = property(get_script, set_script)
+    def get_template(self):
+        return None
+    def set_template(self, nValue):
+        return
+    template = property(get_template, set_template)
     def get_entries(self):
         numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 10)
         if(numRecords > 0): return [self.Entry(self._CollectionIndex, self._ModName, self._recordID, 10, x) for x in range(0, numRecords)]
         return []
     def set_entries(self, nEntries):
-        if nEntries is None or nEntries == []: return
-        diffLength = len(nEntries) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 10)
-        nValues = [(nEntry.level, nEntry.unused1, nEntry.listId, nEntry.count, nEntry.unused2) for nEntry in nEntries]
-        while(diffLength < 0):
-            CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 10)
-            diffLength += 1
-        while(diffLength > 0):
-            CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 10)
-            diffLength -= 1
-        for oEntry, nValue in zip(self.entries, nValues):
-            oEntry.level, oEntry.unused1, oEntry.listId, oEntry.count, oEntry.unused2 = nValue
+        if nEntries is None or nEntries == []: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        else:
+            diffLength = len(nEntries) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 10)
+            if isinstance(nEntries[0], tuple):
+                nValues = nEntries
+            else:
+                nValues = [(nEntry.level, nEntry.unused1, nEntry.listId, nEntry.count, nEntry.unused2) for nEntry in nEntries]
+            while(diffLength < 0):
+                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 10)
+                diffLength += 1
+            while(diffLength > 0):
+                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 10)
+                diffLength -= 1
+            for oEntry, nValue in zip(self.entries, nValues):
+                oEntry.level, oEntry.unused1, oEntry.listId, oEntry.count, oEntry.unused2 = nValue
     entries = property(get_entries, set_entries)
+    
     def get_IsCalcFromAllLevels(self):
         return self.flags != None and (self.flags & 0x00000001) != 0 or (chanceNone & 0x00000080) != 0
     def set_IsCalcFromAllLevels(self, nValue):
@@ -9581,8 +9596,8 @@ class LVLCRecord(LVLRecord):
         if(retValue): return retValue.contents.value
         return None
     def set_script(self, nValue):
-        if nValue is None: return
-        CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 8, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 8, nValue)
     script = property(get_script, set_script)
     def get_template(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
@@ -9590,8 +9605,8 @@ class LVLCRecord(LVLRecord):
         if(retValue): return retValue.contents.value
         return None
     def set_template(self, nValue):
-        if nValue is None: return
-        CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 9, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 9, nValue)
     template = property(get_template, set_template)
     copyattrs = LVLRecord.copyattrs + ['script','template']
 

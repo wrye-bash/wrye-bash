@@ -14891,6 +14891,8 @@ class CBash_PatchFile(CBashModFile):
             subProgress.setFull(max(len(type_patchers),1))
             for type, patchers in type_patchers.iteritems():
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
+                editPatchers = sorted(patchers,key=attrgetter('editOrder'))
+                scanPatchers = sorted(patchers,key=attrgetter('scanOrder'))
                 pstate = pstate + 1
                 for record in getattr(modFile, type):
                     if isMerged: record._ModName = patchFile._ModName
@@ -14898,27 +14900,27 @@ class CBash_PatchFile(CBashModFile):
                     #(i.e. len(conflicts) will never equal 1)
                     #The winning record is at position 0, and the last record is the one most overridden
                     conflicts = record.Conflicts()
-                    IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
-                    if IsNewest:
-                        for patcher in sorted(patchers,key=attrgetter('editOrder')):
+##                    IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
+                    if (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName):
+                        for patcher in editPatchers:
                             if iiMode and not patcher.iiMode: continue
                             patcher.apply(modFile, record, bashTags)
                     else:
-                        for patcher in sorted(patchers,key=attrgetter('scanOrder')):
+                        for patcher in scanPatchers:
                             if iiMode and not patcher.iiMode: continue
                             patcher.scan(modFile, record, bashTags)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
         #Finish the patch
-        modFile = self
-        subProgress = SubProgress(progress,len(self.allMods))
-        subProgress.setFull(max(len(type_patchers),1))
-        pstate = 0
+##        modFile = self
+##        subProgress = SubProgress(progress,len(self.allMods))
+##        subProgress.setFull(max(len(type_patchers),1))
+##        pstate = 0
         for type, patchers in type_patchers.iteritems():
-            subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
-            pstate = pstate + 1
-            for patcher in sorted(patchers,key=attrgetter('scanOrder')):
+##            subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
+##            pstate = pstate + 1
+            for patcher in sorted(patchers,key=attrgetter('editOrder')):
                 patcher.finishPatch(self)
         progress(progress.full,_('Patchers applied.'))
 
@@ -17547,6 +17549,64 @@ class ImportScripts(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+class CBash_ImportScripts(CBash_ImportPatcher):
+    """Imports attached scripts on objects."""
+    name = _('Import Scripts')
+    text = _("Import Scripts on containers, plants, misc, weapons etc. from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Scripts'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_script = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.class_mod_count = {}
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['ACTI','ALCH','APPA','ARMO','BOOK','CLOT','CONT','CREA',
+                'DOOR','FLOR','FURN','INGR','KEYM','LIGH','LVLC','MISC',
+                'NPC_','QUST','SGST','SLGM','WEAP']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName in self.srcMods and record.script is not None:
+            self.id_script[record.fid] = record.script
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        if(record.fid in self.id_script and record.script != self.id_script[record.fid]):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.script = self.id_script[record.fid]
+                class_mod_count = self.class_mod_count
+                class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
+
 #------------------------------------------------------------------------------
 class ImportScriptContents(ImportPatcher):
     """Imports the contents of scripts -- currently only object/mgef scripts."""
@@ -17695,6 +17755,8 @@ class ImportScriptContents(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+##class CBash_ImportScriptContents(CBash_ImportPatcher):
+##    raise NotImplementedError
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
     """Merge changes to actor inventories."""
@@ -22321,1193 +22383,6 @@ class NamesTweaker(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.buildPatch(log,progress,self.patchFile)
 
-# Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher:
-    """Provides default group, scan and edit orders."""
-    group = _('Special')
-    scanOrder = 40
-    editOrder = 40
-
-#------------------------------------------------------------------------------
-class AlchemicalCatalogs(SpecialPatcher,Patcher):
-    """Updates COBL alchemical catalogs."""
-    name = _('Cobl Catalogs')
-    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
-
-    #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('COBL Main.esm') in loadMods)
-        self.id_ingred = {}
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        return (MreIngr,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        return (MreBook,)
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        id_ingred = self.id_ingred
-        mapper = modFile.getLongMapper()
-        for record in modFile.INGR.getActiveRecords():
-            if not record.full: continue #--Ingredient must have name!
-            effects = record.getEffects()
-            if not ('SEFF',0) in effects:
-                id_ingred[mapper(record.fid)] = (record.eid, record.full, effects)
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        #--Setup
-        mgef_name = self.patchFile.getMgefName()
-        for mgef in mgef_name:
-            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
-        actorEffects = bush.actorValueEffects
-        actorNames = bush.actorValues
-        keep = self.patchFile.getKeeper()
-        #--Book generatator
-        def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreBook(('BOOK',0,0,0,0))
-            book.longFids = True
-            book.changed = True
-            book.eid = eid
-            book.full = full
-            book.value = value
-            book.weight = 0.2
-            book.fid = keep((GPath('Cobl Main.esm'),objectId))
-            book.text = '<div align="left"><font face=3 color=4444>'
-            book.text += _("Salan's Catalog of %s\r\n\r\n") % full
-            book.iconPath = iconPath
-            book.model = book.getDefault('model')
-            book.model.modPath = modelPath
-            book.model.modb_p = modb_p
-            book.modb = book
-            self.patchFile.BOOK.setRecord(book)
-            return book
-        #--Ingredients Catalog
-        id_ingred = self.id_ingred
-        iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
-        for (num,objectId,full,value) in bush.ingred_alchem:
-            book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = cStringIO.StringIO()
-            buff.write(book.text)
-            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(full+'\r\n')
-                for mgef,actorValue in effects[:num]:
-                    effectName = mgef_name[mgef]
-                    if mgef in actorEffects: effectName += actorNames[actorValue]
-                    buff.write('  '+effectName+'\r\n')
-                buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
-        #--Get Ingredients by Effect
-        effect_ingred = {}
-        for fid,(eid,full,effects) in id_ingred.iteritems():
-            for index,(mgef,actorValue) in enumerate(effects):
-                effectName = mgef_name[mgef]
-                if mgef in actorEffects: effectName += actorNames[actorValue]
-                if effectName not in effect_ingred: effect_ingred[effectName] = []
-                effect_ingred[effectName].append((index,full))
-        #--Effect catalogs
-        iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
-        for (num,objectId,full,value) in bush.effect_alchem:
-            book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = cStringIO.StringIO()
-            buff.write(book.text)
-            for effectName in sorted(effect_ingred.keys()):
-                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
-                if effects:
-                    buff.write(effectName+'\r\n')
-                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
-                        exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
-                    buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
-        #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
-        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
-class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
-    """Updates COBL alchemical catalogs."""
-    name = _('Cobl Catalogs')
-    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('COBL Main.esm') in loadMods)
-        if self.isActive:
-            patchFile.indexMGEFs = True
-        self.id_ingred = {}
-        self.effect_ingred = {}
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
-
-    def getTypes(self):
-        return ['INGR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if (record.full):
-            for effect in record.effects:
-                if effect.name == 'SEFF':
-                    return
-            self.id_ingred[record.fid] = (record.eid, record.full, record.effects)
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        id_ingred = self.id_ingred
-        effect_ingred = self.effect_ingred
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
-        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
-
-    def finishPatch(self,patchFile):
-        """Edits the bashed patch file directly."""
-        #--Setup
-        mgef_name = patchFile.mgef_name
-        for mgef in mgef_name:
-            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
-        actorEffects = bush.actorValueEffects
-        actorNames = bush.actorValues
-        #--Book generator
-        def getBook(patchFile, objectId):
-            fid = patchFile.MakeShortFid((GPath('Cobl Main.esm'),objectId))
-            book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
-            book = book.CopyAsOverride(self.patchFile)
-            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
-            return book
-        #--Ingredients Catalog
-        id_ingred = self.id_ingred
-        for (num,objectId,full,value) in bush.ingred_alchem:
-            book = getBook(patchFile, objectId)
-            buff = cStringIO.StringIO()
-            buff.write(book.text)
-            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(full+'\r\n')
-                for effect in effects[:num]:
-                    mgef = effect.name
-                    effectName = mgef_name[mgef]
-                    if mgef in actorEffects: effectName += actorNames[effect.actorValue]
-                    buff.write('  '+effectName+'\r\n')
-                buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
-        #--Get Ingredients by Effect
-        effect_ingred = self.effect_ingred = {}
-        for fid,(eid,full,effects) in id_ingred.iteritems():
-            for index,effect in enumerate(effects):
-                mgef, actorValue = effect.name, effect.actorValue
-                effectName = mgef_name[mgef]
-                if mgef in actorEffects: effectName += actorNames[actorValue]
-                if effectName not in effect_ingred: effect_ingred[effectName] = []
-                effect_ingred[effectName].append((index,full))
-        #--Effect catalogs
-        for (num,objectId,full,value) in bush.effect_alchem:
-            book = getBook(patchFile,objectId)
-            buff = cStringIO.StringIO()
-            buff.write(book.text)
-            for effectName in sorted(effect_ingred.keys()):
-                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
-                if effects:
-                    buff.write(effectName+'\r\n')
-                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
-                        exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
-                    buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
-
-#------------------------------------------------------------------------------
-class CoblExhaustion(SpecialPatcher,ListPatcher):
-    """Modifies most Greater power to work with Cobl's power exhaustion feature."""
-    name = _('Cobl Exhaustion')
-    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
-    autoKey = 'Exhaust'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-
-    #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.cobl = GPath('Cobl Main.esm')
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
-        self.id_exhaustion = {}
-
-    def readFromText(self,textPath):
-        """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.aliases
-        id_exhaustion = self.id_exhaustion
-        textPath = GPath(textPath)
-        ins = bolt.CsvReader(textPath)
-        reNum = re.compile(r'\d+')
-        for fields in ins:
-            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
-            mod,objectIndex,eid,time = fields[:4]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            id_exhaustion[longid] = int(time)
-        ins.close()
-
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        progress.setFull(len(self.srcFiles))
-        for srcFile in self.srcFiles:
-            srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
-            progress.plus()
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        return (MreSpel,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        return (MreSpel,)
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.SPEL
-        for record in modFile.SPEL.getActiveRecords():
-            if not record.spellType == 2: continue
-            record = record.getTypeCopy(mapper)
-            if record.fid in self.id_exhaustion:
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        count = {}
-        exhaustId = (self.cobl,0x05139B)
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.SPEL.records:
-            #--Skip this one?
-            duration = self.id_exhaustion.get(record.fid,0)
-            if not (duration and record.spellType == 2): continue
-            isExhausted = False
-            for effect in record.effects:
-                if effect.name == 'SEFF' and effect.scriptEffect.script == exhaustId:
-                    duration = 0
-                    break
-            if not duration: continue
-            #--Okay, do it
-            record.full = '+'+record.full
-            record.spellType = 3 #--Lesser power
-            effect = record.getDefault('effects')
-            effect.name = 'SEFF'
-            effect.duration = duration
-            scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = _("Power Exhaustion")
-            scriptEffect.script = exhaustId
-            scriptEffect.school = 2
-            scriptEffect.visual = null4
-            scriptEffect.flags.hostile = False
-            effect.scriptEffect = scriptEffect
-            record.effects.append(effect)
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
-    """Modifies most Greater power to work with Cobl's power exhaustion feature."""
-    name = _('Cobl Exhaustion')
-    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
-    autoKey = 'Exhaust'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
-        self.cobl = GPath('Cobl Main.esm')
-        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
-        self.id_exhaustion = {}
-        self.mod_count = {}
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
-        progress.setFull(len(self.srcFiles))
-        for srcFile in self.srcFiles:
-            srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
-            progress.plus()
-
-    def getTypes(self):
-        return ['SPEL']
-
-    def readFromText(self,textPath):
-        """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.aliases
-        id_exhaustion = self.id_exhaustion
-        textPath = GPath(textPath)
-        ins = bolt.CsvReader(textPath)
-        reNum = re.compile(r'\d+')
-        for fields in ins:
-            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
-            mod,objectIndex,eid,time = fields[:4]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            id_exhaustion[longid] = int(time)
-        ins.close()
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if (record.spellType == 2):
-            #--Skip this one?
-            duration = self.id_exhaustion.get(record.longFid,0)
-            if not duration: return
-            exhaustId = self.patchFile.MakeShortFid((self.cobl,0x05139B))
-            for effect in record.effects:
-                if effect.name == 'SEFF' and effect.script == exhaustId:
-                    return
-            #--Okay, do it
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.full = '+'+override.full
-                override.spellType = 3 #--Lesser power
-                effect = override.newEffectsElement()
-                effect.name = 'SEFF'
-                effect.duration = duration
-                effect.full = _("Power Exhaustion")
-                effect.script = exhaustId
-                effect.school = 2
-                effect.visual = null4
-                effect.IsHostile = False
-
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._ModName = override._ModName
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Powers Tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-class ListsMerger(SpecialPatcher,ListPatcher):
-    """Merged leveled lists mod file."""
-    scanOrder = 45
-    editOrder = 45
-    name = _('Leveled Lists')
-    text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
-    tip = _("Merges changes to leveled lists from all active mods.")
-    choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = ('Delev','Relev')
-    forceAuto = False
-    forceItemCheck = True #--Force configChecked to True for all items
-    iiMode = True
-    selectCommands = False
-
-    #--Static------------------------------------------------------------------
-    @staticmethod
-    def getDefaultTags():
-        tags = {}
-        for fileName in ('Leveled Lists.csv','My Leveled Lists.csv'):
-            textPath = dirs['patches'].join(fileName)
-            if textPath.exists():
-                reader = bolt.CsvReader(textPath)
-                for fields in reader:
-                    if len(fields) < 2 or not fields[0] or fields[1] not in ('DR','R','D','RD',''): continue
-                    tags[GPath(fields[0])] = fields[1]
-                reader.close()
-        return tags
-
-    #--Config Phase -----------------------------------------------------------
-    def getChoice(self,item):
-        """Get default config choice."""
-        choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set(('Auto',))
-        if 'Auto' in choice:
-            if item in modInfos:
-                choice = set(('Auto',))
-                bashTags = modInfos[item].getBashTags()
-                for key in ('Delev','Relev'):
-                    if key in bashTags: choice.add(key)
-        self.configChoices[item] = choice
-        return choice
-
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
-        if isinstance(item,bolt.Path): item = item.s
-        if choice:
-            return '%s [%s]' % (item,''.join(sorted(choice)))
-        else:
-            return item
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.listTypes = ('LVLC','LVLI','LVSP')
-        self.type_list = dict([(type,{}) for type in self.listTypes])
-        self.masterItems = {}
-        self.mastersScanned = set()
-        self.levelers = None #--Will initialize later
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (MreLvlc,MreLvli,MreLvsp)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (MreLvlc,MreLvli,MreLvsp)
-
-    def scanModFile(self, modFile, progress):
-        """Add lists from modFile."""
-        #--Level Masters (complete initialization)
-        if self.levelers == None:
-            allMods = set(self.patchFile.allMods)
-            self.levelers = [leveler for leveler in self.getConfigChecked() if leveler in allMods]
-            self.delevMasters = set()
-            for leveler in self.levelers:
-                self.delevMasters.update(modInfos[leveler].header.masters)
-        #--Begin regular scan
-        modName = modFile.fileInfo.name
-        modFile.convertToLongFids(self.listTypes)
-        #--PreScan for later Relevs/Delevs?
-        if modName in self.delevMasters:
-            for type in self.listTypes:
-                for levList in getattr(modFile,type).getActiveRecords():
-                    masterItems = self.masterItems.setdefault(levList.fid,{})
-                    masterItems[modName] = set([entry.listId for entry in levList.entries])
-            self.mastersScanned.add(modName)
-        #--Relev/Delev setup
-        configChoice = self.configChoices.get(modName,tuple())
-        isRelev = ('Relev' in configChoice)
-        isDelev = ('Delev' in configChoice)
-        #--Scan
-        for type in self.listTypes:
-            levLists = self.type_list[type]
-            newLevLists = getattr(modFile,type)
-            for newLevList in newLevLists.getActiveRecords():
-                listId = newLevList.fid
-                isListOwner = (listId[0] == modName)
-                #--Items, delevs and relevs sets
-                newLevList.items = items = set([entry.listId for entry in newLevList.entries])
-                if not isListOwner:
-                    #--Relevs
-                    newLevList.relevs = (set(),items.copy())[isRelev]
-                    #--Delevs: all items in masters minus current items
-                    newLevList.delevs = delevs = set()
-                    if isDelev:
-                        id_masterItems = self.masterItems.get(newLevList.fid)
-                        if id_masterItems:
-                            for masterName in modFile.tes4.masters:
-                                if masterName in id_masterItems:
-                                    delevs |= id_masterItems[masterName]
-                            delevs -= items
-                            newLevList.items |= delevs
-                #--Cache/Merge
-                if isListOwner:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = []
-                    levLists[listId] = levList
-                elif listId not in levLists:
-                    levList = copy.deepcopy(newLevList)
-                    levList.mergeSources = [modName]
-                    levLists[listId] = levList
-                else:
-                    levLists[listId].mergeWith(newLevList,modName)
-
-    def buildPatch(self,log,progress):
-        """Adds merged lists to patchfile."""
-        keep = self.patchFile.getKeeper()
-        #--Relevs/Delevs List
-        log.setHeader('= '+self.__class__.name,True)
-        log.setHeader(_('=== Delevelers/Relevelers'))
-        for leveler in (self.levelers or []):
-            log('* '+self.getItemLabel(leveler))
-        #--Save to patch file
-        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
-            log.setHeader(_('=== Merged %s Lists') % label)
-            patchBlock = getattr(self.patchFile,type)
-            levLists = self.type_list[type]
-            for record in sorted(levLists.values(),key=attrgetter('eid')):
-                if not record.mergeOverLast: continue
-                fid = keep(record.fid)
-                patchBlock.setRecord(levLists[fid])
-                log('* '+record.eid)
-                for mod in record.mergeSources:
-                    log('  * ' + self.getItemLabel(mod))
-        #--Discard empty sublists
-        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
-            patchBlock = getattr(self.patchFile,type)
-            levLists = self.type_list[type]
-            #--Empty lists
-            empties = []
-            sub_supers = dict((x,[]) for x in levLists.keys())
-            for record in sorted(levLists.values()):
-                listId = record.fid
-                if not record.items:
-                    empties.append(listId)
-                else:
-                    subLists = [x for x in record.items if x in sub_supers]
-                    for subList in subLists:
-                        sub_supers[subList].append(listId)
-            #--Clear empties
-            removed = set()
-            cleaned = set()
-            while empties:
-                empty = empties.pop()
-                if empty not in sub_supers: continue
-                for super in sub_supers[empty]:
-                    record = levLists[super]
-                    record.entries = [x for x in record.entries if x.listId != empty]
-                    record.items.remove(empty)
-                    patchBlock.setRecord(record)
-                    if not record.items:
-                        empties.append(super)
-                    cleaned.add(record.eid)
-                    removed.add(levLists[empty].eid)
-                    keep(super)
-            log.setHeader(_('=== Empty %s Sublists') % label)
-            for eid in sorted(removed,key=string.lower):
-                log('* '+eid)
-            log.setHeader(_('=== Empty %s Sublists Removed') % label)
-            for eid in sorted(cleaned,key=string.lower):
-                log('* '+eid)
-
-#------------------------------------------------------------------------------
-class MFactMarker(SpecialPatcher,ListPatcher):
-    """Mark factions that player can acquire while morphing."""
-    name = _('Morph Factions')
-    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 2.18 and Wrye Morph or similar.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'MFact'
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_info = {} #--Morphable factions keyed by fid
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles) and GPath("Cobl Main.esm") in modInfos.ordered
-        self.mFactLong = (GPath("Cobl Main.esm"),0x33FB)
-
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        aliases = self.patchFile.aliases
-        id_info = self.id_info
-        for srcFile in self.srcFiles:
-            textPath = dirs['patches'].join(srcFile)
-            if not textPath.exists(): continue
-            ins = bolt.CsvReader(textPath)
-            for fields in ins:
-                if len(fields) < 6 or fields[1][:2] != '0x':
-                    continue
-                mod,objectIndex = fields[:2]
-                mod = GPath(mod)
-                longid = (aliases.get(mod,mod),int(objectIndex,0))
-                morphName = fields[4].strip()
-                rankName = fields[5].strip()
-                if not morphName: continue
-                if not rankName: rankName = _('Member')
-                id_info[longid] = (morphName,rankName)
-            ins.close()
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (None,(MreFact,))[self.isActive]
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (None,(MreFact,))[self.isActive]
-
-    def scanModFile(self, modFile, progress):
-        """Scan modFile."""
-        if not self.isActive: return
-        id_info = self.id_info
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        patchBlock = self.patchFile.FACT
-        if modFile.fileInfo.name == GPath("Cobl Main.esm"):
-            modFile.convertToLongFids(('FACT',))
-            record = modFile.FACT.getRecord(self.mFactLong)
-            if record:
-                patchBlock.setRecord(record.getTypeCopy())
-        for record in modFile.FACT.getActiveRecords():
-            fid = record.fid
-            if not record.longFids: fid = mapper(fid)
-            if fid in id_info:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,log,progress):
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        mFactLong = self.mFactLong
-        id_info = self.id_info
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        changed = {}
-        mFactable = []
-        for record in modFile.FACT.getActiveRecords():
-            if record.fid not in id_info: continue
-            if record.fid == mFactLong: continue
-            mFactable.append(record.fid)
-            #--Update record if it doesn't have an existing relation with mFactLong
-            if mFactLong not in [relation.faction for relation in record.relations]:
-                record.flags.hiddenFromPC = False
-                relation = record.getDefault('relations')
-                relation.faction = mFactLong
-                relation.mod = 10
-                record.relations.append(relation)
-                mname,rankName = id_info[record.fid]
-                record.full = mname
-                if not record.ranks:
-                    record.ranks = [record.getDefault('ranks')]
-                for rank in record.ranks:
-                    if not rank.male: rank.male = rankName
-                    if not rank.female: rank.female = rank.male
-                    if not rank.insigniaPath:
-                        rank.insigniaPath = r'Menus\Stats\Cobl\generic%02d.dds' % rank.rank
-                keep(record.fid)
-                mod = record.fid[0]
-                changed[mod] = changed.setdefault(mod,0) + 1
-        #--MFact record
-        record = modFile.FACT.getRecord(mFactLong)
-        if record:
-            relations = record.relations
-            del relations[:]
-            for faction in mFactable:
-                relation = record.getDefault('relations')
-                relation.faction = faction
-                relation.mod = 10
-                relations.append(relation)
-            keep(record.fid)
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
-        for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Morphable Factions"))
-        for mod in sorted(changed):
-            log("* %s: %d" % (mod.s,changed[mod]))
-
-#------------------------------------------------------------------------------
-class PowerExhaustion(SpecialPatcher,Patcher):
-    """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
-    name = _('Power Exhaustion')
-    text = _("Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active.")
-
-    #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
-        self.id_exhaustion = bush.id_exhaustion
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        return (MreSpel,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        return (MreSpel,)
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.SPEL
-        for record in modFile.SPEL.getActiveRecords():
-            if not record.spellType == 2: continue
-            record = record.getTypeCopy(mapper)
-            if record.fid in self.id_exhaustion or ('FOAT',5) in record.getEffects():
-                patchRecords.setRecord(record)
-                continue
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        count = {}
-        exhaustId = (GPath('Power Exhaustion.esp'),0xCE7)
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.SPEL.records:
-            #--Skip this one?
-            if record.spellType != 2: continue
-            if record.fid not in self.id_exhaustion and ('FOAT',5) not in record.getEffects():
-                continue
-            newEffects = []
-            duration = self.id_exhaustion.get(record.fid,0)
-            for effect in record.effects:
-                if effect.name == 'FOAT' and effect.actorValue == 5 and effect.magnitude == 1:
-                    duration = effect.duration
-                else:
-                    newEffects.append(effect)
-            if not duration: continue
-            record.effects = newEffects
-            #--Okay, do it
-            record.full = '+'+record.full
-            record.spellType = 3 #--Lesser power
-            effect = record.getDefault('effects')
-            effect.name = 'SEFF'
-            effect.duration = duration
-            scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = _("Power Exhaustion")
-            scriptEffect.name = exhaustId
-            scriptEffect.school = 2
-            scriptEffect.visual = null4
-            scriptEffect.flags.hostile = False
-            effect.scriptEffect = scriptEffect
-            record.effects.append(effect)
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(_('= Power Exhaustion'))
-        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
-class RacePatcher(SpecialPatcher,ListPatcher):
-    """Merged leveled lists mod file."""
-    name = _('Race Records')
-    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED.")
-    tip = _("Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
-        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells')
-    forceAuto = True
-
-    #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = set(self.__class__.autoKey)
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
-                if modInfo.mtime > PatchFile.patchTime: continue
-                autoItems.append(modInfo.name)
-        return autoItems
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.raceData = {} #--Race eye meshes, hair,eyes
-        self.tempRaceData = {}
-        #--Restrict srcMods to active/merged mods.
-        self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
-        self.isActive = True #--Always enabled to support eye filtering
-        self.bodyKeys = set(('Height','Weight','TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
-        self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
-        self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
-        self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
-        #--Mesh tuple for each defined eye. Derived from race records.
-        defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
-        self.eye_mesh = {}
-        self.scanTypes = set(('RACE','EYES','HAIR','NPC_'))
-
-    def initData(self,progress):
-        """Get data from source files."""
-        if not self.isActive or not self.srcMods: return
-        loadFactory = LoadFactory(False,MreRace)
-        progress.setFull(len(self.srcMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.srcMods):
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            masters = srcInfo.header.masters
-            bashTags = srcInfo.getBashTags()
-            if 'RACE' not in srcFile.tops: continue
-            srcFile.convertToLongFids(('RACE',))
-            self.tempRaceData = {} #so as not to carry anything over!
-            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags: 
-                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
-            for race in srcFile.RACE.getActiveRecords():
-                tempRaceData = self.tempRaceData.setdefault(race.fid,{})
-                raceData = self.raceData.setdefault(race.fid,{})
-                if 'Hair' in bashTags:
-                    raceHair = raceData.setdefault('hairs',[])
-                    for hair in race.hairs:
-                        if hair not in raceHair: raceHair.append(hair)
-                if self.eyeKeys & bashTags:
-                    tempRaceData['rightEye'] = race.rightEye
-                    tempRaceData['leftEye'] = race.leftEye
-                    raceEyes = raceData.setdefault('eyes',[])
-                    for eye in race.eyes:
-                        if eye not in raceEyes: raceEyes.append(eye)
-                if 'Voice-M' in bashTags:
-                    tempRaceData['maleVoice'] = race.maleVoice
-                if 'Voice-F' in bashTags:
-                    tempRaceData['femaleVoice'] = race.femaleVoice
-                if 'Body-M' in bashTags:
-                    for key in ['male'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if 'Body-F' in bashTags:
-                    for key in ['female'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Teeth' in bashTags:
-                    for key in ('teethLower','teethUpper'):
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Mouth' in bashTags:
-                    for key in ('mouth','tongue'):
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Head' in bashTags:
-                    tempRaceData['head'] = race.head
-                if 'R.Ears' in bashTags:
-                    for key in ('maleEars','femaleEars'):
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Relations' in bashTags:
-                    relations = raceData.setdefault('relations',{})
-                    for x in race.relations:
-                        relations[x.faction] = x.mod
-                if 'R.Attributes-F' in bashTags:
-                    for key in ['female'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Attributes-M' in bashTags:
-                    for key in ['male'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.Skills' in bashTags:
-                    for key in self.raceSkills:
-                        tempRaceData[key] = getattr(race,key)
-                if 'R.AddSpells' in bashTags:
-                    tempRaceData['AddSpells'] = race.spells
-                if 'R.ChangeSpells' in bashTags:
-                    raceData['spellsOverride'] = race.spells
-                if 'R.Description' in bashTags:
-                    tempRaceData['text'] = race.text
-            for master in masters:
-                if not master in modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    if 'RACE' not in masterFile.tops: continue
-                    masterFile.convertToLongFids(('RACE',))
-                    cachedMasters[master] = masterFile
-                for race in masterFile.RACE.getActiveRecords():
-                    if race.fid not in self.tempRaceData: continue
-                    tempRaceData = self.tempRaceData[race.fid]
-                    raceData = self.raceData[race.fid]
-                    if 'AddSpells' in tempRaceData:
-                        raceData.setdefault('AddSpells', [])
-                        for spell in tempRaceData['AddSpells']:
-                            if spell not in race.spells:
-                                if spell not in raceData['AddSpells']:
-                                    raceData['AddSpells'].append(spell)
-                        del tempRaceData['AddSpells']
-                    for key in tempRaceData:
-                        if not tempRaceData[key] == getattr(race,key):
-                            raceData[key] = tempRaceData[key]
-                            
-            progress.plus()
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (None,(MreRace,MreEyes,MreHair,MreNpc))[self.isActive]
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (None,(MreRace,MreEyes,MreHair,MreNpc))[self.isActive]
-
-    def scanModFile(self, modFile, progress):
-        """Add appropriate records from modFile."""
-        if not self.isActive: return
-        eye_mesh = self.eye_mesh
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if not (set(modFile.tops) & self.scanTypes): return
-        modFile.convertToLongFids(('RACE','EYES','NPC_'))
-        srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
-        #--Eyes, Hair
-        for type in ('EYES','HAIR'):
-            patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in getattr(modFile,type).getActiveRecords():
-                if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-        #--Npcs with unassigned eyes
-        patchBlock = self.patchFile.NPC_
-        id_records = patchBlock.id_records
-        for record in modFile.NPC_.getActiveRecords():
-            if not record.eye and record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-        #--Race block
-        patchBlock = self.patchFile.RACE
-        id_records = patchBlock.id_records
-        for record in modFile.RACE.getActiveRecords():
-            if record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-            for eye in record.eyes:
-                if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
-
-    def buildPatch(self,log,progress):
-        """Updates races as needed."""
-        debug = False
-        if not self.isActive: return
-        patchFile = self.patchFile
-        keep = patchFile.getKeeper()
-        if 'RACE' not in patchFile.tops: return
-        racesPatched = []
-        racesSorted = []
-        racesFiltered = []
-        mod_npcsFixed = {}
-        #--Import race info
-        for race in patchFile.RACE.records:
-            #~~print 'Building',race.eid
-            raceData = self.raceData.get(race.fid,None)
-            if not raceData: continue
-            raceChanged = False
-            #-- Racial Hair and  Eye sets
-            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
-                race.hairs = raceData['hairs']
-                raceChanged = True
-            if 'eyes' in raceData:
-                if set(race.eyes) != set(raceData['eyes']):
-                    race.eyes = raceData['eyes']
-                    raceChanged = True
-            #-- Eye paths:  
-            if 'rightEye' in raceData:
-                if not race.rightEye: deprint(_('Very odd race % found - no right eye assigned') % (race.full))
-                if race.rightEye.modPath != raceData['rightEye'].modPath:
-                    race.rightEye.modPath = raceData['rightEye'].modPath
-                    raceChanged = True
-            if 'leftEye' in raceData:
-                if not race.leftEye: deprint(_('Very odd race % found - no left eye assigned') % (race.full))
-                if race.leftEye.modPath != raceData['leftEye'].modPath:
-                    race.leftEye.modPath = raceData['leftEye'].modPath
-                    raceChanged = True
-            #--Teeth/Mouth/head/ears/description
-            for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
-                        raceChanged = True
-            #--spells
-            if 'spellsOverride' in raceData:
-                race.spells = raceData['spellsOverride']
-            if 'AddSpells' in raceData:
-                raceData['spells'] = race.spells
-                for spell in raceData['AddSpells']:
-                    raceData['spells'].append(spell)
-                race.spells = raceData['spells']
-            #--skills
-            for key in self.raceSkills:
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
-                        raceChanged = True
-            #--Gender info (voice, gender specific body data)
-            for gender in ('male','female'):
-                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('Ears','Voice'))))
-                bodyKeys = [gender+key for key in bodyKeys]
-                for key in bodyKeys:
-                    if key in raceData:
-                        if getattr(race,key) != raceData[key]:
-                            setattr(race,key,raceData[key])
-                            raceChanged = True
-            #--Relations
-            if 'relations' in raceData:
-                relations = raceData['relations']
-                oldRelations = set((x.faction,x.mod) for x in race.relations)
-                newRelations = set(relations.iteritems())
-                if newRelations != oldRelations:
-                    del race.relations[:]
-                    for faction,mod in newRelations:
-                        entry = MelObject()
-                        entry.faction = faction
-                        entry.mod = mod
-                        race.relations.append(entry)
-                    raceChanged = True
-            #--Changed
-            if raceChanged:
-                racesPatched.append(race.eid)
-                keep(race.fid)
-        #--Eye Mesh filtering
-        eye_mesh = self.eye_mesh
-        blueEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x27308)]
-        argonianEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x3e91e)]
-        if debug:
-            print '== Eye Mesh Filtering'
-            print 'blueEyeMesh',blueEyeMesh
-            print 'argonianEyeMesh',argonianEyeMesh
-        for eye in (
-            (GPath('Oblivion.esm'),0x1a), #--Reanimate
-            (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
-            (GPath('Oblivion.esm'),0x54bba), #--Golden Saint
-            (GPath('Oblivion.esm'),0x5fa43), #--Ordered
-            ):
-            eye_mesh.setdefault(eye,blueEyeMesh)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
-        for race in patchFile.RACE.records:
-            if debug: print '===', race.eid
-            if not race.eyes: continue #--Sheogorath. Assume is handled correctly.
-            if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match('^117[a-zA-Z]',race.eid): continue #-- x117 race?
-            raceChanged = False
-            mesh_eye = {}
-            for eye in race.eyes:
-                if eye not in eye_mesh:
-                    raise StateError(_('Mesh undefined for eye %s in race %s') % (strFid(eye),race.eid,))
-                mesh = eye_mesh[eye]
-                if mesh not in mesh_eye:
-                    mesh_eye[mesh] = []
-                mesh_eye[mesh].append(eye)
-            currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-            #print race.eid, mesh_eye
-            maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
-            #--Single eye mesh, but doesn't match current mesh?
-            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
-                setRaceEyeMesh(race,*maxEyesMesh)
-                raceChanged = True
-            #--Multiple eye meshes (and playable)?
-            if debug:
-                for mesh,eyes in mesh_eye.iteritems():
-                    print mesh
-                    for eye in eyes: print ' ',strFid(eye)
-            if len(mesh_eye) > 1 and race.flags.playable:
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
-                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
-                    setRaceEyeMesh(race,*blueEyeMesh)
-                    race.eyes = mesh_eye[blueEyeMesh]
-                    raceChanged = True
-                elif argonianEyeMesh in mesh_eye:
-                    setRaceEyeMesh(race,*argonianEyeMesh)
-                    race.eyes = mesh_eye[argonianEyeMesh]
-                    raceChanged = True
-                #--Else figure that current eye mesh is the correct one
-                elif currentMesh in mesh_eye:
-                    race.eyes = mesh_eye[currentMesh]
-                    raceChanged = True
-                #--Else use most popular eye mesh
-                else:
-                    setRaceEyeMesh(race,*maxEyesMeshes)
-                    race.eyes = mesh_eye[maxEyesMesh]
-                    raceChanged = True
-            if raceChanged:
-                racesFiltered.append(race.eid)
-                keep(race.fid)
-        #--Sort Eyes/Hair
-        defaultEyes = {}
-        defaultMaleHair = {}
-        defaultFemaleHair = {}
-        eyeNames  = dict((x.fid,x.full) for x in patchFile.EYES.records)
-        hairNames = dict((x.fid,x.full) for x in patchFile.HAIR.records)
-        maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
-        femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
-        for race in patchFile.RACE.records:
-            if race.flags.playable and race.eyes:
-                defaultEyes[race.fid] = [x for x in bush.defaultEyes.get(race.fid,[]) if x in race.eyes]
-                if not defaultEyes[race.fid]:
-                    defaultEyes[race.fid] = [race.eyes[0]]
-                defaultMaleHair[race.fid] = [x for x in race.hairs if x in maleHairs]
-                defaultFemaleHair[race.fid] = [x for x in race.hairs if x in femaleHairs]
-                race.hairs.sort(key=lambda x: hairNames.get(x))
-                race.eyes.sort(key=lambda x: eyeNames.get(x))
-                racesSorted.append(race.eid)
-                keep(race.fid)
-        #--Npcs with unassigned eyes/hair
-        for npc in patchFile.NPC_.records:
-            raceEyes = defaultEyes.get(npc.race)
-            if not npc.eye and raceEyes:
-                npc.eye = random.choice(raceEyes)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
-                keep(npc.fid)
-            raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.flags.female]).get(npc.race)
-            if not npc.hair and raceHair:
-                npc.hair = random.choice(raceHair)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
-                keep(npc.fid)
-            if not npc.hairLength:
-                npc.hairLength = random.random()
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                keep(npc.fid)
-                if npc.fid in mod_npcsFixed[srcMod]: continue
-                mod_npcsFixed[srcMod].add(npc.fid)
-
-                
-        #--Done
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
-        for mod in self.srcMods:
-            log("* " +mod.s)
-        log(_("\n=== Merged"))
-        if not racesPatched:
-            log(_(". ~~None~~"))
-        else:
-            for eid in sorted(racesPatched):
-                log("* "+eid)
-        log(_("\n=== Eyes/Hair Sorted"))
-        if not racesSorted:
-            log(_(". ~~None~~"))
-        else:
-            for eid in sorted(racesSorted):
-                log("* "+eid)
-        log(_("\n=== Eye Meshes Filtered"))
-        if not racesFiltered:
-            log(_(". ~~None~~"))
-        else:
-            log(_("In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
-            for eid in sorted(racesFiltered):
-                log("* "+eid)
-        if mod_npcsFixed:
-            log(_("\n=== Eyes/Hair Assigned for NPCs"))
-            for srcMod in sorted(mod_npcsFixed):
-                log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
 #------------------------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
     """Base for all NPC tweakers"""
@@ -24225,6 +23100,1373 @@ class CBash_TweakActors(CBash_MultiTweaker):
         log.setHeader('= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+# Patchers: 40 ----------------------------------------------------------------
+class SpecialPatcher:
+    """Provides default group, scan and edit orders."""
+    group = _('Special')
+    scanOrder = 40
+    editOrder = 40
+
+#------------------------------------------------------------------------------
+class AlchemicalCatalogs(SpecialPatcher,Patcher):
+    """Updates COBL alchemical catalogs."""
+    name = _('Cobl Catalogs')
+    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = (GPath('COBL Main.esm') in loadMods)
+        self.id_ingred = {}
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return tuple()
+        return (MreIngr,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return tuple()
+        return (MreBook,)
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive: return
+        id_ingred = self.id_ingred
+        mapper = modFile.getLongMapper()
+        for record in modFile.INGR.getActiveRecords():
+            if not record.full: continue #--Ingredient must have name!
+            effects = record.getEffects()
+            if not ('SEFF',0) in effects:
+                id_ingred[mapper(record.fid)] = (record.eid, record.full, effects)
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        #--Setup
+        mgef_name = self.patchFile.getMgefName()
+        for mgef in mgef_name:
+            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
+        actorEffects = bush.actorValueEffects
+        actorNames = bush.actorValues
+        keep = self.patchFile.getKeeper()
+        #--Book generatator
+        def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
+            book = MreBook(('BOOK',0,0,0,0))
+            book.longFids = True
+            book.changed = True
+            book.eid = eid
+            book.full = full
+            book.value = value
+            book.weight = 0.2
+            book.fid = keep((GPath('Cobl Main.esm'),objectId))
+            book.text = '<div align="left"><font face=3 color=4444>'
+            book.text += _("Salan's Catalog of %s\r\n\r\n") % full
+            book.iconPath = iconPath
+            book.model = book.getDefault('model')
+            book.model.modPath = modelPath
+            book.model.modb_p = modb_p
+            book.modb = book
+            self.patchFile.BOOK.setRecord(book)
+            return book
+        #--Ingredients Catalog
+        id_ingred = self.id_ingred
+        iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
+        for (num,objectId,full,value) in bush.ingred_alchem:
+            book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
+                buff.write(full+'\r\n')
+                for mgef,actorValue in effects[:num]:
+                    effectName = mgef_name[mgef]
+                    if mgef in actorEffects: effectName += actorNames[actorValue]
+                    buff.write('  '+effectName+'\r\n')
+                buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+        #--Get Ingredients by Effect
+        effect_ingred = {}
+        for fid,(eid,full,effects) in id_ingred.iteritems():
+            for index,(mgef,actorValue) in enumerate(effects):
+                effectName = mgef_name[mgef]
+                if mgef in actorEffects: effectName += actorNames[actorValue]
+                if effectName not in effect_ingred: effect_ingred[effectName] = []
+                effect_ingred[effectName].append((index,full))
+        #--Effect catalogs
+        iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
+        for (num,objectId,full,value) in bush.effect_alchem:
+            book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for effectName in sorted(effect_ingred.keys()):
+                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
+                if effects:
+                    buff.write(effectName+'\r\n')
+                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
+                        exSpace = ('',' ')[index == 0]
+                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
+                    buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+        #--Log
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
+        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
+    """Updates COBL alchemical catalogs."""
+    name = _('Cobl Catalogs')
+    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = (GPath('COBL Main.esm') in loadMods)
+        if self.isActive:
+            patchFile.indexMGEFs = True
+        self.id_ingred = {}
+        self.effect_ingred = {}
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        return ['INGR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if (record.full):
+            for effect in record.effects:
+                if effect.name == 'SEFF':
+                    return
+            self.id_ingred[record.fid] = (record.eid, record.full, record.effects)
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        id_ingred = self.id_ingred
+        effect_ingred = self.effect_ingred
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
+        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        #--Setup
+        mgef_name = patchFile.mgef_name
+        for mgef in mgef_name:
+            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
+        actorEffects = bush.actorValueEffects
+        actorNames = bush.actorValues
+        #--Book generator
+        def getBook(patchFile, objectId):
+            fid = patchFile.MakeShortFid((GPath('Cobl Main.esm'),objectId))
+            book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
+            book = book.CopyAsOverride(self.patchFile)
+            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
+            return book
+        #--Ingredients Catalog
+        id_ingred = self.id_ingred
+        for (num,objectId,full,value) in bush.ingred_alchem:
+            book = getBook(patchFile, objectId)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
+                buff.write(full+'\r\n')
+                for effect in effects[:num]:
+                    mgef = effect.name
+                    effectName = mgef_name[mgef]
+                    if mgef in actorEffects: effectName += actorNames[effect.actorValue]
+                    buff.write('  '+effectName+'\r\n')
+                buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+        #--Get Ingredients by Effect
+        effect_ingred = self.effect_ingred = {}
+        for fid,(eid,full,effects) in id_ingred.iteritems():
+            for index,effect in enumerate(effects):
+                mgef, actorValue = effect.name, effect.actorValue
+                effectName = mgef_name[mgef]
+                if mgef in actorEffects: effectName += actorNames[actorValue]
+                if effectName not in effect_ingred: effect_ingred[effectName] = []
+                effect_ingred[effectName].append((index,full))
+        #--Effect catalogs
+        for (num,objectId,full,value) in bush.effect_alchem:
+            book = getBook(patchFile,objectId)
+            buff = cStringIO.StringIO()
+            buff.write(book.text)
+            for effectName in sorted(effect_ingred.keys()):
+                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
+                if effects:
+                    buff.write(effectName+'\r\n')
+                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
+                        exSpace = ('',' ')[index == 0]
+                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
+                    buff.write('\r\n')
+            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+
+#------------------------------------------------------------------------------
+class CoblExhaustion(SpecialPatcher,ListPatcher):
+    """Modifies most Greater power to work with Cobl's power exhaustion feature."""
+    name = _('Cobl Exhaustion')
+    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
+    autoKey = 'Exhaust'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cobl = GPath('Cobl Main.esm')
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
+        self.id_exhaustion = {}
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        aliases = self.patchFile.aliases
+        id_exhaustion = self.id_exhaustion
+        textPath = GPath(textPath)
+        ins = bolt.CsvReader(textPath)
+        reNum = re.compile(r'\d+')
+        for fields in ins:
+            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
+            mod,objectIndex,eid,time = fields[:4]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            id_exhaustion[longid] = int(time)
+        ins.close()
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesDir = dirs['patches'].list()
+            if srcPath not in patchesDir: continue
+            self.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return tuple()
+        return (MreSpel,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return tuple()
+        return (MreSpel,)
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive: return
+        mapper = modFile.getLongMapper()
+        patchRecords = self.patchFile.SPEL
+        for record in modFile.SPEL.getActiveRecords():
+            if not record.spellType == 2: continue
+            record = record.getTypeCopy(mapper)
+            if record.fid in self.id_exhaustion:
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        count = {}
+        exhaustId = (self.cobl,0x05139B)
+        keep = self.patchFile.getKeeper()
+        for record in self.patchFile.SPEL.records:
+            #--Skip this one?
+            duration = self.id_exhaustion.get(record.fid,0)
+            if not (duration and record.spellType == 2): continue
+            isExhausted = False
+            for effect in record.effects:
+                if effect.name == 'SEFF' and effect.scriptEffect.script == exhaustId:
+                    duration = 0
+                    break
+            if not duration: continue
+            #--Okay, do it
+            record.full = '+'+record.full
+            record.spellType = 3 #--Lesser power
+            effect = record.getDefault('effects')
+            effect.name = 'SEFF'
+            effect.duration = duration
+            scriptEffect = record.getDefault('effects.scriptEffect')
+            scriptEffect.full = _("Power Exhaustion")
+            scriptEffect.script = exhaustId
+            scriptEffect.school = 2
+            scriptEffect.visual = null4
+            scriptEffect.flags.hostile = False
+            effect.scriptEffect = scriptEffect
+            record.effects.append(effect)
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
+    """Modifies most Greater power to work with Cobl's power exhaustion feature."""
+    name = _('Cobl Exhaustion')
+    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
+    autoKey = 'Exhaust'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcFiles = self.getConfigChecked()
+        self.cobl = GPath('Cobl Main.esm')
+        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
+        self.id_exhaustion = {}
+        self.mod_count = {}
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesDir = dirs['patches'].list()
+            if srcPath not in patchesDir: continue
+            self.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['SPEL']
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        aliases = self.patchFile.aliases
+        id_exhaustion = self.id_exhaustion
+        textPath = GPath(textPath)
+        ins = bolt.CsvReader(textPath)
+        reNum = re.compile(r'\d+')
+        for fields in ins:
+            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
+            mod,objectIndex,eid,time = fields[:4]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            id_exhaustion[longid] = int(time)
+        ins.close()
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if (record.spellType == 2):
+            #--Skip this one?
+            duration = self.id_exhaustion.get(record.longFid,0)
+            if not duration: return
+            exhaustId = self.patchFile.MakeShortFid((self.cobl,0x05139B))
+            for effect in record.effects:
+                if effect.name == 'SEFF' and effect.script == exhaustId:
+                    return
+            #--Okay, do it
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = '+'+override.full
+                override.spellType = 3 #--Lesser power
+                effect = override.newEffectsElement()
+                effect.name = 'SEFF'
+                effect.duration = duration
+                effect.full = _("Power Exhaustion")
+                effect.script = exhaustId
+                effect.school = 2
+                effect.visual = null4
+                effect.IsHostile = False
+
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= '+self.__class__.name)
+        log(_('* Powers Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class ListsMerger(SpecialPatcher,ListPatcher):
+    """Merged leveled lists mod file."""
+    scanOrder = 45
+    editOrder = 45
+    name = _('Leveled Lists')
+    text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
+    tip = _("Merges changes to leveled lists from all active mods.")
+    choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
+    autoKey = ('Delev','Relev')
+    forceAuto = False
+    forceItemCheck = True #--Force configChecked to True for all items
+    iiMode = True
+    selectCommands = False
+
+    #--Static------------------------------------------------------------------
+    @staticmethod
+    def getDefaultTags():
+        tags = {}
+        for fileName in ('Leveled Lists.csv','My Leveled Lists.csv'):
+            textPath = dirs['patches'].join(fileName)
+            if textPath.exists():
+                reader = bolt.CsvReader(textPath)
+                for fields in reader:
+                    if len(fields) < 2 or not fields[0] or fields[1] not in ('DR','R','D','RD',''): continue
+                    tags[GPath(fields[0])] = fields[1]
+                reader.close()
+        return tags
+
+    #--Config Phase -----------------------------------------------------------
+    def getChoice(self,item):
+        """Get default config choice."""
+        choice = self.configChoices.get(item)
+        if not isinstance(choice,set): choice = set(('Auto',))
+        if 'Auto' in choice:
+            if item in modInfos:
+                choice = set(('Auto',))
+                bashTags = modInfos[item].getBashTags()
+                for key in ('Delev','Relev'):
+                    if key in bashTags: choice.add(key)
+        self.configChoices[item] = choice
+        return choice
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
+        if isinstance(item,bolt.Path): item = item.s
+        if choice:
+            return '%s [%s]' % (item,''.join(sorted(choice)))
+        else:
+            return item
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.listTypes = ('LVLC','LVLI','LVSP')
+        self.type_list = dict([(type,{}) for type in self.listTypes])
+        self.masterItems = {}
+        self.mastersScanned = set()
+        self.levelers = None #--Will initialize later
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreLvlc,MreLvli,MreLvsp)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreLvlc,MreLvli,MreLvsp)
+
+    def scanModFile(self, modFile, progress):
+        """Add lists from modFile."""
+        #--Level Masters (complete initialization)
+        if self.levelers == None:
+            allMods = set(self.patchFile.allMods)
+            self.levelers = [leveler for leveler in self.getConfigChecked() if leveler in allMods]
+            self.delevMasters = set()
+            for leveler in self.levelers:
+                self.delevMasters.update(modInfos[leveler].header.masters)
+        #--Begin regular scan
+        modName = modFile.fileInfo.name
+        modFile.convertToLongFids(self.listTypes)
+        #--PreScan for later Relevs/Delevs?
+        if modName in self.delevMasters:
+            for type in self.listTypes:
+                for levList in getattr(modFile,type).getActiveRecords():
+                    masterItems = self.masterItems.setdefault(levList.fid,{})
+                    masterItems[modName] = set([entry.listId for entry in levList.entries])
+            self.mastersScanned.add(modName)
+        #--Relev/Delev setup
+        configChoice = self.configChoices.get(modName,tuple())
+        isRelev = ('Relev' in configChoice)
+        isDelev = ('Delev' in configChoice)
+        #--Scan
+        for type in self.listTypes:
+            levLists = self.type_list[type]
+            newLevLists = getattr(modFile,type)
+            for newLevList in newLevLists.getActiveRecords():
+                listId = newLevList.fid
+                isListOwner = (listId[0] == modName)
+                #--Items, delevs and relevs sets
+                newLevList.items = items = set([entry.listId for entry in newLevList.entries])
+                if not isListOwner:
+                    #--Relevs
+                    newLevList.relevs = (set(),items.copy())[isRelev]
+                    #--Delevs: all items in masters minus current items
+                    newLevList.delevs = delevs = set()
+                    if isDelev:
+                        id_masterItems = self.masterItems.get(newLevList.fid)
+                        if id_masterItems:
+                            for masterName in modFile.tes4.masters:
+                                if masterName in id_masterItems:
+                                    delevs |= id_masterItems[masterName]
+                            delevs -= items
+                            newLevList.items |= delevs
+                #--Cache/Merge
+                if isListOwner:
+                    levList = copy.deepcopy(newLevList)
+                    levList.mergeSources = []
+                    levLists[listId] = levList
+                elif listId not in levLists:
+                    levList = copy.deepcopy(newLevList)
+                    levList.mergeSources = [modName]
+                    levLists[listId] = levList
+                else:
+                    levLists[listId].mergeWith(newLevList,modName)
+
+    def buildPatch(self,log,progress):
+        """Adds merged lists to patchfile."""
+        keep = self.patchFile.getKeeper()
+        #--Relevs/Delevs List
+        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(_('=== Delevelers/Relevelers'))
+        for leveler in (self.levelers or []):
+            log('* '+self.getItemLabel(leveler))
+        #--Save to patch file
+        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
+            log.setHeader(_('=== Merged %s Lists') % label)
+            patchBlock = getattr(self.patchFile,type)
+            levLists = self.type_list[type]
+            for record in sorted(levLists.values(),key=attrgetter('eid')):
+                if not record.mergeOverLast: continue
+                fid = keep(record.fid)
+                patchBlock.setRecord(levLists[fid])
+                log('* '+record.eid)
+                for mod in record.mergeSources:
+                    log('  * ' + self.getItemLabel(mod))
+        #--Discard empty sublists
+        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
+            patchBlock = getattr(self.patchFile,type)
+            levLists = self.type_list[type]
+            #--Empty lists
+            empties = []
+            sub_supers = dict((x,[]) for x in levLists.keys())
+            for record in sorted(levLists.values()):
+                listId = record.fid
+                if not record.items:
+                    empties.append(listId)
+                else:
+                    subLists = [x for x in record.items if x in sub_supers]
+                    for subList in subLists:
+                        sub_supers[subList].append(listId)
+            #--Clear empties
+            removed = set()
+            cleaned = set()
+            while empties:
+                empty = empties.pop()
+                if empty not in sub_supers: continue
+                for super in sub_supers[empty]:
+                    record = levLists[super]
+                    record.entries = [x for x in record.entries if x.listId != empty]
+                    record.items.remove(empty)
+                    patchBlock.setRecord(record)
+                    if not record.items:
+                        empties.append(super)
+                    cleaned.add(record.eid)
+                    removed.add(levLists[empty].eid)
+                    keep(super)
+            log.setHeader(_('=== Empty %s Sublists') % label)
+            for eid in sorted(removed,key=string.lower):
+                log('* '+eid)
+            log.setHeader(_('=== Empty %s Sublists Removed') % label)
+            for eid in sorted(cleaned,key=string.lower):
+                log('* '+eid)
+
+class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
+    """Merged leveled lists mod file."""
+    scanOrder = 45
+    editOrder = 45
+    name = _('Leveled Lists')
+    text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
+    tip = _("Merges changes to leveled lists from all active mods.")
+    choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
+    autoKey = ('Delev','Relev')
+    forceAuto = False
+    forceItemCheck = True #--Force configChecked to True for all items
+    iiMode = True
+    selectCommands = False
+
+    #--Static------------------------------------------------------------------
+    @staticmethod
+    def getDefaultTags():
+        tags = {}
+        for fileName in ('Leveled Lists.csv','My Leveled Lists.csv'):
+            textPath = dirs['patches'].join(fileName)
+            if textPath.exists():
+                reader = bolt.CsvReader(textPath)
+                for fields in reader:
+                    if len(fields) < 2 or not fields[0] or fields[1] not in ('DR','R','D','RD',''): continue
+                    tags[GPath(fields[0])] = fields[1]
+                reader.close()
+        return tags
+
+    #--Config Phase -----------------------------------------------------------
+    def getChoice(self,item):
+        """Get default config choice."""
+        choice = self.configChoices.get(item)
+        if not isinstance(choice,set): choice = set(('Auto',))
+        if 'Auto' in choice:
+            if item in modInfos:
+                choice = set(('Auto',))
+                bashTags = modInfos[item].getBashTags()
+                for key in ('Delev','Relev'):
+                    if key in bashTags: choice.add(key)
+        self.configChoices[item] = choice
+        return choice
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
+        if isinstance(item,bolt.Path): item = item.s
+        if choice:
+            return '%s [%s]' % (item,''.join(sorted(choice)))
+        else:
+            return item
+
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_delevs = {}
+        self.mod_id_items = {}
+        self.id_list = {}
+##        self.id_items = {}
+        self.id_attrs = {}
+        self.mod_count = {}
+        self.empties = set()
+        self.changed = set()
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+            
+    def getTypes(self):
+        return ['LVLC','LVLI','LVSP']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        recordId = record.fid
+        if recordId not in self.id_list:
+            Entries = record.entries
+            if Entries:
+                self.id_list[recordId] = [(entry.listId, entry.level, entry.count) for entry in Entries]
+                self.id_attrs[recordId] = [record.chanceNone, record.script, record.template, record.flags]
+                self.mod_id_items.setdefault(modFile._ModName,{})[recordId] = set([entry.listId for entry in Entries])
+            else:
+                self.empties.add(recordId)
+        else:
+            mergedList = self.id_list[recordId]
+            configChoice = self.configChoices.get(modFile.GName,tuple())
+            isRelev = ('Relev' in configChoice)
+            isDelev = ('Delev' in configChoice)
+            delevs = self.id_delevs.setdefault(recordId, set())
+##            if isRelev or isDelev:
+            curItems = self.mod_id_items.setdefault(modFile._ModName,{})[recordId] = set([entry.listId for entry in record.entries])
+            if isRelev:
+                #Can add and set the level/count of items, but not delete items
+                #Ironically, the first step is to delete items that the list will add right back
+                #This is an easier way to update level/count than actually checking if they need changing
+
+                #Filter out any records that may have their level/count updated
+                mergedList = [(entry[0], entry[1], entry[2]) for entry in mergedList if entry[0] not in curItems]
+                #Add any new records as well as any that were filtered out
+                mergedList += [(entry.listId, entry.level, entry.count) for entry in record.entries]
+                self.id_attrs[recordId] = [record.chanceNone, record.script, record.template, record.flags]
+                #Remove the added items from the deleveled list
+                delevs -= curItems
+            else:
+                #Can add new items, but can't change existing ones
+                items = set([entry[0] for entry in mergedList])
+                mergedList += [(entry.listId, entry.level, entry.count) for entry in record.entries if entry.listId not in items]
+                mergedAttrs = self.id_attrs[recordId]
+                self.id_attrs[recordId] = [record.chanceNone or mergedAttrs[0], record.script or mergedAttrs[1], record.template or mergedAttrs[2], record.flags | mergedAttrs[3]]
+            #--Delevs: all items in masters minus current items
+            if isDelev:
+                deletedItems = set()
+                for master in modFile.TES4.masters:
+                    if master in self.mod_id_items:
+                        deletedItems |= self.mod_id_items[master].get(recordId,set())
+                deletedItems -= curItems
+                delevs |= deletedItems
+
+            #Remove any items that were deleveled
+            mergedList = [(entry[0], entry[1], entry[2]) for entry in mergedList if entry[0] not in delevs]
+            if mergedList:
+                self.empties.discard(recordId)
+            self.id_list[recordId] = mergedList
+            self.id_delevs[recordId] = delevs
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        recordId = record.fid
+        merged = recordId in self.id_list
+        Entries = record.entries
+        if merged:
+            self.scan(modFile,record,bashTags)
+            mergedList = self.id_list[recordId]
+            mergedAttrs = self.id_attrs[recordId]
+            newList = [(entry.listId, entry.level, entry.count) for entry in Entries]
+            newAttrs = [record.chanceNone, record.script, record.template, record.flags]
+        elif Entries:
+            self.empties.discard(recordId)
+        else:
+            self.empties.add(recordId)
+        #Can't tell if any sublists are actually empty until they've all been processed/merged
+        #So every level list gets copied into the patch, so that they can be checked after the regular patch process
+        #They'll get deleted from the patch there as needed.
+        override = record.CopyAsOverride(self.patchFile)
+        if override:
+            record.UnloadRecord()
+            record._ModName = override._ModName
+            if merged and (sorted(newList, key=itemgetter(0)) != sorted(mergedList, key=itemgetter(0)) or newAttrs != mergedAttrs):
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.changed.add(recordId)
+                override.chanceNone, override.script, override.template, override.flags = mergedAttrs
+                override.entries = [(entry[1], None, entry[0], entry[2], None) for entry in mergedList]
+
+    def finishPatch(self,patchFile):
+        """Edits the bashed patch file directly."""
+        if not self.empties: return
+        #Clean up any empty sublists
+        for type in self.getTypes():
+            for record in getattr(patchFile,type):
+                items = set([entry.listId for entry in record.entries])
+                toRemove = self.empties & items
+                if toRemove:
+                    record.entries = [entry for entry in record.entries if entry.listId not in toRemove]
+                elif record.fid not in self.changed:
+                    record.DeleteRecord()
+        patchFile.CleanMasters()
+        self.empties = None
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== ' +self.__class__.name)
+        log(_('* Modified LVL: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class MFactMarker(SpecialPatcher,ListPatcher):
+    """Mark factions that player can acquire while morphing."""
+    name = _('Morph Factions')
+    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 2.18 and Wrye Morph or similar.")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'MFact'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles) and GPath("Cobl Main.esm") in modInfos.ordered
+        self.mFactLong = (GPath("Cobl Main.esm"),0x33FB)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        for srcFile in self.srcFiles:
+            textPath = dirs['patches'].join(srcFile)
+            if not textPath.exists(): continue
+            ins = bolt.CsvReader(textPath)
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != '0x':
+                    continue
+                mod,objectIndex = fields[:2]
+                mod = GPath(mod)
+                longid = (aliases.get(mod,mod),int(objectIndex,0))
+                morphName = fields[4].strip()
+                rankName = fields[5].strip()
+                if not morphName: continue
+                if not rankName: rankName = _('Member')
+                id_info[longid] = (morphName,rankName)
+            ins.close()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (None,(MreFact,))[self.isActive]
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (None,(MreFact,))[self.isActive]
+
+    def scanModFile(self, modFile, progress):
+        """Scan modFile."""
+        if not self.isActive: return
+        id_info = self.id_info
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        patchBlock = self.patchFile.FACT
+        if modFile.fileInfo.name == GPath("Cobl Main.esm"):
+            modFile.convertToLongFids(('FACT',))
+            record = modFile.FACT.getRecord(self.mFactLong)
+            if record:
+                patchBlock.setRecord(record.getTypeCopy())
+        for record in modFile.FACT.getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid in id_info:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Make changes to patchfile."""
+        if not self.isActive: return
+        mFactLong = self.mFactLong
+        id_info = self.id_info
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        changed = {}
+        mFactable = []
+        for record in modFile.FACT.getActiveRecords():
+            if record.fid not in id_info: continue
+            if record.fid == mFactLong: continue
+            mFactable.append(record.fid)
+            #--Update record if it doesn't have an existing relation with mFactLong
+            if mFactLong not in [relation.faction for relation in record.relations]:
+                record.flags.hiddenFromPC = False
+                relation = record.getDefault('relations')
+                relation.faction = mFactLong
+                relation.mod = 10
+                record.relations.append(relation)
+                mname,rankName = id_info[record.fid]
+                record.full = mname
+                if not record.ranks:
+                    record.ranks = [record.getDefault('ranks')]
+                for rank in record.ranks:
+                    if not rank.male: rank.male = rankName
+                    if not rank.female: rank.female = rank.male
+                    if not rank.insigniaPath:
+                        rank.insigniaPath = r'Menus\Stats\Cobl\generic%02d.dds' % rank.rank
+                keep(record.fid)
+                mod = record.fid[0]
+                changed[mod] = changed.setdefault(mod,0) + 1
+        #--MFact record
+        record = modFile.FACT.getRecord(mFactLong)
+        if record:
+            relations = record.relations
+            del relations[:]
+            for faction in mFactable:
+                relation = record.getDefault('relations')
+                relation.faction = faction
+                relation.mod = 10
+                relations.append(relation)
+            keep(record.fid)
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods/Files"))
+        for file in self.srcFiles:
+            log("* " +file.s)
+        log(_("\n=== Morphable Factions"))
+        for mod in sorted(changed):
+            log("* %s: %d" % (mod.s,changed[mod]))
+
+#------------------------------------------------------------------------------
+class PowerExhaustion(SpecialPatcher,Patcher):
+    """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
+    name = _('Power Exhaustion')
+    text = _("Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active.")
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
+        self.id_exhaustion = bush.id_exhaustion
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return tuple()
+        return (MreSpel,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return tuple()
+        return (MreSpel,)
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive: return
+        mapper = modFile.getLongMapper()
+        patchRecords = self.patchFile.SPEL
+        for record in modFile.SPEL.getActiveRecords():
+            if not record.spellType == 2: continue
+            record = record.getTypeCopy(mapper)
+            if record.fid in self.id_exhaustion or ('FOAT',5) in record.getEffects():
+                patchRecords.setRecord(record)
+                continue
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        count = {}
+        exhaustId = (GPath('Power Exhaustion.esp'),0xCE7)
+        keep = self.patchFile.getKeeper()
+        for record in self.patchFile.SPEL.records:
+            #--Skip this one?
+            if record.spellType != 2: continue
+            if record.fid not in self.id_exhaustion and ('FOAT',5) not in record.getEffects():
+                continue
+            newEffects = []
+            duration = self.id_exhaustion.get(record.fid,0)
+            for effect in record.effects:
+                if effect.name == 'FOAT' and effect.actorValue == 5 and effect.magnitude == 1:
+                    duration = effect.duration
+                else:
+                    newEffects.append(effect)
+            if not duration: continue
+            record.effects = newEffects
+            #--Okay, do it
+            record.full = '+'+record.full
+            record.spellType = 3 #--Lesser power
+            effect = record.getDefault('effects')
+            effect.name = 'SEFF'
+            effect.duration = duration
+            scriptEffect = record.getDefault('effects.scriptEffect')
+            scriptEffect.full = _("Power Exhaustion")
+            scriptEffect.name = exhaustId
+            scriptEffect.school = 2
+            scriptEffect.visual = null4
+            scriptEffect.flags.hostile = False
+            effect.scriptEffect = scriptEffect
+            record.effects.append(effect)
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('= Power Exhaustion'))
+        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+#------------------------------------------------------------------------------
+class RacePatcher(SpecialPatcher,ListPatcher):
+    """Merged leveled lists mod file."""
+    name = _('Race Records')
+    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED.")
+    tip = _("Merge race eyes, hair, body, voice from mods.")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
+        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
+        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
+        'R.AddSpells', 'R.ChangeSpells')
+    forceAuto = True
+
+    #--Config Phase -----------------------------------------------------------
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        autoRe = self.__class__.autoRe
+        autoKey = set(self.__class__.autoKey)
+        for modInfo in modInfos.data.values():
+            if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
+                if modInfo.mtime > PatchFile.patchTime: continue
+                autoItems.append(modInfo.name)
+        return autoItems
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.raceData = {} #--Race eye meshes, hair,eyes
+        self.tempRaceData = {}
+        #--Restrict srcMods to active/merged mods.
+        self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
+        self.isActive = True #--Always enabled to support eye filtering
+        self.bodyKeys = set(('Height','Weight','TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
+        self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
+        self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
+        self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
+        #--Mesh tuple for each defined eye. Derived from race records.
+        defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
+        self.eye_mesh = {}
+        self.scanTypes = set(('RACE','EYES','HAIR','NPC_'))
+
+    def initData(self,progress):
+        """Get data from source files."""
+        if not self.isActive or not self.srcMods: return
+        loadFactory = LoadFactory(False,MreRace)
+        progress.setFull(len(self.srcMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.srcMods):
+            if srcMod not in modInfos: continue
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile.load(True)
+            masters = srcInfo.header.masters
+            bashTags = srcInfo.getBashTags()
+            if 'RACE' not in srcFile.tops: continue
+            srcFile.convertToLongFids(('RACE',))
+            self.tempRaceData = {} #so as not to carry anything over!
+            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags: 
+                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
+            for race in srcFile.RACE.getActiveRecords():
+                tempRaceData = self.tempRaceData.setdefault(race.fid,{})
+                raceData = self.raceData.setdefault(race.fid,{})
+                if 'Hair' in bashTags:
+                    raceHair = raceData.setdefault('hairs',[])
+                    for hair in race.hairs:
+                        if hair not in raceHair: raceHair.append(hair)
+                if self.eyeKeys & bashTags:
+                    tempRaceData['rightEye'] = race.rightEye
+                    tempRaceData['leftEye'] = race.leftEye
+                    raceEyes = raceData.setdefault('eyes',[])
+                    for eye in race.eyes:
+                        if eye not in raceEyes: raceEyes.append(eye)
+                if 'Voice-M' in bashTags:
+                    tempRaceData['maleVoice'] = race.maleVoice
+                if 'Voice-F' in bashTags:
+                    tempRaceData['femaleVoice'] = race.femaleVoice
+                if 'Body-M' in bashTags:
+                    for key in ['male'+key for key in self.bodyKeys]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'Body-F' in bashTags:
+                    for key in ['female'+key for key in self.bodyKeys]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Teeth' in bashTags:
+                    for key in ('teethLower','teethUpper'):
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Mouth' in bashTags:
+                    for key in ('mouth','tongue'):
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Head' in bashTags:
+                    tempRaceData['head'] = race.head
+                if 'R.Ears' in bashTags:
+                    for key in ('maleEars','femaleEars'):
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Relations' in bashTags:
+                    relations = raceData.setdefault('relations',{})
+                    for x in race.relations:
+                        relations[x.faction] = x.mod
+                if 'R.Attributes-F' in bashTags:
+                    for key in ['female'+key for key in self.raceAttributes]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Attributes-M' in bashTags:
+                    for key in ['male'+key for key in self.raceAttributes]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.Skills' in bashTags:
+                    for key in self.raceSkills:
+                        tempRaceData[key] = getattr(race,key)
+                if 'R.AddSpells' in bashTags:
+                    tempRaceData['AddSpells'] = race.spells
+                if 'R.ChangeSpells' in bashTags:
+                    raceData['spellsOverride'] = race.spells
+                if 'R.Description' in bashTags:
+                    tempRaceData['text'] = race.text
+            for master in masters:
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    if 'RACE' not in masterFile.tops: continue
+                    masterFile.convertToLongFids(('RACE',))
+                    cachedMasters[master] = masterFile
+                for race in masterFile.RACE.getActiveRecords():
+                    if race.fid not in self.tempRaceData: continue
+                    tempRaceData = self.tempRaceData[race.fid]
+                    raceData = self.raceData[race.fid]
+                    if 'AddSpells' in tempRaceData:
+                        raceData.setdefault('AddSpells', [])
+                        for spell in tempRaceData['AddSpells']:
+                            if spell not in race.spells:
+                                if spell not in raceData['AddSpells']:
+                                    raceData['AddSpells'].append(spell)
+                        del tempRaceData['AddSpells']
+                    for key in tempRaceData:
+                        if not tempRaceData[key] == getattr(race,key):
+                            raceData[key] = tempRaceData[key]
+                            
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (None,(MreRace,MreEyes,MreHair,MreNpc))[self.isActive]
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (None,(MreRace,MreEyes,MreHair,MreNpc))[self.isActive]
+
+    def scanModFile(self, modFile, progress):
+        """Add appropriate records from modFile."""
+        if not self.isActive: return
+        eye_mesh = self.eye_mesh
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if not (set(modFile.tops) & self.scanTypes): return
+        modFile.convertToLongFids(('RACE','EYES','NPC_'))
+        srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
+        #--Eyes, Hair
+        for type in ('EYES','HAIR'):
+            patchBlock = getattr(self.patchFile,type)
+            id_records = patchBlock.id_records
+            for record in getattr(modFile,type).getActiveRecords():
+                if record.fid not in id_records:
+                    patchBlock.setRecord(record.getTypeCopy(mapper))
+        #--Npcs with unassigned eyes
+        patchBlock = self.patchFile.NPC_
+        id_records = patchBlock.id_records
+        for record in modFile.NPC_.getActiveRecords():
+            if not record.eye and record.fid not in id_records:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+        #--Race block
+        patchBlock = self.patchFile.RACE
+        id_records = patchBlock.id_records
+        for record in modFile.RACE.getActiveRecords():
+            if record.fid not in id_records:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+            for eye in record.eyes:
+                if eye in srcEyes:
+                    eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
+
+    def buildPatch(self,log,progress):
+        """Updates races as needed."""
+        debug = False
+        if not self.isActive: return
+        patchFile = self.patchFile
+        keep = patchFile.getKeeper()
+        if 'RACE' not in patchFile.tops: return
+        racesPatched = []
+        racesSorted = []
+        racesFiltered = []
+        mod_npcsFixed = {}
+        #--Import race info
+        for race in patchFile.RACE.records:
+            #~~print 'Building',race.eid
+            raceData = self.raceData.get(race.fid,None)
+            if not raceData: continue
+            raceChanged = False
+            #-- Racial Hair and  Eye sets
+            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
+                race.hairs = raceData['hairs']
+                raceChanged = True
+            if 'eyes' in raceData:
+                if set(race.eyes) != set(raceData['eyes']):
+                    race.eyes = raceData['eyes']
+                    raceChanged = True
+            #-- Eye paths:  
+            if 'rightEye' in raceData:
+                if not race.rightEye: deprint(_('Very odd race % found - no right eye assigned') % (race.full))
+                if race.rightEye.modPath != raceData['rightEye'].modPath:
+                    race.rightEye.modPath = raceData['rightEye'].modPath
+                    raceChanged = True
+            if 'leftEye' in raceData:
+                if not race.leftEye: deprint(_('Very odd race % found - no left eye assigned') % (race.full))
+                if race.leftEye.modPath != raceData['leftEye'].modPath:
+                    race.leftEye.modPath = raceData['leftEye'].modPath
+                    raceChanged = True
+            #--Teeth/Mouth/head/ears/description
+            for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
+                if key in raceData:
+                    if getattr(race,key) != raceData[key]:
+                        setattr(race,key,raceData[key])
+                        raceChanged = True
+            #--spells
+            if 'spellsOverride' in raceData:
+                race.spells = raceData['spellsOverride']
+            if 'AddSpells' in raceData:
+                raceData['spells'] = race.spells
+                for spell in raceData['AddSpells']:
+                    raceData['spells'].append(spell)
+                race.spells = raceData['spells']
+            #--skills
+            for key in self.raceSkills:
+                if key in raceData:
+                    if getattr(race,key) != raceData[key]:
+                        setattr(race,key,raceData[key])
+                        raceChanged = True
+            #--Gender info (voice, gender specific body data)
+            for gender in ('male','female'):
+                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('Ears','Voice'))))
+                bodyKeys = [gender+key for key in bodyKeys]
+                for key in bodyKeys:
+                    if key in raceData:
+                        if getattr(race,key) != raceData[key]:
+                            setattr(race,key,raceData[key])
+                            raceChanged = True
+            #--Relations
+            if 'relations' in raceData:
+                relations = raceData['relations']
+                oldRelations = set((x.faction,x.mod) for x in race.relations)
+                newRelations = set(relations.iteritems())
+                if newRelations != oldRelations:
+                    del race.relations[:]
+                    for faction,mod in newRelations:
+                        entry = MelObject()
+                        entry.faction = faction
+                        entry.mod = mod
+                        race.relations.append(entry)
+                    raceChanged = True
+            #--Changed
+            if raceChanged:
+                racesPatched.append(race.eid)
+                keep(race.fid)
+        #--Eye Mesh filtering
+        eye_mesh = self.eye_mesh
+        blueEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x27308)]
+        argonianEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x3e91e)]
+        if debug:
+            print '== Eye Mesh Filtering'
+            print 'blueEyeMesh',blueEyeMesh
+            print 'argonianEyeMesh',argonianEyeMesh
+        for eye in (
+            (GPath('Oblivion.esm'),0x1a), #--Reanimate
+            (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
+            (GPath('Oblivion.esm'),0x54bba), #--Golden Saint
+            (GPath('Oblivion.esm'),0x5fa43), #--Ordered
+            ):
+            eye_mesh.setdefault(eye,blueEyeMesh)
+        def setRaceEyeMesh(race,rightPath,leftPath):
+            race.rightEye.modPath = rightPath
+            race.leftEye.modPath = leftPath
+        for race in patchFile.RACE.records:
+            if debug: print '===', race.eid
+            if not race.eyes: continue #--Sheogorath. Assume is handled correctly.
+            if not race.rightEye or not race.leftEye: continue #--WIPZ race?
+            if re.match('^117[a-zA-Z]',race.eid): continue #-- x117 race?
+            raceChanged = False
+            mesh_eye = {}
+            for eye in race.eyes:
+                if eye not in eye_mesh:
+                    raise StateError(_('Mesh undefined for eye %s in race %s') % (strFid(eye),race.eid,))
+                mesh = eye_mesh[eye]
+                if mesh not in mesh_eye:
+                    mesh_eye[mesh] = []
+                mesh_eye[mesh].append(eye)
+            currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
+            #print race.eid, mesh_eye
+            maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
+            #--Single eye mesh, but doesn't match current mesh?
+            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
+                setRaceEyeMesh(race,*maxEyesMesh)
+                raceChanged = True
+            #--Multiple eye meshes (and playable)?
+            if debug:
+                for mesh,eyes in mesh_eye.iteritems():
+                    print mesh
+                    for eye in eyes: print ' ',strFid(eye)
+            if len(mesh_eye) > 1 and race.flags.playable:
+                #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
+                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
+                    setRaceEyeMesh(race,*blueEyeMesh)
+                    race.eyes = mesh_eye[blueEyeMesh]
+                    raceChanged = True
+                elif argonianEyeMesh in mesh_eye:
+                    setRaceEyeMesh(race,*argonianEyeMesh)
+                    race.eyes = mesh_eye[argonianEyeMesh]
+                    raceChanged = True
+                #--Else figure that current eye mesh is the correct one
+                elif currentMesh in mesh_eye:
+                    race.eyes = mesh_eye[currentMesh]
+                    raceChanged = True
+                #--Else use most popular eye mesh
+                else:
+                    setRaceEyeMesh(race,*maxEyesMeshes)
+                    race.eyes = mesh_eye[maxEyesMesh]
+                    raceChanged = True
+            if raceChanged:
+                racesFiltered.append(race.eid)
+                keep(race.fid)
+        #--Sort Eyes/Hair
+        defaultEyes = {}
+        defaultMaleHair = {}
+        defaultFemaleHair = {}
+        eyeNames  = dict((x.fid,x.full) for x in patchFile.EYES.records)
+        hairNames = dict((x.fid,x.full) for x in patchFile.HAIR.records)
+        maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
+        femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
+        for race in patchFile.RACE.records:
+            if race.flags.playable and race.eyes:
+                defaultEyes[race.fid] = [x for x in bush.defaultEyes.get(race.fid,[]) if x in race.eyes]
+                if not defaultEyes[race.fid]:
+                    defaultEyes[race.fid] = [race.eyes[0]]
+                defaultMaleHair[race.fid] = [x for x in race.hairs if x in maleHairs]
+                defaultFemaleHair[race.fid] = [x for x in race.hairs if x in femaleHairs]
+                race.hairs.sort(key=lambda x: hairNames.get(x))
+                race.eyes.sort(key=lambda x: eyeNames.get(x))
+                racesSorted.append(race.eid)
+                keep(race.fid)
+        #--Npcs with unassigned eyes/hair
+        for npc in patchFile.NPC_.records:
+            raceEyes = defaultEyes.get(npc.race)
+            if not npc.eye and raceEyes:
+                npc.eye = random.choice(raceEyes)
+                srcMod = npc.fid[0]
+                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
+                mod_npcsFixed[srcMod].add(npc.fid)
+                keep(npc.fid)
+            raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.flags.female]).get(npc.race)
+            if not npc.hair and raceHair:
+                npc.hair = random.choice(raceHair)
+                srcMod = npc.fid[0]
+                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
+                mod_npcsFixed[srcMod].add(npc.fid)
+                keep(npc.fid)
+            if not npc.hairLength:
+                npc.hairLength = random.random()
+                srcMod = npc.fid[0]
+                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
+                keep(npc.fid)
+                if npc.fid in mod_npcsFixed[srcMod]: continue
+                mod_npcsFixed[srcMod].add(npc.fid)
+
+                
+        #--Done
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
+        log(_("\n=== Merged"))
+        if not racesPatched:
+            log(_(". ~~None~~"))
+        else:
+            for eid in sorted(racesPatched):
+                log("* "+eid)
+        log(_("\n=== Eyes/Hair Sorted"))
+        if not racesSorted:
+            log(_(". ~~None~~"))
+        else:
+            for eid in sorted(racesSorted):
+                log("* "+eid)
+        log(_("\n=== Eye Meshes Filtered"))
+        if not racesFiltered:
+            log(_(". ~~None~~"))
+        else:
+            log(_("In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
+            for eid in sorted(racesFiltered):
+                log("* "+eid)
+        if mod_npcsFixed:
+            log(_("\n=== Eyes/Hair Assigned for NPCs"))
+            for srcMod in sorted(mod_npcsFixed):
+                log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
 #--------------------------------------------
 #------------------------------------------------------------------------------
 class SEWorldEnforcer(SpecialPatcher,Patcher):
