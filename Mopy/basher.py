@@ -5650,6 +5650,7 @@ class MFactMarker(bosh.MFactMarker,ListPatcher): pass
 class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
 
 class PowerExhaustion(bosh.PowerExhaustion,Patcher): pass
+class CBash_PowerExhaustion(bosh.CBash_PowerExhaustion,Patcher): pass
 
 class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
 
@@ -5724,7 +5725,7 @@ else:
         CBash_NamesPatcher(),
         CBash_NamesTweaker(),
         CBash_NpcFacePatcher(),
-##        CBash_PowerExhaustion(),
+        CBash_PowerExhaustion(),
 ##        CBash_RacePatcher(),
 ##        CBash_RoadImporter(),
 ##        CBash_SoundPatcher(),

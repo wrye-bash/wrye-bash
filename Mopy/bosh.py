@@ -14917,7 +14917,6 @@ class CBash_PatchFile(CBashModFile):
                     record.UnloadRecord()
         if self.scanSet:
             self.completeMods = modInfos.getOrdered(self.loadSet|self.mergeSet|self.scanSet)
-##            self.allSet = set(self.allMods)
             self.ScanCollection = Collection(ModsPath=dirs['mods'].s)
             for name in self.scanSet:
                 if modInfos[name].mtime < self.patchTime:
@@ -20832,7 +20831,6 @@ class ClothesTweak_MaxWeight(ClothesTweak):
 
 class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     """Enforce a max weight for specified clothes."""
-    #--Patch Phase ------------------------------------------------------------
     scanOrder = 32
     editOrder = 32
     name = _('Reweigh Clothes')
@@ -24954,6 +24952,67 @@ class PowerExhaustion(SpecialPatcher,Patcher):
         log(_('* Powers Tweaked: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
+    """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
+    name = _('Power Exhaustion')
+    text = _("Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
+        self.id_exhaustion = bush.id_exhaustion
+        self.mod_count = {}
+        self.exhaustId = (GPath('Power Exhaustion.esp'),0xCE7)
+
+    def getTypes(self):
+        return ['SPEL']
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.spellType == 2:
+            recordId = record.fid_long
+            id_exhaustion = self.id_exhaustion
+            Effects = record.effects
+            newEffects = []
+            duration = id_exhaustion.get(recordId,0)
+            for effect in Effects:
+                if effect.name == 'FOAT' and effect.actorValue == 5 and effect.magnitude == 1:
+                    duration = effect.duration
+                else:
+                    newEffects.append(effect)
+            if duration:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.effects = newEffects
+                    #--Okay, do it
+                    override.full = '+'+override.full
+                    override.spellType = 3 #--Lesser power
+                    effect = override.newEffectsElement()
+                    effect.name = 'SEFF'
+                    effect.duration = duration
+                    effect.full = _("Power Exhaustion")
+                    effect.script_long = self.exhaustId
+                    effect.school = 2
+                    effect.visual = null4
+                    effect.IsHostile = False
+
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_('* Powers Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class RacePatcher(SpecialPatcher,ListPatcher):
