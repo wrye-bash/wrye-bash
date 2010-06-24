@@ -4976,6 +4976,7 @@ class PatchDialog(wx.Dialog):
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
                             % (fileName.s,))
                     modList.RefreshUI()
+                del patchFile
             except bosh.FileEditError, error:
                 progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
@@ -5133,7 +5134,7 @@ class Patcher:
         if not self.gConfigPanel:
             self.gTipText = gTipText
             gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
-            text = fill(self.__class__.text,70)
+            text = fill(self.text,70)
             gText = staticText(self.gConfigPanel,text)
             gSizer = vSizer(gText)
             gConfigPanel.SetSizer(gSizer)
@@ -5209,7 +5210,7 @@ class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
         #--Tip
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
-        text = fill(self.__class__.text,70)
+        text = fill(self.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
         #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
@@ -5252,7 +5253,7 @@ class ListPatcher(Patcher):
         self.selectCommands = self.__class__.selectCommands
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
-        text = fill(self.__class__.text,70)
+        text = fill(self.text,70)
         gText = staticText(self.gConfigPanel,text)
         if self.forceItemCheck:
             self.gList = wx.ListBox(gConfigPanel,-1)
@@ -5594,6 +5595,7 @@ class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
 class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
+class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
 class RacePatcher(bosh.RacePatcher,ListPatcher):
     listLabel = _("Race Mods")
@@ -5721,7 +5723,7 @@ else:
         CBash_MFactMarker(),
         CBash_NamesPatcher(),
         CBash_NamesTweaker(),
-##        CBash_NpcFacePatcher(),
+        CBash_NpcFacePatcher(),
 ##        CBash_PowerExhaustion(),
 ##        CBash_RacePatcher(),
 ##        CBash_RoadImporter(),
