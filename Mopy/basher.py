@@ -5627,6 +5627,7 @@ class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
 
 class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
+class CBash_NamesTweaker(bosh.CBash_NamesTweaker,TweakPatcher): pass
 
 class TweakActors(bosh.TweakActors,TweakPatcher): pass
 class CBash_TweakActors(bosh.CBash_TweakActors,TweakPatcher): pass
@@ -5719,7 +5720,7 @@ else:
         CBash_ListsMerger(),
         CBash_MFactMarker(),
         CBash_NamesPatcher(),
-##        CBash_NamesTweaker(),
+        CBash_NamesTweaker(),
 ##        CBash_NpcFacePatcher(),
 ##        CBash_PowerExhaustion(),
 ##        CBash_RacePatcher(),
