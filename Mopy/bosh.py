@@ -22843,18 +22843,18 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
                     for entry in stage.entries:
                         changed = self.reDwarf.search(entry.text or '')
                         if changed: break
-                        compiled = entry.compiled_p
-                        if compiled:
-                            changed = self.reDwarf.search(struct.pack('B' * len(compiled), *compiled) or '')
-                            if changed: break
-                        changed = self.reDwarf.search(entry.scriptText or '')
-                        if changed: break
-        if not changed:
-            if hasattr(record, 'scriptText'):
-                changed = self.reDwarf.search(record.scriptText or '')
-                if not changed:
-                    compiled = record.compiled_p
-                    changed = self.reDwarf.search(struct.pack('B' * len(compiled), *compiled) or '')
+##                        compiled = entry.compiled_p
+##                        if compiled:
+##                            changed = self.reDwarf.search(struct.pack('B' * len(compiled), *compiled) or '')
+##                            if changed: break
+##                        changed = self.reDwarf.search(entry.scriptText or '')
+##                        if changed: break
+##        if not changed:
+##            if hasattr(record, 'scriptText'):
+##                changed = self.reDwarf.search(record.scriptText or '')
+##                if not changed:
+##                    compiled = record.compiled_p
+##                    changed = self.reDwarf.search(struct.pack('B' * len(compiled), *compiled) or '')
         if not changed:
             if record._Type == 'SKIL':
                 changed = self.reDwarf.search(record.apprentice or '')
@@ -22903,29 +22903,29 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
                             newString = entry.text
                             if newString:
                                 entry.text = self.reDwarf.sub(r'\1wemer', newString)
-                            newString = entry.compiled_p
-                            if newString:
-                                nSize = len(newString)
-                                newString = self.reDwarf.sub(r'\1wemer', struct.pack('B' * nSize, *newString))
-                                nSize = len(newString)
-                                entry.compiled_p = struct.unpack('B' * nSize, newString)
-                                entry.compiledSize = nSize
-                            newString = entry.scriptText
-                            if newString:
-                                entry.scriptText = self.reDwarf.sub(r'\1wemer', newString)
+##                            newString = entry.compiled_p
+##                            if newString:
+##                                nSize = len(newString)
+##                                newString = self.reDwarf.sub(r'\1wemer', struct.pack('B' * nSize, *newString))
+##                                nSize = len(newString)
+##                                entry.compiled_p = struct.unpack('B' * nSize, newString)
+##                                entry.compiledSize = nSize
+##                            newString = entry.scriptText
+##                            if newString:
+##                                entry.scriptText = self.reDwarf.sub(r'\1wemer', newString)
+##
 
-
-                if hasattr(override, 'scriptText'):
-                    newString = override.compiled_p
-                    if newString:
-                        nSize = len(newString)
-                        newString = self.reDwarf.sub(r'\1wemer', struct.pack('B' * nSize, *newString))
-                        nSize = len(newString)
-                        override.compiled_p = struct.unpack('B' * nSize, newString)
-                        override.compiledSize = nSize
-                    newString = override.scriptText
-                    if newString:
-                        override.scriptText = self.reDwarf.sub(r'\1wemer', newString)
+##                if hasattr(override, 'scriptText'):
+##                    newString = override.compiled_p
+##                    if newString:
+##                        nSize = len(newString)
+##                        newString = self.reDwarf.sub(r'\1wemer', struct.pack('B' * nSize, *newString))
+##                        nSize = len(newString)
+##                        override.compiled_p = struct.unpack('B' * nSize, newString)
+##                        override.compiledSize = nSize
+##                    newString = override.scriptText
+##                    if newString:
+##                        override.scriptText = self.reDwarf.sub(r'\1wemer', newString)
 
                 if override._Type == 'SKIL':
                     newString = override.apprentice
