@@ -415,6 +415,7 @@ class Effect(object):
             else: self.flags = 0x00000001
         elif self.flags: self.flags &= ~0x00000001
     IsHostile = property(get_IsHostile, set_IsHostile)
+
 class Faction(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
@@ -475,10 +476,10 @@ class BaseRecord(object):
         if not isinstance(newFid, int): return 0
         return CBash.UpdateReferences(self._CollectionIndex, self._ModName, self._recordID, origFid, newFid)
     def Conflicts(self):
-        numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._ModName, self._recordID)
+        numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._recordID)
         if(numRecords > 1):
             cModNames = (POINTER(c_char_p) * numRecords)()
-            CBash.GetFIDConflicts(self._CollectionIndex, self._ModName, self._recordID, cModNames)
+            CBash.GetFIDConflicts(self._CollectionIndex, self._recordID, cModNames)
             return [self.__class__(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
     def mergeFilter(self,modFile,modSet):
@@ -768,10 +769,10 @@ class GMSTRecord(object):
     def UpdateReferences(self, origFid, newFid):
         return 0
     def Conflicts(self):
-        numRecords = CBash.GetNumGMSTConflicts(self._CollectionIndex, self._ModName, self._recordID)
+        numRecords = CBash.GetNumGMSTConflicts(self._CollectionIndex, self._recordID)
         if(numRecords > 1):
             cModNames = (POINTER(c_char_p) * numRecords)()
-            CBash.GetGMSTConflicts(self._CollectionIndex, self._ModName, self._recordID, cModNames)
+            CBash.GetGMSTConflicts(self._CollectionIndex, self._recordID, cModNames)
             return [GMSTRecord(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
     def get_longFid(self):
@@ -2074,6 +2075,11 @@ class ARMORecord(BaseRecord):
             else: self.flags = 0x00040000
         elif self.flags: self.flags &= ~0x00400000
     IsNonPlayable = property(get_IsNonPlayable, set_IsNonPlayable)
+    def get_IsPlayable(self):
+        return not self.IsNonPlayable
+    def set_IsPlayable(self, nValue):
+        self.IsNonPlayable = not nValue
+    IsPlayable = property(get_IsPlayable, set_IsPlayable)
     def get_IsHeavyArmor(self):
         return self.flags != None and (self.flags & 0x00800000) != 0
     def set_IsHeavyArmor(self, nValue):
@@ -3486,6 +3492,11 @@ class CLOTRecord(BaseRecord):
             else: self.flags = 0x00400000
         elif self.flags: self.flags &= ~0x00400000
     IsNonPlayable = property(get_IsNonPlayable, set_IsNonPlayable)
+    def get_IsPlayable(self):
+        return not self.IsNonPlayable
+    def set_IsPlayable(self, nValue):
+        self.IsNonPlayable = not nValue
+    IsPlayable = property(get_IsPlayable, set_IsPlayable)
     copyattrs = BaseRecord.baseattrs + ['full','script','enchantment','enchantPoints',
                                         'flags','maleBody','maleWorld','maleIconPath',
                                         'femaleBody','femaleWorld','femaleIconPath',
@@ -19008,7 +19019,19 @@ class Collection:
 
     def fullLoad(self, LoadMasters=False):
         CBash.FullLoad(self._CollectionIndex, LoadMasters)
-
+    def LookupRecords(self, recordID):
+        if isinstance(recordID, basestring):
+            GetNumConflicts = CBash.GetNumGMSTConflicts
+            GetConflicts = CBash.GetGMSTConflicts
+        else:
+            GetNumConflicts = CBash.GetNumFIDConflicts
+            GetConflicts = CBash.GetFIDConflicts
+        numRecords = GetNumConflicts(self._CollectionIndex, recordID)
+        if(numRecords > 0):
+            cModNames = (POINTER(c_char_p) * numRecords)()
+            GetConflicts(self._CollectionIndex, recordID, cModNames)
+            return [BaseRecord(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
+        return []
     def UpdateReferences(self, origFid, newFid):
         if not isinstance(origFid, int): return 0
         if not isinstance(newFid, int): return 0
