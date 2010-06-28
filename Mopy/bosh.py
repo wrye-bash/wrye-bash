@@ -18636,6 +18636,65 @@ class RoadImporter(ImportPatcher):
         for modWorld in sorted(worldsPatched):
             log('* %s: %s' % modWorld)
 
+class CBash_RoadImporter(CBash_ImportPatcher):
+    """Imports roads."""
+    name = _('Import Roads')
+    text = _("Import roads from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Roads'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_ROAD = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.mod_count = {}
+        
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['WRLD']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if record.GName in self.srcMods:
+            road = record.ROAD
+            if road: self.id_ROAD[record.fid_long] = road
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        recordId = record.fid_long
+        #If a previous road was scanned, and it is replaced by a new road
+        if(recordId in self.id_ROAD and record.ROAD):
+            #Roads and pathgrids are complex records...
+            #No good way to tell if the roads are equal.
+            #A direct comparison would prove equality, but not inequality
+            #So might as well skip the comparison and just copy it over.
+            #Bloats the patch a little, but won't hurt anything.
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override = self.id_ROAD[recordId].CopyAsOverride(self.patchFile)
+                if override:
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_('* Roads Imported: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class SoundPatcher(ImportPatcher):
     """Imports sounds from source mods into patch."""
