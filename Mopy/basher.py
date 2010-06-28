@@ -4934,7 +4934,6 @@ class PatchDialog(wx.Dialog):
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
                 log = bolt.LogFile(cStringIO.StringIO())
-                nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
 
                 patchFile = bosh.CBash_PatchFile(patchName,patchers)
@@ -5599,8 +5598,11 @@ class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
 class RacePatcher(bosh.RacePatcher,ListPatcher):
     listLabel = _("Race Mods")
+class CBash_RacePatcher(bosh.CBash_RacePatcher,ListPatcher):
+    listLabel = _("Race Mods")
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
+##class CBash_RoadImporter(bosh.CBash_RoadImporter,ListPatcher): pass
 
 class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
 
@@ -5726,7 +5728,7 @@ else:
         CBash_NamesTweaker(),
         CBash_NpcFacePatcher(),
         CBash_PowerExhaustion(),
-##        CBash_RacePatcher(),
+        CBash_RacePatcher(),
 ##        CBash_RoadImporter(),
 ##        CBash_SoundPatcher(),
 ##        CBash_StatsPatcher(),
