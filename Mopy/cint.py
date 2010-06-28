@@ -17862,7 +17862,8 @@ class WRLDRecord(BaseRecord):
         return None
     def set_ROAD(self, nROAD):
         curROAD = self.ROAD
-        if nROAD is None and curROAD is not None: curROAD.DeleteRecord()
+        if nROAD is None:
+            if curROAD is not None: curROAD.DeleteRecord()
         else:
             if(curROAD == None):
                 curROAD = self.createROADRecord()
@@ -19655,7 +19656,7 @@ class CBashModFile(object):
         roads = []
         for world in self.WRLD:
             road = world.ROAD
-            if(road): roads = roads + [road]
+            if(road): roads.append(road)
         return roads
     @property
     def tops(self):

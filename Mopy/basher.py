@@ -5602,7 +5602,7 @@ class CBash_RacePatcher(bosh.CBash_RacePatcher,ListPatcher):
     listLabel = _("Race Mods")
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
-##class CBash_RoadImporter(bosh.CBash_RoadImporter,ListPatcher): pass
+class CBash_RoadImporter(bosh.CBash_RoadImporter,ListPatcher): pass
 
 class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
 
@@ -5729,7 +5729,7 @@ else:
         CBash_NpcFacePatcher(),
         CBash_PowerExhaustion(),
         CBash_RacePatcher(),
-##        CBash_RoadImporter(),
+        CBash_RoadImporter(),
 ##        CBash_SoundPatcher(),
 ##        CBash_StatsPatcher(),
 ##        CBash_SEWorldEnforcer(),
