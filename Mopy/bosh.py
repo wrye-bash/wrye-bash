@@ -11658,7 +11658,7 @@ class CBash_ActorFactions:
                 fid_long = record.fid_long
                 if record.factions:
                     id_eid[fid_long] = record.eid
-                    id_factions[fid_long] = [(x.faction_long,x.rank,None) for x in record.factions]
+                    id_factions[fid_long] = record.factions_list
                 record.UnloadRecord()
 
     def writeToMod(self,modInfo):
@@ -11675,7 +11675,7 @@ class CBash_ActorFactions:
                 fid_long = record.fid_long
                 if fid_long not in id_factions: continue
                 newFactions = set(id_factions[fid_long])
-                curFactions = set((x.faction_long,x.rank,None) for x in record.factions)
+                curFactions = set(record.factions_list)
                 changed = newFactions - curFactions
                 if not changed: continue
                 for faction_long,rank,unused1 in changed:
@@ -12163,6 +12163,7 @@ class FactionRelations:
                 otherEid = id_eid.get(other,'Unknown')
                 out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
         out.close()
+
 class CBash_FactionRelations:
     """Faction relations."""
     def __init__(self,aliases=None):
@@ -12195,11 +12196,11 @@ class CBash_FactionRelations:
 
         for record in modFile.FACT:
             fid_long = record.fid_long
-            relations = record.relations
+            relations = record.relations_list
             if relations:
                 id_eid[fid_long] = record.eid
                 faction_mod = id_faction_mod.setdefault(fid_long,{})
-                faction_mod.update((relation.faction_long,relation.mod) for relation in relations)
+                faction_mod.update(relations)
             record.UnloadRecord()
 
     def readFromText(self,textPath):
@@ -16091,6 +16092,7 @@ class GraphicsPatcher(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _('Import Graphics')
@@ -17190,6 +17192,7 @@ class ImportFactions(ImportPatcher):
         log(_("\n=== Refactioned Actors"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _('Import Factions')
@@ -17233,14 +17236,14 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            self.id_factions[record.fid_long] = [(entry.faction_long,entry.rank,None) for entry in record.factions]
+            self.id_factions[record.fid_long] = record.factions_list
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
         if(record.fid_long in self.id_factions):
             newFactions = set(self.id_factions[record.fid_long])
-            curFactions = set((entry.faction_long,entry.rank,None) for entry in record.factions)
+            curFactions = set(record.factions_list)
             changed = newFactions - curFactions
             if changed:
                 override = record.CopyAsOverride(self.patchFile)
@@ -17371,6 +17374,7 @@ class ImportRelations(ImportPatcher):
         for file in self.srcFiles:
             log("* " +file.s)
         log(_("\n=== Modified Factions: %d") % type_count['FACT'])
+
 class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _('Import Relations')
@@ -17403,8 +17407,6 @@ class CBash_ImportRelations(CBash_ImportPatcher):
             progress.plus()
         #--Finish
         self.id_faction_mod.update(factionRelations.id_faction_mod)
-##        for longid,faction_mod in factionRelations.id_faction_mod.iteritems():
-##            id_relations[longid] = faction_mod
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -17413,18 +17415,17 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            relations = record.relations
+            relations = record.relations_list
             if relations:
                 faction_mod = self.id_faction_mod.setdefault(record.fid_long,{})
-                faction_mod.update((relation.faction_long,relation.mod) for relation in relations)
+                faction_mod.update(relations)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
-##        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
         if(record.fid_long in self.id_faction_mod):
             newRelations = set((faction_long,mod) for faction_long,mod in self.id_faction_mod[record.fid_long].iteritems() if faction_long[0] in self.patchFile.allMods)
-            curRelations = set((relation.faction_long,relation.mod) for relation in record.relations)
+            curRelations = set(record.relations_list)
             changed = newRelations - curRelations
             if changed:
                 override = record.CopyAsOverride(self.patchFile)
@@ -17586,6 +17587,7 @@ class ImportScripts(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
     name = _('Import Scripts')
@@ -17918,6 +17920,7 @@ class ImportInventory(ImportPatcher):
         log(_("\n=== Inventories Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
+
 class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
     name = _('Import Inventory')
@@ -17952,7 +17955,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         mod_id_entries = self.mod_id_entries
         #--Master or source?
         if record.GName in self.allMods:
-            mod_id_entries.setdefault(modFile._ModName,{})[record.fid_long] = [(entry.item_long,entry.count) for entry in record.items]
+            mod_id_entries.setdefault(modFile._ModName,{})[record.fid_long] = record.items_list
         #--Source mod?
         if record.GName in self.srcMods:
             fid_long = record.fid_long
@@ -17986,7 +17989,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
 
         removable = set(entry.item_long for entry in record.items)
         for removeItems,addEntries in reversed(deltas):
-            items = [(entry.item_long,entry.count) for entry in record.items]
+            items = record.items_list
             changed = False
             if removeItems:
                 #--Skip if some items to be removed have already been removed
@@ -18003,7 +18006,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
             if changed:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.items = items
+                    override.items_list = items
                     class_mod_count = self.class_mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -18669,11 +18672,15 @@ class CBash_RoadImporter(CBash_ImportPatcher):
         if self.autoKey in bashTags and modFile.GName in self.srcMods: return
         recordId = record.fid_long
         #If a previous road was scanned, and it is replaced by a new road
-        if(recordId in self.id_ROAD and record.ROAD):
+        curRoad = record.ROAD
+        if(recordId in self.id_ROAD and curRoad):
             #Roads and pathgrids are complex records...
             #No good way to tell if the roads are equal.
-            #A direct comparison would prove equality, but not inequality
-            #So might as well skip the comparison and just copy it over.
+            #A direct comparison can prove equality, but not inequality
+            newRoad = self.id_ROAD[recordId]
+            if curRoad.PGRP_list == newRoad.PGRP_list and curRoad.PGRR_list == newRoad.PGRR_list:
+                return
+            #So some records that are actually equal won't pass the above test and end up copied over
             #Bloats the patch a little, but won't hurt anything.
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -18837,6 +18844,76 @@ class SoundPatcher(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
+
+
+class CBash_SoundPatcher(CBash_ImportPatcher):
+    """Imports sounds from source mods into patch."""
+    name = _('Import Sounds')
+    text = _("Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Sound'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_values = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.class_mod_count = {}
+        class_attrs = self.class_attrs = {}
+        class_attrs['ACTI'] = ('sound_long',)
+        class_attrs['CONT'] = ('soundOpen_long','soundClose_long')
+        class_attrs['CREA'] = ('footWeight','inheritsSoundsFrom_long','sounds_list')
+        class_attrs['DOOR'] = ('soundOpen_long','soundClose_long','soundLoop_long')
+        class_attrs['LIGH'] = ('sound_long',)
+        class_attrs['MGEF'] = ('castingSound_long','boltSound_long','hitSound_long','areaSound_long')
+##        class_attrs['REGN'] = ('sound_long','sounds_list')
+        class_attrs['WTHR'] = ('sound_long','sounds_list')
+        
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['ACTI','CONT','CREA','DOOR','LIGH','MGEF','WTHR']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if record.GName in self.srcMods:
+            self.id_values[record.fid_long] = map(record.__getattribute__,self.class_attrs[record._Type])
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if modFile.GName in self.srcMods: return
+        recordId = record.fid_long
+        if(recordId in self.id_values):
+            attrs = self.class_attrs[record._Type]
+            prevValues = self.id_values[recordId]
+            recValues = map(record.__getattribute__,attrs)
+            if recValues != prevValues:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    map(override.__setattr__,attrs,prevValues)
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
 class StatsPatcher(ImportPatcher):
@@ -19538,6 +19615,7 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         log(_('* Clothes set as playable: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     """Sets all clothes to playable"""
     scanOrder = 29 #Run before the show clothing tweaks
@@ -23354,6 +23432,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
     scanOrder = 32
@@ -24068,6 +24147,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         log.setHeader('= '+self.__class__.name)
         log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
         log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+
 class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     """Updates COBL alchemical catalogs."""
     name = _('Cobl Catalogs')
@@ -25527,10 +25607,10 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods and bashTags & self.autoKey:
-            relations = record.relations
+            relations = record.relations_list
             if relations:
                 faction_mod = self.id_faction_mod.setdefault(record.fid_long,{})
-                faction_mod.update((relation.faction_long,relation.mod) for relation in relations)
+                faction_mod.update(relations)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -25538,7 +25618,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         recordId = record.fid_long
         if(recordId in self.id_faction_mod):
             newRelations = set((faction_long,mod) for faction_long,mod in self.id_faction_mod[recordId].iteritems())
-            curRelations = set((relation.faction_long,relation.mod) for relation in record.relations)
+            curRelations = set(record.relations_list)
             changed = newRelations - curRelations
             if changed:
                 override = record.CopyAsOverride(self.patchFile)
