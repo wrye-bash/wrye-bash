@@ -148,7 +148,7 @@ class Condition(object):
         return []
     def set_unused1(self, nValue):
         if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
-        else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, nValue)
+        else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2, struct.pack('3B', *nValue), 3)
     unused1 = property(get_unused1, set_unused1)
     def get_compValue(self):
         CBash.ReadFIDListField.restype = POINTER(c_float)
@@ -157,7 +157,7 @@ class Condition(object):
         return None
     def set_compValue(self, nValue):
         if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 3)
-        else: CBash.SetFIDListFieldF(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 3, nValue)
+        else: CBash.SetFIDListFieldF(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 3, c_float(round(nValue,6)))
     compValue = property(get_compValue, set_compValue)
     def get_ifunc(self):
         CBash.ReadFIDListField.restype = POINTER(c_uint)
@@ -213,7 +213,7 @@ class Condition(object):
         return []
     def set_unused2(self, nValue):
         if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7)
-        else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, nValue)
+        else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 7, struct.pack('4B', *nValue), 4)
     unused2 = property(get_unused2, set_unused2)
     def get_IsEqual(self):
         return self.operType and ((self.operType & 0xF0) == 0x00000000)

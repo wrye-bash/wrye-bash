@@ -26516,6 +26516,66 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
         log.setHeader('= '+self.__class__.name)
         log(_('===Quests Patched: %d') % (len(patched),))
 
+class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
+    """Suspends Cyrodiil quests while in Shivering Isles."""
+    name = _('SEWorld Tests')
+    text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cyrodiilQuests = set()
+        self.srcMod = GPath('Oblivion.esm')
+        self.isActive = self.srcMod in loadMods
+        self.mod_eids = {}
+
+    def getTypes(self):
+        return ['QUST']
+
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if record.GName == self.srcMod:
+            for condition in record.conditions:
+                if condition.ifunc == 365 and condition.compValue == 0:
+                    self.cyrodiilQuests.add(record.fid_long)
+                    return
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if record.GName == self.srcMod: return
+
+        recordId = record.fid_long
+        if(recordId in self.cyrodiilQuests):
+            for condition in record.conditions:
+                if condition.ifunc == 365: return #--365: playerInSeWorld
+            else:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    conditions = override.conditions
+                    condition = override.newConditionsElement()
+                    condition.ifunc = 365
+                    conditions.insert(0,condition)
+                    override.conditions = conditions
+                    eids = self.mod_eids.setdefault(record.GName,[])
+                    eids.append(override.eid)
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_eids = self.mod_eids
+        log.setHeader('= ' +self.__class__.name)
+        log(_("\n=== Quests Patched"))
+        for mod,eids in mod_eids.iteritems():
+            log(_('* %s: %d') % (mod.s,len(eids)))
+            for eid in sorted(eids):
+                log('  * %s' % (eid))
+        self.mod_eids = {}
+
 #------------------------------------------------------------------------------
 class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
