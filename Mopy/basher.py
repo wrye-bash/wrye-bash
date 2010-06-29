@@ -5657,6 +5657,7 @@ class PowerExhaustion(bosh.PowerExhaustion,Patcher): pass
 class CBash_PowerExhaustion(bosh.CBash_PowerExhaustion,Patcher): pass
 
 class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
+class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 
@@ -5734,7 +5735,7 @@ else:
         CBash_RoadImporter(),
         CBash_SoundPatcher(),
         CBash_StatsPatcher(),
-##        CBash_SEWorldEnforcer(),
+        CBash_SEWorldEnforcer(),
 ##        CBash_ContentsChecker(),
         ))
 # Files Links -----------------------------------------------------------------
