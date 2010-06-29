@@ -5608,6 +5608,7 @@ class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
 class CBash_SoundPatcher(bosh.CBash_SoundPatcher,ListPatcher): pass
 
 class StatsPatcher(bosh.StatsPatcher,ListPatcher): pass
+class CBash_StatsPatcher(bosh.CBash_StatsPatcher,ListPatcher): pass
 
 class ImportScripts(bosh.ImportScripts,ListPatcher):pass
 class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
@@ -5732,7 +5733,7 @@ else:
         CBash_RacePatcher(),
         CBash_RoadImporter(),
         CBash_SoundPatcher(),
-##        CBash_StatsPatcher(),
+        CBash_StatsPatcher(),
 ##        CBash_SEWorldEnforcer(),
 ##        CBash_ContentsChecker(),
         ))

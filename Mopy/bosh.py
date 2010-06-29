@@ -12396,15 +12396,15 @@ class FullNames:
 
 class CBash_FullNames:
     """Names for records, with functions for importing/exporting from/to mod/text file."""
-    defaultTypes = set((
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
-        'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-        'SLGM', 'SPEL','WEAP',))
+    defaultTypes = set(["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN",
+                        "ACTI","APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH",
+                        "MISC","FLOR","FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM",
+                        "ALCH","SGST","WRLD","CELL","DIAL","QUST"])
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
-        self.types = types or FullNames.defaultTypes
+        self.types = types or CBash_FullNames.defaultTypes
         self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
@@ -12414,17 +12414,15 @@ class CBash_FullNames:
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
-        for type,block in modFile.aggregates.iteritems():
-            if type not in type_id_name: type_id_name[type] = {}
-            id_name = type_id_name[type]
-            for record in block:
-                fid_long = record.fid_long
+        for type in self.types:
+            id_name = type_id_name.setdefault(type,{})
+            for record in getattr(modFile,type):
                 if(hasattr(record, 'full')):
                     full = record.full or (type != 'LIGH' and 'NO NAME')
                     eid = record.eid
                     if eid and full:
-                        id_name[fid_long] = (eid,full)
-                record.UnloadRecord()
+                        id_name[record.fid_long] = (eid,full)
+        del Current
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
@@ -12434,10 +12432,10 @@ class CBash_FullNames:
         Current.minimalLoad(LoadMasters=False)
         
         changed = {}
-        for type,block in modFile.aggregates.iteritems():
+        for type in self.types:
             id_name = type_id_name.get(type,None)
             if not id_name: continue
-            for record in block:
+            for record in getattr(modFile,type):
                 fid_long = record.fid_long
                 full = record.full
                 eid,newFull = id_name.get(fid_long,(0,0))
@@ -12762,7 +12760,205 @@ class ItemStats:
                 out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
                 out.write(format % stats[longid])
         out.close()
+class CBash_ItemStats:
+    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+    type_attrs = {
+        'ALCH':('eid', 'weight', 'value'),
+        'AMMO':('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
+        'APPA':('eid', 'weight', 'value', 'quality'),
+        'ARMO':('eid', 'weight', 'value', 'health', 'strength'),
+        'BOOK':('eid', 'weight', 'value', 'enchantPoints'),
+        'CLOT':('eid', 'weight', 'value', 'enchantPoints'),
+        'INGR':('eid', 'weight', 'value'),
+        'KEYM':('eid', 'weight', 'value'),
+        'LIGH':('eid', 'weight', 'value', 'duration'),
+        'MISC':('eid', 'weight', 'value'),
+        'SGST':('eid', 'weight', 'value', 'uses'),
+        'SLGM':('eid', 'weight', 'value'),
+        'WEAP':('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints'),
+        }
 
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        #--type_stats[type] = ...
+        #--AMMO: (eid, weight, value, damage, speed, epoints)
+        #--ARMO: (eid, weight, value, health, strength)
+        #--WEAP: (eid, weight, value, health, damage, speed, reach, epoints)
+        self.type_id_stats = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        type_id_stats = self.type_id_stats
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        for type, attrs in self.type_attrs:
+            id_stats = type_id_stats.setdefault(type, {})
+            for record in getattr(modFile,type):
+                id_stats[record.fid_long] = map(record.__getattribute__,attrs)
+        del Current
+
+    def writeToMod(self,modInfo):
+        """Exports type_id_name to specified mod."""
+        type_id_stats = self.type_id_stats
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+        
+        mod_count = {}
+        for type, attrs in self.type_attrs:
+            if type not in type_id_stats: continue
+            id_stats = type_id_stats[type]
+            for record in getattr(modFile,type):
+                recordId = record.fid_long
+                stats = id_stats.get(recordId,None)
+                if stats:
+                    map(record.__setattr__,attrs,stats)
+                    mod_count[modFile.GName] = mod_count.setdefault(modFile.GName,0) + 1
+
+        if mod_count: modFile.safeCloseSave()
+        return mod_count
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        type_id_stats = self.type_id_stats
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
+        for fields in ins:
+            if len(fields) < 3 or fields[2][:2] != '0x': continue
+            type,modName,objectStr,eid = fields[0:4]
+            modName = GPath(modName)
+            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+            id_stats = type_id_stats.setdefault(type,{})
+            if type == 'ALCH':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+            elif type == 'AMMO':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, damage, speed, enchantPoints)
+                    zip((sfloat,int,int,sfloat,int),fields[4:9]))
+            elif type == 'APPA':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, quality)
+                    zip((sfloat,int,sfloat),fields[4:7]))
+            elif type == 'ARMO':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, health, strength)
+                    zip((sfloat,int,int,int),fields[4:8]))
+            elif type == 'BOOK':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, echantPoints)
+                    zip((sfloat,int,int,),fields[4:7]))
+            elif type == 'CLOT':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, echantPoints)
+                    zip((sfloat,int,int,),fields[4:7]))
+            elif type == 'INGR':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+            elif type == 'KEYM':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+            elif type == 'LIGH':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, duration)
+                    zip((sfloat,int,int,),fields[4:7]))
+            elif type == 'MISC':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+            elif type == 'SGST':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, uses)
+                    zip((sfloat,int,int,),fields[4:7]))
+            elif type == 'SLGM':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value)
+                    zip((sfloat,int),fields[4:6]))
+            elif type == 'WEAP':
+                id_stats[longid] = (eid,) + tuple(func(field) for func,field in
+                    #--(weight, value, health, damage, speed, reach, epoints)
+                    zip((sfloat,int,int,int,sfloat,sfloat,int),fields[4:11]))
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        type_id_stats = self.type_id_stats
+        out = textPath.open('w')
+        def getSortedIds(id_stats):
+            longids = id_stats.keys()
+            longids.sort(key=lambda a: id_stats[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        for type,format,header in (
+            #--Alch
+            ('ALCH', bolt.csvFormat('sfi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+            #Ammo
+            ('AMMO', bolt.csvFormat('sfiifi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'))) + '"\n')),
+            #--Apparatus
+            ('APPA', bolt.csvFormat('sfif')+'\n',
+                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Quality'))) + '"\n')),
+            #--Armor
+            ('ARMO', bolt.csvFormat('sfiii')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('AR'))) + '"\n')),
+            #Books
+            ('BOOK', bolt.csvFormat('sfii')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
+            #Clothing
+            ('CLOT', bolt.csvFormat('sfii')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
+            #Ingredients
+            ('INGR', bolt.csvFormat('sfi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+            #--Keys
+            ('KEYM', bolt.csvFormat('sfi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+            #Lights
+            ('LIGH', bolt.csvFormat('sfii')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Duration'))) + '"\n')),
+            #--Misc
+            ('MISC', bolt.csvFormat('sfi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+            #Sigilstones
+            ('SGST', bolt.csvFormat('sfii')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Uses'))) + '"\n')),
+            #Soulgems
+            ('SLGM', bolt.csvFormat('sfi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+            #--Weapons
+            ('WEAP', bolt.csvFormat('sfiiiffi')+'\n',
+                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
+                _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('Damage'),
+                _('Speed'),_('Reach'),_('EPoints'))) + '"\n')),
+            ):
+            id_stats = type_id_stats[type]
+            if not stats: continue
+            out.write(header)
+            for longid in getSortedIds(id_stats):
+                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                out.write(format % id_stats[longid])
+        out.close()
 #------------------------------------------------------------------------------
 class ItemPrices:
     """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
@@ -18314,7 +18510,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.activeTypes = set() #--Types ('ALCH', etc.) of data actually provided by src mods/files.
         self.id_full = {}
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
@@ -18341,29 +18536,28 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             Current.minimalLoad(LoadMasters=False)
             for modFile in Current:
                 for type in self.getTypes():
-                    for record in getattr(modFile, type):
-                        if hasattr(record,'full'):
-                            activeAdd(type)
-                            self.scan(modFile, record, modInfos[modFile.GName].getBashTags())
+                    for record in getattr(modFile,type):
+                        self.scan(modFile, record, modInfos[modFile.GName].getBashTags())
             del Current
 
         #--Finish
         id_full = self.id_full
-        activeAdd = self.activeTypes.add
         for type,id_name in fullNames.type_id_name.iteritems():
             if type not in validTypes: continue
-            activeAdd(type)
             for fid_long,(eid,name) in id_name.iteritems():
                 if name != 'NO NAME':
                     id_full[fid_long] = name
-        self.isActive = bool(self.activeTypes)
 
         for type in self.getTypes():
              type_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return self.activeTypes
+        return ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH",
+                "SPEL","BSGN","ACTI","APPA","ARMO","BOOK","CLOT",
+                "CONT","DOOR","INGR","LIGH","MISC","FLOR","FURN",
+                "WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH",
+                "SGST","WRLD","CELL","DIAL","QUST"]
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -19027,6 +19221,110 @@ class StatsPatcher(ImportPatcher):
             log("* %s: %d" % (typeName,count))
             for modName in sorted(counts):
                 log("  * %s: %d" % (modName.s,counts[modName]))
+
+class CBash_StatsPatcher(CBash_ImportPatcher):
+    """Import stats from mod file."""
+    scanOrder = 28
+    editOrder = 28 #--Run ahead of bow patcher
+    name = _('Import Stats')
+    text = _("Import stats from any pickupable items from source mods/files.")
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'Stats'
+    allowUnloaded = True
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.type_id_stats = {}
+        self.type_attrs = CBash_ItemStats.type_attrs
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.class_mod_count = {}
+        for type in self.type_attrs.keys():
+            self.type_id_stats.setdefault(type,{})
+        
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcFiles))
+        patchesDir = dirs['patches'].list()
+        for srcFile in self.srcFiles:
+            if not reModExt.search(srcFile.s):
+                if srcFile not in patchesDir: continue
+                itemStats.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+        loadMods = [mod for mod in self.srcFiles if reModExt.search(mod.s) and mod not in self.patchFile.allMods]
+        if loadMods:
+            types = self.type_attrs.keys()
+            Current = Collection(ModsPath=dirs['mods'].s)
+            for mod in loadMods:
+                Current.addMod(mod.s)
+            Current.minimalLoad(LoadMasters=False)
+            for modFile in Current:
+                for type in types:
+                    for record in getattr(modFile, type):
+                        self.scan(modFile, record, modInfos[modFile.GName].getBashTags())
+            del Current
+
+        #--Finish
+        for type,id_stats in itemStats.type_id_stats.iteritems():
+            if type not in validTypes: continue
+            self.type_id_stats[type].update(id_stats)
+
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return self.type_attrs.keys()
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if record.GName in self.srcFiles:
+            type = record._Type
+            attrs = self.type_attrs[type]
+            self.type_id_stats[type][record.fid_long] = map(record.__getattribute__,attrs)
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        recordId = record.fid_long
+        type = record._Type
+        id_stats = self.type_id_stats[type]
+        if(recordId in id_stats):
+            attrs = self.type_attrs[type]
+            curStats = map(record.__getattribute__,attrs)
+            newStats = id_stats[recordId]
+            if curStats != newStats:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    map(override.__setattr__,attrs,newStats)
+                    class_mod_count = self.class_mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        class_mod_count = self.class_mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods/Files"))
+        for file in self.srcFiles:
+            log("* " +file.s)
+        log(_("\n=== Imported Stats"))
+        for type in class_mod_count.keys():
+            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
+                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+        self.class_mod_count = {}
+    
+
 #------------------------------------------------------------------------------
 class SpellsPatcher(ImportPatcher):
     """Import spell changes from mod files."""
