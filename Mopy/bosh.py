@@ -22933,8 +22933,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
                     if enchantment:
                         #Get the winning record
                         enchantment = enchantment[0]
-                        #returned as a baserecord, so recast it as an enchantment
-                        Effects = ENCHRecord(enchantment._CollectionIndex, enchantment._ModName, enchantment._recordID).effects
+                        Effects = enchantment.effects
                     else:
                         Effects = None
                     if Effects:
@@ -26679,6 +26678,92 @@ class ContentsChecker(SpecialPatcher,Patcher):
                             mod,index = removedId
                             log('  . %s: %06X' % (mod.s,index))
 
+class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
+    """Checks contents of leveled lists, inventories and containers for correct content types."""
+    scanOrder = 50
+    editOrder = 50
+    name = _('Contents Checker')
+    text = _("Checks contents of leveled lists, inventories and containers for correct types.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = True
+        self.type_validEntries = {'LVSP':set(['LVSP','SPEL']),
+                                'LVLC':set(['LVLC','NPC_','CREA']),
+                                'LVLI':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
+                                'CONT':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
+                                'CREA':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
+                                'NPC_':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP'])}
+        self.listTypes = set(['LVSP','LVLC','LVLI'])
+        self.containerTypes = set(['CONT','CREA','NPC_'])
+        self.mod_type_id_badEntries = {}
+        self.knownGood = set()
+        
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CONT','CREA','NPC_','LVLI','LVLC','LVSP']
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        type = record._Type
+        Collection = self.patchFile.Collection
+        badEntries = set()
+        goodEntries = []
+        knownGood = self.knownGood
+        knownGoodAdd = knownGood.add
+        goodAppend = goodEntries.append
+        badAdd = badEntries.add
+        validEntries = self.type_validEntries[type]
+        if type in self.listTypes:
+            topattr, subattr = ('entries','listId')
+        else: #Is a container type
+            topattr, subattr = ('items','item')
+
+        for entry in getattr(record,topattr):
+            entryId = getattr(entry,subattr)
+            #Cache known good entries to decrease execution time
+            if entryId in knownGood:
+                goodAppend(entry)
+            else:
+                entryRecords = Collection.LookupRecords(entryId)
+                if not entryRecords:
+                    badAdd((_('NONE'),entryId,None,_('NONE')))
+                elif entryRecords[0].recType in validEntries:
+                    knownGoodAdd(entryId)
+                    goodAppend(entry)
+                else:
+                    entryRecord = entryRecords[0]
+                    badAdd((entryRecord.eid,entryId,entryRecord._ModName,entryRecord.recType))
+                    entryRecord.UnloadRecord()
+
+        if badEntries:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                setattr(override, topattr, goodEntries)
+                type_id_badEntries = self.mod_type_id_badEntries.setdefault(modFile.GName, {})
+                id_badEntries = type_id_badEntries.setdefault(type, {})
+                id_badEntries[record.eid] = badEntries.copy()
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_type_id_badEntries = self.mod_type_id_badEntries
+        log.setHeader('= ' +self.__class__.name)
+        for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
+            log('\n=== %s' % (mod.s))
+            for type,id_badEntries in type_id_badEntries.iteritems():
+                log(_('  * Cleaned %s: %d') % (type,len(id_badEntries)))
+                for id, badEntries in id_badEntries.iteritems():
+                    log('    * %s : %d' % (id,len(badEntries)))
+                    for entry in sorted(badEntries, key=itemgetter(0)):
+                        longId = self.patchFile.MakeLongFid(entry[1])
+                        log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],entry[2] or longId[0].s,entry[3]))
+        self.mod_type_id_badEntries = {}
 # Initialization --------------------------------------------------------------
 def initDirs(personal='',localAppData='',oblivionPath=''):      
     #--Bash Ini

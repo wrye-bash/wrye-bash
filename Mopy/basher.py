@@ -5660,6 +5660,7 @@ class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
 class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(bosh.ContentsChecker,Patcher): pass
+class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5736,7 +5737,7 @@ else:
         CBash_SoundPatcher(),
         CBash_StatsPatcher(),
         CBash_SEWorldEnforcer(),
-##        CBash_ContentsChecker(),
+        CBash_ContentsChecker(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

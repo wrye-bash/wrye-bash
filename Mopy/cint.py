@@ -12,15 +12,6 @@ else:
     CBash = None
 
 #Helper functions
-validTypes = set(["GMST","GLOB","CLAS","FACT","HAIR","EYES","RACE",
-                  "SOUN","SKIL","MGEF","SCPT","LTEX","ENCH","SPEL",
-                  "BSGN","ACTI","APPA","ARMO","BOOK","CLOT","CONT",
-                  "DOOR","INGR","LIGH","MISC","STAT","GRAS","TREE",
-                  "FLOR","FURN","WEAP","AMMO","NPC_","CREA","LVLC",
-                  "SLGM","KEYM","ALCH","SBSP","SGST","LVLI","WTHR",
-                  "CLMT","REGN","WRLD","CELL","ACHR","ACRE","REFR",
-                  "PGRD","LAND","ROAD","DIAL","INFO","QUST","IDLE",
-                  "PACK","CSTY","LSCR","LVSP","ANIO","WATR","EFSH"])
 class PrintFormID(object):
     def __init__(self, formID):
         self._FormID = formID
@@ -666,6 +657,12 @@ class BaseRecord(object):
     def CopyAsNew(self, targetMod):
         CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
         return
+    @property
+    def recType(self):
+        CBash.GetFIDFieldType.restype = (c_char * 4)
+        retValue = CBash.GetFIDFieldType(self._CollectionIndex, self._ModName, self._recordID, 0)
+        if(retValue): return retValue.value
+        return None
     def get_flags1(self):
         CBash.ReadFIDField.restype = POINTER(c_int)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 2)
@@ -806,6 +803,9 @@ class TES4Record(object):
         self.GName = GPath(ModName)
     def UnloadRecord(self):
         pass
+    @property
+    def recType(self):
+        return self._Type
     def get_flags1(self):
         CBash.ReadTES4Field.restype = POINTER(c_uint)
         retValue = CBash.ReadTES4Field(self._CollectionIndex, self._ModName, 2)
@@ -944,6 +944,9 @@ class GMSTRecord(object):
         if(recID): return GMSTRecord(self._CollectionIndex, targetMod._ModName, self._recordID)
         return None
 
+    @property
+    def recType(self):
+        return self._Type
     def get_flags1(self):
         CBash.ReadGMSTField.restype = POINTER(c_int)
         retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 2)
@@ -18933,6 +18936,37 @@ class WTHRRecord(BaseRecord):
                                         'weatherType','boltRed','boltGreen','boltBlue','sounds']
 
 
+#Helper functions
+validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+                  'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
+                  'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
+                  'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
+                  'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
+                  'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
+                  'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
+                  'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
+                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+type_record = dict([('GMST',GMSTRecord),('GLOB',GLOBRecord),('CLAS',CLASRecord),
+                ('FACT',FACTRecord),('HAIR',HAIRRecord),('EYES',EYESRecord),
+                ('RACE',RACERecord),('SOUN',SOUNRecord),('SKIL',SKILRecord),
+                ('MGEF',MGEFRecord),('SCPT',SCPTRecord),('LTEX',LTEXRecord),
+                ('ENCH',ENCHRecord),('SPEL',SPELRecord),('BSGN',BSGNRecord),
+                ('ACTI',ACTIRecord),('APPA',APPARecord),('ARMO',ARMORecord),
+                ('BOOK',BOOKRecord),('CLOT',CLOTRecord),('CONT',CONTRecord),
+                ('DOOR',DOORRecord),('INGR',INGRRecord),('LIGH',LIGHRecord),
+                ('MISC',MISCRecord),('STAT',STATRecord),('GRAS',GRASRecord),
+                ('TREE',TREERecord),('FLOR',FLORRecord),('FURN',FURNRecord),
+                ('WEAP',WEAPRecord),('AMMO',AMMORecord),('NPC_',NPC_Record),
+                ('CREA',CREARecord),('LVLC',LVLCRecord),('SLGM',SLGMRecord),
+                ('KEYM',KEYMRecord),('ALCH',ALCHRecord),('SBSP',SBSPRecord),
+                ('SGST',SGSTRecord),('LVLI',LVLIRecord),('WTHR',WTHRRecord),
+                ('CLMT',CLMTRecord),('REGN',REGNRecord),('WRLD',WRLDRecord),
+                ('CELL',CELLRecord),('ACHR',ACHRRecord),('ACRE',ACRERecord),
+                ('REFR',REFRRecord),('PGRD',PGRDRecord),('LAND',LANDRecord),
+                ('ROAD',ROADRecord),('DIAL',DIALRecord),('INFO',INFORecord),
+                ('QUST',QUSTRecord),('IDLE',IDLERecord),('PACK',PACKRecord),
+                ('CSTY',CSTYRecord),('LSCR',LSCRRecord),('LVSP',LVSPRecord),
+                ('ANIO',ANIORecord),('WATR',WATRRecord),('EFSH',EFSHRecord)])
 class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
@@ -19760,7 +19794,6 @@ class CBashModFile(object):
 
 class Collection:
     """Collection of esm/esp's."""
-
     def __init__(self, recordID=None, ModsPath="."):
         if recordID:
             self._CollectionIndex = recordID
@@ -19795,7 +19828,9 @@ class Collection:
         if(numRecords > 0):
             cModNames = (POINTER(c_char_p) * numRecords)()
             GetConflicts(self._CollectionIndex, recordID, cModNames)
-            return [BaseRecord(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
+            testRecord = BaseRecord(self._CollectionIndex, string_at(cModNames[0]), recordID)
+            RecordType = type_record[testRecord.recType]
+            return [RecordType(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
         return []
     def UpdateReferences(self, origFid, newFid):
         if not isinstance(origFid, int): return 0
