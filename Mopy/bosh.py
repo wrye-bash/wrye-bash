@@ -69,6 +69,7 @@ import struct
 import sys
 from types import *
 from operator import attrgetter,itemgetter
+from subprocess import *
 
 #--Local
 import balt
@@ -9843,8 +9844,6 @@ class Installer(object):
                 continue
             elif skipDocs and fileExt in docExts:
                 continue
-            elif file[:2] == '--':
-                continue
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFiles.add(full)
@@ -10072,9 +10071,9 @@ class InstallerConverter(object):
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
-        command = '7z.exe x "%s" BCF.dat -y -so' % self.fullPath.s
+        command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
         try:
-            ins = os.popen(command,'rb')
+            ins = Popen(command, stdout=PIPE).stdout
             values = cPickle.load(ins)
             setter = object.__setattr__
             for value,attr in zip(values,self.persistBCF):
@@ -10100,8 +10099,8 @@ class InstallerConverter(object):
         self.clearTemp()
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
-        command = '7z.exe x "%s" -y -o"%s"' % (self.fullPath.s, self.tempDir.s)
-        ins = os.popen(command,'r')
+        command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
+        ins = Popen(command, stdout=PIPE).stdout
         #--Error checking
         reError = re.compile('Error:')
         regMatch = reError.match
@@ -10125,7 +10124,7 @@ class InstallerConverter(object):
             nextStep += step
         #--Move files around and pack them
         self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        self.pack(self.tempDir.join("BCF-Temp"), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
+        self.pack(self.tempDir, destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))#.join("BCF-Temp")
         #--Lastly, apply the settings.
         #--That is done by the calling code, since it requires an InstallerArchive object to work on
 
@@ -10138,13 +10137,14 @@ class InstallerConverter(object):
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
-        destDir = self.tempDir.join("BCF-Temp")
+        destDir = self.tempDir#.join("BCF-Temp")
         progress(0,_("Moving files..."))
         progress.setFull(1+len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
         destJoin = destDir.join
         tempJoin = self.tempDir.join
+        
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
@@ -10304,11 +10304,11 @@ class InstallerConverter(object):
             archiveType = writeExts.get(destArchive.cext)
         outFile = outDir.join(destArchive)
         solid = ('off','on')[self.isSolid]
-        command = '7z.exe a "%s" -t"%s" -ms="%s" -y -r -o"%s" "%s"' % ("%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+        command = '"%s" a "%s" -t"%s" -ms="%s" -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
-        ins = os.popen(command,'r')
+        ins = Popen(command, stdout=PIPE).stdout        
         #--Error checking and progress feedback
         reCompressing = re.compile('Compressing\s+(.+)')
         regMatch = reCompressing.match
@@ -10341,9 +10341,8 @@ class InstallerConverter(object):
         try:
             out = self.tempList.open('w')
             out.write('\n'.join(fileNames))
-            result = out.close()
         finally:
-            if out: out.close()
+            result = out.close()
             if result: raise StateError(_("Error creating file list for 7z:\nError Code: %s") % (result))
             result = 0
         #--Determine settings for 7z
@@ -10357,9 +10356,9 @@ class InstallerConverter(object):
         if progress:
             progress(0,_("%s\nExtracting files...") % srcInstaller.s)
             progress.setFull(1+len(fileNames))
-        command = '7z.exe x "%s" -y -o"%s" @%s -scsWIN' % (apath.s, subTempDir.s, self.tempList.s)
+        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         #--Extract files
-        ins = os.popen(command,'r')
+        ins = Popen(command, stdout=PIPE).stdout
         #--Error Checking, and progress feedback
         #--Note subArchives for recursive unpacking
         subArchives = []
@@ -10424,10 +10423,11 @@ class InstallerArchive(Installer):
         self.size = archive.size
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
+        oldstylefileSizeCrcs = []
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        ins = os.popen('7z.exe l -slt "%s"' % archive.s,'rt')
+        ins = Popen(r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s), stdout=PIPE).stdout
         cumCRC = 0
         for line in ins:
             maList = reList.match(line)
@@ -10442,11 +10442,14 @@ class InstallerArchive(Installer):
                     #  It won't solve problems with non-european characters though.
                    ## try: file = value.decode('cp437').encode('cp1252')
                    ## except: pass
-                    file = value
+                    file = value[:-1]
                 elif key == 'Size': size = int(value)
                 elif key == 'Attributes': isdir = (value[0] == 'D')
                 elif key == 'CRC' and value:
-                    crc = int(value,16)
+                    if not value: continue #last check should have caught but it is being FUNKY
+                    try:
+                        crc = int(value,16)
+                    except ValueError: continue # WTF... last check didn't catch it either???!
                 elif key == 'Method':
                     if file and not isdir and file != archive.s:
                         fileSizeCrcs.append((file,size,crc))
@@ -10471,15 +10474,13 @@ class InstallerArchive(Installer):
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        command = '7z.exe x "%s" -y -o%s @%s -scsWIN' % (apath.s, self.tempDir.s, self.tempList.s)
-        ins = os.popen(command,'r')
+        ins = Popen('"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s), stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         reError = re.compile('Error:')
         extracted = []
         errorLine = []
         index = 0
         for line in ins:
-            #print line,
             maExtracting = reExtracting.match(line)
             if len(errorLine) or reError.match(line):
                 errorLine.append(line)
@@ -10552,12 +10553,13 @@ class InstallerArchive(Installer):
         log = bolt.LogFile(cStringIO.StringIO())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
-
+        
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
         file = ''
         isdir = False
         apath = dirs['installers'].join(archive)
-        ins = os.popen('7z.exe l -slt "%s"' % apath.s,'rt')
+        command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
+        ins = Popen(command, stdout=PIPE).stdout
         text = []
         for line in ins:
             maList = reList.match(line)
@@ -10569,7 +10571,7 @@ class InstallerArchive(Installer):
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
                     #--Hopefully this will mostly resolve problem with german umlauts, etc.
                     #  It won't solve problems with non-european characters though.
-                    try: file = value.decode('cp437').encode('cp1252')
+                    try: file = value[:-1].decode('cp437').encode('cp1252')
                     except: pass
                 elif key == 'Attributes':
                     isdir = (value[0] == 'D')
@@ -10693,10 +10695,10 @@ class InstallerProject(Installer):
             out.write('--*\\')
         out.close()
         #--Compress
-        command = '7z.exe a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
+        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
-        ins = os.popen(command,'r')
+        ins = Popen(command, stdout=PIPE).stdout
         reCompressing = re.compile('Compressing\s+(.+)')
         regMatch = reCompressing.match
         reError = re.compile('Error: (.*)')
@@ -15069,6 +15071,7 @@ class CBash_PatchFile(CBashModFile):
             filtered = []
             for record in block:
                 conflicts = record.Conflicts()
+                print conflicts
                 IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                 if record.fid_long == badForm: continue
                 #--Include this record?
@@ -16348,7 +16351,10 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return ['BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH']
+        return ['BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR',
+                'FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR',
+                'KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO',
+                'CLOT','CREA','MGEF','EFSH']
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""

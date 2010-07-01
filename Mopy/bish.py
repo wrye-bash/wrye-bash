@@ -47,6 +47,7 @@ import struct
 import cStringIO
 import sys
 import types
+from subprocess import *
 from operator import attrgetter,itemgetter
 
 #--Local
@@ -1041,7 +1042,8 @@ class Archive:
         files = {}
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = crc = isDir = 0
-        out = os.popen('7z.exe l "'+self.path.s+'"','rt')
+        command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7z.exe').s, self.path.s)
+        out = Popen(command, stdout=PIPE).stdout
         for line in out:
             print line,
             maList = reList.match(line)
@@ -1065,7 +1067,8 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        out = os.popen('7z.exe x "'+self.path.s+'" -y -oDumpster @listfile.txt -scsWIN','r')
+        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7z.exe'),self.path.s)
+        out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         for line in out:
             maExtracting = reExtracting.match(line)
