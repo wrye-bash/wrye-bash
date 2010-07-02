@@ -879,7 +879,7 @@ class WryeParser(ScriptParser.Parser):
         #    #For file in subpackage('name')
         #    if args[2].text == 'subpackage':
         #        pass
-     else:
+        else:
             self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
