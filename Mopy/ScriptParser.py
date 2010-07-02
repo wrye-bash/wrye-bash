@@ -541,6 +541,8 @@ class Parser(object):
             if not self.word: self.word = ''
             self._emit(type=STRING)
             return self._stateSpace
+        if c == '\n':
+            self.error('Unterminated single quote.')
         self._grow(c)
         return self._stateSQuote
     def _stateSQuoteEscape(self, c):
@@ -554,6 +556,8 @@ class Parser(object):
             if not self.word: self.word = ""
             self._emit(type=STRING)
             return self._stateSpace
+        if c == '\n':
+            self.error("Unterminated double quote.")
         self._grow(c)
         return self._stateDQuote
     def _stateDQuoteEscape(self, c):
