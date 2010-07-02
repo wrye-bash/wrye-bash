@@ -266,10 +266,12 @@ class PageSelect(PageInstaller):
                 self.listOptions.Check(index, default)
         else:
             self.listOptions = wx.ListBox(self, 643, choices=listItems)
+            self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
             for index, default in enumerate(defaultMap):
                 if default:
                     self.listOptions.Select(index)
                     self.Selection(index)
+                    self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
                     break
         sizerBoxes.Add(self.listOptions, 0, wx.ALL|wx.EXPAND)
         sizerBoxes.Add(self.bmpItem, 0, wx.ALL|wx.EXPAND)
@@ -291,6 +293,7 @@ class PageSelect(PageInstaller):
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
     def OnSelect(self, event):
+        self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
         index = event.GetSelection()
         self.Selection(index)
 
@@ -792,7 +795,6 @@ class WryeParser(ScriptParser.Parser):
         if self.LenFlow() > 0 and self.PeekFlow().type == 'While' and not self.PeekFlow().active:
             #Within an un-true while statement, but we hit a new While, so we need to ignore the
             #next 'EndWhile' towards THIS one
-            print 'adding a fake WHILE'
             self.PushFlow('While', False, ['While', 'EndWhile'])
             return
         bActive = self.ExecuteTokens(args)
@@ -870,10 +872,14 @@ class WryeParser(ScriptParser.Parser):
                 by = 1
             self.variables[varname.text] = start
             self.PushFlow('For', True, ['For', 'EndFor'], cLine=self.cLine, varname=varname.text, end=end, by=by)
-        #elif args[1] == 'in':
-        #    #For varname in list
-        #    self.error("Not implemented")
-        else:
+        #elif args[1].text == 'in':
+        #    #For name in subpackages
+        #    if args[2].text == 'subpackages':
+        #        pass
+        #    #For file in subpackage('name')
+        #    if args[2].text == 'subpackage':
+        #        pass
+     else:
             self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
@@ -916,14 +922,19 @@ class WryeParser(ScriptParser.Parser):
             descs.append(args.pop(0))
             images.append(args.pop(0))
         if self.bAuto:
-            temp = []
-            for index in range(len(titles)):
-                if defaultMap[index]:
-                    temp.append(titles[index])
-                    if not bMany:
-                        break
-            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
-            return
+            #If there are no defaults specified, show the dialog anyway
+            default = False
+            for i in defaultMap:
+                if defaultMap[i]:
+                    temp = []
+                    for index in range(len(titles)):
+                        if defaultMap[index]:
+                            temp.append(titles[index])
+                            if not bMany:
+                                break
+                    self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+                    return
+        # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
             temp = []
             for i in images:
@@ -952,13 +963,10 @@ class WryeParser(ScriptParser.Parser):
         self.PeekFlow().active = True
         self.PeekFlow().hitCase = True
     def kwdBreak(self):
-        print 'KEYWORD BREAK'
         if self.LenFlow() > 0 and self.PeekFlow().type == 'Select':
-            print '...from a SelectOne/SelectMany'
             # Break for SelectOne/SelectMany
             self.PeekFlow().active = False
         else:
-            print '...possibly from a While or For'
             # Test for a While/For statement earlier
             index = self.LenFlow()-1
             iType = None
@@ -968,20 +976,14 @@ class WryeParser(ScriptParser.Parser):
                     break
                 index -= 1
             if index < 0:
-                print 'EVIL!'
                 # No while or for statements found
                 self.error(UNEXPECTED % 'Break')
-            print '...from a', iType
-            print 'index=', index
             self.PeekFlow(index).active = False
 
             #We're going to jump to the EndWhile/EndFor, so discard
             #any flow control structs on top of the While/For one
             while self.LenFlow() > index+1:
                 flow = self.PopFlow()
-            print 'remaining flow controls:', self.LenFlow()
-            print 'top flow active:', self.PeekFlow().active
-            print 'top flow keywds:', self.PeekFlow().keywords
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
             self.error(UNEXPECTED % 'EndSelect')
