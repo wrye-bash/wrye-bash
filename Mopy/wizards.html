@@ -38,6 +38,7 @@
 <p class=list-3>&bull;&nbsp; <a href="#Constants">Constants</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#Expressions">Expressions</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#Strings">Strings</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Comments">Comments (;)</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#Functions">Functions</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CompareObVersion">CompareObVersion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CompareOBSEVersion">CompareOBSEVersion</a></p>
@@ -63,6 +64,16 @@
 <p class=list-3>&bull;&nbsp; <a href="#Elif">Elif</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#Else">Else</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#EndIf">EndIf</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#WhileContinueBreakEndWhile">While-Continue-Break-EndWhile</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#While">While</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Continue">Continue</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Break">Break</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#EndWhile">EndWhile</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ForContinueBreakEndFor">For-Continue-Break-EndFor</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#For">For</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Continue">Continue</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#Break">Break</a></p>
+<p class=list-3>&bull;&nbsp; <a href="#EndFor">EndFor</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#SelectOne">SelectOne</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#Case">Case</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#Default">Default</a></p>
@@ -130,7 +141,7 @@
 <p>Each line of the wizard contains one statement.  If you want to continue the line onto the next one, just add a <B>backslash ( \ )</B> to the end of the line.  This will cause BAIN to read the next line as is it were part of the first.
 <p class=empty>&nbsp;</p>
 <h3><a name='Variables'>Variables</a></h3>
-<p>You can use variables by assigning a value using an <a href="#Operators">assignment operator</a>.  Just make sure you assign a value before using a variable, or it will generate an error.
+<p>You can use variables by assigning a value using an <a href="#Operators">assignment operator</a>.  Just make sure you assign a value before using a variable, or it can cause undefined behavior.  In the best case, the variable will just be treated as a string with the same value as its name, but this is not guaranteed.
 <p class=empty>&nbsp;</p>
 <p>Variable names can contain any alpha-numeric characters (a-z,A-Z,0-9) and underscores ( _ ), but cannot start with a digit.  You also cannot create a variable with the same name (case sensitive) as a <a href="#Keywords">keyword</a>, <a href="#Functions">function</a>, or <a href="#Constants">constant</a>.  Variables can be used to hold any of the following types of data:
 <p class=list-1>&bull;&nbsp; <B><I>Integers</I></B>
@@ -157,6 +168,9 @@
   <p class=empty>&nbsp;</p>
 <h3><a name='Strings'>Strings</a></h3>
 <p>Strings can be denoted by enclosing the text in either single quotes ( ' ), or double quotes ( " ).  If you need to include a special character in the string, use an escape sequence.  Strings can be added and multiplied using the addition and multiplication <a href="#Operators">operator</a>.  You can also test if one string is contained within another using the <a href="#Operators">in operator</a>.
+  <p class=empty>&nbsp;</p>
+<h3><a name='Comments'>Comments (;)</a></h3>
+<p>Comments are extra text ignored by the wizard engine, to explain what is going on in the code to other people who might read the wizard file.  To start a comment, use a semi-colon; the comment will include everthing following the semi-colon until the end of the line.
   <p class=empty>&nbsp;</p>
 <h1><a name='Functions'>Functions</a></h1>
   <p class=empty>&nbsp;</p>
@@ -339,7 +353,7 @@
 <p>A basic <B>If</B> control block.
   <p class=empty>&nbsp;</p>
 <p><B>Usage:</B> <br />
-<B>If</B> <B><I>satement</I></B> <br />
+<B>If</B> <B><I>statement</I></B> <br />
 ...lines... <br />
 <p><B>Elif</B> <B><I>statement</I></B> <br />
 ...lines... <br />
@@ -351,16 +365,69 @@
   <p class=empty>&nbsp;</p>
 <h3><a name='If'>If</a></h3>
 <p class=list-1>&bull;&nbsp; A begins the control block.
-<p class=list-1>&bull;&nbsp;  If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, then the lines following it will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
+<p class=list-1>&bull;&nbsp; If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, then the lines following it will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
 <p class=empty>&nbsp;</p>
 <h3><a name='Elif'>Elif</a></h3>
-<p class=list-1>&bull;&nbsp;  If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, and the initial <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following this <B>Elif</B> will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
+<p class=list-1>&bull;&nbsp; If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, and the initial <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following this <B>Elif</B> will be run, until the next <B>Elif</B>, <B>Else</B>, or <B>EndIf</B>.
 <p class=empty>&nbsp;</p>
 <h3><a name='Else'>Else</a></h3>
-<p class=list-1>&bull;&nbsp;  If the initail <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following will be run until an <B>EndIf</B> is met.
+<p class=list-1>&bull;&nbsp; If the initail <B>If</B> and none of the previous <B>Elif</B>'s were <B><I>True</I></B>, then the lines following will be run until an <B>EndIf</B> is met.
 <p class=empty>&nbsp;</p>
 <h3><a name='EndIf'>EndIf</a></h3>
 <p class=list-1>&bull;&nbsp; Signals the end of the <B>If</B> control block.
+<p class=empty>&nbsp;</p>
+<h2><a name='WhileContinueBreakEndWhile'>While-Continue-Break-EndWhile</a></h2>
+<p>A <B>While</B> loop.
+<p class=empty>&nbsp;</p>
+<p><B>Usage:</B><br />
+<B>While</B> <B><I>statement</I></B> <br />
+...lines...<br />
+...<B>Continue</B><br />
+...lines...<br />
+...<B>Break</B><br />
+<p><B>EndWhile</B>
+<p class=empty>&nbsp;</p>
+<h3><a name='While'>While</a></h3>
+<p class=list-1>&bull;&nbsp; Begins the while loop.
+<p class=list-1>&bull;&nbsp; If <B><I>statement</I></B> evaluates to <B><I>True</I></B>, execution of the lines begins, otherwise execution skips to after the <B>EndWhile</B>.
+<p class=empty>&nbsp;</p>
+<h3><a name='Continue'>Continue</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the while loop to begin over again at the <B>While</B> statement.
+<p class=empty>&nbsp;</p>
+<h3><a name='Break'>Break</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the while loop to end execution, skipping to after the <B>EndWhile</B>.
+<p class=empty>&nbsp;</p>
+<h3><a name='EndWhile'>EndWhile</a></h3>
+<p class=list-1>&bull;&nbsp; Ends the while loop.  <B><I>statement</I></B> is re-evaluated, and if <B><I>True</I></B>, execution begins again at the start of the <B>While</B> block.
+<p class=empty>&nbsp;</p>
+<h2><a name='ForContinueBreakEndFor'>For-Continue-Break-EndFor</a></h2>
+<p>A <B>For</B> loop.
+<p class=empty>&nbsp;</p>
+<p><B>Usage:</B><br />
+<B>For</B> <B><I>varname</I></B> from <B><I>start_value</I></B> to <B><I>end_value</I></B> [by <B><I>increment_value</I></B>]<br />
+...lines...<br />
+...<B>Continue</B><br />
+...lines...<br />
+...<B>Break</B><br />
+<p><B>EndFor</B>
+<p class=empty>&nbsp;</p>
+<h3><a name='For'>For</a></h3>
+<p class=list-1>&bull;&nbsp; Begins the for loop.
+<p class=list-1>&bull;&nbsp; <B><I>varname</I></B> is initialized to <B><I>increment_value</I></B>, and execution of the <B>For</B> block begins.
+<p class=list-1>&bull;&nbsp; <B>by <B><I>increment_value</I></B></B> is optional.  If not specified, the <B>For</B> loop assumes a value of <B>1</B> or <B>-1</B> as appropriate.
+<p class=empty>&nbsp;</p>
+<h3><a name='Continue'>Continue</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the for loop to begin another iteration.
+<p class=list-1>&bull;&nbsp; If <B><I>varname</I></B> equals <B><I>end_value</I></B>, the for loop exits and execution begins after the <B>EndFor</B>.
+<p class=list-1>&bull;&nbsp; Otherwise, <B><I>varname</I></B> is incremented by <B><I>increment_value</I></B>, and execution begins at the beginning of the <B>For</B> loop again.
+<p class=empty>&nbsp;</p>
+<h3><a name='Break'>Break</a></h3>
+<p class=list-1>&bull;&nbsp; Signals the for loop to end execution, skipping to after the <B>EndFor</B>.
+<p class=empty>&nbsp;</p>
+<h3><a name='EndFor'>EndFor</a></h3>
+<p class=list-1>&bull;&nbsp; Ends the for loop.
+<p class=list-1>&bull;&nbsp; If <B><I>varname</I></B> equals <B><I>end_value</I></B>, the for loop is done and execution continues after the <B>EndFor</B>.
+<p class=list-1>&bull;&nbsp; Otherwise, <B><I>varname</I></B> is incremented by <B><I>increment_value</I></B>, and execution skips back to the beginning of the <B>For</B> loop.
 <p class=empty>&nbsp;</p>
 <h2><a name='SelectOne'>SelectOne</a></h2>
 <p>Shows a <a href="images/SelectOne.jpg">dialog</a> where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a <B>Select</B> control block.

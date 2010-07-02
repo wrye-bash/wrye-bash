@@ -35,7 +35,7 @@ Wizards are case sensitive, so ensure you get the case right.  The only exceptio
 Each line of the wizard contains one statement.  If you want to continue the line onto the next one, just add a __backslash ( \ )__ to the end of the line.  This will cause BAIN to read the next line as is it were part of the first.
 
 === Variables
-You can use variables by assigning a value using an [[#Operators|assignment operator]].  Just make sure you assign a value before using a variable, or it will generate an error.
+You can use variables by assigning a value using an [[#Operators|assignment operator]].  Just make sure you assign a value before using a variable, or it can cause undefined behavior.  In the best case, the variable will just be treated as a string with the same value as its name, but this is not guaranteed.
 
 Variable names can contain any alpha-numeric characters (a-z,A-Z,0-9) and underscores ( _ ), but cannot start with a digit.  You also cannot create a variable with the same name (case sensitive) as a [[#Keywords|keyword]], [[#Functions|function]], or [[#Constants|constant]].  Variables can be used to hold any of the following types of data:
 * **Integers**
@@ -62,6 +62,9 @@ Will evaluate to __15__ as expected, not __18__.
 
 === Strings
 Strings can be denoted by enclosing the text in either single quotes ( ' ), or double quotes ( " ).  If you need to include a special character in the string, use an escape sequence.  Strings can be added and multiplied using the addition and multiplication [[#Operators|operator]].  You can also test if one string is contained within another using the [[#Operators|in operator]].
+
+=== Comments (;)
+Comments are extra text ignored by the wizard engine, to explain what is going on in the code to other people who might read the wizard file.  To start a comment, use a semi-colon; the comment will include everthing following the semi-colon until the end of the line.
 
 = Functions
 
@@ -244,7 +247,7 @@ Add a note to the user to be displayed at the end of the wizard, on the [[images
 A basic __If__ control block.
 
 __Usage:__ <br />
-__If__ **satement** <br />
+__If__ **statement** <br />
 ...lines... <br />
 __Elif__ **statement** <br />
 ...lines... <br />
@@ -256,16 +259,69 @@ __EndIf__
 
 === If
 * A begins the control block.
-*  If **statement** evaluates to **True**, then the lines following it will be run, until the next __Elif__, __Else__, or __EndIf__.
+* If **statement** evaluates to **True**, then the lines following it will be run, until the next __Elif__, __Else__, or __EndIf__.
 
 === Elif
-*  If **statement** evaluates to **True**, and the initial __If__ and none of the previous __Elif__'s were **True**, then the lines following this __Elif__ will be run, until the next __Elif__, __Else__, or __EndIf__.
+* If **statement** evaluates to **True**, and the initial __If__ and none of the previous __Elif__'s were **True**, then the lines following this __Elif__ will be run, until the next __Elif__, __Else__, or __EndIf__.
 
 === Else
-*  If the initail __If__ and none of the previous __Elif__'s were **True**, then the lines following will be run until an __EndIf__ is met.
+* If the initail __If__ and none of the previous __Elif__'s were **True**, then the lines following will be run until an __EndIf__ is met.
 
 === EndIf
 * Signals the end of the __If__ control block.
+
+== While-Continue-Break-EndWhile
+A __While__ loop.
+
+__Usage:__<br />
+__While__ **statement** <br />
+...lines...<br />
+...__Continue__<br />
+...lines...<br />
+...__Break__<br />
+__EndWhile__
+
+=== While
+* Begins the while loop.
+* If **statement** evaluates to **True**, execution of the lines begins, otherwise execution skips to after the __EndWhile__.
+
+=== Continue
+* Signals the while loop to begin over again at the __While__ statement.
+
+=== Break
+* Signals the while loop to end execution, skipping to after the __EndWhile__.
+
+=== EndWhile
+* Ends the while loop.  **statement** is re-evaluated, and if **True**, execution begins again at the start of the __While__ block.
+
+== For-Continue-Break-EndFor
+A __For__ loop.
+
+__Usage:__<br />
+__For__ **varname** from **start_value** to **end_value** [by **increment_value**]<br />
+...lines...<br />
+...__Continue__<br />
+...lines...<br />
+...__Break__<br />
+__EndFor__
+
+=== For
+* Begins the for loop.
+* **varname** is initialized to **increment_value**, and execution of the __For__ block begins.
+* __by **increment_value**__ is optional.  If not specified, the __For__ loop assumes a value of __1__ or __-1__ as appropriate.
+
+=== Continue
+* Signals the for loop to begin another iteration.
+* If **varname** equals **end_value**, the for loop exits and execution begins after the __EndFor__.
+* Otherwise, **varname** is incremented by **increment_value**, and execution begins at the beginning of the __For__ loop again.
+
+=== Break
+* Signals the for loop to end execution, skipping to after the __EndFor__.
+
+=== EndFor
+* Ends the for loop.
+* If **varname** equals **end_value**, the for loop is done and execution continues after the __EndFor__.
+* Otherwise, **varname** is incremented by **increment_value**, and execution skips back to the beginning of the __For__ loop.
 
 == SelectOne
 Shows a [[images/SelectOne.jpg|dialog]] where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a __Select__ control block.

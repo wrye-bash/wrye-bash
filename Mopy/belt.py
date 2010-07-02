@@ -592,6 +592,14 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('Elif', self.kwdElif, 1, ScriptParser.KEY.NO_MAX, True, True)
         self.SetKeyword('Else', self.kwdElse)
         self.SetKeyword('EndIf', self.kwdEndIf)
+        self.SetKeyword('While', self.kwdWhile, 1, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('Continue', self.kwdContinue)
+        self.SetKeyword('EndWhile', self.kwdEndWhile)
+        self.SetKeyword('For', self.kwdFor, 4, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('from', self.kwdDummy)
+        self.SetKeyword('to', self.kwdDummy)
+        self.SetKeyword('by', self.kwdDummy)
+        self.SetKeyword('EndFor', self.kwdEndFor)
         self.SetKeyword('SelectOne', self.kwdSelectOne, 7, ScriptParser.KEY.NO_MAX)
         self.SetKeyword('SelectMany', self.kwdSelectMany, 4, ScriptParser.KEY.NO_MAX)
         self.SetKeyword('Case', self.kwdCase, 1, ScriptParser.KEY.NO_MAX)
@@ -606,6 +614,7 @@ class WryeParser(ScriptParser.Parser):
     def Begin(self, file):
         self.vars = {}
         self.Flow = []
+        self.cLine = 0
 
         if file.exists() and file.isfile():
             script = file.open()
@@ -617,14 +626,14 @@ class WryeParser(ScriptParser.Parser):
 
     def Continue(self):
         self.page = None
-        while len(self.lines) > 0:
-            newline = self.lines.pop(0)
+        while self.cLine < len(self.lines):
+            newline = self.lines[self.cLine]
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
                 return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script:\n Line:\t%s\n Error:\t%s') % (newline.strip('\n'), e))
             except Exception, e:
-                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line:\t%s\n Error:\t%s') % (newline.strip('\n'), e))
+                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line(%s):\t%s\n Error:\t%s') % (self.cLine,newline.strip('\n'), e))
             if self.page:
                 return self.page
         return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
@@ -695,11 +704,15 @@ class WryeParser(ScriptParser.Parser):
     def opNot(self, l): return not l
     # Postfix inc/dec
     def opInc(self, l):
-        l += 1
-        return l
+        if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
+            self.error('Cannot increment %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+        self.variables[l.text] = l.data+1
+        return l.data
     def opDec(self, l):
-        l -= 1
-        return l
+        if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
+            self.error('Cannot decrement %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+        self.variables[l.text] = l.data-1
+        return l.data
     # Math operators
     def opAdd(self, l, r): return l + r
     def opMin(self, l, r): return l - r
@@ -740,6 +753,10 @@ class WryeParser(ScriptParser.Parser):
         except:
             return 0
 
+    # Dummy keyword, for reserving a keyword, but handled by other keywords (like from, to, and by)
+    def kwdDummy(self):
+        pass
+
     # Keywords, mostly for flow control (If, Select, etc)
     def kwdIf(self, *args):
         if self.LenFlow() > 0 and self.PeekFlow().type == 'If' and not self.PeekFlow().active:
@@ -770,6 +787,106 @@ class WryeParser(ScriptParser.Parser):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
             self.error(UNEXPECTED % 'EndIf')
         self.PopFlow()
+
+    def kwdWhile(self, *args):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'While' and not self.PeekFlow().active:
+            #Within an un-true while statement, but we hit a new While, so we need to ignore the
+            #next 'EndWhile' towards THIS one
+            print 'adding a fake WHILE'
+            self.PushFlow('While', False, ['While', 'EndWhile'])
+            return
+        bActive = self.ExecuteTokens(args)
+        self.PushFlow('While', bActive, ['While', 'EndWhile'], cLine=self.cLine, expr=args)
+    def kwdContinue(self):
+        #Find the next up While or For statement to continue from
+        index = self.LenFlow()-1
+        iType = None
+        while index >= 0:
+            iType = self.PeekFlow(index).type
+            if iType in ['While','For']:
+                break
+            index -= 1
+        if index < 0:
+            # No while statement was found
+            self.error(UNEXPECTED % 'Continue')
+        #Discard any flow control statments that happened after
+        #the While/For, since we're resetting either back to the
+        #the While/For', or the EndWhile/EndFor
+        while self.LenFlow() > index+1:
+            self.PopFlow()
+        flow = self.PeekFlow()
+        if iType == 'While':
+            # Continue a While loop
+            if self.ExecuteTokens(flow.expr):
+                #Still an active loop, so jump back to the top,
+                self.cLine = flow.cLine
+            else:
+                #Inactive now, so skip to after the EndWhile,
+                self.PeekFlow().active = False
+        else:
+            # Continue a For loop
+            if self.variables[flow.varname] == flow.end:
+                # For loop is done
+                self.PeekFlow().active = False
+            else:
+                # keep going
+                self.cLine = flow.cLine
+            self.variables[flow.varname] += flow.by
+    def kwdEndWhile(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
+            self.error(UNEXPECTED % 'EndWhile')
+        #Re-evaluate the while loop's expression, if needed
+        if self.PeekFlow().active:
+            bActive = self.ExecuteTokens(self.PeekFlow().expr)
+            if not bActive:
+                #While loop is done
+                self.PopFlow()
+            else:
+                #Still need to execute the while loop
+                self.cLine = self.PeekFlow().cLine
+        else:
+            self.PopFlow()
+
+    def kwdFor(self, *args):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'For' and not self.PeekFlow().active:
+            #Within an ending For statement, but we hit a new For, so we need to ignore the
+            #next 'EndFor' towards THIS one
+            self.PushFlow('For', False, ['For', 'EndFor'])
+            return
+        varname = args[0]
+        if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
+            self.error("Invalid syntax for 'For' statement.  Expected variable.")
+        if args[1].text == 'from':
+            #For varname from value_start to value_end [by value_increment]
+            if (len(args) not in [5,7]) or (args[3].text != 'to') or (len(args)==7 and args[5].text != 'by'):
+                self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
+            start = self.ExecuteTokens([args[2]])
+            end = self.ExecuteTokens([args[4]])
+            if len(args) == 7:
+                by = self.ExecuteTokens([args[6]])
+            elif start > end:
+                by = -1
+            else:
+                by = 1
+            self.variables[varname.text] = start
+            self.PushFlow('For', True, ['For', 'EndFor'], cLine=self.cLine, varname=varname.text, end=end, by=by)
+        #elif args[1] == 'in':
+        #    #For varname in list
+        #    self.error("Not implemented")
+        else:
+            self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
+    def kwdEndFor(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
+            self.error(UNEXPECTED % 'EndFor')
+        #Increment the variable, then test to see if we should end or keep going
+        flow = self.PeekFlow()
+        if self.variables[flow.varname] == flow.end:
+            #For loop is done
+            self.PopFlow()
+        else:
+            #Need to keep going
+            self.cLine = flow.cLine
+            self.variables[flow.varname] += flow.by
 
     def kwdSelectOne(self, *args): self._KeywordSelect(False, 'SelectOne', *args)
     def kwdSelectMany(self, *args): self._KeywordSelect(True, 'SelectMany', *args)
@@ -835,9 +952,36 @@ class WryeParser(ScriptParser.Parser):
         self.PeekFlow().active = True
         self.PeekFlow().hitCase = True
     def kwdBreak(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            self.error(UNEXPECTED % 'Break')
-        self.PeekFlow().active = False
+        print 'KEYWORD BREAK'
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'Select':
+            print '...from a SelectOne/SelectMany'
+            # Break for SelectOne/SelectMany
+            self.PeekFlow().active = False
+        else:
+            print '...possibly from a While or For'
+            # Test for a While/For statement earlier
+            index = self.LenFlow()-1
+            iType = None
+            while index >=0:
+                iType = self.PeekFlow(index).type
+                if iType in ['While','For']:
+                    break
+                index -= 1
+            if index < 0:
+                print 'EVIL!'
+                # No while or for statements found
+                self.error(UNEXPECTED % 'Break')
+            print '...from a', iType
+            print 'index=', index
+            self.PeekFlow(index).active = False
+
+            #We're going to jump to the EndWhile/EndFor, so discard
+            #any flow control structs on top of the While/For one
+            while self.LenFlow() > index+1:
+                flow = self.PopFlow()
+            print 'remaining flow controls:', self.LenFlow()
+            print 'top flow active:', self.PeekFlow().active
+            print 'top flow keywds:', self.PeekFlow().keywords
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
             self.error(UNEXPECTED % 'EndSelect')
