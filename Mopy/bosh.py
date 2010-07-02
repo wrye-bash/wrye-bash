@@ -15071,7 +15071,6 @@ class CBash_PatchFile(CBashModFile):
             filtered = []
             for record in block:
                 conflicts = record.Conflicts()
-                print conflicts
                 IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                 if record.fid_long == badForm: continue
                 #--Include this record?
@@ -19908,7 +19907,7 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
                 if record.script: 
                     deprint(record.fid) #if debug printing is enabled print that to make sure it is correct to get skipped.
                     continue #test that anyways...
-                if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower(): continue #probably truly shouldn't be playable
+                if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower() or 'werewolf' in record.full.lower(): continue #probably truly shouldn't be playable
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
@@ -19925,7 +19924,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _('Playable Clothes')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20002,7 +20001,9 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.ARMO.records:
+            if not record.full: continue
             if record.flags.notPlayable:
+                if 'werewolf' in record.full.lower(): continue
                 # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
                 if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
                     name = record.full
@@ -20020,7 +20021,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _('Playable Armor')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("All Armor Playable"),
