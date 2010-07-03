@@ -340,9 +340,9 @@ class Reference(object):
         else: self.reference = nValue            
     reference_long = property(get_reference_long, set_reference_long)
     def get_IsSCRO(self):
-        CBash.ReadFIDListField.restype = POINTER(c_bool)
+        CBash.ReadFIDListField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, self._subField, self._listIndex, 2)
-        if(retValue): return retValue.contents.value
+        if(retValue): return bool(retValue.contents.value)
         return None
     def set_IsSCRO(self, nValue):
         if isinstance(nValue, bool):
@@ -645,17 +645,18 @@ class BaseRecord(object):
             CBash.GetFIDConflicts(self._CollectionIndex, self._recordID, cModNames)
             return [self.__class__(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
-    def mergeFilter(self,modFile,modSet):
+    def mergeFilter(self,modSet):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
         removed from the list."""
         pass
+
     def CopyAsOverride(self, targetMod):
-        CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         return
     def CopyAsNew(self, targetMod):
-        CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        CBash.CopyFIDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         return
     @property
     def recType(self):
@@ -1024,13 +1025,13 @@ class ACHRRecord(BaseRecord):
     def CopyAsOverride(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
         if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        FID = CBash.CopyACHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
         if(FID): return ACHRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -1248,13 +1249,13 @@ class ACRERecord(BaseRecord):
     def CopyAsOverride(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
         if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        FID = CBash.CopyACRERecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
         if(FID): return ACRERecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -1436,11 +1437,11 @@ class ACRERecord(BaseRecord):
 class ACTIRecord(BaseRecord):
     _Type = 'ACTI'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyACTIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyACTIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return ACTIRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyACTIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyACTIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return ACTIRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -1512,11 +1513,11 @@ class ACTIRecord(BaseRecord):
 class ALCHRecord(BaseRecord):
     _Type = 'ALCH'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyALCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyALCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return ALCHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyALCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyALCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return ALCHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newEffectsElement(self):
@@ -1669,11 +1670,11 @@ class ALCHRecord(BaseRecord):
 class AMMORecord(BaseRecord):
     _Type = 'AMMO'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyAMMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyAMMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return AMMORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyAMMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyAMMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return AMMORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -1820,11 +1821,11 @@ class AMMORecord(BaseRecord):
 class ANIORecord(BaseRecord):
     _Type = 'ANIO'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyANIORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyANIORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return ANIORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyANIORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyANIORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return ANIORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_modPath(self):
@@ -1875,11 +1876,11 @@ class ANIORecord(BaseRecord):
 class APPARecord(BaseRecord):
     _Type = 'APPA'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyAPPARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyAPPARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return APPARecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyAPPARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyAPPARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return APPARecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -2006,11 +2007,11 @@ class APPARecord(BaseRecord):
 class ARMORecord(BaseRecord):
     _Type = 'ARMO'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyARMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyARMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return ARMORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyARMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyARMORecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return ARMORecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -2341,11 +2342,11 @@ class ARMORecord(BaseRecord):
 class BOOKRecord(BaseRecord):
     _Type = 'BOOK'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyBOOKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyBOOKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return BOOKRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyBOOKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyBOOKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return BOOKRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -2495,11 +2496,11 @@ class BOOKRecord(BaseRecord):
 class BSGNRecord(BaseRecord):
     _Type = 'BSGN'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyBSGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyBSGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return BSGNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyBSGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyBSGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return BSGNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -2552,13 +2553,13 @@ class CELLRecord(BaseRecord):
     def CopyAsOverride(self, target, isWorldCell=False):
         if isinstance(target, CBashModFile): targetID = self._parentID
         else: targetID = target._recordID
-        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, c_bool(True), c_bool(isWorldCell))
+        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, 1, int(isWorldCell))
         if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
         return None
     def CopyAsNew(self, target, isWorldCell=False):
         if isinstance(target, CBashModFile): targetID = self._parentID
         else: targetID = target._recordID
-        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, c_bool(False), c_bool(isWorldCell))
+        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, 0, int(isWorldCell))
         if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -3037,11 +3038,11 @@ class CELLRecord(BaseRecord):
 class CLASRecord(BaseRecord):
     _Type = 'CLAS'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCLASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCLASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CLASRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCLASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCLASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CLASRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -3337,11 +3338,11 @@ class CLASRecord(BaseRecord):
 class CLMTRecord(BaseRecord):
     _Type = 'CLMT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCLMTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCLMTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CLMTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCLMTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCLMTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CLMTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Weather(object):
@@ -3505,11 +3506,11 @@ class CLMTRecord(BaseRecord):
 class CLOTRecord(BaseRecord):
     _Type = 'CLOT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCLOTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCLOTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CLOTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCLOTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCLOTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CLOTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -3814,18 +3815,18 @@ class CLOTRecord(BaseRecord):
 class CONTRecord(BaseRecord):
     _Type = 'CONT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCONTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCONTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CONTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCONTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCONTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CONTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
-    def mergeFilter(self,modFile,modSet):
+    def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        mapper = modFile.MakeLongFID
-        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
+        self.items = [x for x in self.items if (x.item_long)[0] in modSet]
+
     def newItemsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 11)
         if(listIndex == -1): return None
@@ -3965,20 +3966,20 @@ class CONTRecord(BaseRecord):
 class CREARecord(BaseRecord):
     _Type = 'CREA'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCREARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCREARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CREARecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCREARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCREARecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CREARecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
-    def mergeFilter(self,modFile,modSet):
+    def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
         Filters spells, factions and items."""
-        mapper = modFile.MakeLongFID
-        self.spells = [x for x in self.spells if mapper(x)[0] in modSet]
-        self.factions = [x for x in self.factions if mapper(x.faction)[0] in modSet]
-        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
+        self.spells_long = [x for x in self.spells_long if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction_long[0] in modSet]
+        self.items = [x for x in self.items if x.item_long[0] in modSet]
+
     class Sound(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
             self._CollectionIndex = CollectionIndex
@@ -5014,11 +5015,11 @@ class CREARecord(BaseRecord):
 class CSTYRecord(BaseRecord):
     _Type = 'CSTY'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyCSTYRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyCSTYRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return CSTYRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyCSTYRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyCSTYRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return CSTYRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_dodgeChance(self):
@@ -5700,16 +5701,16 @@ class CSTYRecord(BaseRecord):
 class DIALRecord(BaseRecord):
     _Type = 'DIAL'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyDIALRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyDIALRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return DIALRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyDIALRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyDIALRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return DIALRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def createINFORecord(self):
         FID = CBash.CreateINFORecord(self._CollectionIndex, self._ModName, self._recordID)
-        if(FID): return INFORecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return INFORecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def get_quests(self):
         numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 6)
@@ -5771,7 +5772,7 @@ class DIALRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 10, byref(cRecords))
-            return [INFORecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [INFORecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
         return []
     def get_IsTopic(self):
         return (self.dialType == 0)
@@ -5820,11 +5821,11 @@ class DIALRecord(BaseRecord):
 class DOORRecord(BaseRecord):
     _Type = 'DOOR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyDOORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyDOORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return DOORRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyDOORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyDOORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return DOORRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -5984,11 +5985,11 @@ class DOORRecord(BaseRecord):
 class EFSHRecord(BaseRecord):
     _Type = 'EFSH'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyEFSHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyEFSHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return EFSHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyEFSHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyEFSHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return EFSHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_fillTexture(self):
@@ -6714,11 +6715,11 @@ class EFSHRecord(BaseRecord):
 class ENCHRecord(BaseRecord):
     _Type = 'ENCH'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyENCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyENCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return ENCHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyENCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyENCHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return ENCHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newEffectsElement(self):
@@ -6844,11 +6845,11 @@ class ENCHRecord(BaseRecord):
 class EYESRecord(BaseRecord):
     _Type = 'EYES'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyEYESRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyEYESRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return EYESRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyEYESRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyEYESRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return EYESRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -6887,11 +6888,11 @@ class EYESRecord(BaseRecord):
 class FACTRecord(BaseRecord):
     _Type = 'FACT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyFACTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyFACTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return FACTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyFACTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyFACTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return FACTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Rank(object):
@@ -7040,11 +7041,11 @@ class FACTRecord(BaseRecord):
 class FLORRecord(BaseRecord):
     _Type = 'FLOR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyFLORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyFLORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return FLORRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyFLORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyFLORRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return FLORRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -7154,11 +7155,11 @@ class FLORRecord(BaseRecord):
 class FURNRecord(BaseRecord):
     _Type = 'FURN'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyFURNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyFURNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return FURNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyFURNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyFURNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return FURNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -7485,11 +7486,11 @@ class FURNRecord(BaseRecord):
 class GLOBRecord(BaseRecord):
     _Type = 'GLOB'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyGLOBRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyGLOBRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return GLOBRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyGLOBRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyGLOBRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return GLOBRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_format(self):
@@ -7515,11 +7516,11 @@ class GLOBRecord(BaseRecord):
 class GRASRecord(BaseRecord):
     _Type = 'GRAS'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyGRASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyGRASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return GRASRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyGRASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyGRASRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return GRASRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_modPath(self):
@@ -7706,11 +7707,11 @@ class GRASRecord(BaseRecord):
 class HAIRRecord(BaseRecord):
     _Type = 'HAIR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyHAIRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyHAIRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return HAIRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyHAIRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyHAIRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return HAIRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -7812,11 +7813,11 @@ class HAIRRecord(BaseRecord):
 class IDLERecord(BaseRecord):
     _Type = 'IDLE'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyIDLERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyIDLERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return IDLERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyIDLERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyIDLERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return IDLERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newConditionsElement(self):
@@ -8003,13 +8004,20 @@ class IDLERecord(BaseRecord):
 
 class INFORecord(BaseRecord):
     _Type = 'INFO'
+    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+        BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
+        self._parentID = parentID
     def CopyAsOverride(self, targetDIAL):
-        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetDIAL._ModName, targetDIAL._recordID, c_bool(True))
-        if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID)
+        if isinstance(targetDIAL, CBashModFile): targetID = self._parentID
+        else: targetID = targetDIAL._recordID
+        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
+        if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetDIAL):
-        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetDIAL._ModName, targetDIAL._recordID, c_bool(False))
-        if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID)
+        if isinstance(targetDIAL, CBashModFile): targetID = self._parentID
+        else: targetID = targetDIAL._recordID
+        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
+        if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID, targetID)
         return None
     def DeleteRecord(self, parent):
         CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, parent._recordID)
@@ -8505,11 +8513,11 @@ class INFORecord(BaseRecord):
 class INGRRecord(BaseRecord):
     _Type = 'INGR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyINGRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyINGRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return INGRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyINGRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyINGRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return INGRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newEffectsElement(self):
@@ -8662,11 +8670,11 @@ class INGRRecord(BaseRecord):
 class MISCRecord(BaseRecord):
     _Type = 'MISC'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyMISCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyMISCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return MISCRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyMISCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyMISCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return MISCRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -8750,11 +8758,11 @@ class MISCRecord(BaseRecord):
 class KEYMRecord(MISCRecord):
     _Type = 'KEYM'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyKEYMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyKEYMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return KEYMRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyKEYMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyKEYMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return KEYMRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
 
@@ -8766,13 +8774,13 @@ class LANDRecord(BaseRecord):
     def CopyAsOverride(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
         if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        FID = CBash.CopyLANDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
         if(FID): return LANDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -9409,11 +9417,11 @@ class LANDRecord(BaseRecord):
 class LIGHRecord(BaseRecord):
     _Type = 'LIGH'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLIGHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLIGHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LIGHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLIGHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLIGHRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LIGHRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_modPath(self):
@@ -9686,11 +9694,11 @@ class LIGHRecord(BaseRecord):
 class LSCRRecord(BaseRecord):
     _Type = 'LSCR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLSCRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLSCRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LSCRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLSCRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLSCRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LSCRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Location(object):
@@ -9792,11 +9800,11 @@ class LSCRRecord(BaseRecord):
 class LTEXRecord(BaseRecord):
     _Type = 'LTEX'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLTEXRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLTEXRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LTEXRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLTEXRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLTEXRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LTEXRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_iconPath(self):
@@ -9985,17 +9993,16 @@ class LTEXRecord(BaseRecord):
 
 class LVLRecord(BaseRecord):
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLVLRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLVLRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LVLRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLVLRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLVLRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LVLRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
-    def mergeFilter(self,modFile,modSet):
+    def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
-        mapper = modFile.MakeLongFID
-        self.entries = [entry for entry in self.entries if mapper(entry.listId)[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId_long[0] in modSet]
 
     class Entry(object):
         def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
@@ -10146,11 +10153,11 @@ class LVLRecord(BaseRecord):
 class LVLCRecord(LVLRecord):
     _Type = 'LVLC'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLVLCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLVLCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LVLCRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLVLCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLVLCRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LVLCRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_script(self):
@@ -10186,33 +10193,33 @@ class LVLCRecord(LVLRecord):
 class LVLIRecord(LVLRecord):
     _Type = 'LVLI'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLVLIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLVLIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LVLIRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLVLIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLVLIRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LVLIRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
 
 class LVSPRecord(LVLRecord):
     _Type = 'LVSP'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyLVSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyLVSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return LVSPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyLVSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyLVSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return LVSPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
 
 class MGEFRecord(BaseRecord):
     _Type = 'MGEF'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyMGEFRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyMGEFRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return MGEFRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyMGEFRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyMGEFRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return MGEFRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -10683,20 +10690,20 @@ class MGEFRecord(BaseRecord):
 class NPC_Record(BaseRecord):
     _Type = 'NPC_'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyNPC_Record(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyNPC_Record(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return NPC_Record(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyNPC_Record(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyNPC_Record(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return NPC_Record(self._CollectionIndex, targetMod._ModName, FID)
         return None
-    def mergeFilter(self,modFile,modSet):
+    def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
         Filters spells, factions and items."""
-        mapper = modFile.MakeLongFID
-        self.spells = [x for x in self.spells if mapper(x)[0] in modSet]
-        self.factions = [x for x in self.factions if mapper(x.faction)[0] in modSet]
-        self.items = [x for x in self.items if mapper(x.item)[0] in modSet]
+        self.spells_long = [x for x in self.spells_long if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction_long[0] in modSet]
+        self.items = [x for x in self.items if x.item_long[0] in modSet]
+
     def newFactionsElement(self):
         listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 17)
         if(listIndex == -1): return None
@@ -11688,11 +11695,11 @@ class NPC_Record(BaseRecord):
 class PACKRecord(BaseRecord):
     _Type = 'PACK'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyPACKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyPACKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return PACKRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyPACKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyPACKRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return PACKRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newConditionsElement(self):
@@ -12178,13 +12185,13 @@ class PGRDRecord(BaseRecord):
     def CopyAsOverride(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
         if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        FID = CBash.CopyPGRDRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
         if(FID): return PGRDRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -12398,11 +12405,11 @@ class PGRDRecord(BaseRecord):
 class QUSTRecord(BaseRecord):
     _Type = 'QUST'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyQUSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyQUSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return QUSTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyQUSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyQUSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return QUSTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Stage(object):
@@ -12637,9 +12644,9 @@ class QUSTRecord(BaseRecord):
                     else: self.reference = nValue            
                 reference_long = property(get_reference_long, set_reference_long)
                 def get_IsSCRO(self):
-                    CBash.ReadFIDListX3Field.restype = POINTER(c_bool)
+                    CBash.ReadFIDListX3Field.restype = POINTER(c_uint)
                     retValue = CBash.ReadFIDListX3Field(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 2, self._listX2Index, 11, self._listX3Index, 2)
-                    if(retValue): return retValue.contents.value
+                    if(retValue): return bool(retValue.contents.value)
                     return None
                 def set_IsSCRO(self, nValue):
                     if isinstance(nValue, bool):
@@ -13288,11 +13295,11 @@ class QUSTRecord(BaseRecord):
 class RACERecord(BaseRecord):
     _Type = 'RACE'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyRACERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyRACERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return RACERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyRACERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyRACERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return RACERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class RaceModel(object):
@@ -14166,13 +14173,13 @@ class REFRRecord(BaseRecord):
     def CopyAsOverride(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(True))
+        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
         if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetCELL):
         if isinstance(targetCELL, CBashModFile): targetID = self._parentID
         else: targetID = targetCELL._recordID
-        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, c_bool(False))
+        FID = CBash.CopyREFRRecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
         if(FID): return REFRRecord(self._CollectionIndex, targetCELL._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -14848,11 +14855,11 @@ class REFRRecord(BaseRecord):
 class REGNRecord(BaseRecord):
     _Type = 'REGN'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyREGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyREGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return REGNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyREGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyREGNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return REGNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Area(object):
@@ -15696,13 +15703,13 @@ class ROADRecord(BaseRecord):
     def CopyAsOverride(self, targetWRLD):
         if isinstance(targetWRLD, CBashModFile): targetID = self._parentID
         else: targetID = targetWRLD._recordID
-        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, c_bool(True))
+        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, 1)
         if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetWRLD):
         if isinstance(targetWRLD, CBashModFile): targetID = self._parentID
         else: targetID = targetWRLD._recordID
-        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, c_bool(False))
+        FID = CBash.CopyROADRecord(self._CollectionIndex, self._ModName, self._recordID, targetWRLD._ModName, targetID, 0)
         if(FID): return ROADRecord(self._CollectionIndex, targetWRLD._ModName, FID, targetID)
         return None
     def DeleteRecord(self):
@@ -15802,11 +15809,11 @@ class ROADRecord(BaseRecord):
 class SBSPRecord(BaseRecord):
     _Type = 'SBSP'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySBSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySBSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SBSPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySBSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySBSPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SBSPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_sizeX(self):
@@ -15841,11 +15848,11 @@ class SBSPRecord(BaseRecord):
 class SCPTRecord(BaseRecord):
     _Type = 'SCPT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySCPTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySCPTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SCPTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySCPTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySCPTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SCPTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class Var(object):
@@ -16035,11 +16042,11 @@ class SCPTRecord(BaseRecord):
 class SGSTRecord(BaseRecord):
     _Type = 'SGST'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySGSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySGSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SGSTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySGSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySGSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SGSTRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newEffectsElement(self):
@@ -16163,11 +16170,11 @@ class SGSTRecord(BaseRecord):
 class SKILRecord(BaseRecord):
     _Type = 'SKIL'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySKILRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySKILRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SKILRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySKILRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySKILRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SKILRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_skill(self):
@@ -16274,11 +16281,11 @@ class SKILRecord(BaseRecord):
 class SLGMRecord(BaseRecord):
     _Type = 'SLGM'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySLGMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySLGMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SLGMRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySLGMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySLGMRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SLGMRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -16453,11 +16460,11 @@ class SLGMRecord(BaseRecord):
 class SOUNRecord(BaseRecord):
     _Type = 'SOUN'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySOUNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySOUNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SOUNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySOUNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySOUNRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SOUNRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_soundFile(self):
@@ -16621,11 +16628,11 @@ class SOUNRecord(BaseRecord):
 class SPELRecord(BaseRecord):
     _Type = 'SPEL'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySPELRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySPELRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return SPELRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySPELRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySPELRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return SPELRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def newEffectsElement(self):
@@ -16839,11 +16846,11 @@ class SPELRecord(BaseRecord):
 class STATRecord(BaseRecord):
     _Type = 'STAT'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopySTATRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopySTATRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return STATRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopySTATRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopySTATRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return STATRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_modPath(self):
@@ -16880,11 +16887,11 @@ class STATRecord(BaseRecord):
 class TREERecord(BaseRecord):
     _Type = 'TREE'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyTREERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyTREERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return TREERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyTREERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyTREERecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return TREERecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_modPath(self):
@@ -17033,11 +17040,11 @@ class TREERecord(BaseRecord):
 class WATRRecord(BaseRecord):
     _Type = 'WATR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyWATRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyWATRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return WATRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyWATRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyWATRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return WATRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_texture(self):
@@ -17491,11 +17498,11 @@ class WATRRecord(BaseRecord):
 class WEAPRecord(BaseRecord):
     _Type = 'WEAP'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyWEAPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyWEAPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return WEAPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyWEAPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyWEAPRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return WEAPRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def get_full(self):
@@ -17709,19 +17716,19 @@ class WEAPRecord(BaseRecord):
 class WRLDRecord(BaseRecord):
     _Type = 'WRLD'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyWRLDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyWRLDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return WRLDRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyWRLDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyWRLDRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return WRLDRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def createWorldCELLRecord(self):
-        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, c_bool(True))
+        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, 1)
         if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createCELLRecord(self):
-        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, c_bool(False))
+        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, 0)
         if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
         return None
     def createROADRecord(self):
@@ -18017,11 +18024,11 @@ class WRLDRecord(BaseRecord):
 class WTHRRecord(BaseRecord):
     _Type = 'WTHR'
     def CopyAsOverride(self, targetMod):
-        FID = CBash.CopyWTHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(True))
+        FID = CBash.CopyWTHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 1)
         if(FID): return WTHRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     def CopyAsNew(self, targetMod):
-        FID = CBash.CopyWTHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, c_bool(False))
+        FID = CBash.CopyWTHRRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName, 0)
         if(FID): return WTHRRecord(self._CollectionIndex, targetMod._ModName, FID)
         return None
     class WTHRColor(object):
@@ -18946,7 +18953,7 @@ validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
                   'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
                   'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
-type_record = dict([('GMST',GMSTRecord),('GLOB',GLOBRecord),('CLAS',CLASRecord),
+type_record = dict([('BASE',BaseRecord),('GMST',GMSTRecord),('GLOB',GLOBRecord),('CLAS',CLASRecord),
                 ('FACT',FACTRecord),('HAIR',HAIRRecord),('EYES',EYESRecord),
                 ('RACE',RACERecord),('SOUN',SOUNRecord),('SKIL',SKILRecord),
                 ('MGEF',MGEFRecord),('SCPT',SCPTRecord),('LTEX',LTEXRecord),
@@ -19168,7 +19175,7 @@ class CBashModFile(object):
         if(FID): return REGNRecord(self._CollectionIndex, self._ModName, FID)
         return None
     def createCELLRecord(self):
-        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, 0, c_bool(False))
+        FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, 0, 0)
         if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID)
         return None
     def createWRLDRecord(self):
@@ -19217,9 +19224,9 @@ class CBashModFile(object):
         return None
 
     def safeSave(self):
-        return CBash.SafeSaveMod(self._CollectionIndex, self._ModName, c_bool(False))
+        return CBash.SafeSaveMod(self._CollectionIndex, self._ModName, 0)
     def safeCloseSave(self):
-        return CBash.SafeSaveMod(self._CollectionIndex, self._ModName, c_bool(True))
+        return CBash.SafeSaveMod(self._CollectionIndex, self._ModName, 1)
     @property
     def TES4(self):
         return TES4Record(self._CollectionIndex, self._ModName)
@@ -19801,16 +19808,18 @@ class Collection:
             self._CollectionIndex = CBash.NewCollection(ModsPath)
         self._ModIndex = -1
         CBash.GetModName.restype = c_char_p
-        CBash.ModIsFake.restype = c_bool
+        CBash.ModIsFake.restype = c_uint
 
     def addMod(self, ModName, CreateIfNotExist=False):
         if(CBash.AddMod(self._CollectionIndex, ModName, CreateIfNotExist) != -1):
             return CBashModFile(self._CollectionIndex, ModName)
         return None
+
     def addMergeMod(self, ModName):
         if(CBash.AddMergeMod(self._CollectionIndex, ModName) != -1):
             return CBashModFile(self._CollectionIndex, ModName)
         return None
+
     def minimalLoad(self, LoadMasters=False):
         CBash.MinimalLoad(self._CollectionIndex, LoadMasters)
 
@@ -19832,6 +19841,7 @@ class Collection:
             RecordType = type_record[testRecord.recType]
             return [RecordType(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
         return []
+
     def UpdateReferences(self, origFid, newFid):
         if not isinstance(origFid, int): return 0
         if not isinstance(newFid, int): return 0
