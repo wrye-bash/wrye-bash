@@ -19825,6 +19825,7 @@ class Collection:
 
     def fullLoad(self, LoadMasters=False):
         CBash.FullLoad(self._CollectionIndex, LoadMasters)
+
     def LookupRecords(self, recordID):
         if isinstance(recordID, basestring):
             GetNumConflicts = CBash.GetNumGMSTConflicts
