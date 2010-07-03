@@ -10137,7 +10137,7 @@ class InstallerConverter(object):
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
-        destDir = self.tempDir#.join("BCF-Temp")
+        destDir = self.tempDir.join("BCF-Temp")
         progress(0,_("Moving files..."))
         progress.setFull(1+len(self.convertedFiles))
         #--Make a copy of dupeCount
@@ -10356,7 +10356,7 @@ class InstallerConverter(object):
         if progress:
             progress(0,_("%s\nExtracting files...") % srcInstaller.s)
             progress.setFull(1+len(fileNames))
-        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE).stdout
         #--Error Checking, and progress feedback
@@ -25965,7 +25965,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower','maleAgility','maleSpeed','maleEndurance','malePersonality','maleLuck'),
         'R.Attributes-F': ('femaleStrength','femaleIntelligence','femaleWillpower','femaleAgility','femaleSpeed','femaleEndurance','femalePersonality','femaleLuck'),
         'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
-        'R.Description': ('text'),
+        'R.Description': ('text',),
         }
     iiMode = False
 
