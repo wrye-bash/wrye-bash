@@ -10082,7 +10082,7 @@ class LVLRecord(BaseRecord):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
         if(retValue): return retValue.contents.value
-        return None
+        return 0
     def set_flags(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
         else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 7, c_ubyte(nValue))
