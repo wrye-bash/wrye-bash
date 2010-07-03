@@ -622,6 +622,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * **Red:**
     * A file that shares a modification date/time with another file -- with both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
     * An active file that has the 'Deactivate' tag.  The file should be deactivated to function properly.
+  * **Grey:** A file that is ghosted (see [[#|Auto-Ghost]])
 * __Text Styles__
     * **__Slant__:** A file that is reccommended to be imported and deactivated (ie. has the 'Deactivate' tag).
     * __Normal:__ Any other file.
