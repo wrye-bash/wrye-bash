@@ -15083,10 +15083,13 @@ class CBash_PatchFile(CBashModFile):
                         mergeIds.add(override.fid_long)
 
     def buildPatch(self,progress):
-        ##simplified, does not support II mode, error checking, etc. Will be added later.
         """Scans load+merge mods."""
         if not len(self.loadMods): return
+        iiModeSet = set(('InventOnly','IIM'))
+        levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
+
+        IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])        
 
         self.Collection = Collection(ModsPath=dirs['mods'].s)
         for name in self.loadSet:
@@ -15115,7 +15118,7 @@ class CBash_PatchFile(CBashModFile):
                         self.mgef_name[eid] = full
                     record.UnloadRecord()
         if self.scanSet:
-            self.completeMods = modInfos.getOrdered(self.loadSet|self.mergeSet|self.scanSet)
+            self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
             self.ScanCollection = Collection(ModsPath=dirs['mods'].s)
             for name in self.scanSet:
                 if modInfos[name].mtime < self.patchTime:
@@ -15139,7 +15142,7 @@ class CBash_PatchFile(CBashModFile):
             isMerged = modName in self.mergeSet
             doFilter = isMerged and 'Filter' in bashTags
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-            iiMode = isMerged and bool(set(('InventOnly','IIM')) & bashTags)
+            iiMode = isMerged and bool(iiModeSet & bashTags)
             if isScanned:
                 modFile = CBashModFile(self.ScanCollection._CollectionIndex, modName.s)
             else:                
@@ -15156,6 +15159,7 @@ class CBash_PatchFile(CBashModFile):
             subProgress.setFull(max(len(type_patchers),1))
             for type, patchers in type_patchers.iteritems():
                 pstate += 1
+                iiFilter = not (iiMode or type in levelLists)
                 if iiMode:
                     applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode]
                     scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode]
@@ -15166,10 +15170,11 @@ class CBash_PatchFile(CBashModFile):
                     scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan')]
 
                 scanners = [scanner.scan for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('scanOrder')) if hasattr(scanner,'scan')]
-                appliers = [scanner.apply for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('scanOrder')) if hasattr(scanner,'apply')]
+                appliers = [scanner.apply for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('editOrder')) if hasattr(scanner,'apply')]
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
                 for record in getattr(modFile, type):
-                    if isMerged: record._ModName = patchFile._ModName
+                    if isMerged and not (iiMode and type not in levelLists):
+                        record._ModName = patchFile._ModName
                     if isScanned: #Ugly hack to make unloaded mods follow load order rules on imports
                         nRecords = self.Collection.LookupRecords(record.fid_long)
                         #If the record doesn't exist in the real load set, do nothing
@@ -15182,16 +15187,23 @@ class CBash_PatchFile(CBashModFile):
                             if(nRecords.GName in self.processed or nRecords._ModName == patchFile._ModName):
                                 record._CollectionIndex = nRecords._CollectionIndex
                                 record._ModName = nRecords._ModName
-                                record.GName = nRecords.GName
+##                                record.GName = nRecords.GName
                                 record._recordID = nRecords._recordID
                                 modFile = CBashModFile(record._CollectionIndex, record._ModName)
                                 for patcher in appliers:
                                     patcher(modFile, record, bashTags)
+                                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modName.s)
                     else:
                         #If conflicts is > 0, it will include all conflicts, even the record that called it
                         #(i.e. len(conflicts) will never equal 1)
                         #The winning record is at position 0, and the last record is the one most overridden
                         conflicts = record.Conflicts()
+                        if iiFilter:
+                            #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
+                            #This effectively hides all non-level list records from the other patchers
+                            conflicts = [conflict for conflict in conflicts if conflict.GName not in IIMSet]
+                            if len(conflicts) == 1:
+                                conflicts = []
 ##                        IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                         if (not conflicts or conflicts[0]._ModName == record._ModName):
                             curPatchers = applyPatchers
@@ -18144,7 +18156,6 @@ class CBash_ImportInventory(CBash_ImportPatcher):
             self.masters |= set(modInfos[srcMod].header.masters)
         self.allMods = self.masters | set(self.srcMods)
         self.mod_id_entries = {}
-##        self.touched = set()
         self.class_mod_count = {}
         
     def getTypes(self):
@@ -18187,14 +18198,26 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         self.scan(modFile,record,bashTags)
         deltas = self.id_deltas.get(record.fid_long)
         if not deltas: return
+        #If only the inventory is imported, the deltas have to be applied to
+        #whatever record would otherwise be winning
+        if record.GName in self.inventOnlyMods:
+            conflicts = record.Conflicts()
+            if conflicts:
+                #If this isn't actually the winning record, use it.
+                #This could be the case if a record was already copied into the patch
+                if conflicts[0]._ModName != record._ModName:
+                    record._ModName = conflicts[0]._ModName
+                #Otherwise, use the previous one.
+                else:
+                    record._ModName = conflicts[1]._ModName
 
         removable = set(entry.item_long for entry in record.items)
+        changed = False
         for removeItems,addEntries in reversed(deltas):
             items = record.items_list
-            changed = False
             if removeItems:
                 #--Skip if some items to be removed have already been removed
-                if not removeItems.issubset(removable): return
+                if not removeItems.issubset(removable): continue
                 items = [(item_long,count) for item_long,count in items if item_long not in removeItems]
                 removable -= removeItems
                 changed = True
@@ -18204,14 +18227,14 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                     if item_long not in current:
                         items.append((item_long,count))
                         changed = True
-            if changed:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.items_list = items
-                    class_mod_count = self.class_mod_count
-                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
+        if changed:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.items_list = items
+                class_mod_count = self.class_mod_count
+                class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -24985,7 +25008,6 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.id_delevs = {}
         self.mod_id_items = {}
         self.id_list = {}
-##        self.id_items = {}
         self.id_attrs = {}
         self.mod_count = {}
         self.empties = set()
@@ -25011,7 +25033,6 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             isRelev = ('Relev' in configChoice)
             isDelev = ('Delev' in configChoice)
             delevs = self.id_delevs.setdefault(recordId, set())
-##            if isRelev or isDelev:
             curItems = self.mod_id_items.setdefault(modFile._ModName,{})[recordId] = set([entry.listId_long for entry in record.entries])
             if isRelev:
                 #Can add and set the level/count of items, but not delete items
@@ -25083,15 +25104,30 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         subProgress.setFull(len(self.getTypes()))
         pstate = 0
         #Clean up any empty sublists
+        changed = self.changed
+        changed |= patchFile.mergeIds
         for type in self.getTypes():
             subProgress(pstate, _("Looking for empty %s sublists...\n") % type)
-            for record in getattr(patchFile,type):
-                items = set([entry.listId_long for entry in record.entries])
-                toRemove = self.empties & items
-                if toRemove:
-                    record.entries = [entry for entry in record.entries if entry.listId_long not in toRemove]
-                elif record.fid_long not in self.changed:
-                    record.DeleteRecord()
+            madeChanges = True
+            while madeChanges:
+                madeChanges = False
+                for record in getattr(patchFile,type):
+                    recordId = record.fid_long
+                    items = set([entry.listId_long for entry in record.entries])
+                    if not items:
+                        self.empties.add(recordId)
+                    toRemove = self.empties & items
+                    if toRemove:
+                        madeChanges = True
+                        record.entries = [entry for entry in record.entries if entry.listId_long not in toRemove]
+                        if not record.entries:
+                            self.empties.add(recordId)
+                    elif record.fid_long not in changed:
+                        conflicts = record.Conflicts()
+                        if conflicts:
+                            prevRecord = conflicts[1]
+                            if prevRecord.entries_list == record.entries_list and [record.chanceNone, record.script_long, record.template_long, record.flags] == [prevRecord.chanceNone, prevRecord.script_long, prevRecord.template_long, prevRecord.flags]:
+                                record.DeleteRecord()
             pstate += 1
         patchFile.CleanMasters()
         self.empties = None
