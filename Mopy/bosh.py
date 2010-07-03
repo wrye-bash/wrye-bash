@@ -19947,7 +19947,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _('Playable Clothes')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20044,7 +20044,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _('Playable Armor')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("All Armor Playable"),
