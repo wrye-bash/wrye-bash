@@ -116,6 +116,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportActors">Import Actors</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportCells">Import Cells</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportFactions">Import Factions</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ImportFormIds">Import FormIds</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportGraphics">Import Graphics</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportNames">Import Names</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportInventory">Import Inventory</a></p>
@@ -290,6 +291,7 @@
   <p class=list-2>&bull;&nbsp; Woodman: Chase Camera
   <p class=list-2>&bull;&nbsp; KseAli: POI Visibility
   <p class=list-2>&bull;&nbsp; Tom Supergan: Chase Camera Distance
+  <p class=list-2>&bull;&nbsp; showler: AI: Max Dead Actors
   <p class=list-2>&bull;&nbsp; ??: Compass Disable
   <p class=list-2>&bull;&nbsp; ??: Compass: POI Recognition
   <p class=empty>&nbsp;</p>
@@ -740,7 +742,9 @@
   <p class=list-2>&bull;&nbsp; <B>Unpack to Project:</B> (Archives only.) Unpack the archive to a project.
   <p class=list-2>&bull;&nbsp; <B>Package for Release:</B> (Projects only.) Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
   <p class=list-2>&bull;&nbsp; <B>Sync from Data:</B> (Projects only.) Synchronize the project with files from the Oblivion\Data directory. This is essentially the reverse of "Install" for projects since it copies from the Oblivion\Data directory to the project rather than the other way around. 
+  <p class=list-2>&bull;&nbsp; <B>Copy Conflicts to Project:</B>  Copies all files that conflict with the selected package into a new project. Useful for comparing conflicting resources.
   <p class=list-2>&bull;&nbsp; <B>OMOD Info:</B> (Projects only.) Allows you to read/write omod configuration info. Useful for updating OMOD conversion info for triple mode (Bain/Manual/OBMM) archives.
+  <p class=list-2>&bull;&nbsp; <B>List Structure:</B>  Generates a report of the files and directories in a package. Useful for troubleshooting and sharing package details.
   <p class=empty>&nbsp;</p>
 <h3><a name='PackageHeaderCommands'>Package Header Commands</a></h3>
 <p>The following commands are available by right clicking on the column header of the Installers tab:
@@ -980,9 +984,9 @@
 <p class=list-1>&bull;&nbsp; See <a href="#FaceImport">Face Import</a> below.
 <p class=empty>&nbsp;</p>
 <h3><a name='ImportFormids'>Import Formids</a></h3>
-<p class=list-1>&bull;&nbsp; Systematically replace formids with alternates. <B><I>This is for advanced modders only.</I></B> Useful if a mod depends on elements from one master, and you want to replace those with equivalent elments from another master.
+<p class=list-1>&bull;&nbsp; Systematically replace formids with alternates. <B><I>This is for advanced modders only.</I></B> Useful if a mod depends on elements from one master, and you want to replace those with equivalent elements from another master.
   <p class=list-2>&bull;&nbsp; <B>Example:</B> To shift a mod that depends on Tamrielic Ingredients to depend on Cobl instead, it's necessary to systematically replace TI elements with equivalent Cobl elements (e.g. replace TI's AdamantiumOre with Cobl's cobTiRawAdamantium). About 130 types of items need to be replaced, and they need to be replaced in leveled lists, containers, npcs, creatures, etc.
-  <p class=list-2>&bull;&nbsp; <B>What's Covered:</B> Almost all simple record types are handled. Notably, cells, worldspaces and dialog are not handled. For more thorough handling, use Tes4View.
+  <p class=list-2>&bull;&nbsp; <B>What's Covered:</B> All record types are handled. Tes4Edit may also be used instead.
 <p class=list-1>&bull;&nbsp; <B>Process</B>
   <p class=list-2>&bull;&nbsp; First step is generating an old formid to new formid mapper file. This file is basically a spreadsheet (in csv format) that lists all of the old formids and the new formids that they map to. Obviously if you already have such a file, then you can skip this step.
   <p class=list-2>&bull;&nbsp; Second, you apply the mapper to a given mod to given mod. 
@@ -1008,10 +1012,7 @@
   <p class=list-2>&bull;&nbsp; Start Tes4Edit with the mod loaded, then select "Batch Change Referencing Records", and the select the XXX_Formids.csv file that you just created. Tes4Edit will apply the changes to every record that uses that formid. 
   <p class=list-2>&bull;&nbsp; <B><I>Warning</I></B> Tes4View changes <B><I>all</I></B> uses of the formid, including the definition of the object! E.g. if you edit OOO to get it to use Cobl's version of a lore book instead of OOO's version, then not only will the use of that book in leveled list be changed, so will the definition of the lore book in OOO! I.e. the original distinct record for the formid in OOO will be destroyed. Wrye Bash's Import Formids command is less aggressive in this way &#150; it only replaces <I>uses</I> of formids, not definitions of them.
 <p class=list-1>&bull;&nbsp; <B>Using Wrye Bash</B>
-  <p class=list-2>&bull;&nbsp; If you're using Bash, the main considerations are:
-    <p class=list-3>&bull;&nbsp; Complex records (cells, worldspaces, dialog, etc.) will not be updated.
-    <p class=list-3>&bull;&nbsp; You may need to first add the dependency to the mod. E.g. if you're replacing OOO items with Cobl items, then you'll first need to make the mod dependent on Cobl Main.esm. You can do this using TESCS or Tes4Edit.
-  <p class=list-2>&bull;&nbsp; Once the dependencies are set, just use the Import: Formids command on the mod with the desired Formids.csv file. You'll get a report afterwards.
+  <p class=list-2>&bull;&nbsp; Just use the Import: Formids command on the mod with the desired Formids.csv file. You'll get a report afterwards.
     <p class=list-3>&bull;&nbsp; It's probably a good idea to create a copy of the original file and make the changes on it. That way you can use Tes4View to do a before/after comparison to check the changes. (You'll want to use Tes4View's Compare To... command.)
 <p class=list-1>&bull;&nbsp; <B>Removing Dependencies</B>
   <p class=list-2>&bull;&nbsp; If you've completely swapped from one base mod to another, then you may want to remove the old dependency. You can do that using Tes4Edit (Clean Masters command) or Tes4Gecko (Edit Master List). Note that Tes4Edit will only remove masters that you're not using at all. Tes4Gecko will remove used masters (with appropriate cleanup), and is a bit more manual &#150; i.e. it will only remove masters that you specify.
@@ -1444,6 +1445,13 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Limitation</B>
   <p class=list-2>&bull;&nbsp; It should be kept in mind that changes to NPC factions will <B><I>not</I></B> have an effect in game for any NPCs that have had their faction ranks changed during gameplay. (This is typically fairly limited &#150; usually only for some quest characters.)
   <p class=empty>&nbsp;</p>
+<h3><a name='ImportFormIds'>Import FormIds</a></h3>
+<p class=list-1>&bull;&nbsp; Allows references to one formID to be swapped for a different formId. Please see <a href="#ImportFormids">Import Formids</a> for details. This component performs the same task, except the changes are made in the Bashed Patch instead of on the mod itself.
+<p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
+  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Formids.csv</code>.
+<p class=list-1>&bull;&nbsp; <B>Source CSV Files</B>
+  <p class=list-2>&bull;&nbsp; Please see <a href="#ImportFormids">Import Formids</a> for details. 
+  <p class=empty>&nbsp;</p>
 <h3><a name='ImportGraphics'>Import Graphics</a></h3>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's <a href="http://www.tesnexus.com/downloads/file.php?id=5570">Book Jackets</a> mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
@@ -1654,6 +1662,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
 <p class=list-1>&bull;&nbsp; <B>AI: Max Active Actors:</B> The maximum number of actors for AI to be processing at once - must be higher than <B>Combat: Max Actors:</B>.
+<p class=list-1>&bull;&nbsp; <B>AI: Max Dead Actors:</B> The maximum number of dead actors allowed before Oblivion begins to remove them.
 <p class=list-1>&bull;&nbsp; <B>Arrow: Litter Count/Time:</B> Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
 <p class=list-1>&bull;&nbsp; <B>Arrow: Recovery from Actor:</B> Your chance of recovering an arrow shot into an actor (including arrows shot into player). 
 <p class=list-1>&bull;&nbsp; <B>Arrow Speed:</B> Speed at which a full power arrow travels.
