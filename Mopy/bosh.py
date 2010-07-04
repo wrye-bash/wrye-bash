@@ -21997,7 +21997,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         if record.value != newValue:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.value = value
+                override.value = newValue
                 record.UnloadRecord()
                 record._ModName = override._ModName
 
@@ -22444,6 +22444,18 @@ class GmstTweaker(MultiTweaker):
             'iVampirismAgeOffset',
             ('Fix it!',0),
             ),
+        GmstTweak(True,_('AI: Max Dead Actors'),
+            _("Maximum number of dead actors allowed before they're removed."),
+            ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
+             'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
+            (_('[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
+            (_('x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
+            (_('x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
+            (_('x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
+            (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
+            (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
+            (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
@@ -22873,6 +22885,18 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
             ('iVampirismAgeOffset',),
             (_('Fix it!'),0),
+            ),
+        CBash_GmstTweak(True,_('AI: Max Dead Actors'),
+            _("Maximum number of dead actors allowed before they're removed."),
+            ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
+             'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
+            (_('[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
+            (_('x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
+            (_('x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
+            (_('x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
+            (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
+            (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
+            (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -27440,6 +27464,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['custom18opt'] = ''
     inisettings['iconSize'] = '16'
     inisettings['AutoItemCheck'] = False
+    inisettings['SkipHideConfirmation'] = False
     #inisettings['show?toollaunchers'] = True
     if bashIni:
         if bashIni.has_option('Settings','sScriptFileExt'):
@@ -27457,6 +27482,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         if bashIni.has_option('Settings','bAutoItemCheck') or bashIni.has_option('Settings','sAutoItemCheck'): #Check "s..." for backwards compatibility
             if bashIni.has_option('Settings','bAutoItemCheck'): inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','bAutoItemCheck')
             else: inisettings['AutoItemCheck'] = bashIni.getboolean('Settings','sAutoItemCheck')
+
+        if bashIni.has_option('Settings','bSkipHideConfirmation'):
+            inisettings['SkipHideConfirmation'] = bashIni.getboolean('Settings','bSkipHideConfirmation')
+
         if bashIni.has_option('Tool Options','bshowtexturetoollaunchers'):
             inisettings['showtexturetoollaunchers'] = bashIni.getboolean('Tool Options','bshowtexturetoollaunchers')
         if bashIni.has_option('Tool Options','bshowmodelingtoollaunchers'):

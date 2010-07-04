@@ -5921,8 +5921,9 @@ class File_Hide(Link):
         menu.AppendItem(wx.MenuItem(menu,self.id,_('Hide')))
 
     def Execute(self,event):
-        message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
-        if not balt.askYes(self.window,message,_('Hide Files')): return
+        if not bosh.inisettings['SkipHideConfirmation']:
+            message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
+            if not balt.askYes(self.window,message,_('Hide Files')): return
         #--Do it
         destRoot = self.window.data.bashDir.join('Hidden')
         fileInfos = self.window.data
@@ -6710,8 +6711,9 @@ class Installer_Hide(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
-        if not balt.askYes(self.gTank,message,_('Hide Files')): return
+        if not bosh.inisettings['SkipHideConfirmation']:
+            message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
+            if not balt.askYes(self.gTank,message,_('Hide Files')): return
         curName = self.selected[0]
         destDir = bosh.dirs['modsBash'].join('Hidden')
         newName = destDir.join(curName)
