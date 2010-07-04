@@ -27216,7 +27216,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 for id, badEntries in id_badEntries.iteritems():
                     log('    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
-                        longId = MakeLongFid(patchFile._CollectionIndex, entry[1])
+                        longId = MakeLongFid(self.patchFile._CollectionIndex, entry[1])
                         log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],entry[2] or longId[0].s,entry[3]))
         self.mod_type_id_badEntries = {}
 # Initialization --------------------------------------------------------------
