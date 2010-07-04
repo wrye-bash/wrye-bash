@@ -2749,15 +2749,17 @@ class InstallersPanel(SashTankPanel):
         installer.refreshStatus(self.data)
 
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndex = self.gSubList.GetSelection()
-        espmIndex = self.gEspmList.GetSelection()
+        
+##        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
+##        espmIndex = self.gEspmList.GetSelection()
         
         self.gList.RefreshUI(self.detailsItem)
         self.gSubList.ScrollLines(subScrollPos)
-        self.gEspmList.ScrollLines(espmScrollPos)
         self.gSubList.SetSelection(subIndex)
-        self.gEspmList.SetSelection(espmIndex)
+##        if espmIndex != -1:
+##            self.gEspmList.ScrollLines(espmScrollPos)
+##            self.gEspmList.SetSelection(espmIndex)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
@@ -7097,44 +7099,45 @@ class Installer_CopyConflicts(InstallerLink):
                     if curConflicts: packConflicts.append((installer.order,installer,package,curConflicts))
                 srcConflicts = set(src for src, size, crc in srcInstaller.fileSizeCrcs if (size,crc) in srcConflicts)
                 numFiles += len(srcConflicts)
-                progress.setFull(numFiles)
-                if isinstance(srcInstaller,bosh.InstallerProject):
-                    for src in srcConflicts:
-                        srcFull = bosh.dirs['installers'].join(srcArchive,src)
-                        destFull = bosh.dirs['installers'].join(destDir,GPath(srcArchive.s),src)
-                        if srcFull.exists():
-                            progress(curFile, _("%s\nCopying files...\n%s")%(srcArchive.s,src))
-                            srcFull.copyTo(destFull)
-                            curFile += 1
-                else:
-                    srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
-                    srcInstaller.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
-                curFile = len(srcConflicts)
-                for order, installer, package, curConflicts in packConflicts:
-                    if isinstance(installer,bosh.InstallerProject):
-                        for src in curConflicts:
-                            srcFull = bosh.dirs['installers'].join(package,src)
-                            destFull = bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s)),src)
+                if numFiles:
+                    progress.setFull(numFiles)
+                    if isinstance(srcInstaller,bosh.InstallerProject):
+                        for src in srcConflicts:
+                            srcFull = bosh.dirs['installers'].join(srcArchive,src)
+                            destFull = bosh.dirs['installers'].join(destDir,GPath(srcArchive.s),src)
                             if srcFull.exists():
                                 progress(curFile, _("%s\nCopying files...\n%s")%(srcArchive.s,src))
                                 srcFull.copyTo(destFull)
                                 curFile += 1
                     else:
-                        installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
-                        installer.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s))))
-                        curFile += len(curConflicts)
-                project = destDir.root
-                if project not in self.data:
-                    self.data[project] = bosh.InstallerProject(project)
-                iProject = self.data[project]
-                pProject = bosh.dirs['installers'].join(project)
-                iProject.refreshed = False
-                iProject.refreshBasic(pProject,None,True)
-                if iProject.order == -1:
-                    self.data.refreshOrder()
-                    self.data.moveArchives([project],srcInstaller.order+1)
-                self.data.refresh(what='I')
-                self.gTank.RefreshUI()
+                        srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
+                        srcInstaller.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
+                    curFile = len(srcConflicts)
+                    for order, installer, package, curConflicts in packConflicts:
+                        if isinstance(installer,bosh.InstallerProject):
+                            for src in curConflicts:
+                                srcFull = bosh.dirs['installers'].join(package,src)
+                                destFull = bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s)),src)
+                                if srcFull.exists():
+                                    progress(curFile, _("%s\nCopying files...\n%s")%(srcArchive.s,src))
+                                    srcFull.copyTo(destFull)
+                                    curFile += 1
+                        else:
+                            installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
+                            installer.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s))))
+                            curFile += len(curConflicts)
+                    project = destDir.root
+                    if project not in self.data:
+                        self.data[project] = bosh.InstallerProject(project)
+                    iProject = self.data[project]
+                    pProject = bosh.dirs['installers'].join(project)
+                    iProject.refreshed = False
+                    iProject.refreshBasic(pProject,None,True)
+                    if iProject.order == -1:
+                        self.data.moveArchives([project],srcInstaller.order+1)
+                        self.data.refreshOrder()
+                    self.data.refresh(what='I')
+                    self.gTank.RefreshUI()
         finally:
             progress.Destroy()
 
@@ -7219,8 +7222,8 @@ class InstallerArchive_Unpack(InstallerLink):
             iProject.refreshed = False
             iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
             if iProject.order == -1:
-                self.data.refreshOrder()
                 self.data.moveArchives([project],installer.order+1)
+                self.data.refreshOrder()
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
             #pProject.start()
@@ -7420,8 +7423,8 @@ class InstallerProject_Pack(InstallerLink):
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
-                self.data.refreshOrder()
                 self.data.moveArchives([archive],installer.order+1)
+                self.data.refreshOrder()
             #--Refresh UI
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
@@ -7478,8 +7481,8 @@ class InstallerProject_ReleasePack(InstallerLink):
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
-                self.data.refreshOrder()
                 self.data.moveArchives([archive],installer.order+1)
+                self.data.refreshOrder()
             #--Refresh UI
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
@@ -7536,9 +7539,9 @@ class InstallerConverter_Apply(InstallerLink):
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
             if iArchive.order == -1:
-                self.data.refreshOrder()
                 lastInstaller = self.data[self.selected[-1]]
                 self.data.moveArchives([destArchive],lastInstaller.order+1)
+                self.data.refreshOrder()
             self.data.refresh(what='NSC')
             self.gTank.RefreshUI()
         finally:
