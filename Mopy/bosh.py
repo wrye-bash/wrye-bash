@@ -3321,6 +3321,7 @@ class MreRace(MelRecord):
 class MreRefr(MelRecord):
     classType = 'REFR'
     _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo'))
+    _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     class MelRefrXloc(MelOptStruct):
@@ -3382,11 +3383,11 @@ class MreRefr(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
-        MelOptStruct('XTEL','l6f',(FID,'destinationFid'),'destinationPosX','destinationPosY',
+        MelOptStruct('XTEL','I6f',(FID,'destinationFid'),'destinationPosX','destinationPosY',
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ'),
         MelRefrXloc('XLOC','B3sI4sB3s','lockLevel',('unused1',null3),(FID,'lockKey'),('unused2',null4),(_lockFlags,'lockFlags'),('unused3',null3)),
         MelOwnership(),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused4',null3)),
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused4',null3)),
         MelFid('XTRG','targetId'),
         MelBase('XSED','seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into the list of seed values in the TREE record
@@ -11635,7 +11636,7 @@ class CBash_ActorFactions:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail)
+        Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
             if modFile._ModName in self.gotFactions: continue
@@ -11650,7 +11651,7 @@ class CBash_ActorFactions:
         type_id_factions,id_eid = self.type_id_factions,self.id_eid
 
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
@@ -11666,7 +11667,7 @@ class CBash_ActorFactions:
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         changed = {'CREA':0,'NPC_':0}
@@ -11787,7 +11788,7 @@ class ActorLevels:
             progress(0,_('Loading:')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
             obFile = Current.addMod('Oblivion.esm')
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11860,7 +11861,7 @@ class ActorLevels:
             #--Load Mod
             progress(0.25,_('Loading ')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11912,7 +11913,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
         
             for type,block in modFile.aggregates.iteritems():
@@ -11958,7 +11959,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
 
             changed = []
@@ -12178,7 +12179,7 @@ class CBash_FactionRelations:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail)
+        Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
             if modFile._ModName in self.gotFactions: continue
@@ -12193,7 +12194,7 @@ class CBash_FactionRelations:
         id_faction_mod,id_eid = self.id_faction_mod,self.id_eid
 
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         for record in modFile.FACT:
@@ -12301,6 +12302,58 @@ class FidReplacer:
         modFile.safeSave()
         entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in
                 old_count.iteritems()]
+        entries.sort(key=itemgetter(1))
+        return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
+
+class CBash_FidReplacer:
+    """Replaces one set of fids with another."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.aliases = aliases or {} #--For aliasing mod names
+        self.old_new = {} #--Maps old fid to new fid
+        self.old_eid = {} #--Maps old fid to old editor id
+        self.new_eid = {} #--Maps new fid to new editor id
+
+    def readFromText(self,textPath):
+        """Reads replacment data from specified text file."""
+        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        for fields in ins:
+            if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+            oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+            oldMod,newMod = map(GPath,(oldMod,newMod))
+            oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
+            newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
+            old_new[oldId] = newId
+            old_eid[oldId] = oldEid
+            new_eid[newId] = newEid
+        ins.close()
+
+    def updateMod(self, modInfo,changeBase=False):
+        """Updates specified mod file."""
+        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        #Filter the fid replacements to only include existing mods
+        old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in modInfos.keys() and newId[0] in modInfos.keys())
+        if not old_new: return False
+
+        old_count = {}
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.name.s)
+        for newId in set(old_new.values()):
+            Current.addMod(newId[0].s)
+        Current.minimalLoad(LoadMasters=False)
+
+        for oldId, newId in old_new.iteritems():
+            count = modFile.UpdateReferences(oldId,newId)
+            if count: old_count[oldId] = count
+
+        #--Done
+        if not sum(old_count.values()): return False
+        modFile.safeCloseSave()
+        entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in old_count.iteritems()]
         entries.sort(key=itemgetter(1))
         return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
 
@@ -12413,7 +12466,7 @@ class CBash_FullNames:
         """Imports type_id_name from specified mod."""
         type_id_name = self.type_id_name
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         for type in self.types:
@@ -12430,7 +12483,7 @@ class CBash_FullNames:
         """Exports type_id_name to specified mod."""
         type_id_name = self.type_id_name
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
         
         changed = {}
@@ -12793,7 +12846,7 @@ class CBash_ItemStats:
         """Reads stats from specified mod."""
         type_id_stats = self.type_id_stats
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         for type, attrs in self.type_attrs:
@@ -12806,7 +12859,7 @@ class CBash_ItemStats:
         """Exports type_id_name to specified mod."""
         type_id_stats = self.type_id_stats
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
         
         mod_count = {}
@@ -12988,9 +13041,9 @@ class ItemPrices:
                     stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
-            mapper = modFile.MakeLongFid
+
             types = self.type_stats
             attrs = self.attrs
             for type in types:
@@ -13023,7 +13076,7 @@ class ItemPrices:
             return changed
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
             attrs = self.attrs
             changed = {}
@@ -13128,7 +13181,7 @@ class CompleteItemData:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
-            mapper = modFile.MakeLongFid
+
             for type,stats in self.type_stats.iteritems():
                 if type in ['KEYM',]:
                     for record in getattr(modFile,type):
@@ -13165,7 +13218,6 @@ class CompleteItemData:
 ##            modFile = Current.addMod(modInfo.name.s)
 ##            Current.minimalLoad(LoadMasters=False)
 ##            
-##            mapper = modFile.MakeLongFid
 ##            changed = {} #--changed[modName] = numChanged
 ##            for type,stats in self.type_stats.iteritems():
 ##                attrs = self.type_attrs[type]
@@ -13439,7 +13491,7 @@ class ScriptText:
             progress = progress.Destroy()
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
             
             progress = balt.Progress(_("Export Scripts"))
@@ -13492,7 +13544,7 @@ class ScriptText:
             return eids_imported
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.name.s)
             Current.minimalLoad(LoadMasters=False)
             
             importscripts = self.importscripts
@@ -13676,7 +13728,7 @@ class CBash_SpellRecords:
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
 
         for type in self.type_attrs:
@@ -13688,11 +13740,9 @@ class CBash_SpellRecords:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
+        modFile = Current.addMod(modInfo.name.s)
         Current.minimalLoad(LoadMasters=False)
         
-        mapper = modFile.MakeLongFid
-        shortMapper = modFile.MakeShortFid
         changed = {'SPEL':0}
         for type,attrs in self.type_attrs:
             id_stats = self.type_id_stats.get(type,None)
@@ -15843,6 +15893,323 @@ class CBash_PatchMerger(CBash_ListPatcher):
         #  their initPatchFile section, it's important that PatchMerger first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcMods)
+#------------------------------------------------------------------------------
+class UpdateReferences(ListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    scanOrder = 15
+    editOrder = 15
+    group = _('General')
+    name = _('Import Form Ids')
+    text = _("Imports Form Id replacers from csv files into the Bashed Patch.")
+    autoKey = 'Formids'
+    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.types = MreRecord.simpleTypes
+        self.classes = [MreRecord.type_class[type] for type in self.types.union(['CELL','WRLD','REFR','ACHR','ACRE'])]
+        self.old_new = {} #--Maps old fid to new fid
+        self.old_eid = {} #--Maps old fid to old editor id
+        self.new_eid = {} #--Maps new fid to new editor id
+
+    def readFromText(self,textPath):
+        """Reads replacment data from specified text file."""
+        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        aliases = self.patchFile.aliases
+        ins = bolt.CsvReader(textPath)
+        pack,unpack = struct.pack,struct.unpack
+        for fields in ins:
+            if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+            oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+            oldMod,newMod = map(GPath,(oldMod,newMod))
+            oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
+            newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
+            old_new[oldId] = newId
+            old_eid[oldId] = oldEid
+            new_eid[newId] = newEid
+        ins.close()
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesDir = dirs['patches'].list()
+            if srcPath not in patchesDir: continue
+            self.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        if not self.isActive: return tuple()
+        return tuple(self.classes)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        if not self.isActive: return tuple()
+        return tuple(self.classes)
+
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive: return
+        mapper = modFile.getLongMapper()
+        patchCells = self.patchFile.CELL
+        patchWorlds = self.patchFile.WRLD
+        newRecords = []
+        modFile.convertToLongFids(('CELL','WRLD','REFR','ACRE','ACHR'))
+##        for type in self.types:
+##            for record in getattr(modFile,type).getActiveRecords():
+##                record = record.getTypeCopy(mapper)
+##                if record.fid in self.old_new:
+##                    getattr(self.patchFile,type).setRecord(record)
+        if 'CELL' in modFile.tops:
+            for cellBlock in modFile.CELL.cellBlocks:
+                cellImported = False
+                if cellBlock.cell.fid in patchCells.id_cellBlock:
+                    patchCells.id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
+                    cellImported = True
+                for record in cellBlock.temp:
+                    if record.base in self.old_new:
+                        if not cellImported:
+                            patchCells.setCell(cellBlock.cell)
+                            cellImported = True
+                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].temp:
+                            if newRef.fid == record.fid:
+                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].temp.index(newRef)
+                                patchCells.id_cellBlock[cellBlock.cell.fid].temp[loc] = record
+                                break
+                        else:
+                            patchCells.id_cellBlock[cellBlock.cell.fid].temp.append(record)
+                for record in cellBlock.persistent:
+                    if record.base in self.old_new:
+                        if not cellImported:
+                            patchCells.setCell(cellBlock.cell)
+                            cellImported = True
+                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].persistent:
+                            if newRef.fid == record.fid:
+                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].persistent.index(newRef)
+                                patchCells.id_cellBlock[cellBlock.cell.fid].persistent[loc] = record
+                                break
+                        else:
+                            patchCells.id_cellBlock[cellBlock.cell.fid].persistent.append(record)
+        if 'WRLD' in modFile.tops:
+            for worldBlock in modFile.WRLD.worldBlocks:
+                worldImported = False
+                if worldBlock.world.fid in patchWorlds.id_worldBlocks:
+                    patchWorlds.id_worldBlocks[worldBlock.world.fid].world = worldBlock.world
+                    worldImported = True
+                for cellBlock in worldBlock.cellBlocks:
+                    cellImported = False
+                    if worldBlock.world.fid in patchWorlds.id_worldBlocks and cellBlock.cell.fid in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock:
+                        patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
+                        cellImported = True
+                    for record in cellBlock.temp:
+                        if record.base in self.old_new:
+                            if not worldImported:
+                                patchWorlds.setWorld(worldBlock.world)
+                                worldImported = True
+                            if not cellImported:
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
+                                cellImported = True
+                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp:
+                                if newRef.fid == record.fid:
+                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp.index(newRef)
+                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp[loc] = record
+                                    break
+                            else:
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp.append(record)
+                    for record in cellBlock.persistent:
+                        if record.base in self.old_new:
+                            if not worldImported:
+                                patchWorlds.setWorld(worldBlock.world)
+                                worldImported = True
+                            if not cellImported:
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
+                                cellImported = True
+                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent:
+                                if newRef.fid == record.fid:
+                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent.index(newRef)
+                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent[loc] = record
+                                    break
+                            else:
+                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent.append(record)
+                                
+    def buildPatch(self,log,progress):
+        """Adds merged fids to patchfile."""
+        if not self.isActive: return
+        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        masters = self.patchFile
+        keep = self.patchFile.getKeeper()
+        count = CountDict()
+        def swapper(oldId):
+            newId = old_new.get(oldId,None)
+            if newId:
+                return newId
+            else:
+                return oldId
+##        for type in self.types:
+##            for record in getattr(self.patchFile,type).getActiveRecords():
+##                if record.fid in self.old_new:
+##                    record.fid = swapper(record.fid)
+##                    count.increment(record.fid[0])
+####                    record.mapFids(swapper,True)
+##                    record.setChanged()
+##                    keep(record.fid)        
+        for cellBlock in self.patchFile.CELL.cellBlocks:
+            for record in cellBlock.temp:
+                if record.base in self.old_new:
+                    record.base = swapper(record.base)
+                    count.increment(cellBlock.cell.fid[0])
+##                    record.mapFids(swapper,True)
+                    record.setChanged()
+                    keep(record.fid)
+            for record in cellBlock.persistent:
+                if record.base in self.old_new:
+                    record.base = swapper(record.base)
+                    count.increment(cellBlock.cell.fid[0])
+##                    record.mapFids(swapper,True)
+                    record.setChanged()
+                    keep(record.fid)
+        for worldBlock in self.patchFile.WRLD.worldBlocks:
+            keepWorld = False
+            for cellBlock in worldBlock.cellBlocks:
+                for record in cellBlock.temp:
+                    if record.base in self.old_new:
+                        record.base = swapper(record.base)
+                        count.increment(cellBlock.cell.fid[0])
+##                        record.mapFids(swapper,True)
+                        record.setChanged()
+                        keep(record.fid)
+                        keepWorld = True
+                for record in cellBlock.persistent:
+                    if record.base in self.old_new:
+                        record.base = swapper(record.base)
+                        count.increment(cellBlock.cell.fid[0])
+##                        record.mapFids(swapper,True)
+                        record.setChanged()
+                        keep(record.fid)
+                        keepWorld = True
+            if keepWorld:
+                keep(worldBlock.world.fid)
+
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.getConfigChecked():
+            log("* " +mod.s)
+        log(_("\n=== Records Patched"))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('* %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_UpdateReferences(CBash_ListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    scanOrder = 15
+    editOrder = 15
+    group = _('General')
+    name = _('Import FormIds')
+    text = _("Imports FormId replacers from csv files into the Bashed Patch.")
+    autoKey = 'Formids'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    unloadedText = _("\n\nAny non-active, non-merged mods referenced by files selected in the following list will be IGNORED.")
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles)
+        self.old_new = {} #--Maps old fid to new fid
+        self.old_eid = {} #--Maps old fid to old editor id
+        self.new_eid = {} #--Maps new fid to new editor id
+        self.mod_old_count = {}
+
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcFiles))
+        patchesDir = dirs['patches'].list()
+        for srcFile in self.srcFiles:
+            if not reModExt.search(srcFile.s):
+                if srcFile not in patchesDir: continue
+                fidReplacer.readFromText(dirs['patches'].join(srcFile))
+            progress.plus()
+        #--Finish
+        self.old_new = dict((oldId, newId) for oldId, newId in fidReplacer.old_new.iteritems() if oldId[0] in self.patchFile.loadSet and newId[0] in self.patchFile.loadSet)
+        self.old_eid.update(fidReplacer.old_eid)
+        self.new_eid.update(fidReplacer.new_eid)
+        self.isActive = bool(self.old_new)
+        if not self.isActive: return
+
+        for type in self.getTypes():
+             type_patchers.setdefault(type,[]).append(self)
+
+    def getTypes(self):
+        return ['FACT','RACE','MGEF','SCPT','LTEX','ENCH',
+                'SPEL','BSGN','ACTI','APPA','ARMO','BOOK',
+                'CLOT','CONT','DOOR','INGR','LIGH','MISC',
+                'FLOR','FURN','WEAP','AMMO','NPC_','CREA',
+                'LVLC','SLGM','KEYM','ALCH','SGST','LVLI',
+                'WTHR','CLMT','REGN','CELL','WRLD','ACHRS',
+                'ACRES','REFRS','DIAL','INFOS','QUST','IDLE',
+                'PACK','LSCR','LVSP','ANIO','WATR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        old_new = self.old_new
+        changed = False
+        map(record.GetNumReferences, set(old_new.keys()))
+        for oldId, newId in old_new.iteritems():
+            if record.GetNumReferences(oldId):
+                changed = True
+                break
+        if changed:
+            if hasattr(record, '_parentID'):
+                parent = self.patchFile.Collection.LookupRecords(record._parentID)
+                if parent:
+                    #Copy the winning version of the parent over
+                    parent[0].CopyAsOverride(self.patchFile)
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                mod_old_count = self.mod_old_count
+                old_count = mod_old_count.setdefault(modFile.GName,{})
+                for oldId, newId in old_new.iteritems():
+                    count = override.UpdateReferences(oldId,newId)
+                    if count: old_count[oldId] = old_count.get(oldId,0) + count
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        mod_old_count = self.mod_old_count
+
+        log(_("=== Source Mods"))
+        if not self.srcFiles:
+            log(_(". ~~None~~"))
+        else:
+            for srcFile in self.srcFiles:
+                log("* " +srcFile.s)
+        log('\n')
+        for mod in modInfos.getOrdered(mod_old_count.keys()):
+            old_count = mod_old_count[mod]
+            log('\n=== %s' % (mod.s))
+            entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in
+                    old_count.iteritems()]
+            entries.sort(key=itemgetter(1))
+            log(_('  * Updated References: %d') % (sum(old_count.values())))
+            log('\n'.join(['    * %3d %s >> %s' % entry for entry in entries]))
+
+        self.mod_old_count = {}
 
 # Patchers: 20 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -24121,13 +24488,13 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
                 return
         elif 'small' in self.choiceValues[self.chosen]:
             return
-        spells = record.spells
-        newSpell = modFile.MakeShortFid(self.spell)
-        if newSpell not in spells:
+        spells_long = record.spells_long
+        newSpell = self.spell
+        if newSpell not in spells_long:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                spells.append(newSpell)
-                override.spells = spells
+                spells_long.append(newSpell)
+                override.spells_long = spells_long
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -24206,13 +24573,13 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
         else:
             return
 
-        spells = record.spells
-        newSpell = modFile.MakeShortFid(self.spell)
-        if newSpell not in spells:
+        spells_long = record.spells_long
+        newSpell = self.spell
+        if newSpell not in spells_long:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                spells.append(newSpell)
-                override.spells = spells
+                spells_long.append(newSpell)
+                override.spells_long = spells_long
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -24516,7 +24883,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         actorNames = bush.actorValues
         #--Book generator
         def getBook(patchFile, objectId):
-            fid = patchFile.MakeShortFid((GPath('Cobl Main.esm'),objectId))
+            fid = MakeShortFid(patchFile._CollectionIndex, (GPath('Cobl Main.esm'),objectId))
             book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
             book = book.CopyAsOverride(self.patchFile)
             book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
@@ -25352,7 +25719,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         subProgress.setFull(len(mFactable))
         pstate = 0
         mFactLong = self.mFactLong
-        record = FACTRecord(patchFile._CollectionIndex, mFactLong[0].s, patchFile.MakeShortFid(mFactLong))
+        record = FACTRecord(patchFile._CollectionIndex, mFactLong[0].s, MakeShortFid(patchFile._CollectionIndex, mFactLong))
         override = record.CopyAsOverride(patchFile)
         if override:
             override.relations = None
@@ -25360,7 +25727,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             for faction in mFactable:
                 subProgress(pstate, _("Marking Morphable Factions...\n"))
                 relation = override.newRelationsElement()
-                relation.faction = patchFile.MakeShortFid(faction)
+                relation.faction_long = faction
                 relation.mod = 10
                 pstate += 1
         mFactable.clear()
@@ -26804,7 +27171,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 for id, badEntries in id_badEntries.iteritems():
                     log('    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
-                        longId = self.patchFile.MakeLongFid(entry[1])
+                        longId = MakeLongFid(patchFile._CollectionIndex, entry[1])
                         log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],entry[2] or longId[0].s,entry[3]))
         self.mod_type_id_badEntries = {}
 # Initialization --------------------------------------------------------------

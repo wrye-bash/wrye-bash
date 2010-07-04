@@ -634,9 +634,15 @@ class BaseRecord(object):
         CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, 0)
         return
 
+    def GetNumReferences(self, referenceFid):
+        referenceFid = MakeShortFid(self._CollectionIndex, referenceFid)
+        if referenceFid is None: return 0
+        return CBash.GetNumReferences(self._CollectionIndex, self._ModName, self._recordID, referenceFid)
+
     def UpdateReferences(self, origFid, newFid):
-        if not isinstance(origFid, int): return 0
-        if not isinstance(newFid, int): return 0
+        origFid = MakeShortFid(self._CollectionIndex, origFid)
+        newFid = MakeShortFid(self._CollectionIndex, newFid)
+        if not (origFid or newFid): return 0
         return CBash.UpdateReferences(self._CollectionIndex, self._ModName, self._recordID, origFid, newFid)
     def Conflicts(self):
         numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._recordID)
@@ -931,6 +937,8 @@ class GMSTRecord(object):
     def DeleteRecord(self):
         CBash.DeleteGMSTRecord(self._CollectionIndex, self._ModName, self._recordID)
         return
+    def GetNumReferences(self, referenceFid):
+        return 0
     def UpdateReferences(self, origFid, newFid):
         return 0
     def Conflicts(self):
@@ -2547,20 +2555,28 @@ class BSGNRecord(BaseRecord):
 
 class CELLRecord(BaseRecord):
     _Type = 'CELL'
-    def __init__(self, CollectionIndex, ModName, recordID, parentID = 0):
+    def __init__(self, CollectionIndex, ModName, recordID, isWorldCell=2):
         BaseRecord.__init__(self, CollectionIndex, ModName, recordID)
-        self._parentID = parentID
-    def CopyAsOverride(self, target, isWorldCell=False):
+        self._IsWorldCell = isWorldCell
+    @property
+    def _parentID(self):
+        CBash.ReadFIDField.restype = POINTER(c_uint)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 41)
+        if(retValue): return retValue.contents.value
+        return 0
+    def CopyAsOverride(self, target, isWorldCell=None):
+        if isWorldCell is None: isWorldCell = self._IsWorldCell
         if isinstance(target, CBashModFile): targetID = self._parentID
         else: targetID = target._recordID
-        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, 1, int(isWorldCell))
-        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
+        FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, 1, isWorldCell)
+        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, isWorldCell)
         return None
-    def CopyAsNew(self, target, isWorldCell=False):
+    def CopyAsNew(self, target, isWorldCell=None):
+        if isWorldCell is None: isWorldCell = self._IsWorldCell
         if isinstance(target, CBashModFile): targetID = self._parentID
         else: targetID = target._recordID
         FID = CBash.CopyCELLRecord(self._CollectionIndex, self._ModName, self._recordID, target._ModName, targetID, 0, int(isWorldCell))
-        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, targetID)
+        if(FID): return CELLRecord(self._CollectionIndex, target._ModName, FID, isWorldCell)
         return None
     def DeleteRecord(self):
         CBash.DeleteRecord(self._CollectionIndex, self._ModName, self._recordID, self._parentID)
@@ -17725,11 +17741,11 @@ class WRLDRecord(BaseRecord):
         return None
     def createWorldCELLRecord(self):
         FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, 1)
-        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
+        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, 1)
         return None
     def createCELLRecord(self):
         FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, self._recordID, 0)
-        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, self._recordID)
+        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, 0)
         return None
     def createROADRecord(self):
         FID = CBash.CreateROADRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -17935,7 +17951,7 @@ class WRLDRecord(BaseRecord):
     def get_CELL(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 25)
-        if(retValue): return CELLRecord(self._CollectionIndex, self._ModName, retValue.contents.value, self._recordID)
+        if(retValue): return CELLRecord(self._CollectionIndex, self._ModName, retValue.contents.value, 1)
         return None
     def set_CELL(self, nCELL):
         curCELL = self.CELL
@@ -17952,7 +17968,7 @@ class WRLDRecord(BaseRecord):
         if(numSubRecords > 0):
             cRecords = (POINTER(c_uint) * numSubRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 26, byref(cRecords))
-            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value, self._recordID) for x in cRecords]
+            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value, 0) for x in cRecords]
         return []
     def get_IsSmallWorld(self):
         return self.flags != None and (self.flags & 0x00000001) != 0
@@ -18979,20 +18995,10 @@ class CBashModFile(object):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
         self.GName = GPath(ModName)
-    def MakeLongFid(self, fid):
-        if(fid == None): return (None,None)
-        masterIndex = int(fid >> 24)
-        object = int(fid & 0xFFFFFFL)
-        master = CBash.GetModName(self._CollectionIndex, masterIndex)
-        return (GPath(master),object)
-    def MakeShortFid(self, longFid):
-        if not isinstance(longFid, tuple): return longFid
-        fid = CBash.GetCorrectedFID(self._CollectionIndex, longFid[0].s, longFid[1])
-        if(fid == 0): return None
-        return fid
     def UpdateReferences(self, origFid, newFid):
-        if not isinstance(origFid, int): return 0
-        if not isinstance(newFid, int): return 0
+        origFid = MakeShortFid(self._CollectionIndex, origFid)
+        newFid = MakeShortFid(self._CollectionIndex, newFid)
+        if not (origFid or newFid): return 0
         return CBash.UpdateAllReferences(self._CollectionIndex, self._ModName, origFid, newFid)
     def CleanMasters(self):
         return CBash.CleanMasters(self._CollectionIndex, self._ModName)
@@ -19176,7 +19182,7 @@ class CBashModFile(object):
         return None
     def createCELLRecord(self):
         FID = CBash.CreateCELLRecord(self._CollectionIndex, self._ModName, 0, 0)
-        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID)
+        if(FID): return CELLRecord(self._CollectionIndex, self._ModName, FID, 0)
         return None
     def createWRLDRecord(self):
         FID = CBash.CreateWRLDRecord(self._CollectionIndex, self._ModName)
@@ -19589,7 +19595,7 @@ class CBashModFile(object):
         if(numRecords > 0):
             cRecords = (POINTER(c_uint) * numRecords)()
             CBash.GetCELLRecords(self._CollectionIndex, self._ModName, cRecords)
-            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value) for x in cRecords]
+            return [CELLRecord(self._CollectionIndex, self._ModName, x.contents.value, 0) for x in cRecords]
         return []
     @property
     def WRLD(self):
@@ -19685,77 +19691,77 @@ class CBashModFile(object):
         cells = self.CELL
         for world in self.WRLD:
             cell = world.CELL
-            if(cell): cells = cells + [cell]
-            cells = cells + world.CELLS
+            if(cell): cells += [cell]
+            cells += world.CELLS
         return cells
     @property
     def INFOS(self):
         infos = []
         for dial in self.DIAL:
-            infos = infos + dial.INFO
+            infos += dial.INFO
         return infos
     @property
     def ACHRS(self):
         achrs = []
         for cell in self.CELL:
-            achrs = achrs + cell.ACHR
+            achrs += cell.ACHR
         for world in self.WRLD:
             cell = world.CELL
-            if(cell): achrs = achrs + cell.ACHR
+            if(cell): achrs += cell.ACHR
             for cell in world.CELLS:
-                achrs = achrs + cell.ACHR
+                achrs += cell.ACHR
         return achrs
     @property
     def ACRES(self):
         acres = []
         for cell in self.CELL:
-            acres = acres + cell.ACRE
+            acres += cell.ACRE
         for world in self.WRLD:
             cell = world.CELL
-            if(cell): acres = acres + cell.ACRE
+            if(cell): acres += cell.ACRE
             for cell in world.CELLS:
-                acres = acres + cell.ACRE
+                acres += cell.ACRE
         return acres
     @property
     def REFRS(self):
         refrs = []
         for cell in self.CELL:
-            refrs = refrs + cell.REFR
+            refrs += cell.REFR
         for world in self.WRLD:
             cell = world.CELL
-            if(cell): refrs = refrs + cell.REFR
+            if(cell): refrs += cell.REFR
             for cell in world.CELLS:
-                refrs = refrs + cell.REFR
+                refrs += cell.REFR
         return refrs
     @property
     def PGRDS(self):
         pgrds = []
         for cell in self.CELL:
             pgrd = cell.PGRD
-            if(pgrd): pgrds = pgrds + [pgrd]
+            if(pgrd): pgrds += [pgrd]
         for world in self.WRLD:
             cell = world.CELL
             if(cell):
                 pgrd = cell.PGRD
-                if(pgrd): pgrds = pgrds + [pgrd]
+                if(pgrd): pgrds += [pgrd]
             for cell in world.CELLS:
                 pgrd = cell.PGRD
-                if(pgrd): pgrds = pgrds + [pgrd]
+                if(pgrd): pgrds += [pgrd]
         return pgrds
     @property
     def LANDS(self):
         lands = []
         for cell in self.CELL:
             land = cell.LAND
-            if(land): lands = lands + [land]
+            if(land): lands += [land]
         for world in self.WRLD:
             cell = world.CELL
             if(cell):
                 land = cell.LAND
-                if(land): lands = lands + [land]
+                if(land): lands += [land]
             for cell in world.CELLS:
                 land = cell.LAND
-                if(land): lands = lands + [land]
+                if(land): lands += [land]
         return lands
     @property
     def ROADS(self):

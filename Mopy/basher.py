@@ -5645,6 +5645,9 @@ class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
 class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
 class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
 
+class UpdateReferences(bosh.UpdateReferences,ListPatcher): pass
+class CBash_UpdateReferences(bosh.CBash_UpdateReferences,ListPatcher): pass
+
 class ListsMerger(bosh.ListsMerger,ListPatcher):
     listLabel = _("Override Delev/Relev Tags")
 class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
@@ -5676,6 +5679,7 @@ if not CBash:
         DeathItemPatcher(),
         NPCAIPackagePatcher(),
         CoblExhaustion(),
+        UpdateReferences(),
         CellImporter(),
         ClothesTweaker(),
         GlobalsTweaker(),
@@ -5713,6 +5717,7 @@ else:
         CBash_DeathItemPatcher(),
 ##        CBash_NPCAIPackagePatcher(),
         CBash_CoblExhaustion(),
+        CBash_UpdateReferences(),
         CBash_CellImporter(),
         CBash_ClothesTweaker(),
         CBash_GlobalsTweaker(),
@@ -7039,6 +7044,88 @@ class Installer_Uninstall(InstallerLink):
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
+
+#------------------------------------------------------------------------------
+class Installer_CopyConflicts(InstallerLink):
+    """For Modders only - copy conflicts to a new project."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        self.title = _('Copy Conflicts to Project')
+        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menu.AppendItem(menuItem)
+        enabled = False        
+        if self.isSingle(): enabled = True
+        menuItem.Enable(enabled)
+        
+    def Execute(self,event):
+        """Handle selection."""
+        dir = self.data.dir
+        data = self.data
+        srcConflicts = set()
+        packConflicts = []
+        progress = balt.Progress(_("Copying Conflicts..."),'\n'+' '*60)
+        try:
+            srcArchive = self.selected[0]
+            srcInstaller = self.data[srcArchive]
+            src_sizeCrc = srcInstaller.data_sizeCrc
+            mismatched = set(src_sizeCrc)
+            if mismatched:
+                numFiles = 0
+                curFile = 1
+                srcOrder = srcInstaller.order
+                destDir = GPath("%03d - Conflicts" % (srcOrder))
+                getArchiveOrder =  lambda x: data[x].order
+                for package in sorted(data.data,key=getArchiveOrder):
+                    installer = data[package]
+                    curConflicts = set()
+                    for x,y in installer.refreshDataSizeCrc().iteritems():
+                        if x in mismatched and installer.data_sizeCrc[x] != src_sizeCrc[x]:
+                            curConflicts.add(y)
+                            srcConflicts.add(src_sizeCrc[x])
+                    numFiles += len(curConflicts)
+                    if curConflicts: packConflicts.append((installer.order,installer,package,curConflicts))
+                srcConflicts = set(src for src, size, crc in srcInstaller.fileSizeCrcs if (size,crc) in srcConflicts)
+                numFiles += len(srcConflicts)
+                progress.setFull(numFiles)
+                if isinstance(srcInstaller,bosh.InstallerProject):
+                    for src in srcConflicts:
+                        srcFull = bosh.dirs['installers'].join(srcArchive,src)
+                        destFull = bosh.dirs['installers'].join(destDir,GPath(srcArchive.s),src)
+                        if srcFull.exists():
+                            progress(curFile, _("%s\nCopying files...\n%s")%(srcArchive.s,src))
+                            srcFull.copyTo(destFull)
+                            curFile += 1
+                else:
+                    srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
+                    srcInstaller.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
+                curFile = len(srcConflicts)
+                for order, installer, package, curConflicts in packConflicts:
+                    if isinstance(installer,bosh.InstallerProject):
+                        for src in curConflicts:
+                            srcFull = bosh.dirs['installers'].join(package,src)
+                            destFull = bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s)),src)
+                            if srcFull.exists():
+                                progress(curFile, _("%s\nCopying files...\n%s")%(srcArchive.s,src))
+                                srcFull.copyTo(destFull)
+                                curFile += 1
+                    else:
+                        installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
+                        installer.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath("%03d - %s" % (order, package.s))))
+                        curFile += len(curConflicts)
+                project = destDir.root
+                if project not in self.data:
+                    self.data[project] = bosh.InstallerProject(project)
+                iProject = self.data[project]
+                pProject = bosh.dirs['installers'].join(project)
+                iProject.refreshed = False
+                iProject.refreshBasic(pProject,None,True)
+                if iProject.order == -1:
+                    self.data.refreshOrder()
+                    self.data.moveArchives([project],srcInstaller.order+1)
+                self.data.refresh(what='I')
+                self.gTank.RefreshUI()
+        finally:
+            progress.Destroy()
 
 # InstallerDetails Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -9152,7 +9239,10 @@ class Mod_Fids_Replace(Link):
         progress = balt.Progress(_("Import Form IDs"))
         changed = None
         try:
-            replacer = bosh.FidReplacer()
+            if not CBash:
+                replacer = bosh.FidReplacer()
+            else:
+                replacer = bosh.CBash_FidReplacer()
             progress(0.1,_("Reading %s.") % (textName.s,))
             replacer.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
@@ -12109,6 +12199,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(InstallerArchive_Unpack())
     InstallersPanel.itemMenu.append(InstallerProject_ReleasePack())
     InstallersPanel.itemMenu.append(InstallerProject_Sync())
+    InstallersPanel.itemMenu.append(Installer_CopyConflicts())
     InstallersPanel.itemMenu.append(InstallerProject_OmodConfig())
     InstallersPanel.itemMenu.append(Installer_ListStructure())
 
