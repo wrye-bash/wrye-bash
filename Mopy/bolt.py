@@ -225,6 +225,23 @@ class Path(object):
         else: dir = self
         os.chdir(dir)
 
+    @staticmethod
+    def mbSplit(path):
+        """Split path to consider multibyte character boundary."""
+        ascii = '[\x00-\x7F]'
+        japanese_hankana = '[\xA1-\xDF]'
+        japanese_zenkaku ='[\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]'
+        reChar = re.compile('('+ascii+'|'+japanese_hankana+'|'+japanese_zenkaku+')', re.M)
+        # Should also add Chinese fantizi and zhengtizi, Korean Hangul, etc.
+        match = reChar.split(path)
+        result = ['']
+        for c in match:
+            if c == '\\':
+                result.append('')
+            else:
+                result[-1] += c
+        return result
+
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
@@ -241,24 +258,21 @@ class Path(object):
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
-##        if getattr(self,'cachedCRC',None):
-##            return (self._s, self.cachedCRC, self.cachedatime, self.cachedctime, self.cachedsize)
-##        else:
         return self._s
 
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
-##        if isinstance(norm, tuple):
-##            self._s = norm[0]
-##            self.cachedCRC = norm[1]
-##            self.cachedatime = norm[2]
-##            self.cachedctime = norm[3]
-##            self.cachedsize = norm[4]
-##        else:
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
-        self._shead,self._stail = os.path.split(self._s)
+##        self._shead,self._stail = os.path.split(self._s)
+        pathParts = Path.mbSplit(self._s)
+        if len(pathParts) == 1:
+            self._shead = ''
+            self._stail = pathParts[0]
+        else:
+            self._shead = '\\'.join(pathParts[0:-1])
+            self._stail = pathParts[-1]
         self._cext = os.path.normcase(self._ext)
         self._csroot = os.path.normcase(self._sroot)
         self._sbody = os.path.basename(os.path.splitext(self._s)[0])
