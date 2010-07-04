@@ -8026,13 +8026,13 @@ class INFORecord(BaseRecord):
     def CopyAsOverride(self, targetDIAL):
         if isinstance(targetDIAL, CBashModFile): targetID = self._parentID
         else: targetID = targetDIAL._recordID
-        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 1)
+        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetDIAL._ModName, targetID, 1)
         if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID, targetID)
         return None
     def CopyAsNew(self, targetDIAL):
         if isinstance(targetDIAL, CBashModFile): targetID = self._parentID
         else: targetID = targetDIAL._recordID
-        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetCELL._ModName, targetID, 0)
+        FID = CBash.CopyINFORecord(self._CollectionIndex, self._ModName, self._recordID, targetDIAL._ModName, targetID, 0)
         if(FID): return INFORecord(self._CollectionIndex, targetDIAL._ModName, FID, targetID)
         return None
     def DeleteRecord(self, parent):
