@@ -2439,7 +2439,7 @@ class InstallersList(balt.Tank):
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
         ##Delete - delete
-        if event.GetKeyCode() == wx.WXK_DELETE:
+        elif event.GetKeyCode() == wx.WXK_DELETE:
             try:
                 wx.BeginBusyCursor()
                 self.DeleteSelected()
@@ -2747,11 +2747,17 @@ class InstallersPanel(SashTankPanel):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.data)
+
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
+        subIndex = self.gSubList.GetSelection()
+        espmIndex = self.gEspmList.GetSelection()
+        
         self.gList.RefreshUI(self.detailsItem)
-        self.gSubList.SetScrollPos(wx.VERTICAL,subScrollPos)
-        self.gEspmList.SetScrollPos(wx.VERTICAL,espmScrollPos)
+        self.gSubList.ScrollLines(subScrollPos)
+        self.gEspmList.ScrollLines(espmScrollPos)
+        self.gSubList.SetSelection(subIndex)
+        self.gEspmList.SetSelection(espmIndex)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
@@ -4927,6 +4933,8 @@ class PatchDialog(wx.Dialog):
                 raise
         else:
             try:
+                from datetime import timedelta
+                timer1 = time.clock()
                 #--Save configs
                 patchConfigs = {'ImportedMods':set()}
                 for patcher in self.patchers:
@@ -4943,18 +4951,21 @@ class PatchDialog(wx.Dialog):
                 #--Save
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.safeCloseSave()
-                time = patchName.mtime
+                patchTime = patchName.mtime
                 patchName.untemp()
-                patchName.mtime = time
+                patchName.mtime = patchTime
                 #--Cleanup
                 self.patchInfo.refresh()
                 modList.RefreshUI(patchName)
                 #--Done
                 progress.Destroy()
+                timer2 = time.clock()
                 #--Readme and log
                 log.setHeader(None)
                 log('{{CSS:wtxt_sand_small.css}}')
                 logValue = log.out.getvalue()
+                timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip('0')
+                logValue = re.sub('TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
                 readme.open('w').write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
