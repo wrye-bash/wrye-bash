@@ -936,7 +936,7 @@ messagesHeader = """<html>
 			margin:0px;
 			padding:0px;
 			text-align:center;
-		   }
+			}
 
 		a:link, a:visited, a:active{
 			color: #000;
@@ -1073,14 +1073,14 @@ messagesHeader = """<html>
 			font-size: 12px;
 			line-height: 160%;
 		}
-        /* Quote/Code formatting */
-        .quotetop {
-            color: #fff;
-            background-color: #B1C9ED;
-            margin: 1em;
-            margin-bottom: 0;
-            padding: 0.5em;
-        }
+		/* Quote/Code formatting */
+		.quotetop {
+			color: #fff;
+			background-color: #B1C9ED;
+			margin: 1em;
+			margin-bottom: 0;
+			padding: 0.5em;
+		}
 
         .quotemain {
             margin: 0 1em;
@@ -1103,6 +1103,6 @@ messagesHeader = """<html>
             padding: 0.5em;
             border: solid 1px #000;
         }
-	</style>
+    </style>
 </head>
 <body><div id="ipbwrapper">\n"""

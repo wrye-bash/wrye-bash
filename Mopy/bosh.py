@@ -9277,19 +9277,26 @@ class Messages(DataDict):
             dates['today'] = datetime.datetime(year,month,day)
             dates['yesterday'] = dates['today'] - datetime.timedelta(1)
         reRelDate = re.compile(r'(Today|Yesterday), (\d+):(\d+) (AM|PM)')
+        reAbsDateNew = re.compile(r'(\d+) (\w+) (\d+) - (\d+):(\d+) (AM|PM)')
         reAbsDate = re.compile(r'(\w+) (\d+) (\d+), (\d+):(\d+) (AM|PM)')
         month_int = dict((x,i+1) for i,x in
             enumerate('Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec'.split(',')))
+        month_int.update(dict((x,i+1) for i,x in
+            enumerate('January,February,March,April,May,June,July,August,September,October,November,December'.split(','))))
         def getTime(sentOn):
             maRelDate = reRelDate.search(sentOn)
             if not maRelDate:
                 #date = time.strptime(sentOn,'%b %d %Y, %I:%M %p')[:-1]+(0,)
                 maAbsDate = reAbsDate.match(sentOn)
-                month,day,year,hour,minute,ampm = maAbsDate.groups()
+                if maAbsDate:
+                    month,day,year,hour,minute,ampm = maAbsDate.groups()
+                else:
+                    maAbsDate = reAbsDateNew.match(sentOn)
+                    day,month,year,hour,minute,ampm = maAbsDate.groups()
                 day,year,hour,minute = map(int,(day,year,hour,minute))
                 month = month_int[month]
                 hour = (hour,0)[hour==12] + (0,12)[ampm=='PM']
-                date = (year,month,day,hour,minute,0,0,0,0)
+                date = (year,month,day,hour,minute,0,0,0,-1)
                 dates['previous'] = datetime.datetime(year,month,day)
             else:
                 if not dates['yesterday']:
@@ -9315,6 +9322,17 @@ class Messages(DataDict):
                     return match.group()
         #--Re's
         reHtmlEntity = re.compile("&(#?)(\d{1,5}|\w{1,8});")
+
+        reLineEndings   = re.compile("(?:\n)|(?:\r\n)")
+        reBodyNew       = re.compile("<body id='ipboard_body'>")
+        reTitleNew      = re.compile('<div id=["\']breadcrumb["\']>Bethesda Softworks Forums -> (.*?)</div>')
+        reAuthorNew     = re.compile('<h3><a href=["\']http\://forums\.bethsoft\.com/index\.php\?/user/.*?/["\']>(.*?)</a></h3>')
+##        reDateStartNew  = re.compile('<p class=["\']posted_info["\']>')
+        reDateNew       = re.compile('Sent (.*?)$')
+##        reEndDateNew    = re.compile('</p>')
+        reMessageNew    = re.compile('<div class=["\']post entry-content["\']>')
+        reEndMessageNew = re.compile('^		</div>$')
+        #Old style re's
         reBody         = re.compile('<body>')
         reWrapper      = re.compile('<div id=["\']ipbwrapper["\']>') #--Will be removed
         reMessage      = re.compile('<div class="borderwrapm">')
@@ -9325,47 +9343,86 @@ class Messages(DataDict):
         reSignatureOld = re.compile('<div class=\'pformstrip\'>')
         reSent         = re.compile('Sent (by|to) <b>(.+)</b> on (.+)</div>')
         #--Final setup, then parse the file
-        (HEADER,BODY,MESSAGE) = range(3)
+        (HEADER,BODY,MESSAGE,OLDSTYLE,NEWSTYLE,AUTHOR,DATE,MESSAGEBODY) = range(8)
+        whichStyle = OLDSTYLE
         mode = HEADER
         buff = None
         subject = "<No Subject>"
+        author = None
         ins = path.open()
         for line in ins:
-            line = reMessageOld.sub('<div class="borderwrapm">',line)
-            line = reTitleOld.sub('<div class="maintitle">',line)
-            line = reSignatureOld.sub('<div class="formsubtitle">',line)
-            #print mode,'>>',line,
+##            print mode,'>>',line,
             if mode == HEADER: #--header
-                if reBody.search(line):
+                if reBodyNew.search(line):
                     mode = BODY
-            elif mode == BODY:
-                if reMessage.search(line):
-                    subject = "<No Subject>"
-                    buff = cStringIO.StringIO()
-                    buff.write(reWrapper.sub('',line))
-                    mode = MESSAGE
-            elif mode == MESSAGE:
-                if reTitle.search(line):
-                    subject = reTitle.search(line).group(1)
-                    subject = reHtmlEntity.sub(subHtmlEntity,subject)
-                    buff.write(line)
-                elif reSignature.search(line):
-                    maSent = reSent.search(line)
-                    if maSent:
-                        direction = maSent.group(1)
-                        author = maSent.group(2)
-                        date = getTime(maSent.group(3))
-                        messageKey = '::'.join((subject,author,`int(date)`))
-                        newSent = (_('Sent %s <b>%s</b> on %s</div>') % (direction,
-                            author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
-                        line = reSent.sub(newSent,line,1)
+                    whichStyle = NEWSTYLE
+                elif reBody.search(line):
+                    mode = BODY
+                    whichStyle = OLDSTYLE
+            if mode != HEADER and whichStyle == OLDSTYLE:
+                line = reMessageOld.sub('<div class="borderwrapm">',line)
+                line = reTitleOld.sub('<div class="maintitle">',line)
+                line = reSignatureOld.sub('<div class="formsubtitle">',line)
+                if mode == BODY:
+                    if reMessage.search(line):
+                        subject = "<No Subject>"
+                        buff = cStringIO.StringIO()
+                        buff.write(reWrapper.sub('',line))
+                        mode = MESSAGE
+                elif mode == MESSAGE:
+                    if reTitle.search(line):
+                        subject = reTitle.search(line).group(1)
+                        subject = reHtmlEntity.sub(subHtmlEntity,subject)
                         buff.write(line)
+                    elif reSignature.search(line):
+                        maSent = reSent.search(line)
+                        if maSent:
+                            direction = maSent.group(1)
+                            author = maSent.group(2)
+                            date = getTime(maSent.group(3))
+                            messageKey = '::'.join((subject,author,`int(date)`))
+                            newSent = (_('Sent %s <b>%s</b> on %s</div>') % (direction,
+                                author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
+                            line = reSent.sub(newSent,line,1)
+                            buff.write(line)
+                            self.data[messageKey] = (subject,author,date,buff.getvalue())
+                        buff.close()
+                        buff = None
+                        mode = BODY
+                    else:
+                        buff.write(line)
+            elif mode != HEADER and whichStyle == NEWSTYLE:
+                if mode == BODY:
+                    if reTitleNew.search(line):
+                        subject = reTitleNew.search(line).group(1)
+                        subject = reHtmlEntity.sub(subHtmlEntity,subject)
+                        mode = AUTHOR
+                elif mode == AUTHOR:
+                    if reAuthorNew.search(line):
+                        author = reAuthorNew.search(line).group(1)
+                        mode = DATE
+                elif mode == DATE:
+                    if reDateNew.search(line):
+                        date = reDateNew.search(line).group(1)
+                        date = getTime(date)
+                        mode = MESSAGE
+                elif mode == MESSAGE:
+                    if reMessageNew.search(line):
+                        buff = cStringIO.StringIO()
+                        buff.write('<br /><div class="borderwrapm">\n')
+                        buff.write('	<div class="maintitle">PM: %s</div>\n' % subject)
+                        buff.write('	<div class="tablefill"><div class="postcolor">')
+                        mode = MESSAGEBODY
+                elif mode == MESSAGEBODY:
+                    if reEndMessageNew.search(line):
+                        buff.write('	<div class="formsubtitle">Sent by <b>%s</b> on %s</div>\n' % (author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
+                        messageKey = '::'.join((subject,author,`int(date)`))
                         self.data[messageKey] = (subject,author,date,buff.getvalue())
-                    buff.close()
-                    buff = None
-                    mode = BODY
-                else:
-                    buff.write(line)
+                        buff.close()
+                        buff = None
+                        mode = AUTHOR
+                    else:
+                        buff.write(reLineEndings.sub('',line))
         ins.close()
         self.hasChanged = True
         self.save()
@@ -26489,6 +26546,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in zip(allAttrs, prevValues):
+                        print attr, ":", value
                         setattr_deep(override,attr,value)
                     racesPatched = self.racesPatched
                     racesPatched.add(record.eid)
