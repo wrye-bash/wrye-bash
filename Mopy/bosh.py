@@ -69,7 +69,13 @@ import struct
 import sys
 from types import *
 from operator import attrgetter,itemgetter
-from subprocess import *
+import subprocess
+from subprocess import Popen, PIPE
+
+#-- To make commands executed with Popen hidden
+if os.name == 'nt':
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
 #--Local
 import balt
@@ -10093,7 +10099,7 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
         command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
         try:
-            ins = Popen(command, stdout=PIPE).stdout
+            ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
             values = cPickle.load(ins)
             setter = object.__setattr__
             for value,attr in zip(values,self.persistBCF):
@@ -10120,7 +10126,7 @@ class InstallerConverter(object):
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
-        ins = Popen(command, stdout=PIPE).stdout
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error checking
         reError = re.compile('Error:')
         regMatch = reError.match
@@ -10328,7 +10334,7 @@ class InstallerConverter(object):
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
-        ins = Popen(command, stdout=PIPE).stdout        
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout        
         #--Error checking and progress feedback
         reCompressing = re.compile('Compressing\s+(.+)')
         regMatch = reCompressing.match
@@ -10378,7 +10384,7 @@ class InstallerConverter(object):
             progress.setFull(1+len(fileNames))
         command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
-        ins = Popen(command, stdout=PIPE).stdout
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
         #--Note subArchives for recursive unpacking
         subArchives = []
@@ -10447,7 +10453,7 @@ class InstallerArchive(Installer):
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        ins = Popen(r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s), stdout=PIPE).stdout
+        ins = Popen(r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s), stdout=PIPE, startupinfo=startupinfo).stdout
         cumCRC = 0
         for line in ins:
             maList = reList.match(line)
@@ -10494,7 +10500,7 @@ class InstallerArchive(Installer):
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        ins = Popen('"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s), stdout=PIPE).stdout
+        ins = Popen('"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s), stdout=PIPE, startupinfo=startupinfo).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         reError = re.compile('Error:')
         extracted = []
@@ -10579,7 +10585,7 @@ class InstallerArchive(Installer):
         isdir = False
         apath = dirs['installers'].join(archive)
         command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
-        ins = Popen(command, stdout=PIPE).stdout
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         text = []
         for line in ins:
             maList = reList.match(line)
@@ -10718,7 +10724,7 @@ class InstallerProject(Installer):
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
-        ins = Popen(command, stdout=PIPE).stdout
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         reCompressing = re.compile('Compressing\s+(.+)')
         regMatch = reCompressing.match
         reError = re.compile('Error: (.*)')
