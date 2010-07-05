@@ -9323,13 +9323,12 @@ class Messages(DataDict):
         #--Re's
         reHtmlEntity = re.compile("&(#?)(\d{1,5}|\w{1,8});")
 
+        #New style re's
         reLineEndings   = re.compile("(?:\n)|(?:\r\n)")
         reBodyNew       = re.compile("<body id='ipboard_body'>")
         reTitleNew      = re.compile('<div id=["\']breadcrumb["\']>Bethesda Softworks Forums -> (.*?)</div>')
         reAuthorNew     = re.compile('<h3><a href=["\']http\://forums\.bethsoft\.com/index\.php\?/user/.*?/["\']>(.*?)</a></h3>')
-##        reDateStartNew  = re.compile('<p class=["\']posted_info["\']>')
         reDateNew       = re.compile('Sent (.*?)$')
-##        reEndDateNew    = re.compile('</p>')
         reMessageNew    = re.compile('<div class=["\']post entry-content["\']>')
         reEndMessageNew = re.compile('^		</div>$')
         #Old style re's
