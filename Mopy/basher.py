@@ -6740,15 +6740,13 @@ class Installer_Rename(InstallerLink):
         menu.AppendItem(menuItem)
         self.InstallerType = None
         ##Only enable if all selected items are of the same type
-        ##and are not markers
         firstItem = window.data[window.GetSelected()[0]]
         if(isinstance(firstItem,bosh.InstallerMarker)):
-           menuItem.Enable(False)
-           return
+            self.InstallerType = bosh.InstallerMarker
         elif(isinstance(firstItem,bosh.InstallerArchive)):
-           self.InstallerType = bosh.InstallerArchive
+            self.InstallerType = bosh.InstallerArchive
         elif(isinstance(firstItem,bosh.InstallerProject)):
-           self.InstallerType = bosh.InstallerProject
+            self.InstallerType = bosh.InstallerProject
              
         if(self.InstallerType):
             for item in window.GetSelected():
@@ -6761,15 +6759,19 @@ class Installer_Rename(InstallerLink):
     def Execute(self,event):
         #--File Info
         fileName = self.selected[0]
-        
         if(self.InstallerType == bosh.InstallerArchive):
             rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
             pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
                 _("Rename Files"),fileName.s)
         else:
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)        
-            pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE"),
-                _("Rename Files"),fileName.s)    
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
+            if (self.InstallerType == bosh.InstallerProject):
+                name = fileName.s
+                msg = _("Enter new name. E.g. VASE")
+            else:
+                name = fileName.s[2:-2]
+                msg = _("Enter new name, '==' will be added for you.  E.g.  WEATHER")
+            pattern = balt.askText(self.gTank, msg, _("Rename Files"), name)
         if not pattern: return
 
         maPattern = rePattern.match(pattern)
@@ -6782,36 +6784,47 @@ class Installer_Rename(InstallerLink):
         else:
             ext = ''
             root,numStr = maPattern.groups()[:2]
-
+        if (self.InstallerType == bosh.InstallerMarker):
+            # Add leading '==' for markers
+            root = '==' + root
         numLen = len(numStr)
         num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
         for archive in self.selected:
             installer = self.data[archive]
             newName = GPath(root)+numStr
+            if (self.InstallerType == bosh.InstallerMarker):
+                # Add trailing '==' for markers
+                newName += '=='
             if(self.InstallerType == bosh.InstallerArchive):
                 newName += archive.ext
             if newName != archive:
                 oldPath = installersDir.join(archive)
                 newPath = installersDir.join(newName)
                 if not newPath.exists():
-                    oldPath.moveTo(newPath)
+                    if (self.InstallerType != bosh.InstallerMarker):
+                        oldPath.moveTo(newPath)
                     self.data.pop(installer)
                     installer.archive = newName.s
                     #--Add the new archive to Bash
                     self.data[newName] = installer
                     #--Update the iniInfos & modInfos for 'installer'
-                    mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                    ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                    for i in mfiles:
-                        bosh.modInfos.table[i]['installer'] = newPath.stail
-                    for i in ifiles:
-                        bosh.iniInfos.table[i]['installer'] = newPath.stail
-                        
+                    if (self.InstallerType != bosh.InstallerMarker):
+                        mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                        ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                        for i in mfiles:
+                            bosh.modInfos.table[i]['installer'] = newPath.stail
+                        for i in ifiles:
+                            bosh.iniInfos.table[i]['installer'] = newPath.stail
             num += 1
             numStr = `num`
             numStr = '0'*(numLen-len(numStr))+numStr
-
+        if (self.InstallerType == bosh.InstallerMarker):
+            # For markers, we're actually making a new one, and deleting the old ones
+            items = self.gTank.GetSelected()
+            for item in items:
+                del self.data[item]
+            #self.data.setChanged()
         #--Refresh UI
         self.data.refresh(what='I')
         modList.RefreshUI()
