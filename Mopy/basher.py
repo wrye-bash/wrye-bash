@@ -6707,27 +6707,31 @@ class Installer_Hide(InstallerLink):
         self.title = _('Hide...')
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingle() and not self.isSingleMarker())
+        for item in window.GetSelected():
+            if isinstance(window.data[item],bosh.InstallerMarker):
+                menuItem.Enable(False)
+                return
+        menuItem.Enable(True)
 
     def Execute(self,event):
         """Handle selection."""
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(r'Hide these files? Note that hidden files are simply moved to the Bash\Hidden subdirectory.')
             if not balt.askYes(self.gTank,message,_('Hide Files')): return
-        curName = self.selected[0]
         destDir = bosh.dirs['modsBash'].join('Hidden')
-        newName = destDir.join(curName)
-        if newName.exists():
-            message = (_('A file named %s already exists in the hidden files directory. Overwrite it?')
-                % (newName.stail,))
-            if not balt.askYes(self.gTank,message,_('Hide Files')): return
-        #Move
-        try:
-            wx.BeginBusyCursor()
-            file = bosh.dirs['installers'].join(curName)
-            file.moveTo(newName)
-        finally:
-            wx.EndBusyCursor()
+        for curName in self.selected:
+            newName = destDir.join(curName)
+            if newName.exists():
+                message = (_('A file named %s already exists in the hidden files directory. Overwrite it?')
+                    % (newName.stail,))
+                if not balt.askYes(self.gTank,message,_('Hide Files')): return
+            #Move
+            try:
+                wx.BeginBusyCursor()
+                file = bosh.dirs['installers'].join(curName)
+                file.moveTo(newName)
+            finally:
+                wx.EndBusyCursor()
         self.data.refresh(what='ION')
         self.gTank.RefreshUI()
 
