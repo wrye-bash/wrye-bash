@@ -10099,19 +10099,19 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
         command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
         try:
-            ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-            values = cPickle.load(ins)
-            setter = object.__setattr__
-            for value,attr in zip(values,self.persistBCF):
-                setter(self,attr,value)
-            if fullLoad:
-                values = cPickle.load(ins)
-                for value,attr in zip(values,self.settings + self.volatile):
-                    setter(self,attr,value)
-            ins.close()
+            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
-            if ins: ins.close()
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
+        ins = cStringIO.StringIO(ins)
+        values = cPickle.load(ins)
+        setter = object.__setattr__
+        for value,attr in zip(values,self.persistBCF):
+            setter(self,attr,value)
+        if fullLoad:
+            values = cPickle.load(ins)
+            for value,attr in zip(values,self.settings + self.volatile):
+                setter(self,attr,value)
+        ins.close()
 
     @staticmethod
     def clearTemp():
@@ -10126,7 +10126,8 @@ class InstallerConverter(object):
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+        ins = cStringIO.StringIO(ins)
         #--Error checking
         reError = re.compile('Error:')
         regMatch = reError.match
@@ -10150,7 +10151,7 @@ class InstallerConverter(object):
             nextStep += step
         #--Move files around and pack them
         self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        self.pack(self.tempDir, destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))#.join("BCF-Temp")
+        self.pack(self.tempDir.join("BCF-Temp"), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
         #--Lastly, apply the settings.
         #--That is done by the calling code, since it requires an InstallerArchive object to work on
 
@@ -10181,9 +10182,10 @@ class InstallerConverter(object):
             else:
                 srcFile = tempJoin("%08X" % srcDir,srcFile)
             destFile = destJoin(destFile)
-            if not srcFile.exists() or destFile == None:
-                raise StateError(_("%s: Missing file:\n%s") % (self.fullPath.stail, destFile))
-                return
+            if not srcFile.exists():
+                raise StateError(_("%s: Missing source file:\n%s") % (self.fullPath.stail, srcFile.s))
+            if destFile == None:
+                raise StateError(_("%s: Unable to determine file destination for:\n%s") % (self.fullPath.stail, srcFile.s))
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by convertedFiles
             #--This allows files to be moved whenever possible, speeding file operations up
@@ -10334,7 +10336,7 @@ class InstallerConverter(object):
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout        
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error checking and progress feedback
         reCompressing = re.compile('Compressing\s+(.+)')
         regMatch = reCompressing.match
@@ -10450,10 +10452,12 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         oldstylefileSizeCrcs = []
-        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
+        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        ins = Popen(r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s), stdout=PIPE, startupinfo=startupinfo).stdout
+        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s)
+        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+        ins = cStringIO.StringIO(ins)
         cumCRC = 0
         for line in ins:
             maList = reList.match(line)
@@ -10468,14 +10472,11 @@ class InstallerArchive(Installer):
                     #  It won't solve problems with non-european characters though.
                    ## try: file = value.decode('cp437').encode('cp1252')
                    ## except: pass
-                    file = value[:-1]
+                    file = value
                 elif key == 'Size': size = int(value)
                 elif key == 'Attributes': isdir = (value[0] == 'D')
                 elif key == 'CRC' and value:
-                    if not value: continue #last check should have caught but it is being FUNKY
-                    try:
-                        crc = int(value,16)
-                    except ValueError: continue # WTF... last check didn't catch it either???!
+                    crc = int(value,16)
                 elif key == 'Method':
                     if file and not isdir and file != archive.s:
                         fileSizeCrcs.append((file,size,crc))
@@ -10500,7 +10501,8 @@ class InstallerArchive(Installer):
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        ins = Popen('"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s), stdout=PIPE, startupinfo=startupinfo).stdout
+        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         reError = re.compile('Error:')
         extracted = []
@@ -10580,12 +10582,13 @@ class InstallerArchive(Installer):
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
         
-        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*)')
+        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = ''
         isdir = False
         apath = dirs['installers'].join(archive)
         command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+        ins = cStringIO.StringIO(ins)
         text = []
         for line in ins:
             maList = reList.match(line)
@@ -10597,7 +10600,7 @@ class InstallerArchive(Installer):
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
                     #--Hopefully this will mostly resolve problem with german umlauts, etc.
                     #  It won't solve problems with non-european characters though.
-                    try: file = value[:-1].decode('cp437').encode('cp1252')
+                    try: file = value.decode('cp437').encode('cp1252')
                     except: pass
                 elif key == 'Attributes':
                     isdir = (value[0] == 'D')
