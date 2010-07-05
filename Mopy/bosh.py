@@ -444,7 +444,7 @@ class ModReader:
         if endPos == -1:
             return (filePos == self.size)
         elif filePos > endPos:
-            raise ModError(self.inName, _('Exceded limit of: ')+recType)
+            raise ModError(self.inName, _('Exceeded limit of: ')+recType)
         else:
             return (filePos == endPos)
 
@@ -24897,7 +24897,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('COBL Main.esm') in loadMods)
+        self.isActive = (GPath('Cobl Main.esm') in loadMods)
         if self.isActive:
             patchFile.indexMGEFs = True
         self.id_ingred = {}
@@ -24929,17 +24929,28 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         #--Book generator
         def getBook(patchFile, objectId):
             fid = MakeShortFid(patchFile._CollectionIndex, (GPath('Cobl Main.esm'),objectId))
-            book = BOOKRecord(patchFile._CollectionIndex, 'COBL Main.esm', fid)
+            book = BOOKRecord(patchFile._CollectionIndex, 'Cobl Main.esm', fid)
             book = book.CopyAsOverride(self.patchFile)
-            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
-            return book
+            if not book:
+                print PrintFormID(fid)
+                for mod in self.patchFile.Collection:
+                    print mod._ModName
+                print book
+                book = BOOKRecord(patchFile._CollectionIndex, 'Cobl Main.esm', fid)
+                print book
+                print book.text
+                print
+                raise StateError(_("Cobl Catalogs: Unable to create book!")) 
+##            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
+            else:
+                return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         for (num,objectId,full,value) in bush.ingred_alchem:
             subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
             book = getBook(patchFile, objectId)
             buff = cStringIO.StringIO()
-            buff.write(book.text)
+            buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
                 for effect in effects[:num]:
@@ -26416,7 +26427,6 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Description': ('text',),
         }
     iiMode = False
-
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcMods,patchFile,loadMods):
