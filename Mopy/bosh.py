@@ -15046,6 +15046,7 @@ class PatchFile(ModFile):
         log.setHeader(_("= Overview"),True)
         log.setHeader(_("=== Date/Time"))
         log('* '+formatDate(time.time()))
+        log(_('* Elapsed Time: ') + 'TIMEPLACEHOLDER')
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
             log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
