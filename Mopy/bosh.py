@@ -11720,7 +11720,7 @@ class CBash_ActorFactions:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.name.s)
+        Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
             if modFile._ModName in self.gotFactions: continue
@@ -11735,7 +11735,7 @@ class CBash_ActorFactions:
         type_id_factions,id_eid = self.type_id_factions,self.id_eid
 
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
@@ -11751,7 +11751,7 @@ class CBash_ActorFactions:
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         changed = {'CREA':0,'NPC_':0}
@@ -11872,7 +11872,7 @@ class ActorLevels:
             progress(0,_('Loading:')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
             obFile = Current.addMod('Oblivion.esm')
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11945,7 +11945,7 @@ class ActorLevels:
             #--Load Mod
             progress(0.25,_('Loading ')+modInfo.name.s)
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             offsetFlag = 0x80
@@ -11997,7 +11997,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
         
             for type,block in modFile.aggregates.iteritems():
@@ -12043,7 +12043,7 @@ class EditorIds:
         else:
             type_id_eid = self.type_id_eid
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
 
             changed = []
@@ -12263,7 +12263,7 @@ class CBash_FactionRelations:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.name.s)
+        Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
             if modFile._ModName in self.gotFactions: continue
@@ -12278,7 +12278,7 @@ class CBash_FactionRelations:
         id_faction_mod,id_eid = self.id_faction_mod,self.id_eid
 
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         for record in modFile.FACT:
@@ -12425,9 +12425,9 @@ class CBash_FidReplacer:
 
         old_count = {}
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         for newId in set(old_new.values()):
-            Current.addMod(newId[0].s)
+            Current.addMod(modInfos[newId[0]].getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         for oldId, newId in old_new.iteritems():
@@ -12550,7 +12550,7 @@ class CBash_FullNames:
         """Imports type_id_name from specified mod."""
         type_id_name = self.type_id_name
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         for type in self.types:
@@ -12567,7 +12567,7 @@ class CBash_FullNames:
         """Exports type_id_name to specified mod."""
         type_id_name = self.type_id_name
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
         
         changed = {}
@@ -12930,7 +12930,7 @@ class CBash_ItemStats:
         """Reads stats from specified mod."""
         type_id_stats = self.type_id_stats
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         for type, attrs in self.type_attrs:
@@ -12943,7 +12943,7 @@ class CBash_ItemStats:
         """Exports type_id_name to specified mod."""
         type_id_stats = self.type_id_stats
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
         
         mod_count = {}
@@ -13125,7 +13125,7 @@ class ItemPrices:
                     stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
 
             types = self.type_stats
@@ -13160,7 +13160,7 @@ class ItemPrices:
             return changed
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             attrs = self.attrs
             changed = {}
@@ -13263,7 +13263,7 @@ class CompleteItemData:
                             self.FGndmodel[longid] = record.femaleWorld.modPath
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
 
             for type,stats in self.type_stats.iteritems():
@@ -13299,7 +13299,7 @@ class CompleteItemData:
         return changed
 ##        else:
 ##            Current = Collection(ModsPath=dirs['mods'].s)
-##            modFile = Current.addMod(modInfo.name.s)
+##            modFile = Current.addMod(modInfo.getPath().stail)
 ##            Current.minimalLoad(LoadMasters=False)
 ##            
 ##            changed = {} #--changed[modName] = numChanged
@@ -13575,7 +13575,7 @@ class ScriptText:
             progress = progress.Destroy()
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             progress = balt.Progress(_("Export Scripts"))
@@ -13628,7 +13628,7 @@ class ScriptText:
             return eids_imported
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.name.s)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
             importscripts = self.importscripts
@@ -13812,7 +13812,7 @@ class CBash_SpellRecords:
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
         for type in self.type_attrs:
@@ -13824,7 +13824,7 @@ class CBash_SpellRecords:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
         
         changed = {'SPEL':0}
@@ -15229,10 +15229,10 @@ class CBash_PatchFile(CBashModFile):
         self.Collection = Collection(ModsPath=dirs['mods'].s)
         for name in self.loadSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addMod(name.s)
+                self.Collection.addMod(modInfos[name].getPath().stail)
         for name in self.mergeSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addMergeMod(name.s)
+                self.Collection.addMergeMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, True)
         CBashModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModName)
@@ -15257,7 +15257,7 @@ class CBash_PatchFile(CBashModFile):
             self.ScanCollection = Collection(ModsPath=dirs['mods'].s)
             for name in self.scanSet:
                 if modInfos[name].mtime < self.patchTime:
-                    self.ScanCollection.addMod(name.s)
+                    self.ScanCollection.addMod(modInfos[name].getPath().stail)
             self.ScanCollection.minimalLoad(LoadMasters=False)
         else:
             self.completeMods = self.allMods
@@ -19014,7 +19014,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         if loadMods:
             Current = Collection(ModsPath=dirs['mods'].s)
             for mod in loadMods:
-                Current.addMod(mod.s)
+                Current.addMod(modInfos[mod].getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             for modFile in Current:
                 for type in self.getTypes():
@@ -19744,7 +19744,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
             types = self.type_attrs.keys()
             Current = Collection(ModsPath=dirs['mods'].s)
             for mod in loadMods:
-                Current.addMod(mod.s)
+                Current.addMod(modInfos[mod].getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             for modFile in Current:
                 for type in types:
