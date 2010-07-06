@@ -25040,7 +25040,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             subProgress(pstate, _("Cataloging Effects...\n%s") % full)
             book = getBook(patchFile,objectId)
             buff = cStringIO.StringIO()
-            buff.write(book.text)
+            buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
                 if effects:
@@ -26521,21 +26521,20 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                         #Using sets would make this clearer, and probably faster (though speed isn't a concern)
                         #So this is a bit convulated, but makes the apply section work without special casing this tag
                         #Hairs should perhaps have it's own patcher, but...
-                        allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[])
-                        hairs = [getattr_deep(record,attr) for attr in self.tag_attrs[bashKey]]
-                        allHairs += [hair for hair in hairs if hair not in allHairs]
+                        allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
+                        allHairs[0] += (hair for hair in record.hairs_long if hair not in allHairs[0])
                     else:                        
                         self.id_tag_values.setdefault(recordId,{})[bashKey] = [getattr_deep(record,attr) for attr in self.tag_attrs[bashKey]]
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_tag_values):
             allAttrs = []
             prevValues = []
             recValues = []
             for bashKey in self.tag_attrs:
-                if bashKey in bashTags and modFile.GName in self.srcMods: continue
                 attrs = self.tag_attrs[bashKey]
                 allAttrs += attrs
                 tagValues = [getattr_deep(record,attr) for attr in attrs]
@@ -26545,7 +26544,6 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in zip(allAttrs, prevValues):
-                        print attr, ":", value
                         setattr_deep(override,attr,value)
                     racesPatched = self.racesPatched
                     racesPatched.add(record.eid)
