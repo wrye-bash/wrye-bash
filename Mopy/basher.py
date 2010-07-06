@@ -4881,6 +4881,8 @@ class PatchDialog(wx.Dialog):
         ###Remove from Bash after CBash integrated
         if not CBash:
             try:
+                from datetime import timedelta
+                timer1 = time.clock()
                 #--Save configs
                 patchConfigs = {'ImportedMods':set()}
                 for patcher in self.patchers:
@@ -4903,10 +4905,13 @@ class PatchDialog(wx.Dialog):
                 modList.RefreshUI(patchName)
                 #--Done
                 progress.Destroy()
+                timer2 = time.clock()
                 #--Readme and log
                 log.setHeader(None)
                 log('{{CSS:wtxt_sand_small.css}}')
                 logValue = log.out.getvalue()
+                timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip('0')
+                logValue = re.sub('TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
                 readme.open('w').write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
