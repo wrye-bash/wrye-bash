@@ -15108,6 +15108,7 @@ class CBash_PatchFile(CBashModFile):
     @staticmethod
     def modIsMergeable(modInfo,progress=None):
         """Returns True or error message indicating whether specified mod is mergeable."""
+        allowMissingMasters = set(['Filter','IIM','InventOnly'])
         reasons = ''
         if reEsmExt.search(modInfo.name.s):
             reasons += _("\n.    Is esm.")
@@ -15121,11 +15122,21 @@ class CBash_PatchFile(CBashModFile):
                 reasons += _("\n.    Has BSA archive.")
                 break
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
+        tags = modInfos[GPath(modInfo.name.s)].getBashTags()
+        if 'NoMerge' in tags: reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
+        if not tags & allowMissingMasters:
+            missingMasters = []
+            for master in modFile.TES4.masters:
+                master = GPath(master)
+                if master not in modInfos:
+                    missingMasters.append(master.s)
+            #--masters not present in mod list?
+            if len(missingMasters):
+                reasons += (_("\n.    Masters missing: \n    * ") + '\n    * '.join(sorted(missingMasters)))
         noTypes = []
         for type in CBash_PatchFile.noMergeTypes:
             if len(getattr(modFile, type, [])):

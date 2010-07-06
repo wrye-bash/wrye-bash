@@ -8719,7 +8719,7 @@ class Mod_MarkMergeable(Link):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         for fileName in map(GPath,self.data):
-            if fileName == 'Oblivion.esm': continue
+            if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
             fileInfo = bosh.modInfos[fileName]
             descTags = fileInfo.getBashTagsDesc()
             if descTags and 'Merge' in descTags:
@@ -8735,16 +8735,20 @@ class Mod_MarkMergeable(Link):
             else:
                 if canMerge == "\n.    Has 'NoMerge' tag.":
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
+                else:
+                    mod_mergeInfo[fileName] = (fileInfo.size,False)
                 no.append("%s:%s" % (fileName.s,canMerge))
         message = ''
         if yes:
-            message += _('=== Mergeable\n* ') + '\n* '.join(x.s for x in yes)
+            message += _('=== Mergeable\n* ') + '\n\n* '.join(x.s for x in yes)
         if yes and no:
             message += '\n\n'
         if no:
-            message += _('=== Not Mergeable\n* ') + '\n* '.join(no)
+            message += _('=== Not Mergeable\n* ') + '\n\n* '.join(no)
         self.window.RefreshUI(yes)
-        balt.showWryeLog(self.window,message,_('Mark Mergeable'),icons=bashBlue)
+        self.window.RefreshUI(no)
+        if message != '':
+            balt.showWryeLog(self.window,message,_('Mark Mergeable'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_CopyToEsmp(Link):
