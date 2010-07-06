@@ -15124,7 +15124,7 @@ class CBash_PatchFile(CBashModFile):
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
         Current = Collection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.name.s)
+        modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
         noTypes = []
         for type in CBash_PatchFile.noMergeTypes:
