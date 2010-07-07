@@ -654,14 +654,18 @@ class BaseRecord(object):
     def ConflictDetails(self, attrs=None):
         conflicting = {}
         attrs = attrs or self.copyattrs
-        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
-        recordMasters = set(recordMod.TES4.masters)
+##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
+        recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
         #sort oldest to newest rather than newest to oldest
-        parentRecords = reversed([parent for parent in self.Conflicts() if parent._ModName in recordMasters])
-        for parentRecord in parentRecords:
-            for attr in attrs:
-                if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
-                    conflicting[attr] = getattr_deep(self,attr)
+        conflicts = self.Conflicts()
+##        parentRecords = reversed([parent for parent in conflicts if parent._ModName in recordMasters])
+        #Less pythonic, but optimized for better speed.
+        #Equivalent to commented out code.
+        conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in reversed([parent for parent in conflicts if parent._ModName in recordMasters]) for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+##        for parentRecord in parentRecords:
+##            for attr in attrs:
+##                if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
+##                    conflicting[attr] = getattr_deep(self,attr)
         return conflicting
     def mergeFilter(self,modSet):
         """This method is called by the bashed patch mod merger. The intention is
