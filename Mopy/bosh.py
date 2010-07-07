@@ -15224,6 +15224,12 @@ class CBash_PatchFile(CBashModFile):
                     filtered.append(record)
                     if doFilter: record.mergeFilter(loadSet)
                     if iiSkipMerge: continue
+                    if hasattr(record, '_parentID'):
+                        if self.HasRecord(record._parentID) is None:
+                            #Copy the winning version of the parent over if it isn't in the patch
+                            parent = self.Collection.LookupRecords(record._parentID)
+                            if parent:
+                                parent[0].CopyAsOverride(self.patchFile)
                     override = record.CopyAsOverride(self)
                     if override:
                         mergeIds.add(override.fid_long)
@@ -26024,7 +26030,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
 class RacePatcher(SpecialPatcher,ListPatcher):
     """Merged leveled lists mod file."""
     name = _('Race Records')
-    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED.")
+    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED.\n\nEven if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
@@ -26903,7 +26909,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
     """Merged leveled lists mod file."""
     name = _('Race Records')
-    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.")
+    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.\n\nEven if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',

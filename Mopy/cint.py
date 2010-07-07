@@ -19007,6 +19007,10 @@ class CBashModFile(object):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
         self.GName = GPath(ModName)
+    def HasRecord(self,recordID):
+        if isinstance(recordID, basestring): TestRecord = GMSTRecord
+        else: TestRecord = BaseRecord
+        return TestRecord(self._CollectionIndex, self._ModName, recordID).fid
     def UpdateReferences(self, origFid, newFid):
         origFid = MakeShortFid(self._CollectionIndex, origFid)
         newFid = MakeShortFid(self._CollectionIndex, newFid)
