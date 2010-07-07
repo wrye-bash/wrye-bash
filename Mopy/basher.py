@@ -2764,10 +2764,10 @@ class InstallersPanel(SashTankPanel):
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
         installer = self.data[self.detailsItem]
+        index = event.GetSelection()
+        self.gSubList.SetSelection(index)
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
-        index = event.GetSelection()
-        self.gSubList.SetSelection(index) 
         self.refreshCurrent(installer)
         
     def SelectionMenu(self,event):
@@ -5089,15 +5089,10 @@ class PatchDialog(wx.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
-            if isinstance(patcher, ListPatcher):
-                if patcher.getName() == 'Leveled Lists': continue
-                for index, item in enumerate(patcher.items):
-                    patcher.gList.Check(index,False)
-                    patcher.configChecks[item] = False
-            elif isinstance(patcher, TweakPatcher):
-                for index, item in enumerate(patcher.tweaks):
-                    patcher.gList.Check(index,False)
-                    item.isEnabled = False
+            if not hasattr(patcher, 'gList'): continue
+            if patcher.getName() == 'Leveled Lists': continue # special case that one.
+            patcher.gList.SetChecked([])
+            patcher.OnListCheck()
         self.gExecute.Enable(False)
         
     #--GUI --------------------------------
@@ -5165,7 +5160,6 @@ class Patcher:
 
     def SelectAll(self,event=None):
         """'Select All' Button was pressed, update all configChecks states."""
-        tocheck = []
         try: items = self.items
         except AttributeError: items = self.tweaks
         for index, item in enumerate(items):
@@ -5439,7 +5433,7 @@ class TweakPatcher(Patcher):
         gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
-        self.gList =wx.CheckListBox(gConfigPanel,-1)
+        self.gList = wx.CheckListBox(gConfigPanel,-1)
         #--Events
         self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
@@ -7673,7 +7667,7 @@ class InstallerConverter_Create(InstallerLink):
             log(_('. Size: %s KB') % formatInteger(converter.fullPath.size/1024))
             log(_('. Remapped: %s file') % formatInteger(len(converter.convertedFiles)) + ('',_('s'))[len(converter.convertedFiles) > 1])
             log.setHeader(_('. Requires: %s file') % formatInteger(len(converter.srcCRCs)) +  ('',_('s'))[len(converter.srcCRCs) > 1])
-            log('  * ' + '\n  * '.join(sorted("(%08X) - %s" % (x, self.data.crc_installer[x].archive) for x in converter.srcCRCs)))
+            log('  * ' + '\n  * '.join(sorted("(%08X) - %s" % (x, self.data.crc_installer[x].archive) for x in converter.srcCRCs if x in self.data.crc_installer)))
             log.setHeader(_('. Options:'))
             log(_('  *  Skip Voices   = %s') % bool(converter.skipVoices))
             log(_('  *  Solid Archive = %s') % bool(converter.isSolid))
