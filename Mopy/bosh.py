@@ -16837,23 +16837,23 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         if record.GName in self.srcMods:
 ##            map(reduce(record.__getattribute__, attr.split('.')))
 ##            self.id_values[record.fid] = map(record.__getattribute__,self.class_attrs[record._Type])
-            self.id_values[record.fid_long] = [getattr_deep(record,attr) for attr in self.class_attrs[record._Type]]
+            self.id_values[record.fid_long] = record.ConflictDetails(self.class_attrs[record._Type])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         recordId = record.fid_long
         if(recordId in self.id_values):
-            if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+           # if self.autoKey in bashTags and modFile.GName in self.srcMods: return
             attrs = self.class_attrs[record._Type]
             prevValues = self.id_values[recordId]
 ##            recValues = map(record.__getattribute__,attrs)
-            recValues = [getattr_deep(record,attr) for attr in attrs]
+            recValues = [getattr_deep(record,attr) for attr in prevValues]
             if recValues != prevValues:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
 ##                    map(override.__setattr__,attrs,prevValues)
-                    for attr, value in zip(attrs, prevValues):
-                        setattr_deep(override,attr,value)
+                    for attr in prevValues:
+                        setattr_deep(override,attr,prevValues[attr])
                     class_mod_count = self.class_mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
