@@ -641,7 +641,7 @@ class WryeParser(ScriptParser.Parser):
                 return self.page
         return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
 
-    def EspmIsInPackage(self, esmp, package):
+    def EspmIsInPackage(self, espm, package):
         package = package.lower()
         espm = espm.lower()
         for i in self.installer.espmMap:
@@ -661,7 +661,7 @@ class WryeParser(ScriptParser.Parser):
             if self.EspmIsInPackage(espm, i):
                 ret.append(i)
         return ret
-    def EspmHasActivePackage(self, esmp):
+    def EspmHasActivePackage(self, espm):
         for i in self.sublist:
             if self.EspmIsInPackage(espm, i):
                 if self.sublist[i]:
