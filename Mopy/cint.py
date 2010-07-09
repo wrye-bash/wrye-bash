@@ -19061,6 +19061,15 @@ class CBashModFile(object):
         if isinstance(recordID, basestring): TestRecord = GMSTRecord
         else: TestRecord = BaseRecord
         return TestRecord(self._CollectionIndex, self._ModName, recordID).fid
+    def IsEmpty(self):
+        return CBash.IsModEmpty(self._CollectionIndex, self._ModName)
+    def GetNewRecordTypes(self):
+        numRecords = CBash.GetNumNewRecordTypes(self._CollectionIndex, self._ModName)
+        if(numRecords > 0):
+            cRecords = (POINTER(c_char * 4) * numRecords)()
+            CBash.GetNewRecordTypes(self._CollectionIndex, self._ModName, cRecords)
+            return [cRecord.contents.value for cRecord in cRecords if cRecord]
+        return []
     def UpdateReferences(self, origFid, newFid):
         origFid = MakeShortFid(self._CollectionIndex, origFid)
         newFid = MakeShortFid(self._CollectionIndex, newFid)
