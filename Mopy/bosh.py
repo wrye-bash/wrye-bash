@@ -8148,9 +8148,9 @@ class ModInfos(FileInfos):
             progress(index,name.s)
             modInfo = self[name]
             if not CBash:
-                canMerge = PatchFile.modIsMergeable(modInfo) == True
+                canMerge = PatchFile.modIsMergeable(modInfo,verbose=False) == True
             else:
-                canMerge = CBash_PatchFile.modIsMergeable(modInfo) == True
+                canMerge = CBash_PatchFile.modIsMergeable(modInfo,verbose=False) == True
             if canMerge:
                 self.mergeable.add(name)
                 name_mergeInfo[name] = (modInfo.size,True)
@@ -14837,33 +14837,43 @@ class PatchFile(ModFile):
         MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil)
 
     @staticmethod
-    def modIsMergeable(modInfo,progress=None):
+    def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
         if reEsmExt.search(modInfo.name.s):
+            if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
+            if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
+
         #--Bsa?
         reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
         for file in modInfos.dir.list():
             if reBsa.match(file.s):
+                if not verbose: return False
                 reasons += _("\n.    Has BSA archive.")
+                break
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags(): reasons += "\n.    Has 'NoMerge' tag."
+        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
+            if not verbose: return False
+            reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
         try:
             modFile.load(True)
         except ModError, error:
+            if not verbose: return False
             reasons += '\n.    ' + str(error)+'.'
         #--Skipped over types?
         if modFile.topsSkipped:
+            if not verbose: return False
             reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(modFile.topsSkipped))+'.')
         #--Empty mod
         if not modFile.tops:
+            if not verbose: return False
             reasons += _("\n.    Empty mod.")
         #--New record
         lenMasters = len(modFile.tes4.masters)
@@ -14871,6 +14881,7 @@ class PatchFile(ModFile):
         for type,block in modFile.tops.iteritems():
             for record in block.getActiveRecords():
                 if record.fid >> 24 >= lenMasters:
+                    if not verbose: return False
                     newblocks.append(type)
                     break
         if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
@@ -15106,61 +15117,69 @@ class CBash_PatchFile(CBashModFile):
 
     #--Class
 ##    noMergeTypes = ('CELL', 'WRLD', 'DIAL', 'INFO', 'ACRE', 'ACHR', 'REFR', 'PGRD','LAND')
-    noMergeTypes = ()
+##    noMergeTypes = ()
     @staticmethod
-    def modIsMergeable(modInfo,progress=None):
+    def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         allowMissingMasters = set(['Filter','IIM','InventOnly'])
         reasons = ''
         if reEsmExt.search(modInfo.name.s):
+            if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
+            if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
         #--Bsa?
         reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
         for file in modInfos.dir.list():
             if reBsa.match(file.s):
+                if not verbose: return False
                 reasons += _("\n.    Has BSA archive.")
                 break
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[GPath(modInfo.name.s)].getBashTags()
-        if 'NoMerge' in tags: reasons += "\n.    Has 'NoMerge' tag."
+        if 'NoMerge' in tags:
+            if not verbose: return False
+            reasons += "\n.    Has 'NoMerge' tag."
         #--Load test
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
-        if not tags & allowMissingMasters:
-            missingMasters = []
-            for master in modFile.TES4.masters:
-                master = GPath(master)
+        missingMasters = []
+        nonActiveMasters = []
+        for master in modFile.TES4.masters:
+            master = GPath(master)
+            if not tags & allowMissingMasters:
                 if master not in modInfos:
+                    if not verbose: return False
                     missingMasters.append(master.s)
-            #--masters not present in mod list?
-            if len(missingMasters):
-                reasons += (_("\n.    Masters missing: \n    * ") + '\n    * '.join(sorted(missingMasters)))
-        noTypes = []
-        for type in CBash_PatchFile.noMergeTypes:
-            if len(getattr(modFile, type, [])):
-                noTypes.append(type)
-        #--Skipped over types?
-        if len(noTypes):
-            reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(noTypes))+'.')
-        isEmpty = True
-        lenMasters = len(modFile.TES4.masters)
-        newblocks = []
-        for type, block in modFile.aggregates.iteritems():
-            for record in block:
-                isEmpty = False
-                if type == 'GMST': break
-                if record.fid >> 24 >= lenMasters:
-                    newblocks.append(type)
-                    break
+                elif not modInfos.isSelected(master):
+                    if not verbose: return False
+                    nonActiveMasters.append(master.s)
+        #--masters not present in mod list?
+        if len(missingMasters):
+            reasons += (_("\n.    Masters missing: \n    * ") + '\n    * '.join(sorted(missingMasters)))
+        if len(nonActiveMasters):
+            reasons += (_("\n.    Masters not active: \n    * ") + '\n    * '.join(sorted(nonActiveMasters)))
+##        noTypes = []
+##        for type in CBash_PatchFile.noMergeTypes:
+##            if len(getattr(modFile, type, [])):
+##                noTypes.append(type)
+##                if not verbose: return False
+##        #--Skipped over types?
+##        if len(noTypes):
+##            reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(noTypes))+'.')
         #--Empty mod
-        if isEmpty:
+        if modFile.IsEmpty():
+            if not verbose: return False
             reasons += _("\n.    Empty mod.")
         #--New record
-        if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
+        else:
+            newblocks = modFile.GetNewRecordTypes()
+            if newblocks:
+                if not verbose: return False
+                reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
         if reasons: return reasons
         return True
 
@@ -15328,6 +15347,7 @@ class CBash_PatchFile(CBashModFile):
                     #The winning record is at position 0, and the last record is the one most overridden
                     if iiFilter:
                         #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
+                        #They're basically a mixture of scanned and merged.
                         #This effectively hides all non-level list records from the other patchers
                         conflicts = [conflict for conflict in record.Conflicts() if conflict.GName not in IIMSet]
                         if len(conflicts) == 1:
