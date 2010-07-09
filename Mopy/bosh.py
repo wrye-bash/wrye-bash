@@ -11106,7 +11106,7 @@ class InstallersData(bolt.TankData, DataDict):
         dataGet = self.data.get
         pendingAdd = pending.add
         for archive in dirs['installers'].list():
-            if archive.lower().startswith(('--','Bash')): continue
+            if archive.s.lower().startswith(('--','bash')): continue
             apath = installersJoin(archive)
             isdir = apath.isdir()
             if isdir: projects.add(archive)
@@ -11155,6 +11155,7 @@ class InstallersData(bolt.TankData, DataDict):
         installersAdd = installers.add
         for item in dirs['installers'].list():
             apath = installersJoin(item)
+            if item.s.lower.startswith(('bash','--')): continue
             if settings['bash.installers.autoRefreshProjects']:
                 if (apath.isdir() and item != 'Bash' and item != dirs['converters'].stail) or (apath.isfile() and item.cext in readExts):
                     installer = dataGet(item)
