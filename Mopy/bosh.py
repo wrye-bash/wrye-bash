@@ -26456,6 +26456,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
     autoKey = set(('R.Relations'))
     iiMode = False
+    allowUnloaded = False
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcMods,patchFile,loadMods):
@@ -26535,6 +26536,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Description': ('text',),
         }
     iiMode = False
+    allowUnloaded = False
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcMods,patchFile,loadMods):
@@ -26597,6 +26599,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     """Merges changes to race spells."""
     autoKey = set(('R.AddSpells', 'R.ChangeSpells'))
     iiMode = False
+    allowUnloaded = False
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcMods,patchFile,loadMods):
@@ -26655,6 +26658,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 ##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
     reX117 = re.compile('^117[a-z]',re.I)
     iiMode = False
+    allowUnloaded = False
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcMods,patchFile,loadMods):
