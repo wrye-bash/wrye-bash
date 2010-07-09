@@ -668,20 +668,26 @@ class BaseRecord(object):
         newFid = MakeShortFid(self._CollectionIndex, newFid)
         if not (origFid or newFid): return 0
         return CBash.UpdateReferences(self._CollectionIndex, self._ModName, self._recordID, origFid, newFid)
-    def Conflicts(self):
-        numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._recordID)
+    def IsWinning(self, ignoreScanned=True):
+        """Returns true if the record is the last to load.
+           If ignoreScanned is True, scanned records will never be considered winning.
+           More efficient than running Conflicts() and checking the first value."""
+        return bool(CBash.IsFIDWinning(self._CollectionIndex, self._ModName, self._recordID, c_int(ignoreScanned)))
+
+    def Conflicts(self, ignoreScanned=True):
+        numRecords = CBash.GetNumFIDConflicts(self._CollectionIndex, self._recordID, c_int(ignoreScanned))
         if(numRecords > 1):
             cModNames = (POINTER(c_char_p) * numRecords)()
-            CBash.GetFIDConflicts(self._CollectionIndex, self._recordID, cModNames)
+            CBash.GetFIDConflicts(self._CollectionIndex, self._recordID, c_int(ignoreScanned), cModNames)
             return [self.__class__(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
-    def ConflictDetails(self, attrs=None):
+    def ConflictDetails(self, attrs=None, ignoreScanned=True):
         conflicting = {}
         attrs = attrs or self.copyattrs
 ##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
         recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
         #sort oldest to newest rather than newest to oldest
-        conflicts = self.Conflicts()
+        conflicts = self.Conflicts(ignoreScanned)
 ##        parentRecords = reversed([parent for parent in conflicts if parent._ModName in recordMasters])
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
@@ -987,11 +993,18 @@ class GMSTRecord(object):
         return 0
     def UpdateReferences(self, origFid, newFid):
         return 0
-    def Conflicts(self):
-        numRecords = CBash.GetNumGMSTConflicts(self._CollectionIndex, self._recordID)
+
+    def IsWinning(self, ignoreScanned=True):
+        """Returns true if the record is the last to load.
+           If ignoreScanned is True, scanned records will never be considered winning.
+           More efficient than running Conflicts() and checking the first value."""
+        return bool(CBash.IsGMSTWinning(self._CollectionIndex, self._ModName, self._recordID, c_int(ignoreScanned)))
+
+    def Conflicts(self, ignoreScanned=True):
+        numRecords = CBash.GetNumGMSTConflicts(self._CollectionIndex, self._recordID, c_int(ignoreScanned))
         if(numRecords > 1):
             cModNames = (POINTER(c_char_p) * numRecords)()
-            CBash.GetGMSTConflicts(self._CollectionIndex, self._recordID, cModNames)
+            CBash.GetGMSTConflicts(self._CollectionIndex, self._recordID, c_int(ignoreScanned), cModNames)
             return [GMSTRecord(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
     def CopyAsOverride(self, targetMod):
@@ -19878,14 +19891,17 @@ class Collection:
         if(CBash.AddMergeMod(self._CollectionIndex, ModName) != -1):
             return CBashModFile(self._CollectionIndex, ModName)
         return None
-
+    def addScanMod(self, ModName):
+        if(CBash.AddScanMod(self._CollectionIndex, ModName) != -1):
+            return CBashModFile(self._CollectionIndex, ModName)
+        return None
     def minimalLoad(self, LoadMasters=False):
         CBash.MinimalLoad(self._CollectionIndex, LoadMasters)
 
     def fullLoad(self, LoadMasters=False):
         CBash.FullLoad(self._CollectionIndex, LoadMasters)
 
-    def LookupRecords(self, recordID):
+    def LookupRecords(self, recordID, ignoreScanned=True):
         if isinstance(recordID, basestring):
             GetNumConflicts = CBash.GetNumGMSTConflicts
             GetConflicts = CBash.GetGMSTConflicts
@@ -19893,10 +19909,10 @@ class Collection:
             GetNumConflicts = CBash.GetNumFIDConflicts
             GetConflicts = CBash.GetFIDConflicts
             recordID = MakeShortFid(self._CollectionIndex,recordID)
-        numRecords = GetNumConflicts(self._CollectionIndex, recordID)
+        numRecords = GetNumConflicts(self._CollectionIndex, recordID, c_int(ignoreScanned))
         if(numRecords > 0):
             cModNames = (POINTER(c_char_p) * numRecords)()
-            GetConflicts(self._CollectionIndex, recordID, cModNames)
+            GetConflicts(self._CollectionIndex, recordID, c_int(ignoreScanned), cModNames)
             testRecord = BaseRecord(self._CollectionIndex, string_at(cModNames[0]), recordID)
             RecordType = type_record[testRecord.recType]
             return [RecordType(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
@@ -19907,7 +19923,7 @@ class Collection:
         if not isinstance(newFid, int): return 0
         count = 0
         for modFile in self:
-            count = count + modFile.UpdateReferences(origFid, newFid)
+            count += modFile.UpdateReferences(origFid, newFid)
         return count
 
     def Unload(self):
@@ -19941,8 +19957,7 @@ class Collection:
         name = CBash.GetModName(self._CollectionIndex, ModIndex)
         if name:
             return CBashModFile(self._CollectionIndex, name)
-        else:
-            raise IndexError
+        raise IndexError
 
     def getChangedMods(self):
         return CBash.GetChangedMods(self._CollectionIndex)
