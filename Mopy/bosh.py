@@ -9612,7 +9612,7 @@ class Installer(object):
     dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
     dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy'))
-    dataDirsMinus = set(('bash','obse','replacers')) #--Will be skipped even if hasExtraData == True.
+    dataDirsMinus = set(('bash','obse','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
     skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
@@ -11106,10 +11106,11 @@ class InstallersData(bolt.TankData, DataDict):
         dataGet = self.data.get
         pendingAdd = pending.add
         for archive in dirs['installers'].list():
+            if archive.lower().startswith(('--','Bash')): continue
             apath = installersJoin(archive)
             isdir = apath.isdir()
             if isdir: projects.add(archive)
-            if (isdir and archive != 'Bash' and archive != dirs['converters'].stail) or archive.cext in readExts:
+            if (isdir and archive != dirs['converters'].stail) or archive.cext in readExts:
                 installer = dataGet(archive)
                 if not installer:
                     pendingAdd(archive)
