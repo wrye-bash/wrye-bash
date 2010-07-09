@@ -6511,6 +6511,19 @@ class Installers_SortStructure(Link):
 class InstallerLink(Link):
     """Common functions for installer links..."""
 
+    def isSingleInstallable(self):
+        if len(self.selected) == 1:
+            installer = self.data[self.selected[0]]
+            if not (isinstance(installer,bosh.InstallerProject) or isinstance(installer,bosh.InstallerArchive)):
+                return False
+            elif installer.type not in (1,2):
+                return False
+            return True
+        return False
+
+    def filterInstallables(self):
+        return [archive for archive in self.selected if archive in self.data and self.data[archive].type in (1,2) and (isinstance(self.data[archive], bosh.InstallerProject) or isinstance(self.data[archive], bosh.InstallerArchive))]
+
     def hasMarker(self):
         if len(self.selected) > 0:
             for i in self.selected:
@@ -6640,12 +6653,14 @@ class Installer_Anneal(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Anneal'))
         menu.AppendItem(menuItem)
+        selected = self.filterInstallables()
+        menuItem.Enable(len(selected))
 
     def Execute(self,event):
         """Handle selection."""
         progress = balt.Progress(_("Annealing..."),'\n'+' '*60)
         try:
-            self.data.anneal(self.selected,progress)
+            self.data.anneal(self.filterInstallables(),progress)
         finally:
             progress.Destroy()
             self.data.refresh(what='NS')
@@ -6841,10 +6856,12 @@ class Installer_HasExtraData(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Has Extra Directories'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingle())
-        if self.isSingle():
+        if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
             menuItem.Check(installer.hasExtraData)
+            menuItem.Enable(True)
+        else:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle selection."""
@@ -6869,6 +6886,8 @@ class Installer_Install(InstallerLink):
         self.title = self.mode_title[self.mode]
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
+        selected = self.filterInstallables()
+        menuItem.Enable(len(selected))
 
     def Execute(self,event):
         """Handle selection."""
@@ -6877,7 +6896,7 @@ class Installer_Install(InstallerLink):
         try:
             last = (self.mode == 'LAST')
             override = (self.mode != 'MISSING')
-            self.data.install(self.selected,progress,last,override)
+            self.data.install(self.filterInstallables(),progress,last,override)
         finally:
             progress.Destroy()
             self.data.refresh(what='N')
@@ -7043,10 +7062,12 @@ class Installer_SkipVoices(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Skip Voices'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingle())
-        if self.isSingle():
+        if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
             menuItem.Check(installer.skipVoices)
+            menuItem.Enable(True)
+        else:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle selection."""
@@ -7063,13 +7084,15 @@ class Installer_Uninstall(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Uninstall'))
         menu.AppendItem(menuItem)
+        selected = self.filterInstallables()
+        menuItem.Enable(len(selected))
 
     def Execute(self,event):
         """Handle selection."""
         dir = self.data.dir
         progress = balt.Progress(_("Uninstalling..."),'\n'+' '*60)
         try:
-            self.data.uninstall(self.selected,progress)
+            self.data.uninstall(self.filterInstallables(),progress)
         finally:
             progress.Destroy()
             self.data.refresh(what='NS')
@@ -7084,9 +7107,7 @@ class Installer_CopyConflicts(InstallerLink):
         self.title = _('Copy Conflicts to Project')
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
-        enabled = False        
-        if self.isSingle(): enabled = True
-        menuItem.Enable(enabled)
+        menuItem.Enable(self.isSingleInstallable())
         
     def Execute(self,event):
         """Handle selection."""
