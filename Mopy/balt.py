@@ -1000,6 +1000,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                  dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
                  fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
         wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
+        ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
             if dndList:
