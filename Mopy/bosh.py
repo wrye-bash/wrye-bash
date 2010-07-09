@@ -15178,7 +15178,6 @@ class CBash_PatchFile(CBashModFile):
         self.unFilteredMods = []
         self.compiledAllMods = []
         self.type_patchers = {}
-        self.type_scanners = {}
         self.indexMGEFs = False
         self.mgef_school = bush.mgef_school.copy()
         self.mgef_name = bush.mgef_name.copy()
@@ -15253,6 +15252,9 @@ class CBash_PatchFile(CBashModFile):
         for name in self.mergeSet:
             if modInfos[name].mtime < self.patchTime:
                 self.Collection.addMergeMod(modInfos[name].getPath().stail)
+        for name in self.scanSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.Collection.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, True)
         CBashModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModName)
@@ -15272,26 +15274,14 @@ class CBash_PatchFile(CBashModFile):
                         self.mgef_school[eid] = record.school
                         self.mgef_name[eid] = full
                     record.UnloadRecord()
-        if self.scanSet:
-            self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
-            self.ScanCollection = Collection(ModsPath=dirs['mods'].s)
-            for name in self.scanSet:
-                if modInfos[name].mtime < self.patchTime:
-                    self.ScanCollection.addMod(modInfos[name].getPath().stail)
-            self.ScanCollection.minimalLoad(LoadMasters=False)
-        else:
-            self.completeMods = self.allMods
+        self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
         type_patchers = self.type_patchers
-        type_scanners = self.type_scanners
+
         progress = progress.setFull(len(self.completeMods) + max(len(type_patchers),1))
         maxVersion = 0
-        self.processed = set()
-        processed = self.processed.add
         for index,modName in enumerate(self.completeMods):
             if modName == self.patchName: continue
             modInfo = modInfos[modName]
-
-            processed(modName)
             bashTags = modInfo.getBashTags()
             isScanned = modName in self.scanSet
             if modName in self.loadMods and 'Filter' in bashTags:
@@ -15300,10 +15290,7 @@ class CBash_PatchFile(CBashModFile):
             doFilter = isMerged and 'Filter' in bashTags
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
             iiMode = isMerged and bool(iiModeSet & bashTags)
-            if isScanned:
-                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modInfo.getPath().stail)
-            else:                
-                modFile = CBashModFile(patchFile._CollectionIndex, modInfo.getPath().stail)
+            modFile = CBashModFile(patchFile._CollectionIndex, modInfo.getPath().stail)
             if isMerged:
                 progress(index,_("%s\nMerging...") % modFile.GName.s)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
@@ -15317,17 +15304,18 @@ class CBash_PatchFile(CBashModFile):
             for type, patchers in type_patchers.iteritems():
                 pstate += 1
                 iiFilter = not (iiMode or type in levelLists)
+                #Filter the used patchers as needed
                 if iiMode:
                     applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode]
                     scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode]
-                    #See if all the patchers were filtered out
-                    if not (applyPatchers or scanPatchers): continue
+                elif isScanned:
+                    applyPatchers = [] #Scanned mods should never be copied directly into the bashed patch.
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded]
                 else:
                     applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply')]
                     scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan')]
-
-                scanners = [scanner.scan for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('scanOrder')) if hasattr(scanner,'scan')]
-                appliers = [scanner.apply for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('editOrder')) if hasattr(scanner,'apply')]
+                #See if all the patchers were filtered out
+                if not (applyPatchers or scanPatchers): continue
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile.GName.s,type))
                 if isMerged and not (iiMode and type not in levelLists):
                     newModName = patchFile._ModName
@@ -15335,41 +15323,26 @@ class CBash_PatchFile(CBashModFile):
                     newModName = modFile._ModName
                 for record in getattr(modFile, type):
                     record._ModName = newModName
-                    if isScanned: #Ugly hack to make unloaded mods follow load order rules on imports
-                        nRecords = self.Collection.LookupRecords(record.fid_long)
-                        #If the record doesn't exist in the real load set, do nothing
-                        if nRecords:
-                            for patcher in scanners:
-                                patcher(modFile, record, bashTags)
-                            #We're only concerned with the winning record
-                            nRecords = nRecords[0]
-                            #If the winning record has already been processed, go back and process it again
-                            if(nRecords.GName in self.processed or nRecords._ModName == patchFile._ModName):
-                                record._CollectionIndex = nRecords._CollectionIndex
-                                record._ModName = nRecords._ModName
-                                record.GName = nRecords.GName
-                                modFile = CBashModFile(record._CollectionIndex, record._ModName)
-                                for patcher in appliers:
-                                    patcher(modFile, record, bashTags)
-                                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modInfo.getPath().stail)
-                    else:
-                        #If conflicts is > 0, it will include all conflicts, even the record that called it
-                        #(i.e. len(conflicts) will never equal 1)
-                        #The winning record is at position 0, and the last record is the one most overridden
-                        conflicts = record.Conflicts()
-                        if iiFilter:
-                            #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
-                            #This effectively hides all non-level list records from the other patchers
-                            conflicts = [conflict for conflict in conflicts if conflict.GName not in IIMSet]
-                            if len(conflicts) == 1:
-                                conflicts = []
+                    #If conflicts is > 0, it will include all conflicts, even the record that called it
+                    #(i.e. len(conflicts) will never equal 1)
+                    #The winning record is at position 0, and the last record is the one most overridden
+                    if iiFilter:
+                        #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
+                        #This effectively hides all non-level list records from the other patchers
+                        conflicts = [conflict for conflict in record.Conflicts() if conflict.GName not in IIMSet]
+                        if len(conflicts) == 1:
+                            conflicts = []
+                        isWinning = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
 ##                        IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
-                        if (not conflicts or conflicts[0]._ModName == record._ModName):
-                            curPatchers = applyPatchers
-                        else:
-                            curPatchers = scanPatchers
-                        for patcher in curPatchers:
-                            patcher(modFile, record, bashTags)
+                    else:
+                        isWinning = record.IsWinning()
+
+                    if isWinning:
+                        curPatchers = applyPatchers
+                    else:
+                        curPatchers = scanPatchers
+                    for patcher in curPatchers:
+                        patcher(modFile, record, bashTags)
                     record.UnloadRecord()
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -15576,7 +15549,7 @@ class CBash_Patcher:
             loadMods = set([mod for mod in srcMods if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
             for type in self.getTypes():
-                self.patchFile.type_scanners.setdefault(type,[]).append(self)
+                self.patchFile.type_patchers.setdefault(type,[]).append(self)
 
     def buildPatchLog(self,log):
         """Write to log."""
@@ -16855,15 +16828,27 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_attr_value.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
+            self.id_attr_value.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_attr_value):
             prev_attr_value = self.id_attr_value[recordId]
-            cur_attr_value = record.ConflictDetails(self.class_attrs[record._Type])
+            cur_attr_value = record.ConflictDetails(self.class_attrs[record._Type], False)
             if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -17290,6 +17275,18 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -18116,6 +18113,18 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         if(record.fid_long in self.id_faction_mod):
             newRelations = set((faction_long,mod) for faction_long,mod in self.id_faction_mod[record.fid_long].iteritems() if faction_long[0] in self.patchFile.allMods)
             curRelations = set(record.relations_list)
@@ -19061,6 +19070,18 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         id_full = self.id_full
         if(recordId in id_full and record.full != id_full[recordId]):
@@ -19219,6 +19240,18 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_face):
             attrs = self.faceData
@@ -19774,6 +19807,18 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         type = record._Type
         id_stats = self.type_id_stats[type]
@@ -19974,6 +20019,18 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_stats):
             prevValues = self.id_stats[recordId]
