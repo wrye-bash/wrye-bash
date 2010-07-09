@@ -663,13 +663,17 @@ def gmstIds(fileName=None):
     maxOld = maxId
     print 'maxId',hex(maxId)
     #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing 
-	# but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
-    for eid in ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal','iAllowAlchemyDuringCombat','iNumberActorsAllowedToFollowPlayer','iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene','fHostileActorExteriorDistance','fHostileActorInteriorDistance','iVampirismAgeOffset']:
+    # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
+    for eid in ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal','iAllowAlchemyDuringCombat','iNumberActorsAllowedToFollowPlayer',
+                'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
+                'fHostileActorExteriorDistance','fHostileActorInteriorDistance','iVampirismAgeOffset','iRemoveExcessDeadCount',
+                'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
+                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
             print '%08X  %08X %s' % (0,maxId,eid)
-			#--Source file
+            #--Source file
     if fileName:
         init(3)
         sorter = lambda a: a.eid
