@@ -50,7 +50,10 @@ class Model(object):
     def __init__(self, CollectionIndex, ModName, recordID, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._listIndex = listIndex
     def get_modPath(self):
@@ -86,7 +89,10 @@ class Item(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -117,7 +123,10 @@ class Condition(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -317,7 +326,10 @@ class Reference(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -354,7 +366,10 @@ class Effect(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -494,7 +509,10 @@ class Faction(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -536,7 +554,10 @@ class Relation(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -622,7 +643,10 @@ class BaseRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
     def LoadRecord(self):
         CBash.LoadRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -823,7 +847,10 @@ class TES4Record(object):
     def __init__(self, CollectionIndex, ModName):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
     def UnloadRecord(self):
         pass
     @property
@@ -946,7 +973,10 @@ class GMSTRecord(object):
     def __init__(self, CollectionIndex, ModName, recordID):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
         self._recordID = recordID
     def UnloadRecord(self):
         pass
@@ -19010,7 +19040,10 @@ class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
         self._ModName = ModName
-        self.GName = GPath(ModName)
+        if ModName[-6:] == '.ghost':
+            self.GName = GPath(ModName[:-6])
+        else:
+            self.GName = GPath(ModName)
     def HasRecord(self,recordID):
         if isinstance(recordID, basestring): TestRecord = GMSTRecord
         else: TestRecord = BaseRecord

@@ -245,7 +245,7 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s','_cs','_csroot','_sroot','_shead','_stail','_ext','_cext','_sbody','_csbody')##,'cachedCRC','cachedatime','cachedctime','cachedsize')
+    __slots__ = ('_s','_cs','_csroot','_sroot','_shead','_stail','_ext','_cext','_sbody','_csbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -414,8 +414,6 @@ class Path(object):
     @property
     def crc(self):
         """Calculates and returns crc value for self."""
-##        if getattr(self,'cachedCRC',None) and (self.cachedatime == self.atime and self.cachedsize == self.size and self.cachedctime == self.ctime):
-##            return self.cachedCRC
         size = self.size
         crc = 0L
         ins = self.open('rb')
@@ -424,10 +422,6 @@ class Path(object):
             crc = crc32(insRead(512),crc)
         ins.close()
         if crc < 0: crc = 4294967296L + crc
-##        self.cachedCRC = crc
-##        self.cachedatime = self.atime
-##        self.cachedsize = self.size
-##        self.cachedctime = self.ctime
         return crc
 
     #--Path stuff -------------------------------------------------------

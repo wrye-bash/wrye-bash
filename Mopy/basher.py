@@ -4942,6 +4942,7 @@ class PatchDialog(wx.Dialog):
             try:
                 from datetime import timedelta
                 timer1 = time.clock()
+                fullName = self.patchInfo.getPath().tail
                 #--Save configs
                 patchConfigs = {'ImportedMods':set()}
                 for patcher in self.patchers:
@@ -4958,7 +4959,7 @@ class PatchDialog(wx.Dialog):
                 #--Save
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.safeCloseSave()
-                patchTime = patchName.mtime
+                patchTime = fullName.mtime
                 patchName.untemp()
                 patchName.mtime = patchTime
                 #--Cleanup

@@ -15246,6 +15246,7 @@ class CBash_PatchFile(CBashModFile):
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])        
 
         self.Collection = Collection(ModsPath=dirs['mods'].s)
+
         for name in self.loadSet:
             if modInfos[name].mtime < self.patchTime:
                 self.Collection.addMod(modInfos[name].getPath().stail)
@@ -15288,8 +15289,10 @@ class CBash_PatchFile(CBashModFile):
         processed = self.processed.add
         for index,modName in enumerate(self.completeMods):
             if modName == self.patchName: continue
+            modInfo = modInfos[modName]
+
             processed(modName)
-            bashTags = modInfos[modName].getBashTags()
+            bashTags = modInfo.getBashTags()
             isScanned = modName in self.scanSet
             if modName in self.loadMods and 'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
@@ -15298,15 +15301,15 @@ class CBash_PatchFile(CBashModFile):
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
             iiMode = isMerged and bool(iiModeSet & bashTags)
             if isScanned:
-                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modName.s)
+                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modInfo.getPath().stail)
             else:                
-                modFile = CBashModFile(patchFile._CollectionIndex, modName.s)
+                modFile = CBashModFile(patchFile._CollectionIndex, modInfo.getPath().stail)
             if isMerged:
-                progress(index,_("%s\nMerging...") % modFile._ModName)
+                progress(index,_("%s\nMerging...") % modFile.GName.s)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
             #--Error checks
             gls = SCPTRecord(modFile._CollectionIndex, modFile._ModName, 0x00025811)
-            if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != 'Oblivion.esm':
+            if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
                 self.compiledAllMods.append(modName)
             pstate = -1
             subProgress = SubProgress(progress,index)
@@ -15325,10 +15328,13 @@ class CBash_PatchFile(CBashModFile):
 
                 scanners = [scanner.scan for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('scanOrder')) if hasattr(scanner,'scan')]
                 appliers = [scanner.apply for scanner in sorted(type_scanners.get(type,[]),key=attrgetter('editOrder')) if hasattr(scanner,'apply')]
-                subProgress(pstate,_("Patching...\n%s::%s") % (modFile._ModName,type))
+                subProgress(pstate,_("Patching...\n%s::%s") % (modFile.GName.s,type))
+                if isMerged and not (iiMode and type not in levelLists):
+                    newModName = patchFile._ModName
+                else:
+                    newModName = modFile._ModName
                 for record in getattr(modFile, type):
-                    if isMerged and not (iiMode and type not in levelLists):
-                        record._ModName = patchFile._ModName
+                    record._ModName = newModName
                     if isScanned: #Ugly hack to make unloaded mods follow load order rules on imports
                         nRecords = self.Collection.LookupRecords(record.fid_long)
                         #If the record doesn't exist in the real load set, do nothing
@@ -15341,12 +15347,11 @@ class CBash_PatchFile(CBashModFile):
                             if(nRecords.GName in self.processed or nRecords._ModName == patchFile._ModName):
                                 record._CollectionIndex = nRecords._CollectionIndex
                                 record._ModName = nRecords._ModName
-##                                record.GName = nRecords.GName
-                                record._recordID = nRecords._recordID
+                                record.GName = nRecords.GName
                                 modFile = CBashModFile(record._CollectionIndex, record._ModName)
                                 for patcher in appliers:
                                     patcher(modFile, record, bashTags)
-                                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modName.s)
+                                modFile = CBashModFile(self.ScanCollection._CollectionIndex, modInfo.getPath().stail)
                     else:
                         #If conflicts is > 0, it will include all conflicts, even the record that called it
                         #(i.e. len(conflicts) will never equal 1)
@@ -15376,7 +15381,7 @@ class CBash_PatchFile(CBashModFile):
         pstate = 0
         for type, patchers in type_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
-            subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile._ModName,type))
+            subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile.GName.s,type))
             pstate = pstate + 1
             for patcher in finishPatchers:
                 patcher(self, subProgress)
@@ -15875,6 +15880,13 @@ class CBash_MultiTweaker(CBash_Patcher):
     editOrder = 20
 
     #--Config Phase -----------------------------------------------------------
+    def initData(self,type_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for tweak in self.enabledTweaks:
+            for type in tweak.getTypes():
+                type_patchers.setdefault(type,[]).append(tweak)
+
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
         config = configs.setdefault(self.__class__.__name__,{})
@@ -19014,6 +19026,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
+        CBash_ImportPatcher.initData(self,type_patchers,progress)
         fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcFiles))
         patchesDir = dirs['patches'].list()
@@ -19024,18 +19037,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
                 fullNames.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
 
-        loadMods = [mod for mod in self.srcFiles if reModExt.search(mod.s) and mod not in self.patchFile.allMods]
-        if loadMods:
-            Current = Collection(ModsPath=dirs['mods'].s)
-            for mod in loadMods:
-                Current.addMod(modInfos[mod].getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-            for modFile in Current:
-                for type in self.getTypes():
-                    for record in getattr(modFile,type):
-                        self.scan(modFile, record, modInfos[modFile.GName].getBashTags())
-            del Current
-
         #--Finish
         id_full = self.id_full
         for type,id_name in fullNames.type_id_name.iteritems():
@@ -19043,9 +19044,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             for fid_long,(eid,name) in id_name.iteritems():
                 if name != 'NO NAME':
                     id_full[fid_long] = name
-
-        for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -19744,6 +19742,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
+        CBash_ImportPatcher.initData(self,type_patchers,progress)
         itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcFiles))
         patchesDir = dirs['patches'].list()
@@ -19752,19 +19751,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                 if srcFile not in patchesDir: continue
                 itemStats.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
-
-        loadMods = [mod for mod in self.srcFiles if reModExt.search(mod.s) and mod not in self.patchFile.allMods]
-        if loadMods:
-            types = self.type_attrs.keys()
-            Current = Collection(ModsPath=dirs['mods'].s)
-            for mod in loadMods:
-                Current.addMod(modInfos[mod].getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-            for modFile in Current:
-                for type in types:
-                    for record in getattr(modFile, type):
-                        self.scan(modFile, record, modInfos[modFile.GName].getBashTags())
-            del Current
 
         #--Finish
         for type,id_stats in itemStats.type_id_stats.iteritems():
@@ -21454,13 +21440,6 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
 
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
-
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -21671,13 +21650,6 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
             tweak.count = 0
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
@@ -22019,13 +21991,6 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
@@ -22986,13 +22951,6 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
             tweak.eid_count = {}
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
@@ -24837,13 +24795,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
-
-    def initData(self,type_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
