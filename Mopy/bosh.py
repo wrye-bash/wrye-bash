@@ -16612,13 +16612,13 @@ class CBash_CellImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_tag_values):
             attrs = []
             prevValues = []
             recValues = []
             for bashKey in self.autoKey:
-                if bashKey in bashTags and modFile.GName in self.srcMods: continue
                 attrs += self.tag_attrs[bashKey]
                 tagValues = map(record.__getattribute__,self.tag_attrs[bashKey])
                 prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
@@ -17096,13 +17096,13 @@ class CBash_ActorImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_tag_values):
             attrs = []
             prevValues = []
             recValues = []
             for bashKey in self.class_tag_attrs[record._Type]:
-                if bashKey in bashTags and modFile.GName in self.srcMods: continue
                 attrs += self.class_tag_attrs[record._Type][bashKey]
                 tagValues = map(record.__getattribute__,self.class_tag_attrs[record._Type][bashKey])
                 prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
@@ -17289,7 +17289,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -17750,7 +17750,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_deathItem and record.deathItem_long != self.id_deathItem[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -17933,7 +17933,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        self.scan(modFile,record,bashTags)
         if(record.fid_long in self.id_factions):
             newFactions = set(self.id_factions[record.fid_long])
             curFactions = set(record.factions_list)
@@ -18311,7 +18311,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_script and record.script_long != self.id_script[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -19060,7 +19060,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         id_full = self.id_full
         if(recordId in id_full and record.full != id_full[recordId]):
@@ -19218,7 +19218,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_face):
             attrs = self.faceData
@@ -19357,7 +19357,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record.ROAD
@@ -19572,7 +19572,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcMods: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_values):
             attrs = self.class_attrs[record._Type]
@@ -19773,7 +19773,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if self.autoKey in bashTags and modFile.GName in self.srcFiles: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         type = record._Type
         id_stats = self.type_id_stats[type]
@@ -19973,7 +19973,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.GName in self.srcFiles: return
+        self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_stats):
             prevValues = self.id_stats[recordId]
