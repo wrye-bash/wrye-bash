@@ -19922,15 +19922,17 @@ class Collection:
         if isinstance(recordID, basestring):
             GetNumConflicts = CBash.GetNumGMSTConflicts
             GetConflicts = CBash.GetGMSTConflicts
+            RecordType = GMSTRecord
         else:
             GetNumConflicts = CBash.GetNumFIDConflicts
             GetConflicts = CBash.GetFIDConflicts
             recordID = MakeShortFid(self._CollectionIndex,recordID)
+            RecordType = BaseRecord
         numRecords = GetNumConflicts(self._CollectionIndex, recordID, c_int(ignoreScanned))
         if(numRecords > 0):
             cModNames = (POINTER(c_char_p) * numRecords)()
             GetConflicts(self._CollectionIndex, recordID, c_int(ignoreScanned), cModNames)
-            testRecord = BaseRecord(self._CollectionIndex, string_at(cModNames[0]), recordID)
+            testRecord = RecordType(self._CollectionIndex, string_at(cModNames[0]), recordID)
             RecordType = type_record[testRecord.recType]
             return [RecordType(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
         return []
