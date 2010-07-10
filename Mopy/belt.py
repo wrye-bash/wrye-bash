@@ -952,8 +952,8 @@ class WryeParser(ScriptParser.Parser):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
             self.error(UNEXPECTED % 'Case')
         case = ' '.join(args)
-        self.PeekFlow().hitCase = True
         if case in self.PeekFlow().values:
+            self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
     def kwdDefault(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
