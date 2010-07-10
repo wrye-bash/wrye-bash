@@ -1,5 +1,4 @@
 # GPL License and Copyright Notice ============================================
-# GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bolt.
 #
 #  Wrye Bolt is free software; you can redistribute it and/or

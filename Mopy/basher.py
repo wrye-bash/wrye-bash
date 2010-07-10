@@ -5812,28 +5812,37 @@ class Files_Unhide(Link):
             srcDir = self.window.data.bashDir.join('Hidden')
             destDir = self.window.data.dir
         elif self.type == 'installer':
+            window = self.gTank
             wildcard = 'Oblivion Mod Archives (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
-            srcPaths = balt.askOpenMulti(self.gTank,_('Unhide files:'),srcDir, '', wildcard)
+            srcPaths = balt.askOpenMulti(window,_('Unhide files:'),srcDir, '.Folder Selection.', wildcard)
         else:
             wildcard = '*.*'
         isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
         if not self.type == 'installer':
-            srcPaths = balt.askOpenMulti(self.window,_('Unhide files:'),srcDir, '', wildcard)
+            window = self.window
+            srcPaths = balt.askOpenMulti(window,_('Unhide files:'),srcDir, '', wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
             if newSrcDir == destDir:
-                balt.showError(self.window,_("You can't unhide files from this directory."))
+                balt.showError(window,_("You can't unhide files from this directory."))
                 return
+            #--Folder selection?
+            if srcFileName.csbody == '.folder selection':
+                if newSrcDir == srcDir:
+                    #--Folder selection on the 'Hidden' folder
+                    return
+                (newSrcDir,srcFileName) = newSrcDir.headTail
+                srcPath = srcPath.head
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists():
-                balt.showWarning(self.window,_("File skipped: %s. File is already present.")
+                balt.showWarning(window,_("File skipped: %s. File is already present.")
                     % (srcFileName.s,))
             #--Move it?
             else:
