@@ -19891,19 +19891,27 @@ class Collection:
         CBash.GetModName.restype = c_char_p
         CBash.ModIsFake.restype = c_uint
 
-    def addMod(self, ModName, CreateIfNotExist=False):
-        if(CBash.AddMod(self._CollectionIndex, ModName, CreateIfNotExist) != -1):
+    def addMod(self, ModName, Merge=False, Scan=False, CreateIfNotExist=False):
+        mergeFlag  = 0x1
+        scanFlag   = 0x2
+        createFlag = 0x4
+        flags = 0
+        if Merge:
+            flags |= mergeFlag
+        elif Scan:
+            flags |= scanFlag
+        elif CreateIfNotExist:
+            flags |= createFlag
+        if(CBash.AddMod(self._CollectionIndex, ModName, flags) != -1):
             return CBashModFile(self._CollectionIndex, ModName)
         return None
 
     def addMergeMod(self, ModName):
-        if(CBash.AddMergeMod(self._CollectionIndex, ModName) != -1):
-            return CBashModFile(self._CollectionIndex, ModName)
-        return None
+        return self.addMod(ModName, Merge=True)
+
     def addScanMod(self, ModName):
-        if(CBash.AddScanMod(self._CollectionIndex, ModName) != -1):
-            return CBashModFile(self._CollectionIndex, ModName)
-        return None
+        return self.addMod(ModName, Scan=True)
+
     def minimalLoad(self, LoadMasters=False):
         CBash.MinimalLoad(self._CollectionIndex, LoadMasters)
 

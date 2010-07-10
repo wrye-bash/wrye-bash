@@ -15275,7 +15275,7 @@ class CBash_PatchFile(CBashModFile):
             if modInfos[name].mtime < self.patchTime:
                 self.Collection.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
-        patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, True)
+        patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, CreateIfNotExist=True)
         CBashModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModName)
         self.Collection.minimalLoad(LoadMasters=True)
 
@@ -15353,7 +15353,6 @@ class CBash_PatchFile(CBashModFile):
                         if len(conflicts) == 1:
                             conflicts = []
                         isWinning = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
-##                        IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                     else:
                         isWinning = record.IsWinning()
 
@@ -22134,6 +22133,9 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
             if not self.eid_count.get(eid,0):
                 self.eid_count[eid] = 1
                 record = patchFile.createGMSTRecord(eid)
+                if not record:
+                    print eid
+                    raise StateError(_("Tweak Settings: Unable to create GMST!")) 
                 record.value = value
             pstate += 1
 
