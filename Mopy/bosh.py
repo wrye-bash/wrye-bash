@@ -15322,7 +15322,7 @@ class CBash_PatchFile(CBashModFile):
             subProgress.setFull(max(len(type_patchers),1))
             for type, patchers in type_patchers.iteritems():
                 pstate += 1
-                iiFilter = not (iiMode or type in levelLists)
+                iiFilter = IIMSet and not (iiMode or type in levelLists)
                 #Filter the used patchers as needed
                 if iiMode:
                     applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode]
@@ -22135,6 +22135,8 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 record = patchFile.createGMSTRecord(eid)
                 if not record:
                     print eid
+                    for conflict in patchFile.Collection.LookupRecords(eid, False):
+                        print conflict._ModName
                     raise StateError(_("Tweak Settings: Unable to create GMST!")) 
                 record.value = value
             pstate += 1
