@@ -15234,14 +15234,14 @@ class CBash_PatchFile(CBashModFile):
         for blockType, block in modFile.aggregates.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
             #--Make sure block type is also in read and write factories
-            filtered = []
+##            filtered = []
             for record in block:
                 conflicts = record.Conflicts()
-                IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
+##                IsNewest = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
                 if record.fid_long == badForm: continue
                 #--Include this record?
-                if IsNewest and (not doFilter or record.fid_long[0] in loadSet):
-                    filtered.append(record)
+                if record.IsWinning() and (not doFilter or record.fid_long[0] in loadSet):
+##                    filtered.append(record)
                     if doFilter: record.mergeFilter(loadSet)
                     if iiSkipMerge: continue
                     if hasattr(record, '_parentID'):
@@ -15310,9 +15310,6 @@ class CBash_PatchFile(CBashModFile):
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
             iiMode = isMerged and bool(iiModeSet & bashTags)
             modFile = CBashModFile(patchFile._CollectionIndex, modInfo.getPath().stail)
-            if isMerged:
-                progress(index,_("%s\nMerging...") % modFile.GName.s)
-                self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
             #--Error checks
             gls = SCPTRecord(modFile._CollectionIndex, modFile._ModName, 0x00025811)
             if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
@@ -15336,12 +15333,12 @@ class CBash_PatchFile(CBashModFile):
                 #See if all the patchers were filtered out
                 if not (applyPatchers or scanPatchers): continue
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile.GName.s,type))
-                if isMerged and not (iiMode and type not in levelLists):
-                    newModName = patchFile._ModName
-                else:
-                    newModName = modFile._ModName
+##                if isMerged and not (iiMode and type not in levelLists):
+##                    newModName = patchFile._ModName
+##                else:
+##                    newModName = modFile._ModName
                 for record in getattr(modFile, type):
-                    record._ModName = newModName
+##                    record._ModName = newModName
                     #If conflicts is > 0, it will include all conflicts, even the record that called it
                     #(i.e. len(conflicts) will never equal 1)
                     #The winning record is at position 0, and the last record is the one most overridden
@@ -15350,9 +15347,9 @@ class CBash_PatchFile(CBashModFile):
                         #They're basically a mixture of scanned and merged.
                         #This effectively hides all non-level list records from the other patchers
                         conflicts = [conflict for conflict in record.Conflicts() if conflict.GName not in IIMSet]
-                        if len(conflicts) == 1:
-                            conflicts = []
-                        isWinning = (len(conflicts) == 0 or conflicts[0]._ModName == record._ModName)
+##                        if len(conflicts) == 1:
+##                            conflicts = []
+                        isWinning = (len(conflicts) < 2 or conflicts[0]._ModName == record._ModName)
                     else:
                         isWinning = record.IsWinning()
 
@@ -15363,6 +15360,9 @@ class CBash_PatchFile(CBashModFile):
                     for patcher in curPatchers:
                         patcher(modFile, record, bashTags)
                     record.UnloadRecord()
+            if isMerged:
+                progress(index,_("%s\nMerging...") % modFile.GName.s)
+                self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
         #Finish the patch
@@ -26533,7 +26533,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                     'tongue.modPath','tongue.modb','tongue.iconPath','tongue.modt_p',),
         'R.Ears': ('maleEars.modPath','maleEars.modb','maleEars.iconPath','maleEars.modt_p',
                     'femaleEars.modPath','femaleEars.modb','femaleEars.iconPath','femaleEars.modt_p',),
-        'R.Head': ('head.modPath','head.modb','head.iconPath','head.modt_p'),
+        'R.Head': ('head.modPath','head.modb','head.iconPath','head.modt_p','fggs_p','fgga_p','fgts_p','snam'),
         'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower','maleAgility','maleSpeed','maleEndurance','malePersonality','maleLuck'),
         'R.Attributes-F': ('femaleStrength','femaleIntelligence','femaleWillpower','femaleAgility','femaleSpeed','femaleEndurance','femalePersonality','femaleLuck'),
         'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
