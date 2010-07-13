@@ -269,76 +269,90 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
     * You can also control if some of the modes show up or not through the bash.ini - by setting  __bShowTes4...__ under __[Tool Options]__
   * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
+  * Tip: If you don't want certain launcher icons to show up you can place a semi-colon ; in the path in the bash.ini after you set up your paths.
+    * Example: sPhotoshopPath=;C:\Program Files\Adobe\Photoshop 7.0\Photoshop.exe
 * __Applications:__
-  * Oblivion (Main Oblivion executable, not the launcher.)
-  * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile=258 | Oblivion Book Creator]]
-  * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]]
-  * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]]
-  * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]]
-  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]]
-  * [[http://www.blender.org | Blender]]
-  * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]]
-  * [[http://www.turbosquid.com/gmax | GMax]]
-  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13577897 | Maya]]
-  * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13567410 | Max]]
-  * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]]
-  * [[http://www.wings3d.com/ | Wings3D]]
-  * [[http://icofx.ro/anifx/index.html | AniFX]]
-  * [[http://www.artweaver.de/ |Artweaver]]
-  * [[http://www.artofillusion.org/ | Art of Illusion]]
-  * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]]
-  * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]]
-  * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]]
-  * [[http://www.gimp.org/downloads/ | GIMP]]
-  * [[http://www.gimpshop.com/ | Gimp Shop]]
-  * [[http://icofx.ro/index.html | IcoFX]]
-  * [[http://www.inkscape.org/ | Inkscape]]
-  * [[http://www.irfanview.com/ | Irfan View]]
-  * [[http://www.getpaint.net/download.html | Paint.NET]]
-  * [[http://www.adobe.com/ | Photoshop]]
-  * [[http://pixelstudiopro.com/ | Pixel Studio Pro]]
-  * [[http://www.pixarra.com/ | Twisted Brush]]
-  * [[http://audacity.sourceforge.net/ | Audacity]]
-  * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]]
-  * [[http://www.fraps.com/download.php | Fraps]]
-  * [[http://www.mediamonkey.com/ | Media Monkey]]
-  * [[http://notepad-plus.sourceforge.net/ | Notepad++]]
-  * [[http://winmerge.org/ | WinMerge]]
-  * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]]
-  * [[http://filezilla-project.org/ | Filezilla]]
-  * [[http://www.egg-of-time.us/portal/index.php?option=com_content&view=article&id=1825 | Egg Translator]]
-  * [[http://www.logitech.com/index.cfm/434/285&cl=za | Logitech G11 Keyboard Profiler]]
+  * Oblivion (Main Oblivion executable, not the launcher.) 16 <img src="images/oblivion16.png" width="16" height="16" border="0"> 32  <img src="images/oblivion32.png" width="32" height="32" border="0">
+  * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]] 16 <img src="images/tescs16.png" width="16" height="16" border="0"> 32  <img src="images/tescs32.png" width="32" height="32" border="0">
+  * __General Tools__
+    * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]] 16 <img src="images/OBMM16.png" width="16" height="16" border="0"> 32 <img src="images/OBMM32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]] 16 <img src="images/ISOBL16.png" width="16" height="16" border="0"> 32  <img src="images/ISOBL32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]] 16 <img src="images/Insanity'sReadmeGenerator16.png" width="16" height="16" border="0"> 32  <img src="images/Insanity'sReadmeGenerator32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]] 16 <img src="images/Insanity'sRNG16.png" width="16" height="16" border="0"> 32  <img src="images/Insanity'sRNG32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]] 16 <img src="images/RandomNPC16.png" width="16" height="16" border="0"> 32  <img src="images/RandomNPC32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]] 16 <img src="images/OblivionFaceExchangerLite16.png" width="16" height="16" border="0"> 32  <img src="images/OblivionFaceExchangerLite32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="images/ModListGenerator16.png" width="16" height="16" border="0"> 32  <img src="images/ModListGenerator32.png" width="32" height="32" border="0">
+    * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile=258 | Oblivion Book Creator]] 16 <img src="images/OblivionBookCreator16.png" width="16" height="16" border="0"> 32  <img src="images/OblivionBookCreator32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]] 16 <img src="images/BSACommander16.png" width="16" height="16" border="0"> 32  <img src="images/BSACommander32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]] 16 <img src="images/tes4files16.png" width="16" height="16" border="0"> 32  <img src="images/tes4files32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]] 16 <img src="images/TES4Gecko16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Gecko32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]] 16 <img src="images/tes4view16.png" width="16" height="16" border="0"> 32  <img src="images/tes4view32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="images/TES4Edit16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Edit32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="images/TES4Trans16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Trans32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="images/Tes4LODGen16.png" width="16" height="16" border="0"> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0">
+  * __Model Tools__
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]] 16 <img src="images/AutoCad16.png" width="16" height="16" border="0"> 32  <img src="images/AutoCad32.png" width="32" height="32" border="0">
+    * [[http://www.blender.org | Blender]] 16 <img src="images/Blender16.png" width="16" height="16" border="0"> 32  <img src="images/Blender32.png" width="32" height="32" border="0">
+    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" border="0"> 32  <img src="images/Dogwaffle32.png" width="32" height="32" border="0">
+    * [[http://www.turbosquid.com/gmax | GMax]] 16 <img src="images/gmax16.png" width="16" height="16" border="0"> 32  <img src="images/gmax32.png" width="32" height="32" border="0">
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13577897 | Maya]] 16 <img src="images/maya16.png" width="16" height="16" border="0"> 32  <img src="images/maya32.png" width="32" height="32" border="0">
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13567410 | 3ds Max]] 16 <img src="images/3dsMax16.png" width="16" height="16" border="0"> 32  <img src="images/3dsMax32.png" width="32" height="32" border="0">
+    * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]] 16 <img src="images/Milkshape3D16.png" width="16" height="16" border="0"> 32  <img src="images/Milkshape3D32.png" width="32" height="32" border="0">
+    * [[http://www.wings3d.com/ | Wings3D]] 16 <img src="images/Wings3D16.png" width="16" height="16" border="0"> 32  <img src="images/Wings3D32.png" width="32" height="32" border="0">
+    * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="images/nifskope16.png" width="16" height="16" border="0"> 32 <img src="images/nifskope32.png" width="32" height="32" border="0"> 
+  * __Texture Tools__
+    * [[http://icofx.ro/anifx/index.html | AniFX]]16 <img src="images/AniFX16.png" width="16" height="16" border="0"> 32  <img src="images/AniFX32.png" width="32" height="32" border="0">
+    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" border="0"> 32  <img src="images/ArtOfIllusion32.png" width="32" height="32" border="0">
+    * [[http://www.artweaver.de/ |Artweaver]] 16 <img src="images/artweaver16.png" width="16" height="16" border="0"> 32  <img src="images/artweaver32.png" width="32" height="32" border="0">
+    * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]] 16 <img src="images/DDSConverter16.png" width="16" height="16" border="0"> 32  <img src="images/DDSConverter32.png" width="32" height="32" border="0">
+    * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]] 16 <img src="images/Genetica16.png" width="16" height="16" border="0"> 32  <img src="images/Genetica32.png" width="32" height="32" border="0">
+    * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]] 16 <img src="images/GeneticaViewer16.png" width="16" height="16" border="0"> 32  <img src="images/GeneticaViewer32.png" width="32" height="32" border="0">
+    * [[http://www.gimp.org/downloads/ | GIMP]] 16 <img src="images/gimp16.png" width="16" height="16" border="0"> 32  <img src="images/gimp32.png" width="32" height="32" border="0">
+    * [[http://www.gimpshop.com/ | Gimp Shop]] 16 <img src="images/GIMPShop16.png" width="16" height="16" border="0"> 32  <img src="images/GIMPShop32.png" width="32" height="32" border="0">
+    * [[http://icofx.ro/index.html | IcoFX]] 16 <img src="images/IcoFX16.png" width="16" height="16" border="0"> 32  <img src="images/IcoFX32.png" width="32" height="32" border="0">
+    * [[http://www.inkscape.org/ | Inkscape]] 16 <img src="images/Inkscape16.png" width="16" height="16" border="0"> 32  <img src="images/Inkscape32.png" width="32" height="32" border="0">
+    * [[http://www.irfanview.com/ | Irfan View]] 16 <img src="images/IrfanView16.png" width="16" height="16" border="0"> 32  <img src="images/IrfanView32.png" width="32" height="32" border="0">
+    * [[http://www.xnview.com/ | XnView]] 16 <img src="images/XnView16.png" width="16" height="16" border="0"> 32 <img src="images/XnView32.png" width="32" height="32" border="0">
+    * [[http://www.getpaint.net/download.html | Paint.NET]] 16 <img src="images/paint.net16.png" width="16" height="16" border="0"> 32  <img src="images/paint.net32.png" width="32" height="32" border="0">
+    * [[http://www.adobe.com/ | Photoshop]] 16 <img src="images/photoshop16.png" width="16" height="16" border="0"> 32  <img src="images/photoshop32.png" width="32" height="32" border="0">
+    * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="images/PixelStudioPro16.png" width="16" height="16" border="0"> 32  <img src="images/PixelStudioPro32.png" width="32" height="32" border="0">
+    * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="images/TwistedBrush16.png" width="16" height="16" border="0"> 32  <img src="images/TwistedBrush32.png" width="32" height="32" border="0">
+  * __Audio Tools__
+    * [[http://audacity.sourceforge.net/ | Audacity]] 16 <img src="images/audacity16.png" width="16" height="16" border="0"> 32  <img src="images/audacity32.png" width="32" height="32" border="0">
+    * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]] 16 <img src="images/ABCAmberAudioConverter16.png" width="16" height="16" border="0"> 32  <img src="images/ABCAmberAudioConverter32.png" width="32" height="32" border="0">
+  * __Misc__
+    * [[http://www.fraps.com/download.php | Fraps]] 16 <img src="images/fraps16.png" width="16" height="16" border="0"> 32  <img src="images/fraps32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]] 16 <img src="images/InteractiveMapofCyrodiil16.png" width="16" height="16" border="0"> 32  <img src="images/InteractiveMapofCyrodiil32.png" width="32" height="32" border="0">
+    * [[http://www.logitech.com/index.cfm/434/285&cl=za | Logitech G11 Keyboard Profiler]] 16 <img src="images/LogitechKeyboard16.png" width="16" height="16" border="0"> 32  <img src="images/LogitechKeyboard32.png" width="32" height="32" border="0">
+    * [[http://www.mediamonkey.com/ | Media Monkey]] 16 <img src="images/MediaMonkey16.png" width="16" height="16" border="0"> 32  <img src="images/MediaMonkey32.png" width="32" height="32" border="0">
+    * [[http://notepad-plus.sourceforge.net/ | Notepad++]] 16 <img src="images/notepad++16.png" width="16" height="16" border="0"> 32  <img src="images/notepad++32.png" width="32" height="32" border="0">
+    * [[http://www.steampowered.com/ | Steam]] 16 <img src="images/Steam16.png" width="16" height="16" border="0"> 32  <img src="images/Steam32.png" width="32" height="32" border="0">
+    * [[http://winmerge.org/ | WinMerge]] 16 <img src="images/WinMerge16.png" width="16" height="16" border="0"> 32  <img src="images/WinMerge32.png" width="32" height="32" border="0">
+    * [[http://freemind.sourceforge.net/wiki/index.php/Main_Page | FreeMind]] 16 <img src="images/FreeMind16.png" width="16" height="16" border="0"> 32 <img src="images/FreeMind32.png" width="32" height="32" border="0">
+    * [[http://filezilla-project.org/ | Filezilla]] 16 <img src="images/FileZilla16.png" width="16" height="16" border="0"> 32  <img src="images/FileZilla32.png" width="32" height="32" border="0">
+    * [[http://www.egg-of-time.us/portal/index.php?option=com_content&view=article&id=1825 | Egg Translator]] 16 <img src="images/EggTranslator16.png" width="16" height="16" border="0"> 32  <img src="images/EggTranslator32.png" width="32" height="32" border="0">
+    * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]] 16 <img src="images/RADVideoTools16.png" width="16" height="16" border="0"> 32  <img src="images/RADVideoTools32.png" width="32" height="32" border="0">
+
   * 18 Custom buttons
+    * <img src="images/Custom116.png" width="16" height="16" border="0"> <img src="images/Custom216.png" width="16" height="16" border="0"> <img src="images/Custom316.png" width="16" height="16" border="0"> <img src="images/Custom416.png" width="16" height="16" border="0"> <img src="images/Custom516.png" width="16" height="16" border="0"> <img src="images/Custom616.png" width="16" height="16" border="0"> <img src="images/Custom716.png" width="16" height="16" border="0"> <img src="images/Custom816.png" width="16" height="16" border="0"> <img src="images/Custom916.png" width="16" height="16" border="0"> <img src="images/Custom1016.png" width="16" height="16" border="0"> <img src="images/Custom1116.png" width="16" height="16" border="0"> <img src="images/Custom1216.png" width="16" height="16" border="0"> <img src="images/Custom1316.png" width="16" height="16" border="0"> <img src="images/Custom1416.png" width="16" height="16" border="0"> <img src="images/Custom1516.png" width="16" height="16" border="0"> <img src="images/Custom1616.png" width="16" height="16" border="0"> <img src="images/Custom1716.png" width="16" height="16" border="0"> <img src="images/Custom1816.png" width="16" height="16" border="0">
+    * <img src="images/Custom132.png" width="32" height="32" border="0"> <img src="images/Custom232.png" width="32" height="32" border="0"> <img src="images/Custom332.png" width="32" height="32" border="0"> <img src="images/Custom432.png" width="32" height="32" border="0"> <img src="images/Custom532.png" width="32" height="32" border="0"> <img src="images/Custom632.png" width="32" height="32" border="0"> <img src="images/Custom732.png" width="32" height="32" border="0"> <img src="images/Custom832.png" width="32" height="32" border="0"> <img src="images/Custom932.png" width="32" height="32" border="0"> <img src="images/Custom1032.png" width="32" height="32" border="0"> <img src="images/Custom1132.png" width="32" height="32" border="0"> <img src="images/Custom1232.png" width="32" height="32" border="0"> <img src="images/Custom1332.png" width="32" height="32" border="0"> <img src="images/Custom1432.png" width="32" height="32" border="0"> <img src="images/Custom1532.png" width="32" height="32" border="0"> <img src="images/Custom1632.png" width="32" height="32" border="0"> <img src="images/Custom1732.png" width="32" height="32" border="0"> <img src="images/Custom1832.png" width="32" height="32" border="0">
     * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
     * You can also set the arguments for any type of Custom button - see ini for full instructions.
 
 === Bash Option Buttons
-* OBSE
+* OBSE 16off <img src="images/checkbox_green_off.png" width="16" height="16" border="0"> 16on <img src="images/checkbox_green_on.png" width="16" height="16" border="0"> 32off <img src="images/checkbox_green_off_32.png" width="32" height="32" border="0"> 32on <img src="images/checkbox_green_on_32.png" width="32" height="32" border="0">
   * When checked this will launch OBSE when either the Oblivion or TESCS buttons are clicked. 
-* Auto-Quit
+* Auto-Quit 16off <img src="images/checkbox_red_off.png" width="16" height="16" border="0"> 16on <img src="images/checkbox_red_x.png" width="16" height="16" border="0"> 32off <img src="images/checkbox_red_off_32.png" width="32" height="32" border="0"> 32on <img src="images/checkbox_red_x_32.png" width="32" height="32" border="0">
   * If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
-* BashMon
+* BashMon 16 <img src="images/bashmon16.png" width="16" height="16" border="0"> 32 <img src="images/bashmon32.png" width="32" height="32" border="0">
   * This launches bashmon.py in a command shell window. This is for use with Breeze582000's Seducers/Succubi mod and Wrye's Morph mod. 
   * For more info, see [[http://forums.bethsoft.com/?showtopic=746499 | [WIPZ] Succubi Race]].
-* Help
+* Help 16 <img src="images/help16.png" width="16" height="16" border="0"> 32 <img src="images/help32.png" width="32" height="32" border="0">
   * Show this help file in the default web browser.
-* Doc Browser
+* Doc Browser 16 <img src="images/DocBrowser16.png" width="16" height="16" border="0"> 32 <img src="images/DocBrowser32.png" width="32" height="32" border="0">
   * Show the [[#|Doc Browser]]. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-* Mod Checker
+* Mod Checker 16 <img src="images/ModChecker16.png" width="16" height="16" border="0"> 32 <img src="images/ModChecker32.png" width="32" height="32" border="0">
   * Show the [[#|Mod Checker]].
 
 == Installers Tab =============================================================
@@ -594,7 +608,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * Go to the Installers tab and activate "BSA Redirection" from the main context menu (right click on the main column header).
 
 == Mods Tab ===================================================================
-<img src="images/WryeBash_01.png" width="685" height="526" border="0" alt="Mods Tab">
+<img src="images/WryeBash_01.png" width="686" height="502" border="0" alt="Mods Tab">
 
 === Mods List
 * __Sorting__ 
@@ -1054,7 +1068,7 @@ Balo provides a default "canonical" set of groups designed to reduce problems du
 * To tag a mod, include the line "Group: [Group Name]" in the description field of the mod. (E.g. "Group: Tweak+1".) The tag must be on a line by itself.
 
 == Bashed Patches =============================================================
-<img src="images/WryeBash_05.png" width="686" height="525" border="0" alt="Bashed Patchers">
+<img src="images/WryeBash_05.png" width="686" height="492" border="0" alt="Bashed Patchers">
 A __Bashed Patch__ is a configurable, custom built patch. The patch can have multiple components, which you can choose and configure as you like. You can also have multiple patches (typically, you would have one patch per major set of load mods).
 
 === Patch Usage
@@ -1598,6 +1612,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 * To show the Doc Browser window, go to the Mods Tab and double click on any mod in the main list.
 
 === Using the Doc Browser
+<img src="images/WryeBash_DocBrowser.png" width="667" height="500" border="0">
 * When you the Doc Browser is showing and you click on the name of a Mod in the Mods Tab, Bash will try to show the document for that mod in the Doc Browser window. If Bash does not know which document to associate with the mod, it will show a blank page.
 * To associate a document with a mod:
   * Select the mod in the Mods Tab.
@@ -1928,7 +1943,7 @@ These are the commands found on context menu for saves...
   * ~~In short, Bash will only import eyes/hair if the eyes/hair come from an esm if the esp already has access (i.e., is dependent on) that esm.~~
  
 == Screenshots Tab ============================================================
-<img src="images/WryeBash_06.jpg" width="685" height="527" border="0" alt="Screenshots Tab">
+<img src="images/WryeBash_06.png" width="686" height="493" border="0" alt="Screenshots Tab">
 This allows you to preview your screenshots. 
 
 === Screenshots Commands
@@ -1975,6 +1990,7 @@ Archive, view, search PM's from the official forum. **Note:** This is fairly new
 * When you select messages, they're actually temporarily written to an html file. You can view this directly, mail it to people, etc. You'll find the temporary file at "My Games\Oblivion\Messages.html"
 
 == People Tab =================================================================
+<img src="images/WryeBash_PeopleTab.png" width="834" height="600" border="0">
 The People tab is a simple database that you can use to keep reminders about various people on the forums. You may find it useful if you're on the forums and want to keep some reminders about various people. (E.g. why you blocked someone, or what awesome mod a person did.)
 
 === General
