@@ -15370,10 +15370,11 @@ class CBash_PatchFile(CBashModFile):
         pstate = 0
         for type, patchers in type_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
-            subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile.GName.s,type))
-            pstate = pstate + 1
-            for patcher in finishPatchers:
-                patcher(self, subProgress)
+            if finishPatchers:
+                subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile.GName.s,type))
+                pstate += 1
+                for patcher in finishPatchers:
+                    patcher(self, subProgress)
         progress(progress.full,_('Patchers applied.'))
         self.ScanCollection = None
 
