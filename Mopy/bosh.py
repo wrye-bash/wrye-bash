@@ -15294,7 +15294,8 @@ class CBash_PatchFile(CBashModFile):
         type_patchers = self.type_patchers
         numFinishers = 0
         for type, patchers in type_patchers.iteritems():
-            numFinishers += len([patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')])
+            if len([patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]):
+            numFinishers += 1
             
         progress = progress.setFull(len(self.completeMods) + max(numFinishers,1))
         maxVersion = 0
