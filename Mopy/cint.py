@@ -19048,7 +19048,8 @@ type_record = dict([('BASE',BaseRecord),('GMST',GMSTRecord),('GLOB',GLOBRecord),
                 ('ROAD',ROADRecord),('DIAL',DIALRecord),('INFO',INFORecord),
                 ('QUST',QUSTRecord),('IDLE',IDLERecord),('PACK',PACKRecord),
                 ('CSTY',CSTYRecord),('LSCR',LSCRRecord),('LVSP',LVSPRecord),
-                ('ANIO',ANIORecord),('WATR',WATRRecord),('EFSH',EFSHRecord)])
+                ('ANIO',ANIORecord),('WATR',WATRRecord),('EFSH',EFSHRecord),
+                (None,None),('',None)])
 class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
@@ -19061,6 +19062,17 @@ class CBashModFile(object):
         if isinstance(recordID, basestring): TestRecord = GMSTRecord
         else: TestRecord = BaseRecord
         return TestRecord(self._CollectionIndex, self._ModName, recordID).fid
+    def LookupRecord(self, recordID):
+        if isinstance(recordID, basestring):
+            RecordType = GMSTRecord
+        else:
+            recordID = MakeShortFid(self._CollectionIndex,recordID)
+            RecordType = BaseRecord
+        testRecord = RecordType(self._CollectionIndex, self._ModName, recordID)
+        RecordType = type_record[testRecord.recType]
+        if RecordType:
+            return RecordType(self._CollectionIndex, self._ModName, recordID)
+        return None
     def IsEmpty(self):
         return CBash.IsModEmpty(self._CollectionIndex, self._ModName)
     def GetNewRecordTypes(self):
