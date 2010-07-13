@@ -11796,7 +11796,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #Max
             App_Button(
                 bosh.tooldirs['MaxPath'],
-                Image(r'images/max'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/3dsMax'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
             App_Button(
@@ -11870,6 +11870,11 @@ def InitStatusBar():
                 bosh.tooldirs['IrfanView'],
                 Image(r'images/IrfanView'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch IrfanView")))
+        BashStatusBar.buttons.append( #XnView
+            App_Button(
+                bosh.tooldirs['XnView'],
+                Image(r'images/XnView'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch XnView")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.tooldirs['PaintNET'],
@@ -11936,6 +11941,11 @@ def InitStatusBar():
             bosh.tooldirs['WinMerge'],
             Image(r'images/WinMerge'+bosh.inisettings['iconSize']+'.png'),
             _("Launch WinMerge")))
+    BashStatusBar.buttons.append( #Freemind
+        App_Button(
+            bosh.tooldirs['FreeMind'],
+            Image(r'images/FreeMind'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch FreeMind")))
     BashStatusBar.buttons.append( #FileZilla
         App_Button(
             bosh.tooldirs['FileZilla'],

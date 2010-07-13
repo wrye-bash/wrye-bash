@@ -11725,11 +11725,11 @@ class CBash_ActorFactions:
         Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
-            if modFile._ModName in self.gotFactions: continue
+            if modFile.GName in self.gotFactions: continue
             for record in modFile.FACT:
                 self.id_eid[record.fid_long] = record.eid
                 record.UnloadRecord()
-            self.gotFactions.add(modFile._ModName)
+            self.gotFactions.add(modFile.GName)
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
@@ -12268,11 +12268,11 @@ class CBash_FactionRelations:
         Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=True)
         for modFile in Current:
-            if modFile._ModName in self.gotFactions: continue
+            if modFile.GName in self.gotFactions: continue
             for record in modFile.FACT:
                 self.id_eid[record.fid_long] = record.eid
                 record.UnloadRecord()
-            self.gotFactions.add(modFile._ModName)
+            self.gotFactions.add(modFile.GName)
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
@@ -26814,9 +26814,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 if not curRightEye or not curLeftEye: continue #--WIPZ race?
                 if reX117.match(race.eid): continue #-- x117 race?
                 if recordId in fixedRaces: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
-                conflicts = race.Conflicts()
                 #IsNewest
-                if(len(conflicts) == 0 or conflicts[0]._ModName == race._ModName):
+                if race.IsWinning():
                     raceChanged = False
                     try:
                         curRightEye = curRightEye.lower()
@@ -26912,9 +26911,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
                 raceId = npc.race_long
                 if raceId not in playableRaces: continue
-                conflicts = npc.Conflicts()
                 #IsNewest
-                if(len(conflicts) == 0 or conflicts[0]._ModName == npc._ModName):
+                if npc.IsWinning():
                     npcChanged = False
                     raceEyes = defaultEyes.get(raceId)
                     eye = npc.eye_long
@@ -27314,7 +27312,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                     goodAppend(entry)
                 else:
                     entryRecord = entryRecords[0]
-                    badAdd((entryRecord.eid,entryId,entryRecord._ModName,entryRecord.recType))
+                    badAdd((entryRecord.eid,entryId,entryRecord.GName,entryRecord.recType))
                     entryRecord.UnloadRecord()
 
         if badEntries:
@@ -27341,7 +27339,11 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                     log('    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
                         longId = MakeLongFid(self.patchFile._CollectionIndex, entry[1])
-                        log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],entry[2] or longId[0].s,entry[3]))
+                        if entry[2]:
+                            modName = entry[2].s
+                        else:
+                            modName = longId[0].s
+                        log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
         self.mod_type_id_badEntries = {}
 # Initialization --------------------------------------------------------------
 def initDirs(personal='',localAppData='',oblivionPath=''):      
@@ -27454,7 +27456,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
     tooldirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
     tooldirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
-    tooldirs['MaxPath'] = GPath('C:\something\dunnothedefaultpath.exe')
+    tooldirs['MaxPath'] = GPath('C:\Program Files\Autodesk\3ds Max 2010\3dsmax.exe')
     tooldirs['MayaPath'] = GPath('C:\something\dunnothedefaultpath.exe')
     tooldirs['PhotoshopPath'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
     tooldirs['GIMP'] = GPath('C:\something\dunnothedefaultpath.exe')
@@ -27485,10 +27487,12 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['AutoCad'] = GPath(r'C:\Program Files\Autodesk Architectural Desktop 3\acad.exe')
     tooldirs['Genetica'] = GPath(r'CC:\Program Files\Spiral Graphics\Genetica 3.5\Genetica.exe')
     tooldirs['IrfanView'] = GPath(r'C:\Program Files\IrfanView\i_view32.exe')
+    tooldirs['XnView'] = GPath(r'C:\Program Files\XnView\xnview.exe')
     tooldirs['Steam'] = GPath(r'C:\Program Files\Steam\steam.exe')
     tooldirs['IcoFX'] = GPath(r'C:\Program Files\IcoFX 1.6\IcoFX.exe')
     tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
     tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
+    tooldirs['FreeMind'] = GPath(r'C:\Program Files\FreeMind\Freemind.exe')
     tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
     tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')
     tooldirs['FileZilla'] = GPath(r'C:\Program Files\FileZilla FTP Client\filezilla.exe')    
