@@ -9034,7 +9034,7 @@ class ConfigHelpers:
             mod = None
             reFcomSwitch = re.compile('^[<>]')
             reComment = re.compile(r'^\\.*')
-            reMod = re.compile(r'(\w.*?\.es[pm])',re.I)
+            reMod = re.compile(r'(^[[\w!].*?\.es[pm]$)',re.I)
             reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
             for line in ins:
                 line = reFcomSwitch.sub('',line)
@@ -16864,10 +16864,14 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_attr_value):
+            if not self.id_attr_value[recordId]: return #otherwise extra unnecesary steps
             prev_attr_value = self.id_attr_value[recordId]
-            cur_attr_value = record.ConflictDetails(self.class_attrs[record._Type], False)
+            if record.Conflicts():
+                last_active_record = record.Conflicts()[0]
+            else: last_active_record = record
+            cur_attr_value = dict((attr,getattr_deep(last_active_record,attr)) for attr in prev_attr_value) 
             if cur_attr_value != prev_attr_value:
-                override = record.CopyAsOverride(self.patchFile)
+                override = last_active_record.CopyAsOverride(self.patchFile) 
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr_deep(override,attr,value)
@@ -17084,7 +17088,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 }
         
-
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -17094,25 +17097,32 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         if record.GName in self.srcMods:
             for bashKey in self.class_tag_attrs[record._Type]:
                 if bashKey in bashTags:
-                    self.id_tag_values.setdefault(record.fid_long,{})[bashKey] = map(record.__getattribute__,self.class_tag_attrs[record._Type][bashKey])
+                    self.id_tag_values.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.class_tag_attrs[record._Type][bashKey], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_tag_values):
-            attrs = []
-            prevValues = []
-            recValues = []
-            for bashKey in self.class_tag_attrs[record._Type]:
-                attrs += self.class_tag_attrs[record._Type][bashKey]
-                tagValues = map(record.__getattribute__,self.class_tag_attrs[record._Type][bashKey])
-                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
-                recValues += tagValues
+##            attrs = []
+##            prevValues = []
+##            recValues = []
+##            for bashKey in self.class_tag_attrs[record._Type]:
+##                attrs += self.class_tag_attrs[record._Type][bashKey]
+##                tagValues = map(record.__getattribute__,self.class_tag_attrs[record._Type][bashKey])
+##                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
+##                recValues += tagValues
+            if not self.id_tag_values[recordId]: return
+            if record.Conflicts():
+                last_active_record = record.Conflicts()[0]
+            else: last_active_record = record
+            prevValues = self.id_tag_values[recordId]
+            recValues = dict((attr,getattr_deep(last_active_record,attr)) for attr in prevValues)
             if recValues != prevValues:
-                override = record.CopyAsOverride(self.patchFile)
+                override = last_active_record.CopyAsOverride(self.patchFile)
                 if override:
-                    map(override.__setattr__,attrs,prevValues)
+                    for attr, value in prevValues.iteritems():
+                        setattr_deep(override,attr,value)
                     class_mod_count = self.class_mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
