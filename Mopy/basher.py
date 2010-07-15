@@ -9435,6 +9435,7 @@ class Mod_Patch_Update(Link):
 
     def Execute(self,event):
         """Handle activation event."""
+        wx.BeginBusyCursor() # just to show users that it hasn't stalled but is doing stuff.
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
@@ -9442,7 +9443,7 @@ class Mod_Patch_Update(Link):
             return
         if not CBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
-        else:
+        else:      
             bosh.CBash_PatchFile.patchTime = fileInfo.mtime
             nullProgress = bolt.Progress()        
             bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
@@ -9457,6 +9458,7 @@ class Mod_Patch_Update(Link):
         if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
         if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
         if noMerge: message += _("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s") % ('\n* '.join(x.s for x in noMerge)) + '\n\n'
+        wx.EndBusyCursor()
         if message:
             message += 'Automatically deactivate those mods now?'
             if balt.showLog(self.window,message,_('Deactivate Suggested Mods?'),icons=bashBlue,question=True):
