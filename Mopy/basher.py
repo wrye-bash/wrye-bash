@@ -5300,7 +5300,7 @@ class ListPatcher(Patcher):
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
-        else: gSelectSizer = None 
+        else: gSelectSizer = None
         #--Init GUI
         self.SetItems(self.configItems)
         #--Layout
@@ -5455,11 +5455,12 @@ class TweakPatcher(Patcher):
         self.SetItems()
         #--Layout
         gSizer = vSizer(
-            (gText,), gSelectSizer,
-            #(hsbSizer((gConfigPanel,-1,self.__class__.listLabel),
-                #((4,0),0,wx.EXPAND),
+            (gText,),
+            (hsbSizer((gConfigPanel,-1,self.__class__.listLabel),
+                ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
-                #),1,wx.EXPAND|wx.TOP,4),
+                gSelectSizer,
+                ),1,wx.EXPAND|wx.TOP,4),
             )
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
