@@ -287,7 +287,7 @@ null4 = null1*4
 reGroup = re.compile(r'^Group: *(.*)',re.M)
 reRequires = re.compile(r'^Requires: *(.*)',re.M)
 reReqItem = re.compile(r'^([a-zA-Z]+) *([0-9]*\.?[0-9]*)$')
-reVersion = re.compile(r'^(Version:?) *([-0-9a-zA-Z\.]*\+?)',re.M)
+reVersion = re.compile(r'^(version[:\.]*|ver[:\.]*|rev[:\.]*) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I)
 
 #--Mod Extensions
 reComment = re.compile('#.*')
@@ -16866,12 +16866,9 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         if(recordId in self.id_attr_value):
             if not self.id_attr_value[recordId]: return #otherwise extra unnecesary steps
             prev_attr_value = self.id_attr_value[recordId]
-            if record.Conflicts():
-                last_active_record = record.Conflicts()[0]
-            else: last_active_record = record
-            cur_attr_value = dict((attr,getattr_deep(last_active_record,attr)) for attr in prev_attr_value) 
+            cur_attr_value = dict((attr,getattr_deep(record,attr)) for attr in prev_attr_value) 
             if cur_attr_value != prev_attr_value:
-                override = last_active_record.CopyAsOverride(self.patchFile) 
+                override = record.CopyAsOverride(self.patchFile) 
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr_deep(override,attr,value)
@@ -16886,6 +16883,9 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         #--Log
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -17073,7 +17073,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                                 'IsNoPersuasion','IsCanCorpseCheck'),
                 'NPC.Class': ('iclass_long',),
                 'Actors.CombatStyle': ('combatStyle_long',),
-                'Creatures.Blood': (),
                 }
         class_tag_attrs['CREA'] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -17083,7 +17082,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                                 'IsWeaponAndShield','IsRespawn','IsSwims','IsFlies','IsWalks','IsPCLevelOffset',
                                 'IsNoLowLevel','IsNoBloodSpray','IsNoBloodDecal','IsNoHead','IsNoRightArm',
                                 'IsNoLeftArm','IsNoCombatInWater','IsNoShadow','IsNoCorpseCheck'),
-                'NPC.Class': (),
                 'Actors.CombatStyle': ('combatStyle_long',),
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 }
@@ -17104,22 +17102,11 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         self.scan(modFile,record,bashTags)
         recordId = record.fid_long
         if(recordId in self.id_tag_values):
-##            attrs = []
-##            prevValues = []
-##            recValues = []
-##            for bashKey in self.class_tag_attrs[record._Type]:
-##                attrs += self.class_tag_attrs[record._Type][bashKey]
-##                tagValues = map(record.__getattribute__,self.class_tag_attrs[record._Type][bashKey])
-##                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
-##                recValues += tagValues
             if not self.id_tag_values[recordId]: return
-            if record.Conflicts():
-                last_active_record = record.Conflicts()[0]
-            else: last_active_record = record
             prevValues = self.id_tag_values[recordId]
-            recValues = dict((attr,getattr_deep(last_active_record,attr)) for attr in prevValues)
+            recValues = dict((attr,getattr_deep(record,attr)) for attr in prevValues)
             if recValues != prevValues:
-                override = last_active_record.CopyAsOverride(self.patchFile)
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prevValues.iteritems():
                         setattr_deep(override,attr,value)
@@ -17134,6 +17121,9 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         #--Log
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
