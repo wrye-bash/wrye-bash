@@ -5,7 +5,9 @@ try:
     from bolt import GPath
     import bush
 except:
-    pass
+    def GPath(obj):
+        return obj
+
 if(exists(".\\CBash.dll")):
     CBash = CDLL("CBash.dll")
 else:
