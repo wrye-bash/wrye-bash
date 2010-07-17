@@ -2433,6 +2433,13 @@ class InstallersList(balt.Tank):
         else:
             event.Skip()
 
+    def OnDClick(self,event):
+        """Double click, open the installer."""
+        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        if hitItem < 0: return
+        path = self.data.dir.join(self.GetItem(hitItem))
+        if path.exists(): path.start()
+
     def OnKeyUp(self,event):
         """Char event: select all items"""
         ##Ctrl+A - select all

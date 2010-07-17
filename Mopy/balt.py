@@ -1148,6 +1148,7 @@ class Tank(wx.Panel):
         gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         gList.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.DoItemMenu)
         gList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.OnItemSelected)
+        gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         #--Events: Columns
         gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
         gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
@@ -1396,6 +1397,10 @@ class Tank(wx.Panel):
     def OnLeftDown(self,event):
         """Left mouse button was pressed."""
         #self.hitTest = self.gList.HitTest((event.GetX(),event.GetY()))
+        event.Skip()
+
+    def OnDClick(self,event):
+        """Left mouse double click."""
         event.Skip()
 
     def OnColumnClick(self, event):
