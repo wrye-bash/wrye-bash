@@ -8194,66 +8194,66 @@ class INFORecord(BaseRecord):
             self._listIndex = listIndex
         def get_emotionType(self):
             CBash.ReadFIDListField.restype = POINTER(c_uint)
-            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 1)
+            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 1)
             if(retValue): return retValue.contents.value
             return None
         def set_emotionType(self, nValue):
-            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 1)
-            else: CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 1, nValue)
+            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 1)
+            else: CBash.SetFIDListFieldUI(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 1, nValue)
         emotionType = property(get_emotionType, set_emotionType)
         def get_emotionValue(self):
             CBash.ReadFIDListField.restype = POINTER(c_int)
-            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 2)
+            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 2)
             if(retValue): return retValue.contents.value
             return None
         def set_emotionValue(self, nValue):
-            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 2)
-            else: CBash.SetFIDListFieldI(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 2, nValue)
+            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 2)
+            else: CBash.SetFIDListFieldI(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 2, nValue)
         emotionValue = property(get_emotionValue, set_emotionValue)
         def get_unused1(self):
-            numRecords = CBash.GetFIDListArraySize(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 3)
+            numRecords = CBash.GetFIDListArraySize(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 3)
             if(numRecords > 0):
                 cRecords = POINTER(c_ubyte * numRecords)()
-                CBash.GetFIDListArray(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 3, byref(cRecords))
+                CBash.GetFIDListArray(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 3, byref(cRecords))
                 return [cRecords.contents[x] for x in range(0, numRecords)]
             return []
         def set_unused1(self, nValue):
-            if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 3)
-            else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 3, nValue)
+            if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 3)
+            else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 3, nValue)
         unused1 = property(get_unused1, set_unused1)
         def get_responseNum(self):
             CBash.ReadFIDListField.restype = POINTER(c_ubyte)
-            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 4)
+            retValue = CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 4)
             if(retValue): return retValue.contents.value
             return None
         def set_responseNum(self, nValue):
-            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 4)
-            else: CBash.SetFIDListFieldUC(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 4, nValue)
+            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 4)
+            else: CBash.SetFIDListFieldUC(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 4, nValue)
         responseNum = property(get_responseNum, set_responseNum)
         def get_unused2(self):
-            numRecords = CBash.GetFIDListArraySize(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5)
+            numRecords = CBash.GetFIDListArraySize(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 5)
             if(numRecords > 0):
                 cRecords = POINTER(c_ubyte * numRecords)()
-                CBash.GetFIDListArray(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5, byref(cRecords))
+                CBash.GetFIDListArray(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 5, byref(cRecords))
                 return [cRecords.contents[x] for x in range(0, numRecords)]
             return []
         def set_unused2(self, nValue):
-            if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5)
-            else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 5, nValue)
+            if nValue is None or not len(nValue): CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 5)
+            else: CBash.SetFIDListFieldR(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 5, nValue)
         unused2 = property(get_unused2, set_unused2)
         def get_responseText(self):
             CBash.ReadFIDListField.restype = c_char_p
-            return CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 6)
+            return CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 6)
         def set_responseText(self, nValue):
-            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 6)
-            else: CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 6, nValue)
+            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 6)
+            else: CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 6, nValue)
         responseText = property(get_responseText, set_responseText)
         def get_actorNotes(self):
             CBash.ReadFIDListField.restype = c_char_p
-            return CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 7)
+            return CBash.ReadFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 7)
         def set_actorNotes(self, nValue):
-            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 7)
-            else: CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, 13, self._listIndex, 7, nValue)
+            if nValue is None: CBash.DeleteFIDListField(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 7)
+            else: CBash.SetFIDListFieldStr(self._CollectionIndex, self._ModName, self._recordID, 12, self._listIndex, 7, nValue)
         actorNotes = property(get_actorNotes, set_actorNotes)
         def get_IsNeutral(self):
             return (self.emotionType == 0)
@@ -8298,7 +8298,7 @@ class INFORecord(BaseRecord):
             elif(self.get_IsSurprise()): self.IsNeutral = True
         IsSurprise = property(get_IsSurprise, set_IsSurprise)
     def newResponsesElement(self):
-        listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 13)
+        listIndex = CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 12)
         if(listIndex == -1): return None
         return self.Response(self._CollectionIndex, self._ModName, self._recordID, listIndex)
     def newConditionsElement(self):
@@ -8310,13 +8310,13 @@ class INFORecord(BaseRecord):
         if(listIndex == -1): return None
         return Reference(self._CollectionIndex, self._ModName, self._recordID, 24, listIndex)
     def get_dialType(self):
-        CBash.ReadFIDField.restype = POINTER(c_ubyte)
+        CBash.ReadFIDField.restype = POINTER(c_ushort)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 6)
         if(retValue): return retValue.contents.value
         return None
     def set_dialType(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 6)
-        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 6, c_ubyte(nValue))
+        else: CBash.SetFIDFieldUS(self._CollectionIndex, self._ModName, self._recordID, 6, c_ushort(nValue))
     dialType = property(get_dialType, set_dialType)
     def get_flags(self):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
@@ -8327,25 +8327,14 @@ class INFORecord(BaseRecord):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 7)
         else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 7, c_ubyte(nValue))
     flags = property(get_flags, set_flags)
-    def get_unused1(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 8)
-        if(numRecords > 0):
-            cRecords = POINTER(c_ubyte * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 8, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
-        return []
-    def set_unused1(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
-        else: CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 8, struct.pack('B', *nValue), 1)
-    unused1 = property(get_unused1, set_unused1)
     def get_quest(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
         if(retValue): return retValue.contents.value
         return None
     def set_quest(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
-        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 9, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 8)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 8, nValue)
     quest = property(get_quest, set_quest)
     def get_quest_long(self):
         return MakeLongFid(self._CollectionIndex,self.quest)
@@ -8354,12 +8343,12 @@ class INFORecord(BaseRecord):
     quest_long = property(get_quest_long, set_quest_long)
     def get_topic(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
         if(retValue): return retValue.contents.value
         return None
     def set_topic(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
-        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 10, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 9)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 9, nValue)
     topic = property(get_topic, set_topic)
     def get_topic_long(self):
         return MakeLongFid(self._CollectionIndex,self.topic)
@@ -8368,12 +8357,12 @@ class INFORecord(BaseRecord):
     topic_long = property(get_topic_long, set_topic_long)
     def get_prevInfo(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
         if(retValue): return retValue.contents.value
         return None
     def set_prevInfo(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
-        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 11, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 10, nValue)
     prevInfo = property(get_prevInfo, set_prevInfo)
     def get_prevInfo_long(self):
         return MakeLongFid(self._CollectionIndex,self.prevInfo)
@@ -8381,18 +8370,18 @@ class INFORecord(BaseRecord):
         self.prevInfo = MakeShortFid(self._CollectionIndex, nValue)
     prevInfo_long = property(get_prevInfo_long, set_prevInfo_long)
     def get_addTopics(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 12)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 11)
         if(numRecords > 0):
             cRecords = (POINTER(c_uint) * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 12, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 11, byref(cRecords))
             return [cRecords[x].contents.value for x in range(0, numRecords)]
         return []
     def set_addTopics(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 12)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
         else:
             length = len(nValue)
             cRecords = (c_uint * length)(*nValue)
-            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 12, cRecords, length)
+            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 11, cRecords, length)
     addTopics = property(get_addTopics, set_addTopics)
     def get_addTopics_long(self):
         return [MakeLongFid(self._CollectionIndex,fid) for fid in self.addTopics]
@@ -8400,22 +8389,22 @@ class INFORecord(BaseRecord):
         self.addTopics = [MakeShortFid(self._CollectionIndex,fid) for fid in nValue]
     addTopics_long = property(get_addTopics_long, set_addTopics_long)
     def get_responses(self):
-        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 13)
+        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 12)
         if(numRecords > 0): return [self.Response(self._CollectionIndex, self._ModName, self._recordID, x) for x in range(0, numRecords)]
         return []
     def set_responses(self, nResponses):
-        if nResponses is None or not len(nResponses): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
+        if nResponses is None or not len(nResponses): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 12)
         else:
-            diffLength = len(nResponses) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 13)
+            diffLength = len(nResponses) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 12)
             if isinstance(nResponses[0], tuple):
                 nValues = nResponses
             else:
                 nValues = [(nResponse.emotionType, nResponse.emotionValue, nResponse.unused1, nResponse.responseNum, nResponse.unused2, nResponse.responseText, nResponse.actorNotes) for nResponse in nResponses]
             while(diffLength < 0):
-                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 13)
+                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 12)
                 diffLength += 1
             while(diffLength > 0):
-                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 13)
+                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 12)
                 diffLength -= 1
             for oResponse, nValue in zip(self.responses, nValues):
                 oResponse.emotionType, oResponse.emotionValue, oResponse.unused1, oResponse.responseNum, oResponse.unused2, oResponse.responseText, oResponse.actorNotes = nValue
@@ -8425,23 +8414,23 @@ class INFORecord(BaseRecord):
                  response.responseNum, None, response.responseText, response.actorNotes) for response in self.responses]
     responses_list = property(get_responses_list, set_responses)
     def get_conditions(self):
-        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 14)
-        if(numRecords > 0): return [Condition(self._CollectionIndex, self._ModName, self._recordID, 14, x) for x in range(0, numRecords)]
+        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 13)
+        if(numRecords > 0): return [Condition(self._CollectionIndex, self._ModName, self._recordID, 13, x) for x in range(0, numRecords)]
         return []
     def set_conditions(self, nConditions):
-        if nConditions is None or not len(nConditions): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
+        if nConditions is None or not len(nConditions): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
         else:
-            diffLength = len(nConditions) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 14)
+            diffLength = len(nConditions) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 13)
             if isinstance(nConditions[0], tuple):
                 nValues = nConditions
             else:
                 nValues = [(nCondition.operType, nCondition.unused1, nCondition.compValue, nCondition.ifunc,
                             nCondition.param1_long, nCondition.param2_long, nCondition.unused2) for nCondition in nConditions]
             while(diffLength < 0):
-                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 14)
+                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 13)
                 diffLength += 1
             while(diffLength > 0):
-                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 14)
+                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 13)
                 diffLength -= 1
             for oCondition, nValue in zip(self.conditions, nValues):
                 oCondition.operType, oCondition.unused1, oCondition.compValue, oCondition.ifunc, oCondition.param1_long, oCondition.param2_long, oCondition.unused2 = nValue
@@ -8450,18 +8439,18 @@ class INFORecord(BaseRecord):
         return [(condition.operType, None, condition.compValue, condition.ifunc, condition.param1_long, condition.param2_long, None) for condition in self.conditions]
     conditions_list = property(get_conditions_list, set_conditions)
     def get_choices(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 15)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 14)
         if(numRecords > 0):
             cRecords = (POINTER(c_uint) * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 15, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 14, byref(cRecords))
             return [cRecords[x].contents.value for x in range(0, numRecords)]
         return []
     def set_choices(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 15)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
         else:
             length = len(nValue)
             cRecords = (c_uint * length)(*nValue)
-            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 15, cRecords, length)
+            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 14, cRecords, length)
     choices = property(get_choices, set_choices)
     def get_choices_long(self):
         return [MakeLongFid(self._CollectionIndex,fid) for fid in self.choices]
@@ -8469,108 +8458,108 @@ class INFORecord(BaseRecord):
         self.choices = [MakeShortFid(self._CollectionIndex,fid) for fid in nValue]
     choices_long = property(get_choices_long, set_choices_long)
     def get_linksFrom(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 16)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 15)
         if(numRecords > 0):
             cRecords = (POINTER(c_uint) * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 16, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 15, byref(cRecords))
             return [cRecords[x].contents.value for x in range(0, numRecords)]
         return []
     def set_linksFrom(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 16)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 15)
         else:
             length = len(nValue)
             cRecords = (c_uint * length)(*nValue)
-            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 16, cRecords, length)
+            CBash.SetFIDFieldUIA(self._CollectionIndex, self._ModName, self._recordID, 15, cRecords, length)
     linksFrom = property(get_linksFrom, set_linksFrom)
     def get_linksFrom_long(self):
         return [MakeLongFid(self._CollectionIndex,fid) for fid in self.linksFrom]
     def set_linksFrom_long(self, nValue):
         self.linksFrom = [MakeShortFid(self._CollectionIndex,fid) for fid in nValue]
     linksFrom_long = property(get_linksFrom_long, set_linksFrom_long)
-    def get_unused2(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 17)
+    def get_unused1(self):
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 16)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 17, byref(cRecords))
             return [cRecords.contents[x] for x in range(0, numRecords)]
         return []
-    def set_unused2(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
-        else: CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 17, struct.pack('4B', *nValue), 4)
-    unused2 = property(get_unused2, set_unused2)
+    def set_unused1(self, nValue):
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 16)
+        else: CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 16, struct.pack('4B', *nValue), 4)
+    unused1 = property(get_unused1, set_unused1)
     def get_numRefs(self):
+        CBash.ReadFIDField.restype = POINTER(c_uint)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
+        if(retValue): return retValue.contents.value
+        return None
+    def set_numRefs(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 17, nValue)
+    numRefs = property(get_numRefs, set_numRefs)
+    def get_compiledSize(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 18)
         if(retValue): return retValue.contents.value
         return None
-    def set_numRefs(self, nValue):
+    def set_compiledSize(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 18)
         else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 18, nValue)
-    numRefs = property(get_numRefs, set_numRefs)
-    def get_compiledSize(self):
+    compiledSize = property(get_compiledSize, set_compiledSize)
+    def get_lastIndex(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 19)
         if(retValue): return retValue.contents.value
         return None
-    def set_compiledSize(self, nValue):
+    def set_lastIndex(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 19)
         else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 19, nValue)
-    compiledSize = property(get_compiledSize, set_compiledSize)
-    def get_lastIndex(self):
+    lastIndex = property(get_lastIndex, set_lastIndex)
+    def get_scriptType(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 20)
         if(retValue): return retValue.contents.value
         return None
-    def set_lastIndex(self, nValue):
+    def set_scriptType(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 20)
         else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 20, nValue)
-    lastIndex = property(get_lastIndex, set_lastIndex)
-    def get_scriptType(self):
-        CBash.ReadFIDField.restype = POINTER(c_uint)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 21)
-        if(retValue): return retValue.contents.value
-        return None
-    def set_scriptType(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 21)
-        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 21, nValue)
     scriptType = property(get_scriptType, set_scriptType)
     def get_compiled_p(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 22)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 21)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 22, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 21, byref(cRecords))
             return [cRecords.contents[x] for x in range(0, numRecords)]
         return []
     def set_compiled_p(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 21)
         else:
             length = len(nValue)
-            CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 22, struct.pack('B' * length, *nValue), length)
+            CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 21, struct.pack('B' * length, *nValue), length)
     compiled_p = property(get_compiled_p, set_compiled_p)
     def get_scriptText(self):
         CBash.ReadFIDField.restype = c_char_p
-        return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
+        return CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
     def set_scriptText(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
-        else: CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 23, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
+        else: CBash.SetFIDFieldStr(self._CollectionIndex, self._ModName, self._recordID, 22, nValue)
     scriptText = property(get_scriptText, set_scriptText)
     def get_references(self):
-        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 24)
-        if(numRecords > 0): return [Reference(self._CollectionIndex, self._ModName, self._recordID, 24, x) for x in range(0, numRecords)]
+        numRecords = CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 23)
+        if(numRecords > 0): return [Reference(self._CollectionIndex, self._ModName, self._recordID, 23, x) for x in range(0, numRecords)]
         return []
     def set_references(self, nReferences):
-        if nReferences is None or not len(nReferences): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 24)
+        if nReferences is None or not len(nReferences): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
         else:
-            diffLength = len(nReferences) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 24)
+            diffLength = len(nReferences) - CBash.GetFIDListSize(self._CollectionIndex, self._ModName, self._recordID, 23)
             if isinstance(nReferences[0], tuple):
                 nValues = nReferences
             else:
                 nValues = [(nReference.reference_long,nReference.IsSCRO) for nReference in nReferences]
             while(diffLength < 0):
-                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 24)
+                CBash.DeleteFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 23)
                 diffLength += 1
             while(diffLength > 0):
-                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 24)
+                CBash.CreateFIDListElement(self._CollectionIndex, self._ModName, self._recordID, 23)
                 diffLength -= 1
             for oReference, nValue in zip(self.references, nValues):
                 oReference.reference_long, oReference.IsSCRO = nValue
@@ -8621,52 +8610,60 @@ class INFORecord(BaseRecord):
         elif(self.get_IsMisc()): self.IsTopic = True
     IsMisc = property(get_IsMisc, set_IsMisc)
     def get_IsGoodbye(self):
-        return self.flags != None and (self.flags & 0x00000001) != 0
+        return self.flags != None and (self.flags & 0x0001) != 0
     def set_IsGoodbye(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000001
-            else: self.flags = 0x00000001
-        elif self.flags: self.flags &= ~0x00000001
+            if self.flags: self.flags |= 0x0001
+            else: self.flags = 0x0001
+        elif self.flags: self.flags &= ~0x0001
     IsGoodbye = property(get_IsGoodbye, set_IsGoodbye)
     def get_IsRandom(self):
-        return self.flags != None and (self.flags & 0x00000002) != 0
+        return self.flags != None and (self.flags & 0x0002) != 0
     def set_IsRandom(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000002
-            else: self.flags = 0x00000002
-        elif self.flags: self.flags &= ~0x00000002
+            if self.flags: self.flags |= 0x0002
+            else: self.flags = 0x0002
+        elif self.flags: self.flags &= ~0x0002
     IsRandom = property(get_IsRandom, set_IsRandom)
     def get_IsSayOnce(self):
-        return self.flags != None and (self.flags & 0x00000004) != 0
+        return self.flags != None and (self.flags & 0x0004) != 0
     def set_IsSayOnce(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000004
-            else: self.flags = 0x00000004
-        elif self.flags: self.flags &= ~0x00000004
+            if self.flags: self.flags |= 0x0004
+            else: self.flags = 0x0004
+        elif self.flags: self.flags &= ~0x0004
     IsSayOnce = property(get_IsSayOnce, set_IsSayOnce)
+    def get_IsRunImmediately(self):
+        return self.flags != None and (self.flags & 0x0008) != 0
+    def set_IsRunImmediately(self, nValue):
+        if nValue:
+            if self.flags: self.flags |= 0x0008
+            else: self.flags = 0x0008
+        elif self.flags: self.flags &= ~0x0008
+    IsRunImmediately = property(get_IsRunImmediately, set_IsRunImmediately)
     def get_IsInfoRefusal(self):
-        return self.flags != None and (self.flags & 0x00000010) != 0
+        return self.flags != None and (self.flags & 0x0010) != 0
     def set_IsInfoRefusal(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000010
-            else: self.flags = 0x00000010
-        elif self.flags: self.flags &= ~0x00000010
+            if self.flags: self.flags |= 0x0010
+            else: self.flags = 0x0010
+        elif self.flags: self.flags &= ~0x0010
     IsInfoRefusal = property(get_IsInfoRefusal, set_IsInfoRefusal)
     def get_IsRandomEnd(self):
-        return self.flags != None and (self.flags & 0x00000020) != 0
+        return self.flags != None and (self.flags & 0x0020) != 0
     def set_IsRandomEnd(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000020
-            else: self.flags = 0x00000020
-        elif self.flags: self.flags &= ~0x00000020
+            if self.flags: self.flags |= 0x0020
+            else: self.flags = 0x0020
+        elif self.flags: self.flags &= ~0x0020
     IsRandomEnd = property(get_IsRandomEnd, set_IsRandomEnd)
     def get_IsRunForRumors(self):
-        return self.flags != None and (self.flags & 0x00000040) != 0
+        return self.flags != None and (self.flags & 0x0040) != 0
     def set_IsRunForRumors(self, nValue):
         if nValue:
-            if self.flags: self.flags |= 0x00000040
-            else: self.flags = 0x00000040
-        elif self.flags: self.flags &= ~0x00000040
+            if self.flags: self.flags |= 0x0040
+            else: self.flags = 0x0040
+        elif self.flags: self.flags &= ~0x0040
     IsRunForRumors = property(get_IsRunForRumors, set_IsRunForRumors)
     copyattrs = BaseRecord.baseattrs + ['dialType','flags','quest','topic',
                                         'prevInfo','addTopics','responses',
