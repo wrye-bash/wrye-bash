@@ -685,7 +685,10 @@ class BaseRecord(object):
         return []
     def ConflictDetails(self, attrs=None, ignoreScanned=True):
         conflicting = {}
-        attrs = attrs or self.copyattrs
+        if attrs is None:
+            attrs = self.copyattrs
+        if not attrs:
+            return conflicting
 ##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
         recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
         #sort oldest to newest rather than newest to oldest
@@ -1009,6 +1012,25 @@ class GMSTRecord(object):
             CBash.GetGMSTConflicts(self._CollectionIndex, self._recordID, c_int(ignoreScanned), cModNames)
             return [GMSTRecord(self._CollectionIndex, string_at(cModNames[x]), self._recordID) for x in range(0, numRecords)]
         return []
+    def ConflictDetails(self, attrs=None, ignoreScanned=True):
+        conflicting = {}
+        if attrs is None:
+            attrs = self.copyattrs
+        if not attrs:
+            return conflicting
+##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
+        recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
+        #sort oldest to newest rather than newest to oldest
+        conflicts = self.Conflicts(ignoreScanned)
+##        parentRecords = reversed([parent for parent in conflicts if parent._ModName in recordMasters])
+        #Less pythonic, but optimized for better speed.
+        #Equivalent to commented out code.
+        conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in reversed([parent for parent in conflicts if parent._ModName in recordMasters]) for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+##        for parentRecord in parentRecords:
+##            for attr in attrs:
+##                if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
+##                    conflicting[attr] = getattr_deep(self,attr)
+        return conflicting
     def CopyAsOverride(self, targetMod):
         recID = CBash.CopyGMSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName)
         if(recID): return GMSTRecord(self._CollectionIndex, targetMod._ModName, self._recordID)
