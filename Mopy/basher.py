@@ -9732,7 +9732,10 @@ class Mod_Stats_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Stats"))
         try:
-            itemStats = bosh.ItemStats()
+            if not CBash:
+                itemStats = bosh.ItemStats()
+            else:
+                itemStats = bosh.CBash_ItemStats()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -9777,7 +9780,10 @@ class Mod_Stats_Import(Link):
         progress = balt.Progress(_("Import Stats"))
         changed = None
         try:
-            itemStats = bosh.ItemStats()
+            if not CBash:
+                itemStats = bosh.ItemStats()
+            else:
+                itemStats = bosh.CBash_ItemStats()
             progress(0.1,_("Reading %s.") % (textName.s,))
             if ext == '.csv':
                 itemStats.readFromText(textPath)
