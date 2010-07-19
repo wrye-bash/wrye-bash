@@ -2714,20 +2714,20 @@ class MreInfo(MelRecord):
     """Info (dialog entry) record."""
     classType = 'INFO'
     _flags = Flags(0,Flags.getNames(
-        'goodbye','random','sayOnce',None,'infoRefusal','randomEnd','runForRumors'))
+        'goodbye','random','sayOnce','runImmediately','infoRefusal','randomEnd','runForRumors'))
     class MelInfoData(MelStruct):
-        """Support older 2 byte version."""
+        """Support truncated 2 byte version."""
         def loadData(self,record,ins,type,size,readId):
             if size != 2:
                 MelStruct.loadData(self,record,ins,type,size,readId)
                 return
-            unpacked = ins.unpack('2B',size,readId)
+            unpacked = ins.unpack('H',size,readId)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if callable(action): value = action(value)
                 setter(attr,value)
-            if self._debug: print (record.dialType,record.flags.getTrueAttrs(),record.unused1)
+            if self._debug: print (record.dialType,record.flags.getTrueAttrs())
 
     class MelInfoSchr(MelStruct):
         """Print only if schd record is null."""
@@ -2736,7 +2736,7 @@ class MreInfo(MelRecord):
                 MelStruct.dumpData(self,record,out)
     #--MelSet
     melSet = MelSet(
-        MelInfoData('DATA','2Bs','dialType',(_flags,'flags'),('unused1','\x02')),
+        MelInfoData('DATA','HB','dialType',(_flags,'flags')),
         MelFid('QSTI','quests'),
         MelFid('TPIC','topic'),
         MelFid('PNAM','prevInfo'),
@@ -2750,7 +2750,7 @@ class MreInfo(MelRecord):
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
         MelBase('SCHD','schd_p'), #--Old format script header?
-        MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+        MelInfoSchr('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
         MelBase('SCDA','compiled_p'),
         MelString('SCTX','scriptText'),
         MelScrxen('SCRV/SCRO','references')
