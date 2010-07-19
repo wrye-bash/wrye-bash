@@ -16574,7 +16574,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
-        self.id_tag_values = {}
+        self.id_attr_value = {}
         self.mod_count = {}
         self.tag_attrs = {
             'C.Climate': ('climate_long','IsBehaveLikeExterior'),
@@ -16595,34 +16595,18 @@ class CBash_CellImporter(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CELLS']
     #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            for bashKey in self.autoKey:
-                if bashKey in bashTags:
-                    self.id_tag_values.setdefault(record.fid_long,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
-
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
-        recordId = record.fid_long
-        if(recordId in self.id_tag_values):
-            attrs = []
-            prevValues = []
-            recValues = []
-            for bashKey in self.autoKey:
-                attrs += self.tag_attrs[bashKey]
-                tagValues = map(record.__getattribute__,self.tag_attrs[bashKey])
-                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
-                recValues += tagValues
-            if recValues != prevValues:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    map(override.__setattr__,attrs,prevValues)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModName = override._ModName
+        new_attr_value = record.ConflictDetailsDeux(self.autoKey, self.tag_attrs, self.srcMods)
+        if(new_attr_value):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for attr, value in new_attr_value.iteritems():
+                    setattr(override,attr,value)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -16851,6 +16835,17 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+##        new_attr_value = record.ConflictDetailsDeux(self.autoKey, self.tag_attrs, self.srcMods)
+##        if(new_attr_value):
+##            override = record.CopyAsOverride(self.patchFile)
+##            if override:
+##                for attr, value in new_attr_value.iteritems():
+##                    setattr(override,attr,value)
+##                mod_count = self.mod_count
+##                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+##                record.UnloadRecord()
+##                record._ModName = override._ModName
+                
         self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned

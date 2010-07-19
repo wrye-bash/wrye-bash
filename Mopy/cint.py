@@ -4,6 +4,7 @@ from os.path import exists
 try:
     from bolt import GPath
     import bush
+    import bosh
 except:
     def GPath(obj):
         return obj
@@ -689,18 +690,50 @@ class BaseRecord(object):
             attrs = self.copyattrs
         if not attrs:
             return conflicting
-##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
         recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
         #sort oldest to newest rather than newest to oldest
         conflicts = self.Conflicts(ignoreScanned)
-##        parentRecords = reversed([parent for parent in conflicts if parent._ModName in recordMasters])
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in reversed([parent for parent in conflicts if parent._ModName in recordMasters]) for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
-##        for parentRecord in parentRecords:
+        parentRecords = [parent for parent in conflicts if parent._ModName in recordMasters].reverse()
+        if parentRecords:
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+        else: #is the first instance of the record
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for attr in attrs])
+##        if parentRecords:
+##            for parentRecord in parentRecords:
+##                for attr in attrs:
+##                    if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
+##                        conflicting[attr] = getattr_deep(self,attr)
+##        else:
 ##            for attr in attrs:
-##                if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
-##                    conflicting[attr] = getattr_deep(self,attr)
+##                conflicting[attr] = getattr_deep(self,attr)
+        return conflicting
+    def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, ignoreScanned=True):
+        conflicting = {}
+        recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
+        conflicts = self.Conflicts(ignoreScanned)
+        if conflicts:
+            newest = conflicts[0]
+            baseValues = {}
+            baseValues.update([(attr,reduce(getattr, attr.split('.'), newest)) for attrs in tag_attrs.values() for attr in attrs])
+            #sort oldest to newest rather than newest to oldest
+            conflicts.reverse()
+            #Less pythonic, but optimized for better speed.
+            #Equivalent to commented out code.
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), parentRecord)) for parentRecord in conflicts if parentRecord.GName in srcMods for bashKey in tags if bashKey in bosh.modInfos[parentRecord.GName].getBashTags() for attr in tag_attrs[bashKey] if baseValues[attr] != reduce(getattr, attr.split('.'), parentRecord)])
+##            for parentRecord in conflicts:
+##                if parentRecord.GName in srcMods:
+##                    modInfo = bosh.modInfos[parentRecord.GName]
+##                    bashTags = modInfo.getBashTags()
+##                    attrs = []
+##                    for bashKey in tags:
+##                        if bashKey in bashTags:
+##                            attrs += tag_attrs[bashKey]
+##                    for attr in attrs:
+##                        value = getattr_deep(parentRecord,attr)
+##                        if baseValues[attr] != value:
+##                            conflicting[attr] = value
         return conflicting
     def mergeFilter(self,modSet):
         """This method is called by the bashed patch mod merger. The intention is
@@ -1018,18 +1051,50 @@ class GMSTRecord(object):
             attrs = self.copyattrs
         if not attrs:
             return conflicting
-##        recordMod = CBashModFile(self._CollectionIndex, self._ModName)
         recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
         #sort oldest to newest rather than newest to oldest
         conflicts = self.Conflicts(ignoreScanned)
-##        parentRecords = reversed([parent for parent in conflicts if parent._ModName in recordMasters])
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in reversed([parent for parent in conflicts if parent._ModName in recordMasters]) for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
-##        for parentRecord in parentRecords:
+        parentRecords = [parent for parent in conflicts if parent._ModName in recordMasters].reverse()
+        if parentRecords:
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+        else: #is the first instance of the record
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for attr in attrs])
+##        if parentRecords:
+##            for parentRecord in parentRecords:
+##                for attr in attrs:
+##                    if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
+##                        conflicting[attr] = getattr_deep(self,attr)
+##        else:
 ##            for attr in attrs:
-##                if getattr_deep(self,attr) != getattr_deep(parentRecord,attr):
-##                    conflicting[attr] = getattr_deep(self,attr)
+##                conflicting[attr] = getattr_deep(self,attr)
+        return conflicting
+    def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, ignoreScanned=True):
+        conflicting = {}
+        recordMasters = set(CBashModFile(self._CollectionIndex, self._ModName).TES4.masters)
+        conflicts = self.Conflicts(ignoreScanned)
+        if conflicts:
+            newest = conflicts[0]
+            baseValues = {}
+            baseValues.update([(attr,reduce(getattr, attr.split('.'), newest)) for attrs in tag_attrs.values() for attr in attrs])
+            #sort oldest to newest rather than newest to oldest
+            conflicts.reverse()
+            #Less pythonic, but optimized for better speed.
+            #Equivalent to commented out code.
+            conflicting.update([(attr,reduce(getattr, attr.split('.'), parentRecord)) for parentRecord in conflicts if parentRecord.GName in srcMods for bashKey in tags if bashKey in bosh.modInfos[parentRecord.GName].getBashTags() for attr in tag_attrs[bashKey] if baseValues[attr] != reduce(getattr, attr.split('.'), parentRecord)])
+##            for parentRecord in conflicts:
+##                if parentRecord.GName in srcMods:
+##                    modInfo = bosh.modInfos[parentRecord.GName]
+##                    bashTags = modInfo.getBashTags()
+##                    attrs = []
+##                    for bashKey in tags:
+##                        if bashKey in bashTags:
+##                            attrs += tag_attrs[bashKey]
+##                    for attr in attrs:
+##                        value = getattr_deep(parentRecord,attr)
+##                        if baseValues[attr] != value:
+##                            conflicting[attr] = value
         return conflicting
     def CopyAsOverride(self, targetMod):
         recID = CBash.CopyGMSTRecord(self._CollectionIndex, self._ModName, self._recordID, targetMod._ModName)
