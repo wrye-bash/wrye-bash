@@ -17759,7 +17759,9 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_deathItem[record.fid_long] = record.deathItem_long
+            deathitem = record.ConflictDetails(('deathItem_long',), False)
+            if deathitem:
+                self.id_deathItem[record.fid_long] = deathitem['deathItem_long']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -17780,6 +17782,9 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
         log(_('* Imported Death Items: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
