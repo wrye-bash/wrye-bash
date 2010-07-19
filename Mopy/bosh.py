@@ -19460,7 +19460,7 @@ class SoundPatcher(ImportPatcher):
         for recClass in (MreActi,MreLigh):
             recAttrs_class[recClass] = ('sound',)
         for recClass in (MreWthr,):
-            recAttrs_class[recClass] = ('sound','sounds')
+            recAttrs_class[recClass] = ('sounds',)
         for recClass in (MreCont,):
             recAttrs_class[recClass] = ('soundOpen','soundClose')
         for recClass in (MreDoor,):
@@ -19603,7 +19603,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         class_attrs['LIGH'] = ('sound_long',)
         class_attrs['MGEF'] = ('castingSound_long','boltSound_long','hitSound_long','areaSound_long')
 ##        class_attrs['REGN'] = ('sound_long','sounds_list')
-        class_attrs['WTHR'] = ('sound_long','sounds_list')
+        class_attrs['WTHR'] = ('sounds_list',)
         
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -19612,7 +19612,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_attr_value.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.class_attrs[record._Type][bashKey]))
+            self.id_attr_value.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
