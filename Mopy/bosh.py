@@ -27019,7 +27019,11 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         if mod_npcsFixed:
             log(_("\n=== Eyes/Hair Assigned for NPCs"))
             for srcMod in sorted(mod_npcsFixed):
-                log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
+                if srcMod.cext == '.tmp':
+                    name = srcMod.sbody
+                else:
+                    name = srcMod.s
+                log("* %s: %d" % (name,len(mod_npcsFixed[srcMod])))
 
 #--------------------------------------------
 #------------------------------------------------------------------------------
