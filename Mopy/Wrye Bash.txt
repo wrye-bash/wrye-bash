@@ -294,7 +294,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * __Model Tools__
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]] 16 <img src="images/AutoCad16.png" width="16" height="16" border="0"> 32  <img src="images/AutoCad32.png" width="32" height="32" border="0">
     * [[http://www.blender.org | Blender]] 16 <img src="images/Blender16.png" width="16" height="16" border="0"> 32  <img src="images/Blender32.png" width="32" height="32" border="0">
-    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" border="0"> 32  <img src="images/Dogwaffle32.png" width="32" height="32" border="0">
+    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" border="0"> 32  <img src="images/ArtOfIllusion32.png" width="32" height="32" border="0">
     * [[http://www.turbosquid.com/gmax | GMax]] 16 <img src="images/gmax16.png" width="16" height="16" border="0"> 32  <img src="images/gmax32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13577897 | Maya]] 16 <img src="images/Maya16.png" width="16" height="16" border="0"> 32  <img src="images/Maya32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13567410 | 3ds Max]] 16 <img src="images/3dsMax16.png" width="16" height="16" border="0"> 32  <img src="images/3dsMax32.png" width="32" height="32" border="0">
@@ -303,7 +303,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="images/nifskope16.png" width="16" height="16" border="0"> 32 <img src="images/nifskope32.png" width="32" height="32" border="0"> 
   * __Texture Tools__
     * [[http://icofx.ro/anifx/index.html | AniFX]]16 <img src="images/AniFX16.png" width="16" height="16" border="0"> 32  <img src="images/AniFX32.png" width="32" height="32" border="0">
-    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" border="0"> 32  <img src="images/ArtOfIllusion32.png" width="32" height="32" border="0">
+    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" border="0"> 32  <img src="images/Dogwaffle32.png" width="32" height="32" border="0">
     * [[http://www.artweaver.de/ |Artweaver]] 16 <img src="images/artweaver16.png" width="16" height="16" border="0"> 32  <img src="images/artweaver32.png" width="32" height="32" border="0">
     * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]] 16 <img src="images/DDSConverter16.png" width="16" height="16" border="0"> 32  <img src="images/DDSConverter32.png" width="32" height="32" border="0">
     * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]] 16 <img src="images/Genetica16.png" width="16" height="16" border="0"> 32  <img src="images/Genetica32.png" width="32" height="32" border="0">
@@ -394,16 +394,16 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * Installed packages will be marked with a "+".
 * __Icon Colors__
 . Icon colors indicate the degree to which the package is synchronized with the Oblivion\Data directory:
-  * Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green -- since it too is fully synced with the data directory.
-  * Red: Some files in the package are missing from the data directory.
-  * Orange: All package files are present in the data directory, but some esps/esms are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
-  * Yellow: All package files are present in the data directory, but some resource files are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
-  * White: This is relatively rare. It just means that the package is configured in a way that it has no files to install. This can happen for complex packages where none of the sub-packages are checked.
-  * Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install. 
-  * Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
+  * <img src="images/checkbox_green_off.png" width="16" height="16" border="0"> Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green -- since it too is fully synced with the data directory.
+  * <img src="images/checkbox_red_off.png" width="16" height="16" border="0"> Red: Some files in the package are missing from the data directory.
+  * <img src="images/checkbox_orange_off.png" width="16" height="16" border="0"> Orange: All package files are present in the data directory, but some esps/esms are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
+  * <img src="images/checkbox_yellow_off.png" width="16" height="16" border="0"> Yellow: All package files are present in the data directory, but some resource files are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
+  * <img src="images/checkbox_white_off.png" width="16" height="16" border="0"> White: This is relatively rare. It just means that the package is configured in a way that it has no files to install. This can happen for complex packages where none of the sub-packages are checked.
+  * <img src="images/checkbox_grey_off.png" width="16" height="16" border="0"> Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install. 
+  * <img src="images/checkbox_red_x.png" width="16" height="16" border="0"> Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
 * __Icon Shape__
-  * Diamond: A project, i.e. a subdirectory in the Installers directory.
-  * Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
+  * <img src="images/diamond_white_off.png" width="16" height="16" border="0"> Diamond: A project, i.e. a subdirectory in the Installers directory.
+  * <img src="images/checkbox_white_off.png" width="16" height="16" border="0"> Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 * __Text Colors__
   * Navy Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
   * Grey: This indicates that the package has a structure that Bain does not recognize, and so, cannot install. 
@@ -2041,13 +2041,13 @@ The People tab is a simple database that you can use to keep reminders about var
   * Header: the first 75 characters of the text.
 * Text: Description of the person. You'll probably want to start with a brief summary (maybe using keywords), since that's what will show up in the header column.
 * Icon: The icon for each person reflects their karma:
-  * +5: Purple
-  * +3,+4: Blue
-  * +1,+2: Green
-  * +0: Grey (Default)
-  * -1,-2: Yellow
-  * -3,-4: Orange
-  * -5: Red
+  * <img src="images/checkbox_purple_inc.png" width="16" height="16" border="0"> +5: Purple
+  * <img src="images/checkbox_blue_inc.png" width="16" height="16" border="0"> +3,+4: Blue
+  * <img src="images/checkbox_green_inc.png" width="16" height="16" border="0"> +1,+2: Green
+  * <img src="images/checkbox_grey_off.png" width="16" height="16" border="0"> +0: Grey (Default)
+  * <img src="images/checkbox_yellow_off.png" width="16" height="16" border="0"> -1,-2: Yellow
+  * <img src="images/checkbox_orange_off.png" width="16" height="16" border="0"> -3,-4: Orange
+  * <img src="images/checkbox_red_off.png" width="16" height="16" border="0"> -5: Red
 
 === Add/Delete People
 * You can add and delete records by clicking using the Add/Delete commands. 
