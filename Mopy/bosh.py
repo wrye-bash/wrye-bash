@@ -287,7 +287,7 @@ null4 = null1*4
 reGroup = re.compile(r'^Group: *(.*)',re.M)
 reRequires = re.compile(r'^Requires: *(.*)',re.M)
 reReqItem = re.compile(r'^([a-zA-Z]+) *([0-9]*\.?[0-9]*)$')
-reVersion = re.compile(r'^(version[:\.]*|ver[:\.]*|rev[:\.]*) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I)
+reVersion = re.compile(r'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I)
 
 #--Mod Extensions
 reComment = re.compile('#.*')
@@ -16883,6 +16883,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         log(_("=== Source Mods"))
         for mod in self.srcMods:
             log("* " +mod.s)
+        log(_("\n=== Modified Records"))    
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -17123,6 +17124,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         log(_("=== Source Mods"))
         for mod in self.srcMods:
             log("* " +mod.s)
+        log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -18336,8 +18338,10 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods and record.script is not None:
-            self.id_script[record.fid_long] = record.script_long
+        if record.GName in self.srcMods:
+            script = record.ConflictDetails(('script_long',), False)
+            if script:
+                self.id_script[record.fid_long] = script['script_long']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -18358,6 +18362,10 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         #--Log
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
