@@ -16009,7 +16009,7 @@ class UpdateReferences(ListPatcher):
     scanOrder = 15
     editOrder = 15
     group = _('General')
-    name = _('Import Form Ids')
+    name = _('Replace Form IDs')
     text = _("Imports Form Id replacers from csv files into the Bashed Patch.")
     autoKey = 'Formids'
     defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
@@ -16222,7 +16222,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     scanOrder = 15
     editOrder = 15
     group = _('General')
-    name = _('Import FormIds')
+    name = _('Replace Form IDs')
     text = _("Imports FormId replacers from csv files into the Bashed Patch.")
     autoKey = 'Formids'
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
@@ -20409,6 +20409,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20441,14 +20442,14 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
+        reSkip = self.reSkip
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
-        #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
-                if not record.full: continue
-                if record.script: 
-                    deprint(record.fid) #if debug printing is enabled print that to make sure it is correct to get skipped.
-                    continue #test that anyways...
-                if 'mark' in record.full.lower() or 'token' in record.full.lower() or 'willful' in record.full.lower() or 'werewolf' in record.full.lower(): continue #probably truly shouldn't be playable
+                full = record.full
+                if not full: continue
+                if record.script: continue
+                if reSkip.search(full): continue #probably truly shouldn't be playable
+                #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
                     keep(record.fid)
@@ -20509,6 +20510,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20541,13 +20543,15 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
+        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
-            if not record.full: continue
             if record.flags.notPlayable:
-                if 'werewolf' in record.full.lower(): continue
+                full = record.full
+                if not full: continue
+                if record.script: continue
+                if reSkip.search(full): continue #probably truly shouldn't be playable
                 # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
                 if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
-                    name = record.full
                     record.flags.notPlayable = 0
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -20785,7 +20789,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Nvidia Fog Fix"),
-            _('Fix fog related Nvidia black screen problems.)'),
+            _('Fix fog related Nvidia black screen problems.'),
             'FogFix',
             ('0.0001',  '0.0001'),
             )
@@ -21279,7 +21283,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Number of uses for pre-enchanted weapons and staffs"),
+        MultiTweakItem.__init__(self,False,_("Number of uses for pre-enchanted weapons and staffs"),
             _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
@@ -21320,15 +21324,16 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        uses = self.choiceValues[self.chosen][0]
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.ENCH.records:
             if record.itemType in [1,2]:
-                if uses == 0:
-                    record.enchantCost = uses
-                else:
-                    record.enchantCost = max(record.chargeAmount/uses,1)
+                uses = self.choiceValues[self.chosen][0]
+                cost = uses
+                if uses != 0:
+                    cost = max(record.chargeAmount/uses,1)
+                record.enchantCost = cost
+                record.chargeAmount = cost * uses
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -23801,11 +23806,15 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class NamesTweak_Dwarven(MultiTweakItem):
+    reDwarf  = re.compile(r'\b(d|D)(?:warven|warf)\b')
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        self.activeTypes = ['ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
-            'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-            'SLGM', 'SPEL', 'WEAP']
+        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                            'CLAS','CLOT','CONT','CREA','DOOR',
+                            'ENCH','EYES','FACT','FLOR','FURN','GMST',
+                            'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
+                            'MISC','NPC_','QUST','RACE','SCPT','SGST',
+                            'SKIL','SLGM','SPEL','WEAP']
         MultiTweakItem.__init__(self,False,_("Lore Friendly Names: Dwarven -> Dwemer"),
             _('Rename any thing that is named X Dwarven or Dwarven X to Dwemer X/X Dwemer to follow lore better.'),
             'Dwemer',
@@ -23815,15 +23824,22 @@ class NamesTweak_Dwarven(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
-        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,MreClas,
-                MreClot,MreCont,MreCrea,MreDoor,MreEyes,MreFact,MreFlor,
-                MreHair,MreIngr,MreKeym,MreMisc,MreNpc,MreSgst,MreRace,
-                MreSlgm,MreSpel, MreWeap)
         """Returns load factory classes needed for reading."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return (MreAlch,MreAmmo,MreAppa,MreBook,MreBsgn,MreClas,MreClot,MreCont,MreCrea,MreDoor,MreFlor,MreIngr,MreKeym,MreMisc,MreNpc,MreSgst,MreRace,MreSlgm,MreSpel, MreWeap)
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -23842,22 +23858,97 @@ class NamesTweak_Dwarven(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         count = {}
         keep = patchFile.getKeeper()
+        reDwarf = self.reDwarf
         for type in self.activeTypes:
             if type not in patchFile.tops: continue
             for record in patchFile.tops[type].records:
-                if not record.full: continue
-                if not 'dwar' in record.full.lower(): continue
-                if 'dwarven' in record.full:
-                    record.full = record.full.replace('dwarven','dwemer')
-                elif 'Dwarven' in record.full:
-                    record.full = record.full.replace('Dwarven','Dwemer')
-                elif 'Dwarf' in record.full:
-                    record.full = record.full.replace('Dwarf','Dwemer')
-                elif 'dwarf' in record.full:
-                    record.full = record.full.replace('dwarf','dwemer')
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                changed = False
+                if hasattr(record, 'full'):
+                    changed = reDwarf.search(record.full or '')
+                if not changed:
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                changed = reDwarf.search(effect.scriptEffect.full or '')
+                            except AttributeError:
+                                continue
+                            if changed: break
+                if not changed:
+                    if hasattr(record, 'text'):
+                        changed = reDwarf.search(record.text or '')
+                if not changed:
+                    if hasattr(record, 'description'):
+                        changed = reDwarf.search(record.description or '')
+                if not changed:
+                    if type == 'GMST' and record.eid[0] == 's':
+                        changed = reDwarf.search(record.value or '')
+                if not changed:
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                changed = reDwarf.search(entry.text or '')
+                                if changed: break
+                if not changed:
+                    if type == 'SKIL':
+                        changed = reDwarf.search(record.apprentice or '')
+                        if not changed:
+                            changed = reDwarf.search(record.journeyman or '')
+                        if not changed:
+                            changed = reDwarf.search(record.expert or '')
+                        if not changed:
+                            changed = reDwarf.search(record.master or '')
+                if changed:
+                    if hasattr(record, 'full'):
+                        newString = record.full
+                        if record:
+                            record.full = reDwarf.sub(r'\1wemer', newString)
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                newString = effect.scriptEffect.full
+                            except AttributeError:
+                                continue
+                            if newString:
+                                effect.scriptEffect.full = reDwarf.sub(r'\1wemer', newString)
+                    if hasattr(record, 'text'):
+                        newString = record.text
+                        if newString:
+                            record.text = reDwarf.sub(r'\1wemer', newString)
+                    if hasattr(record, 'description'):
+                        newString = record.description
+                        if newString:
+                            record.description = reDwarf.sub(r'\1wemer', newString)
+                    if type == 'GMST' and record._recordID[0] == 's':
+                        newString = record.value
+                        if newString:
+                            record.value = reDwarf.sub(r'\1wemer', newString)
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                newString = entry.text
+                                if newString:
+                                    entry.text = reDwarf.sub(r'\1wemer', newString)
+                    if type == 'SKIL':
+                        newString = record.apprentice
+                        if newString:
+                            record.apprentice = reDwarf.sub(r'\1wemer', newString)
+                        newString = record.journeyman
+                        if newString:
+                            record.journeyman = reDwarf.sub(r'\1wemer', newString)
+                        newString = record.expert
+                        if newString:
+                            record.expert = reDwarf.sub(r'\1wemer', newString)
+                        newString = record.master
+                        if newString:
+                            record.master = reDwarf.sub(r'\1wemer', newString)
+
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log(_('* %s: %d') % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -24056,10 +24147,10 @@ class NamesTweaker(MultiTweaker):
             (_('(BL02) Leather Boots'),'(%s%02d) '),
             ),
         NamesTweak_Body(False,_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
-            (_('P Grey Trowsers'),  '%s '),
-            (_('P. Grey Trowsers'), '%s. '),
-            (_('P - Grey Trowsers'),'%s - '),
-            (_('(P) Grey Trowsers'),'(%s) '),
+            (_('P Grey Trousers'),  '%s '),
+            (_('P. Grey Trousers'), '%s. '),
+            (_('P - Grey Trousers'),'%s - '),
+            (_('(P) Grey Trousers'),'(%s) '),
             ),
         NamesTweak_Potions(),
         NamesTweak_Scrolls(),
@@ -24115,10 +24206,10 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
             (_('(BL02) Leather Boots'),'(%s%02d) '),
             ),
         CBash_NamesTweak_Body(False,_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
-            (_('P Grey Trowsers'),  '%s '),
-            (_('P. Grey Trowsers'), '%s. '),
-            (_('P - Grey Trowsers'),'%s - '),
-            (_('(P) Grey Trowsers'),'(%s) '),
+            (_('P Grey Trousers'),  '%s '),
+            (_('P. Grey Trousers'), '%s. '),
+            (_('P - Grey Trousers'),'%s - '),
+            (_('(P) Grey Trousers'),'(%s) '),
             ),
         CBash_NamesTweak_Potions(),
         CBash_NamesTweak_Scrolls(),
@@ -24260,16 +24351,19 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-            model = record.model.modPath
-            if record.full and record.full.lower() == 'bendu olo': continue
-            if model.lower() == r'characters\_male\skeletonsesheogorath.nif':
-                record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-            else:
-                record.model.modPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+            if record.fid == (GPath('Oblivion.esm'),0x000007): continue #skip player record
+            try:
+                oldModPath = record.model.modPath
+            except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+                continue
+            newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+            try:
+                if oldModPath.lower() == r'characters\_male\skeletonsesheogorath.nif':
+                    newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
+            except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
+                pass
+            if newModPath != oldModPath:
+                record.model.modPath = newModPath
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -24364,12 +24458,22 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
+        newModPath = r"Characters\_Male\SkeletonBeast.nif"
         for record in patchFile.NPC_.records:
-            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-            record.model.modPath = "Characters\_Male\SkeletonBeast.nif"
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
+            try:
+                oldModPath = record.model.modPath
+            except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+                continue
+            try:
+                if oldModPath.lower() != r'characters\_male\skeleton.nif':
+                    continue
+            except AttributeError: #in case oldModPath was None. Try/Except has no overhead if exception isn't thrown.
+                pass
+            if newModPath != oldModPath:
+                record.model.modPath = newModPath
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('===Vanilla Beast Skeleton'))
         log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
@@ -24513,6 +24617,8 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
             if record.bloodDecalPath or record.bloodSprayPath:
                 record.bloodDecalPath = None
                 record.bloodSprayPath = None
+                record.flags.noBloodSpray = True
+                record.flags.noBloodDecal = True
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -24566,6 +24672,8 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AsIntendedImpsPatcher(BasalCreatureTweaker):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+    reImpModPath  = re.compile(r'(imp(?!erial)|gargoyle)\\.',re.I)
+    reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -24582,19 +24690,30 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         count = {}
         keep = patchFile.getKeeper()
         spell = (GPath('Oblivion.esm'), 0x02B53F)
+        reImp  = self.reImp
+        reImpModPath = self.reImpModPath
         for record in patchFile.CREA.records:
-            if not record.full or not record.model.modPath or not record.eid: continue #for unnamed creatures else next if crashes.
-            if 'imp' in record.full.lower() or 'imp' in record.eid.lower() or 'gargoyle' in record.full.lower() or 'gargoyle' in record.eid.lower() or 'gargoyle' in record.model.modPath.lower():
-                if 'imperial' in record.full.lower() or 'imperial' in record.eid.lower(): continue #avoids false positives.
+            try:
+                oldModPath = record.model.modPath
+            except AttributeError:
+                continue
+            if not reImpModPath.search(oldModPath or ''): continue
+            
+            for bodyPart in record.bodyParts:
+                if reImp.search(bodyPart):
+                    break
+            else:
+                continue
+            if record.baseScale < 0.4:
                 if 'big' in self.choiceValues[self.chosen]:
-                    if 'impling' in record.full.lower(): continue
-                elif 'small' in self.choiceValues[self.chosen]:
-                    if not 'impling' in record.full.lower() and not 'CreatureImpFrostCrag' in record.eid: continue
-                if spell not in record.spells:
-                    record.spells.append(spell)
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+                    continue
+            elif 'small' in self.choiceValues[self.chosen]:
+                continue
+            if spell not in record.spells:
+                record.spells.append(spell)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('===As Intended: Imps'))
         log(_('* %d Imps Tweaked') % (sum(count.values()),))
@@ -24664,6 +24783,8 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AsIntendedBoarsPatcher(BasalCreatureTweaker):
     """Set all imps to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+    reBoarModPath  = re.compile(r'(boar)\\.',re.I)
+    reBoar  = re.compile(r'(boar)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -24678,14 +24799,25 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
         count = {}
         spell = (GPath('Oblivion.esm'), 0x02B54E)
         keep = patchFile.getKeeper()
+        reBoar  = self.reBoar
+        reBoarModPath = self.reBoarModPath
         for record in patchFile.CREA.records:
-            if not record.full or not record.eid or not record.model.modPath: continue #for unnamed creatures else next if crashes.
-            if 'boar' in record.full.lower() or 'boar' in record.model.modPath.lower() or 'boar' in record.eid.lower():
-                if spell not in record.spells:
-                    record.spells.append(spell)
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+            try:
+                oldModPath = record.model.modPath
+            except AttributeError:
+                continue
+            if not reBoarModPath.search(oldModPath or ''): continue
+            
+            for bodyPart in record.bodyParts:
+                if reBoar.search(bodyPart):
+                    break
+            else:
+                continue
+            if spell not in record.spells:
+                record.spells.append(spell)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('===As Intended: Boars'))
         log(_('* %d Boars Tweaked') % (sum(count.values()),))
@@ -25980,7 +26112,7 @@ class PowerExhaustion(SpecialPatcher,Patcher):
             effect.duration = duration
             scriptEffect = record.getDefault('effects.scriptEffect')
             scriptEffect.full = _("Power Exhaustion")
-            scriptEffect.name = exhaustId
+            scriptEffect.script = exhaustId
             scriptEffect.school = 2
             scriptEffect.visual = null4
             scriptEffect.flags.hostile = False
@@ -27487,6 +27619,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
     tooldirs['PixelStudio'] = GPath(r'C:\Program Files\Pixel\Pixel.exe')
     tooldirs['TwistedBrush'] = GPath(r'C:\Program Files\Pixarra\TwistedBrush Open Studio\tbrush_open_studio.exe')
+    tooldirs['PhotoScape'] = GPath(r'C:\Program Files\PhotoScape\PhotoScape.exe')
+    tooldirs['Photobie'] = GPath(r'C:\Program Files\Photobie\Photobie.exe')
+    tooldirs['PhotoFiltre'] = GPath(r'C:\Program Files\PhotoFiltre\PhotoFiltre.exe')
+    tooldirs['PaintShopPhotoPro'] = GPath(r'C:\Program Files\Corel\Corel PaintShop Photo Pro\X3\PSPClassic\Corel Paint Shop Pro Photo.exe')
     tooldirs['Dogwaffle'] = GPath(r'C:\Program Files\project dogwaffle\dogwaffle.exe')
     tooldirs['GeneticaViewer'] = GPath(r'C:\Program Files\Spiral Graphics\Genetica Viewer 3\Genetica Viewer 3.exe')
     tooldirs['LogitechKeyboard'] = GPath(r'C:\Program Files\Logitech\GamePanel Software\G-series Software\LGDCore.exe')
@@ -27494,7 +27630,9 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Genetica'] = GPath(r'CC:\Program Files\Spiral Graphics\Genetica 3.5\Genetica.exe')
     tooldirs['IrfanView'] = GPath(r'C:\Program Files\IrfanView\i_view32.exe')
     tooldirs['XnView'] = GPath(r'C:\Program Files\XnView\xnview.exe')
+    tooldirs['FastStone'] = GPath(r'C:\Program Files\FastStone Image Viewer\FSViewer.exe')
     tooldirs['Steam'] = GPath(r'C:\Program Files\Steam\steam.exe')
+    tooldirs['EVGAPrecision'] = GPath(r'C:\Program Files\EVGA Precision\EVGAPrecision.exe')
     tooldirs['IcoFX'] = GPath(r'C:\Program Files\IcoFX 1.6\IcoFX.exe')
     tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
     tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
