@@ -5399,6 +5399,7 @@ class ListPatcher(Patcher):
             itemHeight = self.gList.GetItemHeight()
         itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
         if itemIndex >= len(self.items): return
+        self.gList.SetSelection(itemIndex)
         self.rightClickItemIndex = itemIndex
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
@@ -5533,8 +5534,9 @@ class TweakPatcher(Patcher):
         tweaks = self.tweaks
         if tweakIndex >= len(tweaks): return
         choiceLabels = tweaks[tweakIndex].choiceLabels
-        chosen = tweaks[tweakIndex].chosen
         if len(choiceLabels) <= 1: return
+        chosen = tweaks[tweakIndex].chosen
+        self.gList.SetSelection(tweakIndex)
         #--Build Menu
         menu = wx.Menu()
         for index,label in enumerate(choiceLabels):
@@ -5560,7 +5562,7 @@ class TweakPatcher(Patcher):
         tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = event.GetId()
         self.gList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
-        
+
     def OnTweakCustomChoice(self,event):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
