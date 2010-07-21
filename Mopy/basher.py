@@ -11809,7 +11809,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #Maya
             App_Button(
                 bosh.tooldirs['MayaPath'],
-                Image(r'images/maya'+bosh.inisettings['iconSize']+'.png'),
+                Image(r'images/Maya'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch Maya")))
         BashStatusBar.buttons.append( #Max
             App_Button(
@@ -11893,6 +11893,11 @@ def InitStatusBar():
                 bosh.tooldirs['XnView'],
                 Image(r'images/XnView'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch XnView")))
+        BashStatusBar.buttons.append( #FastStone Image Viewer
+            App_Button(
+                bosh.tooldirs['FastStone'],
+                Image(r'images/FastStoneImageViewer'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.tooldirs['PaintNET'],
@@ -11913,6 +11918,27 @@ def InitStatusBar():
                 bosh.tooldirs['TwistedBrush'],
                 Image(r'images/TwistedBrush'+bosh.inisettings['iconSize']+'.png'),
                 _("Launch TwistedBrush")))
+
+        BashStatusBar.buttons.append( #PhotoScape
+            App_Button(
+                bosh.tooldirs['PhotoScape'],
+                Image(r'images/PhotoScape'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch PhotoScape")))
+        BashStatusBar.buttons.append( #Photobie Design Studio
+            App_Button(
+                bosh.tooldirs['Photobie'],
+                Image(r'images/Photobie'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch Photobie")))
+        BashStatusBar.buttons.append( #PhotoFiltre
+            App_Button(
+                bosh.tooldirs['PhotoFiltre'],
+                Image(r'images/PhotoFiltre'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch PhotoFiltre")))
+        BashStatusBar.buttons.append( #PaintShop Photo Pro
+            App_Button(
+                bosh.tooldirs['PaintShopPhotoPro'],
+                Image(r'images/PaintshopProX3'+bosh.inisettings['iconSize']+'.png'),
+                _("Launch PaintShop Photo Pro")))
     if bosh.inisettings['showaudiotoollaunchers']:
         BashStatusBar.buttons.append( #Audacity
             App_Button(
