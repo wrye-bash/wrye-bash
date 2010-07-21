@@ -2137,7 +2137,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]
+=== 286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,valda,Waruddar]
 * Bashed Patch:
   * '[[#|Replace Form IDs]]' added (both Bash and CBash)
     . It is just like [[#|Import Formids]] (but slower). It changes the references in the bashed patch instead of in the file itself
@@ -2205,6 +2205,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * General:
   * 7z updated to latest version
   * [[#|Backing Up]] section added
+  * CELL block size calculation corrected (reported by valda)
+    . Not as important as it may sound. The size isn't actually used except for error raising.
   * Import/Export Scripts from/to mod/csv optimized/significantly enhanced
   * Import Prices from csv file added
   * [[#|Face Import]] no longer fails when the mod index of the record is higher than expected

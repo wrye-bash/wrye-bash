@@ -11980,6 +11980,11 @@ def InitStatusBar():
             bosh.tooldirs['Steam'],
             Image(r'images/Steam'+bosh.inisettings['iconSize']+'.png'),
             _("Launch Steam")))
+    BashStatusBar.buttons.append( #EVGA Precision
+        App_Button(
+            bosh.tooldirs['EVGAPrecision'],
+            Image(r'images/EVGAPrecision'+bosh.inisettings['iconSize']+'.png'),
+            _("Launch EVGA Precision")))
     BashStatusBar.buttons.append( #WinMerge
         App_Button(
             bosh.tooldirs['WinMerge'],
