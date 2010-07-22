@@ -9912,14 +9912,15 @@ class Installer(object):
             rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
             fileEndsWith = fileLower.endswith
+            fileStartsWith = fileLower.startswith
             #--Silent skips
             if fileEndsWith(('thumbs.db','desktop.ini')):
                 continue #--Silent skip
-            elif skipDistantLOD and fileEndsWith('distantlod'):
+            elif skipDistantLOD and fileStartsWith('distantlod'):
                 continue
-            elif skipVoices and fileEndsWith('sound\\voice'):
+            elif skipVoices and fileStartsWith('sound\\voice'):
                 continue
-            elif skipScreenshots and fileEndsWith('screenshots'):
+            elif skipScreenshots and fileStartsWith('screenshots'):
                 continue
             elif fileLower == 'wizard.txt':
                 self.hasWizard = full
@@ -9927,6 +9928,8 @@ class Installer(object):
             elif skipImages and fileExt in imageExts:
                 continue
             elif skipDocs and fileExt in docExts:
+                continue
+            elif fileStartsWith('--'):
                 continue
             #--Noisy skips
             elif file in bethFiles:
@@ -9950,7 +9953,7 @@ class Installer(object):
                 espmsAdd(pFile)
                 if pFile in espmNots: continue
             elif bSkip: continue
-            if skipEspmVoices and fileLower.startswith('sound\\voice\\'):
+            if skipEspmVoices and fileStartsWith('sound\\voice\\'):
 ##                farPos = file.find('\\',12)
                 pathParts = splitter(file[12:])
                 farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
