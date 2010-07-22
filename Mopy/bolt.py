@@ -193,6 +193,10 @@ class Path(object):
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
     mtimeResets = [] #--Used by getmtime
+    ascii = '[\x00-\x7F]'
+    japanese_hankana = '[\xA1-\xDF]'
+    japanese_zenkaku ='[\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]'
+    reChar = re.compile('('+ascii+'|'+japanese_hankana+'|'+japanese_zenkaku+')', re.M)
 
     @staticmethod
     def get(name):
@@ -228,18 +232,18 @@ class Path(object):
     @staticmethod
     def mbSplit(path):
         """Split path to consider multibyte character boundary."""
-        ascii = '[\x00-\x7F]'
-        japanese_hankana = '[\xA1-\xDF]'
-        japanese_zenkaku ='[\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]'
-        reChar = re.compile('('+ascii+'|'+japanese_hankana+'|'+japanese_zenkaku+')', re.M)
         # Should also add Chinese fantizi and zhengtizi, Korean Hangul, etc.
-        match = reChar.split(path)
-        result = ['']
+        match = Path.reChar.split(path)
+        result = []
+        curResult = ''
+        resultAppend = result.append
         for c in match:
             if c == '\\':
-                result.append('')
+                resultAppend(curResult)
+                curResult = ''
             else:
-                result[-1] += c
+                curResult += c
+        resultAppend(curResult)
         return result
 
     #--Instance stuff --------------------------------------------------

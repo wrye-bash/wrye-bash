@@ -9642,10 +9642,11 @@ class Installer(object):
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
+        splitter = bolt.Path.mbSplit
         def sortKey(file):
 ##            dirFile = file.lower().rsplit('\\',1)
 ##            if len(dirFile) == 1: dirFile.insert(0,'')
-            pathParts = bolt.Path.mbSplit(file)
+            pathParts = splitter(file)
             if len(pathParts) == 1:
                 dirFile = ['', pathParts[0]]
             else:
@@ -9870,15 +9871,23 @@ class Installer(object):
         data_sizeCrc = {}
         skipExtFiles = self.skipExtFiles
         skipDirFiles = self.skipDirFiles
+        skipDirFilesAdd = skipDirFiles.add
+        skipExtFilesAdd = skipExtFiles.add
         espms = self.espms
+        espmsAdd = espms.add
+        splitter = bolt.Path.mbSplit
+        espmMap = self.espmMap
+        espmMapSetdefault = espmMap.setdefault
+        reModExtMatch = reModExt.match
+        reReadMeMatch = reReadMe.match
         dest_src = {}
         #--Bad archive?
         if type not in (1,2): return dest_src
         #--Scan over fileSizeCrcs
         for full,size,crc in self.fileSizeCrcs:
-            file = full #--Default
+            file = full
             fileLower = file.lower()
-            if full[:2] == '--' or fileLower[:20] == 'omod conversion data':
+            if fileLower.startswith(('--','omod conversion data')):
                 continue
             sub = ''
             bSkip = False
@@ -9886,32 +9895,31 @@ class Installer(object):
                 #subFile = full.split('\\',1)
                 #if len(subFile) == 2:
                 #    sub,file = subFile
-                pathParts = bolt.Path.mbSplit(full)
+                pathParts = splitter(full)
                 if len(pathParts) > 1:
                     sub = pathParts[0]
                     file = '\\'.join(pathParts[1:])
                     if sub not in activeSubs:
                         if sub not in allSubs:
-                            skipDirFiles.add(file)
+                            skipDirFilesAdd(file)
                         bSkip = True
                     fileLower = file.lower()
-            if sub not in self.espmMap:
-                self.espmMap[sub] = []
+            subList = espmMapSetdefault(sub,[])
 ##            rootPos = file.find('\\')
-            pathParts = bolt.Path.mbSplit(file)
+            pathParts = splitter(file)
             rootPos = len(pathParts[0]) if len(pathParts) > 1 else -1
             extPos = file.rfind('.')
-            fileLower = file.lower()
             rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
+            fileEndsWith = fileLower.endswith
             #--Silent skips
-            if fileLower[-9:] == 'thumbs.db' or fileLower[-11:] == 'desktop.ini':
+            if fileEndsWith(('thumbs.db','desktop.ini')):
                 continue #--Silent skip
-            elif skipDistantLOD and fileLower[:10] == 'distantlod':
+            elif skipDistantLOD and fileEndsWith('distantlod'):
                 continue
-            elif skipVoices and fileLower[:11] == 'sound\\voice':
+            elif skipVoices and fileEndsWith('sound\\voice'):
                 continue
-            elif skipScreenshots and fileLower[:11] == 'screenshots':
+            elif skipScreenshots and fileEndsWith('screenshots'):
                 continue
             elif fileLower == 'wizard.txt':
                 self.hasWizard = full
@@ -9922,29 +9930,29 @@ class Installer(object):
                 continue
             #--Noisy skips
             elif file in bethFiles:
-                if not bSkip: skipDirFiles.add(full)
+                if not bSkip: skipDirFilesAdd(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                if not bSkip: skipDirFiles.add(full)
+                if not bSkip: skipDirFilesAdd(full)
                 continue
             elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                if not bSkip: skipDirFiles.add(full)
+                if not bSkip: skipDirFilesAdd(full)
                 continue
             elif fileExt in skipExts:
-                if not bSkip: skipExtFiles.add(full)
+                if not bSkip: skipExtFilesAdd(full)
                 continue
             #--Esps
-            if not rootLower and reModExt.match(fileExt):
-                if file not in self.espmMap[sub]:
-                    self.espmMap[sub].append(file)
+            if not rootLower and reModExtMatch(fileExt):
+                if file not in subList:
+                    subList.append(file)
                 if bSkip: continue
                 pFile = GPath(file)
-                espms.add(pFile)
+                espmsAdd(pFile)
                 if pFile in espmNots: continue
             elif bSkip: continue
-            if skipEspmVoices and fileLower[:12] == 'sound\\voice\\':
+            if skipEspmVoices and fileLower.startswith('sound\\voice\\'):
 ##                farPos = file.find('\\',12)
-                pathParts = bolt.Path.mbSplit(file[12:])
+                pathParts = splitter(file[12:])
                 farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
@@ -9955,8 +9963,8 @@ class Installer(object):
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
-                maReadMe = reReadMe.match(file)
-                if fileLower == 'masterlist.txt' or fileLower == 'dlclist.txt':
+                maReadMe = reReadMeMatch(file)
+                if fileLower in ('masterlist.txt','dlclist.txt'):
                     pass
                 elif maReadMe:
                     if not (maReadMe.group(1) or maReadMe.group(3)):
@@ -9995,10 +10003,11 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
+        splitter = bolt.Path.mbSplit
         def fscSortKey(fsc):
 ##            dirFile = fsc[0].lower().rsplit('\\',1)
 ##            if len(dirFile) == 1: dirFile.insert(0,'')
-            pathParts = bolt.Path.mbSplit(fsc[0])
+            pathParts = splitter(fsc[0])
             if len(pathParts) == 1:
                 dirFile = ['', pathParts[0]]
             else:
@@ -10017,7 +10026,7 @@ class Installer(object):
             fileLower = file.lower()
             if type != 1:
 ##                frags = file.split('\\')
-                frags = bolt.Path.mbSplit(file)
+                frags = splitter(file)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFile.search(frags[0]) or
