@@ -2137,6 +2137,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 287 [22/07/2010] [Waruddar]
+* BAIN:
+  * File skipping (Skip DistantLOD/Voices/Screenshots and '--' directories) was broken by 286. Fixed.
+
 === 286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,valda,Waruddar]
 * Bashed Patch:
   * '[[#|Replace Form IDs]]' added (both Bash and CBash)
