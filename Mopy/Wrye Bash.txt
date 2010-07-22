@@ -2184,9 +2184,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Double clicking a package will now open it
   * Implemented valda's patch for partial support of japanese multi-byte characters
   * Refreshing packages now ignore Skipped Directories (those that start with '--' or 'Bash')
+  * Selecting sub-packages that contain large numbers of files now refreshes a little more quickly (reported by Vindicator)
+    * Still needs more work to make it faster
   * Sub-package and Esp/m lists now retain their position when selected
   * The "Hide" command now works with multiple packages selected
     . It is disabled if any selected package is a marker
+  * Toggling "Skip DistantLOD" no longer causes packages to be marked dirty (reported by Vindicator)
 * BAIN Wizards:
   * Added For loops (For/Continue/Break/EndWhile)
   * Added While loops (While/Continue/Break/EndWhile)
@@ -2207,18 +2210,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * [[#|Backing Up]] section added
   * CELL block size calculation corrected (reported by valda)
     . Not as important as it may sound. The size isn't actually used except for error raising.
+  * [[#|Face Import]] no longer fails when the mod index of the record is higher than expected
   * Import/Export Scripts from/to mod/csv optimized/significantly enhanced
   * Import Prices from csv file added
-  * [[#|Face Import]] no longer fails when the mod index of the record is higher than expected
+  * [[#|Import Archives]] now works with the new forum PMs
   * INFO definitions fixed (reported by valda)
   * Ini setting added: bSkipHideConfirmation. (suggested by Utumno)
     . When True, the hide confirmation is suppressed.
-  * Mergeable mods that are a master of non-mergeable mods are no longer considered mergeable
-  * Missing resource error on wryemonkey16.jpg has been fixed
-  * [[#|Mark Mergeable]] can now change formerly mergeable mods to non-mergeable
   * [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow)
     . EVGA Precision,FastStone Image Viewer,FreeMind,PaintShop Photo Pro,Photobie Design Studio,PhotoFiltre,PhotoScape,XnView
-  * [[#|Import Archives]] now works with the new forum PMs
+  * [[#|Mark Mergeable]] can now change formerly mergeable mods to non-mergeable
+  * Mergeable mods that are a master of non-mergeable mods are no longer considered mergeable
+  * Missing resource error on wryemonkey16.jpg has been fixed
+  * Non-lower case file extensions used in Bash.ini no longer cause issues (reported by Vindicator)
   * Several readme images updated (contributed by Metallicow)
   * Various cell and reference flags corrected
   * Various typos fixed, and more strings are translatable (as reported by DJK)

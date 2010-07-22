@@ -6484,7 +6484,7 @@ class Installers_SkipDistantLOD(Link):
         settings['bash.installers.skipDistantLOD'] ^= True
         for installer in self.data.itervalues():
             installer.refreshDataSizeCrc()
-        self.data.refresh(what='N')
+        self.data.refresh(what='NS')
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -11312,12 +11312,12 @@ class App_Button(Link):
         self.image = image
         self.tip = tip
         #--Exe stuff
-        if self.exePath and str((self.exePath).ext) == '.exe': #Sometimes exePath is "None"
+        if self.exePath and self.exePath.ext.lower() == '.exe': #Sometimes exePath is "None"
             self.isExe = True
         else:
             self.isExe = False
         #--Java stuff
-        if self.exePath and str((self.exePath).ext) == '.jar': #Sometimes exePath is "None"
+        if self.exePath and self.exePath.ext.lower() == '.jar': #Sometimes exePath is "None"
             self.isJava = True
             self.java = GPath(os.environ['SYSTEMROOT']).join('system32','javaw.exe')
             self.jar = self.exePath
