@@ -72,6 +72,13 @@ For mod-makers:
 [/quote]
 
 Latest Version:
+=== 287 [22/07/2010] [Waruddar]
+[list]
+[*] BAIN:
+  [list]
+  [*] File skipping (Skip DistantLOD/Voices/Screenshots and '--' directories) was broken by 286. Fixed.
+  [/list]
+[/list]
 === 286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,valda,Waruddar]
 [spoiler]
 [list]
