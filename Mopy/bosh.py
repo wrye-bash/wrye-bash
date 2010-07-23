@@ -13809,12 +13809,13 @@ class SpellRecords:
 class CBash_SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self,types=None,aliases=None,detailed=False):
         """Initialize."""
-        self.type_id_stats = {'SPEL':{},}
-        self.type_attrs = {
-            'SPEL':('eid', 'full', 'cost', 'level', 'spellType'),
-            }
+        self.type_id_stats = {}
+        self.type_attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+        if detailed:
+            self.type_attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+            ##todo: will include effects, and flags.
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -13823,11 +13824,10 @@ class CBash_SpellRecords:
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
 
-        for type in self.type_attrs:
-            id_stats, attrs = self.type_id_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type):
-                id_stats[record.fid_long] = [getattr(record,attr) for attr in attrs]
-                record.UnloadRecord()
+        id_stats, attrs = self.type_id_stats, self.type_attrs
+        for record in getattr(modFile,'SPEL'):
+            id_stats[record.fid_long] = [getattr(record,attr) for attr in attrs]
+            record.UnloadRecord()
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -13835,24 +13835,24 @@ class CBash_SpellRecords:
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
         
-        changed = {'SPEL':0}
-        for type,attrs in self.type_attrs:
-            id_stats = self.type_id_stats.get(type,None)
-            for record in getattr(modFile,type):
-                longFid = record.fid_long
-                if longFid in id_stats:
-                    prevValues = id_stats[longFid]
-                    recValues = map(record.__getattribute__,attrs)
-                    if recValues != prevValues:
-                         map(record.__setattr__,attrs,prevValues)
-                    changed[type] += 1
+        changed = 0
+        attrs = self.type_attrs
+        id_stats = self.type_id_stats
+        for record in getattr(modFile,'SPEL'):
+            longFid = record.fid_long
+            if longFid in id_stats:
+                prevValues = id_stats[longFid]
+                recValues = map(record.__getattribute__,attrs)
+                if recValues != prevValues:
+                     map(record.__setattr__,attrs,prevValues)
+                changed += 1
         #--Done
-        if sum(changed.values()): modFile.safeCloseSave()
+        if changed: modFile.safeCloseSave()
         return changed
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        Spells = [self.type_id_stats[type] for type in ('SPEL',)]
+        Spells = [self.type_id_stats]
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         pack,unpack = struct.pack,struct.unpack
@@ -13883,7 +13883,7 @@ class CBash_SpellRecords:
                 _('Editor Id'),_('Name'),_('Cost'),_('Level'),_('Spell Type')
                 )) + '"\n')),
             ):
-            id_stats = self.type_id_stats[type]
+            id_stats = self.type_id_stats
             if not id_stats: continue
             out.write(header)
             for longid in getSortedIds(id_stats):
@@ -18142,8 +18142,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         if record.GName in self.srcFiles:
             relations = record.relations_list
             if relations:
-                faction_mod = self.id_faction_mod.setdefault(record.fid_long,{})
-                faction_mod.update(relations)
+                self.id_faction_mod.setdefault(record.fid_long,{}).update(relations)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -20019,7 +20018,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
-        self.attrs = spellStats.type_attrs['SPEL']
+        self.attrs = spellStats.type_attrs
         progress.setFull(len(self.srcFiles))
         patchesDir = dirs['patches'].list()
         for srcFile in self.srcFiles:
@@ -20029,10 +20028,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
                 spellStats.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        Update = self.id_stats.update
-        for type,sFid_stats in spellStats.type_id_stats.iteritems():
-            if type not in ('SPEL'): continue
-            Update(sFid_stats)
+        self.id_stats.update(spellStats.type_id_stats)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20041,7 +20037,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            self.id_stats[record.fid_long] = map(record.__getattribute__,self.attrs)
+            self.id_stats.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.attrs))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -20060,12 +20056,14 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_stats):
-            prevValues = self.id_stats[recordId]
-            recValues = map(record.__getattribute__,self.attrs)
-            if recValues != prevValues:
+            prev_values = self.id_stats[recordId]
+            if not prev_values: return #otherwise extra unnecessary steps
+            rec_values = dict((attr,getattr(record,attr)) for attr in prev_values)
+            if rec_values != prev_values:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    map(override.__setattr__,self.attrs,prevValues)
+                    for attr, value in prev_values.iteritems():
+                        setattr(override,attr,value)
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -20429,7 +20427,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20486,7 +20484,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _('Playable Clothes')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20530,7 +20528,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20586,7 +20584,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _('Playable Armor')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("All Armor Playable"),
