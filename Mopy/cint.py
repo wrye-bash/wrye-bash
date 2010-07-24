@@ -1145,17 +1145,17 @@ class GMSTRecord(object):
         return CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 5)
     def get_value(self):
         rFormat = CBash.GetGMSTFieldType(self._CollectionIndex, self._ModName, self._recordID, 6)
-        if(rFormat == -1):
+        if(rFormat == 0):
             return None
-        elif(rFormat == 1):
+        elif(rFormat == 2):
             CBash.ReadGMSTField.restype = POINTER(c_int)
             retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 6)
             if(retValue): return retValue.contents.value
-        elif(rFormat == 2):
+        elif(rFormat == 3):
             CBash.ReadGMSTField.restype = POINTER(c_float)
             retValue = CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 6)
             if(retValue): return round(retValue.contents.value,6)
-        elif(rFormat == 3):
+        elif(rFormat == 4):
             CBash.ReadGMSTField.restype = c_char_p
             return CBash.ReadGMSTField(self._CollectionIndex, self._ModName, self._recordID, 6)
         return None
@@ -1163,11 +1163,11 @@ class GMSTRecord(object):
         if nValue is None: CBash.DeleteGMSTField(self._CollectionIndex, self._ModName, self._recordID, 6)
         else:
             rFormat = CBash.GetGMSTFieldType(self._CollectionIndex, self._ModName, self._recordID, 6)
-            if(rFormat == 1 and type(nValue) is int):
+            if(rFormat == 2 and type(nValue) is int):
                 CBash.SetGMSTFieldI(self._CollectionIndex, self._ModName, self._recordID, 6, nValue)
-            elif(rFormat == 2 and type(nValue) is float):
+            elif(rFormat == 3 and type(nValue) is float):
                 CBash.SetGMSTFieldF(self._CollectionIndex, self._ModName, self._recordID, 6, c_float(round(nValue,6)))
-            elif(rFormat == 3 and type(nValue) is str):
+            elif(rFormat == 4 and type(nValue) is str):
                 CBash.SetGMSTFieldStr(self._CollectionIndex, self._ModName, self._recordID, 6, nValue)
     value = property(get_value, set_value)
     copyattrs = ['flags1','flags2','value']
