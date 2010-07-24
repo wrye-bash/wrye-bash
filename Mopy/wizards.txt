@@ -339,7 +339,7 @@ __Break__ <br />
 __Case__ **option n** <br />
 ... <br />
 ... <br />
-__Break__
+__Break__ <br />
 __Default__ <br />
 ...lines... <br />
 __Break__ <br />
