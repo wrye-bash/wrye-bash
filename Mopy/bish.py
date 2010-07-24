@@ -486,6 +486,56 @@ def perfTest():
 
 #------------------------------------------------------------------------------
 @mainfunc
+def makeOOO_NoGuildOwnership():
+    bosh.initDirs()
+    Current = bosh.Collection(ModsPath=bosh.dirs['mods'].s)
+    modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
+    destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
+    Current.minimalLoad(LoadMasters=True)
+    guildCells = set([0x0002C178,0x00003AAC,0x00030534,0x0000A2BC,0x00027D58,
+                      0x0003E0E4,0x00086588,0x0002C179,0x000855AD,0x0002CA2F,
+                      0x0002FF4F,0x0002CDBD,0x00030535,0x0002D155,0x00000885,
+                      0x0003E0E5,0x0002C17A,0x0004F8C8,0x00032F02,0x000235DE,
+                      0x00000ADE,0x00000D9A,0x00006917,0x000855A5,0x00003AAF,
+                      0x000260CD,0x000855A6,0x0002D068,0x0001C92A,0x00051B8E,
+                      0x0002C172,0x0002D626,0x0003ABDD,0x00051B8F,0x0001C93F,
+                      0x0002E545,0x0003ABDE,0x000855A8,0x000097B4,0x00051B90,
+                      0x00033370,0x0002C174,0x0000691B,0x000855A9,0x000097B5,
+                      0x0000A2B9,0x000302ED,0x0002C175,0x0008440C,0x00049CF8,
+                      0x000097B6,0x0004EA5A,0x0002C176,0x0008440D,0x00049CF9,
+                      0x00027D57,0x000308CB,0x00030425,0x0002CFD7,0x0003E0E3,
+                      0x0002C177])
+    guildFactions = set([0x00022296,0x0002228F])
+    changed = {}
+
+    for record in modFile.CELL:
+        if record.fid in guildCells:
+            print record.eid
+            for refr in record.REFR:
+                if refr.owner in guildFactions:
+                    base = Current.LookupRecords(refr.base)
+                    try:
+                        base = base[0]
+                    except:
+                        continue
+                    if base._Type in bosh.pickupables:
+                        if base._Type == 'LIGH':
+                            if not base.IsCanTake: continue
+                        if base._Type == 'BOOK':
+                            if base.IsFixed: continue
+                        if destFile.HasRecord(record.fid) is None:
+                            #Copy the winning version of the parent over if it isn't in the patch
+                            record.CopyAsOverride(destFile)
+                        override = refr.CopyAsOverride(destFile)
+                        if override:
+                            override.owner = None
+                            override.rank = None
+                            override.globalVariable = None
+                            changed[base._Type] = changed.get(base._Type,0) + 1
+    print changed
+    if sum(changed.values()): destFile.safeCloseSave()
+    del Current
+@mainfunc
 def bsaReport(fileName,printAll='False'):
     printAll = eval(printAll)
     init(2)
@@ -1029,7 +1079,6 @@ def temp1(fileName):
     #saveFile.load()
     #saveFile.weather = ''
     #saveFile.safeSave()
-
 
 # Zip Stuff --------------------------------------------------------------------
 class Archive:
