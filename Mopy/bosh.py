@@ -4661,6 +4661,7 @@ class MobWorld(MobCells):
         cell = None
         block = None
         subblock = None
+        endBlockPos = endSubblockPos = 0
         cellBlocks = self.cellBlocks
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks('WRLD')
         insAtEnd = ins.atEnd
@@ -4673,6 +4674,11 @@ class MobWorld(MobCells):
         structUnpack = struct.unpack
         structPack = struct.pack
         while not insAtEnd(endPos,errLabel):
+            curPos = insTell()
+            if curPos >= endBlockPos:
+                block = None
+            if curPos >= endSubblockPos:
+                subblock = None
             #--Get record info and handle it
             header = insRecHeader()
             recType = header[0]
