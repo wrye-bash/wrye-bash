@@ -9,12 +9,9 @@ except:
     def GPath(obj):
         return obj
 
+CBash = None
 ##if(exists(".\\CBash.dll")):
 ##    CBash = CDLL("CBash.dll")
-##else:
-##    CBash = None
-
-CBash = None
 
 #Helper functions
 class PrintFormID(object):
@@ -19116,6 +19113,8 @@ validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
                   'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
                   'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+pickupables = set(['APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
+                   'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'])
 type_record = dict([('BASE',BaseRecord),('GMST',GMSTRecord),('GLOB',GLOBRecord),('CLAS',CLASRecord),
                 ('FACT',FACTRecord),('HAIR',HAIRRecord),('EYES',EYESRecord),
                 ('RACE',RACERecord),('SOUN',SOUNRecord),('SKIL',SKILRecord),
