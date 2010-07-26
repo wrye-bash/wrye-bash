@@ -2419,7 +2419,7 @@ class InstallersList(balt.Tank):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.refresh(what='N')
+            self.data.refresh(what='I')
             self.RefreshUI()
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
@@ -7488,7 +7488,7 @@ class InstallerProject_Pack(InstallerLink):
             if iArchive.order == -1:
                 self.data.moveArchives([archive],installer.order+1)
             #--Refresh UI
-            self.data.refresh(what='NS')
+            self.data.refresh(what='I')
             self.gTank.RefreshUI()
         finally:
             progress.Destroy()
@@ -7549,7 +7549,7 @@ class InstallerProject_ReleasePack(InstallerLink):
             if iArchive.order == -1:
                 self.data.moveArchives([archive],installer.order+1)
             #--Refresh UI
-            self.data.refresh(what='NS')
+            self.data.refresh(what='I')
             self.gTank.RefreshUI()
         finally:
             progress.Destroy()
@@ -7606,7 +7606,7 @@ class InstallerConverter_Apply(InstallerLink):
             if iArchive.order == -1:
                 lastInstaller = self.data[self.selected[-1]]
                 self.data.moveArchives([destArchive],lastInstaller.order+1)
-            self.data.refresh(what='NSC')
+            self.data.refresh(what='I')
             self.gTank.RefreshUI()
         finally:
             progress.Destroy()
