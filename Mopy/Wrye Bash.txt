@@ -2137,6 +2137,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 287 [12/12/2012] [Waruddar]
+* BAIN:
+  * Archives created with solid compression may now set the solid block size.
+  * The General Info tab now displays the block size an archive was compressed with.
+    * Solid archives not made by BAIN will display "Unknown" for the block size.
+  * BCFs may now set the block size of the resulting archive.
+* General:
+  * The error message for unexpected subrecords is now a little more helpful.
+
 === 287 [22/07/2010] [Waruddar]
 * BAIN:
   * File skipping (Skip DistantLOD/Voices/Screenshots and '--' directories) was broken by 286. Fixed.
