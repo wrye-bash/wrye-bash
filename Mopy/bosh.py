@@ -10140,15 +10140,25 @@ class InstallerConverter(object):
         #--Persistent variables are saved in the data tank for normal operations.
         #--persistBCF is read one time from BCF.dat, and then saved in Converters.dat to keep archive extractions to a minimum
         #--persistDAT has operational variables that are saved in Converters.dat
+        #--Do NOT reorder persistBCF,persistDAT,addedPersist or you will break existing BCFs!
+        #--Do NOT add new attributes to persistBCF, persistDAT.
         self.persistBCF = ['srcCRCs']
         self.persistDAT = ['crc','fullPath']
+        #--Any new BCF persistent variables are not allowed. Additional work needed to support backwards compat.
+        #--Any new DAT persistent variables must be appended to addedPersistDAT.
+        #----They must be able to handle being set to None
+        self.addedPersistDAT = []
         self.srcCRCs = set()
         self.crc = None
         #--fullPath is saved in Converters.dat, but it is also updated on every refresh in case of renaming
         self.fullPath = 'BCF: Missing!'
         #--Semi-Persistent variables are loaded only when and as needed. They're always read from BCF.dat
-        self.settings = ['comments','espmNots','hasExtraData','isSolid','skipVoices','subActives','blockSize']
+        #--Do NOT reorder settings,volatile,addedSettings or you will break existing BCFs!
+        self.settings = ['comments','espmNots','hasExtraData','isSolid','skipVoices','subActives']
         self.volatile = ['convertedFiles','dupeCount']
+        #--Any new saved variables, whether they're settings or volatile must be appended to addedSettings.
+        #----They must be able to handle being set to None
+        self.addedSettings = ['blockSize',]
         self.convertedFiles = []
         self.dupeCount = {}
         #--Cheap init overloading...
@@ -10166,17 +10176,12 @@ class InstallerConverter(object):
 
     def __getstate__(self):
         """Used by pickler to save object state. Used for Converters.dat"""
-        getter = object.__getattribute__
-        attrs = self.persistBCF + self.persistDAT
-        return tuple(getter(self,x) for x in attrs)
+        return tuple(map(self.__getattribute__, self.persistBCF + self.persistDAT + self.addedPersistDAT))
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object. Used for Converters.dat"""
         self.__init__()
-        setter = object.__setattr__
-        attrs = self.persistBCF + self.persistDAT
-        for value,attr in zip(values,attrs):
-            setter(self,attr,value)
+        map(self.__setattr__,self.persistBCF + self.persistDAT + self.addedPersistDAT, values)
 
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
@@ -10190,9 +10195,21 @@ class InstallerConverter(object):
         setter = object.__setattr__
         map(self.__setattr__, self.persistBCF, cPickle.load(ins))
         if fullLoad:
-            map(self.__setattr__, self.settings + self.volatile, cPickle.load(ins))
+            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(ins))
         ins.close()
 
+    def save(self, destInstaller):
+        #--Dump settings into BCF.dat
+        try:
+            f = open(destInstaller.tempDir.join("BCF.dat").s, 'wb')
+            cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
+            cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
+            result = f.close()
+        finally:
+            if f: f.close()
+            if result:
+                raise StateError(_("Error creating BCF.dat:\nError Code: %s") % (result))
+        
     @staticmethod
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
@@ -10237,7 +10254,7 @@ class InstallerConverter(object):
 
     def applySettings(self,destInstaller):
         """Applies the saved settings to an Installer"""
-        map(destInstaller.__setattr__, self.settings, map(self.__getattribute__, self.settings))
+        map(destInstaller.__setattr__, self.settings + self.addedSettings, map(self.__getattribute__, self.settings + self.addedSettings))
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
@@ -10379,16 +10396,7 @@ class InstallerConverter(object):
             tempDir2.moveTo(destInstaller.tempDir.join('BCF-Missing'))
         #--Make the temp dir in case it doesn't exist
         destInstaller.tempDir.makedirs()
-        #--Dump settings into BCF.dat
-        try:
-            f = open(destInstaller.tempDir.join("BCF.dat").s, 'wb')
-            cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
-            cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile)), f,-1)
-            result = f.close()
-        finally:
-            if f: f.close()
-            if result:
-                raise StateError(_("Error creating BCF.dat:\nError Code: %s") % (result))
+        self.save(destInstaller)
         #--Pack the BCF
         #--BCF's need to be non-Solid since they have to have BCF.dat extracted and read from during runtime
         self.isSolid = False
