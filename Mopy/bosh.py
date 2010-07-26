@@ -114,6 +114,18 @@ readExts.update(set(writeExts))
 noSolidExts = set(('.zip',))
 settings  = None
 
+allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
+                  'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent',
+                  'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
+                  'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
+                  'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
+                  'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
+                  'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd'))
+allTagsSet = set(allTags)
+oldTags = sorted(('Merge',))
+oldTagsSet = set(oldTags)
+
+
 #--Default settings
 settingDefaults = {
     'bosh.modInfos.resetMTimes':True,
@@ -1443,9 +1455,11 @@ class MelSet:
                 else:
                     loaders[type].loadData(record,ins,type,size,readId)
                 doFullTest = doFullTest and (type != 'EFID')
-            except:
-                eid = getattr(record,'eid','<<NO EID>>')
-                print 'Loading: %08X..%s..%s.%s..%d..' % (record.fid,eid,record.recType,type,size)
+            except Exception as error:
+                print str(error)
+                eid = getattr(record,'eid',_('<<NO EID>>'))
+                if not eid: eid = _('<<NO EID>>)')
+                print _('Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d') % (record.recType,record.fid,eid,type,size)
                 raise
         if _debug: print '<<<<',getattr(record,'eid','[NO EID]')
 
@@ -7320,17 +7334,12 @@ class ModInfo(FileInfo):
         """Returns any Bash flag keys."""
         tags = modInfos.table.getItem(self.name,'bashTags',None)
         if tags is None:
-            tags = set()
-            tagstemp = self.getBashTagsDesc()
-            if tagstemp:
-                for tag in tagstemp:
-                    tags.add(tag)
-            tagstemp = configHelpers.getBashTags(self.name)
-            if tagstemp:
-                for tag in tagstemp:
-                    tags.add(tag)
-            #--Filter and return
-        tags.discard('Merge')
+            tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
+        # Filter and remove old tags
+        tags = tags & allTagsSet
+        if tags & oldTagsSet:
+            tags -= oldTagsSet
+            self.setBashTagsDesc(tags)
         return tags
 
     def getBashTagsDesc(self):
@@ -7341,8 +7350,7 @@ class ModInfo(FileInfo):
             return None
         else:
             bashTags = maBashKeys.group(1).split(',')
-            bashTags = [str.strip() for str in bashTags]
-            return set(bashTags)
+            return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
@@ -9061,8 +9069,7 @@ class ConfigHelpers:
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName in self.bossMasterTags:
-            tags = set(self.bossMasterTags[modName])
-            return tags
+            return set(self.bossMasterTags[modName])
         else: return None
 
     #--Mod Checker ------------------------------------------------------------
@@ -9611,7 +9618,7 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid')
+        'skipVoices','espmNots','isSolid','blockSize')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap')
     __slots__ = persistent+volatile
@@ -9769,7 +9776,8 @@ class Installer(object):
         self.size = 0 #--size of archive file
         self.crc = 0 #--crc of archive
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
-        self.isSolid = 0
+        self.isSolid = False
+        self.blockSize = None
         self.fileSizeCrcs = []
         self.subNames = []
         self.src_sizeCrcDate = {} #--For InstallerProject's
@@ -10128,7 +10136,7 @@ class InstallerConverter(object):
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
-    def __init__(self,srcArchives=None, data=None, destArchive=None, BCFArchive=None,progress=None):
+    def __init__(self,srcArchives=None, data=None, destArchive=None, BCFArchive=None, blockSize=None, progress=None):
         #--Persistent variables are saved in the data tank for normal operations.
         #--persistBCF is read one time from BCF.dat, and then saved in Converters.dat to keep archive extractions to a minimum
         #--persistDAT has operational variables that are saved in Converters.dat
@@ -10139,7 +10147,7 @@ class InstallerConverter(object):
         #--fullPath is saved in Converters.dat, but it is also updated on every refresh in case of renaming
         self.fullPath = 'BCF: Missing!'
         #--Semi-Persistent variables are loaded only when and as needed. They're always read from BCF.dat
-        self.settings = ['comments','espmNots','hasExtraData','isSolid','skipVoices','subActives']
+        self.settings = ['comments','espmNots','hasExtraData','isSolid','skipVoices','subActives','blockSize']
         self.volatile = ['convertedFiles','dupeCount']
         self.convertedFiles = []
         self.dupeCount = {}
@@ -10147,7 +10155,7 @@ class InstallerConverter(object):
         if data != None:
             #--Build a BCF from scratch
             self.fullPath = dirs['converters'].join(BCFArchive)
-            self.build(srcArchives, data, destArchive, BCFArchive,progress)
+            self.build(srcArchives, data, destArchive, BCFArchive, blockSize, progress)
             self.crc = self.fullPath.crc
         elif isinstance(srcArchives,bolt.Path):
             #--Load a BCF from file
@@ -10179,14 +10187,10 @@ class InstallerConverter(object):
         except:
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
         ins = cStringIO.StringIO(ins)
-        values = cPickle.load(ins)
         setter = object.__setattr__
-        for value,attr in zip(values,self.persistBCF):
-            setter(self,attr,value)
+        map(self.__setattr__, self.persistBCF, cPickle.load(ins))
         if fullLoad:
-            values = cPickle.load(ins)
-            for value,attr in zip(values,self.settings + self.volatile):
-                setter(self,attr,value)
+            map(self.__setattr__, self.settings + self.volatile, cPickle.load(ins))
         ins.close()
 
     @staticmethod
@@ -10233,10 +10237,7 @@ class InstallerConverter(object):
 
     def applySettings(self,destInstaller):
         """Applies the saved settings to an Installer"""
-        setter = object.__setattr__
-        getter = object.__getattribute__
-        for attr in self.settings:
-            setter(destInstaller,attr,getter(self,attr))
+        map(destInstaller.__setattr__, self.settings, map(self.__getattribute__, self.settings))
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
@@ -10273,7 +10274,7 @@ class InstallerConverter(object):
                 progress(index,_("Moving file...\n%s") % destFile.stail)
                 srcFile.moveTo(destFile)
 
-    def build(self, srcArchives, data, destArchive, BCFArchive,progress=None):
+    def build(self, srcArchives, data, destArchive, BCFArchive, blockSize, progress=None):
         """Builds and packages a BCF"""
         progress = progress or bolt.Progress()
         #--Initialization
@@ -10282,6 +10283,7 @@ class InstallerConverter(object):
         destFiles = []
         destInstaller = data[destArchive]
         self.missingFiles = []
+        self.blockSize = blockSize
         subArchives = dict()
         srcAdd = self.srcCRCs.add
         convertedFileAppend = self.convertedFiles.append
@@ -10290,12 +10292,10 @@ class InstallerConverter(object):
         dupeGet = self.dupeCount.get
         srcGet = srcFiles.get
         subGet = subArchives.get
-        setter = object.__setattr__
-        getter = object.__getattribute__
         lastStep = 0
         #--Get settings
-        for attr in ['espmNots','hasExtraData','skipVoices','comments','subActives','isSolid']:
-            setter(self,attr,getter(destInstaller,attr))
+        attrs = ['espmNots','hasExtraData','skipVoices','comments','subActives','isSolid']
+        map(self.__setattr__, attrs, map(destInstaller.__getattribute__,attrs))
         #--Make list of source files
         for installer in [data[x] for x in srcArchives]:
             installerCRC = installer.crc
@@ -10382,8 +10382,8 @@ class InstallerConverter(object):
         #--Dump settings into BCF.dat
         try:
             f = open(destInstaller.tempDir.join("BCF.dat").s, 'wb')
-            cPickle.dump(tuple(getter(self,x) for x in self.persistBCF), f,-1)
-            cPickle.dump(tuple(getter(self,x) for x in (self.settings + self.volatile)), f,-1)
+            cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
+            cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile)), f,-1)
             result = f.close()
         finally:
             if f: f.close()
@@ -10393,7 +10393,7 @@ class InstallerConverter(object):
         #--BCF's need to be non-Solid since they have to have BCF.dat extracted and read from during runtime
         self.isSolid = False
         self.pack(destInstaller.tempDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
-        self.isSolid = getter(destInstaller,'isSolid')
+        self.isSolid = destInstaller.isSolid
 
     def pack(self,srcFolder,destArchive,outDir,progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
@@ -10407,8 +10407,15 @@ class InstallerConverter(object):
             destArchive = GPath(destArchive.sbody + defaultExt).tail
             archiveType = writeExts.get(destArchive.cext)
         outFile = outDir.join(destArchive)
-        solid = ('off','on')[self.isSolid]
-        command = '"%s" a "%s" -t"%s" -ms="%s" -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+
+        if self.isSolid:
+            if self.blockSize:
+                solid = '-ms=on -ms=%dm' % self.blockSize
+            else:
+                solid = '-ms=on'
+        else:
+            solid = '-ms=off'
+        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
@@ -10776,7 +10783,7 @@ class InstallerProject(Installer):
         self.removeEmpties(package)
         return (updated,removed)
 
-    def packToArchive(self,project,archive,isSolid,progress=None,release=False):
+    def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
         """Packs project to build directory. Release filters out developement material from the archive"""
         progress = progress or bolt.Progress()
         length = len(self.fileSizeCrcs)
@@ -10791,7 +10798,13 @@ class InstallerProject(Installer):
         if archive.cext in noSolidExts:
             solid = ''
         else:
-            solid = ('-ms=off','-ms=on')[isSolid]
+            if isSolid:
+                if blockSize:
+                    solid = '-ms=on -ms=%dm' % blockSize
+                else:
+                    solid = '-ms=on'
+            else:
+                solid = '-ms=off'
         #--Dump file list
         out = self.tempList.open('w')
         if release:
