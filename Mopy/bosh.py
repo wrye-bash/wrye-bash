@@ -11839,13 +11839,14 @@ class CBash_ActorFactions:
             id_factions = type_id_factions[type]
             factions = id_factions.get(aid)
             if factions is None:
-                factions = id_factions[aid] = []
+                factions = id_factions[aid] = {}
             for index,entry in enumerate(factions):
-                if entry[0] == fid:
-                    factions[index] = (fid,rank,None)
+                if entry == fid:
+                    factions[fid] = (rank,None)
                     break
             else:
-                factions.append((fid,rank,None))
+                factions[fid] = (rank,None)
+        print type_id_factions
         ins.close()
 
     def writeToText(self,textPath):
@@ -11859,7 +11860,7 @@ class CBash_ActorFactions:
             id_factions = type_id_factions[type]
             for id in sorted(id_factions,key = lambda x: id_eid.get(x)):
                 actorEid = id_eid.get(id,'Unknown')
-                for faction, rank in sorted(id_factions[id],key=lambda x: id_eid.get(x[0])):
+                for faction, rank, unused in sorted(id_factions[id],key=lambda x: id_eid.get(x[0])):
                     factionEid = id_eid.get(faction,'Unknown')
                     out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
@@ -17975,7 +17976,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                 actorFactions.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        id_factions= self.id_factions
+        id_factions = self.id_factions
         for type,aFid_factions in actorFactions.type_id_factions.iteritems():
             if type not in ('CREA','NPC_'): continue
             for fid_long,factions in aFid_factions.iteritems():
@@ -17988,26 +17989,28 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            self.id_factions[record.fid_long] = record.factions_list
+            factions = record.ConflictDetails(('factions_list',))
+            if factions:
+                self.id_factions.setdefault(record.fid_long,{}).update(dict((faction[0],(faction[1],faction[2])) for faction in factions['factions_list']))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
         if(record.fid_long in self.id_factions):
-            newFactions = set(self.id_factions[record.fid_long])
-            curFactions = set(record.factions_list)
-            changed = newFactions - curFactions
-            if changed:
+            newFactions = self.id_factions[record.fid_long]
+            curFactions = dict((faction[0],(faction[1],faction[2])) for faction in record.factions_list)
+            if newFactions != curFactions:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    for faction_long,rank,unused1 in changed:
+                    for faction_long in newFactions:
                         for entry in override.factions:
                             if entry.faction_long == faction_long:
-                                entry.rank = rank
+                                entry.rank, entry.unused1 = newFactions[faction_long]
                                 break
                         else:
                             entry = override.newFactionsElement()
-                            entry.faction_long,entry.rank,entry.unused1 = faction_long,rank,unused1
+                            entry.faction_long = faction_long
+                            entry.rank,entry.unused1 = newFactions[faction_long]
                     class_mod_count = self.class_mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -18167,9 +18170,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            relations = record.relations_list
+            relations = record.ConflictDetails(('relations_list',),False)
             if relations:
-                self.id_faction_mod.setdefault(record.fid_long,{}).update(relations)
+                self.id_faction_mod.setdefault(record.fid_long,{}).update(relations['relations_list'])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -19122,7 +19125,9 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
-            self.id_full[record.fid_long] = record.full
+            full = record.ConflictDetails(('full',),False)
+            if full: 
+                self.id_full[record.fid_long] = full['full']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -19292,7 +19297,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_face[record.fid_long] = map(record.__getattribute__,self.faceData)
+            self.id_face.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.faceData, False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -19311,13 +19316,14 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if(recordId in self.id_face):
-            attrs = self.faceData
-            prevValues = self.id_face[recordId]
-            recValues = map(record.__getattribute__,attrs)
-            if recValues != prevValues:
+            prev_face_value = self.id_face[recordId]
+            if not prev_face_value: return #otherwise extra unnecessary steps
+            cur_face_value = dict((attr,getattr_deep(record,attr)) for attr in prev_face_value)
+            if cur_face_value != prev_face_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    map(override.__setattr__,attrs,prevValues)
+                    for attr, value in prev_face_value.iteritems():
+                        setattr_deep(override,attr,value)
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -19442,8 +19448,8 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            road = record.ROAD
-            if road: self.id_ROAD[record.fid_long] = road
+            road = record.ConflictDetails(('ROAD',))
+            if road: self.id_ROAD[record.fid_long] = road['ROAD']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
