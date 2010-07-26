@@ -1548,13 +1548,7 @@ class ModDetails(wx.Window):
         self.save.Disable()
         self.cancel.Disable()
         #--Bash tags
-        self.allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
-                               'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent',
-                               'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
-                               'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
-                               'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
-                               'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
-                               'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd'))
+        self.allTags = bosh.allTags
         id = self.tagsId = wx.NewId()
         self.gTags = (
             wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
@@ -2707,8 +2701,16 @@ class InstallersPanel(SashTankPanel):
             elif isinstance(installer,bosh.InstallerMarker):
                 info += _("Size: N/A\n")
             elif isinstance(installer,bosh.InstallerArchive):
-                sSolid = (_("Non-solid"),_("Solid"))[installer.isSolid]
-                info += _("Size: %s kb (%s)\n") % (formatInteger(installer.size/1024),sSolid)
+                if installer.isSolid:
+                    if installer.blockSize:
+                        sSolid = _("Solid, Block Size: %d MB") % installer.blockSize
+                    elif installer.blockSize is None:
+                        sSolid = _("Solid, Block Size: Unknown")
+                    else:
+                        sSolid = _("Solid, Block Size: 7z Default")
+                else:
+                    sSolid = _("Non-solid")
+                info += _("Size: %s KB (%s)\n") % (formatInteger(installer.size/1024),sSolid)
             else:
                 info += _("Size: Unrecognized\n")
             info += (_("Modified: %s\n") % formatDate(installer.modified),_(
@@ -7465,20 +7467,24 @@ class InstallerProject_Pack(InstallerLink):
         if archive in self.data:
             if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % archive.s,self.title,False): return
         #--Archive configuration options
+        blockSize = None
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
             isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
+            if isSolid:
+                blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
         progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
         try:
             #--Pack
-            installer.packToArchive(project,archive,isSolid,SubProgress(progress,0,0.8))
+            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8))
             #--Add the new archive to Bash
             if archive not in self.data:
                 self.data[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.data[archive]
             pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
@@ -7523,20 +7529,24 @@ class InstallerProject_ReleasePack(InstallerLink):
         if archive in self.data:
             if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % archive.s,self.title,False): return
         #--Archive configuration options
+        blockSize = None
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
             isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
+            if isSolid:
+                blockSize = balt.askNumber(self.gTank,'mb',_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),self.title,0,0,102400)
         progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
         try:
             #--Pack
-            installer.packToArchive(project,archive,isSolid,SubProgress(progress,0,0.8),release=True)
+            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8),release=True)
             #--Add the new archive to Bash
             if archive not in self.data:
                 self.data[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.data[archive]
             pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
@@ -7691,11 +7701,14 @@ class InstallerConverter_Create(InstallerLink):
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
             self.data.removeConverter(BCFArchive)
+        destInstaller = self.data[destArchive]
+        if destInstaller.isSolid:
+            blockSize = balt.askNumber(self.gTank,'mb',_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),self.title,destInstaller.blockSize or 0,0,102400)
         progress = balt.Progress(_("Creating %s...") % BCFArchive.s,'\n'+' '*60)
         log = None
         try:
             #--Create the converter
-            converter = bosh.InstallerConverter(self.selected, self.data, destArchive, BCFArchive, progress)
+            converter = bosh.InstallerConverter(self.selected, self.data, destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
             self.data.addConverter(converter)
             #--Refresh UI
@@ -7712,6 +7725,11 @@ class InstallerConverter_Create(InstallerLink):
             log.setHeader(_('. Options:'))
             log(_('  *  Skip Voices   = %s') % bool(converter.skipVoices))
             log(_('  *  Solid Archive = %s') % bool(converter.isSolid))
+            if converter.isSolid:
+                if converter.blockSize:
+                    log(_('    *  Solid Block Size = %d') % (converter.blockSize))
+                else:
+                    log(_('    *  Solid Block Size = 7z default'))
             log(_('  *  Has Comments  = %s') % bool(converter.comments))
             log(_('  *  Has Extra Directories = %s') % bool(converter.hasExtraData))
             log(_('  *  Has Esps Unselected   = %s') % bool(converter.espmNots))
@@ -8756,10 +8774,6 @@ class Mod_MarkMergeable(Link):
         for fileName in map(GPath,self.data):
             if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
             fileInfo = bosh.modInfos[fileName]
-            descTags = fileInfo.getBashTagsDesc()
-            if descTags and 'Merge' in descTags:
-                descTags.discard('Merge')
-                fileInfo.setBashTagsDesc(descTags)
             if not CBash:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
             else:
