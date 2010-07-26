@@ -7196,7 +7196,6 @@ class Installer_CopyConflicts(InstallerLink):
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
                         self.data.moveArchives([project],srcInstaller.order+1)
-                        self.data.refreshOrder()
                     self.data.refresh(what='I')
                     self.gTank.RefreshUI()
         finally:
@@ -7284,7 +7283,6 @@ class InstallerArchive_Unpack(InstallerLink):
             iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
             if iProject.order == -1:
                 self.data.moveArchives([project],installer.order+1)
-                self.data.refreshOrder()
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
             #pProject.start()
@@ -7489,7 +7487,6 @@ class InstallerProject_Pack(InstallerLink):
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
                 self.data.moveArchives([archive],installer.order+1)
-                self.data.refreshOrder()
             #--Refresh UI
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
@@ -7551,7 +7548,6 @@ class InstallerProject_ReleasePack(InstallerLink):
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
             if iArchive.order == -1:
                 self.data.moveArchives([archive],installer.order+1)
-                self.data.refreshOrder()
             #--Refresh UI
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
@@ -7610,7 +7606,6 @@ class InstallerConverter_Apply(InstallerLink):
             if iArchive.order == -1:
                 lastInstaller = self.data[self.selected[-1]]
                 self.data.moveArchives([destArchive],lastInstaller.order+1)
-                self.data.refreshOrder()
             self.data.refresh(what='NSC')
             self.gTank.RefreshUI()
         finally:
@@ -7702,6 +7697,7 @@ class InstallerConverter_Create(InstallerLink):
             #--It will be picked back up by the next refresh.
             self.data.removeConverter(BCFArchive)
         destInstaller = self.data[destArchive]
+        blockSize = None
         if destInstaller.isSolid:
             blockSize = balt.askNumber(self.gTank,'mb',_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),self.title,destInstaller.blockSize or 0,0,102400)
         progress = balt.Progress(_("Creating %s...") % BCFArchive.s,'\n'+' '*60)
