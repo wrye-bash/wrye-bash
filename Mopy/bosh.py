@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -71,6 +72,8 @@ from types import *
 from operator import attrgetter,itemgetter
 import subprocess
 from subprocess import Popen, PIPE
+import ctypes
+import codecs
 
 #-- To make commands executed with Popen hidden
 if os.name == 'nt':
@@ -101,6 +104,22 @@ screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
+archiveDLL = None
+if(exists(".\\7zDec.dll")):
+    archiveDLL = ctypes.CDLL("7zDec.dll")
+    archiveDLL.ListContents.restype = ctypes.c_uint
+    archiveDLL.GetString.restype = ctypes.c_wchar_p
+else:
+    raise StateError('Missing 7zDec.dll')
+
+def listArchiveContents(fileName):
+    command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, fileName)
+    ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+    return ins
+##    stringIndex = archiveDLL.ListContents(unicode(fileName,'utf8'))
+##    stringBuffer = archiveDLL.GetString(stringIndex)
+##    archiveDLL.FreeString(stringIndex)
+##    return stringBuffer
 
 #--Settings
 dirs = {} #--app, user, mods, saves, userApp
@@ -9657,15 +9676,9 @@ class Installer(object):
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
-        splitter = bolt.Path.mbSplit
         def sortKey(file):
-##            dirFile = file.lower().rsplit('\\',1)
-##            if len(dirFile) == 1: dirFile.insert(0,'')
-            pathParts = splitter(file)
-            if len(pathParts) == 1:
-                dirFile = ['', pathParts[0]]
-            else:
-                dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
+            dirFile = file.lower().rsplit('\\',1)
+            if len(dirFile) == 1: dirFile.insert(0,'')
             return dirFile
         sortKeys = dict((x,sortKey(x)) for x in files)
         return sorted(files,key=lambda x: sortKeys[x])
@@ -9891,7 +9904,6 @@ class Installer(object):
         skipExtFilesAdd = skipExtFiles.add
         espms = self.espms
         espmsAdd = espms.add
-        splitter = bolt.Path.mbSplit
         espmMap = self.espmMap
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
@@ -9908,22 +9920,16 @@ class Installer(object):
             sub = ''
             bSkip = False
             if type == 2: #--Complex archive
-                #subFile = full.split('\\',1)
-                #if len(subFile) == 2:
-                #    sub,file = subFile
-                pathParts = splitter(full)
-                if len(pathParts) > 1:
-                    sub = pathParts[0]
-                    file = '\\'.join(pathParts[1:])
+                subFile = full.split('\\',1)
+                if len(subFile) == 2:
+                    sub,file = subFile
                     if sub not in activeSubs:
                         if sub not in allSubs:
                             skipDirFilesAdd(file)
                         bSkip = True
                     fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
-##            rootPos = file.find('\\')
-            pathParts = splitter(file)
-            rootPos = len(pathParts[0]) if len(pathParts) > 1 else -1
+            rootPos = file.find('\\')
             extPos = file.rfind('.')
             rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
@@ -9970,9 +9976,7 @@ class Installer(object):
                 if pFile in espmNots: continue
             elif bSkip: continue
             if skipEspmVoices and fileStartsWith('sound\\voice\\'):
-##                farPos = file.find('\\',12)
-                pathParts = splitter(file[12:])
-                farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
+                farPos = file.find('\\',12)
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
             #--Remap docs
@@ -10022,15 +10026,9 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
-        splitter = bolt.Path.mbSplit
         def fscSortKey(fsc):
-##            dirFile = fsc[0].lower().rsplit('\\',1)
-##            if len(dirFile) == 1: dirFile.insert(0,'')
-            pathParts = splitter(fsc[0])
-            if len(pathParts) == 1:
-                dirFile = ['', pathParts[0]]
-            else:
-                dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
+            dirFile = fsc[0].lower().rsplit('\\',1)
+            if len(dirFile) == 1: dirFile.insert(0,'')
             return dirFile
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
@@ -10044,8 +10042,7 @@ class Installer(object):
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
-##                frags = file.split('\\')
-                frags = splitter(file)
+                frags = file.split('\\')
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFile.search(frags[0]) or
@@ -10545,19 +10542,17 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         oldstylefileSizeCrcs = []
-        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s)
-        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        ins = cStringIO.StringIO(ins)
+        ins = listArchiveContents(archive.s)
         cumCRC = 0
-        for line in ins:
+        for line in ins.splitlines(True):
             maList = reList.match(line)
             if maList:
                 key,value = maList.groups()
-                if key == 'Solid': self.isSolid = (value[0] == '+')
-                elif key == 'Path':
+                if key == u'Solid': self.isSolid = (value[0] == u'+')
+                elif key == u'Path':
                     #--Should be able to twist 7z to export names in UTF-8, but can't (at
                     #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
@@ -10565,20 +10560,17 @@ class InstallerArchive(Installer):
                     #  It won't solve problems with non-european characters though.
                    ## try: file = value.decode('cp437').encode('cp1252')
                    ## except: pass
-                    file = value
-                elif key == 'Size': size = int(value)
-                elif key == 'Attributes': isdir = (value[0] == 'D')
-                elif key == 'CRC' and value:
+                    file = value.decode('utf8')
+                elif key == u'Size': size = int(value)
+                elif key == u'Attributes': isdir = (value[0] == u'D')
+                elif key == u'CRC' and value:
                     crc = int(value,16)
-                elif key == 'Method':
+                elif key == u'Method':
                     if file and not isdir and file != archive.s:
                         fileSizeCrcs.append((file,size,crc))
                         cumCRC += crc
                     file = size = crc = isdir = 0
         self.crc = cumCRC & 0xFFFFFFFFL
-        result = ins.close()
-        if result:
-            raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (archive.s,result))
 
     def unpackToTemp(self,archive,fileNames,progress=None):
         """Erases all files from self.tempDir and then extracts specified files
@@ -10588,31 +10580,32 @@ class InstallerArchive(Installer):
         progress = progress or bolt.Progress()
         progress.state,progress.full = 0,len(fileNames)
         #--Dump file list
-        out = self.tempList.open('w')
+        out = codecs.open(self.tempList.s, encoding='utf8', mode='w')
         out.write('\n'.join(fileNames))
         out.close()
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        reExtracting = re.compile('Extracting\s+(.+)')
-        reError = re.compile('Error:')
+        reExtracting = re.compile(u'Extracting\s+(.+)')
+        reError = re.compile(u'Error:')
         extracted = []
         errorLine = []
         index = 0
         for line in ins:
+            line = unicode(line,'UTF8')
             maExtracting = reExtracting.match(line)
             if len(errorLine) or reError.match(line):
                 errorLine.append(line)
             if maExtracting:
                 extracted.append(maExtracting.group(1).strip())
-                progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
+                progress(index,_("%s\nExtracting files...\n%s") % (archive.s.encode('UTF8'), maExtracting.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
         if result:
-            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
+            raise StateError(_("%s: Extraction failed\n%s") % (archive.s.encode('UTF8'),"\n".join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -10679,11 +10672,9 @@ class InstallerArchive(Installer):
         file = ''
         isdir = False
         apath = dirs['installers'].join(archive)
-        command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
-        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        ins = cStringIO.StringIO(ins)
+        ins = listArchiveContents(apath.s)
         text = []
-        for line in ins:
+        for line in ins.splitlines(True):
             maList = reList.match(line)
             if maList:
                 key,value = maList.groups()
@@ -10701,9 +10692,6 @@ class InstallerArchive(Installer):
                 elif key == 'Method':
                     file = ''
                     isdir = False
-        result = ins.close()
-        if result:
-            raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
         text.sort()
         
         for line in text:
