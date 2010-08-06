@@ -2028,7 +2028,7 @@ class MreAchr(MelRecord): # Placed NPC
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelXpci('XPCI'),
-        MelBase('XLOD','xlod_p'), ### Float?
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
         MelFid('XMRC','merchantContainer'),
         MelFid('XHRS','horse'),
@@ -2046,6 +2046,7 @@ class MreAcre(MelRecord): # Placed Creature
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelOwnership(),
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
         MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
         MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
         MelOptStruct('XSCL','f',('scale',1.0)),

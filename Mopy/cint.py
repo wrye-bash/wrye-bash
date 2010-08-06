@@ -1467,23 +1467,50 @@ class ACRERecord(BaseRecord):
     def set_globalVariable_long(self, nValue):
         self.globalVariable = MakeShortFid(self._CollectionIndex, nValue)
     globalVariable_long = property(get_globalVariable_long, set_globalVariable_long)
+    def get_lod1(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_lod1(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 10, c_float(round(nValue,6)))
+    lod1 = property(get_lod1, set_lod1)
+    def get_lod2(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_lod2(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 11, c_float(round(nValue,6)))
+    lod2 = property(get_lod2, set_lod2)
+    def get_lod3(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 12)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_lod3(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 12)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 12, c_float(round(nValue,6)))
+    lod3 = property(get_lod3, set_lod3)
     def get_parent(self):
         CBash.ReadFIDField.restype = POINTER(c_uint)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
         if(retValue): return retValue.contents.value
         return None
     def set_parent(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 10)
-        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 10, nValue)
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
+        else: CBash.SetFIDFieldUI(self._CollectionIndex, self._ModName, self._recordID, 13, nValue)
     parent = property(get_parent, set_parent)
     def get_parentFlags(self):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
         if(retValue): return retValue.contents.value
         return None
     def set_parentFlags(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 11)
-        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 11, c_ubyte(nValue))
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
+        else: CBash.SetFIDFieldUC(self._CollectionIndex, self._ModName, self._recordID, 14, c_ubyte(nValue))
     parentFlags = property(get_parentFlags, set_parentFlags)
     def get_parent_long(self):
         return MakeLongFid(self._CollectionIndex,self.parent)
@@ -1491,91 +1518,91 @@ class ACRERecord(BaseRecord):
         self.parent = MakeShortFid(self._CollectionIndex, nValue)
     parent_long = property(get_parent_long, set_parent_long)
     def get_unused1(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 12)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 15)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 12, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 15, byref(cRecords))
             return [cRecords.contents[x] for x in range(0, numRecords)]
         return []
     def set_unused1(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 12)
-        else: CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 12, struct.pack('3B', *nValue), 3)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 15)
+        else: CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 15, struct.pack('3B', *nValue), 3)
     unused1 = property(get_unused1, set_unused1)
     def get_xrgd_p(self):
-        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 13)
+        numRecords = CBash.GetFIDFieldArraySize(self._CollectionIndex, self._ModName, self._recordID, 16)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
-            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 13, byref(cRecords))
+            CBash.GetFIDFieldArray(self._CollectionIndex, self._ModName, self._recordID, 16, byref(cRecords))
             return [cRecords.contents[x] for x in range(0, numRecords)]
         return []
     def set_xrgd_p(self, nValue):
-        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
+        if nValue is None or not len(nValue): CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 16)
         else:
             length = len(nValue)
-            CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 13, struct.pack('B' * length, *nValue), length)
+            CBash.SetFIDFieldR(self._CollectionIndex, self._ModName, self._recordID, 16, struct.pack('B' * length, *nValue), length)
     xrgd_p = property(get_xrgd_p, set_xrgd_p)
     def get_scale(self):
-        CBash.ReadFIDField.restype = POINTER(c_float)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
-    def set_scale(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
-        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 14, c_float(round(nValue,6)))
-    scale = property(get_scale, set_scale)
-    def get_posX(self):
-        CBash.ReadFIDField.restype = POINTER(c_float)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 15)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
-    def set_posX(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 15)
-        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 15, c_float(round(nValue,6)))
-    posX = property(get_posX, set_posX)
-    def get_posY(self):
-        CBash.ReadFIDField.restype = POINTER(c_float)
-        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 16)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
-    def set_posY(self, nValue):
-        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 16)
-        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 16, c_float(round(nValue,6)))
-    posY = property(get_posY, set_posY)
-    def get_posZ(self):
         CBash.ReadFIDField.restype = POINTER(c_float)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
         if(retValue): return round(retValue.contents.value,6)
         return None
-    def set_posZ(self, nValue):
+    def set_scale(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 17)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 17, c_float(round(nValue,6)))
-    posZ = property(get_posZ, set_posZ)
-    def get_rotX(self):
+    scale = property(get_scale, set_scale)
+    def get_posX(self):
         CBash.ReadFIDField.restype = POINTER(c_float)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 18)
         if(retValue): return round(retValue.contents.value,6)
         return None
-    def set_rotX(self, nValue):
+    def set_posX(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 18)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 18, c_float(round(nValue,6)))
-    rotX = property(get_rotX, set_rotX)
-    def get_rotY(self):
+    posX = property(get_posX, set_posX)
+    def get_posY(self):
         CBash.ReadFIDField.restype = POINTER(c_float)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 19)
         if(retValue): return round(retValue.contents.value,6)
         return None
-    def set_rotY(self, nValue):
+    def set_posY(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 19)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 19, c_float(round(nValue,6)))
-    rotY = property(get_rotY, set_rotY)
-    def get_rotZ(self):
+    posY = property(get_posY, set_posY)
+    def get_posZ(self):
         CBash.ReadFIDField.restype = POINTER(c_float)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 20)
         if(retValue): return round(retValue.contents.value,6)
         return None
-    def set_rotZ(self, nValue):
+    def set_posZ(self, nValue):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 20)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 20, c_float(round(nValue,6)))
+    posZ = property(get_posZ, set_posZ)
+    def get_rotX(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 21)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_rotX(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 21)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 21, c_float(round(nValue,6)))
+    rotX = property(get_rotX, set_rotX)
+    def get_rotY(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_rotY(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 22)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 22, c_float(round(nValue,6)))
+    rotY = property(get_rotY, set_rotY)
+    def get_rotZ(self):
+        CBash.ReadFIDField.restype = POINTER(c_float)
+        retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
+        if(retValue): return round(retValue.contents.value,6)
+        return None
+    def set_rotZ(self, nValue):
+        if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
+        else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 23, c_float(round(nValue,6)))
     rotZ = property(get_rotZ, set_rotZ)
     def get_IsOppositeParent(self):
         return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
@@ -1585,7 +1612,8 @@ class ACRERecord(BaseRecord):
             else: self.parentFlags = 0x00000001
         elif self.parentFlags: self.parentFlags &= ~0x00000001
     IsOppositeParent = property(get_IsOppositeParent, set_IsOppositeParent)
-    copyattrs = BaseRecord.baseattrs + ['base','owner','rank','globalVariable','parent',
+    copyattrs = BaseRecord.baseattrs + ['base','owner','rank','globalVariable',
+                                        'lod1','lod2','lod3','parent',
                                         'parentFlags','xrgd_p','scale',
                                         'posX','posY','posZ','rotX','rotY','rotZ']
 
