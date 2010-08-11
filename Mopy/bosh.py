@@ -104,22 +104,11 @@ screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
-archiveDLL = None
-if(exists(".\\7zDec.dll")):
-    archiveDLL = ctypes.CDLL("7zDec.dll")
-    archiveDLL.ListContents.restype = ctypes.c_uint
-    archiveDLL.GetString.restype = ctypes.c_wchar_p
-else:
-    raise StateError('Missing 7zDec.dll')
 
 def listArchiveContents(fileName):
     command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, fileName)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
-##    stringIndex = archiveDLL.ListContents(unicode(fileName,'utf8'))
-##    stringBuffer = archiveDLL.GetString(stringIndex)
-##    archiveDLL.FreeString(stringIndex)
-##    return stringBuffer
 
 #--Settings
 dirs = {} #--app, user, mods, saves, userApp
