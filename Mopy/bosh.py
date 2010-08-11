@@ -9648,7 +9648,7 @@ class Installer(object):
     docDirs = set(('screenshots',))
     dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy'))
+    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini'))
     dataDirsMinus = set(('bash','obse','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
