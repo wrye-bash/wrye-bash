@@ -9061,7 +9061,7 @@ class ConfigHelpers:
             mod = None
             reFcomSwitch = re.compile('^[<>]')
             reComment = re.compile(r'^\\.*')
-            reMod = re.compile(r'(^[[\w!].*?\.es[pm]$)',re.I)
+            reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
             reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
             for line in ins:
                 line = reFcomSwitch.sub('',line)
@@ -16672,7 +16672,19 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreMgef,):
             recAttrs_class[recClass] = ('iconPath','model','effectShader','enchantEffect','light')
         for recClass in (MreEfsh,):
-            recAttrs_class[recClass] = ('particleTexture','fillTexture')
+            recAttrs_class[recClass] = ('particleTexture','fillTexture','flags','unused1','memSBlend',
+                                        'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue','unused2',
+                                        'fillAIn','fillAFull','fillAOut','fillAPRatio','fillAAmp','fillAFreq',
+                                        'fillAnimSpdU','fillAnimSpdV','edgeOff','edgeRed','edgeGreen',
+                                        'edgeBlue','unused3','edgeAIn','edgeAFull','edgeAOut','edgeAPRatio',
+                                        'edgeAAmp','edgeAFreq','fillAFRatio','edgeAFRatio','memDBlend',
+                                        'partSBlend','partBlendOp','partZFunc','partDBlend','partBUp',
+                                        'partBFull','partBDown','partBFRatio','partBPRatio','partLTime',
+                                        'partLDelta','partNSpd','partNAcc','partVel1','partVel2','partVel3',
+                                        'partAcc1','partAcc2','partAcc3','partKey1','partKey2','partKey1Time',
+                                        'partKey2Time','key1Red','key1Green','key1Blue','unused4','key2Red',
+                                        'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
+                                        'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
         #--Needs Longs
         self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
 
@@ -16839,7 +16851,19 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         class_attrs['CREA'] = model + ('bodyParts', 'nift_p','bloodSprayPath','bloodDecalPath')
         ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
         class_attrs['MGEF'] = icon + model## + ('effectShader_long','enchantEffect_long','light_long')
-        class_attrs['EFSH'] = ('particleTexture','fillTexture')
+        class_attrs['EFSH'] = ('fillTexture','particleTexture','flags','memSBlend','memBlendOp',
+                               'memZFunc','fillRed','fillGreen','fillBlue','fillAIn','fillAFull',
+                               'fillAOut','fillAPRatio','fillAAmp','fillAFreq','fillAnimSpdU',
+                               'fillAnimSpdV','edgeOff','edgeRed','edgeGreen','edgeBlue','edgeAIn',
+                               'edgeAFull','edgeAOut','edgeAPRatio','edgeAAmp','edgeAFreq',
+                               'fillAFRatio','edgeAFRatio','memDBlend','partSBlend','partBlendOp',
+                               'partZFunc','partDBlend','partBUp','partBFull','partBDown',
+                               'partBFRatio','partBPRatio','partLTime','partLDelta','partNSpd',
+                               'partNAcc','partVel1','partVel2','partVel3','partAcc1','partAcc2',
+                               'partAcc3','partKey1','partKey2','partKey1Time','partKey2Time',
+                               'key1Red','key1Green','key1Blue','key2Red','key2Green','key2Blue',
+                               'key3Red','key3Green','key3Blue','key1A','key2A','key3A',
+                               'key1Time','key2Time','key3Time')
         
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -17308,7 +17332,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_animations[record.fid_long] = record.animations
+            self.id_animations.setdefault([record.fid_long],[]).append(anim for anim in record.animations if anim not in self.id_animations.setdefault([record.fid_long],[]))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -27776,35 +27800,36 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
                 readKey = 'iIconSize'
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
-    for section in bashIni.sections():
-        options = bashIni.items(section)
-        for key,value in options:
-            usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
-            defaultValue = usedSettings.get(usedKey,'')
-            settingType = type(defaultValue)
-            if settingType is bolt.Path:
-                value = GPath(value)
-                if not value.isabs():
-                    value = dirs['app'].join(value)
-            elif settingType is bool:
-                value = bashIni.getboolean(section,key)
-            else:
-                value = settingType(value)
-            compDefaultValue = defaultValue
-            compValue = value
-            if settingType is str:
-                compDefaultValue = compDefaultValue.lower()
-                compValue = compValue.lower()
-                if compValue in (_('-option(s)'),_('tooltip text'),):
-                    compValue = compDefaultValue
-            if compValue != compDefaultValue:
-##                print section
-##                print "  ", usedKey
-##                print "  ", key,'=',defaultValue
-##                print "  ", key,'=',value
-##                print
-                usedSettings[usedKey] = value
-##    print unknownSettings
+    if bashIni:
+        for section in bashIni.sections():
+            options = bashIni.items(section)
+            for key,value in options:
+                usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
+                defaultValue = usedSettings.get(usedKey,'')
+                settingType = type(defaultValue)
+                if settingType is bolt.Path:
+                    value = GPath(value)
+                    if not value.isabs():
+                        value = dirs['app'].join(value)
+                elif settingType is bool:
+                    value = bashIni.getboolean(section,key)
+                else:
+                    value = settingType(value)
+                compDefaultValue = defaultValue
+                compValue = value
+                if settingType is str:
+                    compDefaultValue = compDefaultValue.lower()
+                    compValue = compValue.lower()
+                    if compValue in (_('-option(s)'),_('tooltip text'),):
+                        compValue = compDefaultValue
+                if compValue != compDefaultValue:
+    ##                print section
+    ##                print "  ", usedKey
+    ##                print "  ", key,'=',defaultValue
+    ##                print "  ", key,'=',value
+    ##                print
+                    usedSettings[usedKey] = value
+    ##    print unknownSettings
 
     tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join('TES4View.exe')
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join('TES4Trans.exe')
