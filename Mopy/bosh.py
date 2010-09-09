@@ -16782,10 +16782,20 @@ class GraphicsPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
-                    if isinstance(record.__getattribute__(attr),str):
+                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
                         if record.__getattribute__(attr).lower() != value.lower():
                             break
+                        #print 'identical string: %s' % value.modPath.lower()
                         continue
+                    elif attr == 'model':
+                       # try:
+                        if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
+                            break
+                        if record.__getattribute__(attr).modPath != value.modPath:
+                            print 'identical model path: %s' % value.modPath.lower()
+                        continue
+                        #except:
+                        #    break #assume they are not equal (ie they aren't both NONE)
                     if record.__getattribute__(attr) != value:
                         break
                 else:
