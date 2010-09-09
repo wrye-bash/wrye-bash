@@ -2,7 +2,7 @@
 [b]Readme[/b]: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (Very outdated ... most up to date readme is in the download - the file named Wrye Bash.html in the mopy folder)
 [b]Wrye Bash Wiki[/b]: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 [b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1107163-relz-wrye-bash-thread-48/][RELZ] Wrye Bash #48[/url]
+[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1109736-relz-wrye-bash-thread-49/][RELZ] Wrye Bash #49[/url]
 [b]Requirements[/b]:
 [list]
 [*]The old "official" setup:

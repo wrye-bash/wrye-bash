@@ -302,6 +302,8 @@ settingDefaults = {
     'bash.messages.colAligns': {},
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
+    #--BOSS:
+    'BOSS.ClearLockTimes':False,
     }
 
 # Exceptions ------------------------------------------------------------------
@@ -4013,10 +4015,11 @@ class BashFrame(wx.Frame):
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
-            message = _('Modified dates have been reset for some mod files:')
-            message += listFiles(sorted(bosh.modInfos.mtimesReset))
+            if not bosh.inisettings['SkipResetTimeNotifications']:
+                message = _('Modified dates have been reset for some mod files:')
+                message += listFiles(sorted(bosh.modInfos.mtimesReset))
+                balt.showInfo(self,message)
             del bosh.modInfos.mtimesReset[:]
-            balt.showInfo(self,message)
             popMods = 'ALL'
         #--Mods autogrouped?
         if bosh.modInfos.autoGrouped:
@@ -6574,6 +6577,11 @@ class InstallerLink(Link):
         if len(self.selected) != 1: return False
         else: return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
 
+    def isSelectedArchives(self):
+        """Indicates whether or not selected is all archives."""
+        for selected in self.data[self.selected]:
+            if not isinstance(selected,bosh.InstallerArchive): return False
+
     def getProjectPath(self):
         """Returns whether build directory exists."""
         archive = self.selected[0]
@@ -7249,45 +7257,64 @@ class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleArchive(): 
-            self.title = _('Unpack to Project...')
+        if self.isSelectedArchives(): 
+            self.title = _('Unpack to Project(s)...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
 
     def Execute(self,event):
-        archive = self.selected[0]
-        installer = self.data[archive]
-        project = archive.root
-        result = balt.askText(self.gTank,_("Unpack %s to Project:") % archive.s,
-            self.title,project.s)
-        result = (result or '').strip()
-        if not result: return
-        #--Error checking
-        project = GPath(result).tail
-        if not project.s or project.cext in bosh.readExts:
-            balt.ShowWarning(self.gTank,_("%s is not a valid project name.") % result)
-            return
-        if self.data.dir.join(project).isfile():
-            balt.ShowWarning(self.gTank,_("%s is a file.") % project.s)
-            return
-        if project in self.data:
-            if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
+        if self.isSingleArchive():
+            archive = self.selected[0]
+            installer = self.data[archive]
+            project = archive.root
+            result = balt.askText(self.gTank,_("Unpack %s to Project:") % archive.s,
+                self.title,project.s)
+            result = (result or '').strip()
+            if not result: return
+            #--Error checking
+            project = GPath(result).tail
+            if not project.s or project.cext in bosh.readExts:
+                balt.ShowWarning(self.gTank,_("%s is not a valid project name.") % result)
                 return
+            if self.data.dir.join(project).isfile():
+                balt.ShowWarning(self.gTank,_("%s is a file.") % project.s)
+                return
+            if project in self.data:
+                if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
+                    return
         #--Copy to Build
         progress = balt.Progress(_("Unpacking to Project..."),'\n'+' '*60)
         try:
-            installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-            if project not in self.data:
-                self.data[project] = bosh.InstallerProject(project)
-            iProject = self.data[project]
-            pProject = bosh.dirs['installers'].join(project)
-            iProject.refreshed = False
-            iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
-            if iProject.order == -1:
-                self.data.moveArchives([project],installer.order+1)
-            self.data.refresh(what='NS')
-            self.gTank.RefreshUI()
-            #pProject.start()
+            if self.isSingleArchive():
+                installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
+                if project not in self.data:
+                    self.data[project] = bosh.InstallerProject(project)
+                iProject = self.data[project]
+                pProject = bosh.dirs['installers'].join(project)
+                iProject.refreshed = False
+                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                if iProject.order == -1:
+                    self.data.moveArchives([project],installer.order+1)
+                self.data.refresh(what='NS')
+                self.gTank.RefreshUI()
+                #pProject.start()
+            else: 
+                for archive in self.selected:
+                    project = archive.root
+                    if project in self.data:
+                        if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
+                        return
+                    installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
+                    if project not in self.data:
+                        self.data[project] = bosh.InstallerProject(project)
+                    iProject = self.data[project]
+                    pProject = bosh.dirs['installers'].join(project)
+                    iProject.refreshed = False
+                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                    if iProject.order == -1:
+                        self.data.moveArchives([project],installer.order+1)
+                self.data.refresh(what='NS')
+                self.gTank.RefreshUI()   
         finally:
             progress.Destroy()
 
@@ -8134,7 +8161,7 @@ class Mods_OblivionVersion(Link):
 
 #------------------------------------------------------------------------------
 class Mods_Tes4ViewExpert(Link):
-    """Turn on deprint/delist."""
+    """Toggle Tes4Edit expert mode (when launched via Bash)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Tes4Edit Expert'),kind=wx.ITEM_CHECK)
@@ -8144,6 +8171,35 @@ class Mods_Tes4ViewExpert(Link):
     def Execute(self,event):
         settings['tes4View.iKnowWhatImDoing'] ^= True
 
+#------------------------------------------------------------------------------
+class Mods_BOSSDisableLockTimes(Link):
+    """Toggle Lock Times disabling when launching BOSS through Bash."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('BOSS Disable Lock Times'),help="If selected will temporarilly disable Bash's Lock Times when running BOSS through Bash.",kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['BOSS.ClearLockTimes'])
+
+    def Execute(self,event):
+        settings['BOSS.ClearLockTimes'] ^= True
+
+class User_SaveSettings(Link):
+    """Saves Bash's settings and user data.."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Save Settings'),help="Save's all of Wrye Bash's settings/data to disc.",kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        BashFrame.CleanSettings()
+        if docBrowser: docBrowser.DoSave()
+        if not BashFrame.IsIconized():
+            settings['bash.framePos'] = BashFrame.GetPositionTuple()
+            settings['bash.frameSize'] = BashFrame.GetSizeTuple()
+        settings['bash.page'] = BashFrame.notebook.GetSelection()
+        for index in range(BashFrame.notebook.GetPageCount()):
+            BashFrame.notebook.GetPage(index).OnCloseWindow()
+        settings.save()
 #------------------------------------------------------------------------------
 class Mods_UpdateInvalidator(Link):
     """Mod Replacers dialog."""
@@ -11467,6 +11523,12 @@ class App_BOSS(App_Button):
                                 ghosted.append(fileLower)
                                 newName = bosh.dirs['mods'].join(name[:-6])
                                 file.moveTo(newName)
+            lockTimesActive = False
+            if settings['BOSS.ClearLockTimes']:
+                if settings['bosh.modInfos.resetMTimes']:
+                    bosh.modInfos.mtimes.clear()
+                    settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimesActive
+                    lockTimesActive = True
             progress(0.55,_("Processing... launching BOSS."))
             try:
                 os.spawnv(os.P_WAIT,exePath.s,exeArgs)
@@ -11478,6 +11540,8 @@ class App_BOSS(App_Button):
                 raise
             finally:
                 if progress: progress.Destroy()
+                if lockTimesActive: 
+                    settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimesActive
                 cwd.setcwd()
         else:
             raise StateError('Application missing: %s' % self.exePath.s)
@@ -12404,6 +12468,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_Deprint())
     ModList.mainMenu.append(Mods_DumpTranslator())
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
+    ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
 
     #--ModList: Item Links
     if True: #--File
@@ -12661,7 +12726,6 @@ def InitLinks():
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
     print _('Compiled')
-    #Testing re.compile function...
 
 def funkychicken():
         text = raw_input ('input relative path')

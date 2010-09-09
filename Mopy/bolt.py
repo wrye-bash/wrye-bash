@@ -259,7 +259,16 @@ class Path(object):
         elif isinstance(name,unicode):
             self.__setstate__(name)
         else:
-            self.__setstate__(unicode(str(name),'UTF8'))
+            try:
+                self.__setstate__(unicode(str(name),'UTF8'))
+            except UnicodeDecodeError:
+                try: 
+                    # A fair number of file names require UTF16 instead...
+                    self.__setstate__(unicode(str(name),'U16'))
+                except UnicodeDecodeError: 
+                    # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                    self.__setstate__(unicode(str(name),'cp500'))
+            
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
