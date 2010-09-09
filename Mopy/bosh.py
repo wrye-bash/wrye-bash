@@ -78,7 +78,10 @@ import codecs
 #-- To make commands executed with Popen hidden
 if os.name == 'nt':
     startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    except: 
+        import _subprocess
+        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
 #--Local
 import balt
