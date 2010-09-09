@@ -9,9 +9,10 @@ except:
     def GPath(obj):
         return obj
 
-CBash = None
-##if(exists(".\\CBash.dll")):
-##    CBash = CDLL("CBash.dll")
+if(exists(".\\CBash.dll")):
+    CBash = CDLL("CBash.dll")
+else:
+    CBash = None
 
 #Helper functions
 class PrintFormID(object):
