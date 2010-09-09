@@ -6579,8 +6579,9 @@ class InstallerLink(Link):
 
     def isSelectedArchives(self):
         """Indicates whether or not selected is all archives."""
-        for selected in self.data[self.selected]:
-            if not isinstance(selected,bosh.InstallerArchive): return False
+        for selected in self.selected:
+            if not isinstance(self.data[selected],bosh.InstallerArchive): return False
+        return True
 
     def getProjectPath(self):
         """Returns whether build directory exists."""
@@ -7301,9 +7302,10 @@ class InstallerArchive_Unpack(InstallerLink):
             else: 
                 for archive in self.selected:
                     project = archive.root
+                    installer = self.data[archive]
                     if project in self.data:
                         if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
-                            return
+                            continue
                     installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                     if project not in self.data:
                         self.data[project] = bosh.InstallerProject(project)
@@ -12469,6 +12471,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_DumpTranslator())
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
+    ModList.mainMenu.append(User_SaveSettings())
 
     #--ModList: Item Links
     if True: #--File
