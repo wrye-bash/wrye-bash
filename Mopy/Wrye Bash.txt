@@ -746,7 +746,7 @@ These are the commands found on context menu for mods...
 
 === File Commands
 * __File Operations__ 
-  * **{{A:Backup}}** Create a backup of the file. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can late restore from a specific point, use Duplicate or Snapshot instead.
+  * **{{A:Backup}}** Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.
     * If multiple files are selected, this is done without any user input.
   * **{{A:Duplicate}}** Creates a duplicate of the file in the mods directory.
     * If multiple files are selected, this is done without any user input.
@@ -1875,7 +1875,7 @@ These are the commands found on context menu for saves...
 * **Deprecated.** Use [[#|Update NPC Levels]] instead. 
 
 === Set Number of Uses for Weapon Enchantments
-* This allows you to set the number of uses for any cast when used enchantments you have created in-game.
+* This allows you to set the number of uses for any cast when used enchantments you have created in-game (or otherwise have ended up recorded in your save game).
 
 === Rename Enchanted
 * This allows you to rename any enchanted items that you have created in-game.
@@ -2137,14 +2137,26 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 287 [12/12/2012] [Waruddar]
+=== 288 [12/12/2010] [DJ_Kovrik,PacificMorrowind,Waruddar]
+* Bashed Patch:
+  * '[[#|Tweak Assorted]]':
+    * 'Playable Armor' and 'Playable Clothes' now skip over even more items that shouldn't be made playable
+  * '[[#|Tweak Actors]]':
+    * MAO Skeleton setter now has option to only affect male or female NPCs or all NPCs
 * BAIN:
   * Archives created with solid compression may now set the solid block size.
   * The General Info tab now displays the block size an archive was compressed with.
     * Solid archives not made by BAIN will display "Unknown" for the block size.
   * BCFs may now set the block size of the resulting archive.
+  * pretty much complete support for non-english characters.
+  * Unpack to Project now works on multiple selections (though then uses automatic naming for the projects names)
 * General:
   * The error message for unexpected subrecords is now a little more helpful.
+  * A few untranslateable strings fixed to be translateable (as reported by DJ_Kovrik)
+  * Updated Russian Translation (contributed by DJ_Kovrik).
+  * BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
+  * A few readme updates
+  * Export Script text now adds comment signifiers (;) to the start of the bash added lines.
 
 === 287 [22/07/2010] [Waruddar]
 * BAIN:
@@ -2238,7 +2250,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Non-lower case file extensions used in Bash.ini no longer cause issues (reported by Vindicator)
   * Several readme images updated (contributed by Metallicow)
   * Various cell and reference flags corrected
-  * Various typos fixed, and more strings are translatable (as reported by DJK)
+  * Various typos fixed, and more strings are translatable (as reported by DJ_Kovrik)
   * Slight fix to recognize mods in the BOSS masterlist/taglist that the modname starts with a '!' or '['.
   * Version reading code modified to recognize ver/rev/r/v as well as version (and any combination of seperating whitespace and '.' and ':' (except for r/v).
 

@@ -2992,7 +2992,7 @@ class MreNpc(MreActor):
     classType = 'NPC_'
     #--Main flags
     _flags = Flags(0L,Flags.getNames(
-        ( 0,'female'),
+        ( 0,2),
         ( 1,'essential'),
         ( 3,'respawn'),
         ( 4,'autoCalc'),
@@ -13685,7 +13685,7 @@ class ScriptText:
                 progress(((1/y)*z),_("reading file %s.") % (name))
                 text = open(os.path.join(root, name),"r")
                 lines = text.readlines()
-                modName,FormID,eid = lines[0][:-1],lines[1][:-1],lines[2][:-1]
+                modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                 scriptText = ''
                 for line in lines[3:]:
                     scriptText = (scriptText+line)
@@ -13721,7 +13721,7 @@ class ScriptText:
                 outpath = dirs['patches'].join(folder).join(name+inisettings['ScriptFileExt'])
                 out = outpath.open('wb')
                 formid = '0x%06X' %(longid[1])
-                out.write(longid[0].s+'\r\n'+formid+'\r\n'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
+                out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
                 out.close
                 exportedScripts += scriptTexts[longid][0]+'\n'
         exportedScripts = (_('Exported %d scripts from %s:\n') % (num,esp)+exportedScripts)
@@ -16779,6 +16779,10 @@ class GraphicsPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
+                    if isinstance(record.__getattribute__(attr),str):
+                        if record.__getattribute__(attr).lower() != value.lower():
+                            break
+                        continue
                     if record.__getattribute__(attr) != value:
                         break
                 else:
@@ -16941,7 +16945,7 @@ class ActorImporter(ImportPatcher):
     text = _("Import Actor components from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood')
+    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -16961,6 +16965,7 @@ class ActorImporter(ImportPatcher):
                 'Actors.Stats': ('skills','health','attributes'),
                 'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
                 'NPC.Class': ('iclass',),
+                'NPC.Race': ('race',),
                 'Actors.CombatStyle': ('combatStyle',),
                 'Creatures.Blood': (),
                 }
@@ -16970,6 +16975,7 @@ class ActorImporter(ImportPatcher):
                 'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
                 'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
                 'NPC.Class': (),
+                'NPC.Race': (),
                 'Actors.CombatStyle': ('combatStyle',),
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 }
@@ -17092,7 +17098,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     text = _("Import Actor components from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood')
+    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -17114,6 +17120,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                                 'IsRespawn','IsAutoCalc','IsPCLevelOffset','IsNoLowLevel','IsNoRumors','IsSummonable',
                                 'IsNoPersuasion','IsCanCorpseCheck'),
                 'NPC.Class': ('iclass_long',),
+                'NPC.Race': ('race_long',),
                 'Actors.CombatStyle': ('combatStyle_long',),
                 'Creatures.Blood': (),
                 }
@@ -17126,6 +17133,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                                 'IsNoLowLevel','IsNoBloodSpray','IsNoBloodDecal','IsNoHead','IsNoRightArm',
                                 'IsNoLeftArm','IsNoCombatInWater','IsNoShadow','IsNoCorpseCheck'),
                 'NPC.Class': (),
+                'NPC.Race': (),
                 'Actors.CombatStyle': ('combatStyle_long',),
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 }
@@ -22277,9 +22285,9 @@ class GmstTweaker(MultiTweaker):
         GmstTweak(True,_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
             ('fChameleonMinRefraction','fChameleonMaxRefraction'),
-            ('Zero',0,0),
-            ('[Normal]',0.01,1),
-            ('Full',1,1),
+            (_('Zero'),0,0),
+            (_('[Normal]'),0.01,1),
+            (_('Full'),1,1),
             ),
         GmstTweak(False,_('Compass: Disable'),
             _("No quest and/or points of interest markers on compass."),
@@ -24398,7 +24406,9 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
             'MAO Skeleton',
-            ('1.0',  '1.0'),
+            (_('All NPCs'),  0),
+            (_('Only Female NPCs'),  1),
+            (_('Only Male NPCs'),  2),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -24406,7 +24416,10 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
+            female = (0,1)[record.flags.female]
             if record.fid == (GPath('Oblivion.esm'),0x000007): continue #skip player record
+            if self.choiceValues[self.chosen] == 1 and not female: continue
+            elif self.choiceValues[self.chosen] == 2 and female: continue
             try:
                 oldModPath = record.model.modPath
             except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
@@ -24439,7 +24452,9 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
         CBash_MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
             'MAO Skeleton',
-            ('1.0',  '1.0'),
+            (_('All NPCs'),  0),
+            (_('Only Female NPCs'),  1),
+            (_('Only Male NPCs'),  2),
             )
         self.mod_count = {}
 
@@ -24450,6 +24465,8 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record._recordID != 0x00000007: #skip player record
+            if self.choiceValues[self.chosen] == 1 and record.isMale: return
+            elif self.choiceValues[self.chosen] == 2 and record.isFemale: return
             oldModPath = record.modPath
             newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
             try:
@@ -27785,6 +27802,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['IconSize'] = '16'
     inisettings['AutoItemCheck'] = False
     inisettings['SkipHideConfirmation'] = False
+    inisettings['SkipResetTimeNotifications'] = False
     #inisettings['show?toollaunchers'] = True
     # Then if bash.ini exists set from the settings in there:
 
