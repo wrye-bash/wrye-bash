@@ -4124,6 +4124,12 @@ class BashFrame(wx.Frame):
     def OnCloseWindow(self, event):
         """Handle Close event. Save application data."""
         self.CleanSettings()
+        self.SaveSettings()
+        self.Destroy()
+        
+    def SaveSettings(self):
+        """Save application data."""
+        self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
         if not self.IsIconized():
             settings['bash.framePos'] = self.GetPositionTuple()
@@ -4132,7 +4138,6 @@ class BashFrame(wx.Frame):
         for index in range(self.notebook.GetPageCount()):
             self.notebook.GetPage(index).OnCloseWindow()
         settings.save()
-        self.Destroy()
 
     def CleanSettings(self):
         """Cleans junk from settings before closing."""
@@ -8193,15 +8198,7 @@ class User_SaveSettings(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
-        BashFrame.CleanSettings()
-        if docBrowser: docBrowser.DoSave()
-        if not BashFrame.IsIconized():
-            settings['bash.framePos'] = BashFrame.GetPositionTuple()
-            settings['bash.frameSize'] = BashFrame.GetSizeTuple()
-        settings['bash.page'] = BashFrame.notebook.GetSelection()
-        for index in range(BashFrame.notebook.GetPageCount()):
-            BashFrame.notebook.GetPage(index).OnCloseWindow()
-        settings.save()
+        BashFrame.SaveSettings(bashFrame)
 #------------------------------------------------------------------------------
 class Mods_UpdateInvalidator(Link):
     """Mod Replacers dialog."""
@@ -12365,6 +12362,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
+    InstallersPanel.mainMenu.append(User_SaveSettings())
 
     #--Item links
     #--File
@@ -12420,6 +12418,7 @@ def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     INIList.mainMenu.append(INI_SortValid())
+    INIList.mainMenu.append(User_SaveSettings())
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -12578,6 +12577,7 @@ def InitSaveLinks():
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
+    SaveList.mainMenu.append(User_SaveSettings())
 
     #--SaveList: Item Links
     if True: #--File
@@ -12678,6 +12678,7 @@ def InitScreenLinks():
     ScreensList.mainMenu.append(Files_Open())
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
+    ScreensList.mainMenu.append(User_SaveSettings())
 
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
@@ -12696,6 +12697,7 @@ def InitMessageLinks():
     """Initialize messages tab menus."""
     #--SaveList: Column Links
     MessageList.mainMenu.append(Messages_Archive_Import())
+    MessageList.mainMenu.append(User_SaveSettings())
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -12705,6 +12707,7 @@ def InitPeopleLinks():
     #--Header links
     PeoplePanel.mainMenu.append(People_AddNew())
     PeoplePanel.mainMenu.append(People_Import())
+    PeoplePanel.mainMenu.append(User_SaveSettings())
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())
     PeoplePanel.itemMenu.append(SeparatorLink())
