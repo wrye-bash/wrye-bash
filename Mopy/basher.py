@@ -7303,7 +7303,7 @@ class InstallerArchive_Unpack(InstallerLink):
                     project = archive.root
                     if project in self.data:
                         if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
-                        return
+                            return
                     installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                     if project not in self.data:
                         self.data[project] = bosh.InstallerProject(project)
