@@ -131,7 +131,8 @@ allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name
                   'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
-                  'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd'))
+                  'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
+                  'NPC.Race'))
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
@@ -2995,7 +2996,7 @@ class MreNpc(MreActor):
     classType = 'NPC_'
     #--Main flags
     _flags = Flags(0L,Flags.getNames(
-        ( 0,2),
+        ( 0,'female'),
         ( 1,'essential'),
         ( 3,'respawn'),
         ( 4,'autoCalc'),
@@ -24416,9 +24417,9 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
             'MAO Skeleton',
-            (_('All NPCs'),  0),
-            (_('Only Female NPCs'),  1),
-            (_('Only Male NPCs'),  2),
+            (_('All NPCs'), 0),
+            (_('Only Female NPCs'), 1),
+            (_('Only Male NPCs'), 2),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -24426,10 +24427,9 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
-            female = (0,1)[record.flags.female]
+            if self.choiceValues[self.chosen][0] == 1 and not record.flags.female: continue
+            elif self.choiceValues[self.chosen][0] == 2 and record.flags.female: continue
             if record.fid == (GPath('Oblivion.esm'),0x000007): continue #skip player record
-            if self.choiceValues[self.chosen] == 1 and not female: continue
-            elif self.choiceValues[self.chosen] == 2 and female: continue
             try:
                 oldModPath = record.model.modPath
             except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
@@ -24475,8 +24475,8 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record._recordID != 0x00000007: #skip player record
-            if self.choiceValues[self.chosen] == 1 and record.isMale: return
-            elif self.choiceValues[self.chosen] == 2 and record.isFemale: return
+            if self.choiceValues[self.chosen][0] == 1 and record.isMale: return
+            elif self.choiceValues[self.chosen][0] == 2 and record.isFemale: return
             oldModPath = record.modPath
             newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
             try:
