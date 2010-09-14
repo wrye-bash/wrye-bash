@@ -20014,7 +20014,7 @@ class Collection:
         if recordID:
             self._CollectionIndex = recordID
         else:
-            self._CollectionIndex = CBash.NewCollection(ModsPath)
+            self._CollectionIndex = CBash.NewCollection(str(ModsPath))
         self._ModIndex = -1
         CBash.GetModName.restype = c_char_p
         CBash.ModIsFake.restype = c_uint
@@ -20030,8 +20030,8 @@ class Collection:
             flags |= scanFlag
         elif CreateIfNotExist:
             flags |= createFlag
-        if(CBash.AddMod(self._CollectionIndex, ModName, flags) != -1):
-            return CBashModFile(self._CollectionIndex, ModName)
+        if(CBash.AddMod(self._CollectionIndex, str(ModName), flags) != -1):
+            return CBashModFile(self._CollectionIndex, str(ModName))
         return None
 
     def addMergeMod(self, ModName):
@@ -20110,7 +20110,7 @@ class Collection:
         return CBash.GetChangedMods(self._CollectionIndex)
 
     def safeSaveMod(self, ModName):
-        return CBash.SafeSaveMod(self._CollectionIndex, ModName)
+        return CBash.SafeSaveMod(self._CollectionIndex, str(ModName))
 
     def safeSaveAllChangedMods(self):
         return CBash.SafeSaveAllChangedMods(self._recordID)
