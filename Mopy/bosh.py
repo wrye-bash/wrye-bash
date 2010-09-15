@@ -12663,18 +12663,11 @@ class CBash_MapMarkers:
         for record in getattr(modFile,'REFRS'):
             if record.base == 0x10:
                 markers[record.fid_long] = [record.eid,record.markerName,record.markerType,record.IsVisible,record.IsCanTravelTo,record.posX,record.posY,record.posZ,record.rotX,record.rotY,record.rotZ]
-                #print record.markerName
-            #print record.base##if record.
-         #       if(hasattr(record, 'full')):
-         #           full = record.full or (type != 'LIGH' and 'NO NAME')
-         #           eid = record.eid
-         #           if eid and full:
-        #                id_name[record.fid_long] = (eid,full)
         del Current
 
     def writeToMod(self,modInfo):
-        """Exports type_id_name to specified mod."""
-        type_id_name = self.type_id_name
+        """Imports type_id_name to specified mod."""
+        markers = self.markers
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
@@ -22762,6 +22755,49 @@ class GmstTweaker(MultiTweaker):
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
             ),
+        GmstTweak(False,_('Inventory Quantity Prompt'),
+            _("Number of items in a stack at which point Oblivion prompts for a quantity."),
+            ('iInventoryAskQuantityAt',),
+            ('1',1),
+            ('2',2),
+            ('[3]',3),
+            ('4',4),
+            ('10',10),
+            (_('No Prompt'),99999),
+            (_('Custom'),0),
+            ),
+        GmstTweak(False,_('Crime: Trespass Fine'),
+            _("Fine in septims for trespassing."),
+            ('iCrimeGoldTresspass',),
+            ('1',1),
+            ('[5]',5),
+            ('8',8),
+            ('10',10),
+            ('20',20),
+            (_('Custom'),0),
+            ),
+        GmstTweak(False,_('Crime: Pickpocketing Fine'),
+            _("Fine in septims for trespassing."),
+            ('iCrimeGoldPickpocket',),
+            ('5',5),
+            ('8',8),
+            ('10',10),
+            ('[25]',25),
+            ('50',50),
+            ('100',100),
+            (_('Custom'),0),
+            ),
+        GmstTweak(False,_('Leveled Item Max level difference'),
+            _("Maximum difference to player level for leveled items."),
+            ('iLevItemLevelDifferenceMax',),
+            ('1',1),
+            ('5',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),9999),
+            (_('Custom'),0),
+            ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
@@ -23203,6 +23239,49 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            ),
+        CBash_GmstTweak(False,_('Inventory Quantity Prompt'),
+            _("Number of items in a stack at which point Oblivion prompts for a quantity."),
+            ('iInventoryAskQuantityAt',),
+            ('1',1),
+            ('2',2),
+            ('[3]',3),
+            ('4',4),
+            ('10',10),
+            (_('No Prompt'),99999),
+            (_('Custom'),0),
+            ),
+        CBash_GmstTweak(False,_('Crime: Trespass Fine'),
+            _("Fine in septims for trespassing."),
+            ('iCrimeGoldTresspass',),
+            ('1',1),
+            ('[5]',5),
+            ('8',8),
+            ('10',10),
+            ('20',20),
+            (_('Custom'),0),
+            ),
+        CBash_GmstTweak(False,_('Crime: Pickpocketing Fine'),
+            _("Fine in septims for trespassing."),
+            ('iCrimeGoldPickpocket',),
+            ('5',5),
+            ('8',8),
+            ('10',10),
+            ('[25]',25),
+            ('50',50),
+            ('100',100),
+            (_('Custom'),0),
+            ),
+        CBash_GmstTweak(False,_('Leveled Item Max level difference'),
+            _("Maximum difference to player level for leveled items."),
+            ('iLevItemLevelDifferenceMax',),
+            ('1',1),
+            ('5',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),9999),
+            (_('Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
