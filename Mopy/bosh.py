@@ -12645,6 +12645,119 @@ class CBash_FullNames:
         out.close()
 
 #------------------------------------------------------------------------------
+class CBash_MapMarkers:
+    """Names for records, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.markers = {}
+        self.aliases = aliases or {}
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        markers = self.markers
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+
+        for record in getattr(modFile,'REFRS'):
+            if record.base == 0x10:
+                markers[record.fid_long] = [record.eid,record.markerName,record.markerType,record.IsVisible,record.IsCanTravelTo,record.posX,record.posY,record.posZ,record.rotX,record.rotY,record.rotZ]
+                #print record.markerName
+            #print record.base##if record.
+         #       if(hasattr(record, 'full')):
+         #           full = record.full or (type != 'LIGH' and 'NO NAME')
+         #           eid = record.eid
+         #           if eid and full:
+        #                id_name[record.fid_long] = (eid,full)
+        del Current
+
+    def writeToMod(self,modInfo):
+        """Exports type_id_name to specified mod."""
+        type_id_name = self.type_id_name
+        Current = Collection(ModsPath=dirs['mods'].s)
+        modFile = Current.addMod(modInfo.getPath().stail)
+        Current.minimalLoad(LoadMasters=False)
+        
+        changed = {}
+        for type in self.types:
+            id_name = type_id_name.get(type,None)
+            if not id_name: continue
+            for record in getattr(modFile,type):
+                fid_long = record.fid_long
+                full = record.full
+                eid,newFull = id_name.get(fid_long,(0,0))
+                if newFull and newFull not in (full,'NO NAME'):
+                    record.full = newFull
+                    changed[eid] = (full,newFull)
+        if changed: modFile.safeCloseSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        textPath = GPath(textPath)
+        type_id_name = self.type_id_name
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        for fields in ins:
+            if len(fields) < 5 or fields[2][:2] != '0x': continue
+            type,mod,objectIndex,eid,full = fields[:5]
+            mod = GPath(mod)
+            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            type_id_name.setdefault(type, {})[longid] = (eid,full)
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports markers to specified text file."""
+        marker_types = {
+            None : 'NONE',
+            0 : 'NONE',
+            1 : 'Camp',
+            2 : 'Cave',
+            3 : 'City',
+            4 : 'Elven Ruin',
+            5 : 'Fort Ruin',
+            6 : 'Mine',
+            7 : 'Landmark',
+            8 : 'Tavern',
+            9 : 'Settlement',
+            10 : 'Daedric Shrine',
+            11 : 'Oblivion Gate',
+            12 : '?',
+            13 : 'Ayleid Well',
+            14 : 'Wayshrine',
+            15 : 'Magical Stone',
+            16 : 'Spire',
+            17 : 'Obelisk of Order',
+            18 : 'House',
+            19 : 'Player marker (flag)',
+            20 : 'Player marker (Q flag)',
+            21 : 'Player marker (i flag)',
+            22 : 'Player marker (? flag)',
+            23 : 'Harbor/dock',
+            24 : 'Stable',
+            25 : 'Castle',
+            26 : 'Farm',
+            27 : 'Chapel',
+            28 : 'Merchant',
+            29 : 'Ayleid Step (old Ayleid ruin icon)',}
+        textPath = GPath(textPath)
+        markers = self.markers
+        headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        rowFormat = '"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name'),_('Type'),_('IsVisible'),_('IsCanTravelTo'),_('posX'),_('posY'),_('posZ'),_('rotX'),_('rotY'),_('rotZ')))
+        longids = markers.keys()
+        longids.sort(key=lambda a: markers[a][0])
+        longids.sort(key=itemgetter(0))
+        for longid in longids:
+            eid,name,type,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = markers[longid]
+            type = marker_types[type]
+            out.write(rowFormat % (longid[0].s,longid[1],eid,name,type,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+        out.close()
+
+#------------------------------------------------------------------------------
+
 class SigilStoneDetails:
     """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
 #just ignore me... or fix me to also export the effect data as Pacific Morrowind is attempting (with little luck).
