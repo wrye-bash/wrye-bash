@@ -304,6 +304,7 @@ settingDefaults = {
     'tes4View.iKnowWhatImDoing':False,
     #--BOSS:
     'BOSS.ClearLockTimes':False,
+    'BOSS.AlwaysUpdate':False,
     }
 
 # Exceptions ------------------------------------------------------------------
@@ -8190,6 +8191,19 @@ class Mods_BOSSDisableLockTimes(Link):
     def Execute(self,event):
         settings['BOSS.ClearLockTimes'] ^= True
 
+#------------------------------------------------------------------------------
+class Mods_BOSSShowUpdate(Link):
+    """Toggle Lock Times disabling when launching BOSS through Bash."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Always Update BOSS Masterlist prior to running BOSS.'),help="If selected will update tell BOSS to update the masterlist before sorting the mods.",kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['BOSS.AlwaysUpdate'])
+
+    def Execute(self,event):
+        settings['BOSS.AlwaysUpdate'] ^= True
+
+#------------------------------------------------------------------------------
 class User_SaveSettings(Link):
     """Saves Bash's settings and user data.."""
     def AppendToMenu(self,menu,window,data):
@@ -11599,25 +11613,22 @@ class App_BOSS(App_Button):
             cwd = bolt.Path.getcwd()
             exePath.head.setcwd()
             progress = balt.Progress(_("Executing BOSS"))
-            if settings.get('bash.mods.autoGhost'):
-                progress(0.05,_("Processing... deghosting mods"))
-                ghosted = []
-                for root, dirs, files in os.walk(bosh.dirs['mods'].s):
-                    for name in files:
-                        fileLower = name.lower()
-                        if fileLower[-10:] == '.esp.ghost' or fileLower[-10:] == '.esm.ghost':
-                            if not name[:-6] in files:
-                                file = bosh.dirs['mods'].join(name)
-                                ghosted.append(fileLower)
-                                newName = bosh.dirs['mods'].join(name[:-6])
-                                file.moveTo(newName)
             lockTimesActive = False
             if settings['BOSS.ClearLockTimes']:
                 if settings['bosh.modInfos.resetMTimes']:
                     bosh.modInfos.mtimes.clear()
                     settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimesActive
                     lockTimesActive = True
-            progress(0.55,_("Processing... launching BOSS."))
+            if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
+                exeArgs += ('-u',)
+            if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+                exeArgs += ('-r 2',)   
+            elif wx.GetKeyState(82):
+                exeArgs += ('-r 1',)
+            if wx.GetKeyState(86):
+                exeArgs += ('-V-',)
+            print exeArgs
+            progress(0.05,_("Processing... launching BOSS."))
             try:
                 os.spawnv(os.P_WAIT,exePath.s,exeArgs)
             except Exception as error:
@@ -11943,9 +11954,11 @@ def InitStatusBar():
             bosh.tooldirs['Tes4LodGenPath'],
             Image(r'images/Tes4LODGen'+bosh.inisettings['IconSize']+'.png'),
             _("Launch Tes4LODGen")))
-    BashStatusBar.buttons.append( #BOSS
+    configHelpers = bosh.ConfigHelpers()
+    configHelpers.refresh()
+    BashStatusBar.buttons.append( #BOSS -- will u
         App_BOSS(
-            bosh.dirs['app'].join('Data\\BOSS.bat'),
+            (bosh.dirs['app'].join('Data\\BOSS.bat'),bosh.dirs['app'].join('Data\\BOSS.exe'))[configHelpers.bossVersion],
             Image(r'images/Boss'+bosh.inisettings['IconSize']+'.png'),
             _("Launch BOSS")))
     if bosh.inisettings['ShowModelingToolLaunchers']:
@@ -12541,6 +12554,7 @@ def InitModLinks():
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1'))
+        versionsMenu.links.append(Mods_OblivionVersion('1.2'))
         versionsMenu.links.append(Mods_OblivionVersion('SI'))
         ModList.mainMenu.append(versionsMenu)
     #--------------------------------------------
@@ -12559,6 +12573,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_DumpTranslator())
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
+    ModList.mainMenu.append(Mods_BOSSShowUpdate())
     ModList.mainMenu.append(User_SaveSettings())
 
     #--ModList: Item Links
@@ -12658,6 +12673,7 @@ def InitSaveLinks():
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1',True))
+        versionsMenu.links.append(Mods_OblivionVersion('1.2',True))
         versionsMenu.links.append(Mods_OblivionVersion('SI',True))
         SaveList.mainMenu.append(versionsMenu)
     if True: #--Save Profiles

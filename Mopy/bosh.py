@@ -9047,9 +9047,13 @@ class ConfigHelpers:
     def __init__(self):
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
-        self.bossMasterPath = dirs['mods'].join('masterlist.txt')
+        self.bossMasterPath = dirs['mods'].join('BOSS//masterlist.txt')
         if not self.bossMasterPath.exists():
-            self.bossMasterPath = dirs['patches'].join('taglist.txt')
+            self.bossMasterPath = dirs['mods'].join('masterlist.txt')
+            self.bossVersion = 0
+            if not self.bossMasterPath.exists():
+                self.bossMasterPath = dirs['patches'].join('taglist.txt')
+        else: self.bossVersion = 1
         self.bossMasterTime = 0
         self.bossMasterTags = {}
         #--Mod Rules
