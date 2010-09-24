@@ -9054,7 +9054,10 @@ class ConfigHelpers:
             if not self.bossMasterPath.exists():
                 self.bossMasterPath = dirs['patches'].join('taglist.txt')
         else: self.bossVersion = 1
+        self.bossUserPath = dirs['mods'].join('BOSS//userlist.txt')
+        if not self.bossUserPath.exists(): self.bossUserPath = None
         self.bossMasterTime = 0
+        self.bossUserTime = 0
         self.bossMasterTags = {}
         #--Mod Rules
         self.name_ruleSet = {}
@@ -9062,14 +9065,14 @@ class ConfigHelpers:
     def refresh(self):
         """Reloads tag info if file dates have changed."""
         #--Boss Master List or Taglist
-        path,mtime,tags = (self.bossMasterPath, self.bossMasterTime, self.bossMasterTags,)
-        if path.exists() and path.mtime != mtime:
+        path,userpath,mtime,utime,tags = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime, self.bossMasterTags,)
+        reFcomSwitch = re.compile('^[<>]')
+        reComment = re.compile(r'^\\.*')
+        reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
+        if path.mtime != mtime:
             tags.clear()
             ins = path.open('r')
             mod = None
-            reFcomSwitch = re.compile('^[<>]')
-            reComment = re.compile(r'^\\.*')
-            reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
             reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
             for line in ins:
                 line = reFcomSwitch.sub('',line)
@@ -9084,6 +9087,30 @@ class ConfigHelpers:
                     tags[GPath(mod)] = tuple(modTags)
             ins.close()
             self.bossMasterTime = path.mtime
+        if userpath:
+            if userpath.mtime != utime:
+                ins = userpath.open('r')
+                mod = None
+                reBashTags = re.compile(r'(APPEND:\s)(%\s+{{BASH:)([^}]+)(}})')
+                reRule = re.compile(r'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)')
+                for line in ins:
+                    maMod = reRule.match(line)
+                    maBashTags = reBashTags.match(line)
+                    if maMod:
+                        mod = maMod.group(2)
+                        print mod
+                    elif maBashTags and mod:
+                        modTags = maBashTags.group(3).split(',')
+                        modTags = map(string.strip,modTags)
+                        if GPath(mod) in tags:
+                            tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
+                            print tags[GPath(mod)]
+                            continue
+                        tags[GPath(mod)] = tuple(modTags)
+                        print tags[GPath(mod)]
+                   # elif
+                ins.close()
+                self.bossUserTime = userpath.mtime
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
