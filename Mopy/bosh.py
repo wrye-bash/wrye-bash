@@ -9091,24 +9091,20 @@ class ConfigHelpers:
             if userpath.mtime != utime:
                 ins = userpath.open('r')
                 mod = None
-                reBashTags = re.compile(r'(APPEND:\s)(%\s+{{BASH:)([^}]+)(}})')
+                reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)(%\s+{{BASH:)([^}]+)(}})')
                 reRule = re.compile(r'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)')
                 for line in ins:
                     maMod = reRule.match(line)
                     maBashTags = reBashTags.match(line)
                     if maMod:
                         mod = maMod.group(2)
-                        print mod
                     elif maBashTags and mod:
                         modTags = maBashTags.group(3).split(',')
                         modTags = map(string.strip,modTags)
-                        if GPath(mod) in tags:
+                        if GPath(mod) in tags and maBashTags.group(1) != 'REPLACE: ':
                             tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
-                            print tags[GPath(mod)]
                             continue
                         tags[GPath(mod)] = tuple(modTags)
-                        print tags[GPath(mod)]
-                   # elif
                 ins.close()
                 self.bossUserTime = userpath.mtime
 
