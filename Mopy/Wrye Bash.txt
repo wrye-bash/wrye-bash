@@ -268,7 +268,6 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Tes4Gecko & Oblivion Book Creator will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory.
   * Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available.
     * You can also control if some of the modes show up or not through the bash.ini - by setting  __bShowTes4...__ under __[Tool Options]__
-  * Running BOSS through here will automatically deghost and reghost your mods if you use ghosting. While doing so it may appear to stall but it hasn't.
   * Tip: If you don't want certain launcher icons to show up you can place a semi-colon ; in the path in the bash.ini after you set up your paths.
     * Example: sPhotoshopPath=;C:\Program Files\Adobe\Photoshop 7.0\Photoshop.exe
 * __Applications:__
@@ -290,7 +289,13 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="images/TES4Edit16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Edit32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="images/TES4Trans16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Trans32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="images/Tes4LODGen16.png" width="16" height="16" border="0"> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" border="0">
-    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> This one has some options!: 
+      * If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
+      * For BOSS version 1.6+ (released September 23rd 2010):
+        * If the option in the main menu is selected/ __U__ is pressed will tell BOSS to update the masterlist firstm
+        * If __V__ is pressed will disable version parsing,
+        * if __R__ is pressed will do a level 1 revert (to the state just prior to the last sort),
+        * if __Shift-R__ is pressed will do a level 2 revert (to the state just prior to the 2nd last sort).
   * __Model Tools__
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]] 16 <img src="images/AutoCad16.png" width="16" height="16" border="0"> 32  <img src="images/AutoCad32.png" width="32" height="32" border="0">
     * [[http://www.blender.org | Blender]] 16 <img src="images/Blender16.png" width="16" height="16" border="0"> 32  <img src="images/Blender32.png" width="32" height="32" border="0">
@@ -2155,6 +2160,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * A few untranslateable strings fixed to be translateable (as reported by DJ_Kovrik)
   * Updated Russian Translation (contributed by DJ_Kovrik).
   * BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
+  * Updated BOSS Launcher and various other code to work with new BOSS version (1.6+) and still work with the old one.
   * A few readme updates
   * Export Script text now adds comment signifiers (;) to the start of the bash added lines.
 
