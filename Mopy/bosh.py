@@ -12700,6 +12700,10 @@ class CBash_MapMarkers:
         Current.minimalLoad(LoadMasters=False)
         
         changed = {}
+        for record in getattr(modFile,'REFRS'):
+            if not record.fid_long in markers: continue
+            if record.base == 0x10:
+                record.eid,record.markerName,record.markerType,record.IsVisible,record.IsCanTravelTo,record.posX,record.posY,record.posZ,record.rotX,record.rotY,record.rotZ = markers[record.fid_long]
         for type in self.types:
             id_name = type_id_name.get(type,None)
             if not id_name: continue
@@ -22825,6 +22829,18 @@ class GmstTweaker(MultiTweaker):
             (_('Unlimited'),9999),
             (_('Custom'),0),
             ),
+        GmstTweak(False,_('Actor Strength Encumbrance Multifier'),
+            _("Actor's Strength X this = Actor's Encumbrance capacity."),
+            ('fActorStrengthEncumbranceMult',),
+            ('1',1),
+            ('3',3),
+            ('[5]',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),999999),
+            (_('Custom'),0),
+            ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
@@ -23308,6 +23324,18 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10),
             ('20',20),
             (_('Unlimited'),9999),
+            (_('Custom'),0),
+            ),
+        CBash_GmstTweak(False,_('Actor Strength Encumbrance Multifier'),
+            _("Actor's Strength X this = Actor's Encumbrance capacity."),
+            ('fActorStrengthEncumbranceMult',),
+            ('1',1),
+            ('3',3),
+            ('[5]',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),999999),
             (_('Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
