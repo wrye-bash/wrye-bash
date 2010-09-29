@@ -12694,41 +12694,80 @@ class CBash_MapMarkers:
 
     def writeToMod(self,modInfo):
         """Imports type_id_name to specified mod."""
+        marker_types = {
+            'NONE':0,
+            'Camp':1,
+            'Cave':2,
+            'City':3,
+            'Elven Ruin':4,
+            'Fort Ruin':5,
+            'Mine':6,
+            'Landmark':7,
+            'Tavern':8,
+            'Settlement':9,
+            'Daedric Shrine':10,
+            'Oblivion Gate':11,
+            '?':12,
+            'Ayleid Well':13,
+            'Wayshrine':14,
+            'Magical Stone':15,
+            'Spire':16,
+            'Obelisk of Order':17,
+            'House':18,
+            'Player marker (flag)':19,
+            'Player marker (Q flag)':20,
+            'Player marker (i flag)':21,
+            'Player marker (? flag)':22,
+            'Harbor/dock':23,
+            'Stable':24,
+            'Castle':25,
+            'Farm':26,
+            'Chapel':27,
+            'Merchant':28,
+            'Ayleid Step (old Ayleid ruin icon)':29,}
         markers = self.markers
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
-        
-        changed = {}
+        attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
+        changed = []
         for record in getattr(modFile,'REFRS'):
             if not record.fid_long in markers: continue
             if record.base == 0x10:
-                record.eid,record.markerName,record.markerType,record.IsVisible,record.IsCanTravelTo,record.posX,record.posY,record.posZ,record.rotX,record.rotY,record.rotZ = markers[record.fid_long]
-        for type in self.types:
-            id_name = type_id_name.get(type,None)
-            if not id_name: continue
-            for record in getattr(modFile,type):
-                fid_long = record.fid_long
-                full = record.full
-                eid,newFull = id_name.get(fid_long,(0,0))
-                if newFull and newFull not in (full,'NO NAME'):
-                    record.full = newFull
-                    changed[eid] = (full,newFull)
+                for x in range(0,10):
+                    if getattr(record,attrs[x]) != markers[record.fid_long][x]:
+                        recchanged = True
+                        break
+                if recchanged:
+                    changed.append(record.eid)
+                    record.eid,record.markerName = markers[record.fid_long][0:2]
+                    Type = markers[record.fid_long][2] 
+                    if type(Type) == int:
+                        record.markerType = Type
+                    else:
+                        record.markerType = marker_types[Type]
+                    record.IsVisible,record.IsCanTravelTo = markers[record.fid_long][3:5]
+                    record.posX = float(markers[record.fid_long][5])
+                    record.posY = float(markers[record.fid_long][6])
+                    record.posZ = float(markers[record.fid_long][7])
+                    record.rotX = float(markers[record.fid_long][8])
+                    record.rotY = float(markers[record.fid_long][9])
+                    record.rotZ = float(markers[record.fid_long][10])
         if changed: modFile.safeCloseSave()
         return changed
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         textPath = GPath(textPath)
-        type_id_name = self.type_id_name
+        markers = self.markers
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
-            if len(fields) < 5 or fields[2][:2] != '0x': continue
-            type,mod,objectIndex,eid,full = fields[:5]
+            if len(fields) < 13 or fields[1][:2] != '0x': continue
+            mod,objectIndex = fields[0:2]
             mod = GPath(mod)
             longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            type_id_name.setdefault(type, {})[longid] = (eid,full)
+            markers[longid] = fields[2:13]
         ins.close()
 
     def writeToText(self,textPath):
@@ -21489,6 +21528,330 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_StaffWeight(MultiTweakItem):
+    """Reweighs staffs."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
+            _('Staff weight will be capped.'),
+            'StaffWeight',
+            (_('1'),  1),
+            (_('2'),  2),
+            (_('3'),  3),
+            (_('4'),  4),
+            (_('5'),  5),
+            (_('6'),  6),
+            (_('7'),  7),
+            (_('8'),  8),
+            (_('Custom'),0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreWeap,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreWeap,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        maxWeight = self.choiceValues[self.chosen][0]
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.WEAP
+        id_records = patchBlock.id_records
+        for record in modFile.WEAP.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.weaponType == 4 and record.weight > maxWeight:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        maxWeight = self.choiceValues[self.chosen][0]
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.WEAP.records:
+            if record.weaponType == 4 and record.weight > maxWeight:
+                record.weight = maxWeight
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Reweigh Staffs'))
+        log(_('* Staffs Reweighed: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
+    """Reweighs staffs."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Reweigh Staffs')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
+            _('Staff weight will be capped.'),
+            'StaffWeight',
+            (_('1'),  1),
+            (_('2'),  2),
+            (_('3'),  3),
+            (_('4'),  4),
+            (_('5'),  5),
+            (_('6'),  6),
+            (_('7'),  7),
+            (_('8'),  8),
+            (_('Custom'),0),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['WEAP']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        maxWeight = self.choiceValues[self.chosen][0]
+        
+        if (record.weaponType == 4 and record.weight > maxWeight):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.weight = maxWeight
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Reweigh Staffs'))
+        log(_('* Staffs Reweighed: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class AssortedTweak_HarvestChance(MultiTweakItem):
+    """Sets Harvest Chances."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Harvest Chance"),
+            _('Harvest chances on all plants will be set to the chosen percentage.'),
+            'HarvestChance',
+            (_('10%'),  10),
+            (_('20%'),  20),
+            (_('30%'),  30),
+            (_('40%'),  40),
+            (_('50%'),  50),
+            (_('60%'),  60),
+            (_('70%'),  70),
+            (_('80%'),  80),
+            (_('90%'), 90),
+            (_('100%'),  100),
+            (_('Custom'),0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreFlor,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreFlor,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        chance = self.choiceValues[self.chosen][0]
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.FLOR
+        id_records = patchBlock.id_records
+        for record in modFile.FLOR.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            for attr in ['spring','summer','fall','winter']:
+                if record.getattr(attr) != chance:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
+                    break
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        chance = self.choiceValues[self.chosen][0]
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.FLOR.records:
+            changed = False
+            for attr in ['spring','summer','fall','winter']:
+                if record.getattr(attr) != chance:
+                    record.setattr(attr,chance)
+                    changed = True
+                if changed:
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Harvest Chance'))
+        log(_('* Harvest Chances Changed: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
+    """Adjust Harvest Chances."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Harvest Chance')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Harvest Chance"),
+            _('Harvest chances on all plants will be set to the chosen percentage.'),
+            'StaffWeight',
+            (_('10'),  10),
+            (_('20'),  20),
+            (_('30'),  30),
+            (_('40'),  40),
+            (_('50'),  50),
+            (_('60'),  60),
+            (_('70'),  70),
+            (_('80'),  80),
+            (_('90'), 90),
+            (_('100'),  100),
+            (_('Custom'),0),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['FLOR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        chance = self.choiceValues[self.chosen][0]
+        changed = False
+        for attr in ['spring','summer','fall','winter']:
+                if record.getattr(attr) != chance:
+                    print 'should override = true'
+                    override = record.CopyAsOverride(self.patchFile)
+                    if override:
+                        override.setattr(attr,chance)
+                        changed = True
+        if changed:                
+            mod_count = self.mod_count
+            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            record.UnloadRecord()
+            record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Harvest Chance'))
+        log(_('* Harvest Chances Changed: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class AssortedTweak_WindSpeed(MultiTweakItem):
+    """Disables WTHR winds."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Disable Wind"),
+            _('Disables the wind on all weathers.'),
+            'windSpeed',
+            (_('Disable'),  0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreWthr,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreWthr,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.WTHR
+        id_records = patchBlock.id_records
+        for record in modFile.WTHR.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.windSpeed != 0:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.WTHR.records:
+            if record.windSpeed != 0:
+                record.windSpeed = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Disable Wind'))
+        log(_('* Winds Disabled: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
+    """Disables WTHR winds."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Disable Wind')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Disable Wind"),
+            _('Disables the wind on all weathers.'),
+            'windSpeed',
+            (_('Disable'),  0),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['WTHR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.windSpeed != 0:
+            print 'should override = 0'
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.windSpeed = 0
+                changed = True              
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Disable Wind'))
+        log(_('* Winds Disabled: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
 #info: 'itemType','chargeAmount','enchantCost'
@@ -21648,6 +22011,8 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_PotionWeightMinimum(),
         AssortedTweak_StaffWeight(),
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
+        AssortedTweak_WindSpeed(),
+        AssortedTweak_HarvestChance(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -21711,6 +22076,8 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_PotionWeightMinimum(),
         CBash_AssortedTweak_StaffWeight(),
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
+        CBash_AssortedTweak_HarvestChance(),
+        CBash_AssortedTweak_WindSpeed()
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
@@ -22279,8 +22646,6 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
         log.setHeader('= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
-
-
 
 #------------------------------------------------------------------------------
 class GmstTweak(MultiTweakItem):
