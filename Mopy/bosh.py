@@ -21319,6 +21319,109 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class AssortedTweak_IngredientWeight(MultiTweakItem):
+    """Reweighs standard ingredients down to 0.1."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,True,_("Max Weight Ingredients"),
+            _('Ingredient weight will be capped.'),
+            'MaximumIngredientWeight',
+            (_('0.1'),  0.1),
+            (_('0.2'),  0.2),
+            (_('0.4'),  0.4),
+            (_('0.6'),  0.6),
+            (_('Custom'),0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreIngr,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreIngr,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        maxWeight = self.choiceValues[self.chosen][0]
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.INGR
+        id_records = patchBlock.id_records
+        for record in modFile.INGR.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.weight > maxWeight:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        maxWeight = self.choiceValues[self.chosen][0]
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.INGR.records:
+            if record.weight > maxWeight not ('SEFF',0) in record.getEffects():
+                record.weight = maxWeight
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Reweigh Ingredients to Maximum Weight'))
+        log(_('* Ingredients Reweighed by max weight ingredients: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
+    """Reweighs standard ingredients down to 0.1."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Ingredients Max Weight')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Ingredients"),
+            _('Ingredient weight will be capped.'),
+            'MaximumIngredientWeight',
+            (_('0.1'),  0.1),
+            (_('0.2'),  0.2),
+            (_('0.4'),  0.4),
+            (_('0.6'),  0.6),
+            (_('Custom'),0),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['INGR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        maxWeight = self.choiceValues[self.chosen][0]
+        
+        if record.weight > maxWeight:
+            for effect in record.effects:
+                if effect.name == 'SEFF':
+                    return
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.weight = maxWeight
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Reweigh Ingredients to Maximum Weight'))
+        log(_('* Ingredients Reweighed by max weight ingrdients: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
     """Reweighs any potions up to 4."""
 
@@ -21677,7 +21780,7 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
         for record in modFile.FLOR.getActiveRecords():
             if mapper(record.fid) in id_records: continue
             for attr in ['spring','summer','fall','winter']:
-                if record.getattr(attr) != chance:
+                if getattr(record,attr) != chance:
                     record = record.getTypeCopy(mapper)
                     patchBlock.setRecord(record)
                     break
@@ -21688,15 +21791,10 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.FLOR.records:
-            changed = False
-            for attr in ['spring','summer','fall','winter']:
-                if record.getattr(attr) != chance:
-                    record.setattr(attr,chance)
-                    changed = True
-                if changed:
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
+            record.spring,record.summer,record.fall,record.winter = chance, chance, chance, chance
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('=== Harvest Chance'))
         log(_('* Harvest Chances Changed: %d') % (sum(count.values()),))
@@ -21735,19 +21833,15 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chance = self.choiceValues[self.chosen][0]
-        changed = False
         for attr in ['spring','summer','fall','winter']:
                 if record.getattr(attr) != chance:
-                    print 'should override = true'
                     override = record.CopyAsOverride(self.patchFile)
                     if override:
-                        override.setattr(attr,chance)
-                        changed = True
-        if changed:                
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-            record.UnloadRecord()
-            record._ModName = override._ModName
+                        override.spring,override.summer,override.fall,override.winter = chance, chance, chance, chance
+                        mod_count = self.mod_count
+                        mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                        record.UnloadRecord()
+                        record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -22013,6 +22107,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         AssortedTweak_WindSpeed(),
         AssortedTweak_HarvestChance(),
+        AssortedTweak_IngredientWeight(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -22077,7 +22172,8 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_StaffWeight(),
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         CBash_AssortedTweak_HarvestChance(),
-        CBash_AssortedTweak_WindSpeed()
+        CBash_AssortedTweak_WindSpeed(),
+        CBash_AssortedTweak_IngredientWeight(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------

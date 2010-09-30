@@ -10075,6 +10075,9 @@ class CBash_Mod_MapMarkers_Export(Link):
         menuItem.Enable(bool(self.data))
 
     def Execute(self,event):
+        if not CBash: 
+            balt.showError(self.window,_('This function requires that CBash is enabled.'))
+            return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+_('_mapmarkers.csv')
@@ -10102,57 +10105,57 @@ class CBash_Mod_MapMarkers_Export(Link):
             progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
-class Mod_Prices_Import(Link):
-    """Import prices from text file."""
+class CBash_Mod_MapMarkers_Import(Link):
+    """Import MapMarkers from text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
+        menuItem = wx.MenuItem(menu,self.id,_('MapMarkers...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data)==1)
-    ## Not implemented yet (no readtext defined in bosh.ItemPrices()
+        
     def Execute(self,event):
-        message = (_("Import item prices from a text file. This will replace existing prices and is not reversible!"))
-        if not balt.askContinue(self.window,message,'bash.prices.import.continue',
-            _('Import prices')):
+        if not CBash: 
+            balt.showError(self.window,_('This function requires that CBash is enabled.'))
+            return
+        message = (_("Import Map Markers data from a text file. This will replace existing the data on map markers with the same editor ids and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.MapMarkers.import.continue',
+            _('Import Map Markers')):
             return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+_('_Prices.csv')
+        textName = fileName.root+_('_MapMarkers.csv')
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_('Import prices from:'),
-            textDir, textName, '*Prices.csv')
+        textPath = balt.askOpen(self.window,_('Import Map Markers from:'),
+            textDir, textName, '*MapMarkers.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
-        if ext not in ['.csv','.ghost','.esm','.esp']:
-            balt.showError(self.window,_('Source file must be a Prices.csv file or esp/m.'))
+        if ext not in ['.csv']:
+            balt.showError(self.window,_('Source file must be a MapMarkers.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Prices"))
+        progress = balt.Progress(_("Import Map Markers"))
         changed = None
         try:
-            itemPrices = bosh.ItemPrices()
+            MapMarkers = bosh.CBash_MapMarkers()
             progress(0.1,_("Reading %s.") % (textName.s,))
-            if ext == '.csv':
-                itemPrices.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemPrices.readFromMod(srcInfo)
+            MapMarkers.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
-            changed = itemPrices.writeToMod(fileInfo)
+            changed = MapMarkers.writeToMod(fileInfo)
             progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
         #--Log
         if not changed:
-            balt.showOk(self.window,_("No relevant prices to import."),_("Import Prices"))
+            balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import MapMarkers"))
         else:
             buff = cStringIO.StringIO()
-            for modName in sorted(changed):
-                buff.write('Imported Prices:\n* %s: %d\n' % (modName.s,changed[modName]))
-            balt.showLog(self.window,buff.getvalue(),_('Import Prices'),icons=bashBlue)
+            buff.write('Imported MapMarkers to mod %s:\n')
+            for eid in sorted(changed):
+                buff.write('* %s\n' % (eid))
+            balt.showLog(self.window,buff.getvalue(),_('Import MapMarkers'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
@@ -12637,6 +12640,7 @@ def InitModLinks():
         importMenu.links.append(Mod_ItemData_Import())
         importMenu.links.append(Mod_FullNames_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
+        importMenu.links.append(CBash_Mod_MapMarkers_Import())
         importMenu.links.append(Mod_Prices_Import())
         importMenu.links.append(Mod_Scripts_Import())
         importMenu.links.append(Mod_Stats_Import())
