@@ -1470,6 +1470,8 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
     * <code>=== Text</code>: Generates a level 3 header.
     * Double underscores generates emphasized (strong color) text.
     * Double asterisks, double tildes have same effect as double underscores.
+* __Harvest Chance__
+  * Sets the harvest chance of all flora to the desired chance.
 * __Max Weight Potions__
   * Potions in Oblivion are rather heavy by default. This changes the weight of potions to a specified value (0.1 up to 0.8). Note: this does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins.
   . Note that this is similar, but not the same as the [[#|Reweigh Potions]] command for savegames, which reweighs ~~user created~~ potions rather than mod created potions.
@@ -2146,6 +2148,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bashed Patch:
   * '[[#|Tweak Assorted]]':
     * 'Playable Armor' and 'Playable Clothes' now skip over even more items that shouldn't be made playable
+    * 'Harvest Chance' tweaker added
   * '[[#|Tweak Actors]]':
     * MAO Skeleton setter now has option to only affect male or female NPCs or all NPCs
 * BAIN:
@@ -2161,8 +2164,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Updated Russian Translation (contributed by DJ_Kovrik).
   * BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
   * Updated BOSS Launcher and various other code to work with new BOSS version (1.6+) and still work with the old one.
+  * Updated Bash Tag grabbing code to read the new BOSS userlist.
   * A few readme updates
   * Export Script text now adds comment signifiers (;) to the start of the bash added lines.
+* New Export/Import function: Map Markers (CBash active only)
 
 === 287 [22/07/2010] [Waruddar]
 * BAIN:
