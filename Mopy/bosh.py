@@ -21362,7 +21362,7 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.INGR.records:
-            if record.weight > maxWeight not ('SEFF',0) in record.getEffects():
+            if record.weight > maxWeight:
                 record.weight = maxWeight
                 keep(record.fid)
                 srcMod = record.fid[0]
@@ -21834,7 +21834,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
         """Edits patch file as desired. """
         chance = self.choiceValues[self.chosen][0]
         for attr in ['spring','summer','fall','winter']:
-                if record.getattr(attr) != chance:
+                if getattr(record,attr) != chance:
                     override = record.CopyAsOverride(self.patchFile)
                     if override:
                         override.spring,override.summer,override.fall,override.winter = chance, chance, chance, chance
@@ -21924,11 +21924,9 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.windSpeed != 0:
-            print 'should override = 0'
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.windSpeed = 0
-                changed = True              
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
