@@ -19169,7 +19169,7 @@ type_record = dict([('BASE',BaseRecord),('GMST',GMSTRecord),('GLOB',GLOBRecord),
 class CBashModFile(object):
     def __init__(self, CollectionIndex, ModName=None):
         self._CollectionIndex = CollectionIndex
-        self._ModName = ModName
+        self._ModName = str(ModName)
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
         else:
