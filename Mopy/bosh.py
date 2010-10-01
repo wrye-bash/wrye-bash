@@ -21266,6 +21266,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('=== Reweigh Potions to Maximum Weight'))
+        log(_('Potions set to maximum weight of %d') % maxWeight)
         log(_('* Potions Reweighed by max weight potions: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -21314,6 +21315,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
         #--Log
         mod_count = self.mod_count
         log.setHeader(_('=== Reweigh Potions to Maximum Weight'))
+        log(_('Potions set to maximum weight of %d') % maxWeight)
         log(_('* Potions Reweighed by max weight potions: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -21369,6 +21371,7 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('=== Reweigh Ingredients to Maximum Weight'))
+        log(_('Ingredients set to maximum weight of %d') % maxWeight)
         log(_('* Ingredients Reweighed by max weight ingredients: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -21377,7 +21380,7 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
     """Reweighs standard ingredients down to 0.1."""
     scanOrder = 32
     editOrder = 32
-    name = _('Ingredients Max Weight')
+    name = _('Max Weight Ingredients')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -21417,6 +21420,7 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
         #--Log
         mod_count = self.mod_count
         log.setHeader(_('=== Reweigh Ingredients to Maximum Weight'))
+        log(_('Ingredients set to maximum weight of %d') % maxWeight)
         log(_('* Ingredients Reweighed by max weight ingrdients: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -21631,44 +21635,40 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_StaffWeight(MultiTweakItem):
-    """Reweighs staffs."""
+class AssortedTweak_ArrowWeight(MultiTweakItem):
+    """Reweighs standard arrows down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
-            _('Staff weight will be capped.'),
-            'StaffWeight',
-            (_('1'),  1),
-            (_('2'),  2),
-            (_('3'),  3),
-            (_('4'),  4),
-            (_('5'),  5),
-            (_('6'),  6),
-            (_('7'),  7),
-            (_('8'),  8),
+        MultiTweakItem.__init__(self,True,_("Max Weight Arrows"),
+            _('Arrow weights will be capped.'),
+            'MaximumArrowWeight',
+            (_('0.1'),  0.1),
+            (_('0.2'),  0.2),
+            (_('0.4'),  0.4),
+            (_('0.6'),  0.6),
             (_('Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return (MreWeap,)
+        return (MreAmmo,)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return (MreWeap,)
+        return (MreAmmo,)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         maxWeight = self.choiceValues[self.chosen][0]
         mapper = modFile.getLongMapper()
-        patchBlock = patchFile.WEAP
+        patchBlock = patchFile.AMMO
         id_records = patchBlock.id_records
-        for record in modFile.WEAP.getActiveRecords():
+        for record in modFile.AMMO.getActiveRecords():
             if mapper(record.fid) in id_records: continue
-            if record.weaponType == 4 and record.weight > maxWeight:
+            if record.weight > maxWeight:
                 record = record.getTypeCopy(mapper)
                 patchBlock.setRecord(record)
 
@@ -21677,50 +21677,47 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
         maxWeight = self.choiceValues[self.chosen][0]
         count = {}
         keep = patchFile.getKeeper()
-        for record in patchFile.WEAP.records:
-            if record.weaponType == 4 and record.weight > maxWeight:
+        for record in patchFile.AMMO.records:
+            if record.weight > maxWeight:
                 record.weight = maxWeight
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh Staffs'))
-        log(_('* Staffs Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(_('=== Reweigh Arrows to Maximum Weight'))
+        log(_('Arrows set to maximum weight of %d') % maxWeight)
+        log(_('* Arrows Reweighed by max weight arrows: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
-    """Reweighs staffs."""
+class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
+    """Reweighs standard arrows down to 0.1."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh Staffs')
+    name = _('Max Weight Arrows')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Staffs"),
-            _('Staff weight will be capped.'),
-            'StaffWeight',
-            (_('1'),  1),
-            (_('2'),  2),
-            (_('3'),  3),
-            (_('4'),  4),
-            (_('5'),  5),
-            (_('6'),  6),
-            (_('7'),  7),
-            (_('8'),  8),
+        CBash_MultiTweakItem.__init__(self,True,_("Max Weight Arrows"),
+            _('Arrow weights will be capped.'),
+            'MaximumArrowWeight',
+            (_('0.1'),  0.1),
+            (_('0.2'),  0.2),
+            (_('0.4'),  0.4),
+            (_('0.6'),  0.6),
             (_('Custom'),0),
             )
         self.mod_count = {}
 
     def getTypes(self):
-        return ['WEAP']
+        return ['AMMO']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
         
-        if (record.weaponType == 4 and record.weight > maxWeight):
+        if record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
@@ -21733,13 +21730,14 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh Staffs'))
-        log(_('* Staffs Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(_('=== Reweigh Arrows to Maximum Weight'))
+        log(_('Arrows set to maximum weight of %d') % maxWeight)
+        log(_('* Arrows Reweighed by max weight arrows: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-
 #------------------------------------------------------------------------------
+
 class AssortedTweak_HarvestChance(MultiTweakItem):
     """Sets Harvest Chances."""
 
@@ -21943,7 +21941,6 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
 #info: 'itemType','chargeAmount','enchantCost'
@@ -22106,6 +22103,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_WindSpeed(),
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
+        AssortedTweak_ArrowWeight(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -22172,6 +22170,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_HarvestChance(),
         CBash_AssortedTweak_WindSpeed(),
         CBash_AssortedTweak_IngredientWeight(),
+        CBash_AssortedTweak_ArrowWeight(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
