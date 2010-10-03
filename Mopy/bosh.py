@@ -21706,6 +21706,7 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
         CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Arrows"),
             _('Arrow weights will be capped.'),
             'MaximumArrowWeight',
+            (_('0'), 0),
             (_('0.1'),  0.1),
             (_('0.2'),  0.2),
             (_('0.4'),  0.4),
