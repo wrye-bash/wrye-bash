@@ -11630,7 +11630,6 @@ class App_BOSS(App_Button):
                 exeArgs += ('-r 1',)
             if wx.GetKeyState(86):
                 exeArgs += ('-V-',)
-            print exeArgs
             progress(0.05,_("Processing... launching BOSS."))
             try:
                 os.spawnv(os.P_WAIT,exePath.s,exeArgs)
