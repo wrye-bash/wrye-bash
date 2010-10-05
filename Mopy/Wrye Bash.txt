@@ -291,7 +291,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="images/Tes4LODGen16.png" width="16" height="16" border="0"> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> This one has some options!: 
       * If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
-      * For BOSS version 1.6+ (released September 23rd 2010):
+      * For BOSS version 1.6+ (released October 2010):
         * If the option in the main menu is selected/ __U__ is pressed will tell BOSS to update the masterlist firstm
         * If __V__ is pressed will disable version parsing,
         * if __R__ is pressed will do a level 1 revert (to the state just prior to the last sort),
@@ -1180,7 +1180,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 * __Automatic Tagging__
   * If the bash tags field is set to "Automatic" for a given mod (which is by default), then Bash will attempt to automatically tag the mod according to all available of several sources. These sources are:
     * The description field. 
-    * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder.
+    * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\Data\BOSS). Also with the newest BOSS version reads the userlist.txt file.
     * Bash Patches\Leveled Lists.csv file. This file has a very small list and is largely surpassed by BOSS. (But is useful for people who don't have BOSS installed.)
     * Bash Patches\taglist.txt (if the masterlit.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist
   * Keep in mind that there is no guarantee that all mods will be correctly tagged. However, between the description field and BOSS, most important tags are covered. 
@@ -1472,13 +1472,19 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
     * Double asterisks, double tildes have same effect as double underscores.
 * __Harvest Chance__
   * Sets the harvest chance of all flora to the desired chance.
-* __Max Weight Potions__
+* __No Wind__
+  * Sets wind speed for all weathers to 0; this means that bushes and trees don't move in the wind since there isn't any. May help on machines with low end graphic cards.
+* __Reweigh: Arrows__
+  * Like Reweigh: Potions, but caps the weight of arrows.
+* __Reweigh: Ingredients__
+  * Like Reweigh: Potions, but caps the weight of ingredients.
+* __Reweigh: Potions (maximum)__
   * Potions in Oblivion are rather heavy by default. This changes the weight of potions to a specified value (0.1 up to 0.8). Note: this does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins.
   . Note that this is similar, but not the same as the [[#|Reweigh Potions]] command for savegames, which reweighs ~~user created~~ potions rather than mod created potions.
-* __Max Weight Staffs__
-  * Like Max Weight Potions, but caps the weight of staffs.
-* __Minimum Weight Potions__
+* __Reweigh: Potions (minimum)__
   * Reweighs potions to a minimum weight.
+* __Reweigh: Staffs__
+  * Like Reweigh: Potions, but caps the weight of staffs.
 * __No Light Flicker__
   * Turns off flickering effects for lights. May help on machines with low end graphic cards.
 * __Nvidia Fog Fix__
@@ -2144,11 +2150,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 288 [12/12/2010] [DJ_Kovrik,PacificMorrowind,Waruddar]
+=== 288 [05/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
 * Bashed Patch:
   * '[[#|Tweak Assorted]]':
     * 'Playable Armor' and 'Playable Clothes' now skip over even more items that shouldn't be made playable
     * 'Harvest Chance' tweaker added
+    * 'No Wind' tweaker added
+    * Weigh adjusting tweakers adjusted
+    * 'Reweigh: Arrows' tweaker added
+    * 'Reweigh: ingredients' tweaker added
   * '[[#|Tweak Actors]]':
     * MAO Skeleton setter now has option to only affect male or female NPCs or all NPCs
 * BAIN:
@@ -2156,7 +2166,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * The General Info tab now displays the block size an archive was compressed with.
     * Solid archives not made by BAIN will display "Unknown" for the block size.
   * BCFs may now set the block size of the resulting archive.
-  * pretty much complete support for non-english characters.
   * Unpack to Project now works on multiple selections (though then uses automatic naming for the projects names)
 * General:
   * The error message for unexpected subrecords is now a little more helpful.
@@ -2168,6 +2177,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * A few readme updates
   * Export Script text now adds comment signifiers (;) to the start of the bash added lines.
 * New Export/Import function: Map Markers (CBash active only)
+* Make use of/follow the oblivion.ini option of bUseMyGamesDirectory to have basically totally seperate Bash & Oblivion profiles (contributed by scooby)
+* Initial Nehrim Support (based on contributions by roxahris)
+* New option to save settings/data at any time from the right click header menu.
 
 === 287 [22/07/2010] [Waruddar]
 * BAIN:
