@@ -2691,12 +2691,12 @@ class MreGmst(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-    def getOblivionFid(self):
+    def getGMSTFid(self):
         """Returns Oblivion.esm fid in long format for specified eid."""
         myClass = self.__class__
         if not myClass.oblivionIds:
             myClass.oblivionIds = cPickle.load(GPath(r'Data\Oblivion_ids.pkl').open())['GMST']
-        return (GPath('Oblivion.esm'), myClass.oblivionIds[self.eid])
+        return (modInfos.masterName, myClass.oblivionIds[self.eid])
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -6856,7 +6856,16 @@ class OblivionIni(IniFile):
 
     def __init__(self):
         """Initialize."""
+        # Use local copy of the oblivion.ini if present
+        if dirs['app'].join('oblivion.ini').exists():
+            IniFile.__init__(self,dirs['app'].join('Oblivion.ini'),'General')
+            # is bUseMyGamesDirectory set to 0?
+            if self.getSetting('General','bUseMyGamesDirectory','1') == '0':
+                return
+        # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
+        # default to user profile directory"""
         IniFile.__init__(self,dirs['saveBase'].join('Oblivion.ini'),'General')
+
 
     def ensureExists(self):
         """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
@@ -7955,7 +7964,7 @@ class ModInfos(FileInfos):
     def __init__(self):
         """Initialize."""
         FileInfos.__init__(self,dirs['mods'],ModInfo)
-        #--MTime resetting
+        #--MTime resettin
         self.lockTimes = settings['bosh.modInfos.resetMTimes']
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
@@ -7965,6 +7974,12 @@ class ModInfos(FileInfos):
         self.plugins = Plugins() #--Plugins instance.
         self.ordered = tuple() #--Active mods arranged in load order.
         #--Info lists/sets
+        if dirs['mods'].join('Oblivion.esm').exists():
+            self.masterName = GPath('Oblivion.esm')
+        elif dirs['mods'].join('Nehrim.esm').exists():
+            self.masterName = GPath('Nehrim.esm')
+        else: 
+            raise StateError(_('Missing master file; Neither Oblivion .esm or Nehrim .esm exists in %s') % (dirs[mods].s))
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -7977,7 +7992,8 @@ class ModInfos(FileInfos):
         self.group_header = {}
         #--Oblivion version
         self.version_voSize = {
-            '1.1':int(_("247388848")), #--247388848
+            '1.1':int(_("247388848")),  #--247388848
+            '1.0.7.5':int(_("108369128")), #Nehrim
             'SI': int(_("277504985"))}
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
@@ -8231,7 +8247,7 @@ class ModInfos(FileInfos):
                     newInfo = ModInfo(self.dir,newName)
                     newInfo.mtime = time.time()
                     newFile = ModFile(newInfo,LoadFactory(True))
-                    newFile.tes4.masters = [GPath('Oblivion.esm')]
+                    newFile.tes4.masters = [modInfos.masterName]
                     newFile.tes4.author = '======'
                     newFile.tes4.description = _('Balo group header.')
                     newFile.safeSave()
@@ -8605,27 +8621,27 @@ class ModInfos(FileInfos):
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def getOblivionVersions(self):
         """Returns tuple of Oblivion versions."""
-        reOblivion = re.compile('^Oblivion(|_SI|_1.1).esm$')
+        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.2|_1.0.7.5).esm$')
         self.voAvailable.clear()
         for name,info in self.data.iteritems():
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.size in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.size])
-        self.voCurrent = self.size_voVersion.get(self.data[GPath('Oblivion.esm')].size,None)
+        self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
 
     def setOblivionVersion(self,newVersion):
         """Swaps Oblivion.esm to to specified version."""
         #--Old info
-        baseName = GPath('Oblivion.esm')
+        baseName = self.masterName
         newSize = self.version_voSize[newVersion]
         oldSize = self.data[baseName].size
         if newSize == oldSize: return
         if oldSize not in self.size_voVersion:
-            raise StateError(_("Can't match current Oblivion.esm to known version."))
-        oldName = GPath('Oblivion_'+self.size_voVersion[oldSize]+'.esm')
+            raise StateError(_("Can't match current main ESM to known version."))
+        oldName = GPath(baseName.sbody+'_'+self.size_voVersion[oldSize]+'.esm')
         if self.dir.join(oldName).exists():
             raise StateError(_("Can't swap: %s already exists.") % oldName)
-        newName = GPath('Oblivion_'+newVersion+'.esm')
+        newName = GPath(baseName.sbody+'_'+newVersion+'.esm')
         if newName not in self.data:
             raise StateError(_("Can't swap: %s doesn't exist.") % newName)
         #--Rename
@@ -13793,12 +13809,13 @@ class ScriptText:
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
         ###Remove from Bash after CBash integrated
+        importscripts = self.importscripts
+        eids_imported = []
         if not CBash:
             loadFactory = LoadFactory(True,MreScpt)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
             
-            eids_imported = []
             for type in self.type_stats:
                 scriptData, attrs = self.type_stats[type], self.type_attrs[type]
                 for record in getattr(modFile,type).getActiveRecords():
@@ -13827,8 +13844,6 @@ class ScriptText:
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
             
-            importscripts = self.importscripts
-            eids_imported = []
             for type in self.type_stats:
                 attrs = self.type_attrs[type]
                 for record in getattr(modFile,type):
@@ -14734,8 +14749,8 @@ class PCFaces:
             tes4.author = '[wb]'
         if not tes4.description:
             tes4.description = _('Face dump from save game.')
-        if GPath('Oblivion.esm') not in tes4.masters:
-            tes4.masters.append(GPath('Oblivion.esm'))
+        if modInfos.masterName not in tes4.masters:
+            tes4.masters.append(modInfos.masterName)
         masterMap = MasterMap(face.masters,tes4.masters+[modInfo.name])
         #--Eid
         npcEids = set([record.eid for record in modFile.NPC_.records])
@@ -15091,7 +15106,7 @@ class PatchFile(ModFile):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = 'BASHED PATCH'
-        self.tes4.masters = [GPath('Oblivion.esm')]
+        self.tes4.masters = [modInfos.masterName]
         self.longFids = True
         #--New attrs
         self.aliases = {} #--Aliases from one mod name to another. Used by text file patchers.
@@ -22755,7 +22770,7 @@ class GmstTweak(MultiTweakItem):
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             gmst = MreGmst(('GMST',0,0,0,0))
             gmst.eid,gmst.value,gmst.longFids = eid,value,True
-            fid = gmst.fid = keep(gmst.getOblivionFid())
+            fid = gmst.fid = keep(gmst.getGMSTFid())
             patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith('Custom'):
@@ -28375,10 +28390,23 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     if not localAppData.exists():
         raise BoltError(_("Local app data folder does not exist.\nLocal app data folder: %s\nAdditional info:\n%s")
             % (localAppData.s, lErrorInfo))
-    #  User sub folders
-    dirs['saveBase'] = personal.join(r'My Games','Oblivion')
-    dirs['userApp'] = localAppData.join('Oblivion')
     
+    dirs['userApp'] = localAppData.join('Oblivion')
+    dirs['saveBase'] = personal.join(r'My Games','Oblivion')
+    
+    # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
+    oblivionIni = OblivionIni()
+    # If bUseMyGamesDirectory=0, use SLocalSavePath and SLocalMasterPath if available
+    if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
+        # Set the save game folder to Data
+        dirs['saveBase'] = dirs['app']
+            
+        # Set the data folder to SLocalMasterPath
+        dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
+        # this one is relative to the mods path so it must be updated too
+        dirs['patches'] = dirs['mods'].join('Bash Patches')
+        
+
     #--Mod Data, Installers
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         oblivionMods = GPath(bashIni.get('General','sOblivionMods').strip())

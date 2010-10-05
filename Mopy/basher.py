@@ -11616,6 +11616,18 @@ class App_BOSS(App_Button):
             cwd = bolt.Path.getcwd()
             exePath.head.setcwd()
             progress = balt.Progress(_("Executing BOSS"))
+            if settings.get('bash.mods.autoGhost') and not bosh.configHelpers.bossVersion:
+                progress(0.05,_("Processing... deghosting mods"))
+                ghosted = []
+                for root, dirs, files in os.walk(bosh.dirs['mods'].s):
+                    for name in files:
+                        fileLower = name.lower()
+                        if fileLower[-10:] == '.esp.ghost' or fileLower[-10:] == '.esm.ghost':
+                            if not name[:-6] in files:
+                                file = bosh.dirs['mods'].join(name)
+                                ghosted.append(fileLower)
+                                newName = bosh.dirs['mods'].join(name[:-6])
+                                file.moveTo(newName)
             lockTimesActive = False
             if settings['BOSS.ClearLockTimes']:
                 if settings['bosh.modInfos.resetMTimes']:
