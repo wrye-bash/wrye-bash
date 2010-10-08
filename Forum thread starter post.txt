@@ -2,7 +2,7 @@
 [b]Readme[/b]: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (Very outdated ... most up to date readme is in the download - the file named Wrye Bash.html in the mopy folder)
 [b]Wrye Bash Wiki[/b]: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
 [b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1109736-relz-wrye-bash-thread-49/][RELZ] Wrye Bash #49[/url]
+[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1114316-relz-wrye-bash-thread-50][RELZ] Wrye Bash #50[/url]
 [b]Requirements[/b]:
 [list]
 [*]The old "official" setup:
@@ -80,152 +80,37 @@ For mod-makers:
 [b]Other news[/b]:
 [list][*]There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.[/list]
 [b]Latest Version[/b]:
-=== 287 [22/07/2010] [Waruddar]
-[list]
-[*] BAIN:
-  [list]
-  [*] File skipping (Skip DistantLOD/Voices/Screenshots and '--' directories) was broken by 286. Fixed.
-  [/list]
-[/list]
-=== 286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,valda,Waruddar]
-[spoiler]
-[list]
-[*] Bashed Patch:
-  [list]
-  [*] 'Replace Form IDs' added (both Bash and CBash)
-    [list]
-    [*] It is just like Import Formids (but slower). It changes the references in the bashed patch instead of in the file itself
-    [*] Included demo file "P1DCandles_Formids.csv", must be used in conjunction with mmmpld's Candles for Kleptos mod
-      [list]
-      [*] When used, all candles are replaced with his pickupable versions
-      [/list]
+=== 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
+[list]=== 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
+[*] Bashed Patch:[/list]
+  [*] '[[#|Tweak Assorted]]':[list]
+    [*] 'Playable Armor' and 'Playable Clothes' now skip over even more items that shouldn't be made playable
+    [*] 'Harvest Chance' tweaker added
+    [*] 'No Wind' tweaker added
+    [*] Weigh adjusting tweakers adjusted
+    [*] 'Reweigh: Arrows' tweaker added
+    [*] 'Reweigh: ingredients' tweaker added[/list]
+  [*] '[[#|Tweak Actors]]':[list]
+    [*] MAO Skeleton setter now has option to only affect male or female NPCs or all NPCs[/list]
     [/list]
-  [*] 'Import Actors: AIPackages' and 'Import Actors: Spells' no longer give an error if active with no selected mods (reported by Shi_shinu)
-  [*] 'Import Actors: Spells' significantly refactored
-    [list]
-    [*] SpellsOnly tag replaced with Actors.SpellsForceAdd
-    [/list]
-  [*] 'Import Sounds' no longer checks invalid variable name on weather records
-  [*] 'Import Spell Stats' no longer checks the wrong bash tag
-    [list]
-    [*] It now works with both Spells and SpellStats tags
-    [/list]
-  [*] 'Tweak Actors':
-    [list]
-    [*] 'As Intended: Imps' and 'As Intended: Boars' work more reliably
-    [*] 'Mayu's Animation Overhaul Skeleton Tweaker' and 'Vanilla Beast Skeleton Tweaker' no longer fail when dealing with unnamed NPCs
-    [*] 'No Bloody Creatures' now correctly sets the record flags
-    [/list]
-  [*] 'Tweak Assorted':
-    [list]
-    [*] 'Number of uses for pre-enchanted weapons and staffs' now has improved handling
-    [*] 'Playable Armor' and 'Playable Clothes' now skip over more items that shouldn't be made playable
-    [/list]
-  [*] 'Tweak Names':
-    [list]
-    [*] 'Armor' and 'Clothes' no longer fail with a keyerror
-      [list]
-      [*] Also fixed misspelling: 'Trowsers' -> 'Trousers'
-      [/list]
-    [*] 'Lore Friendly Names: Dwarven->Dwemer' fixed
-      [list]
-      [*] Expanded to check all text fields except scripts and cell names
-      [*] CBash also checks cell names
-      [/list]
-    [/list]
-  [*] 'Tweak Settings':
-    [list]
-    [*] 'AI: Max Dead Actors' added for both Bash and CBash (based settings posted by showler)
-    [*] 'Essential NPC Unconsciousness' 10s option was previously setting it to 20s
-    [/list]
-  [*] 'Power Exhaustion' no longer assigns to a non-existent variable
-  [*] 'Race Records' now has an expanded description
-    [list]
-    [*] Unlike other import patchers, it works even if no mods are selected
-    [/list]
-  [*] Changed the 'Tweak XXX' patchers SelectAll/DeselectAll buttons to be consistent with the rest of the patchers
-  [*] Custom Values for tweaks fully working
-  [*] The Bashed Patch now shows how long it took to build (as suggested by AdmiralWarron)
-  [*] Lists with enough items to scroll will retain their scroll position after using popup menus
-  [/list]
-[*] BAIN:
-  [list]
-  [*] 'Package Commands':
-    [list]
-    [*] Commands such as duplicating a package no longer result in incorrect ordering
-    [*] 'Copy Conflicts to Project' added
-    [*] Disabled various commands when only non-installable items are selected
-      [*] Install / Anneal / Uninstall / HasExtraData / SkipVoices / Copy Conflicts to Project
-    [*] Markers can now be renamed
-    [/list]
-  [*] 'Package Header Commands':
-    [list]
-    [*] Projects may now be unhidden
-    [/list]
-  [*] Double clicking a package will now open it
-  [*] Implemented valda's patch for partial support of japanese multi-byte characters
-  [*] Refreshing packages now ignore Skipped Directories (those that start with '--' or 'Bash')
-  [*] Selecting sub-packages that contain large numbers of files now refreshes a little more quickly (reported by Vindicator)
-    [list]
-    [*] Still needs more work to make it faster
-    [/list]
-  [*] Sub-package and Esp/m lists now retain their position when selected
-  [*] The "Hide" command now works with multiple packages selected
-    [list]
-    [*] It is disabled if any selected package is a marker
-    [/list]
-  [*] Toggling "Skip DistantLOD" no longer causes packages to be marked dirty (reported by Vindicator)
-  [/list]
-[*] BAIN Wizards:
-  [list]
-  [*] Added For loops (For/Continue/Break/EndWhile)
-  [*] Added While loops (While/Continue/Break/EndWhile)
-  [*] Default keyword wasn't working properly, fixed now
-  [*] Fixed minor bug where allowing unmatched quotes at the end of a line
-  [*] Fixed the increment and decrement operators (++,--)
-  [*] Fixed two typos that caused 'DeSelectSubPackage' (and probably others) to throw an error
-  [*] Removed some debugging prints
-  [*] SelectOne dialogs with no default option have the 'Next' button disabled until an option is selected
-  [*] SelectOne/SelectMany dialogs with no default option will now be shown even during an Auto-WizardReturn
-  [*] Updated wizard documentation for this, and also to include comments (;)
-  [/list]
-[*] CBash:
-  [list]
-  [*] CBash 90% integrated
-  [*] CBash temporarily disabled while remaining issues fixed.
-    [list]
-    [*] Will be re-enabled in a later release
-    [/list]
-  [/list]
-[*] General:
-  [list]
-  [*] 7z updated to latest version
-  [*] Backing Up section added
-  [*] CELL block size calculation corrected (reported by valda)
-    [list]
-    [*] Not as important as it may sound. The size isn't actually used except for error raising.
-    [/list]
-  [*] Face Import no longer fails when the mod index of the record is higher than expected
-  [*] Import/Export Scripts from/to mod/csv optimized/significantly enhanced
-  [*] Import Prices from csv file added
-  [*] Import Archives now works with the new forum PMs
-  [*] INFO definitions fixed (reported by valda)
-  [*] Ini setting added: bSkipHideConfirmation. (suggested by Utumno)
-    [list]
-    [*] When True, the hide confirmation is suppressed.
-    [/list]
-  [*] Launch Buttons for more applications are now supported via Bash.ini (contributed by Metallicow)
-    [list]
-    [*] EVGA Precision,FastStone Image Viewer,FreeMind,PaintShop Photo Pro,Photobie Design Studio,PhotoFiltre,PhotoScape,XnView
-    [/list]
-  [*] Mark Mergeable can now change formerly mergeable mods to non-mergeable
-  [*] Mergeable mods that are a master of non-mergeable mods are no longer considered mergeable
-  [*] Missing resource error on wryemonkey16.jpg has been fixed
-  [*] Non-lower case file extensions used in Bash.ini no longer cause issues (reported by Vindicator)
-  [*] Several readme images updated (contributed by Metallicow)
-  [*] Various cell and reference flags corrected
-  [*] Various typos fixed, and more strings are translatable (as reported by DJK)
-  [*] Slight fix to recognize mods in the BOSS masterlist/taglist that the modname starts with a '!' or '['.
-  [*] Version reading code modified to recognize ver/rev/r/v as well as version (and any combination of seperating whitespace and '.' and ':' (except for r/v).
-  [/list]
+[*] BAIN:[list]
+  [*] Archives created with solid compression may now set the solid block size.
+  [*] The General Info tab now displays the block size an archive was compressed with.[list]
+    [*] Solid archives not made by BAIN will display "Unknown" for the block size.[/list]
+  [*] BCFs may now set the block size of the resulting archive.
+  [*] Unpack to Project now works on multiple selections (though then uses automatic naming for the projects names)[/list]
+[*] General:[list]
+  [*] The error message for unexpected subrecords is now a little more helpful.
+  [*] A few untranslateable strings fixed to be translateable (as reported by DJ_Kovrik)
+  [*] Updated Russian Translation (contributed by DJ_Kovrik).
+  [*] BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
+  [*] Updated BOSS Launcher and various other code to work with new BOSS version (1.6+) and still work with the old one.
+  [*] Updated Bash Tag grabbing code to read the new BOSS userlist.
+  [*] A few readme updates
+  [*] Export Script text now adds comment signifiers (;) to the start of the bash added lines.[/list]
+[*] New Export/Import function: Map Markers (CBash active only)
+[*] Make use of/follow the oblivion.ini option of bUseMyGamesDirectory to have basically totally seperate Bash & Oblivion profiles (contributed by scooby)
+[*] Initial Nehrim Support (based on contributions by roxahris)
+[*] New option to save settings/data at any time from the right click header menu.
+[*] Taglist updated to BOSS rev 1605
 [/list][/spoiler]
