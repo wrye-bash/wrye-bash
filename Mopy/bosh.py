@@ -9068,6 +9068,7 @@ class ConfigHelpers:
             self.bossMasterPath = dirs['mods'].join('masterlist.txt')
             self.bossVersion = 0
             if not self.bossMasterPath.exists():
+                self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
                 self.bossMasterPath = dirs['patches'].join('taglist.txt')
         else: self.bossVersion = 1
         self.bossUserPath = dirs['mods'].join('BOSS//userlist.txt')

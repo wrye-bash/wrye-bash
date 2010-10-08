@@ -2184,7 +2184,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bashed Patch:
   * Fixed Reweigh Staff logger
   * Fixed iInventoryAskQuantityAt gmst tweaker
-  * 
+* A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine. 
 
 === 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
 * Bashed Patch:
