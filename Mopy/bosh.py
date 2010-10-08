@@ -21597,7 +21597,7 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('=== Reweigh: Staffs'))
-        log(_('Staffs set to maximum weight of %f') % mxWeight)
+        log(_('Staffs set to maximum weight of %f') % maxWeight)
         log(_('* Staffs Reweighed: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
