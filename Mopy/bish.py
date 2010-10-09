@@ -718,7 +718,7 @@ def gmstIds(fileName=None):
                 'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
                 'fHostileActorExteriorDistance','fHostileActorInteriorDistance','iVampirismAgeOffset','iRemoveExcessDeadCount',
                 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
-                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt']:
+                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket', 'iCrimeGoldTresspass']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
