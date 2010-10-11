@@ -11635,13 +11635,15 @@ class App_BOSS(App_Button):
                     settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimesActive
                     lockTimesActive = True
             if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
-                exeArgs += ('-u',)
+                exeArgs += ('-u',) # Update - BOSS version 1.6+
             if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                exeArgs += ('-r 2',)   
+                exeArgs += ('-r 2',) # Revert level 2 - BOSS version 1.6+
             elif wx.GetKeyState(82):
-                exeArgs += ('-r 1',)
+                exeArgs += ('-r 1',) # Revert level 1 - BOSS version 1.6+
+            if wx.GetKeyState(83):
+                exeArgs += ('-s',) # Silent Mode - BOSS version 1.6+
             if wx.GetKeyState(86):
-                exeArgs += ('-V-',)
+                exeArgs += ('-V-',) # Disable version parsing - BOSS version 1.6+
             progress(0.05,_("Processing... launching BOSS."))
             try:
                 os.spawnv(os.P_WAIT,exePath.s,exeArgs)
