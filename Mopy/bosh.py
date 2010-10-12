@@ -7979,7 +7979,8 @@ class ModInfos(FileInfos):
         elif dirs['mods'].join('Nehrim.esm').exists():
             self.masterName = GPath('Nehrim.esm')
         else: 
-            raise StateError(_('Missing master file; Neither Oblivion .esm or Nehrim .esm exists in %s') % (dirs[mods].s))
+            self.masterName = GPath('Oblivion.esm')
+            deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -10580,7 +10581,7 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         oldstylefileSizeCrcs = []
-        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = size = crc = isdir = 0
         self.isSolid = False
         ins = listArchiveContents(archive.s)
@@ -10589,8 +10590,8 @@ class InstallerArchive(Installer):
             maList = reList.match(line)
             if maList:
                 key,value = maList.groups()
-                if key == u'Solid': self.isSolid = (value[0] == u'+')
-                elif key == u'Path':
+                if key == 'Solid': self.isSolid = (value[0] == u'+')
+                elif key == 'Path':
                     #--Should be able to twist 7z to export names in UTF-8, but can't (at
                     #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
@@ -10599,11 +10600,11 @@ class InstallerArchive(Installer):
                    ## try: file = value.decode('cp437').encode('cp1252')
                    ## except: pass
                     file = value.decode('utf8')
-                elif key == u'Size': size = int(value)
-                elif key == u'Attributes': isdir = (value[0] == u'D')
-                elif key == u'CRC' and value:
+                elif key == 'Size': size = int(value)
+                elif key == 'Attributes': isdir = (value[0] == u'D')
+                elif key == 'CRC' and value:
                     crc = int(value,16)
-                elif key == u'Method':
+                elif key == 'Method':
                     if file and not isdir and file != archive.s:
                         fileSizeCrcs.append((file,size,crc))
                         cumCRC += crc
@@ -10624,10 +10625,10 @@ class InstallerArchive(Installer):
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        reExtracting = re.compile(u'Extracting\s+(.+)')
-        reError = re.compile(u'Error:')
+        reExtracting = re.compile('Extracting\s+(.+)')
+        reError = re.compile('Error:')
         extracted = []
         errorLine = []
         index = 0
@@ -17293,8 +17294,6 @@ class ActorImporter(ImportPatcher):
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
 
-
-
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
     name = _('Import Actors')
@@ -19013,7 +19012,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         self.class_mod_count = {}
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
-    """Merges changes to the AI Packages of Actors."""
+    """Merges changes to the spells lists of Actors."""
     name = _('Import Actors: Spells')
     text = _("Merges changes to NPC and creature spell lists.")
     tip = text
@@ -19189,6 +19188,92 @@ class ImportActorsSpells(ImportPatcher):
         log(_("\n=== Spell Lists Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
+class CBash_ImportActorsSpells(CBash_ImportPatcher):
+    """Merges changes to the spells lists of Actors."""
+    name = _('Import Actors: Spells')
+    text = _("Merges changes to NPC and creature spell lists.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = ('Actors.Spells','Actors.SpellsForceAdd')
+    allowUnloaded = True
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_spells = {}
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        self.mod_count = {}
+        
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if record.GName in self.srcMods:
+            curData = {'deleted':[],'merged':[]}
+            curspells = list(record.spells)
+            parentRecords = [parent for parent in record.Conflicts() if parent._ModName in set(CBashModFile(record._CollectionIndex, record._ModName).TES4.masters)].reverse()
+            if parentRecords:
+                if parentRecord[0].spells != curspells or'Actors.SpellsForceAdd' in bashTags: 
+                    curData = {'deleted':[],'merged':curspells}
+                    for spell in parentRecord[0].spells:
+                        if spell not in curspells:
+                            curData['deleted'].append(spell)
+            curData['merged'] = curspells
+            if not record.fid_long in self.id_spells:
+                self.id_spells[record.fid_long] = curData
+            else:
+                id_spells = self.id_spells[record.fid_long]
+                for spell in curData['deleted']:
+                    if spell in id_spells['merged']:
+                        id_spells['merged'].remove(spell)
+                    id_spells['deleted'].append(spell)
+                for spell in curData['merged']:
+                    if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
+                    if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
+                        id_spells['merged'].append(spell)
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan(modFile,record,bashTags)
+        conflicts = record.Conflicts(False)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModName != record._ModName:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
+        recordId = record.fid_long
+        if(recordId in self.id_spells and record.spells != self.id_spells[recordId]['merged']):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.spells = self.id_spells[recordId]['merged']
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('= ' +self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.srcMods:
+            log("* " +mod.s)
+        log(_('* Imported Spell Lists: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
