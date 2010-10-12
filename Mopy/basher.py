@@ -5624,7 +5624,7 @@ class ImportInventory(bosh.ImportInventory,ListPatcher): pass
 class CBash_ImportInventory(bosh.CBash_ImportInventory,ListPatcher): pass
 
 class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
-##class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
+class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
 
 class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
 class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
@@ -5766,7 +5766,7 @@ else:
         CBash_ImportRelations(),
         CBash_ImportScripts(),
 ##        CBash_ImportScriptContents(),
-##        CBash_ImportActorsSpells(),
+        CBash_ImportActorsSpells(),
         CBash_ListsMerger(),
         CBash_MFactMarker(),
         CBash_NamesPatcher(),
