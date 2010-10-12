@@ -55,8 +55,10 @@ class Model(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._listIndex = listIndex
     def get_modPath(self):
@@ -94,8 +96,10 @@ class Item(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -128,8 +132,10 @@ class Condition(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -331,8 +337,10 @@ class Reference(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -371,8 +379,10 @@ class Effect(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -514,8 +524,10 @@ class Faction(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -559,8 +571,10 @@ class Relation(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
         self._subField = subField
         self._listIndex = listIndex
@@ -648,8 +662,10 @@ class BaseRecord(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
     def LoadRecord(self):
         CBash.LoadRecord(self._CollectionIndex, self._ModName, self._recordID)
@@ -695,7 +711,8 @@ class BaseRecord(object):
         conflicts = self.Conflicts(ignoreScanned)
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        parentRecords = [parent for parent in conflicts if parent._ModName in recordMasters].reverse()
+        parentRecords = [parent for parent in conflicts if parent._NormName in recordMasters]
+        parentRecords.reverse()
         if parentRecords:
             conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
         else: #is the first instance of the record
@@ -893,8 +910,10 @@ class TES4Record(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
     def UnloadRecord(self):
         pass
     @property
@@ -1019,8 +1038,10 @@ class GMSTRecord(object):
         self._ModName = ModName
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
         self._recordID = recordID
     def UnloadRecord(self):
         pass
@@ -19172,8 +19193,10 @@ class CBashModFile(object):
         self._ModName = str(ModName)
         if ModName[-6:] == '.ghost':
             self.GName = GPath(ModName[:-6])
+            self._NormName = ModName[:-6]
         else:
             self.GName = GPath(ModName)
+            self._NormName = ModName
     def HasRecord(self,recordID):
         if isinstance(recordID, basestring): TestRecord = GMSTRecord
         else: TestRecord = BaseRecord
