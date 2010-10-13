@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -72,8 +71,6 @@ from types import *
 from operator import attrgetter,itemgetter
 import subprocess
 from subprocess import Popen, PIPE
-import ctypes
-import codecs
 
 #-- To make commands executed with Popen hidden
 if os.name == 'nt':
@@ -132,7 +129,7 @@ allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
                   'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race'))
+                  'NPC.Race','Actors.Skeleton'))
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
@@ -5126,7 +5123,10 @@ class ModFile:
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError("ModFile fids not in long form.")
-        masters = MasterSet([GPath('Oblivion.esm')]) #--Not so good for TCs. Fix later.
+        if dirs['mods'].join('Oblivion.esm').exists():
+			masters = MasterSet(self.masterName) 
+        elif dirs['mods'].join('Nehrim.esm').exists():
+			masters = MasterSet([GPath('Nehrim.esm')]) # insert witty joke here about the old comment
         for block in self.tops.values():
             block.updateMasters(masters)
         return masters.getOrdered()
@@ -9715,9 +9715,15 @@ class Installer(object):
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
+        splitter = bolt.Path.mbSplit
         def sortKey(file):
-            dirFile = file.lower().rsplit('\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,'')
+##            dirFile = file.lower().rsplit('\\',1)
+##            if len(dirFile) == 1: dirFile.insert(0,'')
+            pathParts = splitter(file)
+            if len(pathParts) == 1:
+                dirFile = ['', pathParts[0]]
+            else:
+                dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
             return dirFile
         sortKeys = dict((x,sortKey(x)) for x in files)
         return sorted(files,key=lambda x: sortKeys[x])
@@ -9943,6 +9949,7 @@ class Installer(object):
         skipExtFilesAdd = skipExtFiles.add
         espms = self.espms
         espmsAdd = espms.add
+        splitter = bolt.Path.mbSplit
         espmMap = self.espmMap
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
@@ -9959,16 +9966,22 @@ class Installer(object):
             sub = ''
             bSkip = False
             if type == 2: #--Complex archive
-                subFile = full.split('\\',1)
-                if len(subFile) == 2:
-                    sub,file = subFile
+                #subFile = full.split('\\',1)
+                #if len(subFile) == 2:
+                #    sub,file = subFile
+                pathParts = splitter(full)
+                if len(pathParts) > 1:
+                    sub = pathParts[0]
+                    file = '\\'.join(pathParts[1:])
                     if sub not in activeSubs:
                         if sub not in allSubs:
                             skipDirFilesAdd(file)
                         bSkip = True
                     fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
-            rootPos = file.find('\\')
+##            rootPos = file.find('\\')
+            pathParts = splitter(file)
+            rootPos = len(pathParts[0]) if len(pathParts) > 1 else -1
             extPos = file.rfind('.')
             rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
@@ -10015,7 +10028,9 @@ class Installer(object):
                 if pFile in espmNots: continue
             elif bSkip: continue
             if skipEspmVoices and fileStartsWith('sound\\voice\\'):
-                farPos = file.find('\\',12)
+##                farPos = file.find('\\',12)
+                pathParts = splitter(file[12:])
+                farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
             #--Remap docs
@@ -10065,9 +10080,15 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
+        splitter = bolt.Path.mbSplit
         def fscSortKey(fsc):
-            dirFile = fsc[0].lower().rsplit('\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,'')
+##            dirFile = fsc[0].lower().rsplit('\\',1)
+##            if len(dirFile) == 1: dirFile.insert(0,'')
+            pathParts = splitter(fsc[0])
+            if len(pathParts) == 1:
+                dirFile = ['', pathParts[0]]
+            else:
+                dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
             return dirFile
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
@@ -10081,7 +10102,8 @@ class Installer(object):
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
-                frags = file.split('\\')
+##                frags = file.split('\\')
+                frags = splitter(file)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFile.search(frags[0]) or
@@ -10584,13 +10606,15 @@ class InstallerArchive(Installer):
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        ins = listArchiveContents(archive.s)
+        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s)
+        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+        ins = cStringIO.StringIO(ins)
         cumCRC = 0
-        for line in ins.splitlines(True):
+        for line in ins:
             maList = reList.match(line)
             if maList:
                 key,value = maList.groups()
-                if key == 'Solid': self.isSolid = (value[0] == u'+')
+                if key == 'Solid': self.isSolid = (value[0] == '+')
                 elif key == 'Path':
                     #--Should be able to twist 7z to export names in UTF-8, but can't (at
                     #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
@@ -10599,9 +10623,9 @@ class InstallerArchive(Installer):
                     #  It won't solve problems with non-european characters though.
                    ## try: file = value.decode('cp437').encode('cp1252')
                    ## except: pass
-                    file = value.decode('utf8')
+                    file = value
                 elif key == 'Size': size = int(value)
-                elif key == 'Attributes': isdir = (value[0] == u'D')
+                elif key == 'Attributes': isdir = (value[0] == 'D')
                 elif key == 'CRC' and value:
                     crc = int(value,16)
                 elif key == 'Method':
@@ -10610,6 +10634,9 @@ class InstallerArchive(Installer):
                         cumCRC += crc
                     file = size = crc = isdir = 0
         self.crc = cumCRC & 0xFFFFFFFFL
+        result = ins.close()
+        if result:
+            raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (archive.s,result))
 
     def unpackToTemp(self,archive,fileNames,progress=None):
         """Erases all files from self.tempDir and then extracts specified files
@@ -10619,7 +10646,7 @@ class InstallerArchive(Installer):
         progress = progress or bolt.Progress()
         progress.state,progress.full = 0,len(fileNames)
         #--Dump file list
-        out = codecs.open(self.tempList.s, encoding='utf8', mode='w')
+        out = self.tempList.open('w')
         out.write('\n'.join(fileNames))
         out.close()
         #--Extract files
@@ -10633,18 +10660,17 @@ class InstallerArchive(Installer):
         errorLine = []
         index = 0
         for line in ins:
-            line = unicode(line,'UTF8')
             maExtracting = reExtracting.match(line)
             if len(errorLine) or reError.match(line):
                 errorLine.append(line)
             if maExtracting:
                 extracted.append(maExtracting.group(1).strip())
-                progress(index,_("%s\nExtracting files...\n%s") % (archive.s.encode('UTF8'), maExtracting.group(1).strip()))
+                progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
         if result:
-            raise StateError(_("%s: Extraction failed\n%s") % (archive.s.encode('UTF8'),"\n".join(errorLine)))
+            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -10711,9 +10737,11 @@ class InstallerArchive(Installer):
         file = ''
         isdir = False
         apath = dirs['installers'].join(archive)
-        ins = listArchiveContents(apath.s)
+        command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
+        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+        ins = cStringIO.StringIO(ins)
         text = []
-        for line in ins.splitlines(True):
+        for line in ins:
             maList = reList.match(line)
             if maList:
                 key,value = maList.groups()
@@ -10731,6 +10759,9 @@ class InstallerArchive(Installer):
                 elif key == 'Method':
                     file = ''
                     isdir = False
+        result = ins.close()
+        if result:
+            raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
         text.sort()
         
         for line in text:
@@ -16865,7 +16896,7 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreArmo, MreClot):
             recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
         for recClass in (MreCrea,):
-            recAttrs_class[recClass] = ('model','bodyParts','nift_p','bloodSprayPath','bloodDecalPath')
+            recAttrs_class[recClass] = ('bodyParts','nift_p')
         for recClass in (MreMgef,):
             recAttrs_class[recClass] = ('iconPath','model','effectShader','enchantEffect','light')
         for recClass in (MreEfsh,):
@@ -17056,7 +17087,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                                'femaleIconPath', 'flags')
         class_attrs['CLOT'] = class_attrs['ARMO']
 
-        class_attrs['CREA'] = model + ('bodyParts', 'nift_p','bloodSprayPath','bloodDecalPath')
+        class_attrs['CREA'] = ('bodyParts', 'nift_p')
         ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
         class_attrs['MGEF'] = icon + model## + ('effectShader_long','enchantEffect_long','light_long')
         class_attrs['EFSH'] = ('fillTexture','particleTexture','flags','memSBlend','memBlendOp',
@@ -17149,7 +17180,7 @@ class ActorImporter(ImportPatcher):
     text = _("Import Actor components from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race')
+    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race', 'Actors.Skeleton')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -17172,6 +17203,7 @@ class ActorImporter(ImportPatcher):
                 'NPC.Race': ('race',),
                 'Actors.CombatStyle': ('combatStyle',),
                 'Creatures.Blood': (),
+                'Actors.Skeleton': ('model',),
                 }
         for recClass in (MreCrea,):
             self.recAttrs_class[recClass] = {
@@ -17182,6 +17214,7 @@ class ActorImporter(ImportPatcher):
                 'NPC.Race': (),
                 'Actors.CombatStyle': ('combatStyle',),
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                'Actors.Skeleton': ('model',),
                 }
         #--Needs Longs
         self.longTypes = set(('CREA','NPC_'))
@@ -17300,7 +17333,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     text = _("Import Actor components from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race')
+    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -17325,6 +17358,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 'NPC.Race': ('race_long',),
                 'Actors.CombatStyle': ('combatStyle_long',),
                 'Creatures.Blood': (),
+                'Actors.Skeleton': ('model',),
                 }
         class_tag_attrs['CREA'] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -17338,6 +17372,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 'NPC.Race': (),
                 'Actors.CombatStyle': ('combatStyle_long',),
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                'Actors.Skeleton': ('model',),
                 }
         
     def getTypes(self):
@@ -19173,8 +19208,9 @@ class ImportActorsSpells(ImportPatcher):
                 fid = record.fid
                 if not fid in data: continue
                 changed = False
-                if list(record.spells) != data[fid]['merged']:
-                    record.spells = data[fid]['merged']
+                mergedSpells = sorted(data[fid]['merged'])
+                if sorted(list(record.spells)) != mergedSpells:
+                    record.spells = mergedSpells
                     changed = True
                 if changed:
                     keep(record.fid)
@@ -19195,7 +19231,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Actors.Spells','Actors.SpellsForceAdd')
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19214,27 +19249,27 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
             curData = {'deleted':[],'merged':[]}
-            curspells = list(record.spells)
-            parentRecords = [parent for parent in record.Conflicts() if parent._ModName in set(CBashModFile(record._CollectionIndex, record._ModName).TES4.masters)].reverse()
+            curspells = record.spells
+            print curspells
+            parentRecords = [parent for parent in record.Conflicts(False) if parent._NormName in set(CBashModFile(record._CollectionIndex, record._ModName).TES4.masters)]
             if parentRecords:
-                if parentRecord[0].spells != curspells or'Actors.SpellsForceAdd' in bashTags: 
-                    curData = {'deleted':[],'merged':curspells}
-                    for spell in parentRecord[0].spells:
+                if parentRecords[-1].spells != curspells or'Actors.SpellsForceAdd' in bashTags:
+                    for spell in parentRecords[-1].spells:
                         if spell not in curspells:
                             curData['deleted'].append(spell)
-            curData['merged'] = curspells
-            if not record.fid_long in self.id_spells:
-                self.id_spells[record.fid_long] = curData
-            else:
-                id_spells = self.id_spells[record.fid_long]
-                for spell in curData['deleted']:
-                    if spell in id_spells['merged']:
-                        id_spells['merged'].remove(spell)
-                    id_spells['deleted'].append(spell)
-                for spell in curData['merged']:
-                    if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
-                    if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
-                        id_spells['merged'].append(spell)
+                curData['merged'] = curspells
+                if not record.fid_long in self.id_spells:
+                    self.id_spells[record.fid_long] = curData
+                else:
+                    id_spells = self.id_spells[record.fid_long]
+                    for spell in curData['deleted']:
+                        if spell in id_spells['merged']:
+                            id_spells['merged'].remove(spell)
+                        id_spells['deleted'].append(spell)
+                    for spell in curData['merged']:
+                        if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
+                        if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
+                            id_spells['merged'].append(spell)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -19250,7 +19285,9 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid_long
-        if(recordId in self.id_spells and record.spells != self.id_spells[recordId]['merged']):
+        if not recordId in self.id_spells: return
+        mergedSpells = sorted(self.id_spells[recordId]['merged'])
+        if sorted(record.spells) != mergedSpells:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.spells = self.id_spells[recordId]['merged']
