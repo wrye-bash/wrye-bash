@@ -520,7 +520,7 @@ class Path(object):
     def __hash__(self):
         return hash(self._cs)
     def __cmp__(self, other):
-            if isinstance(other,Path): return cmp(self._cs, other._cs)
+        if isinstance(other,Path): return cmp(self._cs, other._cs)
         else: return cmp(self._cs, Path.getCase(other))
 
 # Util Constants --------------------------------------------------------------
