@@ -10993,7 +10993,7 @@ class InstallersData(bolt.TankData, DataDict):
         #--Default Params
         self.defaultParam('columns',self.tankColumns)
         self.defaultParam('colWidths',{
-            'Package':100,'Package':100,'Order':10,'Group':60,'Modified':60,'Size':40,'Files':20})
+            'Package':100,'Order':10,'Group':60,'Modified':60,'Size':40,'Files':20})
         self.defaultParam('colAligns',{'Order':'RIGHT','Size':'RIGHT','Files':'RIGHT','Modified':'RIGHT'})
         #--Persistent data
         self.dictFile = PickleDict(self.bashDir.join('Installers.dat'))
@@ -12634,7 +12634,7 @@ class FullNames:
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,name = id_name[longid]
-                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name))
+                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name.replace('"', '""')))
         out.close()
 
 class CBash_FullNames:
@@ -12717,7 +12717,7 @@ class CBash_FullNames:
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,name = id_name[longid]
-                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name))
+                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name.replace('"', '""')))
         out.close()
 
 #------------------------------------------------------------------------------
