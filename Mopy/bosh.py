@@ -129,7 +129,7 @@ allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
                   'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race','Actors.Skeleton'))
+                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport'))
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
@@ -19274,16 +19274,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
-        conflicts = record.Conflicts(False)
-        scanConflicts = []
-        for conflict in conflicts:
-            if conflict._ModName != record._ModName:
-                scanConflicts.append(conflict)
-            else: break
-        for conflict in scanConflicts:
-            mod = CBashModFile(conflict._CollectionIndex, conflict._ModName)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
         recordId = record.fid_long
         if not recordId in self.id_spells: return
         mergedSpells = sorted(self.id_spells[recordId]['merged'])
@@ -19514,7 +19504,7 @@ class NpcFacePatcher(ImportPatcher):
     name = _('Import NPC Faces')
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = 'NpcFaces'
+    autoKey = ('NpcFaces','NpcFacesForceFullImport')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19544,27 +19534,31 @@ class NpcFacePatcher(ImportPatcher):
                     temp_faceData[npc.fid] = {}
                     for attr in ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','unused3'):
                         temp_faceData[npc.fid][attr] = npc.__getattribute__(attr)
-            for master in masters:
-                if not master in modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(('NPC_',))
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                if 'NPC_' not in masterFile.tops: continue
-                for npc in masterFile.NPC_.getActiveRecords():
-                    if npc.fid not in temp_faceData: continue
-                    for attr, value in temp_faceData[npc.fid].iteritems():
-                        if value == npc.__getattribute__(attr): continue
-                        if npc.fid not in faceData: faceData[npc.fid] = dict()
-                        try:
-                            faceData[npc.fid][attr] = temp_faceData[npc.fid][attr]
-                        except KeyError:
-                            faceData[npc.fid].setdefault(attr,value)
+            if 'NpcFacesForceFullImport' in faceInfo.getBashTags():
+                for fid in temp_faceData:
+                    faceData[fid] = temp_faceData[fid]
+            else:
+                for master in masters:
+                    if not master in modInfos: continue # or break filter mods
+                    if master in cachedMasters:
+                        masterFile = cachedMasters[master]
+                    else:
+                        masterInfo = modInfos[master]
+                        masterFile = ModFile(masterInfo,loadFactory)
+                        masterFile.load(True)
+                        masterFile.convertToLongFids(('NPC_',))
+                        cachedMasters[master] = masterFile
+                    mapper = masterFile.getLongMapper()
+                    if 'NPC_' not in masterFile.tops: continue
+                    for npc in masterFile.NPC_.getActiveRecords():
+                        if npc.fid not in temp_faceData: continue
+                        for attr, value in temp_faceData[npc.fid].iteritems():
+                            if value == npc.__getattribute__(attr): continue
+                            if npc.fid not in faceData: faceData[npc.fid] = dict()
+                            try:
+                                faceData[npc.fid][attr] = temp_faceData[npc.fid][attr]
+                            except KeyError:
+                                faceData[npc.fid].setdefault(attr,value)
             progress.plus()
 
     def getReadClasses(self):
@@ -19614,7 +19608,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     name = _('Import NPC Faces')
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = 'NpcFaces'
+    autoKey = ('NpcFaces','NpcFacesForceFullImport')
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
@@ -19634,7 +19628,14 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.id_face.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.faceData, False))
+            if 'NpcFacesForceFullImport' in bashTags:
+                fid = record.fid_long
+                id_face = self.id_face
+                id_face[fid] = {}
+                for attr in self.faceData:
+                    id_face[fid][attr] = getattr(record,attr)
+            else:
+                self.id_face.setdefault(record.fid_long,{}).update(record.ConflictDetails(self.faceData, False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
