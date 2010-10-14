@@ -1155,9 +1155,10 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
   * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
   * Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed ([[#|Import Actors]]).
-  * Actors.Animations: Mod modifies Creature or NPC special Animations list ([[#|Import Actors]]).
-  * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles ([[#|Import Actors]]). 
-  * Actors.DeathItem: Mod modifies Creature or NPC Death Item ([[#|Import Actors]]).
+  * Actors.Animations: Mod modifies Creature or NPC special Animations list(s) ([[#|Import Actors]]).
+  * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) ([[#|Import Actors]]). 
+  * Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) ([[#|Import Actors]]).
+  * Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) ([[#|Import Actors]]).
   * Actors.Spells: Mod modifies Creature or NPC Spell list ([[#|Import Spells]]).
   * Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed([[#|Import Spells]]).
   * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
@@ -1187,6 +1188,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * NoMerge: Mod should not be merged even though they're technically mergeable.
   * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
   * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
+  * NpcFacesForceFullImport: Mod modifies faces ([[#|Import NPC Faces]]).
   * R.AddSpells: mod adds racial spells. ([[#|Race Records]]).
   * R.Attributes-F mod changes race attributes for females ([[#|Race Records]]).
   * R.Attributes-M: mod changes race attributes for males ([[#|Race Records]]).
@@ -1274,6 +1276,7 @@ __Importers__ are components that import specific information from selected mods
     * Actors.ACBS: Mod modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     * Actors.AIData: Mod modifies Creature or NPC AI Data.
     * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
+    * Actors.Skeleton: Mod modifies Creature or NPC skeleton(s).
     * Actors.Stats: Mod modifies Creature or NPC stats.
     * Creatures.Blood: Mod modifies the creature blood subrecords.
     * NPC.Class: Mod modifies the designated classes of NPCs.
@@ -1359,8 +1362,10 @@ __Importers__ are components that import specific information from selected mods
 * __Overview__
 . This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://www.dreamingthepyramid.net/TNR-home.html|Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 * __Configuration__
-  * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> [[#BashTags|tag]] in the mod description. 
+  * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> [[#BashTags|tag]] in the mod description. 
   * Note that since there is a now a [[http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip|TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
+  * If tagged with NpcFaces only changed face subrecords will be imported into the patch; this will get changes from more esps at once - like hair from mod 1 and facial changes from mod 2 however depending on the exact changes the results may not __look__ good though.
+  * If tagged with NpcFacesForceFullImport all the npc facial subrecords will be imported whether they are changed or not.  
 * __Source Mods__
   * Since TNR contains ~~only~~ face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods -- but ~~do~~ keep them in your data directory, since Bash will need to find them when updating the patch.
 
@@ -2180,11 +2185,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-== 289 [08/10/2010] [PacificMorrowind]
+=== 289 [14/10/2010] [PacificMorrowind,roxahris]
 * Bashed Patch:
   * Fixed Reweigh Staff logger
-  * Fixed iInventoryAskQuantityAt gmst tweaker
+  * Fixed some missing gmstIds for non-CBash build of the tweak settings (gmst tweaker)
+  * Added CBash version of Import Actors: Spells
+  * optimizations/fixes applied to Import Actors: Spells (both CBash & non-CBash versions)
+  * Actors.Skeleton importer added
+  * skeleton removed from graphics import for creatures.
+  * NpcFacesForceFullImport tag added.
+* Improved Nehrim Support (contributed by roxahris) 
 * A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine. 
+* 7z reverted to version 9.15 and then updated to version 9.17
+* Unicode/ansi fatal installer errors fixed. (it still may copy slightly er funkified file names of some non-ASCII char files).
 
 === 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
 * Bashed Patch:

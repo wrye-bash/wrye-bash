@@ -670,6 +670,36 @@
   <p class=list-2>&bull;&nbsp; Order can be changed by right clicking on a package (or group of selected packages) and selecting "Move To". Just enter the position to which the packages should be moved. If you're moving many packages at once, they'll keep their relative order, with the "oldest" moving to the specified position, and the others following after it.
   <p class=list-2>&bull;&nbsp; You can also use Ctrl-Up and Ctrl-Down to change the order of packages.  This preserves their relative load order without moving them as a block.
   <p class=list-2>&bull;&nbsp; You can also re-order packages by dragging and dropping the package where you want in the load order.  This will only work if the list is sorted by 'Order'
+  <p class=list-2>&bull;&nbsp; A good simple starter ordering would be roughly this sample adjusted as desired:
+    <p class=list-3>&bull;&nbsp; DCL
+    <p class=list-3>&bull;&nbsp; Unofficial Patches
+    <p class=list-3>&bull;&nbsp; DarN
+    <p class=list-3>&bull;&nbsp; Sounds
+    <p class=list-3>&bull;&nbsp; World textures - expandable
+    <p class=list-3>&bull;&nbsp; Environments
+    <p class=list-3>&bull;&nbsp; Weather
+    <p class=list-3>&bull;&nbsp; Other replacers
+    <p class=list-3>&bull;&nbsp; Overhauls - much
+    <p class=list-3>&bull;&nbsp; Overhaul Overrides and Patches
+    <p class=list-3>&bull;&nbsp; Quests
+    <p class=list-3>&bull;&nbsp; Dungeons
+    <p class=list-3>&bull;&nbsp; Locations
+    <p class=list-3>&bull;&nbsp; Houses
+    <p class=list-3>&bull;&nbsp; Unique Landscapes
+    <p class=list-3>&bull;&nbsp; Provinces/LOD
+    <p class=list-3>&bull;&nbsp; Cities and villages
+    <p class=list-3>&bull;&nbsp; Roads and infrastructure
+    <p class=list-3>&bull;&nbsp; Races and Bodies
+    <p class=list-3>&bull;&nbsp; Companions
+    <p class=list-3>&bull;&nbsp; Magic
+    <p class=list-3>&bull;&nbsp; Stealth
+    <p class=list-3>&bull;&nbsp; Combat
+    <p class=list-3>&bull;&nbsp; Scaling and leveling
+    <p class=list-3>&bull;&nbsp; errata
+    <p class=list-3>&bull;&nbsp; newly acquired and testing mods
+    <p class=list-3>&bull;&nbsp; my own projects
+    <p class=list-3>&bull;&nbsp; ====
+    <p class=list-3>&bull;&nbsp; Unused Mods
 <p class=list-1>&bull;&nbsp; <B>Last</B>
   <p class=list-2>&bull;&nbsp; Last is a special marker entry that Bain automatically adds to the archive list. It corresponds to the position at which any newly encountered packages are inserted. if you want specific packages (e.g. your personal projects) to always have high order, then move them to <I>after</I> the ==Last== marker.
 <p class=list-1>&bull;&nbsp; <B>Install Order</B>
@@ -1323,9 +1353,10 @@
   <p class=list-2>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed (<a href="#ImportActors">Import Actors</a>).
-  <p class=list-2>&bull;&nbsp; Actors.Animations: Mod modifies Creature or NPC special Animations list (<a href="#ImportActors">Import Actors</a>).
-  <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles (<a href="#ImportActors">Import Actors</a>). 
-  <p class=list-2>&bull;&nbsp; Actors.DeathItem: Mod modifies Creature or NPC Death Item (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.Animations: Mod modifies Creature or NPC special Animations list(s) (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) (<a href="#ImportActors">Import Actors</a>). 
+  <p class=list-2>&bull;&nbsp; Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) (<a href="#ImportActors">Import Actors</a>).
+  <p class=list-2>&bull;&nbsp; Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) (<a href="#ImportActors">Import Actors</a>).
   <p class=list-2>&bull;&nbsp; Actors.Spells: Mod modifies Creature or NPC Spell list (<a href="#ImportSpells">Import Spells</a>).
   <p class=list-2>&bull;&nbsp; Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed(<a href="#ImportSpells">Import Spells</a>).
   <p class=list-2>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).
@@ -1355,6 +1386,7 @@
   <p class=list-2>&bull;&nbsp; NoMerge: Mod should not be merged even though they're technically mergeable.
   <p class=list-2>&bull;&nbsp; NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).
   <p class=list-2>&bull;&nbsp; NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).
+  <p class=list-2>&bull;&nbsp; NpcFacesForceFullImport: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).
   <p class=list-2>&bull;&nbsp; R.AddSpells: mod adds racial spells. (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Attributes-F mod changes race attributes for females (<a href="#RaceRecords">Race Records</a>).
   <p class=list-2>&bull;&nbsp; R.Attributes-M: mod changes race attributes for males (<a href="#RaceRecords">Race Records</a>).
@@ -1442,6 +1474,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class=list-3>&bull;&nbsp; Actors.ACBS: Mod modifies the Creature or NPC ACBS configuration (such as fatigue, etc.).
     <p class=list-3>&bull;&nbsp; Actors.AIData: Mod modifies Creature or NPC AI Data.
     <p class=list-3>&bull;&nbsp; Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat styles. 
+    <p class=list-3>&bull;&nbsp; Actors.Skeleton: Mod modifies Creature or NPC skeleton(s).
     <p class=list-3>&bull;&nbsp; Actors.Stats: Mod modifies Creature or NPC stats.
     <p class=list-3>&bull;&nbsp; Creatures.Blood: Mod modifies the creature blood subrecords.
     <p class=list-3>&bull;&nbsp; NPC.Class: Mod modifies the designated classes of NPCs.
@@ -1527,8 +1560,10 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Overview</B>
 <p class=list-1>&nbsp;&nbsp; This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the <a href="http://www.dreamingthepyramid.net/TNR-home.html">Tamriel NPCs Revamped mods</a>), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 <p class=list-1>&bull;&nbsp; <B>Configuration</B>
-  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if their mod name starts with <B>TNR </B> or the mod has a <code>NpcFaces</code> <a href="#BashTags">tag</a> in the mod description. 
+  <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if their mod name starts with <B>TNR </B> or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> <a href="#BashTags">tag</a> in the mod description. 
   <p class=list-2>&bull;&nbsp; Note that since there is a now a <a href="http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip">TNR All Races</a> mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
+  <p class=list-2>&bull;&nbsp; If tagged with NpcFaces only changed face subrecords will be imported into the patch; this will get changes from more esps at once - like hair from mod 1 and facial changes from mod 2 however depending on the exact changes the results may not <B>look</B> good though.
+  <p class=list-2>&bull;&nbsp; If tagged with NpcFacesForceFullImport all the npc facial subrecords will be imported whether they are changed or not.  
 <p class=list-1>&bull;&nbsp; <B>Source Mods</B>
   <p class=list-2>&bull;&nbsp; Since TNR contains <I>only</I> face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods &#150; but <I>do</I> keep them in your data directory, since Bash will need to find them when updating the patch.
   <p class=empty>&nbsp;</p>
@@ -2347,6 +2382,20 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h3><a name='28914102010PacificMorrowindroxahris'>289 [14/10/2010] [PacificMorrowind,roxahris]</a></h3>
+<p class=list-1>&bull;&nbsp; Bashed Patch:
+  <p class=list-2>&bull;&nbsp; Fixed Reweigh Staff logger
+  <p class=list-2>&bull;&nbsp; Fixed some missing gmstIds for non-CBash build of the tweak settings (gmst tweaker)
+  <p class=list-2>&bull;&nbsp; Added CBash version of Import Actors: Spells
+  <p class=list-2>&bull;&nbsp; optimizations/fixes applied to Import Actors: Spells (both CBash & non-CBash versions)
+  <p class=list-2>&bull;&nbsp; Actors.Skeleton importer added
+  <p class=list-2>&bull;&nbsp; skeleton removed from graphics import for creatures.
+  <p class=list-2>&bull;&nbsp; NpcFacesForceFullImport tag added.
+<p class=list-1>&bull;&nbsp; Improved Nehrim Support (contributed by roxahris) 
+<p class=list-1>&bull;&nbsp; A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine. 
+<p class=list-1>&bull;&nbsp; 7z reverted to version 9.15 and then updated to version 9.17
+<p class=list-1>&bull;&nbsp; Unicode/ansi fatal installer errors fixed. (it still may copy slightly er funkified file names of some non-ASCII char files).
+<p class=empty>&nbsp;</p>
 <h3><a name='28806102010DJ_KovrikPacificMorrowindroxahrisscoobyWaruddar'>288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch:
   <p class=list-2>&bull;&nbsp; '<a href="#TweakAssorted">Tweak Assorted</a>':
