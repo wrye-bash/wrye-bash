@@ -2398,7 +2398,7 @@ class InstallersList(balt.Tank):
     def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
             details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
-            details,id,style,dndList=True,dndFiles=True,dndColumns=[_('Order')])
+            details,id,style,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
