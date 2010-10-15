@@ -5124,7 +5124,7 @@ class ModFile:
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError("ModFile fids not in long form.")
         if dirs['mods'].join('Oblivion.esm').exists():
-			masters = MasterSet(self.masterName) 
+			masters = MasterSet([GPath('Oblivion.esm')]) 
         elif dirs['mods'].join('Nehrim.esm').exists():
 			masters = MasterSet([GPath('Nehrim.esm')]) # insert witty joke here about the old comment
         for block in self.tops.values():
