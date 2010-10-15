@@ -2187,6 +2187,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 290 [15/10/2010] [PacificMorrowind]
+* fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
+* added Disable/Enable ini tweaks for Screenshots.
+
 === 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
 * Bashed Patch:
   * Fixed Reweigh Staff logger
