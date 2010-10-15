@@ -1557,6 +1557,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 === Tweak Settings
 * __Overview__
 . Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
+* __Actor Strength Encumbrance Multiplier:__ Actor strength X this multiplier = actor encumbrance capacity.
 * __AI: Max Active Actors:__ The maximum number of actors for AI to be processing at once - must be higher than __Combat: Max Actors:__.
 * __AI: Max Dead Actors:__ The maximum number of dead actors allowed before Oblivion begins to remove them.
 * __Arrow: Litter Count/Time:__ Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.
@@ -1584,6 +1585,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Cost Multiplier: Repair:__ The cost multiplier factor for repairing.
 * __Cost Multiplier: Spellmaking:__ The cost multiplier factor for spellmaking.
 * __Crime Alarm Distance:__ the distance from the player that NPCs will be alerted to crimes
+* __Crime: X Fine: the fine for X crime.
 * __Essential NPC Unconsciousness:__ Time for which an essential NPC stays unconscious after being knocked out.
 * __Fatigue from Running/Encumbrance:__ Fatigue cost multiplier for running or encumbrance
 * __Greeting Distance:__ Distance at which NPCs will great the player.
@@ -2185,7 +2187,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 289 [14/10/2010] [PacificMorrowind,roxahris]
+=== 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
 * Bashed Patch:
   * Fixed Reweigh Staff logger
   * Fixed some missing gmstIds for non-CBash build of the tweak settings (gmst tweaker)
@@ -2198,6 +2200,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine. 
 * 7z reverted to version 9.15 and then updated to version 9.17
 * Unicode/ansi fatal installer errors fixed. (it still may copy slightly er funkified file names of some non-ASCII char files).
+* DnD ordering in Installers fixed for Non-English installs (contributed by valda68k)
+* Escaping of quotations in names export (contributed by valda68k)
+* fix/improvement for oneInstanceChecker (contributed by myk002)
 
 === 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
 * Bashed Patch:
