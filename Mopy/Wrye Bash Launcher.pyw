@@ -100,26 +100,39 @@ import atexit
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 from os import open as _open, O_CREAT, O_EXCL, O_RDWR
 
-pidpath = bosh.dirs['mopy'].join('pidfile.tmp').s
+pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
+pidfilename = pidpath.s
 lockfd = None
 
 def exit():
     try:
         os.close(lockfd)
-        os.unlink(pidpath)
+        os.unlink(pidfilename)
     except OSError, e:
         print e
-        return 0 
 
 def oneInstanceChecker():
     global lockfd
     try:
-        lockfd = _open(pidpath, O_CREAT|O_EXCL|O_RDWR)
+        lockfd = _open(pidfilename, O_CREAT|O_EXCL|O_RDWR)
         os.write(lockfd, "%d" % os.getpid())
-    except OSError, e: # Already locked
-        print 'already started'
-        lockfd = None
-        return False
+    except OSError, e:
+        # file already created, but double-check in case it is left over from
+        # a previous run
+        processlist = bosh.dirs['mopy'].join('temp.tmp')
+        pidfile = pidpath.open('r')
+        pidlist = pidfile.readlines()
+        pidfile.close()
+        os.system(r'tasklist > "%s"' % processlist.s)
+        processlistfile = processlist.open('r')
+        processlistcontents = processlistfile.readlines()
+        processlistfile.close()
+        processlist.remove()
+        for pid in pidlist:
+            for line in processlistcontents:
+                if pid in line:
+                    print 'already started'
+                    return False
     return True
     
 # Main ------------------------------------------------------------------------
