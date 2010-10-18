@@ -3912,7 +3912,7 @@ class BashStatusBar(wx.StatusBar):
         for link in buttons:
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
             if gButton: self.buttons.append(gButton)
-        self.SetStatusWidths([self.size*len(self.buttons),-1, 120])
+        self.SetStatusWidths([self.size*len(self.buttons),-1, 130])
         self.SetSize((-1, self.size))
         self.GetParent().SendSizeEvent()
         self.OnSize() #--Position buttons
