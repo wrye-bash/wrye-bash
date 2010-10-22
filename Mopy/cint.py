@@ -1,5 +1,6 @@
 from ctypes import *
 import struct
+import math
 from os.path import exists
 try:
     from bolt import GPath
@@ -9,10 +10,9 @@ except:
     def GPath(obj):
         return obj
 
+CBash = None
 if(exists(".\\CBash.dll")):
     CBash = CDLL("CBash.dll")
-else:
-    CBash = None
 
 #Helper functions
 class PrintFormID(object):
@@ -517,6 +517,24 @@ class Effect(object):
             else: self.flags = 0x00000001
         elif self.flags: self.flags &= ~0x00000001
     IsHostile = property(get_IsHostile, set_IsHostile)
+    def get_IsSelf(self):
+        return self.recipient != None and (self.recipient == 0)
+    def set_IsSelf(self, nValue):
+        if nValue: self.recipient = 0
+        else: self.recipient = 1
+    IsSelf = property(get_IsSelf, set_IsSelf)
+    def get_IsTouch(self):
+        return self.recipient != None and (self.recipient == 1)
+    def set_IsTouch(self, nValue):
+        if nValue: self.recipient = 1
+        else: self.recipient = 0
+    IsTouch = property(get_IsTouch, set_IsTouch)
+    def get_IsTarget(self):
+        return self.recipient != None and (self.recipient == 2)
+    def set_IsTarget(self, nValue):
+        if nValue: self.recipient = 2
+        else: self.recipient = 0
+    IsTarget = property(get_IsTarget, set_IsTarget)
 
 class Faction(object):
     def __init__(self, CollectionIndex, ModName, recordID, subField, listIndex):
@@ -1405,6 +1423,30 @@ class ACHRRecord(BaseRecord):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 24)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 24, c_float(round(nValue,6)))
     rotZ = property(get_rotZ, set_rotZ)
+    def get_rotX_degrees(self):
+        retValue = self.rotX
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotX_degrees(self, nValue):
+        if nValue is None: self.rotX = None
+        else: self.rotX = math.radians(nValue)
+    rotX_degrees = property(get_rotX_degrees, set_rotX_degrees)
+    def get_rotY_degrees(self):
+        retValue = self.rotY
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotY_degrees(self, nValue):
+        if nValue is None: self.rotY = None
+        else: self.rotY = math.radians(nValue)
+    rotY_degrees = property(get_rotY_degrees, set_rotY_degrees)
+    def get_rotZ_degrees(self):
+        retValue = self.rotZ
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotZ_degrees(self, nValue):
+        if nValue is None: self.rotZ = None
+        else: self.rotZ = math.radians(nValue)
+    rotZ_degrees = property(get_rotZ_degrees, set_rotZ_degrees)
     def get_IsOppositeParent(self):
         return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
@@ -1626,6 +1668,30 @@ class ACRERecord(BaseRecord):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 23)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 23, c_float(round(nValue,6)))
     rotZ = property(get_rotZ, set_rotZ)
+    def get_rotX_degrees(self):
+        retValue = self.rotX
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotX_degrees(self, nValue):
+        if nValue is None: self.rotX = None
+        else: self.rotX = math.radians(nValue)
+    rotX_degrees = property(get_rotX_degrees, set_rotX_degrees)
+    def get_rotY_degrees(self):
+        retValue = self.rotY
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotY_degrees(self, nValue):
+        if nValue is None: self.rotY = None
+        else: self.rotY = math.radians(nValue)
+    rotY_degrees = property(get_rotY_degrees, set_rotY_degrees)
+    def get_rotZ_degrees(self):
+        retValue = self.rotZ
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotZ_degrees(self, nValue):
+        if nValue is None: self.rotZ = None
+        else: self.rotZ = math.radians(nValue)
+    rotZ_degrees = property(get_rotZ_degrees, set_rotZ_degrees)
     def get_IsOppositeParent(self):
         return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
@@ -14477,6 +14543,30 @@ class REFRRecord(BaseRecord):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 13)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 13, c_float(round(nValue,6)))
     destinationRotZ = property(get_destinationRotZ, set_destinationRotZ)
+    def get_destinationRotX_degrees(self):
+        retValue = self.destinationRotX
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_destinationRotX_degrees(self, nValue):
+        if nValue is None: self.destinationRotX = None
+        else: self.destinationRotX = math.radians(nValue)
+    destinationRotX_degrees = property(get_destinationRotX_degrees, set_destinationRotX_degrees)
+    def get_destinationRotY_degrees(self):
+        retValue = self.destinationRotY
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_destinationRotY_degrees(self, nValue):
+        if nValue is None: self.destinationRotY = None
+        else: self.destinationRotY = math.radians(nValue)
+    destinationRotY_degrees = property(get_destinationRotY_degrees, set_destinationRotY_degrees)
+    def get_destinationRotZ_degrees(self):
+        retValue = self.destinationRotZ
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_destinationRotZ_degrees(self, nValue):
+        if nValue is None: self.destinationRotZ = None
+        else: self.destinationRotZ = math.radians(nValue)
+    destinationRotZ_degrees = property(get_destinationRotZ_degrees, set_destinationRotZ_degrees)
     def get_lockLevel(self):
         CBash.ReadFIDField.restype = POINTER(c_ubyte)
         retValue = CBash.ReadFIDField(self._CollectionIndex, self._ModName, self._recordID, 14)
@@ -14860,6 +14950,30 @@ class REFRRecord(BaseRecord):
         if nValue is None: CBash.DeleteFIDField(self._CollectionIndex, self._ModName, self._recordID, 50)
         else: CBash.SetFIDFieldF(self._CollectionIndex, self._ModName, self._recordID, 50, c_float(round(nValue,6)))
     rotZ = property(get_rotZ, set_rotZ)
+    def get_rotX_degrees(self):
+        retValue = self.rotX
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotX_degrees(self, nValue):
+        if nValue is None: self.rotX = None
+        else: self.rotX = math.radians(nValue)
+    rotX_degrees = property(get_rotX_degrees, set_rotX_degrees)
+    def get_rotY_degrees(self):
+        retValue = self.rotY
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotY_degrees(self, nValue):
+        if nValue is None: self.rotY = None
+        else: self.rotY = math.radians(nValue)
+    rotY_degrees = property(get_rotY_degrees, set_rotY_degrees)
+    def get_rotZ_degrees(self):
+        retValue = self.rotZ
+        if(retValue): return round(math.degrees(retValue),6)
+        return None
+    def set_rotZ_degrees(self, nValue):
+        if nValue is None: self.rotZ = None
+        else: self.rotZ = math.radians(nValue)
+    rotZ_degrees = property(get_rotZ_degrees, set_rotZ_degrees)
     def get_IsOppositeParent(self):
         return self.parentFlags != None and (self.parentFlags & 0x00000001) != 0
     def set_IsOppositeParent(self, nValue):
@@ -20088,6 +20202,8 @@ class Collection:
             return [RecordType(self._CollectionIndex, string_at(cModNames[x]), recordID) for x in range(0, numRecords)]
         return []
 
+    def LookupModFile(self,ModName):
+        return CBashModFile(self._CollectionIndex, ModName)
     def UpdateReferences(self, origFid, newFid):
         if not isinstance(origFid, int): return 0
         if not isinstance(newFid, int): return 0
