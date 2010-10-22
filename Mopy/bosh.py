@@ -25865,6 +25865,100 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
+class QuietFeetPatcher(BasalCreatureTweaker):
+    """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_('Quiet Feet'),
+            _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
+            'silent n sneaky!',
+            (_('All Creature Foot Sounds'), 'all'),
+            (_('Only 4 Legged Creature Foot Sounds'), 'partial'),
+            (_('Only Mount Foot Sounds'), 'mounts'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        chosen = self.choiceValues[self.chosen][0]
+        for record in patchFile.CREA.records:
+            sounds = record.sounds
+            if chosen == 'all':
+                sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+            elif chosen == 'partial':
+                for sound in record.sounds:
+                    if sound.type in [2,3]:
+                        sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+                        break
+            else: #really is: "if chosen == 'mounts':", but less cpu to do it as else.
+                if record.creatureType == 4:
+                    sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+            if sounds != record.sounds:
+                record.sounds = sounds
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===Quite Feet'))
+        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
+    """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("Quiet Feet")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_('Quiet Feet'),
+            _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
+            'silent n sneaky!',
+            (_('All Creature Foot Sounds'), 'all'),
+            (_('Only 4 Legged Creature Foot Sounds'), 'partial'),
+            (_('Only Mount Foot Sounds'), 'mounts'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['CREA']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        chosen = self.choiceValues[self.chosen][0]
+        sounds = record.sounds
+        if chosen == 'all':
+            sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+        elif chosen == 'partial':
+            for sound in record.sounds:
+                if sound.type in [2,3]:
+                    sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+                    break
+        else: ##if chosen == 'mounts':
+            if record.creatureType == 4:
+                sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
+        if sounds != record.sounds:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.sounds = sounds
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
@@ -25876,6 +25970,7 @@ class TweakActors(MultiTweaker):
         NoBloodCreaturesPatcher(),
         AsIntendedImpsPatcher(),
         AsIntendedBoarsPatcher(),
+        QuietFeetPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -25919,6 +26014,7 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_NoBloodCreaturesPatcher(),
         CBash_AsIntendedImpsPatcher(),
         CBash_AsIntendedBoarsPatcher(),
+        CBash_QuietFeetPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
