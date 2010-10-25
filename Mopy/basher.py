@@ -10718,7 +10718,6 @@ class Save_Move:
         menuItem = wx.MenuItem(menu,self.idList.DEFAULT,_('Default'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Enable(localSave != 'Saves\\')
-        menuItem.Enable(bool(data))
         for id,item in zip(self.idList,self.GetItems()):
             menuItem = wx.MenuItem(menu,id,item,kind=wx.ITEM_CHECK)
             menu.AppendItem(menuItem)
