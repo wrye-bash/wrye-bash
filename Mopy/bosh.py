@@ -67,6 +67,7 @@ import shutil
 import string
 import struct
 import sys
+from stat import *
 from types import *
 from operator import attrgetter,itemgetter
 import subprocess
@@ -152,6 +153,8 @@ class FileError(BoltError):
 
     def __str__(self):
         if self.inName:
+            if isinstance(inName, str):
+                return self.inName+': '+self.message
             return self.inName.s+': '+self.message
         else:
             return _('Unknown File: ')+self.message
@@ -10560,6 +10563,8 @@ class InstallerConverter(object):
                 index += 1
         result = ins.close()
         self.tempList.remove()
+        # Clear ReadOnly flag if set
+        os.chmod(subTempDir.s,stat.S_IWRITE)
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
         #--Done
@@ -10669,6 +10674,8 @@ class InstallerArchive(Installer):
                 index += 1
         result = ins.close()
         self.tempList.remove()
+        # Clear ReadOnly flag if set
+        os.chmod(self.tempDir.s,stat.S_IWRITE)
         if result:
             raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
@@ -10717,6 +10724,8 @@ class InstallerArchive(Installer):
         progress(0.9,project.s+_("\nMoving files..."))
         count = 0
         tempDir = self.tempDir
+        # Clear ReadOnly flag if set
+        os.chmod(self.tempDir.s,stat.S_IWRITE)
         for file in files:
             srcFull = tempDir.join(file)
             destFull = destDir.join(file)
@@ -20798,7 +20807,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20855,7 +20864,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _('Playable Clothes')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)',re.I)
+    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
