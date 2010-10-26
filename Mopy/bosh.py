@@ -64,10 +64,10 @@ import os
 import random
 import re
 import shutil
+import stat
 import string
 import struct
 import sys
-from stat import *
 from types import *
 from operator import attrgetter,itemgetter
 import subprocess
