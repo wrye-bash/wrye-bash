@@ -48,7 +48,7 @@ class Data:
     """Some setup and data. Mostly various paths."""
     def __init__(self):
         #--Init bosh stuff
-        bosh.initDirs()
+        bosh.initBosh()
         bosh.initSettings(readOnly=True)
         bosh.oblivionIni = bosh.OblivionIni()
         bosh.oblivionIni.mtime = 0

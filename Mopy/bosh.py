@@ -1470,7 +1470,7 @@ class MelSet:
                     loaders[type].loadData(record,ins,type,size,readId)
                 doFullTest = doFullTest and (type != 'EFID')
             except Exception as error:
-                print str(error)
+                print error
                 eid = getattr(record,'eid',_('<<NO EID>>'))
                 if not eid: eid = _('<<NO EID>>)')
                 print _('Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d') % (record.recType,record.fid,eid,type,size)
@@ -28520,46 +28520,17 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                             modName = longId[0].s
                         log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
         self.mod_type_id_badEntries = {}
+
 # Initialization --------------------------------------------------------------
-def initDirs(personal='',localAppData='',oblivionPath=''):
-    #--Bash Ini
-    bashIni = None
-    if GPath('bash.ini').exists():
-        bashIni = ConfigParser.ConfigParser()
-        bashIni.read('bash.ini')
-        
-    #--Mopy directories
-    dirs['mopy'] = bolt.Path.getcwd().root
-    dirs['mopyData'] = dirs['mopy'].join('Data')
-    dirs['mopyExtras'] = dirs['mopy'].join('Extras')
-    dirs['mopyImages'] = dirs['mopy'].join('Images')
-    
-    #--Oblivion (Application) Directories
-    if oblivionPath: dirs['app'] = GPath(oblivionPath)
-    elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
-        dirs['app'] = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else: dirs['app'] = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
-    #--If path is relative, make absolute
-    if not dirs['app'].isabs():
-        dirs['app'] = dirs['mopy'].join(dirs['app'])
-    #--Error check
-    if not dirs['app'].join('Oblivion.exe').exists():
-        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % dirs['app'])
-    #--Subdirectories
-    dirs['mods'] = dirs['app'].join('Data')
-    dirs['builds'] = dirs['app'].join('Builds')
-    dirs['patches'] = dirs['mods'].join('Bash Patches')
-        
-    #--Determine User folders from Personal and Local Application Data directories
-    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
-    #  Import win32com, in case it's necessary
-    try:
+
+#  Import win32com, in case it's necessary
+try:
         from win32com.shell import shell, shellcon
         def getShellPath(shellKey):
             path = shell.SHGetFolderPath (0, shellKey, None, 0)
             path = path.encode(locale.getpreferredencoding())
             return GPath(path)
-    except ImportError:
+except ImportError:
         shell = shellcon = None
         reEnv = re.compile('%(\w+)%')
         envDefs = os.environ
@@ -28580,80 +28551,125 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
             path = path.encode(locale.getpreferredencoding())
             path = reEnv.sub(subEnv,path)
             return GPath(path)
-    #  Personal
-    if personal:
-        personal = GPath(personal)
-        pErrorInfo = _("Folder path specified on command line (-p)")
+
+def getOblivionPath(bashIni, path):
+    if path: path = GPath(path)
+    elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
+        path = GPath(bashIni.get('General', 'sOblivionPath').strip())
+    else: path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
+    #--If path is relative, make absolute
+    if not path.isabs(): path = dirs['mopy'].join(path)
+    #--Error check
+    if not path.join('Oblivion.exe').exists():
+        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
+    return path
+
+def getPersonalPath(bashIni, path):
+    #--Determine User folders from Personal and Local Application Data directories
+    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
+    if path:
+        path = GPath(path)
+        sErrorInfo = _("Folder path specified on command line (-p)")
     elif bashIni and bashIni.has_option('General', 'sPersonalPath') and not bashIni.get('General', 'sPersonalPath') == '.':
-        personal = GPath(bashIni.get('General', 'sPersonalPath').strip())
-        pErrorInfo = _("Folder path specified  in bash.ini (sPersonalPath)")
+        path = GPath(bashIni.get('General', 'sPersonalPath').strip())
+        sErrorInfo = _("Folder path specified in bash.ini (%s)") % ('sPersonalPath')
     elif shell and shellcon:
-        personal = getShellPath(shellcon.CSIDL_PERSONAL)
-        pErrorInfo = _("Folder paths extracted from win32com.shell.")
+        path = getShellPath(shellcon.CSIDL_PERSONAL)
+        sErrorInfo = _("Folder path extracted from win32com.shell.")
     else:
-        personal = getShellPath('Personal')
-        pErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
-    #  Local Application Data
-    if localAppData:
-        localAppData = GPath(localAppData)
-        lErrorInfo = _("Folder path specified on command line (-l)")
-    elif bashIni and bashIni.has_option('General', 'sLocalAppDataPath') and not bashIni.get('General', 'sLocalAppDataPath') == '.':
-        localAppData = GPath(bashIni.get('General', 'sLocalAppDataPath').strip())
-        lErrorInfo = _("Folder path specified  in bash.ini (sLocalAppDataPath)")
-    elif shell and shellcon:
-        localAppData = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
-        lErrorInfo = _("Folder path extracted from win32com.shell.")
-    else:
-        localAppData = getShellPath('Local AppData')
-        lErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+        path = getShellPath('Personal')
+        sErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
     #  If path is relative, make absolute
-    #    Not likely to be used, but guaranteed in Ini instructions
-    if not personal.isabs():
-        personal = dirs['app'].join(personal)
-    if not localAppData.isabs():
-        localAppData = dirs['app'].join(localAppData)
-    #  Error checks
-    if not personal.exists():
-        raise BoltError(_("Personal folder does not exist\nPersonal folder: %s\nAdditional info:\n%s")
-            % (personal.s,pErrorInfo))
-    if not localAppData.exists():
-        raise BoltError(_("Local app data folder does not exist.\nLocal app data folder: %s\nAdditional info:\n%s")
-            % (localAppData.s, lErrorInfo))
+    if not path.isabs():
+        path = dirs['app'].join(path)
+    #  Error check
+    if not path.exists():
+        raise BoltError(_("Personal folder does not exist.\nPersonal folder: %s\nAdditional info:\n%s")
+            % (path.s, sErrorInfo))
+    return path
+
+def getLocalAppDataPath(bashIni, path):
+    #--Determine User folders from Personal and Local Application Data directories
+    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
+    if path:
+        path = GPath(path)
+        sErrorInfo = _("Folder path specified on command line (-l)")
+    elif bashIni and bashIni.has_option('General', 'sLocalAppDataPath') and not bashIni.get('General', 'sLocalAppDataPath') == '.':
+        path = GPath(bashIni.get('General', 'sLocalAppDataPath').strip())
+        sErrorInfo = _("Folder path specified  in bash.ini (%s)") % ('sLocalAppDataPath')
+    elif shell and shellcon:
+        path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
+        sErrorInfo = _("Folder path extracted from win32com.shell.")
+    else:
+        path = getShellPath('Local AppData')
+        sErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+    #  If path is relative, make absolute
+    if not path.isabs():
+        path = dirs['app'].join(path)
+    #  Error check
+    if not path.exists():
+        raise BoltError(_("Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s")
+            % (path.s, sErrorInfo))
+    return path
+
+def getOblivionModsPath(bashIni):
+    if bashIni and bashIni.has_option('General','sOblivionMods'):
+        path = GPath(bashIni.get('General','sOblivionMods').strip())
+    else:
+        path = GPath(r'..\Oblivion Mods')
+    if not path.isabs(): path = dirs['app'].join(path)
+    return path
+
+def getLegacyPath(newPath, oldPath):
+    return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
+
+def initDirs(bashIni, personal, localAppData, oblivionPath):
+    #--Mopy directories
+    dirs['mopy'] = bolt.Path.getcwd().root
+    dirs['mopyData'] = dirs['mopy'].join('Data')
+    dirs['mopyExtras'] = dirs['mopy'].join('Extras')
+    dirs['mopyImages'] = dirs['mopy'].join('Images')
     
-    dirs['userApp'] = localAppData.join('Oblivion')
+    #--Oblivion (Application) Directories
+    dirs['app'] = getOblivionPath(bashIni,oblivionPath)
+    dirs['mods'] = dirs['app'].join('Data')
+    dirs['builds'] = dirs['app'].join('Builds')
+    dirs['patches'] = dirs['mods'].join('Bash Patches')
+        
+    #  Personal
+    personal = getPersonalPath(bashIni,personal)
     dirs['saveBase'] = personal.join(r'My Games','Oblivion')
+    
+    #  Local Application Data
+    localAppData = getLocalAppDataPath(bashIni,localAppData)
+    dirs['userApp'] = localAppData.join('Oblivion')
     
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
     oblivionIni = OblivionIni()
-    # If bUseMyGamesDirectory=0, use SLocalSavePath and SLocalMasterPath if available
     if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
-        # Set the save game folder to Data
+        # Set the save game folder to the Oblivion directory
         dirs['saveBase'] = dirs['app']
-            
-        # Set the data folder to SLocalMasterPath
+        # Set the data folder to sLocalMasterPath
         dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
         # this one is relative to the mods path so it must be updated too
         dirs['patches'] = dirs['mods'].join('Bash Patches')
         
-
     #--Mod Data, Installers
-    if bashIni and bashIni.has_option('General','sOblivionMods'):
-        oblivionMods = GPath(bashIni.get('General','sOblivionMods').strip())
-    else:
-        oblivionMods = GPath(r'..\Oblivion Mods')
-    if not oblivionMods.isabs():
-        oblivionMods = dirs['app'].join(oblivionMods)
-    for key,oldDir,newDir in (
-        ('modsBash', dirs['app'].join('Data','Bash'), oblivionMods.join('Bash Mod Data')),
-        ('installers', dirs['app'].join('Installers'), oblivionMods.join('Bash Installers')),
-        ):
-        dirs[key] = (oldDir,newDir)[newDir.isdir() or not oldDir.isdir()]
-        dirs[key].makedirs()
-    dirs['converters'] = dirs['installers'].join('Bain Converters')
-    dirs['converters'].makedirs()
-    dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
-    dirs['dupeBCFs'].makedirs()
+    oblivionMods = getOblivionModsPath(bashIni)
+    dirs['modsBash'] = oblivionMods.join('Bash Mod Data')
+    dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join('Data','Bash'))
     
+    dirs['installers'] = oblivionMods.join('Bash Installers')
+    dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join('Installers'))
+
+    dirs['converters'] = dirs['installers'].join('Bain Converters')
+    dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
+    
+    # create bash user folders, keep these in order
+    for key in ('modsBash','installers','converters','dupeBCFs'):
+        dirs[key].makedirs()
+
+def initDefaultTools():
     #-- Other tool directories
     #   First to default path
     tooldirs['Tes4FilesPath'] = dirs['app'].join('Tools','TES4Files.exe')
@@ -28731,6 +28747,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Custom17'] = undefinedPath
     tooldirs['Custom18'] = undefinedPath
 
+def initDefaultSettings():
     #other settings from the INI:
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
@@ -28782,7 +28799,10 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
     #inisettings['show?toollaunchers'] = True
-    # Then if bash.ini exists set from the settings in there:
+
+def initOptions(bashIni):
+    initDefaultTools()    
+    initDefaultSettings()
 
     defaultOptions = {}
     type_key = {str:'s',int:'i',bool:'b',bolt.Path:'s'}
@@ -28796,6 +28816,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
                 readKey = 'iIconSize'
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
+    # if bash.ini exists update the settings from there:
     if bashIni:
         for section in bashIni.sections():
             options = bashIni.items(section)
@@ -28830,6 +28851,7 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
     tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join('TES4View.exe')
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join('TES4Trans.exe')
 
+def initLogFile():
     if inisettings['KeepLog'] == 0:
         if inisettings['LogFile'].exists():
             os.remove(inisettings['LogFile'].s)
@@ -28837,6 +28859,17 @@ def initDirs(personal='',localAppData='',oblivionPath=''):
         log = inisettings['LogFile'].open("a")
         log.write(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['KeepLog']))
         log.close()
+  
+def initBosh(personal='',localAppData='',oblivionPath=''):
+    #--Bash Ini
+    bashIni = None
+    if GPath('bash.ini').exists():
+        bashIni = ConfigParser.ConfigParser()
+        bashIni.read('bash.ini')
+
+    initDirs(bashIni,personal,localAppData, oblivionPath)        
+    initOptions(bashIni)
+    initLogFile()
 
 def initSettings(readOnly=False):
     global settings

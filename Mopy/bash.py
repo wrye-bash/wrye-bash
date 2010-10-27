@@ -92,7 +92,7 @@ elif os.path.exists('bash.ini'):
         os.environ['HOMEPATH'] = path
 personal = opts.get('-p')
 localAppData = opts.get('-l')
-bosh.initDirs(personal,localAppData,oblivionPath)
+bosh.initBosh(personal,localAppData,oblivionPath)
 pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
 import basher
 import bolt
@@ -140,6 +140,8 @@ def main():
         bolt.deprintOn = True
     else:
         app = basher.BashApp()
+
+    app.Init()
     app.MainLoop()
 
 if __name__ == '__main__':

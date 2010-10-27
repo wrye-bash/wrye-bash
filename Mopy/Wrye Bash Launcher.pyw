@@ -22,7 +22,7 @@
 """This module starts the Wrye Bash application. Basically, it runs some
 initialization functions, and then starts the main application loop.
 
-bash [-o OblivionPath] [-u userPath] [-p personalPath] [-l localAppDataPath] [-d] [0]
+bash [-o OblivionPath] [-u userPath] [-p personalPath] [-l localAppDataPath] [-b backupFilePath] [-r backupFilePath] [-q] [-d] [0]
 ----
 For all arguments:
 Note that Python reads the backslash "\" as an escape character,
@@ -57,6 +57,24 @@ Example: -p "C:\\Documents and Settings\\Wrye\\My Documents"
 -l localAppDataPath: Specify the user's local application data directory. 
 If you need to set this then you probably need to set -p too.
 Example: -l "C:\\Documents and Settings\\Wrye\\Local Settings\\Application Data"
+---
+Backup Bash Settings:
+-b backupFilePath: Backup all Bash settings to an archive file before the app launches.
+Example: -b "C:\\Games\\Bash Backups\\BashBackupFile.7z"
+Prompts the user for the backup file path if an empty string is given or
+the path does not end with '.7z' or the specified file already exists.
+If the -q flag is used, no confirmation dialog will be displayed.
+---
+Restore Bash Settings:
+-r backupFilePath: Restore all Bash settings from backup file before the app launches.
+Example: -r "C:\\Games\\Bash Backups\\BashBackupFile.7z"
+Prompts the user for the backup file path if an empty string is given or
+the path does not end with '.7z' or the specified file already exists.
+If the -q flag is used, no confirmation dialog will be displayed.
+---
+Quiet/Quit Mode:
+-q Close Bash after creating or restoring backup and do not display confirmation dialog.
+Only used with -b and -r options
 ----
 Debug argument:
 -d Send debug text to the console rather than to a newly created debug window.
@@ -72,8 +90,9 @@ if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
 import bosh
+
 #--Parse arguments
-optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:d')
+optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:b:r:qd')
 #--Initialize Directories and some settings
 #  required before the rest has imported
 opts = dict(optlist)
@@ -92,21 +111,51 @@ elif os.path.exists('bash.ini'):
         os.environ['HOMEPATH'] = path
 personal = opts.get('-p')
 localAppData = opts.get('-l')
-bosh.initDirs(personal,localAppData,oblivionPath)
+bosh.initBosh(personal,localAppData,oblivionPath)
 import basher
 import bolt
 import atexit
+import barb
 
+# Backup/Restore --------------------------------------------------------------
+def cmdBackup():
+    # backup settings if app version has changed or on user request
+    path = None
+    quit = '-b' in opts and '-q' in opts
+    if '-b' in opts: path = bolt.GPath(opts['-b'])
+    backup = barb.BackupSettings(basher.bashFrame,path, quit)
+    if backup.PromptMismatch() or '-b' in opts:
+        try:
+            backup.Apply()
+        except bolt.StateError:
+            if backup.SameAppVersion():
+                backup.WarnFailed()
+            elif backup.PromptQuit():
+                return False
+        except barb.BackupCancelled:
+            if not backup.SameAppVersion() and not backup.PromptContinue():
+                return False
+    backup = None
+    return not quit
+
+def cmdRestore():
+    # restore settings on user request
+    path = None
+    quit = '-r' in opts and '-q' in opts
+    if '-r' in opts: path = bolt.GPath(opts['-r'])
+    if '-r' in opts:
+        try:
+            backup = barb.RestoreSettings(basher.bashFrame,path, quit)
+            backup.Apply()
+        except barb.BackupCancelled:
+            pass
+    backup = None
+    return not quit
+
+# -----------------------------------------------------------------------------
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
 lockfd = None
-
-def exit():
-    try:
-        os.close(lockfd)
-        os.remove(pidpath.s)
-    except OSError, e:
-        print e
 
 def oneInstanceChecker():
     global lockfd
@@ -122,14 +171,15 @@ def oneInstanceChecker():
 
     return True
 
-# Main ------------------------------------------------------------------------
-def main():
-    #import warnings
-    #warnings.filterwarnings('error')
-    #--More Initialization
-    if not oneInstanceChecker():
-        return False
-    atexit.register(exit)
+def exit():
+    try:
+        os.close(lockfd)
+        os.remove(pidpath.s)
+    except OSError, e:
+        print e
+
+# Runtime ---------------------------------------------------------------------
+def runtime():
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
@@ -139,7 +189,26 @@ def main():
         bolt.deprintOn = True
     else:
         app = basher.BashApp()
+
+    # only process backup/restore cli options on the first pass
+    if not basher.appRestart:
+        quit = False
+        quit = quit or not cmdBackup()
+        quit = quit or not cmdRestore()
+        if quit: return
+
+    app.Init()
     app.MainLoop()
+
+# Main ------------------------------------------------------------------------
+def main():
+    #import warnings
+    #warnings.filterwarnings('error')
+    #--More Initialization
+    if not oneInstanceChecker(): return
+    atexit.register(exit)
+    runtime()
+    while basher.appRestart: runtime()
 
 if __name__ == '__main__':
     try:
@@ -150,4 +219,3 @@ if __name__ == '__main__':
     except:
         pass
     main()
-
