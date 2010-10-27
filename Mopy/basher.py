@@ -39,6 +39,7 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
+import barb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
@@ -86,6 +87,8 @@ except:
 if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
 
+appRestart = False # restart Bash if true
+
 # Singletons ------------------------------------------------------------------
 statusBar = None
 modList = None
@@ -108,6 +111,7 @@ settingDefaults = {
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,'0'),
+    'bash.backupPath': None,
     'bash.framePos': (-1,-1),
     'bash.frameSize': (600,500),
     'bash.frameSize.min': (400,600),
@@ -4573,9 +4577,23 @@ class ModChecker(wx.Frame):
         self.Destroy()
 
 #------------------------------------------------------------------------------
+def GetBashVersion():
+    #--Version from readme
+    readme = bosh.dirs['mopy'].join('Wrye Bash.txt')
+    if readme.exists() and readme.mtime != settings['bash.readme'][0]:
+        reVersion = re.compile("^=== ([\.\d]+) \[")
+        for line in readme.open():
+            maVersion = reVersion.match(line)
+            if maVersion:
+                return (readme.mtime,maVersion.group(1))
+    return settings['bash.readme'] #readme file not found or not changed
+
+#------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
-    def OnInit(self):
+    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instanced
+        global appRestart
+        appRestart = False
         """wxWindows: Initialization handler."""
         #--Constants
         self.InitResources()
@@ -4599,7 +4617,6 @@ class BashApp(wx.App):
             #DocBrowser().Show()
             pass #--Better to not refresh doc browser, I think.
         #balt.ensureDisplayed(docBrowser)
-        return True
 
     def InitResources(self):
         """Init application resources."""
@@ -4664,15 +4681,7 @@ class BashApp(wx.App):
                     del balt.sizes[key]
         #--Current Version
         settings['bash.version'] = 43
-        #--Version from readme
-        readme = bosh.dirs['mopy'].join('Wrye Bash.txt')
-        if readme.exists() and readme.mtime != settings['bash.readme'][0]:
-            reVersion = re.compile("^=== ([\.\d]+) \[")
-            for line in readme.open():
-                maVersion = reVersion.match(line)
-                if maVersion:
-                    settings['bash.readme'] = (readme.mtime,maVersion.group(1))
-                    break
+        settings['bash.readme'] = GetBashVersion()
 
 # Misc Dialogs ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -8203,11 +8212,48 @@ class Mods_BOSSShowUpdate(Link):
         settings['BOSS.AlwaysUpdate'] ^= True
 
 #------------------------------------------------------------------------------
+class User_BackupSettings(Link):
+    """Saves Bash's settings and user data.."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Backup Settings...'),help="Backup all of Wrye Bash's settings/data to an archive file.",kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        BashFrame.SaveSettings(bashFrame)
+        backup = barb.BackupSettings(bashFrame)
+        try:
+            if backup.PromptConfirm(): backup.Apply()
+        except StateError:
+            backup.WarnFailed()
+        except barb.BackupCancelled:
+            pass
+        #end try
+        backup = None
+
+#------------------------------------------------------------------------------
+class User_RestoreSettings(Link):
+    """Saves Bash's settings and user data.."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Restore Settings...'),help="Restore all of Wrye Bash's settings/data from a backup archive file.",kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        try:
+            backup = barb.RestoreSettings(bashFrame)
+            if backup.PromptConfirm(): backup.Apply()
+        except barb.BackupCancelled: #cancelled
+            pass
+        #end try
+        backup = None
+
+#------------------------------------------------------------------------------
 class User_SaveSettings(Link):
     """Saves Bash's settings and user data.."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Save Settings'),help="Save's all of Wrye Bash's settings/data to disc.",kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Save Settings'),help="Save all of Wrye Bash's settings/data now.",kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11529,7 +11575,7 @@ class App_Button(Link):
                 try:
                     os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,'-jar',self.jar.stail,self.appArgs))
                 except Exception as error:
-                    print str(error)
+                    print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
                     print
@@ -11552,7 +11598,7 @@ class App_Button(Link):
                 try:
                     os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
                 except Exception as error:
-                    print str(error)
+                    print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
                     print
@@ -11563,7 +11609,7 @@ class App_Button(Link):
                 try:
                     os.startfile(self.exePath.s, (str(self.exeArgs))[2:-3])
                 except Exception as error:
-                    print str(error)
+                    print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
                     print
@@ -11644,7 +11690,7 @@ class App_BOSS(App_Button):
                 # And refresh to get the new times so WB will keep the order that BOSS specifies
                 bosh.modInfos.refresh(doInfos=False)
             except Exception as error:
-                print str(error)
+                print error
                 print _("Used Path: %s") % exePath.s
                 print _("Used Arguments: "), exeArgs
                 print
@@ -12474,6 +12520,9 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
+    InstallersPanel.mainMenu.append(SeparatorLink())
+    InstallersPanel.mainMenu.append(User_BackupSettings())
+    InstallersPanel.mainMenu.append(User_RestoreSettings())
     InstallersPanel.mainMenu.append(User_SaveSettings())
 
     #--Item links
@@ -12530,6 +12579,9 @@ def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     INIList.mainMenu.append(INI_SortValid())
+    INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(User_BackupSettings())
+    INIList.mainMenu.append(User_RestoreSettings())
     INIList.mainMenu.append(User_SaveSettings())
 
     #--Item menu
@@ -12584,6 +12636,9 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
     ModList.mainMenu.append(Mods_BOSSShowUpdate())
+    ModList.mainMenu.append(SeparatorLink())
+    ModList.mainMenu.append(User_BackupSettings())
+    ModList.mainMenu.append(User_RestoreSettings())
     ModList.mainMenu.append(User_SaveSettings())
 
     #--ModList: Item Links
@@ -12694,6 +12749,9 @@ def InitSaveLinks():
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
+    SaveList.mainMenu.append(SeparatorLink())
+    SaveList.mainMenu.append(User_BackupSettings())
+    SaveList.mainMenu.append(User_RestoreSettings())
     SaveList.mainMenu.append(User_SaveSettings())
 
     #--SaveList: Item Links
@@ -12795,6 +12853,9 @@ def InitScreenLinks():
     ScreensList.mainMenu.append(Files_Open())
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
+    ScreensList.mainMenu.append(SeparatorLink())
+    ScreensList.mainMenu.append(User_BackupSettings())
+    ScreensList.mainMenu.append(User_RestoreSettings())
     ScreensList.mainMenu.append(User_SaveSettings())
 
     #--ScreensList: Item Links
@@ -12814,6 +12875,9 @@ def InitMessageLinks():
     """Initialize messages tab menus."""
     #--SaveList: Column Links
     MessageList.mainMenu.append(Messages_Archive_Import())
+    MessageList.mainMenu.append(SeparatorLink())
+    MessageList.mainMenu.append(User_BackupSettings())
+    MessageList.mainMenu.append(User_RestoreSettings())
     MessageList.mainMenu.append(User_SaveSettings())
 
     #--ScreensList: Item Links
@@ -12824,6 +12888,9 @@ def InitPeopleLinks():
     #--Header links
     PeoplePanel.mainMenu.append(People_AddNew())
     PeoplePanel.mainMenu.append(People_Import())
+    PeoplePanel.mainMenu.append(SeparatorLink())
+    PeoplePanel.mainMenu.append(User_BackupSettings())
+    PeoplePanel.mainMenu.append(User_RestoreSettings())
     PeoplePanel.mainMenu.append(User_SaveSettings())
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())

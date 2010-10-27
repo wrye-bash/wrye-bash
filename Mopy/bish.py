@@ -73,7 +73,7 @@ def init(initLevel):
         2: modInfos
         3: saveInfos"""
     #--Settings
-    bosh.initDirs()
+    bosh.initBosh()
     bosh.initSettings(readOnly=True)
     bosh.oblivionIni = bosh.OblivionIni()
     #--MwIniFile (initLevel >= 1)
@@ -487,7 +487,7 @@ def perfTest():
 #------------------------------------------------------------------------------
 @mainfunc
 def makeOOO_NoGuildOwnership():
-    bosh.initDirs()
+    bosh.initBosh()
     Current = bosh.Collection(ModsPath=bosh.dirs['mods'].s)
     modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
     destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
