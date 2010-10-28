@@ -350,8 +350,8 @@
   <p class=list-2>&bull;&nbsp; If it's not present, then you'll have to generate the bug dump yourself...
 <p class=list-1>&bull;&nbsp; <B>Generating the Bugdump</B>
   <p class=list-2>&bull;&nbsp; Open a command shell (Start: Programs: Accessories: Command Prompt).
-  <p class=list-2>&bull;&nbsp; <B>chdir</B> to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir C:\Program Files\Bethesda Softworks\Oblivion\Mopy</code>
-  <p class=list-2>&bull;&nbsp; <B>Type:</B> <code>c:\python25\python.exe bash.py -d</code>
+  <p class=list-2>&bull;&nbsp; <B>chdir</B> to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
+  <p class=list-2>&bull;&nbsp; <B>Type:</B> <code>c:\python26\python.exe bash.py -d</code>
     <p class=list-3>&bull;&nbsp; If you have a different version/location of python, adapt the first 
     argument accordingly. 
   <p class=list-2>&bull;&nbsp; Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.
@@ -384,44 +384,29 @@
     <p class=empty>&nbsp;</p>
 <h3><a name='PythonComponents'>Python Components</a></h3>
 <p class=list-1>&bull;&nbsp; If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
-<p class=list-1>&bull;&nbsp; There are two currently supported Python installations that you may choose between: an older "official" setup, and a newer alternative setup.
+<p class=list-1>&bull;&nbsp; If uninstalling old Python and Python addon versions (recommended) make sure to uninstall all of them starting with the addons via the control panel->Add/Remove Programs or Programs & Features.
 <p class=list-1>&bull;&nbsp; <B>Components:</B>
-  <p class=list-2>&bull;&nbsp; The old "official" setup:
-    <p class=list-3>&bull;&nbsp; <B>Python 2.5</B> 
-      <p class=list-4>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.5 is the preferred version for Wrye Bash.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://python.org/ftp/python/2.5.2/python-2.5.2.msi">Python 2.5.2</a>
-    <p class=list-3>&bull;&nbsp; <B>wxPython 2.8.7.1 ANSI</B>  
-      <p class=list-4>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython. Note that it's important to get version 2.8.7.1 &#150; later versions of wxPython 2.8 are not compatible with Psyco.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.7.1-py25.exe">wxPython 2.8.7.1 ANSI for python 2.5</a>. 
-    <p class=list-3>&bull;&nbsp; <B>pyWin32</B>
-      <p class=list-4>&bull;&nbsp; PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this info to locate user specific info (active plugins and save games folder).
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://sourceforge.net/projects/pywin32/files/latest">SourceForge pywin32</a>. <B>Be sure to install the version that matches the version of python you installed!</B> E.g. if you installed python 2.5, then download/install pywinXXX-py2.5.exe. 
-    <p class=list-3>&bull;&nbsp; <B>ComTypes 0.5.2</B> 
-      <p class=list-4>&bull;&nbsp; ComTypes is not strictly required, but may be used by later versions of Wrye Bash. (It's useful for copying screenshots to the desktop, etc.)
-    <p class=list-3>&bull;&nbsp; <B>PIL 1.1.6</B>
-      <p class=list-4>&bull;&nbsp; PIL (Python Imaging Library) is not currently required, but may be used by later versions of Wrye Bash. (It's useful for manipulating screenshots, etc.)
-      <p class=empty>&nbsp;</p>
-  <p class=list-2>&bull;&nbsp; The newer alternative setup:
-    <p class=list-3>&bull;&nbsp; <B>Python 2.6</B> 
-      <p class=list-4>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi">Python 2.6.5</a>
-    <p class=list-3>&bull;&nbsp; <B>wxPython 2.8.10.1 ANSI</B>  
-      <p class=list-4>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe">wxPython 2.8.10.1 ANSI for Python 2.6</a>. 
-    <p class=list-3>&bull;&nbsp; <B>PyWin32</B>
-      <p class=list-4>&bull;&nbsp; Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://sourceforge.net/project/platformdownload.php?group_id=78018">PyWin32</a>.
-    <p class=list-3>&bull;&nbsp; <B>ComTypes 0.6.2</B> 
-      <p class=list-4>&bull;&nbsp; Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
-      <p class=list-4>&bull;&nbsp; Download link:  <a href="http://pypi.python.org/pypi/comtypes/0.6.2">ComTypes</a>
-    <p class=list-3>&bull;&nbsp; <B>Psyco 1.6</B> 
-      <p class=list-4>&bull;&nbsp; <B><a href="http://psyco.sourceforge.net/">Psyco</a></B> provides a performance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
-      <p class=list-4>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0">Psyco 1.6-py25.exe</a>.
+  <p class=list-2>&bull;&nbsp; <B>Python 2.6</B> 
+    <p class=list-3>&bull;&nbsp; This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi">Python 2.6.6</a>
+  <p class=list-2>&bull;&nbsp; <B>wxPython 2.8.10.1 ANSI</B>  
+    <p class=list-3>&bull;&nbsp; Python supports several different GUI libraries. Wrye Bash uses wxPython.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe">wxPython 2.8.10.1 ANSI for Python 2.6</a>. 
+  <p class=list-2>&bull;&nbsp; <B>PyWin32</B>
+    <p class=list-3>&bull;&nbsp; Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://sourceforge.net/project/platformdownload.php?group_id=78018">PyWin32</a>.
+  <p class=list-2>&bull;&nbsp; <B>ComTypes 0.6.2</B> 
+    <p class=list-3>&bull;&nbsp; Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
+    <p class=list-3>&bull;&nbsp; Download link:  <a href="http://pypi.python.org/pypi/comtypes/0.6.2">ComTypes</a>
+  <p class=list-2>&bull;&nbsp; <B>Psyco 1.6</B> 
+    <p class=list-3>&bull;&nbsp; <B><a href="http://psyco.sourceforge.net/">Psyco</a></B> provides a performance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
+    <p class=list-3>&bull;&nbsp; Download link: <a href="http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&big_mirror=0">Psyco 1.6-py25.exe</a>.
 <p class=list-1>&bull;&nbsp; Wrye Python Debris
-  <p class=list-2>&bull;&nbsp; Wrye Python does <B><I>not</I></B> have an uninstall feature. Instead, run install for separate components. If you're uninstalling everything, then uninstall python <I>last</I>.
+  <p class=list-2>&bull;&nbsp; Wrye Python does <B><I>not</I></B> have an uninstall feature. Instead, run uninstall for separate components. If you're uninstalling everything, then uninstall python <I>last</I>.
   <p class=list-2>&bull;&nbsp; After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
 <p class=list-1>&bull;&nbsp; Alternate Python Installations
-  <p class=list-2>&bull;&nbsp; Alternate python installations <I>might</I> work, however no guarantee is made. Currently (and for the foreseeable future), python 2.5, wxPython 2.8.7.1, etc. are the preferred versions.
+  <p class=list-2>&bull;&nbsp; Alternate python installations <I>might</I> work, however no guarantee is made. Currently (and for the foreseeable future), python 2.6, wxPython 2.8.10.1, etc. are the preferred versions.
+  <p class=list-2>&bull;&nbsp; Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.9.x is definitely required.
   <p class=empty>&nbsp;</p>
 <h2><a name='Help'>Help!</a></h2>
 <p class=list-1>&bull;&nbsp; <B>Startup Problems:</B> See <a href="#IfBashWontStart">If Bash Won't Start</a>.
@@ -436,6 +421,8 @@
 <h2><a name='BackingUp'>Backing Up</a></h2>
 <p>If you are looking to back up your Bash installation, Bash stores files in a variety of locations.
   <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; The easiest method is to just run the Backup/Restore Settings commands, which are available in the main Bash menu. These commands to not backup/restore any mod files or saves, just the Wrye Bash settings/data.
+<p class=empty>&nbsp;</p>
 <p><B>Overview:</B>
   <p class=list-2>&bull;&nbsp; "Oblivion\Mopy"
     <p class=list-3>&bull;&nbsp; Contains Bash itself.
@@ -655,9 +642,11 @@
   <p class=list-2>&bull;&nbsp; This is for modders who want to keep files related to the project in the project directory, but not have it be considered for syncing with is useful for project directories and files for modders
   <p class=list-2>&bull;&nbsp; It's also useful for including material in a package archive that is there for background info, but should not be installed. E.g. screenshots, copies of resource readmes, etc.
 <p class=list-1>&bull;&nbsp; <B>Directory Skipping</B>
-<p class=list-1>&nbsp;&nbsp; Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped. If this happens, you'll find them listed in the debug pane on the right.
+<p class=list-1>&nbsp;&nbsp; Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon') or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
 <p class=list-1>&bull;&nbsp; <B>Extension Skipping</B>
 <p class=list-1>&nbsp;&nbsp; Bain will skip files with certain extensions - mostly executables (exe, dll, dlx) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
+<p class=list-1>&bull;&nbsp; <B>Other Skips</B>
+<p class=list-1>&nbsp;&nbsp; There are a few options in package/header menus to skip certain file types; voices, distandLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
 <p class=empty>&nbsp;</p>
 <h3><a name='DocFileSweeping'>Doc File Sweeping</a></h3>
 <p>In order to prevent clutter and centralize doc file storage, Bain will sweep files that appear to be doc files into Oblivion\Data\Docs. Also, files named simply readme.txt (or readme.doc, etc.) will be renamed according to the package name before being swept into the Docs directory.
@@ -2378,12 +2367,28 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X \n</code>. The '%' strings are place holders where file names, counts, etc. are entered &#150; if they're not present, Bash will throw an exception. The \n combinations are newline characters &#150; I use them in dialogs and other places where I want line breaks. 
   <p class=list-2>&bull;&nbsp; In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> &#150; this is the name of the Mods tab. And right under it is the name of the Saves tab. 
   <p class=list-2>&bull;&nbsp; To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.
-  <p class=list-2>&bull;&nbsp; Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away to it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)
+  <p class=list-2>&bull;&nbsp; Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)
   <p class=list-2>&bull;&nbsp; Spell checking: If you're using an office suite, you might want turn on dictionaries for both English and your language &#150; Abot mentions that Open Office allows you to do this.
   <p class=empty>&nbsp;</p>
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h3><a name='29112122010Gaticusmyk002PacificMorrowind'>291 [12/12/2010] [Gaticus,myk002,PacificMorrowind]</a></h3>
+<p class=list-1>&bull;&nbsp; Bashed Patch:
+  <p class=list-2>&bull;&nbsp; typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
+  <p class=list-2>&bull;&nbsp; Tweak Actors:
+    <p class=list-3>&bull;&nbsp; Quiet Feet patcher added.
+  <p class=list-2>&bull;&nbsp; Tweak Assorted:
+    <p class=list-3>&bull;&nbsp; another skip added to All Clothes Playable patcher
+<p class=list-1>&bull;&nbsp; BAIN:
+  <p class=list-2>&bull;&nbsp; fix so that the end of the display of the number of packages does not get cut off.
+  <p class=list-2>&bull;&nbsp; Read-Only files in installers will now longer throw errors (automatically converted to non-ReadOnly).
+<p class=list-1>&bull;&nbsp; fix for launcher code which prevented launching in some cases (contributed by myk002)
+<p class=list-1>&bull;&nbsp; fix for move/copy saves so that Default is not selectable if already in Default profile.
+<p class=list-1>&bull;&nbsp; fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
+<p class=list-1>&bull;&nbsp; Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
+<p class=list-1>&bull;&nbsp; Backup/Restore settings options added (contributed by Gaticus)
+<p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
 <p class=list-1>&bull;&nbsp; added Disable/Enable ini tweaks for Screenshots.
