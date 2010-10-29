@@ -2183,6 +2183,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Quiet Feet patcher added.
   * Tweak Assorted:
     * another skip added to All Clothes Playable patcher
+  * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
   * Read-Only files in installers will now longer throw errors (automatically converted to non-ReadOnly).
