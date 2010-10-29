@@ -27402,6 +27402,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         for record in modFile.RACE.getActiveRecords():
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
+            if not record.rightEye or not record.leftEye:
+                deprint(_('No right and/or no left eye recorded in race %') % race.full)
+                continue
             for eye in record.eyes:
                 if eye in srcEyes:
                     eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
@@ -27981,6 +27984,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     playableRaces.add(recordId)
                 currentEyes = race.eyes_long
                 if not currentEyes: continue #--Sheogorath. Assume is handled correctly.
+                if not race.rightEye or not race.leftEye: continue #no eye set for either right or left... skip.
                 curRightEye, curLeftEye = race.rightEye.modPath, race.leftEye.modPath
                 if not curRightEye or not curLeftEye: continue #--WIPZ race?
                 if reX117.match(race.eid): continue #-- x117 race?

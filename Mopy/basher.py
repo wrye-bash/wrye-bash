@@ -111,6 +111,7 @@ settingDefaults = {
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,'0'),
+    'bash.CBashEnabled': = False,
     'bash.backupPath': None,
     'bash.framePos': (-1,-1),
     'bash.frameSize': (600,500),
@@ -4681,7 +4682,15 @@ class BashApp(wx.App):
                     del balt.sizes[key]
         #--Current Version
         settings['bash.version'] = 43
-        settings['bash.readme'] = GetBashVersion()
+        if settings['bash.readme'] != GetBashVersion()
+            settings['bash.readme'] = GetBashVersion()
+            # rescan mergeability
+            nullProgress = bolt.Progress()        
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+        elif settings['bash.CBashEnabled'] != bool(CBash):
+            nullProgress = bolt.Progress()        
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+        settings['bash.CBashEnabled'] != bool(CBash)    
 
 # Misc Dialogs ----------------------------------------------------------------
 #------------------------------------------------------------------------------
