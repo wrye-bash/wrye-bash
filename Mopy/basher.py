@@ -4685,12 +4685,13 @@ class BashApp(wx.App):
         if settings['bash.readme'] != GetBashVersion():
             settings['bash.readme'] = GetBashVersion()
             # rescan mergeability
+            if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
+                nullProgress = bolt.Progress()  
+                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+        elif settings['bash.CBashEnabled'] != bool(CBash) and not CBash:
             nullProgress = bolt.Progress()        
             bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-        elif settings['bash.CBashEnabled'] != bool(CBash):
-            nullProgress = bolt.Progress()        
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-        settings['bash.CBashEnabled'] != bool(CBash)    
+        settings['bash.CBashEnabled'] = bool(CBash)    
 
 # Misc Dialogs ----------------------------------------------------------------
 #------------------------------------------------------------------------------
