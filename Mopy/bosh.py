@@ -130,7 +130,7 @@ allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
                   'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport'))
+                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'ForceMerge'))
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
@@ -15430,7 +15430,7 @@ class CBash_PatchFile(CBashModFile):
             if not verbose: return False
             reasons += _("\n.    Empty mod.")
         #--New record
-        else:
+        else:            
             newblocks = modFile.GetNewRecordTypes()
             if newblocks:
                 if not verbose: return False
@@ -27403,7 +27403,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_('No right and/or no left eye recorded in race %') % race.full)
+                deprint(_('No right and/or no left eye recorded in race %') % record.full)
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
