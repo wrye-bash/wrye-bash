@@ -9067,8 +9067,8 @@ class ConfigHelpers:
     def __init__(self):
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
-        #version:
-        #>1.6.2 = 393218
+        #version notes:
+        #>1.6.2 = 393218+
         # 1.6.1 = 393217
         # 1.6   = 1 
         #<1.6   = 0
@@ -27447,15 +27447,17 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     raceChanged = True
             #-- Eye paths:  
             if 'rightEye' in raceData:
-                if not race.rightEye: deprint(_('Very odd race % found - no right eye assigned') % (race.full))
-                if race.rightEye.modPath != raceData['rightEye'].modPath:
-                    race.rightEye.modPath = raceData['rightEye'].modPath
-                    raceChanged = True
+                if not race.rightEye: deprint(_('Very odd race %s found - no right eye assigned') % (race.full))
+                else:
+                    if race.rightEye.modPath != raceData['rightEye'].modPath:
+                        race.rightEye.modPath = raceData['rightEye'].modPath
+                        raceChanged = True
             if 'leftEye' in raceData:
-                if not race.leftEye: deprint(_('Very odd race % found - no left eye assigned') % (race.full))
-                if race.leftEye.modPath != raceData['leftEye'].modPath:
-                    race.leftEye.modPath = raceData['leftEye'].modPath
-                    raceChanged = True
+                if not race.leftEye: deprint(_('Very odd race %s found - no left eye assigned') % (race.full))
+                else:
+                    if race.leftEye.modPath != raceData['leftEye'].modPath:
+                        race.leftEye.modPath = raceData['leftEye'].modPath
+                        raceChanged = True
             #--Teeth/Mouth/head/ears/description
             for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
                 if key in raceData:
