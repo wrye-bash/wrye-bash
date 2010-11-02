@@ -193,7 +193,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * Download link: [[http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi|Python 2.6.6]]
   * __wxPython 2.8.10.1 ANSI__  
     * Python supports several different GUI libraries. Wrye Bash uses wxPython.
-    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe|wxPython 2.8.10.1 ANSI for Python 2.6]]. 
+    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe|wxPython 2.8.11.0 ANSI for Python 2.6]]. 
   * __PyWin32__
     * Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.
     * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|PyWin32]].
@@ -223,7 +223,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 == Backing Up =================================================================
 If you are looking to back up your Bash installation, Bash stores files in a variety of locations.
 
-* The easiest method is to just run the Backup/Restore Settings commands, which are available in the main Bash menu. These commands to not backup/restore any mod files or saves, just the Wrye Bash settings/data.
+* The easiest method is to just run the Backup/Restore Settings commands, which are available in the main Bash menu. These commands do not backup/restore any mod files or saves, just the Wrye Bash settings/data.
 
 __Overview:__
   * "Oblivion\Mopy"
@@ -2186,7 +2186,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
-  * Read-Only files in installers will now longer throw errors (automatically converted to non-ReadOnly).
+  * Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
 * fix for launcher code which prevented launching in some cases (contributed by myk002)
 * fix for move/copy saves so that Default is not selectable if already in Default profile.
 * fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
