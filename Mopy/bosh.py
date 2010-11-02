@@ -9067,16 +9067,26 @@ class ConfigHelpers:
     def __init__(self):
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
+        #version:
+        #>1.6.2 = 393218
+        # 1.6.1 = 393217
+        # 1.6   = 1 
+        #<1.6   = 0
+        try:
+            import win32api
+            self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join('BOSS.exe').s, '\\')[u'FileVersionLS']
+        except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
+            self.bossVersion = None
         self.bossMasterPath = dirs['mods'].join('BOSS//masterlist.txt')
-        if not self.bossMasterPath.exists():
-            self.bossMasterPath = dirs['mods'].join('masterlist.txt')
-            self.bossVersion = 0
+        if self.bossVersion == None: 
             if not self.bossMasterPath.exists():
-                self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
-                self.bossMasterPath = dirs['patches'].join('taglist.txt')
-        else: self.bossVersion = 1
+                self.bossMasterPath = dirs['mods'].join('masterlist.txt')
+                self.bossVersion = 0
+                if not self.bossMasterPath.exists():
+                    self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
+                    self.bossMasterPath = dirs['patches'].join('taglist.txt')
+            else: self.bossVersion = 1
         self.bossUserPath = dirs['mods'].join('BOSS//userlist.txt')
-        if not self.bossUserPath.exists(): self.bossUserPath = None
         self.bossMasterTime = 0
         self.bossUserTime = 0
         self.bossMasterTags = {}
@@ -9090,25 +9100,26 @@ class ConfigHelpers:
         reFcomSwitch = re.compile('^[<>]')
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
-        if path.mtime != mtime:
-            tags.clear()
-            ins = path.open('r')
-            mod = None
-            reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
-            for line in ins:
-                line = reFcomSwitch.sub('',line)
-                line = reComment.sub('',line)
-                maMod = reMod.match(line)
-                maBashTags = reBashTags.match(line)
-                if maMod:
-                    mod = maMod.group(1)
-                elif maBashTags and mod:
-                    modTags = maBashTags.group(1).split(',')
-                    modTags = map(string.strip,modTags)
-                    tags[GPath(mod)] = tuple(modTags)
-            ins.close()
-            self.bossMasterTime = path.mtime
-        if userpath:
+        if path.exists():
+            if path.mtime != mtime:
+                tags.clear()
+                ins = path.open('r')
+                mod = None
+                reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
+                for line in ins:
+                    line = reFcomSwitch.sub('',line)
+                    line = reComment.sub('',line)
+                    maMod = reMod.match(line)
+                    maBashTags = reBashTags.match(line)
+                    if maMod:
+                        mod = maMod.group(1)
+                    elif maBashTags and mod:
+                        modTags = maBashTags.group(1).split(',')
+                        modTags = map(string.strip,modTags)
+                        tags[GPath(mod)] = tuple(modTags)
+                ins.close()
+                self.bossMasterTime = path.mtime
+        if userpath.exists():
             if userpath.mtime != utime:
                 ins = userpath.open('r')
                 mod = None
@@ -27403,7 +27414,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_('No right and/or no left eye recorded in race %') % record.full)
+                deprint(_('No right and/or no left eye recorded in race %s') % record.full)
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
@@ -28331,6 +28342,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
                 log('  * %s' % (eid))
         self.mod_eids = {}
 
+class CBash_ForceMerger: pass
 #------------------------------------------------------------------------------
 class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
