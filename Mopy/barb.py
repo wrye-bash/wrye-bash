@@ -1,3 +1,25 @@
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#
+# =============================================================================
+# Rollback library.
+
 import os
 import re
 import datetime
@@ -5,16 +27,12 @@ import cPickle
 import cStringIO
 from subprocess import Popen, PIPE
 
+import barg
 import bosh
 import basher
 from bosh import startupinfo, dirs
 from bolt import _, BoltError, AbstractError, StateError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
-
-#------------------------------------------------------------------------------
-def VersionChanged():
-    #--Check if the current app version is different from the last version used
-    return basher.BashApp.GetVersion(None)[1] != basher.settings['bash.readme'][1]
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
@@ -65,34 +83,43 @@ class BaseBackupSettings:
         raise AbstractError
         return False
 
+    def CmpDataVersion(self):
+        return cmp(self.verDat, basher.settings['bash.version'])
+        
+    def CmpAppVersion(self):
+        return cmp(self.verApp, basher.settings['bash.readme'][1])
+
     def SameDataVersion(self):
-        return self.verDat == basher.settings['bash.version']
+        return not self.CmpDataVersion()
         
     def SameAppVersion(self):
-        return self.verApp == basher.settings['bash.readme'][1]
+        return not self.CmpAppVersion()
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
     def __init__(self, parent=None, path=None, quit=False):
         BaseBackupSettings.__init__(self,parent,path,quit)
-        #end try
         for path, name, tmpdir in (
-              (dirs['mopy'],                      'Bash.ini',     'Oblivion\\Mopy'),
-              (dirs['mods'].join('Bash'),         'Table',        'Oblivion\\Data\\Bash'),
-              (dirs['modsBash'],                  'Table',        'Oblivion Mods\\Bash Mod Data'),
-              (dirs['modsBash'].join('INI Data'), 'Table',        'Oblivion Mods\\Bash Mod Data\\INI Data'),
-              (dirs['installers'].join('Bash'),   'Converters',   'Oblivion Mods\\Bash Installers\\Bash'),
-              (dirs['installers'].join('Bash'),   'Installers',   'Oblivion Mods\\Bash Installers\\Bash'),
-              (dirs['userApp'],                   'Profiles',     'LocalAppData\\Oblivion'),
-              (dirs['userApp'],                   'bash config',  'LocalAppData\\Oblivion'),
-              (dirs['saveBase'],                  'BashProfiles', 'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'BashSettings', 'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'Messages',     'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'ModeBase',     'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'People',       'My Games\\Oblivion'),
+              (dirs['mopy'],                      'Bash.ini',             'Oblivion\\Mopy'),
+              (dirs['mods'].join('Bash'),         'Table',                'Oblivion\\Data\\Bash'),
+              (dirs['mods'].join('Docs'),         'Bash Readme Template', 'Oblivion\\Data\\Docs'),
+              (dirs['mods'].join('Docs'),         'Bashed Lists',         'Oblivion\\Data\\Docs'),
+              (dirs['mods'].join('Docs'),         'wtxt_sand_small.css',  'Oblivion\\Data\\Docs'),
+              (dirs['mods'].join('Docs'),         'wtxt_teal.css',        'Oblivion\\Data\\Docs'),
+              (dirs['modsBash'],                  'Table',                'Oblivion Mods\\Bash Mod Data'),
+              (dirs['modsBash'].join('INI Data'), 'Table',                'Oblivion Mods\\Bash Mod Data\\INI Data'),
+              (dirs['installers'].join('Bash'),   'Converters',           'Oblivion Mods\\Bash Installers\\Bash'),
+              (dirs['installers'].join('Bash'),   'Installers',           'Oblivion Mods\\Bash Installers\\Bash'),
+              (dirs['userApp'],                   'Profiles',             'LocalAppData\\Oblivion'),
+              (dirs['userApp'],                   'bash config',          'LocalAppData\\Oblivion'),
+              (dirs['saveBase'],                  'BashProfiles',         'My Games\\Oblivion'),
+              (dirs['saveBase'],                  'BashSettings',         'My Games\\Oblivion'),
+              (dirs['saveBase'],                  'Messages',             'My Games\\Oblivion'),
+              (dirs['saveBase'],                  'ModeBase',             'My Games\\Oblivion'),
+              (dirs['saveBase'],                  'People',               'My Games\\Oblivion'),
                 ):
             tmpdir = GPath(tmpdir)
-            for ext in ('','.dat','.pkl','.html'): # hack so the above file list can be shorter
+            for ext in ('','.dat','.pkl','.html','.txt'): # hack so the above file list can be shorter, could include rogue files but not very likely
                 tpath = tmpdir.join(name+ext)
                 fpath = path.join(name+ext)
                 if fpath.exists(): self.files[tpath] = fpath
@@ -100,10 +127,25 @@ class BackupSettings(BaseBackupSettings):
             #end for
         #end for
 
+        #backup all files in Mopy\Data, Data\Bash Patches and Data\INI Tweaks
+        for path, tmpdir in (
+              (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
+              (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
+              (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
+              (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
+                ):
+            tmpdir = GPath(tmpdir)
+            for name in path.list():
+                if path.join(name).isfile():
+                    self.files[tmpdir.join(name)] = path.join(name)
+        
         #backup save profile settings
         savedir = GPath('My Games\\Oblivion')
         profiles = [''] + [x for x in dirs['saveBase'].join('Saves').list() if dirs['saveBase'].join('Saves',x).isdir() and str(x).lower() != 'bash']
         for profile in profiles:
+            tpath = savedir.join('Saves',profile,'plugins.txt')
+            fpath = dirs['saveBase'].join('Saves',profile,'plugins.txt')
+            if fpath.exists(): self.files[tpath] = fpath
             for ext in ('.dat','.pkl'):
                 tpath = savedir.join('Saves',profile,'Bash','Table'+ext)
                 fpath = dirs['saveBase'].join('Saves',profile,'Bash','Table'+ext)
@@ -115,8 +157,12 @@ class BackupSettings(BaseBackupSettings):
     def Apply(self):
         if not self.PromptFile(): return
 
+        deprint('')
+        deprint('BACKUP BASH SETTINGS: ' + self.dir.join(self.archive).s)
+        
         # copy all files to ~tmp backup dir
         for tpath,fpath in self.files.iteritems():
+            deprint(tpath.s + ' <-- ' + fpath.s)
             fpath.copyTo(self.tmp.join(tpath))
         #end for
 
@@ -124,7 +170,6 @@ class BackupSettings(BaseBackupSettings):
         out = self.tmp.join('backup.dat').open('wb')
         cPickle.dump(self.verDat, out, -1) #data version, if this doesn't match the installed data version, do not allow restore
         cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the use on restore
-        cPickle.dump(self.files, out, -1) # file dictionary
         out.close()
 
         # create the backup archive
@@ -143,10 +188,13 @@ class BackupSettings(BaseBackupSettings):
         if self.archive == None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
             file = 'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime('%d-%m-%Y %H%M.%S'))
-            path = askSave(self.parent,_('Backup Bash Settings'),self.dir,file,'*.7z')
-            if not path: return False
-            self.dir = path.head
-            self.archive = path.tail
+            if not self.quit:
+                path = askSave(self.parent,_('Backup Bash Settings'),self.dir,file,'*.7z')
+                if not path: return False
+                self.dir = path.head
+                self.archive = path.tail
+            elif not self.archive:
+                self.archive = file
         #end if
         self.maketmp()
         return True
@@ -211,7 +259,6 @@ class RestoreSettings(BaseBackupSettings):
         ins = self.tmp.join('backup.dat').open('rb')
         self.verDat = cPickle.load(ins)
         self.verApp = cPickle.load(ins)
-        self.files = cPickle.load(ins)
         ins.close()
 
     def Apply(self):
@@ -222,13 +269,53 @@ class RestoreSettings(BaseBackupSettings):
             raise BackupCancelled()
             return
 
-        for tpath,fpath in self.files.iteritems():
-            self.tmp.join(tpath).copyTo(fpath)
-        #end for
+        deprint('')
+        deprint('RESTORE BASH SETTINGS: ' + self.dir.join(self.archive).s)
 
-#         basher.appRestart = True
-        self.WarnQuit()
-        if basher.bashFrame:
+        # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
+        tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')
+        opts, args = barg.ParseArgs()
+        barg.SetUserPath(tmpBash.s,opts.get('-u'))
+
+        bashIni = barg.GetBashIni(tmpBash.s)
+        bosh.initDirs(bashIni,opts.get('-p'),opts.get('-l'),opts.get('-o'))
+
+        # restore all the settings files
+        for fpath, tpath in (
+              (dirs['mopy'],                              'Oblivion\\Mopy'),
+              (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
+              (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
+              (dirs['mods'].join('Bash'),                 'Oblivion\\Data\\Bash'),
+              (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
+              (dirs['mods'].join('Docs'),                 'Oblivion\\Data\\Docs'),
+              (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
+              (dirs['modsBash'],                          'Oblivion Mods\\Bash Mod Data'),
+              (dirs['modsBash'].join('INI Data'),         'Oblivion Mods\\Bash Mod Data\\INI Data'),
+              (dirs['installers'].join('Bash'),           'Oblivion Mods\\Bash Installers\\Bash'),
+              (dirs['userApp'],                           'LocalAppData\\Oblivion'),
+              (dirs['saveBase'],                          'My Games\\Oblivion'),
+                ):
+            path = self.tmp.join(tpath)
+            if path.exists():
+                for name in path.list():
+                    if path.join(name).isfile():
+                        deprint(GPath(tpath).join(name).s + ' --> ' + fpath.join(name).s)
+                        path.join(name).copyTo(fpath.join(name))
+                    
+        #restore savegame profile settings
+        tpath = GPath('My Games\\Oblivion\\Saves')
+        fpath = dirs['saveBase'].join('Saves')
+        path = self.tmp.join(tpath)
+        if path.exists():
+            for root, folders, files in path.walk(True,None,True):
+                root = GPath('.'+root.s)
+                for name in files:
+                    deprint(tpath.join(root,name).s + ' --> ' + fpath.join(root,name).s)
+                    path.join(root,name).copyTo(fpath.join(root,name))
+
+        # tell the user the restore is compete and warn about restart
+        self.WarnRestart()
+        if basher.bashFrame: # should always exist
             basher.bashFrame.Destroy()
 
     def PromptFile(self):
@@ -259,9 +346,9 @@ class RestoreSettings(BaseBackupSettings):
 
     def ErrorConflict(self):
         #returns True if the data format doesn't match
-        if not self.SameDataVersion():
+        if self.CmpDataVersion() > 0:
             showError(self.parent,
-                  _('The data format of the selected backup file is different from the current Bash version!\n') +
+                  _('The data format of the selected backup file is newer than the current Bash version!\n') +
                   _('Backup v%s is not compatible with v%s\n') % (self.verApp, basher.settings['bash.readme'][1]) +
                   _('\n') +
                   _('You cannot use this backup with this version of Bash.'),
@@ -276,14 +363,15 @@ class RestoreSettings(BaseBackupSettings):
             _('No settings were restored.'),
             _('Unable to restore backup!'))
 
-    def WarnQuit(self):
+    def WarnRestart(self):
         if self.quit: return
+        basher.appRestart = True
         showWarning(self.parent,
             _('Your Bash settings have been successfuly restored.\n') +
             _('Backup Path: %s\n') % (self.dir.join(self.archive).s) +
             _('\n') +
-            _('Before the settings can take effect, you must restart Bash.\n') +
-            _('Click OK to quit now.'),
+            _('Before the settings can take effect, Wrye Bash must restart.\n') +
+            _('Click OK to restart now.'),
             _('Bash Settings Restored'))
 
 #------------------------------------------------------------------------------
