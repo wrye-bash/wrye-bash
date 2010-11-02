@@ -1,18 +1,17 @@
 [b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] or [url="https://sourceforge.net/projects/oblivionworks/files"]Sourceforge[/url]
-[b]Readme[/b]: [url="http://wryemusings.com/Wrye%20Bash.html"]Wrye Bash Readme[/url] (Very outdated ... most up to date readme is in the download - the file named Wrye Bash.html in the mopy folder)
-[b]Wrye Bash Wiki[/b]: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
+[b]Readme[/b]: the file named Wrye Bash.html in the mopy folder)
+[b]External Reading (ie tutorials, user created help files) - they may be more understandable/help you get started with less technical detail/better written from a non-dev standpoint[/b]
+[list]
+[*][b]Wrye Bash Wiki[/b]: [url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP: Wrye Bash FAQs, etc.[/url]
+[*][http://www.tesnexus.com/downloads/file.php?id=35230]alt3rn1ty's Wrye Bash Pictorial Guide for Newbies[/url]
+[/list]
 [b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1119710-relz-wrye-bash-thread-51][RELZ] Wrye Bash #51[/url]
+[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1120997-relz-wrye-bash-thread-52/][RELZ] Wrye Bash #52[/url]
 [b]Requirements[/b]:
 [list]
-[*]The old "official" setup:
-[list]
-[*]Python 2.5.4 and wxpython 2.8.7.1 ansi () - if using this best to just download the Wrye Python 01 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
-[/list]
-[*]The newer recommended setup:
-[list]
-[*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url], [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.10.1-py26.exe"]wxpython 2.8.10.1 ansi[/url], [url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]ComTypes[/url], [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url], and [url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url]. (the newer stuff so should be faster, needed for newer versions of Blender/Nifscripts/PyFFI, tested as working well other than one bug to be fixed)
-(Probably best to just download Wrye Python 03 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] unless you like to customize your install)
+[*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url], [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxpython 2.8.11.0 ansi[/url], [url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]ComTypes[/url], [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url], and [url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url].
+(Probably best to just download Wrye Python 03 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] unless you like to customize your install).
+Older/Newer versions _may_ work but those are probably best and what most of use (and is done the most testing with).
 [/list][/list]
 
 [b]Overview[/b]:
@@ -79,9 +78,14 @@ For mod-makers:
 [list][*]TheLORDofDOOM has taken on making a FO3 version, Wrye4Fallout3... and here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [url="http://forums.bethsoft.com/index.php?/topic/1079607-relz-garybash/"]garybash[/url].[/list]
 [b]Other news[/b]:
 [list][*]There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.[/list]
-[b]Latest Version[/b]:
-=== 288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]
+[b]Latest Versions[/b]:
+=== 290 [15/10/2010] [PacificMorrowind]
+=== 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
 [spoiler]
+[list]=== 290 [15/10/2010] [PacificMorrowind]
+[*] fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
+[*] added Disable/Enable ini tweaks for Screenshots.
+[/list]
 [list]=== 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
 [*] Bashed Patch:[list]
   [*] Fixed Reweigh Staff logger
