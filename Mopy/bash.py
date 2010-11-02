@@ -71,27 +71,20 @@ import sys
 if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
+import barg
 import bosh
+
 #--Parse arguments
-optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:d')
+opts, args = barg.ParseArgs()
+
 #--Initialize Directories and some settings
 #  required before the rest has imported
 opts = dict(optlist)
-oblivionPath = opts.get('-o')
-if '-u' in opts:
-    drive,path = os.path.splitdrive(opts['-u'])
-    os.environ['HOMEDRIVE'] = drive
-    os.environ['HOMEPATH'] = path
-elif os.path.exists('bash.ini'):
-    import ConfigParser
-    bashIni = ConfigParser.ConfigParser()
-    bashIni.read('bash.ini')
-    if bashIni.has_option('General', 'sUserPath') and not bashIni.get('General', 'sUserPath') == '.':
-        drive,path = os.path.splitdrive(bashIni.get('General', 'sUserPath'))
-        os.environ['HOMEDRIVE'] = drive
-        os.environ['HOMEPATH'] = path
+barg.SetUserPath('bash.ini',opts.get('-u'))
 personal = opts.get('-p')
 localAppData = opts.get('-l')
+oblivionPath = opts.get('-o')
+
 bosh.initBosh(personal,localAppData,oblivionPath)
 pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
 import basher

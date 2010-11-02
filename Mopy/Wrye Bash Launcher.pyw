@@ -58,23 +58,30 @@ Example: -p "C:\\Documents and Settings\\Wrye\\My Documents"
 If you need to set this then you probably need to set -p too.
 Example: -l "C:\\Documents and Settings\\Wrye\\Local Settings\\Application Data"
 ---
+Quiet/Quit Mode:
+-q Close Bash after creating or restoring backup and do not display any prompts or message dialogs.
+Only used with -b and -r options. Otherwise ignored.
+---
 Backup Bash Settings:
 -b backupFilePath: Backup all Bash settings to an archive file before the app launches.
 Example: -b "C:\\Games\\Bash Backups\\BashBackupFile.7z"
 Prompts the user for the backup file path if an empty string is given or
 the path does not end with '.7z' or the specified file already exists.
-If the -q flag is used, no confirmation dialog will be displayed.
+
+When the -q flag is used, no dialogs will be displayed and Bash will quit after completing the backup.
+  If backupFilePath does not specify a valid directory, the default directory will be used:
+    '[Oblivion Mods]\\Bash Mod Data\\Bash Backup'
+  If backupFilePath does not specify a filename, a default name including the Bash version and current timestamp will be used.
+    'Backup Bash Settings vVER (DD-MM-YYYY hhmm.ss).7z'
 ---
 Restore Bash Settings:
 -r backupFilePath: Restore all Bash settings from backup file before the app launches.
 Example: -r "C:\\Games\\Bash Backups\\BashBackupFile.7z"
-Prompts the user for the backup file path if an empty string is given or
-the path does not end with '.7z' or the specified file already exists.
-If the -q flag is used, no confirmation dialog will be displayed.
----
-Quiet/Quit Mode:
--q Close Bash after creating or restoring backup and do not display confirmation dialog.
-Only used with -b and -r options
+Bash will prompt the user for the backup file path if an empty string is given or
+the path does not end with '.7z' or the specified file does not exist.
+
+When the -q flag is used, no dialogs will be displayed and Bash will quit after restoring the settings.
+  If backupFilePath is not valid, the user will be prompted for the backup file to restore.
 ----
 Debug argument:
 -d Send debug text to the console rather than to a newly created debug window.
@@ -83,35 +90,28 @@ information (e.g. while developing or debugging).
 """
 
 # Imports ---------------------------------------------------------------------
-import getopt
 import os
 import sys
 if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
+import barg
 import bosh
+from time import time, sleep
+
 
 #--Parse arguments
-optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:b:r:qd')
+opts, args = barg.ParseArgs()
+
 #--Initialize Directories and some settings
 #  required before the rest has imported
-opts = dict(optlist)
-oblivionPath = opts.get('-o')
-if '-u' in opts:
-    drive,path = os.path.splitdrive(opts['-u'])
-    os.environ['HOMEDRIVE'] = drive
-    os.environ['HOMEPATH'] = path
-elif os.path.exists('bash.ini'):
-    import ConfigParser
-    bashIni = ConfigParser.ConfigParser()
-    bashIni.read('bash.ini')
-    if bashIni.has_option('General', 'sUserPath') and not bashIni.get('General', 'sUserPath') == '.':
-        drive,path = os.path.splitdrive(bashIni.get('General', 'sUserPath'))
-        os.environ['HOMEDRIVE'] = drive
-        os.environ['HOMEPATH'] = path
+barg.SetUserPath('bash.ini',opts.get('-u'))
 personal = opts.get('-p')
 localAppData = opts.get('-l')
+oblivionPath = opts.get('-o')
+
 bosh.initBosh(personal,localAppData,oblivionPath)
+
 import basher
 import bolt
 import atexit
@@ -120,6 +120,7 @@ import barb
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
     # backup settings if app version has changed or on user request
+    backup = None
     path = None
     quit = '-b' in opts and '-q' in opts
     if '-b' in opts: path = bolt.GPath(opts['-b'])
@@ -135,11 +136,12 @@ def cmdBackup():
         except barb.BackupCancelled:
             if not backup.SameAppVersion() and not backup.PromptContinue():
                 return False
-    backup = None
+    del backup
     return not quit
 
 def cmdRestore():
     # restore settings on user request
+    backup = None
     path = None
     quit = '-r' in opts and '-q' in opts
     if '-r' in opts: path = bolt.GPath(opts['-r'])
@@ -149,7 +151,7 @@ def cmdRestore():
             backup.Apply()
         except barb.BackupCancelled:
             pass
-    backup = None
+    del backup
     return not quit
 
 # -----------------------------------------------------------------------------
@@ -159,6 +161,10 @@ lockfd = None
 
 def oneInstanceChecker():
     global lockfd
+    if '--restarting' in opts: # wait up to 10 seconds for previous instance to close
+        t = time()
+        while (time()-t < 10) and pidpath.exists(): sleep(1)
+            
     try:
         # if a stale pidfile exists, remove it (this will fail if the file is currently locked)
         if pidpath.exists(): os.remove(pidpath.s)
@@ -178,8 +184,26 @@ def exit():
     except OSError, e:
         print e
 
-# Runtime ---------------------------------------------------------------------
-def runtime():
+    if basher.appRestart:
+        exePath = bolt.GPath(sys.executable)
+        sys.argv = [exePath.stail] + sys.argv + ['--restarting']
+        sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
+        try:
+            os.spawnv(os.P_NOWAIT, exePath.s, sys.argv)
+        except Exception as error:
+            print error
+            print _("Error Attempting to Restart Wrye Bash!")
+            print _("cmd line: "), exePath.s, sys.argv
+            print
+            raise
+
+# Main ------------------------------------------------------------------------
+def main():
+    #import warnings
+    #warnings.filterwarnings('error')
+    #--More Initialization
+    if not oneInstanceChecker(): return
+    atexit.register(exit)
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
@@ -190,30 +214,18 @@ def runtime():
     else:
         app = basher.BashApp()
 
-    # only process backup/restore cli options on the first pass
-    if not basher.appRestart:
-        quit = False
-        quit = quit or not cmdBackup()
-        quit = quit or not cmdRestore()
-        if quit: return
+    # process backup/restore options
+    quit = False # quit if either is true, but only after calling both
+    quit = quit or not cmdBackup()
+    quit = quit or not cmdRestore()
+    if quit: return
 
     app.Init()
     app.MainLoop()
 
-# Main ------------------------------------------------------------------------
-def main():
-    #import warnings
-    #warnings.filterwarnings('error')
-    #--More Initialization
-    if not oneInstanceChecker(): return
-    atexit.register(exit)
-    runtime()
-    while basher.appRestart: runtime()
-
 if __name__ == '__main__':
     try:
-        args = sys.argv[1:]
-        if '-d' not in args and '0' not in args:
+        if '-d' not in opts and '0' not in args:
             import psyco
             psyco.full()
     except:
