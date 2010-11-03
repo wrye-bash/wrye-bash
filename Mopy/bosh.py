@@ -6696,7 +6696,7 @@ class IniFile:
             if maSection:
                 section = LString(maSection.group(1))
                 sectionSettings = ini_settings.get(section,{})
-            elif maSetting and LString(maSetting.group(1)) in sectionSettings:
+            elif maSetting and sectionSettings and LString(maSetting.group(1)) in sectionSettings:
                 key = LString(maSetting.group(1))
                 value = sectionSettings[key]
                 if isinstance(value,str) and value[-1] == '\n':
@@ -10109,7 +10109,7 @@ class Installer(object):
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
         #--Type, subNames
         reDataFile = self.reDataFile
-        dataDirs = self.dataDirs
+        dataDirs = self.dataDirsPlus
         type = 0
         subNameSet = set()
         subNameSet.add('')
