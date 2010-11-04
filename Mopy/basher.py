@@ -10544,6 +10544,33 @@ class Save_DiffMasters(Link):
             balt.showWryeLog(self.window,message,_("Diff Masters"))
 
 #--------------------------------------------------------------------------
+class Save_Rename(Link):
+    """Renames Save File."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) == 1)
+
+    def Execute(self,event):
+        #--File Info
+        fileName = self.data[0]
+        newName = balt.askText(self.window,_("Enter new name. E.g. AwesomeSave.ess"),
+            _("Rename Files"),fileName.s)
+        if not newName: return
+        if not newName.endswith('.ess'): newName = newName + '.ess'
+        if newName != fileName:
+            oldPath = bosh.saveInfos.dir.join(fileName)
+            newPath = bosh.saveInfos.dir.join(newName)
+            if not newPath.exists():
+                oldPath.moveTo(newPath)
+                if GPath(oldPath.s[:-3]+'obse').exists():
+                    GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
+                if GPath(oldPath.s[:-3]+'pluggy').exists():
+                    GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
+                bosh.saveInfos.refresh()
+                self.window.RefreshUI()
+#--------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
     def __init__(self,parent,saveFile,recordTypes):
@@ -10639,7 +10666,7 @@ class Save_EditCreatedData(balt.ListEditorData):
 
 #------------------------------------------------------------------------------
 class Save_EditCreated(Link):
-    """Allows user to rename custom items (spells, enchantments, etc."""
+    """Allows user to rename custom items (spells, enchantments, etc)."""
     menuNames = {'ENCH':_('Rename Enchanted...'),'SPEL':_('Rename Spells...'),'ALCH':_('Rename Potions...')}
     recordTypes = {'ENCH':('ARMO','CLOT','WEAP')}
 
@@ -12787,6 +12814,7 @@ def InitSaveLinks():
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
+        fileMenu.links.append(Save_Rename())
         #fileMenu.links.append(File_RevertToSnapshot())
         SaveList.itemMenu.append(fileMenu)
     if True: #--Move to Profile
