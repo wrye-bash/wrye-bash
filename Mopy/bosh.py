@@ -15084,6 +15084,25 @@ class SaveEnchantments:
                 count += 1
         self.saveFile.safeSave()
 
+class Save_NPCEdits:
+    """General editing of NPCs/player in savegame."""
+    
+    def __init__(self,saveInfo):
+        """Initialize."""
+        self.saveInfo = saveInfo
+        self.saveFile = SaveFile(saveInfo)
+    
+    def renamePlayer(self,newName):
+        """rename the player in  a save file."""
+        self.saveInfo.header.pcName = newName
+        saveFile = self.saveFile
+        saveFile.load()
+        (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
+        npc = SreNPC(recFlags,data)
+        npc.full = newName
+        saveFile.pcName = newName
+        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.safeSave()
 
 # Patchers 1 ------------------------------------------------------------------
 #------------------------------------------------------------------------------

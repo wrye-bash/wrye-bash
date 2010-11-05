@@ -10506,6 +10506,26 @@ class Save_ImportFace(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
+class Save_RenamePlayer(Link):
+    """Renames the Player character in a save game."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Rename Player...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) != 0)
+
+    def Execute(self,event):
+        saveInfo = bosh.saveInfos[self.data[0]]
+        newName = balt.askText(self.window,_("Enter new player name. E.g. Conan the Bold"),
+            _("Rename player"),saveInfo.header.pcName)
+        if not newName: return
+        for save in self.data:
+            savedPlayer = bosh.Save_NPCEdits(self.window.data[GPath(save)])
+            savedPlayer.renamePlayer(newName) 
+        bosh.saveInfos.refresh()
+        self.window.RefreshUI()
+
+#------------------------------------------------------------------------------
 class Save_DiffMasters(Link):
     """Shows how saves masters differ from active mod list."""
     def AppendToMenu(self,menu,window,data):
@@ -10550,26 +10570,29 @@ class Save_Rename(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+        menuItem.Enable(len(data) != 0)
 
     def Execute(self,event):
         #--File Info
-        fileName = self.data[0]
-        newName = balt.askText(self.window,_("Enter new name. E.g. AwesomeSave.ess"),
-            _("Rename Files"),fileName.s)
+        newName = balt.askText(self.window,_("Enter new name. E.g. AwesomeSave.ess.\nIf there are multiple saves selected the first will be named the name you select and then the rest will have a number appended (eg AwesomeSave1.ess... AwesomeSave2.ess etc.)."),
+            _("Rename Save"),self.data[0].s)
         if not newName: return
         if not newName.endswith('.ess'): newName = newName + '.ess'
-        if newName != fileName:
-            oldPath = bosh.saveInfos.dir.join(fileName)
-            newPath = bosh.saveInfos.dir.join(newName)
-            if not newPath.exists():
-                oldPath.moveTo(newPath)
-                if GPath(oldPath.s[:-3]+'obse').exists():
-                    GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
-                if GPath(oldPath.s[:-3]+'pluggy').exists():
-                    GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
-                bosh.saveInfos.refresh()
-                self.window.RefreshUI()
+        newFileName = newName
+        for index, name in enumerate(self.data):
+            if index:
+                newFileName = newName.replace('.ess','%d.ess' % index)        
+            if newFileName != name.s:
+                oldPath = bosh.saveInfos.dir.join(name.s)
+                newPath = bosh.saveInfos.dir.join(newFileName)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+                    if GPath(oldPath.s[:-3]+'obse').exists():
+                        GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
+                    if GPath(oldPath.s[:-3]+'pluggy').exists():
+                        GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
+        bosh.saveInfos.refresh()
+        self.window.RefreshUI()
 #--------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
@@ -10781,9 +10804,9 @@ class Save_EditCreatedEnchantmentCosts(Link):
         fileInfo = self.window.data[fileName]
         dialog = balt.askNumber(self.window,_('Enter the number of uses you desire per recharge for all custom made enchantements.\n(Enter 0 for unlimited uses)'),prompt='Uses',title='Number of Uses',value=50,min=0,max=10000)
         if not dialog: return
-        self.Enchantments = bosh.SaveEnchantments(fileInfo)
-        self.Enchantments.load()
-        self.Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
+        Enchantments = bosh.SaveEnchantments(fileInfo)
+        Enchantments.load()
+        Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
         
 #------------------------------------------------------------------------------
 class Save_Move:
@@ -12835,6 +12858,7 @@ def InitSaveLinks():
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_EditPCSpells())
+    SaveList.itemMenu.append(Save_RenamePlayer())
     SaveList.itemMenu.append(Save_EditCreatedEnchantmentCosts())
     SaveList.itemMenu.append(Save_ImportFace())
     SaveList.itemMenu.append(Save_EditCreated('ENCH'))
