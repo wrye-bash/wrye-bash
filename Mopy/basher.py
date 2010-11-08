@@ -12050,6 +12050,11 @@ def InitStatusBar():
             bosh.tooldirs['BSACMD'],
             Image(r'images/BSACommander'+bosh.inisettings['IconSize']+'.png'),
             _("Launch BSA Commander")))  
+    BashStatusBar.buttons.append( #Tabula
+        App_Button(
+            bosh.tooldirs['Tabula'],
+            Image(r'images/Tabula'+bosh.inisettings['IconSize']+'.png'),
+            _("Launch Tabula")))
     BashStatusBar.buttons.append( #Tes4Files
         App_Button(
             bosh.tooldirs['Tes4FilesPath'],
@@ -12125,6 +12130,16 @@ def InitStatusBar():
                 bosh.tooldirs['Milkshape3D'],
                 Image(r'images/Milkshape3D'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Milkshape 3D")))
+        BashStatusBar.buttons.append( #Mudbox
+            App_Button(
+                bosh.tooldirs['Mudbox'],
+                Image(r'images/Mudbox'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Mudbox")))
+        BashStatusBar.buttons.append( #Sculptris
+            App_Button(
+                bosh.tooldirs['Sculptris'],
+                Image(r'images/Sculptris'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Sculptris")))
         BashStatusBar.buttons.append( #Wings3D
             App_Button(
                 bosh.tooldirs['Wings3D'],
@@ -12152,11 +12167,26 @@ def InitStatusBar():
                 bosh.tooldirs['Artweaver'],
                 Image(r'images/artweaver'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Artweaver")))
+        BashStatusBar.buttons.append( #CrazyBump
+            App_Button(
+                bosh.tooldirs['CrazyBump'],
+                Image(r'images/CrazyBump'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch CrazyBump")))
         BashStatusBar.buttons.append( #DDSConverter
             App_Button(
                 bosh.tooldirs['DDSConverter'],
                 Image(r'images/DDSConverter'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch DDSConverter")))
+        BashStatusBar.buttons.append( #DeepPaint
+            App_Button(
+                bosh.tooldirs['DeepPaint'],
+                Image(r'images/DeepPaint'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch DeepPaint")))
+        BashStatusBar.buttons.append( #FastStone Image Viewer
+            App_Button(
+                bosh.tooldirs['FastStone'],
+                Image(r'images/FastStoneImageViewer'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Genetica
             App_Button(
                 bosh.tooldirs['Genetica'],
@@ -12192,37 +12222,26 @@ def InitStatusBar():
                 bosh.tooldirs['IrfanView'],
                 Image(r'images/IrfanView'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch IrfanView")))
-        BashStatusBar.buttons.append( #XnView
+        BashStatusBar.buttons.append( #MyPaint
             App_Button(
-                bosh.tooldirs['XnView'],
-                Image(r'images/XnView'+bosh.inisettings['IconSize']+'.png'),
-                _("Launch XnView")))
-        BashStatusBar.buttons.append( #FastStone Image Viewer
-            App_Button(
-                bosh.tooldirs['FastStone'],
-                Image(r'images/FastStoneImageViewer'+bosh.inisettings['IconSize']+'.png'),
-                _("Launch FastStone Image Viewer")))
+                bosh.tooldirs['MyPaint'],
+                Image(r'images/MyPaint'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch MyPaint")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.tooldirs['PaintNET'],
                 Image(r'images/paint.net'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Paint.NET")))
+        BashStatusBar.buttons.append( #PaintShop Photo Pro
+            App_Button(
+                bosh.tooldirs['PaintShopPhotoPro'],
+                Image(r'images/PaintshopProX3'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch PaintShop Photo Pro")))
         BashStatusBar.buttons.append( #Photoshop
             App_Button(
                 bosh.tooldirs['PhotoshopPath'],
                 Image(r'images/photoshop'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Photoshop")))
-        BashStatusBar.buttons.append( #Pixel Studio Pro
-            App_Button(
-                bosh.tooldirs['PixelStudio'],
-                Image(r'images/PixelStudioPro'+bosh.inisettings['IconSize']+'.png'),
-                _("Launch Pixel Studio Pro")))
-        BashStatusBar.buttons.append( #Twisted Brush
-            App_Button(
-                bosh.tooldirs['TwistedBrush'],
-                Image(r'images/TwistedBrush'+bosh.inisettings['IconSize']+'.png'),
-                _("Launch TwistedBrush")))
-
         BashStatusBar.buttons.append( #PhotoScape
             App_Button(
                 bosh.tooldirs['PhotoScape'],
@@ -12238,11 +12257,31 @@ def InitStatusBar():
                 bosh.tooldirs['PhotoFiltre'],
                 Image(r'images/PhotoFiltre'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch PhotoFiltre")))
-        BashStatusBar.buttons.append( #PaintShop Photo Pro
+        BashStatusBar.buttons.append( #Pixel Studio Pro
             App_Button(
-                bosh.tooldirs['PaintShopPhotoPro'],
-                Image(r'images/PaintshopProX3'+bosh.inisettings['IconSize']+'.png'),
-                _("Launch PaintShop Photo Pro")))
+                bosh.tooldirs['PixelStudio'],
+                Image(r'images/PixelStudioPro'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Pixel Studio Pro")))
+        BashStatusBar.buttons.append( #Pixia
+            App_Button(
+                bosh.tooldirs['Pixia'],
+                Image(r'images/Pixia'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Pixia")))
+        BashStatusBar.buttons.append( #Twisted Brush
+            App_Button(
+                bosh.tooldirs['TwistedBrush'],
+                Image(r'images/TwistedBrush'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch TwistedBrush")))
+        BashStatusBar.buttons.append( #xNormal
+            App_Button(
+                bosh.tooldirs['xNormal'],
+                Image(r'images/xNormal'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch xNormal")))
+        BashStatusBar.buttons.append( #XnView
+            App_Button(
+                bosh.tooldirs['XnView'],
+                Image(r'images/XnView'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch XnView")))
     if bosh.inisettings['ShowAudioToolLaunchers']:
         BashStatusBar.buttons.append( #Audacity
             App_Button(

@@ -77,7 +77,7 @@ from subprocess import Popen, PIPE
 if os.name == 'nt':
     startupinfo = subprocess.STARTUPINFO()
     try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except: 
+    except:
         import _subprocess
         startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
@@ -1970,7 +1970,7 @@ class MreHasEffects:
                 actorValue = 0
             effectsAppend((mgef,actorValue))
         return effects
-        
+
     def getSpellSchool(self,mgef_school=bush.mgef_school):
         """Returns the school based on the highest cost spell efect."""
         spellSchool = [0,0]
@@ -1983,8 +1983,8 @@ class MreHasEffects:
                 effectValue *=  (effect.area/10)
             if effect.duration:
                 effectValue *=  effect.duration
-            if spellSchool[0] < effectValue: 
-                spellSchool = [effectValue,school]        
+            if spellSchool[0] < effectValue:
+                spellSchool = [effectValue,school]
         return spellSchool[1]
 
     def getEffectsSummary(self,mgef_school=None,mgef_name=None):
@@ -5127,7 +5127,7 @@ class ModFile:
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError("ModFile fids not in long form.")
         if dirs['mods'].join('Oblivion.esm').exists():
-			masters = MasterSet([GPath('Oblivion.esm')]) 
+			masters = MasterSet([GPath('Oblivion.esm')])
         elif dirs['mods'].join('Nehrim.esm').exists():
 			masters = MasterSet([GPath('Nehrim.esm')]) # insert witty joke here about the old comment
         for block in self.tops.values():
@@ -7981,7 +7981,7 @@ class ModInfos(FileInfos):
             self.masterName = GPath('Oblivion.esm')
         elif dirs['mods'].join('Nehrim.esm').exists():
             self.masterName = GPath('Nehrim.esm')
-        else: 
+        else:
             self.masterName = GPath('Oblivion.esm')
             deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
         self.mtime_mods = {}
@@ -8002,7 +8002,7 @@ class ModInfos(FileInfos):
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
-                
+
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
@@ -8205,7 +8205,7 @@ class ModInfos(FileInfos):
             if canMerge:
                 self.mergeable.add(name)
                 name_mergeInfo[name] = (modInfo.size,True)
-            else:   
+            else:
                 self.mergeable.discard(name)
                 name_mergeInfo[name] = (modInfo.size,False)
 
@@ -9070,7 +9070,7 @@ class ConfigHelpers:
         #version notes:
         #>1.6.2 = 393218+
         # 1.6.1 = 393217
-        # 1.6   = 1 
+        # 1.6   = 1
         #<1.6   = 0
         try:
             import win32api
@@ -9078,7 +9078,7 @@ class ConfigHelpers:
         except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
             self.bossVersion = None
         self.bossMasterPath = dirs['mods'].join('BOSS//masterlist.txt')
-        if self.bossVersion == None: 
+        if self.bossVersion == None:
             if not self.bossMasterPath.exists():
                 self.bossMasterPath = dirs['mods'].join('masterlist.txt')
                 self.bossVersion = 0
@@ -10283,7 +10283,7 @@ class InstallerConverter(object):
             if f: f.close()
             if result:
                 raise StateError(_("Error creating BCF.dat:\nError Code: %s") % (result))
-        
+
     @staticmethod
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
@@ -10339,7 +10339,7 @@ class InstallerConverter(object):
         dupes = dict(self.dupeCount.iteritems())
         destJoin = destDir.join
         tempJoin = self.tempDir.join
-        
+
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
@@ -10752,7 +10752,7 @@ class InstallerArchive(Installer):
         log = bolt.LogFile(cStringIO.StringIO())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
-        
+
         reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = ''
         isdir = False
@@ -10767,7 +10767,7 @@ class InstallerArchive(Installer):
                 key,value = maList.groups()
                 if key == 'Path':
                     #--Should be able to twist 7z to export names in UTF-8, but can't (at
-                    #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead, 
+                    #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
                     #  assume file is encoded in cp437 and that we want to decode to cp1252.
                     #--Hopefully this will mostly resolve problem with german umlauts, etc.
                     #  It won't solve problems with non-european characters though.
@@ -10783,7 +10783,7 @@ class InstallerArchive(Installer):
         if result:
             raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
         text.sort()
-        
+
         for line in text:
             dir = line[0]
             isdir = line[1]
@@ -10792,7 +10792,7 @@ class InstallerArchive(Installer):
             else:
                 log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
         log('[/code][/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())   
+        return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
@@ -10902,6 +10902,7 @@ class InstallerProject(Installer):
         out.close()
         #--Compress
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
+        print command
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
@@ -10990,7 +10991,7 @@ class InstallerProject(Installer):
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
         apath = dirs['installers'].join(archive)
-        
+
         walkPath(apath.s, 0)
         log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
@@ -11690,7 +11691,7 @@ class InstallersData(bolt.TankData, DataDict):
         if not conflictsMode and not report and not srcInstaller.isActive:
             report = _("No Underrides. Mod is not completely un-installed.")
         return report
-        
+
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
@@ -11998,7 +11999,7 @@ class ActorLevels:
             obFile = Current.addMod('Oblivion.esm')
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
-            
+
             offsetFlag = 0x80
             npcLevels = {}
             for npc in modFile.NPC_:
@@ -12071,7 +12072,7 @@ class ActorLevels:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
-            
+
             offsetFlag = 0x80
             npcLevels = {}
             changed = []
@@ -12123,7 +12124,7 @@ class EditorIds:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
-        
+
             for type,block in modFile.aggregates.iteritems():
                 if type not in type_id_eid: type_id_eid[type] = {}
                 id_eid = type_id_eid[type]
@@ -12383,7 +12384,7 @@ class CBash_FactionRelations:
         self.id_eid = {} #--For all factions.
         self.aliases = aliases or {}
         self.gotFactions = set()
-        
+
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         Current = Collection(ModsPath=dirs['mods'].s)
@@ -12621,7 +12622,7 @@ class FullNames:
                     changed[eid] = (full,newFull)
         if changed: modFile.safeSave()
         return changed
- 
+
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         textPath = GPath(textPath)
@@ -12693,7 +12694,7 @@ class CBash_FullNames:
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
-        
+
         changed = {}
         for type in self.types:
             id_name = type_id_name.get(type,None)
@@ -12810,7 +12811,7 @@ class CBash_MapMarkers:
                 if recchanged:
                     changed.append(record.eid)
                     record.eid,record.markerName = markers[record.fid_long][0:2]
-                    Type = markers[record.fid_long][2] 
+                    Type = markers[record.fid_long][2]
                     if type(Type) == int:
                         record.markerType = Type
                     else:
@@ -13260,7 +13261,7 @@ class CBash_ItemStats:
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        class_id_attr_value = self.class_id_attr_value        
+        class_id_attr_value = self.class_id_attr_value
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         attr_type = self.attr_type
@@ -13370,7 +13371,7 @@ class ItemPrices:
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
-        self.attrs = ('value', 'eid', 'full') 
+        self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -13402,7 +13403,7 @@ class ItemPrices:
                     longid = record.fid_long
                     id_value[longid] = tuple(getattr(record, attr) for attr in attrs)
                     record.UnloadRecord()
-                    
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         if not CBash:
@@ -13410,7 +13411,7 @@ class ItemPrices:
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
-            changed = {} 
+            changed = {}
             attrs = self.attrs
             for type in self.type_stats:
                 stats = self.type_stats[type]
@@ -13452,7 +13453,7 @@ class ItemPrices:
             longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
             self.type_stats[type][longid] = int(fields[2])
         ins.close()
-        
+
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         out = textPath.open('w')
@@ -13566,7 +13567,7 @@ class CompleteItemData:
 ##            Current = Collection(ModsPath=dirs['mods'].s)
 ##            modFile = Current.addMod(modInfo.getPath().stail)
 ##            Current.minimalLoad(LoadMasters=False)
-##            
+##
 ##            changed = {} #--changed[modName] = numChanged
 ##            for type,stats in self.type_stats.iteritems():
 ##                attrs = self.type_attrs[type]
@@ -13655,7 +13656,7 @@ class CompleteItemData:
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        if not CBash: 
+        if not CBash:
             for type,format,header in (
                 #--Alch
                 ('ALCH', bolt.csvFormat('ssfiss')+'\n',
@@ -13842,7 +13843,7 @@ class ScriptText:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
-            
+
             progress = balt.Progress(_("Export Scripts"))
             for type in self.type_stats:
                 records = getattr(modFile,type)
@@ -13868,7 +13869,7 @@ class ScriptText:
             loadFactory = LoadFactory(True,MreScpt)
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
-            
+
             for type in self.type_stats:
                 scriptData, attrs = self.type_stats[type], self.type_attrs[type]
                 for record in getattr(modFile,type).getActiveRecords():
@@ -13890,13 +13891,13 @@ class ScriptText:
                         modFile.SCPT.records.append(newScript)
                         eids_imported.append(eid)
             if len(eids_imported):
-                modFile.safeSave()                
+                modFile.safeSave()
             return eids_imported
         else:
             Current = Collection(ModsPath=dirs['mods'].s)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.minimalLoad(LoadMasters=False)
-            
+
             for type in self.type_stats:
                 attrs = self.type_attrs[type]
                 for record in getattr(modFile,type):
@@ -13913,7 +13914,7 @@ class ScriptText:
                         newScript.scriptText = importscripts[eid]
                         eids_imported.append(eid)
             if len(eids_imported):
-                modFile.safeCloseSave()                
+                modFile.safeCloseSave()
             return eids_imported
 
     def readFromText(self,textPath,modInfo):
@@ -14090,7 +14091,7 @@ class CBash_SpellRecords:
         Current = Collection(ModsPath=dirs['mods'].s)
         modFile = Current.addMod(modInfo.getPath().stail)
         Current.minimalLoad(LoadMasters=False)
-        
+
         changed = 0
         attrs = self.type_attrs
         id_stats = self.type_id_stats
@@ -15074,7 +15075,7 @@ class SaveEnchantments:
         for (index, record) in self.createdEnchantments:
             if record.itemType in [1,2]:
                 if uses == 0:
-                    if record.enchantCost == 0: continue 
+                    if record.enchantCost == 0: continue
                     record.enchantCost = 0
                 else:
                     if record.enchantCost == max(record.chargeAmount/uses,1): continue
@@ -15086,12 +15087,12 @@ class SaveEnchantments:
 
 class Save_NPCEdits:
     """General editing of NPCs/player in savegame."""
-    
+
     def __init__(self,saveInfo):
         """Initialize."""
         self.saveInfo = saveInfo
         self.saveFile = SaveFile(saveInfo)
-    
+
     def renamePlayer(self,newName):
         """rename the player in  a save file."""
         self.saveInfo.header.pcName = newName
@@ -15460,7 +15461,7 @@ class CBash_PatchFile(CBashModFile):
             if not verbose: return False
             reasons += _("\n.    Empty mod.")
         #--New record
-        else:            
+        else:
             newblocks = modFile.GetNewRecordTypes()
             if newblocks:
                 if not verbose: return False
@@ -15547,7 +15548,7 @@ class CBash_PatchFile(CBashModFile):
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
 
-        IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])        
+        IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])
 
         self.Collection = Collection(ModsPath=dirs['mods'].s)
 
@@ -15585,7 +15586,7 @@ class CBash_PatchFile(CBashModFile):
         for type, patchers in type_patchers.iteritems():
             if len([patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]):
                 numFinishers += 1
-            
+
         progress = progress.setFull(len(self.completeMods) + max(numFinishers,1))
         maxVersion = 0
         for index,modName in enumerate(self.completeMods):
@@ -16437,7 +16438,7 @@ class UpdateReferences(ListPatcher):
                                     break
                             else:
                                 patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent.append(record)
-                                
+
     def buildPatch(self,log,progress):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
@@ -16458,7 +16459,7 @@ class UpdateReferences(ListPatcher):
 ##                    count.increment(record.fid[0])
 ####                    record.mapFids(swapper,True)
 ##                    record.setChanged()
-##                    keep(record.fid)        
+##                    keep(record.fid)
         for cellBlock in self.patchFile.CELL.cellBlocks:
             for record in cellBlock.temp:
                 if record.base in self.old_new:
@@ -16799,7 +16800,7 @@ class CellImporter(ImportPatcher):
                             cellBlock.cell)
                 # if worldBlock.world.fid in cellData['Maps']:
                     # patchWorlds.setWorld(worldBlock.world)
-                    
+
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
         def handleCellBlock(cellBlock):
@@ -17104,7 +17105,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         class_attrs['FLOR'] = model
         class_attrs['FURN'] = model
         class_attrs['GRAS'] = model
-        class_attrs['STAT'] = model        
+        class_attrs['STAT'] = model
         class_attrs['ALCH'] = icon + model
         class_attrs['AMMO'] = icon + model
         class_attrs['APPA'] = icon + model
@@ -17142,7 +17143,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                                'key1Red','key1Green','key1Blue','key2Red','key2Green','key2Blue',
                                'key3Red','key3Green','key3Blue','key1A','key2A','key3A',
                                'key1Time','key2Time','key3Time')
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR',
@@ -17167,7 +17168,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 ##                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
 ##                record.UnloadRecord()
 ##                record._ModName = override._ModName
-                
+
         self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
@@ -17185,9 +17186,9 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         if(recordId in self.id_attr_value):
             prev_attr_value = self.id_attr_value[recordId]
             if not prev_attr_value: return #otherwise extra unnecessary steps
-            cur_attr_value = dict((attr,getattr_deep(record,attr)) for attr in prev_attr_value) 
+            cur_attr_value = dict((attr,getattr_deep(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
-                override = record.CopyAsOverride(self.patchFile) 
+                override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr_deep(override,attr,value)
@@ -17205,7 +17206,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         log(_("=== Source Mods"))
         for mod in self.srcMods:
             log("* " +mod.s)
-        log(_("\n=== Modified Records"))    
+        log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
             log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
@@ -17413,7 +17414,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
                 'Actors.Skeleton': ('model',),
                 }
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -17432,7 +17433,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         if(recordId in self.id_attr_value):
             prev_attr_value = self.id_attr_value[recordId]
             if not prev_attr_value: return #otherwise extra unnecessary steps
-            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value) 
+            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -17608,7 +17609,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -17721,7 +17722,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                             del tempData[fid]
                             continue
                         if fid in data:
-                            if tempData[fid] == data[fid]['merged']: continue                        
+                            if tempData[fid] == data[fid]['merged']: continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for pkg in list(record.aiPackages):
                             if not pkg in tempData[fid]:
@@ -17739,7 +17740,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                                     data[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if not pkg in data[fid]['merged']: # so needs to be added... (unless deleted that is) 
+                                if not pkg in data[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
                                     if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
@@ -17793,7 +17794,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                                         if pkg in data[fid]['merged']:
                                             data[fid]['merged'].remove(pkg)
             progress.plus()
-            
+
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return (None,(MreNpc,MreCrea))[self.isActive]
@@ -17861,7 +17862,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         self.id_Moved = {}
         self.previousPackages = {}
         self.mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -17910,7 +17911,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             merged = record.aiPackages
             merged += [package for package in self.id_Added.get(recordId, {}).keys() if package not in merged]
             merged = [package for package in merged if package not in self.id_Deleted.get(recordId, {}).keys()]
-                
+
             if(record.aiPackages != merged):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -18081,7 +18082,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -18249,7 +18250,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
-        
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -18434,7 +18435,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.mod_count = {}
-        
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -18658,7 +18659,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['ACTI','ALCH','APPA','ARMO','BOOK','CLOT','CONT','CREA',
@@ -18999,7 +19000,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
             (x in patchFile.mergeSet and set(('InventOnly','IIM')) & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_','CONT']
@@ -19147,7 +19148,7 @@ class ImportActorsSpells(ImportPatcher):
                             del tempData[fid]
                             continue
                         if fid in data:
-                            if tempData[fid] == data[fid]['merged']: continue                        
+                            if tempData[fid] == data[fid]['merged']: continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for spell in list(record.spells):
                             if not spell in tempData[fid]:
@@ -19165,7 +19166,7 @@ class ImportActorsSpells(ImportPatcher):
                                     data[fid]['merged'].append(spell)
                                 continue
                             for index, spell in enumerate(recordData['merged']):
-                                if not spell in data[fid]['merged']: # so needs to be added... (unless deleted that is) 
+                                if not spell in data[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
                                     if spell in data[fid]['deleted'] and not 'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
@@ -19213,7 +19214,7 @@ class ImportActorsSpells(ImportPatcher):
                                                     break
                                                 i += 1
             progress.plus()
-            
+
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return (None,(MreNpc,MreCrea))[self.isActive]
@@ -19279,7 +19280,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
@@ -19457,7 +19458,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
-        
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -19492,7 +19493,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         if record.GName in self.srcFiles:
             full = record.ConflictDetails(('full',),False)
-            if full: 
+            if full:
                 self.id_full[record.fid_long] = full['full']
 
     def apply(self,modFile,record,bashTags):
@@ -19536,7 +19537,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
                 log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
-    
+
 #------------------------------------------------------------------------------
 class NpcFacePatcher(ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
@@ -19817,7 +19818,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
         self.mod_count = {}
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['WRLD']
@@ -20033,7 +20034,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         class_attrs['MGEF'] = ('castingSound_long','boltSound_long','hitSound_long','areaSound_long')
 ##        class_attrs['REGN'] = ('sound_long','sounds_list')
         class_attrs['WTHR'] = ('sounds_list',)
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['ACTI','CONT','CREA','DOOR','LIGH','MGEF','WTHR']
@@ -20210,7 +20211,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
-        
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -20286,7 +20287,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
                 log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
-    
+
 
 #------------------------------------------------------------------------------
 class SpellsPatcher(ImportPatcher):
@@ -20422,7 +20423,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.id_stats = {}
         self.mod_count = {}
         self.attrs = None #set in initData
-        
+
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
@@ -21127,7 +21128,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         log(_('* Books DarNified: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-        
+
 class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     """DarNifies books."""
     scanOrder = 32
@@ -21155,7 +21156,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
             return str
         def replaceAlign(mo):
             return '<div align=%s>' % align_text[mo.group(1)]
-        
+
         if record.text and not record.enchantment:
             text = record.text
 
@@ -21209,7 +21210,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-        
+
 #------------------------------------------------------------------------------
 class AssortedTweak_FogFix(MultiTweakItem):
     """Fix fog in cell to be non-zero."""
@@ -21475,7 +21476,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
-        
+
         if (record.weight > maxWeight and record.weight < 1.0):
             for effect in record.effects:
                 if effect.name == 'SEFF':
@@ -21580,7 +21581,7 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
-        
+
         if record.weight > maxWeight:
             for effect in record.effects:
                 if effect.name == 'SEFF':
@@ -21795,7 +21796,7 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
-        
+
         if (record.weaponType == 4 and record.weight > maxWeight):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -21900,7 +21901,7 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
-        
+
         if record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -22684,7 +22685,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.choiceValues[self.chosen][0]
-        
+
         if (record.weight > maxWeight) and self.isMyType(record):
             for attr in self.matchFlags:
                 if(getattr(record, attr)):
@@ -22983,7 +22984,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                     print eid
                     for conflict in patchFile.Collection.LookupRecords(eid, False):
                         print conflict._ModName
-                    raise StateError(_("Tweak Settings: Unable to create GMST!")) 
+                    raise StateError(_("Tweak Settings: Unable to create GMST!"))
                 record.value = value
             pstate += 1
 
@@ -25016,17 +25017,17 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
                     newString = override.text
                     if newString:
                         override.text = self.reDwarf.sub(r'\1wemer', newString)
-                        
+
                 if hasattr(override, 'description'):
                     newString = override.description
                     if newString:
                         override.description = self.reDwarf.sub(r'\1wemer', newString)
-                        
+
                 if override._Type == 'GMST' and override._recordID[0] == 's':
                     newString = override.value
                     if newString:
                         override.value = self.reDwarf.sub(r'\1wemer', newString)
-                        
+
                 if hasattr(override, 'stages'):
                     Stages = override.stages
                     for stage in Stages:
@@ -25066,15 +25067,15 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
                     newString = override.journeyman
                     if newString:
                         override.journeyman = self.reDwarf.sub(r'\1wemer', newString)
-                        
+
                     newString = override.expert
                     if newString:
                         override.expert = self.reDwarf.sub(r'\1wemer', newString)
-                        
+
                     newString = override.master
                     if newString:
                         override.master = self.reDwarf.sub(r'\1wemer', newString)
-                
+
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -25669,7 +25670,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
             except AttributeError:
                 continue
             if not reImpModPath.search(oldModPath or ''): continue
-            
+
             for bodyPart in record.bodyParts:
                 if reImp.search(bodyPart):
                     break
@@ -25718,7 +25719,7 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
         """Edits patch file as desired. """
 ##        reImp  = re.compile(r'(\bimpling\b|\bimp\b|\bgargoyle\b)',re.I)
         if not self.reImpModPath.search(record.modPath or ''): return
-        
+
         reImp  = self.reImp
         for bodyPart in record.bodyParts:
             if reImp.search(bodyPart):
@@ -25778,7 +25779,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
             except AttributeError:
                 continue
             if not reBoarModPath.search(oldModPath or ''): continue
-            
+
             for bodyPart in record.bodyParts:
                 if reBoar.search(bodyPart):
                     break
@@ -25820,7 +25821,7 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not self.reBoarModPath.search(record.modPath or ''): return
-        
+
         reBoar  = self.reBoar
         for bodyPart in record.bodyParts:
             if reBoar.search(bodyPart):
@@ -26239,7 +26240,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 print book
                 print book.text
                 print
-                raise StateError(_("Cobl Catalogs: Unable to create book!")) 
+                raise StateError(_("Cobl Catalogs: Unable to create book!"))
 ##            book.text = '<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full
             else:
                 return book
@@ -27078,7 +27079,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModName = override._ModName
-                    
+
     def finishPatch(self,patchFile,progress):
         """Edits the bashed patch file directly."""
         mFactable = self.mFactable
@@ -27314,7 +27315,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
-            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags: 
+            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags:
                 raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
@@ -27464,7 +27465,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 if set(race.eyes) != set(raceData['eyes']):
                     race.eyes = raceData['eyes']
                     raceChanged = True
-            #-- Eye paths:  
+            #-- Eye paths:
             if 'rightEye' in raceData:
                 if not race.rightEye: deprint(_('Very odd race %s found - no right eye assigned') % (race.full))
                 else:
@@ -27761,7 +27762,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         if not self.isActive: return
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(self)
-            
+
     def getTypes(self):
         return ['RACE']
     #--Patch Phase ------------------------------------------------------------
@@ -27777,7 +27778,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                         #Hairs should perhaps have it's own patcher, but...
                         allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
                         allHairs[0] += (hair for hair in record.hairs_long if hair not in allHairs[0])
-                    else:                        
+                    else:
                         self.id_tag_values.setdefault(recordId,{})[bashKey] = [getattr_deep(record,attr) for attr in self.tag_attrs[bashKey]]
 
     def apply(self,modFile,record,bashTags):
@@ -27832,7 +27833,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods and bashTags & self.autoKey:
-            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags: 
+            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags:
                 raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
             curSpells = set(record.spells_long)
             if curSpells:
@@ -28489,7 +28490,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         self.containerTypes = set(['CONT','CREA','NPC_'])
         self.mod_type_id_badEntries = {}
         self.knownGood = set()
-        
+
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CONT','CREA','NPC_','LVLI','LVLC','LVSP']
@@ -28666,21 +28667,21 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['mopyData'] = dirs['mopy'].join('Data')
     dirs['mopyExtras'] = dirs['mopy'].join('Extras')
     dirs['mopyImages'] = dirs['mopy'].join('Images')
-    
+
     #--Oblivion (Application) Directories
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
     dirs['mods'] = dirs['app'].join('Data')
     dirs['builds'] = dirs['app'].join('Builds')
     dirs['patches'] = dirs['mods'].join('Bash Patches')
-        
+
     #  Personal
     personal = getPersonalPath(bashIni,personal)
     dirs['saveBase'] = personal.join(r'My Games','Oblivion')
-    
+
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
     dirs['userApp'] = localAppData.join('Oblivion')
-    
+
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
     oblivionIni = OblivionIni()
     if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
@@ -28690,18 +28691,18 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
         # this one is relative to the mods path so it must be updated too
         dirs['patches'] = dirs['mods'].join('Bash Patches')
-        
+
     #--Mod Data, Installers
     oblivionMods = getOblivionModsPath(bashIni)
     dirs['modsBash'] = oblivionMods.join('Bash Mod Data')
     dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join('Data','Bash'))
-    
+
     dirs['installers'] = oblivionMods.join('Bash Installers')
     dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join('Installers'))
 
     dirs['converters'] = dirs['installers'].join('Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
-    
+
     # create bash user folders, keep these in order
     for key in ('modsBash','installers','converters','dupeBCFs'):
         dirs[key].makedirs()
@@ -28762,9 +28763,17 @@ def initDefaultTools():
     tooldirs['FreeMind'] = GPath(r'C:\Program Files\FreeMind\Freemind.exe')
     tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
     tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')
-    tooldirs['FileZilla'] = GPath(r'C:\Program Files\FileZilla FTP Client\filezilla.exe')    
-    tooldirs['RADVideo'] = GPath(r'C:\Program Files\RADVideo\radvideo.exe')    
-    tooldirs['EggTranslator'] = GPath(r'C:\Program Files\Egg Translator\EggTranslator.exe')    
+    tooldirs['FileZilla'] = GPath(r'C:\Program Files\FileZilla FTP Client\filezilla.exe')
+    tooldirs['RADVideo'] = GPath(r'C:\Program Files\RADVideo\radvideo.exe')
+    tooldirs['EggTranslator'] = GPath(r'C:\Program Files\Egg Translator\EggTranslator.exe')
+    tooldirs['Sculptris'] = GPath(r'C:\Program Files\sculptris\Sculptris.exe')
+    tooldirs['Mudbox'] = GPath(r'C:\Program Files\Autodesk\Mudbox2011\mudbox.exe')
+    tooldirs['Tabula'] = dirs['app'].join(r'C:\Program Files\Bethesda Softworks\Oblivion\Modding Tools\Tabula\Tabula.exe')
+    tooldirs['MyPaint'] = GPath(r'CC:\Program Files\MyPaint\mypaint.exe')
+    tooldirs['Pixia'] = GPath(r'C:\Program Files\Pixia\pixia.exe')
+    tooldirs['DeepPaint'] = GPath(r'C:\Program Files\Right Hemisphere\Deep Paint\DeepPaint.exe')
+    tooldirs['CrazyBump'] = GPath(r'C:\Program Files\Crazybump\CrazyBump.exe')
+    tooldirs['xNormal'] = GPath(r'C:\Program Files\Santiago Orgaz\xNormal\3.17.3\x86\xNormal.exe')
     tooldirs['Custom1'] = undefinedPath
     tooldirs['Custom2'] = undefinedPath
     tooldirs['Custom3'] = undefinedPath
@@ -28838,7 +28847,7 @@ def initDefaultSettings():
     #inisettings['show?toollaunchers'] = True
 
 def initOptions(bashIni):
-    initDefaultTools()    
+    initDefaultTools()
     initDefaultSettings()
 
     defaultOptions = {}
@@ -28896,7 +28905,7 @@ def initLogFile():
         log = inisettings['LogFile'].open("a")
         log.write(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['KeepLog']))
         log.close()
-  
+
 def initBosh(personal='',localAppData='',oblivionPath=''):
     #--Bash Ini
     bashIni = None
@@ -28904,7 +28913,7 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
         bashIni = ConfigParser.ConfigParser()
         bashIni.read('bash.ini')
 
-    initDirs(bashIni,personal,localAppData, oblivionPath)        
+    initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)
     initLogFile()
 
