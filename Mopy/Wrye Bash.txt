@@ -208,7 +208,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
 * Alternate Python Installations
   * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), python 2.6, wxPython 2.8.10.1, etc. are the preferred versions.
-  * Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.9.x is definitely required.
+  * Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.
 
 == Help! ======================================================================
 * __Startup Problems:__ See [[#|If Bash Won't Start]].
@@ -270,6 +270,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="images/ModListGenerator16.png" width="16" height="16" border="0"> 32  <img src="images/ModListGenerator32.png" width="32" height="32" border="0">
     * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile=258 | Oblivion Book Creator]] 16 <img src="images/OblivionBookCreator16.png" width="16" height="16" border="0"> 32  <img src="images/OblivionBookCreator32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]] 16 <img src="images/BSACommander16.png" width="16" height="16" border="0"> 32  <img src="images/BSACommander32.png" width="32" height="32" border="0">
+    * [[http://www.tesnexus.com/downloads/file.php?id=33486 | Tabula]] 16 <img src="images/Tabula16.png" width="16" height="16" border="0"> 32  <img src="images/Tabula32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]] 16 <img src="images/tes4files16.png" width="16" height="16" border="0"> 32  <img src="images/tes4files32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]] 16 <img src="images/TES4Gecko16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Gecko32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]] 16 <img src="images/tes4view16.png" width="16" height="16" border="0"> 32  <img src="images/tes4view32.png" width="32" height="32" border="0">
@@ -284,20 +285,24 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
         * if __R__ is pressed will do a level 1 revert (to the state just prior to the last sort),
         * if __Shift-R__ is pressed will do a level 2 revert (to the state just prior to the 2nd last sort).
   * __Model Tools__
+    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" border="0"> 32  <img src="images/ArtOfIllusion32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13799652 | AutoCad]] 16 <img src="images/AutoCad16.png" width="16" height="16" border="0"> 32  <img src="images/AutoCad32.png" width="32" height="32" border="0">
     * [[http://www.blender.org | Blender]] 16 <img src="images/Blender16.png" width="16" height="16" border="0"> 32  <img src="images/Blender32.png" width="32" height="32" border="0">
-    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" border="0"> 32  <img src="images/ArtOfIllusion32.png" width="32" height="32" border="0">
     * [[http://www.turbosquid.com/gmax | GMax]] 16 <img src="images/gmax16.png" width="16" height="16" border="0"> 32  <img src="images/gmax32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13577897 | Maya]] 16 <img src="images/Maya16.png" width="16" height="16" border="0"> 32  <img src="images/Maya32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13567410 | 3ds Max]] 16 <img src="images/3dsMax16.png" width="16" height="16" border="0"> 32  <img src="images/3dsMax32.png" width="32" height="32" border="0">
     * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]] 16 <img src="images/Milkshape3D16.png" width="16" height="16" border="0"> 32  <img src="images/Milkshape3D32.png" width="32" height="32" border="0">
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13565063 | Mudbox]] 16 <img src="images/Mudbox16.png" width="16" height="16" border="0"> 32  <img src="images/Mudbox32.png" width="32" height="32" border="0">
+    * [[http://www.sculptris.com | Sculptris]] 16 <img src="images/Sculptris16.png" width="16" height="16" border="0"> 32  <img src="images/Sculptris32.png" width="32" height="32" border="0">
     * [[http://www.wings3d.com/ | Wings3D]] 16 <img src="images/Wings3D16.png" width="16" height="16" border="0"> 32  <img src="images/Wings3D32.png" width="32" height="32" border="0">
     * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="images/nifskope16.png" width="16" height="16" border="0"> 32 <img src="images/nifskope32.png" width="32" height="32" border="0"> 
   * __Texture Tools__
     * [[http://icofx.ro/anifx/index.html | AniFX]]16 <img src="images/AniFX16.png" width="16" height="16" border="0"> 32  <img src="images/AniFX32.png" width="32" height="32" border="0">
-    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" border="0"> 32  <img src="images/Dogwaffle32.png" width="32" height="32" border="0">
     * [[http://www.artweaver.de/ |Artweaver]] 16 <img src="images/artweaver16.png" width="16" height="16" border="0"> 32  <img src="images/artweaver32.png" width="32" height="32" border="0">
+    * [[http://www.crazybump.com/ | CrazyBump]] 16 <img src="images/CrazyBump16.png" width="16" height="16" border="0"> 32  <img src="images/CrazyBump32.png" width="32" height="32" border="0">
     * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]] 16 <img src="images/DDSConverter16.png" width="16" height="16" border="0"> 32  <img src="images/DDSConverter32.png" width="32" height="32" border="0">
+    * [[http://download.chip.eu/en/Deep-Paint-2.0_132831.html | DeepPaint]] 16 <img src="images/DeepPaint16.png" width="16" height="16" border="0"> 32  <img src="images/DeepPaint32.png" width="32" height="32" border="0">
+    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" border="0"> 32  <img src="images/Dogwaffle32.png" width="32" height="32" border="0">
     * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]] 16 <img src="images/Genetica16.png" width="16" height="16" border="0"> 32  <img src="images/Genetica32.png" width="32" height="32" border="0">
     * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]] 16 <img src="images/GeneticaViewer16.png" width="16" height="16" border="0"> 32  <img src="images/GeneticaViewer32.png" width="32" height="32" border="0">
     * [[http://www.gimp.org/downloads/ | GIMP]] 16 <img src="images/gimp16.png" width="16" height="16" border="0"> 32  <img src="images/gimp32.png" width="32" height="32" border="0">
@@ -305,16 +310,19 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://icofx.ro/index.html | IcoFX]] 16 <img src="images/IcoFX16.png" width="16" height="16" border="0"> 32  <img src="images/IcoFX32.png" width="32" height="32" border="0">
     * [[http://www.inkscape.org/ | Inkscape]] 16 <img src="images/Inkscape16.png" width="16" height="16" border="0"> 32  <img src="images/Inkscape32.png" width="32" height="32" border="0">
     * [[http://www.irfanview.com/ | Irfan View]] 16 <img src="images/IrfanView16.png" width="16" height="16" border="0"> 32  <img src="images/IrfanView32.png" width="32" height="32" border="0">
-    * [[http://www.xnview.com/ | XnView]] 16 <img src="images/XnView16.png" width="16" height="16" border="0"> 32 <img src="images/XnView32.png" width="32" height="32" border="0">
     * [[http://www.faststone.org/ | FastStone Image Viewer]] 16 <img src="images/FastStoneImageViewer16.png" width="16" height="16" border="0"> 32 <img src="images/FastStoneImageViewer32.png" width="32" height="32" border="0">
+    * [[http://mypaint.intilinux.com/ | MyPaint]] 16 <img src="images/MyPaint16.png" width="16" height="16" border="0"> 32  <img src="images/MyPaint32.png" width="32" height="32" border="0">
     * [[http://www.getpaint.net/download.html | Paint.NET]] 16 <img src="images/paint.net16.png" width="16" height="16" border="0"> 32  <img src="images/paint.net32.png" width="32" height="32" border="0">
-    * [[http://www.adobe.com/ | Photoshop]] 16 <img src="images/photoshop16.png" width="16" height="16" border="0"> 32  <img src="images/photoshop32.png" width="32" height="32" border="0">
-    * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="images/PixelStudioPro16.png" width="16" height="16" border="0"> 32  <img src="images/PixelStudioPro32.png" width="32" height="32" border="0">
-    * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="images/TwistedBrush16.png" width="16" height="16" border="0"> 32  <img src="images/TwistedBrush32.png" width="32" height="32" border="0">
-    * [[http://www.photoscape.org/ps/main/index.php | PhotoScape]] 16 <img src="images/PhotoScape16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoScape32.png" width="32" height="32" border="0">
+    * [[http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051 | PaintShop Photo Pro]] 16 <img src="images/PaintShopProX316.png" width="16" height="16" border="0"> 32  <img src="images/PaintShopProX332.png" width="32" height="32" border="0">
     * [[http://www.photobie.com/ | Photobie Design Studio]] 16 <img src="images/Photobie16.png" width="16" height="16" border="0"> 32  <img src="images/Photobie32.png" width="32" height="32" border="0">
     * [[http://www.photofiltre.com/ | PhotoFiltre]] 16 <img src="images/PhotoFiltre16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoFiltre32.png" width="32" height="32" border="0">
-    * [[http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051 | PaintShop Photo Pro]] 16 <img src="images/PaintShopProX316.png" width="16" height="16" border="0"> 32  <img src="images/PaintShopProX332.png" width="32" height="32" border="0">
+    * [[http://www.photoscape.org/ps/main/index.php | PhotoScape]] 16 <img src="images/PhotoScape16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoScape32.png" width="32" height="32" border="0">
+    * [[http://www.adobe.com/ | Photoshop]] 16 <img src="images/photoshop16.png" width="16" height="16" border="0"> 32  <img src="images/photoshop32.png" width="32" height="32" border="0">
+    * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="images/PixelStudioPro16.png" width="16" height="16" border="0"> 32  <img src="images/PixelStudioPro32.png" width="32" height="32" border="0">
+    * [[http://www.ne.jp/asahi/mighty/knight/index.html | Pixia]] 16 <img src="images/Pixia16.png" width="16" height="16" border="0"> 32  <img src="images/Pixia32.png" width="32" height="32" border="0">
+    * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="images/TwistedBrush16.png" width="16" height="16" border="0"> 32  <img src="images/TwistedBrush32.png" width="32" height="32" border="0">
+    * [[http://www.xnormal.net/ | xNormal]] 16 <img src="images/xNormal16.png" width="16" height="16" border="0"> 32 <img src="images/xNormal32.png" width="32" height="32" border="0">
+    * [[http://www.xnview.com/ | XnView]] 16 <img src="images/XnView16.png" width="16" height="16" border="0"> 32 <img src="images/XnView32.png" width="32" height="32" border="0">
   * __Audio Tools__
     * [[http://audacity.sourceforge.net/ | Audacity]] 16 <img src="images/audacity16.png" width="16" height="16" border="0"> 32  <img src="images/audacity32.png" width="32" height="32" border="0">
     * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]] 16 <img src="images/ABCAmberAudioConverter16.png" width="16" height="16" border="0"> 32  <img src="images/ABCAmberAudioConverter32.png" width="32" height="32" border="0">
@@ -2187,11 +2195,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
   * Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
+  * Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+* Saves Tab:
+  * Rename Save(s) command added.
+  * Rename Player command added
 * fix for launcher code which prevented launching in some cases (contributed by myk002)
 * fix for move/copy saves so that Default is not selectable if already in Default profile.
 * fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
 * Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
 * Backup/Restore settings options added (contributed by Gaticus)
+* Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
+* Ini Tweaking fixed to work fine with Nehrim.
+
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
