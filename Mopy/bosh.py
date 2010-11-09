@@ -130,7 +130,7 @@ allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
                   'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'ForceMerge'))
+                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'ForceMerge', 'MustBeActiveIfImported'))
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
@@ -9175,8 +9175,9 @@ class ConfigHelpers:
         log(_("This is a report on your currently active/merged mods."))
         #--Mergeable/NoMerge/Deactivate tagged mods
         shouldMerge = active & modInfos.mergeable
-        shouldDeactivateA = [x for x in modInfos.ordered if 'Deactivate' in modInfos[x].getBashTags()]
-        shouldDeactivateB = [x for x in modInfos.ordered if 'NoMerge' in modInfos[x].getBashTags()]
+        shouldDeactivateA = [x for x in active if 'Deactivate' in modInfos[x].getBashTags()]
+        shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags()]
+        shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
         for mod in tuple(shouldMerge):
             if 'NoMerge' in modInfos[mod].getBashTags():
                 shouldMerge.discard(mod)
@@ -9194,6 +9195,11 @@ class ConfigHelpers:
             log.setHeader(_("=== Deactivate Tagged Mods"))
             log(_("Following mods are tagged Deactivate and should be deactivate and imported into the bashed patch but are currently active."))
             for mod in sorted(shouldDeactivateA):
+                log('* __'+mod.s+'__')
+        if shouldActivateA:
+            log.setHeader(_("=== Mods that are inactive that should be active with your bashed patch configuration"))
+            log(_("Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported."))
+            for mod in sorted(shouldActivateA):
                 log('* __'+mod.s+'__')
         #--Missing/Delinquent Masters
         if showModList:
