@@ -27,6 +27,7 @@ import locale
 import os
 import re
 import shutil
+import stat
 import struct
 import sys
 import time
@@ -474,6 +475,8 @@ class Path(object):
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
+            # Clear ReadOnly flag if set
+            os.chmod(self.s,stat.S_IWRITE)
             shutil.rmtree(self._s)
 
     #--start, move, copy, touch, untemp
