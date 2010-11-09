@@ -329,7 +329,7 @@ reCsvExt  = re.compile(r'\.csv$',re.I)
 reINIExt  = re.compile(r'\.ini$',re.I)
 reQuoted  = re.compile(r'^"(.*)"$')
 reGroupHeader = re.compile(r'^(\+\+|==)')
-reTesNexus = re.compile(r'-(\d{4,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
+reTesNexus = re.compile(r'-(\d{4,6})(\.tessource)?(-bain)?(-\d{0,6}-\d{0,6})?\.(7z|zip|rar)$',re.I)
 reTESA = re.compile(r'-(\d{1,6})(\.tessource)?(-bain)?\.(7z|zip|rar)$',re.I)
 reSplitOnNonAlphaNumeric = re.compile(r'\W+')
 
@@ -9701,7 +9701,7 @@ class Installer(object):
     dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
     dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini'))
-    dataDirsMinus = set(('bash','obse','replacers','--')) #--Will be skipped even if hasExtraData == True.
+    dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
     skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
@@ -9781,6 +9781,10 @@ class Installer(object):
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']
+                for x in sDirs:
+                    if x.lower =='obse':
+                        if not settings['bash.installers.allowOBSEPlugins'] :
+                            sDirs[:] = [x for x in sDirs if x.lower() != 'obse']
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
                 if inisettings['KeepLog'] >= 1:
@@ -9803,6 +9807,9 @@ class Installer(object):
                 #print '...',sFile
                 ext = sFile[sFile.rfind('.'):].lower()
                 rpFile = rpDirJoin(sFile)
+                if ext == '.dll':
+                    print 'warning stuf - to be finalized'
+                    continue
                 if inModsRoot:
                     if ext in skipExts: continue
                     if not rsDir and sFile.lower() in bethFiles: continue

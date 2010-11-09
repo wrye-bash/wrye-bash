@@ -470,7 +470,7 @@ Bain assigns an install order to all packages. When packages are installed and/o
   * You can also use Ctrl-Up and Ctrl-Down to change the order of packages.  This preserves their relative load order without moving them as a block.
   * You can also re-order packages by dragging and dropping the package where you want in the load order.  This will only work if the list is sorted by 'Order'
   * A good simple starter ordering would be roughly this sample adjusted as desired:
-    * DCL
+    * DLC
     * Unofficial Patches
     * DarN
     * Sounds
@@ -2196,6 +2196,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * fix so that the end of the display of the number of packages does not get cut off.
   * Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
   * Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+  * Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
+  * Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
 * Saves Tab:
   * Rename Save(s) command added.
   * Rename Player command added
@@ -2206,7 +2208,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Backup/Restore settings options added (contributed by Gaticus)
 * Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
 * Ini Tweaking fixed to work fine with Nehrim.
-
+* [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow).
+  . Sculptris, Mudbox, Tabula, MyPaint, Pixia, DeepPaint, Crazy Bump, xNormal.
+  * Also improved 3dsMax icons (contributed by Metallicow).
+* Bash.ini typo fixes (contributed by Metallicow).
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
