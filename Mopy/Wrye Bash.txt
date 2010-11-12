@@ -2198,6 +2198,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
   * Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
   * Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
+  * New keyboard shortcuts added:
+    * Enter: Open archive/project.
+    * F2: Rename archive/project.
 * Saves Tab:
   * Rename Save(s) command added.
   * Rename Player command added

@@ -64,7 +64,6 @@ import os
 import random
 import re
 import shutil
-import stat
 import string
 import struct
 import sys
@@ -73,14 +72,6 @@ from operator import attrgetter,itemgetter
 import subprocess
 from subprocess import Popen, PIPE
 
-#-- To make commands executed with Popen hidden
-if os.name == 'nt':
-    startupinfo = subprocess.STARTUPINFO()
-    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except:
-        import _subprocess
-        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-
 #--Local
 import balt
 import bolt
@@ -88,6 +79,7 @@ import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 from bolt import _, LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
 from cint import *
+startupinfo = bolt.startupinfo
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -9188,16 +9180,16 @@ class ConfigHelpers:
                 log('* __'+mod.s+'__')
         if shouldDeactivateB:
             log.setHeader(_("=== NoMerge Tagged Mods"))
-            log(_("Following mods are tagged NoMerge and should be deactivate and imported into the bashed patch but are currently active."))
+            log(_("Following mods are tagged NoMerge and should be deactivated and imported into the bashed patch but are currently active."))
             for mod in sorted(shouldDeactivateB):
                 log('* __'+mod.s+'__')
         if shouldDeactivateA:
             log.setHeader(_("=== Deactivate Tagged Mods"))
-            log(_("Following mods are tagged Deactivate and should be deactivate and imported into the bashed patch but are currently active."))
+            log(_("Following mods are tagged Deactivate and should be deactivated and imported into the bashed patch but are currently active."))
             for mod in sorted(shouldDeactivateA):
                 log('* __'+mod.s+'__')
         if shouldActivateA:
-            log.setHeader(_("=== Mods that are inactive that should be active with your bashed patch configuration"))
+            log.setHeader(_("=== MustBeActiveIfImported Tagged Mods"))
             log(_("Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported."))
             for mod in sorted(shouldActivateA):
                 log('* __'+mod.s+'__')
@@ -9710,7 +9702,7 @@ class Installer(object):
     dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
-    skipExts = set(('.dll','.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
+    skipExts = set(('.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
     imageExts = set(('.gif','.jpg','.png'))
@@ -10588,7 +10580,8 @@ class InstallerConverter(object):
         result = ins.close()
         self.tempList.remove()
         # Clear ReadOnly flag if set
-        os.chmod(subTempDir.s,stat.S_IWRITE)
+        cmd = r'attrib -R "%s\*" /S /D' % (subTempDir.s)
+        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
         #--Done
@@ -10699,7 +10692,8 @@ class InstallerArchive(Installer):
         result = ins.close()
         self.tempList.remove()
         # Clear ReadOnly flag if set
-        os.chmod(self.tempDir.s,stat.S_IWRITE)
+        cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
         if result:
             raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
@@ -10749,7 +10743,8 @@ class InstallerArchive(Installer):
         count = 0
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
-        os.chmod(self.tempDir.s,stat.S_IWRITE)
+        cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
         for file in files:
             srcFull = tempDir.join(file)
             destFull = destDir.join(file)
@@ -15215,7 +15210,7 @@ class PatchFile(ModFile):
         if loadMods != None: self.loadMods = loadMods
         if mergeMods != None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
-        self.mergeSet = set(self.mergeMods)
+        self.mergeSet = set(self.mergeMods)|self.mergeSet
         self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet)
         self.allSet = set(self.allMods)
 
@@ -15510,13 +15505,15 @@ class CBash_PatchFile(CBashModFile):
         for patcher in self.patchers:
             patcher.initPatchFile(self,self.loadMods)
 
-    def setMods(self,loadMods=None,mergeMods=None):
+    def setMods(self,loadMods=None,mergeMods=None,forceMergeMods=None):
         """Sets mod lists and sets."""
         if loadMods != None: self.loadMods = loadMods
         if mergeMods != None: self.mergeMods = mergeMods
+        if forceMergeMods != None: self.forceMergeMods = forceMergeMods
+        self.forceMergeSet = set(forceMergeMods)
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
-        self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet)
+        self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet|self.forceMergeSet)
         self.allSet = set(self.allMods)
 
     def initData(self,progress):
@@ -15553,6 +15550,25 @@ class CBash_PatchFile(CBashModFile):
                     override = record.CopyAsOverride(self)
                     if override:
                         mergeIds.add(override.fid_long)
+                        
+    def forceMergeModFile(self,modFile,progress,doFilter,iiMode):
+        """Copies contents of modFile into self; as new records in the patch not as overrides including new records so can be dangerous!."""
+        badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
+        for blockType, block in modFile.aggregates.iteritems():
+            #--Make sure block type is also in read and write factories
+            for record in block:
+                if record.fid_long == badForm: continue
+                #--Include this record?
+                if hasattr(record, '_parentID'):
+                    if self.HasRecord(record._parentID) is None:
+                        #Copy the winning version of the parent over if it isn't in the patch
+                        parent = self.Collection.LookupRecords(record._parentID)
+                        if parent:
+                            if parent[0].GName == record.GName:
+                                parent[0].CopyAsNew(self.patchFile)
+                            else:
+                                parent[0].CopyAsOverride(self.patchFile)
+                new = record.CopyAsNew(self)
 
     def buildPatch(self,progress):
         """Scans load+merge mods."""
@@ -15569,6 +15585,9 @@ class CBash_PatchFile(CBashModFile):
             if modInfos[name].mtime < self.patchTime:
                 self.Collection.addMod(modInfos[name].getPath().stail)
         for name in self.mergeSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.Collection.addMergeMod(modInfos[name].getPath().stail)
+        for name in self.forceMergeSet:
             if modInfos[name].mtime < self.patchTime:
                 self.Collection.addMergeMod(modInfos[name].getPath().stail)
         for name in self.scanSet:
@@ -15610,6 +15629,7 @@ class CBash_PatchFile(CBashModFile):
             if modName in self.loadMods and 'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             isMerged = modName in self.mergeSet
+            isForceMerged = modName in self.forceMergeSet
             doFilter = isMerged and 'Filter' in bashTags
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
             iiMode = isMerged and bool(iiModeSet & bashTags)
@@ -15664,6 +15684,9 @@ class CBash_PatchFile(CBashModFile):
             if isMerged:
                 progress(index,_("%s\nMerging...") % modFile.GName.s)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
+            if isforceMerged:
+                progress(index,_("%s\nMerging...") % modFile.GName.s)
+                self.forceMergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
         #Finish the patch
@@ -16301,9 +16324,32 @@ class CBash_PatchMerger(CBash_ListPatcher):
         self.isActive = bool(self.srcMods)
         if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update during
-        #  their initPatchFile section, it's important that PatchMerger first or near first.
+        #  their initPatchFile section, it's important that PatchMerger runs first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcMods)
+#------------------------------------------------------------------------------
+class CBash_ForceMerger(CBash_ListPatcher):
+    """Merges specified patches into Bashed Patch."""
+    scanOrder = 12
+    editOrder = 12
+    group = _('General')
+    name = _('Force Merge Mods')
+    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'ForceMerge'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    unloadedText = ""
+##    allowUnloaded = True
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        if not self.isActive: return
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None,None,self.srcMods)
 #------------------------------------------------------------------------------
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -28376,8 +28422,6 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
             for eid in sorted(eids):
                 log('  * %s' % (eid))
         self.mod_eids = {}
-
-class CBash_ForceMerger: pass
 #------------------------------------------------------------------------------
 class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
