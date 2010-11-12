@@ -668,7 +668,7 @@
   <p class=list-2>&bull;&nbsp; You can also use Ctrl-Up and Ctrl-Down to change the order of packages.  This preserves their relative load order without moving them as a block.
   <p class=list-2>&bull;&nbsp; You can also re-order packages by dragging and dropping the package where you want in the load order.  This will only work if the list is sorted by 'Order'
   <p class=list-2>&bull;&nbsp; A good simple starter ordering would be roughly this sample adjusted as desired:
-    <p class=list-3>&bull;&nbsp; DCL
+    <p class=list-3>&bull;&nbsp; DLC
     <p class=list-3>&bull;&nbsp; Unofficial Patches
     <p class=list-3>&bull;&nbsp; DarN
     <p class=list-3>&bull;&nbsp; Sounds
@@ -2393,6 +2393,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; fix so that the end of the display of the number of packages does not get cut off.
   <p class=list-2>&bull;&nbsp; Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
   <p class=list-2>&bull;&nbsp; Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+  <p class=list-2>&bull;&nbsp; Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
+  <p class=list-2>&bull;&nbsp; Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
+  <p class=list-2>&bull;&nbsp; New keyboard shortcuts added:
+    <p class=list-3>&bull;&nbsp; Enter: Open archive/project.
+    <p class=list-3>&bull;&nbsp; F2: Rename archive/project.
 <p class=list-1>&bull;&nbsp; Saves Tab:
   <p class=list-2>&bull;&nbsp; Rename Save(s) command added.
   <p class=list-2>&bull;&nbsp; Rename Player command added
@@ -2403,7 +2408,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Backup/Restore settings options added (contributed by Gaticus)
 <p class=list-1>&bull;&nbsp; Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
 <p class=list-1>&bull;&nbsp; Ini Tweaking fixed to work fine with Nehrim.
-<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <a href="#LaunchButtons">Launch Buttons</a> for more applications are now supported via Bash.ini (contributed by Metallicow).
+  <p class=list-2>&nbsp;&nbsp; Sculptris, Mudbox, Tabula, MyPaint, Pixia, DeepPaint, Crazy Bump, xNormal.
+  <p class=list-2>&bull;&nbsp; Also improved 3dsMax icons (contributed by Metallicow).
+<p class=list-1>&bull;&nbsp; Bash.ini typo fixes (contributed by Metallicow).
 <p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)

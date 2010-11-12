@@ -27,12 +27,21 @@ import locale
 import os
 import re
 import shutil
-import stat
 import struct
 import sys
 import time
+import subprocess
+from subprocess import Popen, PIPE
 from types import *
 from binascii import crc32
+
+#-- To make commands executed with Popen hidden
+if os.name == 'nt':
+    startupinfo = subprocess.STARTUPINFO()
+    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    except:
+        import _subprocess
+        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
 # Localization ----------------------------------------------------------------
 reTrans = re.compile(r'^([ :=\.]*)(.+?)([ :=\.]*$)')
@@ -476,7 +485,8 @@ class Path(object):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
             # Clear ReadOnly flag if set
-            os.chmod(self.s,stat.S_IWRITE)
+            cmd = r'attrib -R "%s\*" /S /D' % (self._s)
+            ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
             shutil.rmtree(self._s)
 
     #--start, move, copy, touch, untemp
