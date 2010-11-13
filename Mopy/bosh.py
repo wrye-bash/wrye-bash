@@ -15210,7 +15210,7 @@ class PatchFile(ModFile):
         if loadMods != None: self.loadMods = loadMods
         if mergeMods != None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
-        self.mergeSet = set(self.mergeMods)|self.mergeSet
+        self.mergeSet = set(self.mergeMods)
         self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet)
         self.allSet = set(self.allMods)
 
@@ -15505,7 +15505,7 @@ class CBash_PatchFile(CBashModFile):
         for patcher in self.patchers:
             patcher.initPatchFile(self,self.loadMods)
 
-    def setMods(self,loadMods=None,mergeMods=None,forceMergeMods=None):
+    def setMods(self,loadMods=None,mergeMods=None,forceMergeMods=[]):
         """Sets mod lists and sets."""
         if loadMods != None: self.loadMods = loadMods
         if mergeMods != None: self.mergeMods = mergeMods
@@ -15554,10 +15554,16 @@ class CBash_PatchFile(CBashModFile):
     def forceMergeModFile(self,modFile,progress,doFilter,iiMode):
         """Copies contents of modFile into self; as new records in the patch not as overrides including new records so can be dangerous!."""
         badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
+        print modFile
+        print modFile.SCPT
         for blockType, block in modFile.aggregates.iteritems():
             #--Make sure block type is also in read and write factories
+            print blockType, block
             for record in block:
+                print record
                 if record.fid_long == badForm: continue
+                if hasattr(record, 'full'):
+                    print record.full
                 #--Include this record?
                 if hasattr(record, '_parentID'):
                     if self.HasRecord(record._parentID) is None:
@@ -15569,6 +15575,9 @@ class CBash_PatchFile(CBashModFile):
                             else:
                                 parent[0].CopyAsOverride(self.patchFile)
                 new = record.CopyAsNew(self)
+                print new
+        print self
+        print self.patchFile
 
     def buildPatch(self,progress):
         """Scans load+merge mods."""
@@ -15684,7 +15693,7 @@ class CBash_PatchFile(CBashModFile):
             if isMerged:
                 progress(index,_("%s\nMerging...") % modFile.GName.s)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
-            if isforceMerged:
+            if isForceMerged:
                 progress(index,_("%s\nMerging...") % modFile.GName.s)
                 self.forceMergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
