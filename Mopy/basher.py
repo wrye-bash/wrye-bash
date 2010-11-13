@@ -5800,7 +5800,7 @@ class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 
 ##class ForceMerger(bosh.ForceMerger,Patcher): pass
-class CBash_ForceMerger(bosh.CBash_ForceMerger,Patcher): pass
+class CBash_ForceMerger(bosh.CBash_ForceMerger,ListPatcher): pass
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
