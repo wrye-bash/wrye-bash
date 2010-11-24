@@ -13488,8 +13488,8 @@ class CompleteItemData:
         """Initialize."""
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
         self.type_attrs = {
-            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath', 'modPath','IsFood','IsNoAutoCalc','script','effects'), #TODO: proper effects export
-            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath','modPath','script','enchantment','IsNormal'),
+            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath', 'model','IsFood','IsNoAutoCalc','script','effects'), #TODO: proper effects export
+            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath','model','script','enchantment','IsNormal'),
             'APPA':('eid', 'full', 'weight', 'value', 'quality', 'iconPath'),
             'ARMO':('eid', 'full', 'weight', 'value', 'health', 'strength', 'maleIconPath', 'femaleIconPath'),
             'BOOK':('eid', 'full', 'weight', 'value', 'enchantPoints', 'iconPath'),
@@ -15509,7 +15509,6 @@ class CBash_PatchFile(CBashModFile):
         """Sets mod lists and sets."""
         if loadMods != None: self.loadMods = loadMods
         if mergeMods != None: self.mergeMods = mergeMods
-        if forceMergeMods != None: self.forceMergeMods = forceMergeMods
         self.forceMergeSet = set(forceMergeMods)
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
@@ -15555,15 +15554,11 @@ class CBash_PatchFile(CBashModFile):
         """Copies contents of modFile into self; as new records in the patch not as overrides including new records so can be dangerous!."""
         badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
         print modFile
-        print modFile.SCPT
         for blockType, block in modFile.aggregates.iteritems():
             #--Make sure block type is also in read and write factories
             print blockType, block
             for record in block:
-                print record
                 if record.fid_long == badForm: continue
-                if hasattr(record, 'full'):
-                    print record.full
                 #--Include this record?
                 if hasattr(record, '_parentID'):
                     if self.HasRecord(record._parentID) is None:
@@ -15576,8 +15571,6 @@ class CBash_PatchFile(CBashModFile):
                                 parent[0].CopyAsOverride(self.patchFile)
                 new = record.CopyAsNew(self)
                 print new
-        print self
-        print self.patchFile
 
     def buildPatch(self,progress):
         """Scans load+merge mods."""
@@ -16337,29 +16330,6 @@ class CBash_PatchMerger(CBash_ListPatcher):
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcMods)
 #------------------------------------------------------------------------------
-class CBash_ForceMerger(CBash_ListPatcher):
-    """Merges specified patches into Bashed Patch."""
-    scanOrder = 12
-    editOrder = 12
-    group = _('General')
-    name = _('Force Merge Mods')
-    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'ForceMerge'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-    unloadedText = ""
-##    allowUnloaded = True
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
-        if not self.isActive: return
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,None,self.srcMods)
-#------------------------------------------------------------------------------
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
@@ -16717,6 +16687,167 @@ class CBash_ImportPatcher(CBash_ListPatcher):
             importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
 
+#------------------------------------------------------------------------------
+class ForceMerger(ImportPatcher):
+    """Merges changes to graphics (models and icons)."""
+    name = _('Force Merge mods')
+    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!\nCurrently only supports force merging of Script and Quest Records.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'ForceMerge'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Needs Longs
+        self.longTypes = set(('SCPT','QUST'))
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in modInfos: continue
+            srcInfo = modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+            for master in masters:
+                if not master in modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
+                        if record.__getattribute__(attr).lower() != value.lower():
+                            break
+                        continue
+                    elif attr == 'model':
+                        try:
+                            if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
+                                break
+                            continue
+                        except:
+                            break #assume they are not equal (ie they aren't __both__ NONE)
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        id_data = None
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log("* %s: %d" % (type,count))
+class CBash_ForceMerger(CBash_ListPatcher):
+    """Merges specified patches into Bashed Patch."""
+    scanOrder = 12
+    editOrder = 12
+    group = _('General')
+    name = _('Force Merge Mods')
+    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!")
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'ForceMerge'
+    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    unloadedText = ""
+##    allowUnloaded = True
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = self.getConfigChecked()
+        self.isActive = bool(self.srcMods)
+        if not self.isActive: return
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None,None,self.srcMods)
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
