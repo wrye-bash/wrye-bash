@@ -7608,9 +7608,10 @@ class InstallerProject_Pack(InstallerLink):
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
-            isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
-            if isSolid:
-                blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
+            if not '-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
+                if isSolid:
+                    blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
         progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
         try:
             #--Pack
