@@ -10502,6 +10502,8 @@ class InstallerConverter(object):
                 solid = '-ms=on'
         else:
             solid = '-ms=off'
+        if inisettings['7zExtraCompressionArguments']:
+            solid += ' %s' % inisettings['7zExtraCompressionArguments']
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
@@ -10901,6 +10903,8 @@ class InstallerProject(Installer):
                     solid = '-ms=on'
             else:
                 solid = '-ms=off'
+        if inisettings['7zExtraCompressionArguments']:
+            solid += ' %s' % inisettings['7zExtraCompressionArguments']
         #--Dump file list
         out = self.tempList.open('w')
         if release:
@@ -29001,6 +29005,7 @@ def initDefaultSettings():
     inisettings['ShowTextureToolLaunchers'] = True
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
+    inisettings['7zExtraCompressionArguments'] = ''
     inisettings['Custom1txt'] = 'Not Set in INI'
     inisettings['Custom2txt'] = 'Not Set in INI'
     inisettings['Custom3txt'] = 'Not Set in INI'
@@ -29080,7 +29085,7 @@ def initOptions(bashIni):
                 if settingType is str:
                     compDefaultValue = compDefaultValue.lower()
                     compValue = compValue.lower()
-                    if compValue in (_('-option(s)'),_('tooltip text'),):
+                    if compValue in (_('-option(s)'),_('tooltip text'),_('default')):
                         compValue = compDefaultValue
                 if compValue != compDefaultValue:
     ##                print section
