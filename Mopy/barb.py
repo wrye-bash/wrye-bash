@@ -27,7 +27,7 @@ import cPickle
 import cStringIO
 from subprocess import Popen, PIPE
 
-import barg
+import bash
 import bosh
 import basher
 from bosh import startupinfo, dirs
@@ -36,7 +36,7 @@ from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, s
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
-# user cancelled operatioin
+# user cancelled operation
     def __init__(self,message=_('Cancelled')):
         BoltError.__init__(self,message)
 
@@ -274,10 +274,10 @@ class RestoreSettings(BaseBackupSettings):
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
         tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')
-        opts, args = barg.ParseArgs()
-        barg.SetUserPath(tmpBash.s,opts.get('-u'))
+        opts, args = bash.ParseArgs()
+        bash.SetUserPath(tmpBash.s,opts.get('-u'))
 
-        bashIni = barg.GetBashIni(tmpBash.s)
+        bashIni = bash.GetBashIni(tmpBash.s)
         bosh.initDirs(bashIni,opts.get('-p'),opts.get('-l'),opts.get('-o'))
 
         # restore all the settings files
