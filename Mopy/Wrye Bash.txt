@@ -191,7 +191,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * __Python 2.6__ 
     * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
     * Download link: [[http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi|Python 2.6.6]]
-  * __wxPython 2.8.10.1 ANSI__  
+  * __wxPython 2.8.11.0 ANSI__  
     * Python supports several different GUI libraries. Wrye Bash uses wxPython.
     * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe|wxPython 2.8.11.0 ANSI for Python 2.6]]. 
   * __PyWin32__
@@ -207,7 +207,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * Wrye Python does **not** have an uninstall feature. Instead, run uninstall for separate components. If you're uninstalling everything, then uninstall python ~~last~~.
   * After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
 * Alternate Python Installations
-  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), python 2.6, wxPython 2.8.10.1, etc. are the preferred versions.
+  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), python 2.6, wxPython 2.8.11.0, etc. are the preferred versions.
   * Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.
 
 == Help! ======================================================================
@@ -454,7 +454,7 @@ Bain will skip over (never install) certain types of files in the package.
 * __Directory Skipping__
 . Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon') or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
 * __Extension Skipping__
-. Bain will skip files with certain extensions - mostly executables (exe, dll, dlx) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
+. Bain will skip files with certain extensions - mostly executables (exe, dll (unless in the OBSE/plugins directory and then only with a large warning), dlx) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
 * __Other Skips__
 . There are a few options in package/header menus to skip certain file types; voices, distandLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
 
@@ -2184,7 +2184,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 291 [12/12/2010] [Gaticus,myk002,PacificMorrowind]
+=== 291 [12/12/2010] [Gaticus,myk002,PacificMorrowind,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
@@ -2201,6 +2201,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New keyboard shortcuts added:
     * Enter: Open archive/project.
     * F2: Rename archive/project.
+  * new ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
+  * 2 new skip options: Skip Meshes\Landscape\Lod and Skip Textures\Landscapelod\Generated (names to be improved)
 * Saves Tab:
   * Rename Save(s) command added.
   * Rename Player command added

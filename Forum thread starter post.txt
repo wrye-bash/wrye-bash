@@ -9,8 +9,8 @@
 [b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1129495-relz-wrye-bash-thread-53][RELZ] Wrye Bash #53[/url]
 [b]Requirements[/b]:
 [list]
-[*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url], [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxpython 2.8.11.0 ansi[/url], [url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]ComTypes[/url], [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url], and [url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url].
-(Probably best to just download Wrye Python 03 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] unless you like to customize your install).
+[*]It's easiest to just download the WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] unless you like to customize your install.
+([url="http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi"]Python 2.6.5[/url] or [url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url]), [url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxpython 2.8.11.0 ansi[/url], [url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]ComTypes[/url], [url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url], and [url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url]
 Older/Newer versions _may_ work but those are probably best and what most of use (and is done the most testing with).
 [/list]
 
