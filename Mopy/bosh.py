@@ -9779,10 +9779,10 @@ class Installer(object):
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']
-                for x in sDirs:
-                    if x.lower =='obse':
-                        if not settings['bash.installers.allowOBSEPlugins'] :
-                            sDirs[:] = [x for x in sDirs if x.lower() != 'obse']
+                #for x in sDirs:
+                #    if x.lower =='obse':
+                if not settings['bash.installers.allowOBSEPlugins'] :
+                    sDirs[:] = [x for x in sDirs if x.lower() != 'obse']
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
                 if inisettings['KeepLog'] >= 1:
@@ -9951,6 +9951,8 @@ class Installer(object):
         skipDocs = settings['bash.installers.skipDocs']
         skipImages = settings['bash.installers.skipImages']
         skipDistantLOD = settings['bash.installers.skipDistantLOD']
+        skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
+        skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -10010,6 +10012,10 @@ class Installer(object):
             if fileEndsWith(('thumbs.db','desktop.ini')):
                 continue #--Silent skip
             elif skipDistantLOD and fileStartsWith('distantlod'):
+                continue
+            elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
+                continue
+            elif skipLandscapeLODTextures and fileStartsWith(r'textures\landscapelod\generated'):
                 continue
             elif skipVoices and fileStartsWith('sound\\voice'):
                 continue

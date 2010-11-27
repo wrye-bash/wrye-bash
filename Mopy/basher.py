@@ -198,6 +198,8 @@ settingDefaults = {
     'bash.installers.skipImages':False,
     'bash.installers.skipDocs':False,
     'bash.installers.skipDistantLOD':False,
+    'bash.installers.skipLandscapeLODMeshes':False,
+    'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.sortProjects':True,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
@@ -6601,6 +6603,38 @@ class Installers_SkipDistantLOD(Link):
             installer.refreshDataSizeCrc()
         self.data.refresh(what='NS')
         self.gTank.RefreshUI()
+#------------------------------------------------------------------------------
+class Installers_skipLandscapeLODMeshes(Link):
+    """Toggle skipLandscapeLODMeshes setting and update."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip Meshes\Landscape\Lod'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.skipLandscapeLODMeshes'])
+
+    def Execute(self,event):
+        """Handle selection."""
+        settings['bash.installers.skipLandscapeLODMeshes'] ^= True
+        for installer in self.data.itervalues():
+            installer.refreshDataSizeCrc()
+        self.data.refresh(what='NS')
+        self.gTank.RefreshUI()
+#------------------------------------------------------------------------------
+class Installers_skipLandscapeLODTextures(Link):
+    """Toggle skipDistantLOD setting and update."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip Textures\Landscapelod\Generated'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.skipLandscapeLODTextures'])
+
+    def Execute(self,event):
+        """Handle selection."""
+        settings['bash.installers.skipLandscapeLODTextures'] ^= True
+        for installer in self.data.itervalues():
+            installer.refreshDataSizeCrc()
+        self.data.refresh(what='NS')
+        self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(Link):
@@ -12708,10 +12742,13 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
+    InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_SkipScreenshots())
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
+    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
+    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(User_BackupSettings())
     InstallersPanel.mainMenu.append(User_RestoreSettings())
