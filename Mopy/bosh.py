@@ -22131,6 +22131,111 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
+    """Silences and invisibleates the Script Effect."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Magic: Script Effect Silencer"),
+            _('Script Effect willl be silenced and have no graphics..'),
+            'SilentScriptEffect',
+            (_('0'),    0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreMgef,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreMgef,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.MGEF
+        id_records = patchBlock.id_records
+        modFile.convertToLongFids(('MGEF',))
+        for record in modFile.MGEF.getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid in id_records: continue
+            if record.eid != 'SEFF': continue
+            patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        nullRef = (GPath('Oblivion.esm'),0)
+        silentattrs = {
+            'model' : None,
+            'projectileSpeed' : 9999,
+            'light' : nullRef,
+            'effectShader' : nullRef,
+            'enchantEffect' : nullRef,
+            'castingSound' : nullRef,
+            'boltSound' : nullRef,
+            'hitSound' : nullRef,
+            'areaSound' : nullRef}
+        keep = patchFile.getKeeper()
+        for record in patchFile.MGEF.records:
+            if record.eid != 'SEFF' or not record.longFids: continue
+            record.flags.noHitEffect = True
+            for attr in silentattrs:
+                if getattr(record,attr) != silentattrs[attr]:
+                    setattr(record,attr,silentattrs[attr])
+                    keep(record.fid)
+        #--Log
+        log.setHeader(_('=== Magic: Script Effect Silencer'))
+        log(_('Script Effect silenced.'))
+class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
+    """Reweighs standard arrows down to 0.1."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Magic: Script Effect Silencer')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,True,_("Magic: Script Effect Silencer"),
+             _('Script Effect willl be silenced and have no graphics..'),
+            'SilentScriptEffect',
+            (_('0'),    0),
+            )
+
+    def getTypes(self):
+        return ['MGEF']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        nullRef = (GPath('Oblivion.esm'),0)
+        silentattrs = {
+            'model' : None,
+            'projectileSpeed' : 9999,
+            'light' : nullRef,
+            'effectShader' : nullRef,
+            'enchantEffect' : nullRef,
+            'castingSound' : nullRef,
+            'boltSound' : nullRef,
+            'hitSound' : nullRef,
+            'areaSound' : nullRef,
+            'noHitEffect' : True}
+        if record.eid == 'SEFF':
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for attr in silentattrs:
+                    if getattr(override,attr) != silentattrs[attr]:
+                        setattr(override,attr,silentattrs[attr])
+                record.UnloadRecord()
+                record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        log.setHeader(_('=== Magic: Script Effect Silencer'))
+        log(_('Script Effect silenced.'))
+#------------------------------------------------------------------------------
 
 class AssortedTweak_HarvestChance(MultiTweakItem):
     """Sets Harvest Chances."""
@@ -22498,6 +22603,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
+        AssortedTweak_ScriptEffectSilencer(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -22565,6 +22671,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_WindSpeed(),
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
+        CBash_AssortedTweak_ScriptEffectSilencer(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
