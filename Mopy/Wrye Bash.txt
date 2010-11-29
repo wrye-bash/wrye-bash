@@ -2189,8 +2189,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
     * Quiet Feet patcher added.
+    * Irresponsible Creatures tweaker added (thanks to Joben for the idea).
   * Tweak Assorted:
     * another skip added to All Clothes Playable patcher
+    * Script Effect Silencer added.
   * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
@@ -2202,7 +2204,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Enter: Open archive/project.
     * F2: Rename archive/project.
   * new ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
-  * 2 new skip options: Skip Meshes\Landscape\Lod and Skip Textures\Landscapelod\Generated (names to be improved)
+  * 3 new skip options: Skip Lod Meshes, Skip Lod Textures (Normals) and Skip Lod Textures (Colour maps).
+  * 7zip updated to version 9.20
 * Saves Tab:
   * Rename Save(s) command added.
   * Rename Player command added
