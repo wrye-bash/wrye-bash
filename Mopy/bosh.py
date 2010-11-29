@@ -9953,6 +9953,7 @@ class Installer(object):
         skipDistantLOD = settings['bash.installers.skipDistantLOD']
         skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
         skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
+        skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODormals']
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -10015,8 +10016,11 @@ class Installer(object):
                 continue
             elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
                 continue
-            elif skipLandscapeLODTextures and fileStartsWith(r'textures\landscapelod\generated'):
-                continue
+            elif fileStartsWith(r'textures\landscapelod\generated'):
+                if skipLandscapeLODNormals and fileEndswith(r'_fn.dds'):
+                    continue
+                elif skipLandscapeLODTextures and not fileEndswith(r'_fn.dds'):
+                    continue
             elif skipVoices and fileStartsWith('sound\\voice'):
                 continue
             elif skipScreenshots and fileStartsWith('screenshots'):

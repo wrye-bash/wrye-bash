@@ -200,6 +200,7 @@ settingDefaults = {
     'bash.installers.skipDistantLOD':False,
     'bash.installers.skipLandscapeLODMeshes':False,
     'bash.installers.skipLandscapeLODTextures':False,
+    'bash.installers.skipLandscapeLODNormals':False,
     'bash.installers.sortProjects':True,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
@@ -6608,7 +6609,7 @@ class Installers_skipLandscapeLODMeshes(Link):
     """Toggle skipLandscapeLODMeshes setting and update."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip Meshes\Landscape\Lod'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Meshes'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.skipLandscapeLODMeshes'])
 
@@ -6624,13 +6625,30 @@ class Installers_skipLandscapeLODTextures(Link):
     """Toggle skipDistantLOD setting and update."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip Textures\Landscapelod\Generated'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Textures'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.skipLandscapeLODTextures'])
 
     def Execute(self,event):
         """Handle selection."""
         settings['bash.installers.skipLandscapeLODTextures'] ^= True
+        for installer in self.data.itervalues():
+            installer.refreshDataSizeCrc()
+        self.data.refresh(what='NS')
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installers_skipLandscapeLODNormals(Link):
+    """Toggle skipDistantLOD setting and update."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Normals'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.skipLandscapeLODNormals'])
+
+    def Execute(self,event):
+        """Handle selection."""
+        settings['bash.installers.skipLandscapeLODNormals'] ^= True
         for installer in self.data.itervalues():
             installer.refreshDataSizeCrc()
         self.data.refresh(what='NS')
@@ -12749,6 +12767,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
+    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(User_BackupSettings())
     InstallersPanel.mainMenu.append(User_RestoreSettings())
