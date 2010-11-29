@@ -9953,7 +9953,7 @@ class Installer(object):
         skipDistantLOD = settings['bash.installers.skipDistantLOD']
         skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
         skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
-        skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODormals']
+        skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -26308,6 +26308,85 @@ class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._ModName = override._ModName
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
+class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
+    """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_('Irresponsible Creatures'),
+            _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
+            'whatbadguarddogs',
+            (_('All Creatures'), 'all'),
+            (_('Only Horses'), 'mounts'),
+            )
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        chosen = self.choiceValues[self.chosen][0]
+        for record in patchFile.CREA.records:
+            if record.responsibility == 0: return
+            if chosen == 'all':
+                record.responsibility = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+            else: #really is: "if chosen == 'mounts':", but less cpu to do it as else.
+                if record.creatureType == 4:
+                    record.responsibility = 0
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===Irresponsible Creatures''))
+        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_IrresponsibleCreatures(CBash_MultiTweakItem):
+    """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("Irresponsible Creatures")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_('Irresponsible Creatures'),
+            _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
+            'whatbadguarddogs',
+            (_('All Creatures'), 'all'),
+            (_('Only Horses'), 'mounts'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['CREA']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        chosen = self.choiceValues[self.chosen][0]
+        if record.resposibility == 0: return
+        if not chosen == 'all':
+            if record.creatureType != 4: return
+        override = record.CopyAsOverride(self.patchFile)
+        if override:
+            override.responsibility = 0
+            mod_count = self.mod_count
+            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            record.UnloadRecord()
+            record._ModName = override._ModName
 
     def buildPatchLog(self,log):
         """Will write to log."""
