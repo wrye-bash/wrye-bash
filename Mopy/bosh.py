@@ -2960,7 +2960,7 @@ class MreMgef(MelRecord):
         MelString('ICON','iconPath'),
         MelModel(),
         MelMgefData('DATA','IfIiiH2sIf6I2f',
-            (_flags,'flags'),'baseCost',(FID,'associated'),'school','resistValue','unk1',
+            (_flags,'flags'),'baseCost',(FID,'associated'),'school','resistValue','numCounters',
             ('unused1',null2),(FID,'light'),'projectileSpeed',(FID,'effectShader'),(FID,'enchantEffect',0),
             (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),(FID,'areaSound',0),
             ('cefEnchantment',0.0),('cefBarter',0.0)),
