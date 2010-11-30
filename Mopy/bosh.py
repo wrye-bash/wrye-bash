@@ -26350,7 +26350,7 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Irresponsible Creatures''))
+        log.setHeader(_('===Irresponsible Creatures'))
         log(_('* %d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
