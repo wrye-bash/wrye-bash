@@ -294,6 +294,9 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]] 16 <img src="images/Milkshape3D16.png" width="16" height="16" border="0"> 32  <img src="images/Milkshape3D32.png" width="32" height="32" border="0">
     * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&id=13565063 | Mudbox]] 16 <img src="images/Mudbox16.png" width="16" height="16" border="0"> 32  <img src="images/Mudbox32.png" width="32" height="32" border="0">
     * [[http://www.sculptris.com | Sculptris]] 16 <img src="images/Sculptris16.png" width="16" height="16" border="0"> 32  <img src="images/Sculptris32.png" width="32" height="32" border="0">
+    * [[http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&siteID=123112 | Softimage Mod Tool]] 16 <img src="images/SoftimageModTool16.png" width="16" height="16" border="0"> 32  <img src="images/SoftimageModTool32.png" width="32" height="32" border="0">
+    * [[http://www.speedtree.com/ | SpeedTree]] 16 <img src="images/SpeedTree16.png" width="16" height="16" border="0"> 32  <img src="images/SpeedTree32.png" width="32" height="32" border="0">
+    * [[http://www.frecle.net/index.php?show=treed.about | Tree[d]]] 16 <img src="images/Treed16.png" width="16" height="16" border="0"> 32  <img src="images/Treed32.png" width="32" height="32" border="0">
     * [[http://www.wings3d.com/ | Wings3D]] 16 <img src="images/Wings3D16.png" width="16" height="16" border="0"> 32  <img src="images/Wings3D32.png" width="32" height="32" border="0">
     * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="images/nifskope16.png" width="16" height="16" border="0"> 32 <img src="images/nifskope32.png" width="32" height="32" border="0"> 
   * __Texture Tools__
@@ -317,9 +320,11 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.photobie.com/ | Photobie Design Studio]] 16 <img src="images/Photobie16.png" width="16" height="16" border="0"> 32  <img src="images/Photobie32.png" width="32" height="32" border="0">
     * [[http://www.photofiltre.com/ | PhotoFiltre]] 16 <img src="images/PhotoFiltre16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoFiltre32.png" width="32" height="32" border="0">
     * [[http://www.photoscape.org/ps/main/index.php | PhotoScape]] 16 <img src="images/PhotoScape16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoScape32.png" width="32" height="32" border="0">
+    * [[http://www.mediachance.com/pseam/ | PhotoSEAM]] 16 <img src="images/PhotoSEAM16.png" width="16" height="16" border="0"> 32  <img src="images/PhotoSEAM32.png" width="32" height="32" border="0">
     * [[http://www.adobe.com/ | Photoshop]] 16 <img src="images/photoshop16.png" width="16" height="16" border="0"> 32  <img src="images/photoshop32.png" width="32" height="32" border="0">
     * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="images/PixelStudioPro16.png" width="16" height="16" border="0"> 32  <img src="images/PixelStudioPro32.png" width="32" height="32" border="0">
     * [[http://www.ne.jp/asahi/mighty/knight/index.html | Pixia]] 16 <img src="images/Pixia16.png" width="16" height="16" border="0"> 32  <img src="images/Pixia32.png" width="32" height="32" border="0">
+    * [[http://www.texturemaker.com/download.php | TextureMaker]] 16 <img src="images/TextureMaker16.png" width="16" height="16" border="0"> 32  <img src="images/TextureMaker32.png" width="32" height="32" border="0">
     * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="images/TwistedBrush16.png" width="16" height="16" border="0"> 32  <img src="images/TwistedBrush32.png" width="32" height="32" border="0">
     * [[http://www.xnormal.net/ | xNormal]] 16 <img src="images/xNormal16.png" width="16" height="16" border="0"> 32 <img src="images/xNormal32.png" width="32" height="32" border="0">
     * [[http://www.xnview.com/ | XnView]] 16 <img src="images/XnView16.png" width="16" height="16" border="0"> 32 <img src="images/XnView32.png" width="32" height="32" border="0">
@@ -339,6 +344,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://filezilla-project.org/ | Filezilla]] 16 <img src="images/FileZilla16.png" width="16" height="16" border="0"> 32  <img src="images/FileZilla32.png" width="32" height="32" border="0">
     * [[http://www.egg-of-time.us/portal/index.php?option=com_content&view=article&id=1825 | Egg Translator]] 16 <img src="images/EggTranslator16.png" width="16" height="16" border="0"> 32  <img src="images/EggTranslator32.png" width="32" height="32" border="0">
     * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]] 16 <img src="images/RADVideoTools16.png" width="16" height="16" border="0"> 32  <img src="images/RADVideoTools32.png" width="32" height="32" border="0">
+    * [[http://www.filehippo.com/download_winsnap/ | WinSnap]] 16 <img src="images/WinSnap16.png" width="16" height="16" border="0"> 32  <img src="images/WinSnap32.png" width="32" height="32" border="0">
 
   * 18 Custom buttons
     * <img src="images/Custom116.png" width="16" height="16" border="0"> <img src="images/Custom216.png" width="16" height="16" border="0"> <img src="images/Custom316.png" width="16" height="16" border="0"> <img src="images/Custom416.png" width="16" height="16" border="0"> <img src="images/Custom516.png" width="16" height="16" border="0"> <img src="images/Custom616.png" width="16" height="16" border="0"> <img src="images/Custom716.png" width="16" height="16" border="0"> <img src="images/Custom816.png" width="16" height="16" border="0"> <img src="images/Custom916.png" width="16" height="16" border="0"> <img src="images/Custom1016.png" width="16" height="16" border="0"> <img src="images/Custom1116.png" width="16" height="16" border="0"> <img src="images/Custom1216.png" width="16" height="16" border="0"> <img src="images/Custom1316.png" width="16" height="16" border="0"> <img src="images/Custom1416.png" width="16" height="16" border="0"> <img src="images/Custom1516.png" width="16" height="16" border="0"> <img src="images/Custom1616.png" width="16" height="16" border="0"> <img src="images/Custom1716.png" width="16" height="16" border="0"> <img src="images/Custom1816.png" width="16" height="16" border="0">
@@ -2217,8 +2223,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
 * Ini Tweaking fixed to work fine with Nehrim.
 * [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow).
-  . Sculptris, Mudbox, Tabula, MyPaint, Pixia, DeepPaint, Crazy Bump, xNormal.
-  * Also improved 3dsMax icons (contributed by Metallicow).
+  . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
+  * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
 * Bash.ini typo fixes (contributed by Metallicow).
 
 === 290 [15/10/2010] [PacificMorrowind]

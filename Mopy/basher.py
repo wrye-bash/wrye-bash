@@ -12273,6 +12273,21 @@ def InitStatusBar():
                 bosh.tooldirs['Sculptris'],
                 Image(r'images/Sculptris'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Sculptris")))
+        BashStatusBar.buttons.append( #Softimage Mod Tool
+            App_Button(
+                (bosh.tooldirs['SoftimageModTool'],'-mod')
+                Image(r'images/SoftimageModTool'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Softimage Mod Tool")))
+        BashStatusBar.buttons.append( #SpeedTree
+            App_Button(
+                bosh.tooldirs['SpeedTree'],
+                Image(r'images/SpeedTree'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch SpeedTree")))
+        BashStatusBar.buttons.append( #Tree[d]
+            App_Button(
+                bosh.tooldirs['Treed'],
+                Image(r'images/Treed'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Tree\[d\]")))
         BashStatusBar.buttons.append( #Wings3D
             App_Button(
                 bosh.tooldirs['Wings3D'],
@@ -12380,6 +12395,11 @@ def InitStatusBar():
                 bosh.tooldirs['PhotoScape'],
                 Image(r'images/PhotoScape'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch PhotoScape")))
+        BashStatusBar.buttons.append( #PhotoSEAM
+            App_Button(
+                bosh.tooldirs['PhotoSEAM'],
+                Image(r'images/PhotoSEAM'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch PhotoSEAM")))
         BashStatusBar.buttons.append( #Photobie Design Studio
             App_Button(
                 bosh.tooldirs['Photobie'],
@@ -12400,6 +12420,11 @@ def InitStatusBar():
                 bosh.tooldirs['Pixia'],
                 Image(r'images/Pixia'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Pixia")))
+        BashStatusBar.buttons.append( #TextureMaker
+            App_Button(
+                bosh.tooldirs['TextureMaker'],
+                Image(r'images/TextureMaker'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch TextureMaker")))
         BashStatusBar.buttons.append( #Twisted Brush
             App_Button(
                 bosh.tooldirs['TwistedBrush'],
@@ -12486,6 +12511,11 @@ def InitStatusBar():
             bosh.tooldirs['RADVideo'],
             Image(r'images/RADVideoTools'+bosh.inisettings['IconSize']+'.png'),
             _("Launch RAD Video Tools")))
+    BashStatusBar.buttons.append( #WinSnap
+        App_Button(
+            bosh.tooldirs['WinSnap'],
+            Image(r'images/WinSnap'+bosh.inisettings['IconSize']+'.png'),
+            _("Launch WinSnap")))
     if bosh.inisettings['Custom1opt']:
         BashStatusBar.buttons.append(
             App_Button(
