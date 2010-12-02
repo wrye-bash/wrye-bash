@@ -29171,6 +29171,12 @@ def initDefaultTools():
     tooldirs['DeepPaint'] = GPath(r'C:\Program Files\Right Hemisphere\Deep Paint\DeepPaint.exe')
     tooldirs['CrazyBump'] = GPath(r'C:\Program Files\Crazybump\CrazyBump.exe')
     tooldirs['xNormal'] = GPath(r'C:\Program Files\Santiago Orgaz\xNormal\3.17.3\x86\xNormal.exe')
+    tooldirs['SoftimageModTool'] = GPath(r'C:\Softimage\Softimage_Mod_Tool_7.5\Application\bin\XSI.bat')
+    tooldirs['SpeedTree'] = GPath(r'C:\not\a\valid\path.exe')
+    tooldirs['Treed'] = GPath(r'C:\Program Files\gile[s]\plugins\tree[d]\tree[d].exe')
+    tooldirs['WinSnap'] = GPath(r'C:\Program Files\WinSnap\WinSnap.exe')
+    tooldirs['PhotoSEAM'] = GPath(r'C:\Program Files\PhotoSEAM\PhotoSEAM.exe')
+    tooldirs['TextureMaker'] = GPath(r'C:\Program Files\Texture Maker\texturemaker.exe')
     tooldirs['Custom1'] = undefinedPath
     tooldirs['Custom2'] = undefinedPath
     tooldirs['Custom3'] = undefinedPath
