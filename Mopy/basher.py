@@ -201,6 +201,7 @@ settingDefaults = {
     'bash.installers.skipLandscapeLODMeshes':False,
     'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.skipLandscapeLODNormals':False,
+    'bash.installers.allowOBSEPlugins':False,
     'bash.installers.sortProjects':True,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
@@ -6655,6 +6656,24 @@ class Installers_skipLandscapeLODNormals(Link):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
+class Installers_enableInstallationofOBSEdlls (Link):
+    """Toggle skipDistantLOD setting and update."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Enable installation of OBSE plugins'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.allowOBSEPlugins'])
+        bosh.installersWindow = self.gTank
+
+    def Execute(self,event):
+        """Handle selection."""
+        settings['bash.installers.allowOBSEPlugins'] ^= True
+        for installer in self.data.itervalues():
+            installer.refreshDataSizeCrc()
+        self.data.refresh(what='NS')
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
 class Installers_SortActive(Link):
     """Sort by type."""
     def AppendToMenu(self,menu,window,data):
@@ -12275,7 +12294,7 @@ def InitStatusBar():
                 _("Launch Sculptris")))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
-                (bosh.tooldirs['SoftimageModTool'],'-mod')
+                (bosh.tooldirs['SoftimageModTool'],'-mod'),
                 Image(r'images/SoftimageModTool'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch Softimage Mod Tool")))
         BashStatusBar.buttons.append( #SpeedTree
@@ -12791,6 +12810,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
     InstallersPanel.mainMenu.append(SeparatorLink())
+    InstallersPanel.mainMenu.append(Installers_enableInstallationofOBSEdlls())
     InstallersPanel.mainMenu.append(Installers_SkipScreenshots())
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
