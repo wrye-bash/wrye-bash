@@ -114,6 +114,7 @@ readExts = set(('.rar',))
 readExts.update(set(writeExts))
 noSolidExts = set(('.zip',))
 settings  = None
+installersWindow = None
 
 allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
                   'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent',
@@ -9692,7 +9693,7 @@ class Installer(object):
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
         'skipVoices','espmNots','isSolid','blockSize')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap')
+        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap','goodDlls', 'badDlls')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
@@ -9779,9 +9780,7 @@ class Installer(object):
                     sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
                 if settings['bash.installers.skipScreenshots']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']
-                #for x in sDirs:
-                #    if x.lower =='obse':
-                if not settings['bash.installers.allowOBSEPlugins'] :
+                if not settings['bash.installers.allowOBSEPlugins']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'obse']
                 if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
                     sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
@@ -9802,12 +9801,8 @@ class Installer(object):
             rpDirJoin = rpDir.join
             apDirJoin = apDir.join
             for sFile in sFiles:
-                #print '...',sFile
                 ext = sFile[sFile.rfind('.'):].lower()
                 rpFile = rpDirJoin(sFile)
-                if ext == '.dll':
-                    print 'warning stuf - to be finalized'
-                    continue
                 if inModsRoot:
                     if ext in skipExts: continue
                     if not rsDir and sFile.lower() in bethFiles: continue
@@ -9884,6 +9879,8 @@ class Installer(object):
         self.skipDirFiles = set()
         self.espms = set()
         self.unSize = 0
+        self.goodDlls = []
+        self.badDlls = []
         #--Volatile: set by refreshStatus
         self.status = 0
         self.underrides = set()
@@ -9969,6 +9966,7 @@ class Installer(object):
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
         skipExtFilesAdd = skipExtFiles.add
+        goodDlls, badDlls = self.goodDlls, self.badDlls
         espms = self.espms
         espmsAdd = espms.add
         splitter = bolt.Path.mbSplit
@@ -10034,6 +10032,18 @@ class Installer(object):
                 continue
             elif fileStartsWith('--'):
                 continue
+            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse'):
+                continue
+            elif fileExt == '.dll':
+                if not fileStartsWith('obse\\'):
+                        continue
+                if full in badDlls: continue
+                if full not in goodDlls:
+                    message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
+                    if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
+                        badDlls.append(full)
+                        continue
+                    goodDlls.append(full)
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFilesAdd(full)
@@ -26354,7 +26364,7 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
         log(_('* %d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_IrresponsibleCreatures(CBash_MultiTweakItem):
+class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
     scanOrder = 32
     editOrder = 32
@@ -26410,6 +26420,7 @@ class TweakActors(MultiTweaker):
         AsIntendedImpsPatcher(),
         AsIntendedBoarsPatcher(),
         QuietFeetPatcher(),
+        IrresponsibleCreaturesPatcher()
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -26454,6 +26465,7 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_AsIntendedImpsPatcher(),
         CBash_AsIntendedBoarsPatcher(),
         CBash_QuietFeetPatcher(),
+        CBash_IrresponsibleCreaturesPatcher(),
         #RWALKNPCAnimationPatcher(),
         #SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -29199,7 +29211,7 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['ScriptFileExt']='.txt'
-    inisettings['KeepLog'] = 0
+    inisettings['KeepLog'] = 1
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
     inisettings['EnableWizard'] = False
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
