@@ -4725,9 +4725,9 @@ class BashApp(wx.App):
         progress.Update(40,_("Initializing IniInfos"))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        progress.Update(55,_("Initializing BSAInfos"))
-        bosh.BSAInfos = bosh.BSAInfos()
-        bosh.BSAInfos.refresh()
+        #progress.Update(55,_("Initializing BSAInfos"))
+        #bosh.BSAInfos = bosh.BSAInfos()
+        #bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
         if not firstBashed:
@@ -11790,7 +11790,7 @@ class App_Button(Link):
                 self.jar.head.setcwd()
                 try:
                     os.spawnv(os.P_NOWAIT,self.java.s,(self.java.stail,'-jar',self.jar.stail,self.appArgs))
-                except Exception as error:
+                except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
@@ -11813,7 +11813,7 @@ class App_Button(Link):
                 exePath.head.setcwd()
                 try:
                     os.spawnv(os.P_NOWAIT,exePath.s,exeArgs)
-                except Exception as error:
+                except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
@@ -11824,7 +11824,7 @@ class App_Button(Link):
             else:
                 try:
                     os.startfile(self.exePath.s, (str(self.exeArgs))[2:-3])
-                except Exception as error:
+                except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
                     print _("Used Arguments: "), exeArgs
@@ -11911,7 +11911,7 @@ class App_BOSS(App_Button):
                 bosh.modInfos.mtimes.clear()
                 # And refresh to get the new times so WB will keep the order that BOSS specifies
                 bosh.modInfos.refresh(doInfos=False)
-            except Exception as error:
+            except Exception, error:
                 print error
                 print _("Used Path: %s") % exePath.s
                 print _("Used Arguments: "), exeArgs

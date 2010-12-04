@@ -1462,7 +1462,7 @@ class MelSet:
                 else:
                     loaders[type].loadData(record,ins,type,size,readId)
                 doFullTest = doFullTest and (type != 'EFID')
-            except Exception as error:
+            except Exception, error:
                 print error
                 eid = getattr(record,'eid',_('<<NO EID>>'))
                 if not eid: eid = _('<<NO EID>>)')
