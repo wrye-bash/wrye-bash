@@ -10015,9 +10015,9 @@ class Installer(object):
             elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
                 continue
             elif fileStartsWith(r'textures\landscapelod\generated'):
-                if skipLandscapeLODNormals and fileEndswith(r'_fn.dds'):
+                if skipLandscapeLODNormals and fileEndsWith(r'_fn.dds'):
                     continue
-                elif skipLandscapeLODTextures and not fileEndswith(r'_fn.dds'):
+                elif skipLandscapeLODTextures and not fileEndsWith(r'_fn.dds'):
                     continue
             elif skipVoices and fileStartsWith('sound\\voice'):
                 continue
@@ -11180,7 +11180,7 @@ class InstallersData(bolt.TankData, DataDict):
                 elif column == 'Modified':
                     value = formatDate(value)
                 elif column == 'Size':
-                    value = formatInteger(value/1024)+' KB'
+                        value = formatInteger(value/1024)+' KB'
                 else:
                     raise ArgumentError(column)
                 labels.append(value)
