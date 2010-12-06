@@ -416,13 +416,13 @@
         ${NSD_GetState} $Check_Readme $0
         ${If} $0 == ${BST_CHECKED}
             ${If} $Path_OB != $Empty
-                Exec "$Path_OB\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_OB\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Nehrim != $Empty
-                Exec "$Path_Nehrim\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex1 != $Empty
-                Exec "$Path_Ex1\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex2 != $Empty
-                Exec "$Path_Ex2\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.html"
             ${EndIf}
         ${EndIf}
         ${NSD_GetState} $Check_DeleteOldFiles $0
