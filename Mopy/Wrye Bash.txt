@@ -1383,6 +1383,9 @@ __Importers__ are components that import specific information from selected mods
 * __Guard Names__
   * A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
 ;  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123| Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
+* __%ModName% Names__
+  * A names patcher file that names/renames NPCs etc. in specified mod.
+  * Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth
 * __Rational Names__
   * A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   * Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -2190,7 +2193,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 291 [12/12/2010] [Gaticus,myk002,PacificMorrowind,Waruddar]
+=== 291 [12/12/2010] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
@@ -2199,6 +2202,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Tweak Assorted:
     * another skip added to All Clothes Playable patcher
     * Script Effect Silencer added.
+  * Import Names
+    * Crowded Roads Revisited NPC names csv file added (contributed by Smooth)
+    * Crowded Roads Revamped NPC names csv file added (contributed by Spotty42)
+    * Crowded Roads Revisited NPC names alternate csv file added (contributed by Gratis_monsta)
+    * Crowded Cities 30/15 NPC names csv file added (contributed by Gratis_monsta)
+    * Crowded Cities 30/15 NPC names alternate csv file added (contributed by Gratis_monsta)
+    * PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)
+    * TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)
   * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
@@ -2210,8 +2221,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Enter: Open archive/project.
     * F2: Rename archive/project.
   * new ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
-  * 3 new skip options: Skip Lod Meshes, Skip Lod Textures (Normals) and Skip Lod Textures (Colour maps).
-  * 7zip updated to version 9.20
+  * 3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
+  * 7z dll/exe updated to version 9.20
+  * new Option to enable installation of OBSE Plugin dlls with large warning.
 * Saves Tab:
   * Rename Save(s) command added.
   * Rename Player command added
@@ -2226,6 +2238,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
   * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
 * Bash.ini typo fixes (contributed by Metallicow).
+* Exception hadling fixes to maintain Python 2.5 compatibility
+* Bash Installer automatically handling requirements created
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
