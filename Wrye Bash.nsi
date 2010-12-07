@@ -358,9 +358,9 @@
         ${EndIf}
 
         IntOp $0 0 + 0
-        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s)/extra location(s) that Wrye Bash is installed to that you want to run it right now:"
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which game(s)/extra location(s) that Wrye Bash is installed to that you want$\nto run Wrye Bash for right now:"
             Pop $Label
-        IntOp $0 0 + 9
+        IntOp $0 0 + 17
         ${If} $Path_OB != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u "Oblivion"
                 Pop $Check_OB
@@ -381,8 +381,9 @@
                 Pop $Check_Ex2
             IntOp $0 $0 + 9
         ${EndIf}
+		IntOp $0 $0 + 9
         IntOp $1 0 + 0
-        ${NSD_CreateCheckBox} $1% $0u 75% 8u "View Readme"
+        ${NSD_CreateCheckBox} $1% $0u 25% 8u "View Readme"
             Pop $Check_Readme
             ${NSD_SetState} $Check_Readme ${BST_CHECKED}
             IntOp $1 $1 + 25
@@ -492,7 +493,7 @@
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
-                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
             ${EndIf}
@@ -500,7 +501,7 @@
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
-                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
             ${EndIf}
@@ -508,7 +509,7 @@
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
-                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
             ${EndIf}
@@ -516,7 +517,7 @@
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
-                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "Forum thread starter post.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
             ${EndIf}
@@ -542,21 +543,25 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
+                SetOutPath $Path_OB\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\mopy\Wrye Bash Launcher.pyw" "" "$PATH_OB\mopy\Wrye Bash Launcher.pyw" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
+                SetOutPath $Path_Nehrim\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
+                SetOutPath $Path_Ex1\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
+                SetOutPath $Path_Ex2\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" 0
             ${EndIf}
         ${EndIf}
