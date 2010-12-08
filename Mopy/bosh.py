@@ -9723,7 +9723,10 @@ class Installer(object):
     @staticmethod
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
-        Installer.tempDir.rmtree(safety='Temp')
+        try:
+            InstallerConverter.tempDir.rmtree(safety='Temp')
+        except:
+            InstallerConverter.tempDir.rmtree(safety='Temp')
 
     @staticmethod
     def sortFiles(files):
@@ -10312,7 +10315,10 @@ class InstallerConverter(object):
     @staticmethod
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
-        InstallerConverter.tempDir.rmtree(safety='Temp')
+        try:
+            InstallerConverter.tempDir.rmtree(safety='Temp')
+        except:
+            InstallerConverter.tempDir.rmtree(safety='Temp')
 
     def apply(self,destArchive,crc_installer,progress=None):
         """Applies the BCF and packages the converted archive"""
@@ -10934,7 +10940,6 @@ class InstallerProject(Installer):
         out.close()
         #--Compress
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
-        print command
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
@@ -11180,7 +11185,10 @@ class InstallersData(bolt.TankData, DataDict):
                 elif column == 'Modified':
                     value = formatDate(value)
                 elif column == 'Size':
-                        value = formatInteger(value/1024)+' KB'
+                    if value == 0:
+                        value = '0 KB'
+                    else:
+                        value = max(formatInteger(value/1024),formatInteger(1))+' KB'
                 else:
                     raise ArgumentError(column)
                 labels.append(value)
