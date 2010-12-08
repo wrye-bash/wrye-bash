@@ -10746,6 +10746,39 @@ class Save_Rename(Link):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 #--------------------------------------------------------------------------
+class Save_Renumber(Link):
+    """Renamumbers a whole lot of save files."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Re-number Save(s)...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) != 0)
+
+    def Execute(self,event):
+        #--File Info
+        newNumber = balt.askNumber(self.window,_("Enter new number to start numbering the selected saves at."),
+            prompt=_('Save Number'),title=_('Re-number Saves'),value=1,min=1,max=10000)
+        if not newNumber: return
+        rePattern = re.compile(r'^(save )(\d*)(.*)',re.I)
+        for index, name in enumerate(self.data):
+            maPattern = rePattern.match(name.s)
+            if not maPattern: continue
+            maPattern = maPattern.groups()
+            if not maPattern[1]: continue
+            newFileName = "%s%d%s" % (maPattern[0],newNumber,maPattern[2])
+            if newFileName != name.s:
+                oldPath = bosh.saveInfos.dir.join(name.s)
+                newPath = bosh.saveInfos.dir.join(newFileName)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+                    if GPath(oldPath.s[:-3]+'obse').exists():
+                        GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
+                    if GPath(oldPath.s[:-3]+'pluggy').exists():
+                        GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
+                newNumber += 1
+        bosh.saveInfos.refresh()
+        self.window.RefreshUI()
+#--------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
     def __init__(self,parent,saveFile,recordTypes):
@@ -10954,7 +10987,7 @@ class Save_EditCreatedEnchantmentCosts(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
-        dialog = balt.askNumber(self.window,_('Enter the number of uses you desire per recharge for all custom made enchantements.\n(Enter 0 for unlimited uses)'),prompt='Uses',title='Number of Uses',value=50,min=0,max=10000)
+        dialog = balt.askNumber(self.window,_('Enter the number of uses you desire per recharge for all custom made enchantements.\n(Enter 0 for unlimited uses)'),prompt=_('Uses'),title=_('Number of Uses'),value=50,min=0,max=10000)
         if not dialog: return
         Enchantments = bosh.SaveEnchantments(fileInfo)
         Enchantments.load()
@@ -13064,6 +13097,7 @@ def InitSaveLinks():
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(Save_Rename())
+        fileMenu.links.append(Save_Renumber())
         #fileMenu.links.append(File_RevertToSnapshot())
         SaveList.itemMenu.append(fileMenu)
     if True: #--Move to Profile
