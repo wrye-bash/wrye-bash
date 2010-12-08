@@ -29219,7 +29219,7 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['ScriptFileExt']='.txt'
-    inisettings['KeepLog'] = 1
+    inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
     inisettings['EnableWizard'] = False
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
