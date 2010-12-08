@@ -146,7 +146,7 @@ class FileError(BoltError):
 
     def __str__(self):
         if self.inName:
-            if isinstance(inName, str):
+            if isinstance(self.inName, str):
                 return self.inName+': '+self.message
             return self.inName.s+': '+self.message
         else:
