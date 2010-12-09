@@ -277,7 +277,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="images/TES4Edit16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Edit32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="images/TES4Trans16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Trans32.png" width="32" height="32" border="0">
     * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="images/Tes4LODGen16.png" width="16" height="16" border="0"> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" border="0">
-    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> This one has some options!: 
+    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> (Compatible with all released versions up to December 5th 2010) This one has some options!: 
       * If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
       * For BOSS version 1.6+ (released October 2010):
         * If the option in the main menu is selected/ __U__ is pressed will tell BOSS to update the masterlist firstm
@@ -2193,7 +2193,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 291 [12/12/2010] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
+=== 291 [5/12/2010] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
@@ -2213,7 +2213,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 * BAIN:
   * fix so that the end of the display of the number of packages does not get cut off.
-  * Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
+  * Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
   * Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
   * Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
   * Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
@@ -2224,9 +2224,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
   * 7z dll/exe updated to version 9.20
   * new Option to enable installation of OBSE Plugin dlls with large warning.
+  * hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
 * Saves Tab:
-  * Rename Save(s) command added.
-  * Rename Player command added
+  * Rename Save(s) command added (in the saves menu->file).
+  * Re-number Save(s) command added (in the saves menu->file).
+  * Rename Player command added.
 * fix for launcher code which prevented launching in some cases (contributed by myk002)
 * fix for move/copy saves so that Default is not selectable if already in Default profile.
 * fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
@@ -2238,8 +2240,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
   * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
 * Bash.ini typo fixes (contributed by Metallicow).
-* Exception hadling fixes to maintain Python 2.5 compatibility
+* Exception handling fixes to maintain Python 2.5 compatibility
 * Bash Installer automatically handling requirements created
+* File read error warning printout fixed
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)

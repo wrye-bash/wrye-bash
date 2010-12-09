@@ -11603,6 +11603,8 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
+        cmd = r'attrib -R "%s\*" /S /D' % (modsDir)
+        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout        
         InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
