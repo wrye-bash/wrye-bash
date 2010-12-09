@@ -26397,7 +26397,7 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chosen = self.choiceValues[self.chosen][0]
-        if record.resposibility == 0: return
+        if record.responsibility == 0: return
         if not chosen == 'all':
             if record.creatureType != 4: return
         override = record.CopyAsOverride(self.patchFile)
