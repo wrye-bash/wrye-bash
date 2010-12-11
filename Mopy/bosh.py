@@ -9702,9 +9702,9 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize')
+        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','goodDlls','badDlls')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap','goodDlls', 'badDlls')
+        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap',)
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
@@ -9876,6 +9876,9 @@ class Installer(object):
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
+        self.overrideSkips = False
+        self.goodDlls = []
+        self.badDlls = []
         self.comments = ''
         self.group = '' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
@@ -9893,8 +9896,6 @@ class Installer(object):
         self.skipDirFiles = set()
         self.espms = set()
         self.unSize = 0
-        self.goodDlls = []
-        self.badDlls = []
         #--Volatile: set by refreshStatus
         self.status = 0
         self.underrides = set()
@@ -9953,18 +9954,26 @@ class Installer(object):
         packageFiles = set(('package.txt','package.jpg'))
         unSize = 0
         espmNots = self.espmNots
-        skipVoices = self.skipVoices
-        if espmNots and not skipVoices:
-            skipEspmVoices = set(x.cs for x in espmNots)
-        else:
+        if self.overrideSkips:
+            skipVoices = False
             skipEspmVoices = None
-        skipScreenshots = settings['bash.installers.skipScreenshots']
-        skipDocs = settings['bash.installers.skipDocs']
-        skipImages = settings['bash.installers.skipImages']
-        skipDistantLOD = settings['bash.installers.skipDistantLOD']
-        skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
-        skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
-        skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+            skipScreenshots = False
+            skipDocs = False
+            skipImages = False
+            skipDistantLOD = False
+            skipLandscapeLODMeshes = False
+            skipLandscapeLODTextures = False
+            skipLandscapeLODNormals = False
+        else:
+            skipVoices = self.skipVoices
+            skipEspmVoices = set(x.cs for x in espmNots)
+            skipScreenshots = settings['bash.installers.skipScreenshots']
+            skipDocs = settings['bash.installers.skipDocs']
+            skipImages = settings['bash.installers.skipImages']
+            skipDistantLOD = settings['bash.installers.skipDistantLOD']
+            skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
+            skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
+            skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
