@@ -431,18 +431,26 @@
             ${If} $Path_OB != $Empty
                 Delete "$Path_OB\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_OB\Data\Docs\Bashed Lists.html"
+                Delete "$Path_OB\Mopy\Data\Actor Levels\*"
+                RMDir "$Path_OB\Mopy\Data\Actor Levels"
             ${EndIf}
             ${If} $Path_Nehrim != $Empty
                 Delete "$Path_Nehrim\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Nehrim\Data\Docs\Bashed Lists.html"
+                Delete "$Path_Nehrim\Mopy\Data\Actor Levels\*"
+                RMDir "$Path_Nehrim\Mopy\Data\Actor Levels"
             ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.html"
+                Delete "$Path_Ex1\Mopy\Data\Actor Levels\*"
+                RMDir "$Path_Ex1\Mopy\Data\Actor Levels"
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 Delete "$Path_Ex2\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Ex2\Data\Docs\Bashed Lists.html"
+                Delete "$Path_Ex2\Mopy\Data\Actor Levels\*"
+                RMDir "$Path_Ex2\Mopy\Data\Actor Levels"
             ${EndIf}
         ${EndIf}
         FunctionEnd
