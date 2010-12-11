@@ -7094,7 +7094,7 @@ class Installer_OverrideSkips(InstallerLink):
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
-            menuItem.Check(installer.hasExtraData)
+            menuItem.Check(installer.overrideSkips)
             menuItem.Enable(True)
         else:
             menuItem.Enable(False)
