@@ -894,9 +894,9 @@ These are the commands found on context menu for mods...
   * If you want to change scripts ~~after~~ you've changed the base eids (or perhaps this was done in another mod), then in the spreadsheet add another column after the eid column and put the old eid in it before doing the import.
   . e.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
 
-=== Export Factions
-* Exports actor factions to an xx_Factions.csv file.
-* To be used in conjunction with [[#|Import Factions]].
+=== Export/Import Factions
+* Exports actor factions to an xx_Factions.csv file, and allows importing actor factions into a mod. This is for advanced modders only. It allows you to export actor faction ranks to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the faction ranks of a lot of actors at once.
+* Can also be used in conjunction with [[#|Import Factions]].
 
 === Export/Import Groups
 * Exports/Imports groups for selected mods to/from a xxx_Group.csv file.
@@ -954,9 +954,9 @@ These are the commands found on context menu for mods...
   * When the Old Style Format is read, it is treated as if the source mod field was set to "Any".
   * Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "Old IsPCLevelOffset" and "bOffset Oblivion" columns indicates whether the NPC was also dynamically offset in Oblivion.esm.
 
-=== Export Relations
-* Exports faction relation(ships)s to an xx_Relations.csv file.
-* To be used in conjunction with [[#|Import Relations]].
+=== Export/Import Relations
+* Exports faction relation(ships)s to an xx_Relations.csv file, and allows importing faction relation(ships)s into a mod. This is for advanced modders only. It allows you to export faction relation(ships)s to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the faction relation(ships)s of a lot of actors at once.
+* Can also be used in conjunction with [[#|Import Relations]].
 * Note: This does not export race relations.
 
 === Export/Import Prices
@@ -1333,7 +1333,7 @@ __Importers__ are components that import specific information from selected mods
 * Allows factions to be imported from source mods and/or source csv files.
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>Factions</code> [[#BashTags|tag]] in the mod description. 
-  * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the [[#|Export Factions]] command will export files in this format.
+  * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the [[#ExportImportFactions|Export Factions]] command will export files in this format.
 * __Source CSV Files__
   * To get source csv files, export factions from an existing mod. This can then be edited as desired.
   * Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
@@ -1404,7 +1404,7 @@ __Importers__ are components that import specific information from selected mods
 * Allows faction relation(ship)s to be imported from source mods and/or source csv files.
 * __Configuration:__ 
   * Source mods are automatically recognized if they have a <code>Relations</code> [[#BashTags|tag]] in the mod description. 
-  * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the [[#|Export Relations]] command will export files in this format.
+  * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the [[#ExportImportRelations|Export Relations]] command will export files in this format.
 * __Source CSV Files__
   * To get source csv files, export relations from an existing mod. This can then be edited as desired.
   * Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
@@ -2255,6 +2255,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * File read error warning printout fixed
 * Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
   * The csv file must now end in "*_NPC_Levels.csv"
+* [[#|Export/Import Factions]] may now be used directly on a mod
+* [[#|Export/Import Relations]] may now be used directly on a mod
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
@@ -3060,7 +3062,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 214 [10/29/2008]
 * [[#|Alchemical Catalogs]]: 
   * Changed to case insensitive sorting of ingredients in "Alchemical Effects" catalogs.
-* [[#|Export Relations]] and [[#|Import Relations]] Bashed Patch component.
+* [[#ExportImportRelations|Export Relations]] and [[#|Import Relations]] Bashed Patch component.
 
 === 213 [10/27/2008]
 * [[#|Alchemical Catalogs]]: 
@@ -3150,7 +3152,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Fix a bug in inventory merging when master lists are empty.
 
 === 193 [7/16/2008]
-* Added [[#|Export Factions]] and [[#|Import Factions]]
+* Added [[#ExportImportFactions|Export Factions]] and [[#|Import Factions]]
 * Expanded Bash_MFact.csv -- should be pretty complete now.
 
 === 192 [7/13/2008]

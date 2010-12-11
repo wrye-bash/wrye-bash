@@ -328,6 +328,17 @@ reSplitOnNonAlphaNumeric = re.compile(r'\W+')
 
 
 # Util Functions --------------------------------------------------------------
+# Type coercion
+def _coerce(value, newtype, base=None):
+    try:
+        if newtype is float:
+            pack,unpack = struct.pack,struct.unpack
+            return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
+        if base:
+            return newtype(value, base)
+        return newtype(value)
+    except TypeError:
+        return None
 # .Net strings
 def netString(x):
     """Encode a string into a .net string."""
@@ -11779,7 +11790,7 @@ class ActorFactions:
             self.gotFactions.add(modName)
 
     def readFromMod(self,modInfo):
-        """Imports eids from specified mod."""
+        """Imports faction data from specified mod."""
         self.readFactionEids(modInfo)
         type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
         loadFactory= LoadFactory(False,*types)
@@ -11797,14 +11808,14 @@ class ActorFactions:
                     id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
 
     def writeToMod(self,modInfo):
-        """Exports eids to specified mod."""
+        """Exports faction data to specified mod."""
         type_id_factions,types = self.type_id_factions,self.types
         loadFactory= LoadFactory(True,*types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
         shortMapper = modFile.getShortMapper()
-        changed = {'CREA':0,'NPC':0}
+        changed = {'CREA':0,'NPC_':0}
         for type in (x.classType for x in types):
             id_factions = type_id_factions.get(type,None)
             typeBlock = modFile.tops.get(type,None)
@@ -11814,9 +11825,9 @@ class ActorFactions:
                 if longid not in id_factions: continue
                 newFactions = set(id_factions[longid])
                 curFactions = set((mapper(x.faction),x.rank) for x in record.factions)
-                changed = newFactions - curFactions
-                if not changed: continue
-                for faction,rank in changed:
+                changes = newFactions - curFactions
+                if not changes: continue
+                for faction,rank in changes:
                     faction = shortMapper(faction)
                     for entry in record.factions:
                         if entry.faction == faction:
@@ -11835,7 +11846,7 @@ class ActorFactions:
         return changed
 
     def readFromText(self,textPath):
-        """Imports eids from specified text file."""
+        """Imports faction data from specified text file."""
         type_id_factions,id_eid = self.type_id_factions, self.id_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
@@ -11849,18 +11860,13 @@ class ActorFactions:
             rank = int(rank)
             id_factions = type_id_factions[type]
             factions = id_factions.get(aid)
-            if factions is None:
-                factions = id_factions[aid] = []
-            for index,entry in enumerate(factions):
-                if entry[0] == fid:
-                    factions[index] = (fid,rank)
-                    break
-            else:
-                factions.append((fid,rank))
+            factiondict = dict(factions or [])
+            factiondict.update({fid:rank})
+            id_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
         ins.close()
 
     def writeToText(self,textPath):
-        """Exports eids to specified text file."""
+        """Exports faction data to specified text file."""
         type_id_factions,id_eid = self.type_id_factions, self.id_eid
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
@@ -11885,7 +11891,7 @@ class CBash_ActorFactions:
         self.gotFactions = set()
 
     def readFromMod(self,modInfo):
-        """Imports eids from specified mod."""
+        """Imports faction data from specified mod."""
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,self.fid_eid,self.gotFactions
 
         Current = ObCollection(ModsPath=dirs['mods'].s)
@@ -11904,15 +11910,16 @@ class CBash_ActorFactions:
                 fid_factions = group_fid_factions[group]
                 for record in block:
                     fid = record.fid
-                    if record.factions:
+                    factions = record.factions_list
+                    if factions:
                         fid_eid[fid] = record.eid
-                        fid_factions[fid] = record.factions_list
+                        fid_factions[fid] = factions
                     record.UnloadRecord()
             gotFactions.add(modName)
         del Current
 
     def writeToMod(self,modInfo):
-        """Exports eids to specified mod."""
+        """Exports faction data to specified mod."""
         group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
@@ -11928,9 +11935,9 @@ class CBash_ActorFactions:
                 if fid not in fid_factions: continue
                 newFactions = set(fid_factions[fid])
                 curFactions = set(record.factions_list)
-                changed = newFactions - curFactions
-                if not changed: continue
-                for faction,rank in changed:
+                changes = newFactions - curFactions
+                if not changes: continue
+                for faction,rank in changes:
                     for entry in record.factions:
                         if entry.faction == faction:
                             entry.rank = rank
@@ -11946,32 +11953,28 @@ class CBash_ActorFactions:
         return changed
 
     def readFromText(self,textPath):
-        """Imports eids from specified text file."""
+        """Imports faction data from specified text file."""
         group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if len(fields) < 8 or fields[3][:2] != '0x': continue
             group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-            amod = GPath(amod)
-            fmod = GPath(fmod)
-            aid = (aliases.get(amod,amod),int(aobj[2:],16))
-            fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
-            rank = int(rank)
+            group = _coerce(group,str)
+            amod = GPath(_coerce(amod,str))
+            fmod = GPath(_coerce(fmod,str))
+            aid = (aliases.get(amod,amod),_coerce(aobj[2:],int,16))
+            fid = (aliases.get(fmod,fmod),_coerce(fobj[2:],int,16))
+            rank = _coerce(rank, int)
             fid_factions = group_fid_factions[group]
             factions = fid_factions.get(aid)
-            if factions is None:
-                factions = fid_factions[aid] = {}
-            for index,entry in enumerate(factions):
-                if entry == fid:
-                    factions[fid] = (rank,None)
-                    break
-            else:
-                factions[fid] = (rank,None)
+            factiondict = dict(factions or [])
+            factiondict.update({fid:rank})
+            fid_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
         ins.close()
 
     def writeToText(self,textPath):
-        """Exports eids to specified text file."""
+        """Exports faction data to specified text file."""
         group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
@@ -12115,18 +12118,6 @@ class CBash_ActorLevels:
         self.aliases = aliases or {}
         self.gotLevels = set()
 
-    @staticmethod
-    def _coerce(value, newtype, base=None):
-        try:
-            if newtype is float:
-                pack,unpack = struct.pack,struct.unpack
-                return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
-            if base:
-                return newtype(value, base)
-            return newtype(value)
-        except TypeError:
-            return None
-
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
         mod_fid_levels, gotLevels = self.mod_fid_levels, self.gotLevels
@@ -12170,7 +12161,7 @@ class CBash_ActorLevels:
 
     def readFromText(self,textPath):
         """Imports NPC level data from specified text file."""
-        mod_fid_levels, _coerce = self.mod_fid_levels, self._coerce
+        mod_fid_levels = self.mod_fid_levels
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
@@ -12246,165 +12237,89 @@ class EditorIds:
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            type_id_eid,types = self.type_id_eid,self.types
-            classes = [MreRecord.type_class[x] for x in types]
-            loadFactory= LoadFactory(False,*classes)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for type in types:
-                typeBlock = modFile.tops.get(type)
-                if not typeBlock: continue
-                if type not in type_id_eid: type_id_eid[type] = {}
-                id_eid = type_id_eid[type]
-                for record in typeBlock.getActiveRecords():
-                    longid = mapper(record.fid)
-                    if record.eid: id_eid[longid] = record.eid
-        else:
-            type_id_eid = self.type_id_eid
-            Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-
-            for type,block in modFile.aggregates.iteritems():
-                if type not in type_id_eid: type_id_eid[type] = {}
-                id_eid = type_id_eid[type]
-                for record in block:
-                    longid = record.fid_long
-                    if record.eid: id_eid[longid] = record.eid
-                    record.UnloadRecord()
+        type_id_eid,types = self.type_id_eid,self.types
+        classes = [MreRecord.type_class[x] for x in types]
+        loadFactory= LoadFactory(False,*classes)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        for type in types:
+            typeBlock = modFile.tops.get(type)
+            if not typeBlock: continue
+            if type not in type_id_eid: type_id_eid[type] = {}
+            id_eid = type_id_eid[type]
+            for record in typeBlock.getActiveRecords():
+                longid = mapper(record.fid)
+                if record.eid: id_eid[longid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            type_id_eid,types = self.type_id_eid,self.types
-            classes = [MreRecord.type_class[x] for x in types]
-            loadFactory= LoadFactory(True,*classes)
-            loadFactory.addClass(MreScpt)
-            loadFactory.addClass(MreQust)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            changed = []
-            for type in types:
-                id_eid = type_id_eid.get(type,None)
-                typeBlock = modFile.tops.get(type,None)
-                if not id_eid or not typeBlock: continue
-                for record in typeBlock.records:
-                    longid = mapper(record.fid)
-                    newEid = id_eid.get(longid)
-                    oldEid = record.eid
-                    if newEid and record.eid and newEid != oldEid:
-                        record.eid = newEid
-                        record.setChanged()
-                        changed.append((oldEid,newEid))
-            #--Update scripts
-            old_new = dict(self.old_new)
-            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
-            changed.extend(self.changeScripts(modFile,old_new))
-            #--Done
-            if changed: modFile.safeSave()
-            return changed
-        else:
-            type_id_eid = self.type_id_eid
-            Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
-
-            changed = []
-            for type,block in modFile.aggregates.iteritems():
-                id_eid = type_id_eid.get(type,None)
-                if not id_eid: continue
-                for record in block:
-                    longid = record.fid_long
-                    newEid = id_eid.get(longid)
-                    oldEid = record.eid
-                    if newEid and newEid != oldEid:
-                        record.eid = newEid
-                        changed.append((oldEid,newEid))
-            #--Update scripts
-            old_new = dict(self.old_new)
-            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
-            changed.extend(self.changeScripts(modFile,old_new))
-            #--Done
-            if changed: modFile.safeCloseSave()
-            return changed
+        type_id_eid,types = self.type_id_eid,self.types
+        classes = [MreRecord.type_class[x] for x in types]
+        loadFactory= LoadFactory(True,*classes)
+        loadFactory.addClass(MreScpt)
+        loadFactory.addClass(MreQust)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        changed = []
+        for type in types:
+            id_eid = type_id_eid.get(type,None)
+            typeBlock = modFile.tops.get(type,None)
+            if not id_eid or not typeBlock: continue
+            for record in typeBlock.records:
+                longid = mapper(record.fid)
+                newEid = id_eid.get(longid)
+                oldEid = record.eid
+                if newEid and record.eid and newEid != oldEid:
+                    record.eid = newEid
+                    record.setChanged()
+                    changed.append((oldEid,newEid))
+        #--Update scripts
+        old_new = dict(self.old_new)
+        old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+        changed.extend(self.changeScripts(modFile,old_new))
+        #--Done
+        if changed: modFile.safeSave()
+        return changed
 
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            changed = []
-            if not old_new: return changed
-            reWord = re.compile('\w+')
-            def subWord(match):
-                word = match.group(0)
-                newWord = old_new.get(word.lower())
-                if not newWord:
-                    return word
-                else:
-                    return newWord
-            #--Scripts
-            for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
-                if not script.scriptText: continue
-                newText = reWord.sub(subWord,script.scriptText)
-                if newText != script.scriptText:
-                    header = '\r\n\r\n; %s %s\r\n' % (script.eid,'-'*(77-len(script.eid)))
-                    script.scriptText = newText
-                    script.setChanged()
-                    changed.append((_("Script"),script.eid))
-            #--Quest Scripts
-            for quest in sorted(modFile.QUST.records,key=attrgetter('eid')):
-                questChanged = False
-                for stage in quest.stages:
-                    for entry in stage.entries:
-                        oldScript = entry.scriptText
-                        if not oldScript: continue
-                        newScript = reWord.sub(subWord,oldScript)
-                        if newScript != oldScript:
-                            entry.scriptText = newScript
-                            questChanged = True
-                if questChanged:
-                    changed.append((_("Quest"),quest.eid))
-                    quest.setChanged()
-            #--Done
-            return changed
-        else:
-            changed = []
-            if not old_new: return changed
-            reWord = re.compile('\w+')
-            def subWord(match):
-                word = match.group(0)
-                newWord = old_new.get(word.lower())
-                if not newWord:
-                    return word
-                else:
-                    return newWord
-            #--Scripts
-            for script in sorted(modFile.SCPT,key=attrgetter('eid')):
-                if not script.scriptText: continue
-                newText = reWord.sub(subWord,script.scriptText)
-                if newText != script.scriptText:
-                    script.scriptText = newText
-                    changed.append((_("Script"),script.eid))
-            #--Quest Scripts
-            for quest in sorted(modFile.QUST,key=attrgetter('eid')):
-                questChanged = False
-                for stage in quest.stages:
-                    for entry in stage.entries:
-                        oldScript = entry.scriptText
-                        if not oldScript: continue
-                        newScript = reWord.sub(subWord,oldScript)
-                        if newScript != oldScript:
-                            entry.scriptText = newScript
-                            questChanged = True
-                if questChanged:
-                    changed.append((_("Quest"),quest.eid))
-            #--Done
-            return changed
+        changed = []
+        if not old_new: return changed
+        reWord = re.compile('\w+')
+        def subWord(match):
+            word = match.group(0)
+            newWord = old_new.get(word.lower())
+            if not newWord:
+                return word
+            else:
+                return newWord
+        #--Scripts
+        for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
+            if not script.scriptText: continue
+            newText = reWord.sub(subWord,script.scriptText)
+            if newText != script.scriptText:
+                header = '\r\n\r\n; %s %s\r\n' % (script.eid,'-'*(77-len(script.eid)))
+                script.scriptText = newText
+                script.setChanged()
+                changed.append((_("Script"),script.eid))
+        #--Quest Scripts
+        for quest in sorted(modFile.QUST.records,key=attrgetter('eid')):
+            questChanged = False
+            for stage in quest.stages:
+                for entry in stage.entries:
+                    oldScript = entry.scriptText
+                    if not oldScript: continue
+                    newScript = reWord.sub(subWord,oldScript)
+                    if newScript != oldScript:
+                        entry.scriptText = newScript
+                        questChanged = True
+            if questChanged:
+                changed.append((_("Quest"),quest.eid))
+                quest.setChanged()
+        #--Done
+        return changed
 
     def readFromText(self,textPath):
         """Imports eids from specified text file."""
@@ -12414,18 +12329,18 @@ class EditorIds:
         reNewEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
         for fields in ins:
             if len(fields) < 4 or fields[2][:2] != '0x': continue
-            type,mod,objectIndex,eid = fields[:4]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+            group,mod,objectIndex,eid = fields[:4]
+            group = _coerce(group,str)
+            mod = GPath(_coerce(mod,str))
+            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+            eid = _coerce(eid,str)
             if not reNewEid.match(eid):
                 continue
-            elif type in type_id_eid:
-                type_id_eid[type][longid] = eid
-            else:
-                type_id_eid[type] = {longid:eid}
+            id_eid = type_id_eid.setdefault(group, {})
+            id_eid[longid] = eid
             #--Explicit old to new def? (Used for script updating.)
             if len(fields) > 4:
-                self.old_new[fields[4].lower()] = fields[3]
+                self.old_new[_coerce(fields[4], str).lower()] = eid
         ins.close()
 
     def writeToText(self,textPath):
@@ -12439,6 +12354,134 @@ class EditorIds:
             id_eid = type_id_eid[type]
             for id in sorted(id_eid,key = lambda a: id_eid[a]):
                 out.write(rowFormat % (type,id[0].s,id[1],id_eid[id]))
+        out.close()
+#------------------------------------------------------------------------------
+class CBash_EditorIds:
+    """Editor ids for records, with functions for importing/exporting from/to mod/text file."""
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.group_fid_eid = {} #--eid = group_fid_eid[group][longid]
+        self.old_new = {}
+        if types:
+            self.groups = set(types)
+        else:
+            self.groups = aggregateTypes
+        self.aliases = aliases or {}
+
+    def readFromMod(self,modInfo):
+        """Imports eids from specified mod."""
+        group_fid_eid,groups = self.group_fid_eid,self.groups
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+
+        for group in groups:
+            fid_eid = group_fid_eid.setdefault(group[:4], {})
+            for record in getattr(modFile, group):
+                fid = record.fid
+                eid = record.eid
+                if eid: fid_eid[fid] = eid
+                record.UnloadRecord()
+        del Current
+
+    def writeToMod(self,modInfo):
+        """Exports eids to specified mod."""
+        group_fid_eid = self.group_fid_eid
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+
+        changed = []
+        for group,block in modFile.aggregates.iteritems():
+            fid_eid = group_fid_eid.get(group[:4],None)
+            if not fid_eid: continue
+            for record in block:
+                fid = record.fid
+                newEid = fid_eid.get(fid)
+                oldEid = record.eid
+                if newEid and newEid != oldEid:
+                    record.eid = newEid
+                    if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
+                        changed.append((oldEid,newEid))
+        #--Update scripts
+        old_new = dict(self.old_new)
+        old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+        changed.extend(self.changeScripts(modFile,old_new))
+        #--Done
+        if changed: modFile.save()
+        return changed
+
+    def changeScripts(self,modFile,old_new):
+        """Changes scripts in modfile according to changed."""
+        changed = []
+        if not old_new: return changed
+        reWord = re.compile('\w+')
+        def subWord(match):
+            word = match.group(0)
+            newWord = old_new.get(word.lower())
+            if not newWord:
+                return word
+            else:
+                return newWord
+        #--Scripts
+        for script in sorted(modFile.SCPT,key=attrgetter('eid')):
+            if not script.scriptText: continue
+            newText = reWord.sub(subWord,script.scriptText)
+            if newText != script.scriptText:
+                script.scriptText = newText
+                changed.append((_("Script"),script.eid))
+        #--Quest Scripts
+        for quest in sorted(modFile.QUST,key=attrgetter('eid')):
+            questChanged = False
+            for stage in quest.stages:
+                for entry in stage.entries:
+                    oldScript = entry.scriptText
+                    if not oldScript: continue
+                    newScript = reWord.sub(subWord,oldScript)
+                    if newScript != oldScript:
+                        entry.scriptText = newScript
+                        questChanged = True
+            if questChanged:
+                changed.append((_("Quest"),quest.eid))
+        #--Done
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports eids from specified text file."""
+        group_fid_eid = self.group_fid_eid
+        aliases = self.aliases
+        ins = bolt.CsvReader(textPath)
+        reNewEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
+        for fields in ins:
+            if len(fields) < 4 or fields[2][:2] != '0x': continue
+            group,mod,objectIndex,eid = fields[:4]
+            group = _coerce(group,str)[:4]
+            if group not in validTypes: continue
+            mod = GPath(_coerce(mod,str))
+            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+            eid = _coerce(eid,str)
+            if not reNewEid.match(eid):
+                continue
+            fid_eid = group_fid_eid.setdefault(group, {})
+            fid_eid[longid] = eid
+            #--Explicit old to new def? (Used for script updating.)
+            if len(fields) > 4:
+                self.old_new[_coerce(fields[4], str).lower()] = eid
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports eids to specified text file."""
+        group_fid_eid = self.group_fid_eid
+        headFormat = '"%s","%s","%s","%s"\n'
+        rowFormat = '"%s","%s","0x%06X","%s"\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')))
+        for group in sorted(group_fid_eid):
+            fid_eid = group_fid_eid[group]
+            for fid in sorted(fid_eid,key = lambda a: fid_eid[a]):
+                out.write(rowFormat % (group,fid[0].s,fid[1],fid_eid[fid]))
         out.close()
 #------------------------------------------------------------------------------
 class FactionRelations:
@@ -12491,9 +12534,11 @@ class FactionRelations:
         for fields in ins:
             if len(fields) < 7 or fields[2][:2] != '0x': continue
             med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-            mid = (GPath(aliases.get(mmod,mmod)),int(mobj[2:],16))
-            oid = (GPath(aliases.get(omod,omod)),int(oobj[2:],16))
-            disp = int(disp)
+            mmod = _coerce(mmod, str)
+            omod = _coerce(omod, str)
+            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
+            oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
+            disp = _coerce(disp, int)
             relations = id_relations.get(mid)
             if relations is None:
                 relations = id_relations[mid] = []
@@ -12504,6 +12549,39 @@ class FactionRelations:
             else:
                 relations.append((oid,disp))
         ins.close()
+
+    def writeToMod(self,modInfo):
+        """Exports faction relations to specified mod."""
+        id_relations,id_eid = self.id_relations, self.id_eid
+        loadFactory= LoadFactory(True,MreFact)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        shortMapper = modFile.getShortMapper()
+        changed = 0
+        for record in modFile.FACT.getActiveRecords():
+            longid = mapper(record.fid)
+            if longid not in id_relations: continue
+            newRelations = set(id_relations[longid])
+            curRelations = set((mapper(x.faction),x.mod) for x in record.relations)
+            changes = newRelations - curRelations
+            if not changes: continue
+            for faction,mod in changes:
+                faction = shortMapper(faction)
+                for entry in record.relations:
+                    if entry.faction == faction:
+                        entry.mod = mod
+                        break
+                else:
+                    entry = MelObject()
+                    entry.faction = faction
+                    entry.mod = mod
+                    record.relations.append(entry)
+                record.setChanged()
+            changed += 1
+        #--Done
+        if changed: modFile.safeSave()
+        return changed
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
@@ -12523,68 +12601,99 @@ class CBash_FactionRelations:
     """Faction relations."""
     def __init__(self,aliases=None):
         """Initialize."""
-        self.id_faction_mod = {}
-        self.id_eid = {} #--For all factions.
+        self.fid_faction_mod = {}
+        self.fid_eid = {} #--For all factions.
         self.aliases = aliases or {}
         self.gotFactions = set()
 
-    def readFactionEids(self,modInfo):
-        """Extracts faction editor ids from modInfo and its masters."""
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=True)
-        for modFile in Current:
-            if modFile.GName in self.gotFactions: continue
-            for record in modFile.FACT:
-                self.id_eid[record.fid_long] = record.eid
-                record.UnloadRecord()
-            self.gotFactions.add(modFile.GName)
-
     def readFromMod(self,modInfo):
-        """Imports eids from specified mod."""
-        self.readFactionEids(modInfo)
-        id_faction_mod,id_eid = self.id_faction_mod,self.id_eid
+        """Imports faction relations from specified mod."""
+        fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,self.fid_eid,self.gotFactions
 
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
+        Current.load()
+        importFile = Current.LookupModFile(modInfo.getPath().stail)
 
-        for record in modFile.FACT:
-            fid_long = record.fid_long
-            relations = record.relations_list
-            if relations:
-                id_eid[fid_long] = record.eid
-                faction_mod = id_faction_mod.setdefault(fid_long,{})
-                faction_mod.update(relations)
-            record.UnloadRecord()
+        for modFile in Current:
+            modName = modFile.GName
+            if modName in gotFactions: continue
+            if modFile == importFile:
+                for record in modFile.FACT:
+                    fid = record.fid
+                    fid_eid[fid] = record.eid
+                    relations = record.relations_list
+                    if relations:
+                        faction_mod = fid_faction_mod.setdefault(fid,{})
+                        faction_mod.update(relations)
+                    record.UnloadRecord()
+            else:
+                for record in modFile.FACT:
+                    fid_eid[record.fid] = record.eid
+                    record.UnloadRecord()
+            gotFactions.add(modName)
+        del Current
 
     def readFromText(self,textPath):
-        """Imports eids from specified text file."""
-        id_faction_mod,id_eid = self.id_faction_mod, self.id_eid
+        """Imports faction relations from specified text file."""
+        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if len(fields) < 7 or fields[2][:2] != '0x': continue
             med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-            mid = (GPath(aliases.get(mmod,mmod)),int(mobj[2:],16))
-            oid = (GPath(aliases.get(omod,omod)),int(oobj[2:],16))
-            disp = int(disp)
-            faction_mod = id_faction_mod.setdefault(mid,{})
+            mmod = _coerce(mmod, str)
+            omod = _coerce(omod, str)
+            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
+            oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
+            disp = _coerce(disp, int)
+            faction_mod = fid_faction_mod.setdefault(mid,{})
             faction_mod[oid] = disp
         ins.close()
 
+    def writeToMod(self,modInfo):
+        """Exports faction relations to specified mod."""
+        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+
+        changed = 0
+        for record in modFile.FACT:
+            fid = record.fid
+            if fid not in fid_faction_mod: continue
+            newRelations = set([(faction, mod) for faction, mod in fid_faction_mod[fid].iteritems()])
+            curRelations = set(record.relations_list)
+            changes = newRelations - curRelations
+            if not changes: continue
+            for faction,mod in changes:
+                for entry in record.relations:
+                    if entry.faction == faction:
+                        entry.mod = mod
+                        break
+                else:
+                    entry = record.create_relation()
+                    entry.faction = faction
+                    entry.mod = mod
+            changed += 1
+        #--Done
+        if changed: modFile.save()
+        del Current
+        return changed
+
     def writeToText(self,textPath):
-        """Exports eids to specified text file."""
-        id_faction_mod,id_eid = self.id_faction_mod, self.id_eid
+        """Exports faction relations to specified text file."""
+        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
         headFormat = '"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
         out.write(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')))
-        for main in sorted(id_faction_mod,key = lambda x: id_eid.get(x)):
-            mainEid = id_eid.get(main,'Unknown')
-            faction_mod = id_faction_mod[main]
-            for other, disp in sorted(faction_mod.items(),key=lambda x: id_eid.get(x[0])):
-                otherEid = id_eid.get(other,'Unknown')
+        for main in sorted(fid_faction_mod,key = lambda x: fid_eid.get(x)):
+            mainEid = fid_eid.get(main,'Unknown')
+            faction_mod = fid_faction_mod[main]
+            for other, disp in sorted(faction_mod.items(),key=lambda x: fid_eid.get(x[0])):
+                otherEid = fid_eid.get(other,'Unknown')
                 out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
         out.close()
 #------------------------------------------------------------------------------
@@ -12818,8 +12927,9 @@ class CBash_FullNames:
         """Imports type_id_name from specified mod."""
         type_id_name = self.type_id_name
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         for type in self.types:
             id_name = type_id_name.setdefault(type,{})
@@ -12835,8 +12945,9 @@ class CBash_FullNames:
         """Exports type_id_name to specified mod."""
         type_id_name = self.type_id_name
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         changed = {}
         for type in self.types:
@@ -12897,8 +13008,9 @@ class CBash_MapMarkers:
         """Imports type_id_name from specified mod."""
         markers = self.markers
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         for record in getattr(modFile,'REFRS'):
             if record.base == 0x10:
@@ -12940,8 +13052,9 @@ class CBash_MapMarkers:
             'Ayleid Step (old Ayleid ruin icon)':29,}
         markers = self.markers
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
         attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
         changed = []
         for record in getattr(modFile,'REFRS'):
@@ -13375,8 +13488,9 @@ class CBash_ItemStats:
         """Reads stats from specified mod."""
         class_id_attr_value = self.class_id_attr_value
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         for type, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,type):
@@ -13387,8 +13501,9 @@ class CBash_ItemStats:
         """Exports type_id_name to specified mod."""
         class_id_attr_value = self.class_id_attr_value
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         mod_count = {}
         for type, id_attr_value in class_id_attr_value.iteritems():
@@ -13534,8 +13649,9 @@ class ItemPrices:
                     stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
         else:
             Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+            Current.load()
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
 
             types = self.type_stats
             attrs = self.attrs
@@ -13569,8 +13685,9 @@ class ItemPrices:
             return changed
         else:
             Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+            Current.load()
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
             attrs = self.attrs
             changed = {}
             for type in self.type_stats:
@@ -13672,8 +13789,9 @@ class CompleteItemData:
                             self.FGndmodel[longid] = record.femaleWorld.modPath
         else:
             Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+            Current.load()
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
 
             for type,stats in self.type_stats.iteritems():
                 if type in ['KEYM',]:
@@ -13984,8 +14102,9 @@ class ScriptText:
             progress = progress.Destroy()
         else:
             Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+            Current.load()
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
 
             progress = balt.Progress(_("Export Scripts"))
             for type in self.type_stats:
@@ -14038,8 +14157,9 @@ class ScriptText:
             return eids_imported
         else:
             Current = ObCollection(ModsPath=dirs['mods'].s)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+            Current.load()
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
 
             for type in self.type_stats:
                 attrs = self.type_attrs[type]
@@ -14221,8 +14341,9 @@ class CBash_SpellRecords:
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         id_stats, attrs = self.type_id_stats, self.type_attrs
         for record in getattr(modFile,'SPEL'):
@@ -14232,8 +14353,9 @@ class CBash_SpellRecords:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         changed = 0
         attrs = self.type_attrs
@@ -18601,8 +18723,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             progress.plus()
         #--Finish
         id_factions = self.id_factions
-        for type,aFid_factions in actorFactions.type_id_factions.iteritems():
-            if type not in ('CREA','NPC_'): continue
+        for group,aFid_factions in actorFactions.group_fid_factions.iteritems():
+            if group not in ('CREA','NPC_'): continue
             for fid_long,factions in aFid_factions.iteritems():
                 id_factions[fid_long] = factions
 

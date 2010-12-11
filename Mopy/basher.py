@@ -9017,6 +9017,55 @@ class Mod_FactionRelations_Export(Link):
             progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
+class Mod_FactionRelations_Import(Link):
+    """Imports faction relations from text file to mod."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Relations...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)==1)
+
+    def Execute(self,event):
+        message = (_("This command will import faction relation info from a previously exported file.\n\nSee the Bash help file for more info."))
+        if not balt.askContinue(self.window,message,'bash.factionRelations.import.continue',_('Import Relations')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Relations.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import faction relations from:'),
+            textDir, textName, '*_Relations.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext != '.csv':
+            balt.showError(self.window,_('Source file must be a _Relations.csv file.'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Relations"))
+        changed = None
+        try:
+            if not CBash:
+                factionRelations = bosh.FactionRelations()
+            else:
+                factionRelations = bosh.CBash_FactionRelations()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            factionRelations.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = factionRelations.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant faction relations to import."),_("Import Relations"))
+        else:
+            buff = cStringIO.StringIO()
+            buff.write('* %03d  %s\n' % (changed, fileName.s))
+            balt.showLog(self.window,buff.getvalue(),_('Import Relations'),icons=bashBlue)
+#------------------------------------------------------------------------------
 class Mod_Factions_Export(Link):
     """Export factions from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -9054,6 +9103,56 @@ class Mod_Factions_Export(Link):
         finally:
             progress = progress.Destroy()
 
+#------------------------------------------------------------------------------
+class Mod_Factions_Import(Link):
+    """Imports factions from text file to mod."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Factions...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)==1)
+
+    def Execute(self,event):
+        message = (_("This command will import faction ranks from a previously exported file.\n\nSee the Bash help file for more info."))
+        if not balt.askContinue(self.window,message,'bash.factionRanks.import.continue',_('Import Factions')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Factions.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import Factions from:'),
+            textDir, textName, '*_Factions.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext != '.csv':
+            balt.showError(self.window,_('Source file must be a _Factions.csv file.'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Factions"))
+        changed = None
+        try:
+            if CBash:
+                actorFactions = bosh.CBash_ActorFactions()
+            else:
+                actorFactions = bosh.ActorFactions()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            actorFactions.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = actorFactions.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant faction ranks to import."),_("Import Factions"))
+        else:
+            buff = cStringIO.StringIO()
+            for groupName in sorted(changed):
+                buff.write('* %s : %03d  %s\n' % (groupName, changed[groupName], fileName.s))
+            balt.showLog(self.window,buff.getvalue(),_('Import Factions'),icons=bashBlue)
 #------------------------------------------------------------------------------
 class Mod_MarkLevelers(Link):
     """Marks (tags) selected mods as Delevs and/or Relevs according to Leveled Lists.csv."""
@@ -9487,7 +9586,10 @@ class Mod_EditorIds_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Editor Ids"))
         try:
-            editorIds = bosh.EditorIds()
+            if CBash:
+                editorIds = bosh.CBash_EditorIds()
+            else:
+                editorIds = bosh.EditorIds()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -9531,7 +9633,10 @@ class Mod_EditorIds_Import(Link):
         progress = balt.Progress(_("Import Editor Ids"))
         changed = None
         try:
-            editorIds = bosh.EditorIds()
+            if CBash:
+                editorIds = bosh.CBash_EditorIds()
+            else:
+                editorIds = bosh.EditorIds()
             progress(0.1,_("Reading %s.") % (textName.s,))
             editorIds.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
@@ -13042,25 +13147,26 @@ def InitModLinks():
         exportMenu.links.append(Mod_EditorIds_Export())
         exportMenu.links.append(Mod_Groups_Export())
         exportMenu.links.append(Mod_ItemData_Export())
+        exportMenu.links.append(Mod_Factions_Export())
         exportMenu.links.append(Mod_FullNames_Export())
         exportMenu.links.append(Mod_ActorLevels_Export())
         exportMenu.links.append(CBash_Mod_MapMarkers_Export())
         exportMenu.links.append(Mod_Prices_Export())
+        exportMenu.links.append(Mod_FactionRelations_Export())
         exportMenu.links.append(Mod_Scripts_Export())
         exportMenu.links.append(Mod_Stats_Export())
-        exportMenu.links.append(SeparatorLink())
-        exportMenu.links.append(Mod_Factions_Export())
-        exportMenu.links.append(Mod_FactionRelations_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
         importMenu = MenuLink(_("Import"))
         importMenu.links.append(Mod_EditorIds_Import())
         importMenu.links.append(Mod_Groups_Import())
         importMenu.links.append(Mod_ItemData_Import())
+        importMenu.links.append(Mod_Factions_Import())
         importMenu.links.append(Mod_FullNames_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
         importMenu.links.append(CBash_Mod_MapMarkers_Import())
         importMenu.links.append(Mod_Prices_Import())
+        importMenu.links.append(Mod_FactionRelations_Import())
         importMenu.links.append(Mod_Scripts_Import())
         importMenu.links.append(Mod_Stats_Import())
         importMenu.links.append(SeparatorLink())

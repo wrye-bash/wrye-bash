@@ -241,11 +241,11 @@ def MakeShortMGEFCode(CollectionID, MGEFCode):
     return masterIndex | object
 
 def ExtractCopyList(Elements):
-    return [[getattr(listElement, attr) for attr in listElement.copyattrs] for listElement in Elements]
+    return [tuple(getattr(listElement, attr) for attr in listElement.copyattrs) for listElement in Elements]
 
 def SetCopyList(oElements, nValues):
-    for oElement, nValueList in zip(oElements, nValues):
-        for nValue, attr in zip(nValueList, oElement.copyattrs):
+    for oElement, nValueTuple in zip(oElements, nValues):
+        for nValue, attr in zip(nValueTuple, oElement.copyattrs):
             setattr(oElement, attr, nValue)
 
 # Classes
@@ -266,10 +266,10 @@ class CBashGrouped(object):
         return self._Type(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID)
     def __set__(self, instance, nElement):
         oElement = self._Type(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID)
-        if nElement is None: nValueList = [None for attr in oElement.copyattrs]
-        elif isinstance(nElement, list): nValueList = nElement
-        else: nValueList = [getattr(nElement, attr) for attr in nElement.copyattrs]
-        for nValue, attr in zip(nValueList, oElement.copyattrs):
+        if nElement is None: nValueList = tuple([None for attr in oElement.copyattrs])
+        elif isinstance(nElement, tuple): nValueTuple = nElement
+        else: nValueTuple = tuple([getattr(nElement, attr) for attr in nElement.copyattrs])
+        for nValue, attr in zip(nValueTuple, oElement.copyattrs):
             setattr(oElement, attr, nValue)
 
 class CBashJunk(object):
@@ -558,7 +558,7 @@ class CBashLIST(object):
         if nElements is None or not length:
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
-            if isinstance(nElements[0], list): nValues = nElements
+            if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
@@ -950,7 +950,7 @@ class CBashLIST_LIST(object):
         if nElements is None or not length:
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
-            if isinstance(nElements[0], list): nValues = nElements
+            if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0, c_long(length))
@@ -1176,7 +1176,7 @@ class CBashLIST_LISTX2(object):
         if nElements is None or not length:
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else:
-            if isinstance(nElements[0], list): nValues = nElements
+            if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0, c_long(length))
@@ -2371,7 +2371,7 @@ class ObLANDRecord(ObFormIDRecord):
         return [[self.Normal(self._CollectionID, self._ModID, self._RecordID, 6, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_normals(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], list): nValues = nElements
+        if isinstance(nElements[0], tuple): nValues = nElements
         else: nValues = ExtractCopyList(nElements)
         SetCopyList(self.normals, nValues)
     normals = property(get_normals, set_normals)
@@ -2385,7 +2385,7 @@ class ObLANDRecord(ObFormIDRecord):
         return [[self.Height(self._CollectionID, self._ModID, self._RecordID, 8, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_heights(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], list): nValues = nElements
+        if isinstance(nElements[0], tuple): nValues = nElements
         else: nValues = ExtractCopyList(nElements)
         SetCopyList(self.heights, nValues)
     heights = property(get_heights, set_heights)
@@ -2399,7 +2399,7 @@ class ObLANDRecord(ObFormIDRecord):
         return [[self.Color(self._CollectionID, self._ModID, self._RecordID, 10, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_colors(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], list): nValues = nElements
+        if isinstance(nElements[0], tuple): nValues = nElements
         else: nValues = ExtractCopyList(nElements)
         SetCopyList(self.colors, nValues)
     colors = property(get_colors, set_colors)
@@ -2433,7 +2433,7 @@ class ObLANDRecord(ObFormIDRecord):
         return [[self.Position(self._CollectionID, self._ModID, self._RecordID, 14, row, 0, column) for column in range(0,33)] for row in range(0,33)]
     def set_Positions(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], list): nValues = nElements
+        if isinstance(nElements[0], tuple): nValues = nElements
         else: nValues = ExtractCopyList(nElements)
         SetCopyList(self.Positions, nValues)
     Positions = property(get_Positions, set_Positions)
@@ -5011,6 +5011,16 @@ validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
                   'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
 
+aggregateTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+                  'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
+                  'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
+                  'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
+                  'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
+                  'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
+                  'CLMT','REGN','WRLD','CELLS','ACHRS','ACRES','REFRS',
+                  'PGRDS','LANDS','ROADS','DIAL','INFOS','QUST','IDLE',
+                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+
 pickupables = set(['APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
                    'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'])
 
@@ -5388,53 +5398,11 @@ class ObModFile(object):
         return None
     CELL = CBashRECORDARRAY(ObCELLRecord, 'CELL', 0)
 
-    def create_ACHR(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObACHRRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    ACHR = CBashRECORDARRAY(ObACHRRecord, 'ACHR', 0)
-
-    def create_ACRE(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObACRERecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    ACRE = CBashRECORDARRAY(ObACRERecord, 'ACRE', 0)
-
-    def create_REFR(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("REFR", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObREFRRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    REFR = CBashRECORDARRAY(ObREFRRecord, 'REFR', 0)
-
-    def create_PGRD(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObPGRDRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    PGRD = CBashRECORDARRAY(ObPGRDRecord, 'PGRD', 0)
-
-    def create_LAND(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("LAND", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObLANDRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    LAND = CBashRECORDARRAY(ObLANDRecord, 'LAND', 0)
-
-    def create_ROAD(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObROADRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    ROAD = CBashRECORDARRAY(ObROADRecord, 'ROAD', 0)
-
     def create_DIAL(self):
         RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
         if(RecordID): return ObDIALRecord(self._CollectionID, self._ModID, RecordID, 0, 0)
         return None
     DIAL = CBashRECORDARRAY(ObDIALRecord, 'DIAL', 0)
-
-    def create_INFO(self):
-        RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("INFO", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
-        if(RecordID): return ObINFORecord(self._CollectionID, self._ModID, RecordID, 0, 0)
-        return None
-    INFO = CBashRECORDARRAY(ObINFORecord, 'INFO', 0)
 
     def create_QUST(self):
         RecordID = CBash.CreateRecord(self._CollectionID, self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, 0, 0, 0, 0)
@@ -5496,7 +5464,7 @@ class ObModFile(object):
     def CELLS(self):
         cells = self.CELL
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell): cells += [cell]
             cells += world.CELLS
         return cells
@@ -5514,7 +5482,7 @@ class ObModFile(object):
         for cell in self.CELL:
             achrs += cell.ACHR
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell): achrs += cell.ACHR
             for cell in world.CELLS:
                 achrs += cell.ACHR
@@ -5526,7 +5494,7 @@ class ObModFile(object):
         for cell in self.CELL:
             acres += cell.ACRE
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell): acres += cell.ACRE
             for cell in world.CELLS:
                 acres += cell.ACRE
@@ -5538,7 +5506,7 @@ class ObModFile(object):
         for cell in self.CELL:
             refrs += cell.REFR
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell): refrs += cell.REFR
             for cell in world.CELLS:
                 refrs += cell.REFR
@@ -5551,7 +5519,7 @@ class ObModFile(object):
             pgrd = cell.PGRD
             if(pgrd): pgrds += [pgrd]
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell):
                 pgrd = cell.PGRD
                 if(pgrd): pgrds += [pgrd]
@@ -5567,7 +5535,7 @@ class ObModFile(object):
             land = cell.LAND
             if(land): lands += [land]
         for world in self.WRLD:
-            cell = world.CELL
+            cell = world.WorldCELL
             if(cell):
                 land = cell.LAND
                 if(land): lands += [land]
