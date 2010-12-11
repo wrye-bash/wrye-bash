@@ -7085,6 +7085,29 @@ class Installer_HasExtraData(InstallerLink):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
+class Installer_OverrideSkips(InstallerLink):
+    """Toggle overrideSkips flag on installer."""
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Override Skips'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        if self.isSingleInstallable():
+            installer = self.data[self.selected[0]]
+            menuItem.Check(installer.hasExtraData)
+            menuItem.Enable(True)
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = self.data[self.selected[0]]
+        installer.overrideSkips ^= True
+        installer.refreshDataSizeCrc()
+        installer.refreshStatus(self.data)
+        self.data.refresh(what='N')
+        self.gTank.RefreshUI()
+#------------------------------------------------------------------------------
 class Installer_Install(InstallerLink):
     """Install selected packages."""
     mode_title = {'DEFAULT':_('Install'),'LAST':_('Install Last'),'MISSING':_('Install Missing')}
@@ -9938,6 +9961,8 @@ class Mod_Patch_Update(Link):
         patchDialog = PatchDialog(self.window,fileInfo)
         patchDialog.ShowModal()
         self.window.RefreshUI(detail=fileName)
+        # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
+        BashFrame.SaveSettings(bashFrame)
 
 #------------------------------------------------------------------------------
 class Mod_Ratings(Mod_Labels):
@@ -13003,6 +13028,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Move())
     InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_HasExtraData())
+    InstallersPanel.itemMenu.append(Installer_OverrideSkips())
     InstallersPanel.itemMenu.append(Installer_SkipVoices())
     InstallersPanel.itemMenu.append(SeparatorLink())
     if bEnableWizard:
