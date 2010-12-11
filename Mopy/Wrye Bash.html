@@ -80,12 +80,12 @@
 <p class=list-2>&bull;&nbsp; <a href="#ImportFace">Import Face</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ImportFormids">Import Formids</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportEditorIds">Export/Import Editor Ids</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#ExportFactions">Export Factions</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ExportImportFactions">Export/Import Factions</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportGroups">Export/Import Groups</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportItemData">Export/Import Item Data</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportNames">Export/Import Names</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportNPCLevels">Export/Import NPC Levels</a></p>
-<p class=list-2>&bull;&nbsp; <a href="#ExportRelations">Export Relations</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ExportImportRelations">Export/Import Relations</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportPrices">Export/Import Prices</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportStats">Export/Import Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportScripts">Export/Import Scripts</a></p>
@@ -1092,9 +1092,9 @@
   <p class=list-2>&bull;&nbsp; If you want to change scripts <I>after</I> you've changed the base eids (or perhaps this was done in another mod), then in the spreadsheet add another column after the eid column and put the old eid in it before doing the import.
   <p class=list-2>&nbsp;&nbsp; e.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
   <p class=empty>&nbsp;</p>
-<h3><a name='ExportFactions'>Export Factions</a></h3>
-<p class=list-1>&bull;&nbsp; Exports actor factions to an xx_Factions.csv file.
-<p class=list-1>&bull;&nbsp; To be used in conjunction with <a href="#ImportFactions">Import Factions</a>.
+<h3><a name='ExportImportFactions'>Export/Import Factions</a></h3>
+<p class=list-1>&bull;&nbsp; Exports actor factions to an xx_Factions.csv file, and allows importing actor factions into a mod. This is for advanced modders only. It allows you to export actor faction ranks to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the faction ranks of a lot of actors at once.
+<p class=list-1>&bull;&nbsp; Can also be used in conjunction with <a href="#ImportFactions">Import Factions</a>.
 <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportGroups'>Export/Import Groups</a></h3>
 <p class=list-1>&bull;&nbsp; Exports/Imports groups for selected mods to/from a xxx_Group.csv file.
@@ -1152,9 +1152,9 @@
   <p class=list-2>&bull;&nbsp; When the Old Style Format is read, it is treated as if the source mod field was set to "Any".
   <p class=list-2>&bull;&nbsp; Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "Old IsPCLevelOffset" and "bOffset Oblivion" columns indicates whether the NPC was also dynamically offset in Oblivion.esm.
   <p class=empty>&nbsp;</p>
-<h3><a name='ExportRelations'>Export Relations</a></h3>
-<p class=list-1>&bull;&nbsp; Exports faction relation(ships)s to an xx_Relations.csv file.
-<p class=list-1>&bull;&nbsp; To be used in conjunction with <a href="#ImportRelations">Import Relations</a>.
+<h3><a name='ExportImportRelations'>Export/Import Relations</a></h3>
+<p class=list-1>&bull;&nbsp; Exports faction relation(ships)s to an xx_Relations.csv file, and allows importing faction relation(ships)s into a mod. This is for advanced modders only. It allows you to export faction relation(ships)s to a csv file, systematically modify them and then reimport them. I.e., it's only useful if you want to change the faction relation(ships)s of a lot of actors at once.
+<p class=list-1>&bull;&nbsp; Can also be used in conjunction with <a href="#ImportRelations">Import Relations</a>.
 <p class=list-1>&bull;&nbsp; Note: This does not export race relations.
 <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportPrices'>Export/Import Prices</a></h3>
@@ -1531,7 +1531,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Allows factions to be imported from source mods and/or source csv files.
 <p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Factions</code> <a href="#BashTags">tag</a> in the mod description. 
-  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the <a href="#ExportFactions">Export Factions</a> command will export files in this format.
+  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the <a href="#ExportImportFactions">Export Factions</a> command will export files in this format.
 <p class=list-1>&bull;&nbsp; <B>Source CSV Files</B>
   <p class=list-2>&bull;&nbsp; To get source csv files, export factions from an existing mod. This can then be edited as desired.
   <p class=list-2>&bull;&nbsp; Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
@@ -1602,7 +1602,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; Allows faction relation(ship)s to be imported from source mods and/or source csv files.
 <p class=list-1>&bull;&nbsp; <B>Configuration:</B> 
   <p class=list-2>&bull;&nbsp; Source mods are automatically recognized if they have a <code>Relations</code> <a href="#BashTags">tag</a> in the mod description. 
-  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the <a href="#ExportRelations">Export Relations</a> command will export files in this format.
+  <p class=list-2>&bull;&nbsp; Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the <a href="#ExportImportRelations">Export Relations</a> command will export files in this format.
 <p class=list-1>&bull;&nbsp; <B>Source CSV Files</B>
   <p class=list-2>&bull;&nbsp; To get source csv files, export relations from an existing mod. This can then be edited as desired.
   <p class=list-2>&bull;&nbsp; Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
@@ -2452,7 +2452,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; File read error warning printout fixed
 <p class=list-1>&bull;&nbsp; Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
   <p class=list-2>&bull;&nbsp; The csv file must now end in "*_NPC_Levels.csv"
-  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <a href="#ExportImportFactions">Export/Import Factions</a> may now be used directly on a mod
+<p class=list-1>&bull;&nbsp; <a href="#ExportImportRelations">Export/Import Relations</a> may now be used directly on a mod
+<p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
 <p class=list-1>&bull;&nbsp; added Disable/Enable ini tweaks for Screenshots.
@@ -3257,7 +3259,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h3><a name='21410292008'>214 [10/29/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a>: 
   <p class=list-2>&bull;&nbsp; Changed to case insensitive sorting of ingredients in "Alchemical Effects" catalogs.
-<p class=list-1>&bull;&nbsp; <a href="#ExportRelations">Export Relations</a> and <a href="#ImportRelations">Import Relations</a> Bashed Patch component.
+<p class=list-1>&bull;&nbsp; <a href="#ExportImportRelations">Export Relations</a> and <a href="#ImportRelations">Import Relations</a> Bashed Patch component.
 <p class=empty>&nbsp;</p>
 <h3><a name='21310272008'>213 [10/27/2008]</a></h3>
 <p class=list-1>&bull;&nbsp; <a href="#AlchemicalCatalogs">Alchemical Catalogs</a>: 
@@ -3347,7 +3349,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Fix a bug in inventory merging when master lists are empty.
 <p class=empty>&nbsp;</p>
 <h3><a name='1937162008'>193 [7/16/2008]</a></h3>
-<p class=list-1>&bull;&nbsp; Added <a href="#ExportFactions">Export Factions</a> and <a href="#ImportFactions">Import Factions</a>
+<p class=list-1>&bull;&nbsp; Added <a href="#ExportImportFactions">Export Factions</a> and <a href="#ImportFactions">Import Factions</a>
 <p class=list-1>&bull;&nbsp; Expanded Bash_MFact.csv &#150; should be pretty complete now.
 <p class=empty>&nbsp;</p>
 <h3><a name='1927132008'>192 [7/13/2008]</a></h3>
