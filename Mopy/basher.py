@@ -4068,7 +4068,7 @@ class BashFrame(wx.Frame):
             if not CBash:
                 title = "Wrye Bash %s: " % (settings['bash.readme'][1],)
             else:
-                title = "Wrye Bash %s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], CBash.GetMajor(), CBash.GetMinor(), CBash.GetRevision())
+                title = "Wrye Bash %s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
@@ -8448,7 +8448,7 @@ class Mod_ActorLevels_Export(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('NPC Levels...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+        menuItem.Enable(bool(self.data))
 
     def Execute(self,event):
         message = (_("This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported.\n\nSee the Bash help file for more info."))
@@ -8457,23 +8457,34 @@ class Mod_ActorLevels_Export(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+_('_NPC_Levels.csv')
-        textDir = settings.get('bash.workDir',bosh.dirs['app'])
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,_('Export NPC levels to:'),
-            textDir,textName, '*.csv')
+        textPath = balt.askSave(self.window,_('Export NPC levels to:'),textDir,textName, '*_NPC_Levels.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
-        settings['bash.workDir'] = textDir
         #--Export
-        progress = balt.Progress(_("Export NPC Levels"))
+        progress = balt.Progress(_("Export Factions"))
         try:
-            bosh.ActorLevels.dumpText(fileInfo,textPath,progress)
+            if CBash:
+                actorLevels = bosh.CBash_ActorLevels()
+            else:
+                actorLevels = bosh.ActorLevels()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                actorLevels.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            actorLevels.writeToText(textPath)
+            progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_ActorLevels_Import(Link):
-    """Export actor levels from mod to text file."""
+    """Imports actor levels from text file to mod."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('NPC Levels...'))
@@ -8487,20 +8498,39 @@ class Mod_ActorLevels_Import(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+_('_NPC_Levels.csv')
-        textDir = settings.get('bash.workDir',bosh.dirs['app'])
+        textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_('Export NPC levels to:'),
-            textDir, textName, '*.csv')
+        textPath = balt.askOpen(self.window,_('Import NPC levels from:'),
+            textDir, textName, '*_NPC_Levels.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
-        settings['bash.workDir'] = textDir
+        #--Extension error check
+        ext = textName.cext
+        if ext != '.csv':
+            balt.showError(self.window,_('Source file must be a _NPC_Levels.csv file.'))
+            return
         #--Export
         progress = balt.Progress(_("Import NPC Levels"))
+        changed = None
         try:
-            bosh.ActorLevels.loadText(fileInfo,textPath, progress)
+            if CBash:
+                actorLevels = bosh.CBash_ActorLevels()
+            else:
+                actorLevels = bosh.ActorLevels()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            actorLevels.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = actorLevels.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
-
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant NPC levels to import."),_("Import NPC Levels"))
+        else:
+            buff = cStringIO.StringIO()
+            buff.write('* %03d  %s\n' % (changed, fileName.s))
+            balt.showLog(self.window,buff.getvalue(),_('Import NPC Levels'),icons=bashBlue)
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
     """Adds master."""
@@ -10074,16 +10104,12 @@ class Mod_Stats_Import(Link):
         progress = balt.Progress(_("Import Stats"))
         changed = None
         try:
-            if not CBash:
-                itemStats = bosh.ItemStats()
-            else:
+            if CBash:
                 itemStats = bosh.CBash_ItemStats()
-            progress(0.1,_("Reading %s.") % (textName.s,))
-            if ext == '.csv':
-                itemStats.readFromText(textPath)
             else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemStats.readFromMod(srcInfo)
+                itemStats = bosh.ItemStats()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            itemStats.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = itemStats.writeToMod(fileInfo)
             progress(1.0,_("Done."))
