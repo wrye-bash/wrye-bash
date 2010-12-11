@@ -475,7 +475,7 @@
     <p class=list-3>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=11536">Tes4Edit</a> 16 <img src="images/TES4Edit16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Edit32.png" width="32" height="32" border="0">
     <p class=list-3>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=11536">Tes4Trans</a> 16 <img src="images/TES4Trans16.png" width="16" height="16" border="0"> 32  <img src="images/TES4Trans32.png" width="32" height="32" border="0">
     <p class=list-3>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=15781">Tes4LodGen</a> 16 <img src="images/Tes4LODGen16.png" width="16" height="16" border="0"> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" border="0">
-    <p class=list-3>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=20516">BOSS</a> 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> This one has some options!: 
+    <p class=list-3>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=20516">BOSS</a> 16 <img src="images/Boss16.png" width="16" height="16" border="0"> 32  <img src="images/Boss32.png" width="32" height="32" border="0"> (Compatible with all released versions up to December 5th 2010) This one has some options!: 
       <p class=list-4>&bull;&nbsp; If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
       <p class=list-4>&bull;&nbsp; For BOSS version 1.6+ (released October 2010):
         <p class=list-5>&bull;&nbsp; If the option in the main menu is selected/ <B>U</B> is pressed will tell BOSS to update the masterlist firstm
@@ -1129,18 +1129,28 @@
     <p class=list-3>&bull;&nbsp; One less esp in your mods directory!
     <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportNPCLevels'>Export/Import NPC Levels</a></h3>
-<p class=list-1>&bull;&nbsp; <B><I>Export NPC Levels</I></B> exports the NPC level info from a mod to a tab separated spreadsheet file. This file can then be edited and re-imported using <B><I>Import NPC Levels.</I></B>
+<p class=list-1>&bull;&nbsp; <B><I>Export NPC Levels</I></B> exports the NPC level info from a mod to a comma separated spreadsheet file. This file can then be edited and re-imported using <B><I>Import NPC Levels.</I></B>
 <p class=list-1>&bull;&nbsp; <B>Notes</B>
   <p class=list-2>&bull;&nbsp; This is an <B><I>advanced function</I></B> intended for modifying overhaul mods like <I>Oscuro's Oblivion Overhaul.</I> Editing the level files takes a bit of thought and work, but once done the level files can be posted for other players to use.
   <p class=list-2>&bull;&nbsp; NPC leveling is only part of the leveling system. Leveled item lists also have a major impact, and there are creature levels as well &#150; neither of which is addressed by this feature.
-  <p class=list-2>&bull;&nbsp; NPC levels in existing saves will not be impacted by this, unless you then use the "Import NPC Levels" command on the save. <I>(Note that while mods import levels from a csv file, saves import their levels from a mod.)</I>
+  <p class=list-2>&bull;&nbsp; NPC levels in existing saves will not be impacted by this, unless you then use the "Update NPC Levels" command on the save. <I>(Note that while mods import levels from a csv file, saves import their levels from a mod.)</I>
 <p class=list-1>&bull;&nbsp; <B>File Format</B>
-  <p class=list-2>&bull;&nbsp; The file format is pretty straightforward &#150; you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same tab separated format.
-  <p class=list-2>&bull;&nbsp; The first column is the formid &#150; <I>do not edit these!</I>
-  <p class=list-2>&bull;&nbsp; The second column is the editor id. This is for convenience only and is ignored on import.
-  <p class=list-2>&bull;&nbsp; The next three columns are the leveling info
-  <p class=list-2>&bull;&nbsp; The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
-  <p class=list-2>&bull;&nbsp; Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "bOffset Oblivion" column indicates whether the NPC was also dynamically offset in Oblivion.esm.
+  <p class=list-2>&bull;&nbsp; The file format is pretty straightforward &#150; you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same comma separated format.
+  <p class=list-2>&bull;&nbsp; Two differing formats are supported (one is for backwards compatibility).
+  <p class=list-2>&bull;&nbsp; <B>New Format</B>
+    <p class=list-3>&bull;&nbsp; The first column is the mod that the data was exported from. It restricts the import of the data on that line to the named mod. Replace the mod name with "Any" (ignoring the quotes) to allow that line of data to be imported into any mod that has that record.
+    <p class=list-3>&bull;&nbsp; The second column is the editor id. This is for convenience only and is ignored on import.
+    <p class=list-3>&bull;&nbsp; The third and fourth column contain the formid <I>do not edit these!</I>
+    <p class=list-3>&bull;&nbsp; The next three columns are the leveling info
+    <p class=list-3>&bull;&nbsp; The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
+  <p class=list-2>&bull;&nbsp; <B>Old Style Format</B>
+    <p class=list-3>&bull;&nbsp; The first column is the formid &#150; <I>do not edit these!</I>
+    <p class=list-3>&bull;&nbsp; The second column is the editor id. This is for convenience only and is ignored on import.
+    <p class=list-3>&bull;&nbsp; The next three columns are the leveling info
+    <p class=list-3>&bull;&nbsp; The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
+  <p class=list-2>&bull;&nbsp; The New Format allows multiple mods to be included in the same csv file.
+  <p class=list-2>&bull;&nbsp; When the Old Style Format is read, it is treated as if the source mod field was set to "Any".
+  <p class=list-2>&bull;&nbsp; Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "Old IsPCLevelOffset" and "bOffset Oblivion" columns indicates whether the NPC was also dynamically offset in Oblivion.esm.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportRelations'>Export Relations</a></h3>
 <p class=list-1>&bull;&nbsp; Exports faction relation(ships)s to an xx_Relations.csv file.
@@ -1581,6 +1591,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Guard Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
 ;  * This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
+<p class=list-1>&bull;&nbsp; <B>%ModName% Names</B>
+  <p class=list-2>&bull;&nbsp; A names patcher file that names/renames NPCs etc. in specified mod.
+  <p class=list-2>&bull;&nbsp; Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth
 <p class=list-1>&bull;&nbsp; <B>Rational Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   <p class=list-2>&bull;&nbsp; Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -2387,7 +2400,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='29112122010Gaticusmyk002PacificMorrowindWaruddar'>291 [12/12/2010] [Gaticus,myk002,PacificMorrowind,Waruddar]</a></h3>
+<h3><a name='2915122010GaticusGratis_monstamyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [5/12/2010] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch:
   <p class=list-2>&bull;&nbsp; typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   <p class=list-2>&bull;&nbsp; Tweak Actors:
@@ -2396,10 +2409,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Tweak Assorted:
     <p class=list-3>&bull;&nbsp; another skip added to All Clothes Playable patcher
     <p class=list-3>&bull;&nbsp; Script Effect Silencer added.
+  <p class=list-2>&bull;&nbsp; Import Names
+    <p class=list-3>&bull;&nbsp; Crowded Roads Revisited NPC names csv file added (contributed by Smooth)
+    <p class=list-3>&bull;&nbsp; Crowded Roads Revamped NPC names csv file added (contributed by Spotty42)
+    <p class=list-3>&bull;&nbsp; Crowded Roads Revisited NPC names alternate csv file added (contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; Crowded Cities 30/15 NPC names csv file added (contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; Crowded Cities 30/15 NPC names alternate csv file added (contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)
   <p class=list-2>&bull;&nbsp; Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
 <p class=list-1>&bull;&nbsp; BAIN:
   <p class=list-2>&bull;&nbsp; fix so that the end of the display of the number of packages does not get cut off.
-  <p class=list-2>&bull;&nbsp; Read-Only files in installers will no longer throw errors (automatically converted to non-ReadOnly).
+  <p class=list-2>&bull;&nbsp; Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
   <p class=list-2>&bull;&nbsp; Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
   <p class=list-2>&bull;&nbsp; Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
   <p class=list-2>&bull;&nbsp; Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
@@ -2407,11 +2428,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class=list-3>&bull;&nbsp; Enter: Open archive/project.
     <p class=list-3>&bull;&nbsp; F2: Rename archive/project.
   <p class=list-2>&bull;&nbsp; new ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
-  <p class=list-2>&bull;&nbsp; 3 new skip options: Skip Lod Meshes, Skip Lod Textures (Normals) and Skip Lod Textures (Colour maps).
-  <p class=list-2>&bull;&nbsp; 7zip updated to version 9.20
+  <p class=list-2>&bull;&nbsp; 3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
+  <p class=list-2>&bull;&nbsp; 7z dll/exe updated to version 9.20
+  <p class=list-2>&bull;&nbsp; new Option to enable installation of OBSE Plugin dlls with large warning.
+  <p class=list-2>&bull;&nbsp; hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
 <p class=list-1>&bull;&nbsp; Saves Tab:
-  <p class=list-2>&bull;&nbsp; Rename Save(s) command added.
-  <p class=list-2>&bull;&nbsp; Rename Player command added
+  <p class=list-2>&bull;&nbsp; Rename Save(s) command added (in the saves menu->file).
+  <p class=list-2>&bull;&nbsp; Re-number Save(s) command added (in the saves menu->file).
+  <p class=list-2>&bull;&nbsp; Rename Player command added.
 <p class=list-1>&bull;&nbsp; fix for launcher code which prevented launching in some cases (contributed by myk002)
 <p class=list-1>&bull;&nbsp; fix for move/copy saves so that Default is not selectable if already in Default profile.
 <p class=list-1>&bull;&nbsp; fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
@@ -2423,7 +2447,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&nbsp;&nbsp; Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
   <p class=list-2>&bull;&nbsp; Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
 <p class=list-1>&bull;&nbsp; Bash.ini typo fixes (contributed by Metallicow).
-<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; Exception handling fixes to maintain Python 2.5 compatibility
+<p class=list-1>&bull;&nbsp; Bash Installer automatically handling requirements created
+<p class=list-1>&bull;&nbsp; File read error warning printout fixed
+<p class=list-1>&bull;&nbsp; Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+  <p class=list-2>&bull;&nbsp; The csv file must now end in "*_NPC_Levels.csv"
+  <p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
 <p class=list-1>&bull;&nbsp; added Disable/Enable ini tweaks for Screenshots.

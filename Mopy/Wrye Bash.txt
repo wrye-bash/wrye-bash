@@ -931,18 +931,28 @@ These are the commands found on context menu for mods...
     * One less esp in your mods directory!
 
 === Export/Import NPC Levels
-* **Export NPC Levels** exports the NPC level info from a mod to a tab separated spreadsheet file. This file can then be edited and re-imported using **Import NPC Levels.**
+* **Export NPC Levels** exports the NPC level info from a mod to a comma separated spreadsheet file. This file can then be edited and re-imported using **Import NPC Levels.**
 * __Notes__
   * This is an **advanced function** intended for modifying overhaul mods like ~~Oscuro's Oblivion Overhaul.~~ Editing the level files takes a bit of thought and work, but once done the level files can be posted for other players to use.
   * NPC leveling is only part of the leveling system. Leveled item lists also have a major impact, and there are creature levels as well -- neither of which is addressed by this feature.
-  * NPC levels in existing saves will not be impacted by this, unless you then use the "Import NPC Levels" command on the save. ~~(Note that while mods import levels from a csv file, saves import their levels from a mod.)~~
+  * NPC levels in existing saves will not be impacted by this, unless you then use the "Update NPC Levels" command on the save. ~~(Note that while mods import levels from a csv file, saves import their levels from a mod.)~~
 * __File Format__
-  * The file format is pretty straightforward -- you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same tab separated format.
-  * The first column is the formid -- ~~do not edit these!~~
-  * The second column is the editor id. This is for convenience only and is ignored on import.
-  * The next three columns are the leveling info
-  * The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
-  * Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "bOffset Oblivion" column indicates whether the NPC was also dynamically offset in Oblivion.esm.
+  * The file format is pretty straightforward -- you should be able to read/edit it with most spreadsheet programs. When reading be sure to set the program to recognize tabs as separators. Also, be sure to save in the same comma separated format.
+  * Two differing formats are supported (one is for backwards compatibility).
+  * __New Format__
+    * The first column is the mod that the data was exported from. It restricts the import of the data on that line to the named mod. Replace the mod name with "Any" (ignoring the quotes) to allow that line of data to be imported into any mod that has that record.
+    * The second column is the editor id. This is for convenience only and is ignored on import.
+    * The third and fourth column contain the formid ~~do not edit these!~~
+    * The next three columns are the leveling info
+    * The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
+  * __Old Style Format__
+    * The first column is the formid -- ~~do not edit these!~~
+    * The second column is the editor id. This is for convenience only and is ignored on import.
+    * The next three columns are the leveling info
+    * The last four columns are the original NPC levels from Oblivion.esm. If the NPCs are new to the mod, these columns will be blank. These are for convenience only and are ignored on import.
+  * The New Format allows multiple mods to be included in the same csv file.
+  * When the Old Style Format is read, it is treated as if the source mod field was set to "Any".
+  * Note that only NPCs that are dynamically leveled (i.e., offset from the player's level) are included in the export file. The "Old IsPCLevelOffset" and "bOffset Oblivion" columns indicates whether the NPC was also dynamically offset in Oblivion.esm.
 
 === Export Relations
 * Exports faction relation(ships)s to an xx_Relations.csv file.
@@ -2243,6 +2253,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Exception handling fixes to maintain Python 2.5 compatibility
 * Bash Installer automatically handling requirements created
 * File read error warning printout fixed
+* Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+  * The csv file must now end in "*_NPC_Levels.csv"
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
