@@ -486,7 +486,7 @@ class Path(object):
         if self.isdir() and safety and safety.lower() in self._cs:
             # Clear ReadOnly flag if set
             cmd = r'attrib -R "%s\*" /S /D' % (self._s)
-            ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
+            ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
             shutil.rmtree(self._s)
 
     #--start, move, copy, touch, untemp
