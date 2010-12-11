@@ -11874,68 +11874,63 @@ class ActorFactions:
                     factionEid = id_eid.get(faction,'Unknown')
                     out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
+        
 class CBash_ActorFactions:
     """Factions for npcs and creatures with functions for importing/exporting from/to mod/text file."""
     def __init__(self,aliases=None):
         """Initialize."""
-        self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions = type_id_factions[type][longid]
-        self.id_eid = {}
+        self.group_fid_factions = {'CREA':{},'NPC_':{}} #--factions = group_fid_factions[group][longid]
+        self.fid_eid = {}
         self.aliases = aliases or {}
         self.gotFactions = set()
 
-    def readFactionEids(self,modInfo):
-        """Extracts faction editor ids from modInfo and its masters."""
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail)
-        Current.load()
-        for modFile in Current:
-            if modFile.GName in self.gotFactions: continue
-            for record in modFile.FACT:
-                self.id_eid[record.fid] = record.eid
-                record.UnloadRecord()
-            self.gotFactions.add(modFile.GName)
-        del Current
-
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        self.readFactionEids(modInfo)
-        type_id_factions,id_eid = self.type_id_factions,self.id_eid
+        group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,self.fid_eid,self.gotFactions
 
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, MinLoad=False, Flags=0x00000028)
+        Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        importFile = Current.LookupModFile(modInfo.getPath().stail)
 
-        types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
-        for type,block in types.iteritems():
-            id_factions = type_id_factions[type]
-            for record in block:
-                fid = record.fid
-                if record.factions:
-                    id_eid[fid] = record.eid
-                    id_factions[fid] = record.factions_list
-                record.UnloadRecord()
+        for modFile in Current:
+            modName = modFile.GName
+            if modName in gotFactions: continue
+            for record in modFile.FACT:
+                fid_eid[record.fid] = record.eid
+            if modFile != importFile: continue
+            types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
+            for group,block in types.iteritems():
+                fid_factions = group_fid_factions[group]
+                for record in block:
+                    fid = record.fid
+                    if record.factions:
+                        fid_eid[fid] = record.eid
+                        fid_factions[fid] = record.factions_list
+                    record.UnloadRecord()
+            gotFactions.add(modName)
         del Current
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
+        group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, MinLoad=False, Flags=0x00000038)
+        Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         changed = {'CREA':0,'NPC_':0}
         types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
-        for type,block in types.iteritems():
-            id_factions = type_id_factions.get(type,None)
+        for group,block in types.iteritems():
+            fid_factions = group_fid_factions.get(group,None)
             for record in block:
                 fid = record.fid
-                if fid not in id_factions: continue
-                newFactions = set(id_factions[fid])
+                if fid not in fid_factions: continue
+                newFactions = set(fid_factions[fid])
                 curFactions = set(record.factions_list)
                 changed = newFactions - curFactions
                 if not changed: continue
-                for faction,rank,unused1 in changed:
+                for faction,rank in changed:
                     for entry in record.factions:
                         if entry.faction == faction:
                             entry.rank = rank
@@ -11944,8 +11939,7 @@ class CBash_ActorFactions:
                         entry = record.create_faction()
                         entry.faction = faction
                         entry.rank = rank
-                        entry.unused1 = unused1
-                changed[type] += 1
+                changed[group] += 1
         #--Done
         if sum(changed.values()): modFile.save()
         del Current
@@ -11953,21 +11947,21 @@ class CBash_ActorFactions:
 
     def readFromText(self,textPath):
         """Imports eids from specified text file."""
-        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if len(fields) < 8 or fields[3][:2] != '0x': continue
-            type,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
+            group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
             amod = GPath(amod)
             fmod = GPath(fmod)
             aid = (aliases.get(amod,amod),int(aobj[2:],16))
             fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
             rank = int(rank)
-            id_factions = type_id_factions[type]
-            factions = id_factions.get(aid)
+            fid_factions = group_fid_factions[group]
+            factions = fid_factions.get(aid)
             if factions is None:
-                factions = id_factions[aid] = {}
+                factions = fid_factions[aid] = {}
             for index,entry in enumerate(factions):
                 if entry == fid:
                     factions[fid] = (rank,None)
@@ -11978,18 +11972,18 @@ class CBash_ActorFactions:
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
-        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
         out.write(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')))
-        for type in sorted(type_id_factions):
-            id_factions = type_id_factions[type]
-            for id in sorted(id_factions,key = lambda x: id_eid.get(x)):
-                actorEid = id_eid.get(id,'Unknown')
-                for faction, rank, unused in sorted(id_factions[id],key=lambda x: id_eid.get(x[0])):
-                    factionEid = id_eid.get(faction,'Unknown')
-                    out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
+        for group in sorted(group_fid_factions):
+            fid_factions = group_fid_factions[group]
+            for fid in sorted(fid_factions,key = lambda x: fid_eid.get(x)):
+                actorEid = fid_eid.get(fid,'Unknown')
+                for faction, rank in sorted(fid_factions[fid],key=lambda x: fid_eid.get(x[0])):
+                    factionEid = fid_eid.get(faction,'Unknown')
+                    out.write(rowFormat % (group,actorEid,fid[0].s,fid[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
 #------------------------------------------------------------------------------
 class ActorLevels:
@@ -12117,25 +12111,25 @@ class CBash_ActorLevels:
     """Package: Functions for manipulating actor levels."""
     def __init__(self,aliases=None):
         """Initialize."""
-        self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
+        self.mod_fid_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
 
     @staticmethod
-    def coerce(value, type, base=None):
+    def _coerce(value, newtype, base=None):
         try:
-            if type is float:
+            if newtype is float:
                 pack,unpack = struct.pack,struct.unpack
                 return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
             if base:
-                return type(value, base)
-            return type(value)
+                return newtype(value, base)
+            return newtype(value)
         except TypeError:
             return None
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
-        mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
+        mod_fid_levels, gotLevels = self.mod_fid_levels, self.gotLevels
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod('Oblivion.esm', Flags=0x00000068)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
@@ -12144,28 +12138,28 @@ class CBash_ActorLevels:
         for modFile in Current:
             modName = modFile.GName
             if modName in gotLevels: continue
-            id_levels = mod_id_levels.setdefault(modName, {})
+            fid_levels = mod_fid_levels.setdefault(modName, {})
             for record in modFile.NPC_:
-                id_levels[record.fid] = (record.eid, record.IsPCLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
+                fid_levels[record.fid] = (record.eid, record.IsPCLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
                 record.UnloadRecord()
             gotLevels.add(modName)
         del Current
 
     def writeToMod(self,modInfo):
         """Exports actor levels to specified mod."""
-        mod_id_levels = self.mod_id_levels
+        mod_fid_levels = self.mod_fid_levels
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         changed = 0
-        id_levels = mod_id_levels.get(modFile.GName,mod_id_levels.get(GPath('Unknown'),None))
-        if id_levels:
+        fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
+        if fid_levels:
             for record in modFile.NPC_:
                 fid = record.fid
-                if fid not in id_levels: continue
-                eid, isOffset, level, calcMin, calcMax = id_levels[fid]
+                if fid not in fid_levels: continue
+                eid, isOffset, level, calcMin, calcMax = fid_levels[fid]
                 if((record.level, record.calcMin, record.calcMax) != (level, calcMin, calcMax)):
                     (record.level, record.calcMin, record.calcMax) = (level, calcMin, calcMax)
                     changed += 1
@@ -12176,41 +12170,41 @@ class CBash_ActorLevels:
 
     def readFromText(self,textPath):
         """Imports NPC level data from specified text file."""
-        mod_id_levels, coerce = self.mod_id_levels, self.coerce
+        mod_fid_levels, _coerce = self.mod_fid_levels, self._coerce
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if fields[0][:2] == '0x': #old format
                 fid,eid,offset,calcMin,calcMax = fields[:5]
                 source = GPath('Unknown')
-                fidObject = coerce(fid[4:], int, 16)
+                fidObject = _coerce(fid[4:], int, 16)
                 fid = (GPath('Oblivion.esm'), fidObject)
-                eid = coerce(eid, str)
-                offset = coerce(offset, int)
-                calcMin = coerce(calcMin, int)
-                calcMax = coerce(calcMax, int)
+                eid = _coerce(eid, str)
+                offset = _coerce(offset, int)
+                calcMin = _coerce(calcMin, int)
+                calcMax = _coerce(calcMax, int)
             else:
                 if len(fields) < 7 or fields[3][:2] != '0x': continue
                 source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
-                source = coerce(source, str)
+                source = _coerce(source, str)
                 if source.lower() in ('none', 'oblivion.esm'): continue
                 source = GPath(source)
-                eid = coerce(eid, str)
-                fidMod = GPath(coerce(fidMod, str))
+                eid = _coerce(eid, str)
+                fidMod = GPath(_coerce(fidMod, str))
                 if fidMod.s.lower() == 'none': continue
-                fidObject = coerce(fidObject[2:], int, 16)
+                fidObject = _coerce(fidObject[2:], int, 16)
                 if fidObject is None: continue
                 fid = (aliases.get(fidMod,fidMod),fidObject)
-                offset = coerce(offset, int)
-                calcMin = coerce(calcMin, int)
-                calcMax = coerce(calcMax, int)
-            id_levels = mod_id_levels.setdefault(source, {})
-            id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
+                offset = _coerce(offset, int)
+                calcMin = _coerce(calcMin, int)
+                calcMax = _coerce(calcMax, int)
+            fid_levels = mod_fid_levels.setdefault(source, {})
+            fid_levels[fid] = (eid, 1, offset, calcMin, calcMax)
         ins.close()
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
-        mod_id_levels = self.mod_id_levels
+        mod_fid_levels = self.mod_fid_levels
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%d","%d","%d"'
         extendedRowFormat = ',"%d","%d","%d","%d"\n'
@@ -12218,17 +12212,17 @@ class CBash_ActorLevels:
         out = textPath.open('w')
         out.write(headFormat % (_('Source Mod'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Offset'),_('CalcMin'),_('CalcMax'),_('Old IsPCLevelOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax')))
         #Sorted based on mod, then editor ID
-        obId_levels = mod_id_levels[GPath('Oblivion.esm')]
-        for mod in sorted(mod_id_levels):
+        obfid_levels = mod_fid_levels[GPath('Oblivion.esm')]
+        for mod in sorted(mod_fid_levels):
             if mod.s.lower() == 'oblivion.esm': continue
-            id_levels = mod_id_levels[mod]
-            for id in sorted(id_levels,key=lambda k: (k[0].s,id_levels[k][0])):
-                eid, isOffset, offset, calcMin, calcMax = id_levels[id]
+            fid_levels = mod_fid_levels[mod]
+            for fid in sorted(fid_levels,key=lambda k: (k[0].s,fid_levels[k][0])):
+                eid, isOffset, offset, calcMin, calcMax = fid_levels[fid]
                 if isOffset:
                     source = mod.s
-                    fidMod, fidObject = id[0].s,id[1]
+                    fidMod, fidObject = fid[0].s,fid[1]
                     out.write(rowFormat % (source, eid, fidMod, fidObject, offset, calcMin, calcMax))
-                    oldLevels = obId_levels.get(id,None)
+                    oldLevels = obfid_levels.get(fid,None)
                     if oldLevels:
                         oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = oldLevels
                         out.write(extendedRowFormat % (wasOffset, oldOffset, oldCalcMin, oldCalcMax))
@@ -15685,7 +15679,7 @@ class CBash_PatchFile(ObModFile):
                     if hasattr(record, '_parentID'):
                         if self.HasRecord(record._parentID) is None:
                             #Copy the winning version of the parent over if it isn't in the patch
-                            parent = self.Collection.LookupRecords(record._parentID)
+                            parent = self.ObCollection.LookupRecords(record._parentID)
                             if parent:
                                 parent[0].CopyAsOverride(self.patchFile)
                     override = record.CopyAsOverride(self)
@@ -15705,7 +15699,7 @@ class CBash_PatchFile(ObModFile):
                 if hasattr(record, '_parentID'):
                     if self.HasRecord(record._parentID) is None:
                         #Copy the winning version of the parent over if it isn't in the patch
-                        parent = self.Collection.LookupRecords(record._parentID)
+                        parent = self.ObCollection.LookupRecords(record._parentID)
                         if parent:
                             if parent[0].GName == record.GName:
                                 parent[0].CopyAsNew(self.patchFile)
@@ -15723,24 +15717,24 @@ class CBash_PatchFile(ObModFile):
 
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])
 
-        self.Collection = ObCollection(ModsPath=dirs['mods'].s)
+        self.ObCollection = ObCollection(ModsPath=dirs['mods'].s)
 
         for name in self.loadSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addMod(modInfos[name].getPath().stail)
+                self.ObCollection.addMod(modInfos[name].getPath().stail)
         for name in self.mergeSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addMergeMod(modInfos[name].getPath().stail)
+                self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
         for name in self.forceMergeSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addMergeMod(modInfos[name].getPath().stail)
+                self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
         for name in self.scanSet:
             if modInfos[name].mtime < self.patchTime:
-                self.Collection.addScanMod(modInfos[name].getPath().stail)
+                self.ObCollection.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
-        patchFile = self.patchFile = self.Collection.addMod(self.patchName.temp.s, CreateIfNotExist=True)
+        patchFile = self.patchFile = self.ObCollection.addMod(self.patchName.temp.s, CreateIfNotExist=True)
         ObModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModName)
-        self.Collection.minimalLoad(LoadMasters=True)
+        self.ObCollection.minimalLoad(LoadMasters=True)
 
         self.TES4.author = 'BASHED PATCH'
 
@@ -16750,7 +16744,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
                 break
         if changed:
             if hasattr(record, '_parentID'):
-                parent = self.patchFile.Collection.LookupRecords(record._parentID)
+                parent = self.patchFile.ObCollection.LookupRecords(record._parentID)
                 if parent:
                     #Copy the winning version of the parent over
                     parent[0].CopyAsOverride(self.patchFile)
@@ -23430,7 +23424,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 record = patchFile.createGMSTRecord(eid)
                 if not record:
                     print eid
-                    for conflict in patchFile.Collection.LookupRecords(eid, False):
+                    for conflict in patchFile.ObCollection.LookupRecords(eid, False):
                         print conflict._ModName
                     raise StateError(_("Tweak Settings: Unable to create GMST!"))
                 record.value = value
@@ -24895,7 +24889,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
                 school = 6 #--Default to 6 (U: unknown)
                 enchantment = record.enchantment
                 if enchantment:
-                    enchantment = self.patchFile.Collection.LookupRecords(enchantment)
+                    enchantment = self.patchFile.ObCollection.LookupRecords(enchantment)
                     if enchantment:
                         #Get the winning record
                         enchantment = enchantment[0]
@@ -26762,7 +26756,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             book = book.CopyAsOverride(self.patchFile)
             if not book:
                 print PrintFormID(fid)
-                for mod in self.patchFile.Collection:
+                for mod in self.patchFile.ObCollection:
                     print mod._ModName
                 print book
                 book = BOOKRecord(patchFile._CollectionIndex, 'Cobl Main.esm', fid)
@@ -28504,7 +28498,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         racesSorted = self.racesSorted
         racesFiltered = self.racesFiltered
         mod_npcsFixed = self.mod_npcsFixed
-        ObCollection = patchFile.Collection
+        ObCollection = patchFile.ObCollection
         subProgress = SubProgress(progress)
         subProgress.setFull(len(Collection) * 2)
         reX117 = self.reX117
@@ -29025,7 +29019,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         type = record._Type
-        ObCollection = self.patchFile.Collection
+        ObCollection = self.patchFile.ObCollection
         badEntries = set()
         goodEntries = []
         knownGood = self.knownGood

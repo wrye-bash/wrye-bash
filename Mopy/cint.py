@@ -5042,6 +5042,14 @@ class ObModFile(object):
         self._CollectionID = CollectionIndex
         self._ModID = ModID
 
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._CollectionID == other._CollectionID and self._ModID == other._ModID
+        return False
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def ModName(self):
         return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
@@ -5621,6 +5629,14 @@ class ObCollection:
             self._CollectionID = _CCreateCollection(str(ModsPath), 0) #Oblivion collection type hardcoded for now
         self._ModIndex = -1
         self._NumMods = 0
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._CollectionID == other._CollectionID
+        return False
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def addMod(self, ModName, MinLoad=True, NoLoad=False, Flags=0x00000078):
 ##        //MinLoad and FullLoad are exclusive
