@@ -10609,7 +10609,7 @@ class InstallerConverter(object):
         self.tempList.remove()
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (subTempDir.s)
-        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
+        ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
         #--Done
@@ -10721,7 +10721,7 @@ class InstallerArchive(Installer):
         self.tempList.remove()
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
-        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
+        ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
@@ -10772,7 +10772,7 @@ class InstallerArchive(Installer):
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
-        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout
+        ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         for file in files:
             srcFull = tempDir.join(file)
             destFull = destDir.join(file)
@@ -11604,7 +11604,7 @@ class InstallersData(bolt.TankData, DataDict):
         emptyDirs = set()
         modsDir = dirs['mods']
         cmd = r'attrib -R "%s\*" /S /D' % (modsDir)
-        ins = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).stdout        
+        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()     
         InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
