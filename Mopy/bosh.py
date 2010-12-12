@@ -2822,6 +2822,28 @@ class MreKeym(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+## Commented out for performance reasons. Slows down loading quite a bit.
+## If Bash ever wants to be able to add masters to a mod, this minimal definition is required
+## It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
+##class MreLand(MelRecord):
+##    """Land structure. Part of exterior cells."""
+##    ####Could probably be loaded via MelStructA,
+##    ####but little point since it is too complex to manipulate
+##    classType = 'LAND'
+##    melSet = MelSet(
+##        MelBase('DATA','data_p'),
+##        MelBase('VNML','normals_p'),
+##        MelBase('VHGT','heights_p'),
+##        MelBase('VCLR','vertexColors_p'),
+##        MelStructs('BTXT','IBBh','baseTextures', (FID,'texture'), 'quadrant', 'unused1', 'layer'),
+##        MelGroups('alphaLayers',
+##            MelStruct('ATXT','IBBh',(FID,'texture'), 'quadrant', 'unused1', 'layer'),
+##            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unused1', 'opacity'),
+##        ),
+##        MelFidList('VTEX','vertexTextures'),
+##    )
+##    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+#------------------------------------------------------------------------------
 class MreLigh(MelRecord):
     """Light source record."""
     classType = 'LIGH'
@@ -3152,7 +3174,42 @@ class MrePack(MelRecord):
         MelConditions(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
+#------------------------------------------------------------------------------
+## See the comments on MreLand. Commented out for same reasons.
+##class MrePgrd(MelRecord):
+##    """Path grid structure. Part of cells."""
+##    ####Could probably be loaded via MelStructA,
+##    ####but little point since it is too complex to manipulate
+##    classType = 'PGRD'
+##    class MelPgrl(MelStructs):
+##        """Handler for pathgrid pgrl record."""
+##        def loadData(self,record,ins,type,size,readId):
+##            """Reads data from ins into record attribute."""
+##            if(size % 4 != 0):
+##                raise "Unexpected size encountered for pathgrid PGRL subrecord: %s" % size
+##            format = 'I' * (size % 4)
+##            attrs = self.attrs
+##            target = self.getDefault()
+##            record.__getattribute__(self.attr).append(target)
+##            target.__slots__ = self.attrs
+##            unpacked = ins.unpack(format,size,readId)
+##            setter = target.__setattr__
+##            map(setter,attrs,(unpacked[0], unpacked[1:]))
+##
+##        def dumpData(self,record,out):
+##            """Dumps data from record to outstream."""
+##            for target in record.__getattribute__(self.attr):
+##                out.packSub(self.subType,'I' + 'I'*(len(target.points)), target.reference, target.points)
+##
+##    melSet = MelSet(
+##        MelBase('DATA','data_p'),
+##        MelBase('PGRP','points_p'),
+##        MelBase('PGAG','pgag_p'),
+##        MelBase('PGRR','pgrr_p'),
+##        MelBase('PGRI','pgri_p'),
+##        MelPgrl('PGRL','','pgrl',(FID,'reference'),'points'),
+##    )
+##    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 #------------------------------------------------------------------------------
 class MreQust(MelRecord):
     """Quest record."""
@@ -8575,6 +8632,14 @@ class ModInfos(FileInfos):
         mtime = self[modName].mtime
         mods = self.mtime_selected.get(mtime,tuple())
         return len(mods) > 1
+        
+    def getFreeTime(self, startTime, defaultTime='+1'):
+        """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""        
+        haskey = self.mtime_mods.has_key
+        for testTime in range(starttime, starttime + 1000): #1000 is an arbitrary limit
+            if not haskey(testTime):
+                return testTime
+        return defaultTime
 
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
@@ -12718,7 +12783,7 @@ class FidReplacer:
         self.new_eid = {} #--Maps new fid to new editor id
 
     def readFromText(self,textPath):
-        """Reads replacment data from specified text file."""
+        """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
@@ -12726,9 +12791,13 @@ class FidReplacer:
         for fields in ins:
             if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
             oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+            oldMod = _coerce(oldMod, str)
+            oldEid = _coerce(oldEid, str)
+            newEid = _coerce(newEid, str)
+            newMod = _coerce(newMod, str)
             oldMod,newMod = map(GPath,(oldMod,newMod))
-            oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
-            newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
+            oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
+            newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
             old_new[oldId] = newId
             old_eid[oldId] = oldEid
             new_eid[newId] = newEid
@@ -12786,7 +12855,7 @@ class CBash_FidReplacer:
         self.new_eid = {} #--Maps new fid to new editor id
 
     def readFromText(self,textPath):
-        """Reads replacment data from specified text file."""
+        """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
@@ -12794,9 +12863,13 @@ class CBash_FidReplacer:
         for fields in ins:
             if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
             oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+            oldMod = _coerce(oldMod, str)
+            oldEid = _coerce(oldEid, str)
+            newEid = _coerce(newEid, str)
+            newMod = _coerce(newMod, str)
             oldMod,newMod = map(GPath,(oldMod,newMod))
-            oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
-            newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
+            oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
+            newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
             old_new[oldId] = newId
             old_eid[oldId] = oldEid
             new_eid[newId] = newEid
@@ -12806,23 +12879,24 @@ class CBash_FidReplacer:
         """Updates specified mod file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         #Filter the fid replacements to only include existing mods
-        old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in modInfos.keys() and newId[0] in modInfos.keys())
+        existing = modInfos.keys()
+        old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
-
         old_count = {}
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        modFile = Current.addMod(modInfo.getPath().stail)
         for newId in set(old_new.values()):
-            Current.addMod(modInfos[newId[0]].getPath().stail)
-        Current.minimalLoad(LoadMasters=False)
+            Current.addMod(modInfos[newId[0]].getPath().stail, Flags=0x00000068)
+        modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00000078)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
 
         for oldId, newId in old_new.iteritems():
-            count = modFile.UpdateReferences(oldId,newId)
-            if count: old_count[oldId] = count
+            count = modFile.UpdateReferences(oldId,newId) #returns -1 on error
+            if count > 0: old_count[oldId] = count
 
         #--Done
         if not sum(old_count.values()): return False
-        modFile.safeCloseSave()
+        modFile.save()
         entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in old_count.iteritems()]
         entries.sort(key=itemgetter(1))
         return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
