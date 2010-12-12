@@ -10449,22 +10449,19 @@ class CBash_Mod_MapMarkers_Export(Link):
     """Export armor and weapon stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('MapMarkers...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Map Markers...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+        menuItem.Enable(bool(self.data) and bool(CBash))
 
     def Execute(self,event):
-        if not CBash: 
-            balt.showError(self.window,_('This function requires that CBash is enabled.'))
-            return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+_('_mapmarkers.csv')
+        textName = fileName.root+_('_MapMarkers.csv')
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
         textPath = balt.askSave(self.window,_('Export Map Markers to:'),
-            textDir, textName, '*mapmarkers.csv')
+            textDir, textName, '*MapMarkers.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
@@ -10488,14 +10485,11 @@ class CBash_Mod_MapMarkers_Import(Link):
     """Import MapMarkers from text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('MapMarkers...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Map Markers...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+        menuItem.Enable(len(self.data) == 1 and bool(CBash))
         
     def Execute(self,event):
-        if not CBash: 
-            balt.showError(self.window,_('This function requires that CBash is enabled.'))
-            return
         message = (_("Import Map Markers data from a text file. This will replace existing the data on map markers with the same editor ids and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.MapMarkers.import.continue',
             _('Import Map Markers')):
@@ -10528,13 +10522,13 @@ class CBash_Mod_MapMarkers_Import(Link):
             progress = progress.Destroy()
         #--Log
         if not changed:
-            balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import MapMarkers"))
+            balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import Map Markers"))
         else:
             buff = cStringIO.StringIO()
-            buff.write('Imported MapMarkers to mod %s:\n')
+            buff.write('Imported Map Markers to mod %s:\n' % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
-            balt.showLog(self.window,buff.getvalue(),_('Import MapMarkers'),icons=bashBlue)
+            balt.showLog(self.window,buff.getvalue(),_('Import Map Markers'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
