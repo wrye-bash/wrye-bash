@@ -6041,7 +6041,11 @@ class File_Duplicate(Link):
             if (destDir == fileInfo.dir) and (destName == fileName):
                 balt.showError(self.window,_("Files cannot be duplicated to themselves!"))
                 continue
-            fileInfos.copy(fileName,destDir,destName,mtime='+1')
+            if(fileInfo.isMod()):
+                newTime = bosh.modInfos.getFreeTime(fileInfo.getPath().mtime)
+            else:
+                newTime = '+1'
+            fileInfos.copy(fileName,destDir,destName,mtime=newTime)
             if destDir == fileInfo.dir:
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
@@ -8992,7 +8996,8 @@ class Mod_CreateBlank(Link):
             count += 1
             newName = GPath('New Mod %d.esp' % (count,))
         newInfo = bosh.ModInfo(fileInfo.dir,newName)
-        newInfo.mtime = fileInfo.mtime+20
+        newTime = fileInfo.mtime + 20
+        newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
         newFile.tes4.masters = [GPath('Oblivion.esm')]
         newFile.safeSave()

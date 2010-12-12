@@ -298,6 +298,8 @@ class Path(object):
     def __repr__(self):
         return "bolt.Path("+repr(self._s)+")"
 
+    def __str__(self):
+        return self._s
     #--Properties--------------------------------------------------------
     #--String/unicode versions.
     @property
