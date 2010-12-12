@@ -329,15 +329,23 @@ reSplitOnNonAlphaNumeric = re.compile(r'\W+')
 
 # Util Functions --------------------------------------------------------------
 # Type coercion
-def _coerce(value, newtype, base=None):
+def _coerce(value, newtype, base=None,AllowNone=False):
     try:
         if newtype is float:
             pack,unpack = struct.pack,struct.unpack
             return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
-        if base:
-            return newtype(value, base)
-        return newtype(value)
-    except TypeError:
+        if newtype is bool:
+            if isinstance(value,basestring):
+                retValue = value.strip().lower()
+                if AllowNone and retValue == 'none': return None
+                return not retValue in ('','none','false','no','0','0.0')
+            return bool(newtype)
+        if base: retValue = newtype(value, base)
+        else: retValue = newtype(value)
+        if AllowNone and isinstance(retValue,basestring) and retValue.lower() == 'none':
+            return None
+        return retValue
+    except ValueError,TypeError:
         return None
 # .Net strings
 def netString(x):
@@ -12244,7 +12252,7 @@ class CBash_ActorLevels:
                 source = GPath('Unknown')
                 fidObject = _coerce(fid[4:], int, 16)
                 fid = (GPath('Oblivion.esm'), fidObject)
-                eid = _coerce(eid, str)
+                eid = _coerce(eid, str, AllowNone=True)
                 offset = _coerce(offset, int)
                 calcMin = _coerce(calcMin, int)
                 calcMax = _coerce(calcMax, int)
@@ -12254,7 +12262,7 @@ class CBash_ActorLevels:
                 source = _coerce(source, str)
                 if source.lower() in ('none', 'oblivion.esm'): continue
                 source = GPath(source)
-                eid = _coerce(eid, str)
+                eid = _coerce(eid, str, AllowNone=True)
                 fidMod = GPath(_coerce(fidMod, str))
                 if fidMod.s.lower() == 'none': continue
                 fidObject = _coerce(fidObject[2:], int, 16)
@@ -12407,7 +12415,7 @@ class EditorIds:
             group = _coerce(group,str)
             mod = GPath(_coerce(mod,str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid,str)
+            eid = _coerce(eid,str, AllowNone=True)
             if not reNewEid.match(eid):
                 continue
             id_eid = type_id_eid.setdefault(group, {})
@@ -12453,9 +12461,8 @@ class CBash_EditorIds:
         for group in groups:
             fid_eid = group_fid_eid.setdefault(group[:4], {})
             for record in getattr(modFile, group):
-                fid = record.fid
                 eid = record.eid
-                if eid: fid_eid[fid] = eid
+                if eid: fid_eid[record.fid] = eid
                 record.UnloadRecord()
         del Current
 
@@ -12535,7 +12542,7 @@ class CBash_EditorIds:
             if group not in validTypes: continue
             mod = GPath(_coerce(mod,str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid,str)
+            eid = _coerce(eid,str, AllowNone=True)
             if not reNewEid.match(eid):
                 continue
             fid_eid = group_fid_eid.setdefault(group, {})
@@ -12792,8 +12799,8 @@ class FidReplacer:
             if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
             oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
             oldMod = _coerce(oldMod, str)
-            oldEid = _coerce(oldEid, str)
-            newEid = _coerce(newEid, str)
+            oldEid = _coerce(oldEid, str, AllowNone=True)
+            newEid = _coerce(newEid, str, AllowNone=True)
             newMod = _coerce(newMod, str)
             oldMod,newMod = map(GPath,(oldMod,newMod))
             oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
@@ -12865,8 +12872,8 @@ class CBash_FidReplacer:
             oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
             oldMod = _coerce(oldMod, str)
             oldEid = _coerce(oldEid, str)
-            newEid = _coerce(newEid, str)
-            newMod = _coerce(newMod, str)
+            newEid = _coerce(newEid, str, AllowNone=True)
+            newMod = _coerce(newMod, str, AllowNone=True)
             oldMod,newMod = map(GPath,(oldMod,newMod))
             oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
             newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
@@ -12970,8 +12977,8 @@ class FullNames:
             group = _coerce(group, str)
             mod = GPath(_coerce(mod, str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid, str)
-            full = _coerce(full, str)
+            eid = _coerce(eid, str, AllowNone=True)
+            full = _coerce(full, str, AllowNone=True)
             if group in type_id_name:
                 type_id_name[group][longid] = (eid,full)
             else:
@@ -13013,7 +13020,7 @@ class CBash_FullNames:
         """Imports type_id_name from specified mod."""
         group_fid_name = self.group_fid_name
         Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
@@ -13025,6 +13032,7 @@ class CBash_FullNames:
                     eid = record.eid
                     if eid and full:
                         fid_name[record.fid] = (eid,full)
+                record.UnloadRecord()
         del Current
 
     def writeToMod(self,modInfo):
@@ -13062,8 +13070,8 @@ class CBash_FullNames:
             group = _coerce(group, str)
             mod = GPath(_coerce(mod, str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid, str)
-            full = _coerce(full, str)
+            eid = _coerce(eid, str, AllowNone=True)
+            full = _coerce(full, str, AllowNone=True)
             group_fid_name.setdefault(group, {})[longid] = (eid,full)
         ins.close()
 
@@ -13087,108 +13095,15 @@ class CBash_FullNames:
 
 #------------------------------------------------------------------------------
 class CBash_MapMarkers:
-    """Names for records, with functions for importing/exporting from/to mod/text file."""
+    """Map marker references, with functions for importing/exporting from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        self.markers = {}
+        self.fid_markerdata = {}
         self.aliases = aliases or {}
-
-    def readFromMod(self,modInfo):
-        """Imports type_id_name from specified mod."""
-        markers = self.markers
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
-        Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
-
-        for record in getattr(modFile,'REFRS'):
-            if record.base == 0x10:
-                markers[record.fid_long] = [record.eid,record.markerName,record.markerType,record.IsVisible,record.IsCanTravelTo,record.posX,record.posY,record.posZ,record.rotX,record.rotY,record.rotZ]
-        del Current
-
-    def writeToMod(self,modInfo):
-        """Imports type_id_name to specified mod."""
-        marker_types = {
-            'NONE':0,
-            'Camp':1,
-            'Cave':2,
-            'City':3,
-            'Elven Ruin':4,
-            'Fort Ruin':5,
-            'Mine':6,
-            'Landmark':7,
-            'Tavern':8,
-            'Settlement':9,
-            'Daedric Shrine':10,
-            'Oblivion Gate':11,
-            '?':12,
-            'Ayleid Well':13,
-            'Wayshrine':14,
-            'Magical Stone':15,
-            'Spire':16,
-            'Obelisk of Order':17,
-            'House':18,
-            'Player marker (flag)':19,
-            'Player marker (Q flag)':20,
-            'Player marker (i flag)':21,
-            'Player marker (? flag)':22,
-            'Harbor/dock':23,
-            'Stable':24,
-            'Castle':25,
-            'Farm':26,
-            'Chapel':27,
-            'Merchant':28,
-            'Ayleid Step (old Ayleid ruin icon)':29,}
-        markers = self.markers
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
-        Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
-        attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
-        changed = []
-        for record in getattr(modFile,'REFRS'):
-            if not record.fid_long in markers: continue
-            if record.base == 0x10:
-                for x in range(0,10):
-                    if getattr(record,attrs[x]) != markers[record.fid_long][x]:
-                        recchanged = True
-                        break
-                if recchanged:
-                    changed.append(record.eid)
-                    record.eid,record.markerName = markers[record.fid_long][0:2]
-                    Type = markers[record.fid_long][2]
-                    if type(Type) == int:
-                        record.markerType = Type
-                    else:
-                        record.markerType = marker_types[Type]
-                    record.IsVisible,record.IsCanTravelTo = markers[record.fid_long][3:5]
-                    record.posX = float(markers[record.fid_long][5])
-                    record.posY = float(markers[record.fid_long][6])
-                    record.posZ = float(markers[record.fid_long][7])
-                    record.rotX = float(markers[record.fid_long][8])
-                    record.rotY = float(markers[record.fid_long][9])
-                    record.rotZ = float(markers[record.fid_long][10])
-        if changed: modFile.safeCloseSave()
-        return changed
-
-    def readFromText(self,textPath):
-        """Imports type_id_name from specified text file."""
-        textPath = GPath(textPath)
-        markers = self.markers
-        aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 13 or fields[1][:2] != '0x': continue
-            mod,objectIndex = fields[0:2]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            markers[longid] = fields[2:13]
-        ins.close()
-
-    def writeToText(self,textPath):
-        """Exports markers to specified text file."""
-        marker_types = {
+        self.markerFid = (GPath('Oblivion.esm'), 0x000010)
+        self.attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
+        self.markerTypeNumber_Name = {
             None : 'NONE',
             0 : 'NONE',
             1 : 'Camp',
@@ -13220,19 +13135,89 @@ class CBash_MapMarkers:
             27 : 'Chapel',
             28 : 'Merchant',
             29 : 'Ayleid Step (old Ayleid ruin icon)',}
+        self.markerTypeName_Number = dict([(y.lower(),x) for x,y in self.markerTypeNumber_Name.iteritems() if x is not None])
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
+
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        
+        for record in modFile.REFRS:
+            if record.base == markerFid:
+                fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
+            record.UnloadRecord()
+            
+        del Current
+
+    def writeToMod(self,modInfo):
+        """Imports type_id_name to specified mod."""
+        fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
+        changed = []
+        
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        
+        for record in modFile.REFRS:
+            fid = record.fid
+            if not fid in fid_markerdata: continue
+            if record.base == markerFid:
+                oldValues = [getattr(record, attr) for attr in attrs]
+                newValues = fid_markerdata[fid]
+                if oldValues != newValues:
+                    changed.append(oldValues[0]) #eid
+                    for attr, value in zip(attrs, newValues):
+                        setattr(record, attr, value)
+                    
+        if changed: modFile.save()
+        del Current
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        fid_markerdata,aliases,markerTypeName_Number = self.fid_markerdata,self.aliases,self.markerTypeName_Number
+        ins = bolt.CsvReader(GPath(textPath))
+        for fields in ins:
+            if len(fields) < 13 or fields[1][:2] != '0x': continue
+            mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
+            mod = GPath(_coerce(mod, str))
+            longid = (aliases.get(mod,mod),_coerce(objectIndex, int, 16))
+            eid = _coerce(eid, str, AllowNone=True)
+            markerName = _coerce(markerName, str, AllowNone=True)
+            markerType = _coerce(_markerType, int)
+            if markerType is None: #coercion failed
+                markerType = markerTypeName_Number.get(_markerType.lower(), 0)
+            IsVisible = _coerce(IsVisible, bool)
+            IsCanTravelTo = _coerce(IsCanTravelTo, bool)
+            posX = _coerce(posX, float)
+            posY = _coerce(posY, float)
+            posZ = _coerce(posZ, float)
+            rotX = _coerce(rotX, float)
+            rotY = _coerce(rotY, float)
+            rotZ = _coerce(rotZ, float)
+            fid_markerdata[longid] = [eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ]
+        ins.close()
+
+    def writeToText(self,textPath):
+        """Exports markers to specified text file."""
+        fid_markerdata,markerTypeNumber_Name = self.fid_markerdata,self.markerTypeNumber_Name
         textPath = GPath(textPath)
-        markers = self.markers
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         out = textPath.open('w')
         out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name'),_('Type'),_('IsVisible'),_('IsCanTravelTo'),_('posX'),_('posY'),_('posZ'),_('rotX'),_('rotY'),_('rotZ')))
-        longids = markers.keys()
-        longids.sort(key=lambda a: markers[a][0])
+        longids = fid_markerdata.keys()
+        longids.sort(key=lambda a: fid_markerdata[a][0])
         longids.sort(key=itemgetter(0))
         for longid in longids:
-            eid,name,type,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = markers[longid]
-            type = marker_types[type]
-            out.write(rowFormat % (longid[0].s,longid[1],eid,name,type,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+            eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fid_markerdata[longid]
+            markerType = markerTypeNumber_Name.get(markerType,markerType)
+            out.write(rowFormat % (longid[0].s,longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
         out.close()
 
 #------------------------------------------------------------------------------
