@@ -8636,7 +8636,7 @@ class ModInfos(FileInfos):
     def getFreeTime(self, startTime, defaultTime='+1'):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""        
         haskey = self.mtime_mods.has_key
-        for testTime in range(starttime, starttime + 1000): #1000 is an arbitrary limit
+        for testTime in range(startTime, startTime + 1000): #1000 is an arbitrary limit
             if not haskey(testTime):
                 return testTime
         return defaultTime
@@ -12966,13 +12966,16 @@ class FullNames:
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if len(fields) < 5 or fields[2][:2] != '0x': continue
-            type,mod,objectIndex,eid,full = fields[:5]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            if type in type_id_name:
-                type_id_name[type][longid] = (eid,full)
+            group,mod,objectIndex,eid,full = fields[:5]
+            group = _coerce(group, str)
+            mod = GPath(_coerce(mod, str))
+            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+            eid = _coerce(eid, str)
+            full = _coerce(full, str)
+            if group in type_id_name:
+                type_id_name[group][longid] = (eid,full)
             else:
-                type_id_name[type] = {longid:(eid,full)}
+                type_id_name[group] = {longid:(eid,full)}
         ins.close()
 
     def writeToText(self,textPath):
@@ -12998,35 +13001,35 @@ class CBash_FullNames:
     defaultTypes = set(["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN",
                         "ACTI","APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH",
                         "MISC","FLOR","FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM",
-                        "ALCH","SGST","WRLD","CELL","DIAL","QUST"])
+                        "ALCH","SGST","WRLD","CELLS","DIAL","QUST"])
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
+        self.group_fid_name = {} #--(eid,name) = group_fid_name[group][longid]
         self.types = types or CBash_FullNames.defaultTypes
         self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
-        type_id_name = self.type_id_name
+        group_fid_name = self.group_fid_name
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
-        for type in self.types:
-            id_name = type_id_name.setdefault(type,{})
-            for record in getattr(modFile,type):
+        for group in self.types:
+            fid_name = group_fid_name.setdefault(group[:4],{})
+            for record in getattr(modFile,group):
                 if(hasattr(record, 'full')):
                     full = record.full or (type != 'LIGH' and 'NO NAME')
                     eid = record.eid
                     if eid and full:
-                        id_name[record.fid_long] = (eid,full)
+                        fid_name[record.fid] = (eid,full)
         del Current
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
-        type_id_name = self.type_id_name
+        group_fid_name = self.group_fid_name
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
@@ -13034,48 +13037,52 @@ class CBash_FullNames:
 
         changed = {}
         for type in self.types:
-            id_name = type_id_name.get(type,None)
-            if not id_name: continue
+            fid_name = group_fid_name.get(type,None)
+            if not fid_name: continue
             for record in getattr(modFile,type):
-                fid_long = record.fid_long
+                fid = record.fid
                 full = record.full
-                eid,newFull = id_name.get(fid_long,(0,0))
+                eid,newFull = fid_name.get(fid,(0,0))
                 if newFull and newFull not in (full,'NO NAME'):
                     record.full = newFull
                     changed[eid] = (full,newFull)
-        if changed: modFile.safeCloseSave()
+        if changed: modFile.save()
+        del Current
         return changed
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         textPath = GPath(textPath)
-        type_id_name = self.type_id_name
+        group_fid_name = self.group_fid_name
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
         for fields in ins:
             if len(fields) < 5 or fields[2][:2] != '0x': continue
-            type,mod,objectIndex,eid,full = fields[:5]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            type_id_name.setdefault(type, {})[longid] = (eid,full)
+            group,mod,objectIndex,eid,full = fields[:5]
+            group = _coerce(group, str)
+            mod = GPath(_coerce(mod, str))
+            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+            eid = _coerce(eid, str)
+            full = _coerce(full, str)
+            group_fid_name.setdefault(group, {})[longid] = (eid,full)
         ins.close()
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
         textPath = GPath(textPath)
-        type_id_name = self.type_id_name
+        group_fid_name = self.group_fid_name
         headFormat = '"%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s"\n'
         out = textPath.open('w')
         out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')))
-        for type in sorted(type_id_name):
-            id_name = type_id_name[type]
-            longids = id_name.keys()
-            longids.sort(key=lambda a: id_name[a][0])
+        for group in sorted(group_fid_name):
+            fid_name = group_fid_name[group]
+            longids = fid_name.keys()
+            longids.sort(key=lambda a: fid_name[a][0])
             longids.sort(key=itemgetter(0))
             for longid in longids:
-                eid,name = id_name[longid]
-                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name.replace('"', '""')))
+                eid,name = fid_name[longid]
+                out.write(rowFormat % (group,longid[0].s,longid[1],eid,name.replace('"', '""')))
         out.close()
 
 #------------------------------------------------------------------------------

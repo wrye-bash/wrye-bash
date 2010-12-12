@@ -6031,11 +6031,18 @@ class File_Duplicate(Link):
             #--Continue copy
             (root,ext) = fileName.rootExt
             if ext.lower() == '.bak': ext = '.ess'
-            (destDir,destName,wildcard) = (fileInfo.dir, root+' Copy'+ext,'*'+ext)
+            (destDir,wildcard) = (fileInfo.dir, '*'+ext)
+            destName = GPath(root+' Copy'+ext)
+            destPath = GPath(destDir).join(destName)
+            count = 0
+            while destPath.exists() and count < 1000:
+                count += 1
+                destName = GPath(root + ' Copy %d'  % (count,) + ext)
+                destPath = GPath(destDir).join(destName)
+            destName = destName.s
             destDir.makedirs()
             if len(data) == 1:
-                destPath = balt.askSave(self.window,_('Duplicate as:'),
-                    destDir,destName,wildcard)
+                destPath = balt.askSave(self.window,_('Duplicate as:'), destDir,destName,wildcard)
                 if not destPath: return
                 destDir,destName = destPath.headTail
             if (destDir == fileInfo.dir) and (destName == fileName):
