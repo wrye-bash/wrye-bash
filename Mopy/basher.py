@@ -10261,10 +10261,13 @@ class Mod_Stats_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant stats to import."),_("Import Stats"))
         else:
-            buff = cStringIO.StringIO()
-            for modName in sorted(changed):
-                buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
-            balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
+            if not len(changed):
+                balt.showOk(self.window,_("No changed stats to import."),_("Import Stats"))
+            else:
+                buff = cStringIO.StringIO()
+                for modName in sorted(changed):
+                    buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+                balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_ItemData_Export(Link):
@@ -10289,7 +10292,10 @@ class Mod_ItemData_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Item Data"))
         try:
-            itemStats = bosh.CompleteItemData()
+            if CBash:
+                itemStats = bosh.CBash_CompleteItemData()
+            else:
+                itemStats = bosh.CompleteItemData()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -10352,12 +10358,12 @@ class Mod_ItemData_Import(Link):
         else:
             buff = cStringIO.StringIO()
             for modName in sorted(changed):
-                buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+                buff.write(_('Imported Item Data:\n* %03d  %s:\n') % (changed[modName], modName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import Item Data'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Prices_Export(Link):
-    """Export armor and weapon stats from mod to text file."""
+    """Export item prices from mod to text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
@@ -10367,7 +10373,7 @@ class Mod_Prices_Export(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+_('_prices.csv')
+        textName = fileName.root+_('_Prices.csv')
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
@@ -10378,15 +10384,18 @@ class Mod_Prices_Export(Link):
         #--Export
         progress = balt.Progress(_("Export Prices"))
         try:
-            itemStats = bosh.ItemPrices()
+            if CBash:
+                itemPrices = bosh.CBash_ItemPrices()
+            else:
+                itemPrices = bosh.ItemPrices()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index,_("Reading %s.") % (fileName.s,))
-                itemStats.readFromMod(fileInfo)
+                itemPrices.readFromMod(fileInfo)
             progress(0.8,_("Exporting to %s.") % (textName.s,))
-            itemStats.writeToText(textPath)
+            itemPrices.writeToText(textPath)
             progress(1.0,_("Done."))
         finally:
             progress = progress.Destroy()
@@ -10399,7 +10408,7 @@ class Mod_Prices_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data)==1)
-    ## Not implemented yet (no readtext defined in bosh.ItemPrices()
+        
     def Execute(self,event):
         message = (_("Import item prices from a text file. This will replace existing prices and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.prices.import.continue',
@@ -10423,7 +10432,10 @@ class Mod_Prices_Import(Link):
         progress = balt.Progress(_("Import Prices"))
         changed = None
         try:
-            itemPrices = bosh.ItemPrices()
+            if CBash:
+                itemPrices = bosh.CBash_ItemPrices()
+            else:
+                itemPrices = bosh.ItemPrices()
             progress(0.1,_("Reading %s.") % (textName.s,))
             if ext == '.csv':
                 itemPrices.readFromText(textPath)
@@ -10441,7 +10453,7 @@ class Mod_Prices_Import(Link):
         else:
             buff = cStringIO.StringIO()
             for modName in sorted(changed):
-                buff.write('Imported Prices:\n* %s: %d\n' % (modName.s,changed[modName]))
+                buff.write(_('Imported Prices:\n* %s: %d\n') % (modName.s,changed[modName]))
             balt.showLog(self.window,buff.getvalue(),_('Import Prices'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -13268,7 +13280,7 @@ def InitModLinks():
         exportMenu = MenuLink(_("Export"))
         exportMenu.links.append(Mod_EditorIds_Export())
         exportMenu.links.append(Mod_Groups_Export())
-        exportMenu.links.append(Mod_ItemData_Export())
+##        exportMenu.links.append(Mod_ItemData_Export())
         exportMenu.links.append(Mod_Factions_Export())
         exportMenu.links.append(Mod_FullNames_Export())
         exportMenu.links.append(Mod_ActorLevels_Export())
@@ -13283,7 +13295,7 @@ def InitModLinks():
         importMenu = MenuLink(_("Import"))
         importMenu.links.append(Mod_EditorIds_Import())
         importMenu.links.append(Mod_Groups_Import())
-        importMenu.links.append(Mod_ItemData_Import())
+##        importMenu.links.append(Mod_ItemData_Import())
         importMenu.links.append(Mod_Factions_Import())
         importMenu.links.append(Mod_FullNames_Import())
         importMenu.links.append(Mod_ActorLevels_Import())
