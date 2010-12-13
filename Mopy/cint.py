@@ -10,77 +10,93 @@ except:
     def GPath(obj):
         return obj
 
+_CBashRequiredVersion = (0,5,0)
+
 CBash = None
 if(exists(".\\CBash.dll")):
     CBash = CDLL("CBash.dll")
-    _CGetVersionMajor = CBash.GetVersionMajor
-    _CGetVersionMinor = CBash.GetVersionMinor
-    _CGetVersionRevision = CBash.GetVersionRevision
-    _CCreateCollection = CBash.CreateCollection
-    _CDeleteCollection = CBash.DeleteCollection
-    _CLoadCollection = CBash.LoadCollection
-    _CUnloadCollection = CBash.UnloadCollection
-    _CDeleteAllCollections = CBash.DeleteAllCollections
-    _CAddMod = CBash.AddMod
-    _CLoadMod = CBash.LoadMod
-    _CUnloadMod = CBash.UnloadMod
-    _CCleanModMasters = CBash.CleanModMasters
-    _CSaveMod = CBash.SaveMod
-    _CGetNumMods = CBash.GetNumMods
-    _CGetModIDs = CBash.GetModIDs
-    _CGetModName = CBash.GetModName
-    _CGetModID = CBash.GetModID
-    _CIsModEmpty = CBash.IsModEmpty
-    _CGetModNumTypes = CBash.GetModNumTypes
-    _CGetModTypes = CBash.GetModTypes
-    _CCreateRecord = CBash.CreateRecord
-    _CDeleteRecord = CBash.DeleteRecord
-    _CCopyRecord = CBash.CopyRecord
-    _CLoadRecord = CBash.LoadRecord
-    _CUnloadRecord = CBash.UnloadRecord
-    _CSetRecordIDs = CBash.SetRecordIDs
-    _CGetNumRecords = CBash.GetNumRecords
-    _CGetRecordFormIDs = CBash.GetRecordFormIDs
-    _CGetRecordEditorIDs = CBash.GetRecordEditorIDs
-    _CIsRecordWinning = CBash.IsRecordWinning
-    _CGetNumRecordConflicts = CBash.GetNumRecordConflicts
-    _CGetRecordConflicts = CBash.GetRecordConflicts
-    _CUpdateReferences = CBash.UpdateReferences
-    _CGetNumReferences = CBash.GetNumReferences
-    _CSetField = CBash.SetField
-    _CDeleteField = CBash.DeleteField
-    _CGetFieldAttribute = CBash.GetFieldAttribute
-    _CGetField = CBash.GetField
-    _CGetVersionMajor.restype = c_ulong
-    _CGetVersionMinor.restype = c_ulong
-    _CGetVersionRevision.restype = c_ulong
-    _CCreateCollection.restype = c_long
-    _CDeleteCollection.restype = c_long
-    _CLoadCollection.restype = c_long
-    _CUnloadCollection.restype = c_long
-    _CDeleteAllCollections.restype = c_long
-    _CAddMod.restype = c_long
-    _CLoadMod.restype = c_long
-    _CUnloadMod.restype = c_long
-    _CCleanModMasters.restype = c_long
-    _CGetNumMods.restype = c_long
-    _CGetModIDs.restype = c_long
-    _CGetModName.restype = c_char_p
-    _CGetModID.restype = c_long
-    _CIsModEmpty.restype = c_ulong
-    _CGetModNumTypes.restype = c_long
-    _CCreateRecord.restype = c_ulong
-    _CDeleteRecord.restype = c_long
-    _CCopyRecord.restype = c_ulong
-    _CLoadRecord.restype = c_long
-    _CUnloadRecord.restype = c_long
-    _CSetRecordIDs.restype = c_long
-    _CGetNumRecords.restype = c_long
-    _CIsRecordWinning.restype = c_long
-    _CGetNumRecordConflicts.restype = c_long
-    _CUpdateReferences.restype = c_long
-    _CGetNumReferences.restype = c_long
-    _CGetFieldAttribute.restype = c_ulong
+    try:
+        try:
+            _CGetVersionMajor = CBash.GetVersionMajor
+            _CGetVersionMinor = CBash.GetVersionMinor
+            _CGetVersionRevision = CBash.GetVersionRevision
+        except AttributeError: #Functions were renamed in v0.5.0
+            _CGetVersionMajor = CBash.GetMajor
+            _CGetVersionMinor = CBash.GetMinor
+            _CGetVersionRevision = CBash.GetRevision
+        if (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision()) < _CBashRequiredVersion:
+            raise ImportError("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)" % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
+        _CCreateCollection = CBash.CreateCollection
+        _CDeleteCollection = CBash.DeleteCollection
+        _CLoadCollection = CBash.LoadCollection
+        _CUnloadCollection = CBash.UnloadCollection
+        _CDeleteAllCollections = CBash.DeleteAllCollections
+        _CAddMod = CBash.AddMod
+        _CLoadMod = CBash.LoadMod
+        _CUnloadMod = CBash.UnloadMod
+        _CCleanModMasters = CBash.CleanModMasters
+        _CSaveMod = CBash.SaveMod
+        _CGetNumMods = CBash.GetNumMods
+        _CGetModIDs = CBash.GetModIDs
+        _CGetModName = CBash.GetModName
+        _CGetModID = CBash.GetModID
+        _CIsModEmpty = CBash.IsModEmpty
+        _CGetModNumTypes = CBash.GetModNumTypes
+        _CGetModTypes = CBash.GetModTypes
+        _CCreateRecord = CBash.CreateRecord
+        _CDeleteRecord = CBash.DeleteRecord
+        _CCopyRecord = CBash.CopyRecord
+        _CLoadRecord = CBash.LoadRecord
+        _CUnloadRecord = CBash.UnloadRecord
+        _CSetRecordIDs = CBash.SetRecordIDs
+        _CGetNumRecords = CBash.GetNumRecords
+        _CGetRecordFormIDs = CBash.GetRecordFormIDs
+        _CGetRecordEditorIDs = CBash.GetRecordEditorIDs
+        _CIsRecordWinning = CBash.IsRecordWinning
+        _CGetNumRecordConflicts = CBash.GetNumRecordConflicts
+        _CGetRecordConflicts = CBash.GetRecordConflicts
+        _CUpdateReferences = CBash.UpdateReferences
+        _CGetNumReferences = CBash.GetNumReferences
+        _CSetField = CBash.SetField
+        _CDeleteField = CBash.DeleteField
+        _CGetFieldAttribute = CBash.GetFieldAttribute
+        _CGetField = CBash.GetField
+        _CGetVersionMajor.restype = c_ulong
+        _CGetVersionMinor.restype = c_ulong
+        _CGetVersionRevision.restype = c_ulong
+        _CCreateCollection.restype = c_long
+        _CDeleteCollection.restype = c_long
+        _CLoadCollection.restype = c_long
+        _CUnloadCollection.restype = c_long
+        _CDeleteAllCollections.restype = c_long
+        _CAddMod.restype = c_long
+        _CLoadMod.restype = c_long
+        _CUnloadMod.restype = c_long
+        _CCleanModMasters.restype = c_long
+        _CGetNumMods.restype = c_long
+        _CGetModIDs.restype = c_long
+        _CGetModName.restype = c_char_p
+        _CGetModID.restype = c_long
+        _CIsModEmpty.restype = c_ulong
+        _CGetModNumTypes.restype = c_long
+        _CCreateRecord.restype = c_ulong
+        _CDeleteRecord.restype = c_long
+        _CCopyRecord.restype = c_ulong
+        _CLoadRecord.restype = c_long
+        _CUnloadRecord.restype = c_long
+        _CSetRecordIDs.restype = c_long
+        _CGetNumRecords.restype = c_long
+        _CIsRecordWinning.restype = c_long
+        _CGetNumRecordConflicts.restype = c_long
+        _CUpdateReferences.restype = c_long
+        _CGetNumReferences.restype = c_long
+        _CGetFieldAttribute.restype = c_ulong
+    except ImportError as error:
+        CBash = None
+        print error
+    except:
+        CBash = None
+        raise
 
 def LoggingCB(logString):
     print logString
@@ -1534,7 +1550,7 @@ class Effect(ListComponent):
     magnitude = CBashGeneric_LIST(3, c_ulong)
     area = CBashGeneric_LIST(4, c_ulong)
     duration = CBashGeneric_LIST(5, c_ulong)
-    recipient = CBashGeneric_LIST(6, c_ulong)
+    rangeType = CBashGeneric_LIST(6, c_ulong)
     actorValue = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(7) #OBME
     script = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(8) #OBME
     school = CBashGeneric_LIST(9, c_ulong)
@@ -1560,9 +1576,9 @@ class Effect(ListComponent):
     resistAV = CBashACTORVALUE_LIST(25) #OBME
     reserved2 = CBashUINT8ARRAY_LIST(26, 0x10) #OBME
     IsHostile = CBashBasicFlag('flags', 0x01)
-    IsSelf = CBashBasicType('recipient', 0, 'IsTouch')
-    IsTouch = CBashBasicType('recipient', 1, 'IsSelf')
-    IsTarget = CBashBasicType('recipient', 2, 'IsSelf')
+    IsSelf = CBashBasicType('rangeType', 0, 'IsTouch')
+    IsTouch = CBashBasicType('rangeType', 1, 'IsSelf')
+    IsTarget = CBashBasicType('rangeType', 2, 'IsSelf')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     IsUsingHostileOverride = CBashBasicFlag('efixOverrides', 0x00000001) #OBME
@@ -1610,7 +1626,7 @@ class Effect(ListComponent):
     IsPersistOnDeathOverride = CBashBasicFlag('efixFlags', 0x10000000) #OBME
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
-    copyattrs = ['name', 'magnitude', 'area', 'duration', 'recipient',
+    copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
                  'actorValue', 'script', 'school', 'visual', 'flags',
                  'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',

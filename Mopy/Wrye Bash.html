@@ -87,6 +87,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportNPCLevels">Export/Import NPC Levels</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportRelations">Export/Import Relations</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportPrices">Export/Import Prices</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ExportImportSigilStones">Export/Import Sigil Stones</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportStats">Export/Import Stats</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportScripts">Export/Import Scripts</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#ExportImportSpellStats">Export/Import Spell Stats</a></p>
@@ -1162,6 +1163,17 @@
 <p class=list-1>&bull;&nbsp; <B>Uses</B>
   <p class=list-2>&bull;&nbsp; Using an external editor with better editing capabilities.
   <p class=list-2>&bull;&nbsp; Editing in a systematic manner all the prices for items.
+  <p class=empty>&nbsp;</p>
+<h3><a name='ExportImportSigilStones'>Export/Import Sigil Stones</a></h3>
+<p class=list-1>&bull;&nbsp; These paired functions allow you to export sigil stone details to a spreadsheet file, edit the file and then reimport the stats.
+<p class=list-1>&bull;&nbsp; <B>Uses</B>
+  <p class=list-2>&bull;&nbsp; Using an external editor with better editing capabilities.
+  <p class=list-2>&bull;&nbsp; Editing in a systematic manner all the sigil stone details.
+<p class=list-1>&bull;&nbsp; <B>Spreadsheet Format</B>
+  <p class=list-2>&bull;&nbsp; The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
+  <p class=list-2>&bull;&nbsp; Any line in which the entry in the second column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
+  <p class=list-2>&bull;&nbsp; More effects may be added as long as they follow the same listed format with one blank column between each effect.
+  <p class=list-2>&bull;&nbsp; If any of the Script Effect columns are set to "None", all the Script Effects values for that effect will be ignored.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportStats'>Export/Import Stats</a></h3>
 <p class=list-1>&bull;&nbsp; These paired functions allow you to export ammo, apparatus, armor, book, clothing, ingredient, key, light, misc object, sigil stone, soulgem  and weapon stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the <a href="#ImportStats">Import Stats</a>. 
@@ -2436,25 +2448,29 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Rename Save(s) command added (in the saves menu->file).
   <p class=list-2>&bull;&nbsp; Re-number Save(s) command added (in the saves menu->file).
   <p class=list-2>&bull;&nbsp; Rename Player command added.
-<p class=list-1>&bull;&nbsp; fix for launcher code which prevented launching in some cases (contributed by myk002)
-<p class=list-1>&bull;&nbsp; fix for move/copy saves so that Default is not selectable if already in Default profile.
-<p class=list-1>&bull;&nbsp; fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
-<p class=list-1>&bull;&nbsp; Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
-<p class=list-1>&bull;&nbsp; Backup/Restore settings options added (contributed by Gaticus)
-<p class=list-1>&bull;&nbsp; Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
-<p class=list-1>&bull;&nbsp; Ini Tweaking fixed to work fine with Nehrim.
-<p class=list-1>&bull;&nbsp; <a href="#LaunchButtons">Launch Buttons</a> for more applications are now supported via Bash.ini (contributed by Metallicow).
-  <p class=list-2>&nbsp;&nbsp; Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
-  <p class=list-2>&bull;&nbsp; Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
-<p class=list-1>&bull;&nbsp; Bash.ini typo fixes (contributed by Metallicow).
-<p class=list-1>&bull;&nbsp; Exception handling fixes to maintain Python 2.5 compatibility
-<p class=list-1>&bull;&nbsp; Bash Installer automatically handling requirements created
-<p class=list-1>&bull;&nbsp; File read error warning printout fixed
-<p class=list-1>&bull;&nbsp; Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+<p class=list-1>&bull;&nbsp; General:
+  <p class=list-2>&bull;&nbsp; fix for launcher code which prevented launching in some cases (contributed by myk002)
+  <p class=list-2>&bull;&nbsp; fix for move/copy saves so that Default is not selectable if already in Default profile.
+  <p class=list-2>&bull;&nbsp; fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
+  <p class=list-2>&bull;&nbsp; Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
+  <p class=list-2>&bull;&nbsp; Backup/Restore settings options added (contributed by Gaticus)
+  <p class=list-2>&bull;&nbsp; Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
+  <p class=list-2>&bull;&nbsp; Ini Tweaking fixed to work fine with Nehrim.
+  <p class=list-2>&bull;&nbsp; <a href="#LaunchButtons">Launch Buttons</a> for more applications are now supported via Bash.ini (contributed by Metallicow).
+    <p class=list-3>&nbsp;&nbsp; Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
+    <p class=list-3>&bull;&nbsp; Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
+  <p class=list-2>&bull;&nbsp; Bash.ini typo fixes (contributed by Metallicow).
+  <p class=list-2>&bull;&nbsp; Exception handling fixes to maintain Python 2.5 compatibility
+  <p class=list-2>&bull;&nbsp; Bash Installer automatically handling requirements created
+  <p class=list-2>&bull;&nbsp; File read error warning printout fixed
+  <p class=list-2>&bull;&nbsp; Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
   <p class=list-2>&bull;&nbsp; The csv file must now end in "*_NPC_Levels.csv"
-<p class=list-1>&bull;&nbsp; <a href="#ExportImportFactions">Export/Import Factions</a> may now be used directly on a mod
-<p class=list-1>&bull;&nbsp; <a href="#ExportImportRelations">Export/Import Relations</a> may now be used directly on a mod
-<p class=empty>&nbsp;</p>
+  <p class=list-2>&bull;&nbsp; <a href="#ExportImportFactions">Export/Import Factions</a> may now be used directly on a mod
+  <p class=list-2>&bull;&nbsp; <a href="#ExportImportRelations">Export/Import Relations</a> may now be used directly on a mod
+  <p class=list-2>&bull;&nbsp; Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names
+  <p class=list-2>&bull;&nbsp; Minor improvements to Export/Import Map Markers 
+  <p class=list-2>&bull;&nbsp; <a href="#ExportImportSigilStones">Export/Import Sigil Stones</a> added
+  <p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
 <p class=list-1>&bull;&nbsp; added Disable/Enable ini tweaks for Screenshots.
@@ -2632,7 +2648,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class=list-1>&bull;&nbsp; Start of the CBash implementation into Wrye Bash:
   <p class=list-2>&bull;&nbsp; CBash.dll included as Rename_CBash.dll; it will only be used if renamed to just 'CBash.dll'
   <p class=list-2>&bull;&nbsp; Bunch of Import/Export functions modified to use that if available: EditorID, Names, Npclevels, Scripts (though leaves a whole lot of backup files on import).
-  <p class=empty>&nbsp;</p>
   <p class=empty>&nbsp;</p>
 <h3><a name='28424052010LojackMetallicowPacificMorrowindThreeDValda68kWaruddar'>284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Incorrect italicization fixed.
