@@ -965,6 +965,17 @@ These are the commands found on context menu for mods...
   * Using an external editor with better editing capabilities.
   * Editing in a systematic manner all the prices for items.
   
+=== Export/Import Sigil Stones
+* These paired functions allow you to export sigil stone details to a spreadsheet file, edit the file and then reimport the stats.
+* __Uses__
+  * Using an external editor with better editing capabilities.
+  * Editing in a systematic manner all the sigil stone details.
+* __Spreadsheet Format__
+  * The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
+  * Any line in which the entry in the second column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
+  * More effects may be added as long as they follow the same listed format with one blank column between each effect.
+  * If any of the Script Effect columns are set to "None", all the Script Effects values for that effect will be ignored.
+
 === Export/Import Stats
 * These paired functions allow you to export ammo, apparatus, armor, book, clothing, ingredient, key, light, misc object, sigil stone, soulgem  and weapon stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Stats]]. 
 * __Uses__
@@ -2239,24 +2250,28 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Rename Save(s) command added (in the saves menu->file).
   * Re-number Save(s) command added (in the saves menu->file).
   * Rename Player command added.
-* fix for launcher code which prevented launching in some cases (contributed by myk002)
-* fix for move/copy saves so that Default is not selectable if already in Default profile.
-* fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
-* Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
-* Backup/Restore settings options added (contributed by Gaticus)
-* Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
-* Ini Tweaking fixed to work fine with Nehrim.
-* [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow).
-  . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
-  * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
-* Bash.ini typo fixes (contributed by Metallicow).
-* Exception handling fixes to maintain Python 2.5 compatibility
-* Bash Installer automatically handling requirements created
-* File read error warning printout fixed
-* Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+* General:
+  * fix for launcher code which prevented launching in some cases (contributed by myk002)
+  * fix for move/copy saves so that Default is not selectable if already in Default profile.
+  * fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
+  * Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
+  * Backup/Restore settings options added (contributed by Gaticus)
+  * Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
+  * Ini Tweaking fixed to work fine with Nehrim.
+  * [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow).
+    . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap.
+    * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
+  * Bash.ini typo fixes (contributed by Metallicow).
+  * Exception handling fixes to maintain Python 2.5 compatibility
+  * Bash Installer automatically handling requirements created
+  * File read error warning printout fixed
+  * Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
   * The csv file must now end in "*_NPC_Levels.csv"
-* [[#|Export/Import Factions]] may now be used directly on a mod
-* [[#|Export/Import Relations]] may now be used directly on a mod
+  * [[#|Export/Import Factions]] may now be used directly on a mod
+  * [[#|Export/Import Relations]] may now be used directly on a mod
+  * Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names
+  * Minor improvements to Export/Import Map Markers 
+  * [[#|Export/Import Sigil Stones]] added
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
@@ -2435,7 +2450,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Start of the CBash implementation into Wrye Bash:
   * CBash.dll included as Rename_CBash.dll; it will only be used if renamed to just 'CBash.dll'
   * Bunch of Import/Export functions modified to use that if available: EditorID, Names, Npclevels, Scripts (though leaves a whole lot of backup files on import).
-
 
 === 284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]
 * Incorrect italicization fixed.

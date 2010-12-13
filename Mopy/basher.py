@@ -10531,6 +10531,96 @@ class CBash_Mod_MapMarkers_Import(Link):
             balt.showLog(self.window,buff.getvalue(),_('Import Map Markers'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_SigilStoneDetails_Export(Link):
+    """Export Sigil Stone details from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Sigil Stones...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_SigilStones.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export Sigil Stone details to:'),textDir,textName, '*_SigilStones.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Sigil Stone details"))
+        try:
+            if CBash:
+                sigilStones = bosh.CBash_SigilStoneDetails()
+            else:
+                sigilStones = bosh.SigilStoneDetails()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                sigilStones.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            sigilStones.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+#------------------------------------------------------------------------------
+class Mod_SigilStoneDetails_Import(Link):
+    """Import Sigil Stone details from text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Sigil Stones...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data) == 1)
+        
+    def Execute(self,event):
+        message = (_("Import Sigil Stone details from a text file. This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.SigilStone.import.continue',
+            _('Import Sigil Stones details')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_SigilStones.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import Map Markers from:'),
+            textDir, textName, '*_SigilStones.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext not in ['.csv']:
+            balt.showError(self.window,_('Source file must be a _SigilStones.csv file'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Sigil Stones details"))
+        changed = None
+        try:
+            if CBash:
+                sigilStones = bosh.CBash_SigilStoneDetails()
+            else:
+                sigilStones = bosh.SigilStoneDetails()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            sigilStones.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = sigilStones.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant Sigil Stones details to import."),_("Import Sigil Stones details"))
+        else:
+            buff = cStringIO.StringIO()
+            buff.write('Imported Sigil Stones details to mod %s:\n' % (fileName.s,))
+            for eid in sorted(changed):
+                buff.write('* %s\n' % (eid))
+            balt.showLog(self.window,buff.getvalue(),_('Import Sigil Stones details'),icons=bashBlue)
+
+#------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
     """Undeletes refs in cells."""
     def AppendToMenu(self,menu,window,data):
@@ -13186,6 +13276,7 @@ def InitModLinks():
         exportMenu.links.append(Mod_Prices_Export())
         exportMenu.links.append(Mod_FactionRelations_Export())
         exportMenu.links.append(Mod_Scripts_Export())
+        exportMenu.links.append(Mod_SigilStoneDetails_Export())
         exportMenu.links.append(Mod_Stats_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
@@ -13200,6 +13291,7 @@ def InitModLinks():
         importMenu.links.append(Mod_Prices_Import())
         importMenu.links.append(Mod_FactionRelations_Import())
         importMenu.links.append(Mod_Scripts_Import())
+        importMenu.links.append(Mod_SigilStoneDetails_Import())
         importMenu.links.append(Mod_Stats_Import())
         importMenu.links.append(SeparatorLink())
         importMenu.links.append(Mod_Face_Import())
