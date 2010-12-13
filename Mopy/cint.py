@@ -309,6 +309,12 @@ def SetCopyList(oElements, nValues):
         for nValue, attr in zip(nValueTuple, oElement.copyattrs):
             setattr(oElement, attr, nValue)
 
+def ExtractExportList(Element):
+    try:
+        return [tuple(ExtractExportList(listElement) if hasattr(listElement, 'exportattrs') else getattr(listElement, attr) for attr in listElement.exportattrs) for listElement in Element]
+    except TypeError:
+        return [tuple(ExtractExportList(getattr(Element, attr)) if hasattr(getattr(Element, attr), 'exportattrs') else getattr(Element, attr) for attr in Element.exportattrs)]
+
 # Classes
 # Any level Descriptors
 class CBashAlias(object):
@@ -320,11 +326,14 @@ class CBashAlias(object):
         setattr(instance, self._AttrName, nValue)
 
 class CBashGrouped(object):
-    def __init__(self, FieldID, Type):
+    def __init__(self, FieldID, Type, AsList=False):
         self._FieldID = FieldID
         self._Type = Type
+        self._AsList = AsList
     def __get__(self, instance, owner):
-        return self._Type(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID)
+        oElement = self._Type(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID)
+        if(self._AsList): return tuple([getattr(oElement, attr) for attr in oElement.copyattrs])
+        return oElement
     def __set__(self, instance, nElement):
         oElement = self._Type(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID)
         if nElement is None: nValueList = tuple([None for attr in oElement.copyattrs])
@@ -1518,11 +1527,12 @@ class Model(BaseComponent):
     modb = CBashFLOAT32_GROUP(1)
     modt_p = CBashUINT8ARRAY_GROUP(2)
     copyattrs = ['modPath', 'modb', 'modt_p']
+    exportattrs = ['modPath', 'modb']#, 'modt_p']
 
 class Item(ListComponent):
     item = CBashFORMID_LIST(1)
     count = CBashGeneric_LIST(2, c_long)
-    copyattrs = ['item', 'count']
+    exportattrs = copyattrs = ['item', 'count']
 
 class Condition(ListComponent):
     operType = CBashGeneric_LIST(1, c_ubyte)
@@ -1541,7 +1551,7 @@ class Condition(ListComponent):
     IsOr = CBashBasicFlag('operType', 0x01)
     IsRunOnTarget = CBashBasicFlag('operType', 0x02)
     IsUseGlobal = CBashBasicFlag('operType', 0x04)
-    copyattrs = ['operType', 'compValue', 'ifunc', 'param1', 'param2']
+    exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1', 'param2']
 
 class Effect(ListComponent):
     ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
@@ -1626,7 +1636,7 @@ class Effect(ListComponent):
     IsPersistOnDeathOverride = CBashBasicFlag('efixFlags', 0x10000000) #OBME
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
-    copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
+    exportattrs = copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
                  'actorValue', 'script', 'school', 'visual', 'flags',
                  'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
@@ -1640,12 +1650,12 @@ class Faction(ListComponent):
     faction = CBashFORMID_LIST(1)
     rank = CBashGeneric_LIST(2, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(3, 3)
-    copyattrs = ['faction', 'rank']
+    exportattrs = copyattrs = ['faction', 'rank']
 
 class Relation(ListComponent):
     faction = CBashFORMID_LIST(1)
     mod = CBashGeneric_LIST(2, c_long)
-    copyattrs = ['faction', 'mod']
+    exportattrs = copyattrs = ['faction', 'mod']
 
 class PGRP(ListComponent):
     x = CBashFLOAT32_LIST(1)
@@ -1653,7 +1663,7 @@ class PGRP(ListComponent):
     z = CBashFLOAT32_LIST(3)
     connections = CBashGeneric_LIST(4, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(5, 3)
-    copyattrs = ['x', 'y', 'z', 'connections']
+    exportattrs = copyattrs = ['x', 'y', 'z', 'connections']
 
 #--Accessors
 class ObFormIDRecord(object):
@@ -2057,7 +2067,7 @@ class ObTES4Record(object):
     masters = CBashISTRINGARRAY(12)
     DATA = CBashJunk(13)
     IsESM = CBashBasicFlag('flags1', 0x00000001)
-    copyattrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject',
+    exportattrs = copyattrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject',
                  'author', 'description', 'masters']
 
 class ObGMSTRecord(ObEditorIDRecord):
@@ -2089,7 +2099,7 @@ class ObGMSTRecord(ObEditorIDRecord):
             elif(rFormat == API_FIELDS.STRING and type(nValue) is str):
                 _CSetField(self._CollectionID, self._ModID, 0, self._RecordID, 5, 0, 0, 0, 0, 0, 0, nValue, 0)
     value = property(get_value, set_value)
-    copyattrs = ObEditorIDRecord.baseattrs + ['value']
+    exportattrs = copyattrs = ObEditorIDRecord.baseattrs + ['value']
 
 class ObACHRRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2124,6 +2134,10 @@ class ObACHRRecord(ObFormIDRecord):
                                         'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
                                         'merchantContainer', 'horse', 'xrgd_p', 'scale',
                                         'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
+    exportattrs = ObFormIDRecord.baseattrs + ['base', 'unknownXPCIFormID', 'unknownXPCIString',
+                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
+                                        'merchantContainer', 'horse', 'scale',
+                                        'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ'] #'xrgd_p', 
 
 class ObACRERecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2157,6 +2171,10 @@ class ObACRERecord(ObFormIDRecord):
                                         'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
                                         'xrgd_p', 'scale', 'posX', 'posY', 'posZ', 'rotX',
                                         'rotY', 'rotZ']
+    exportattrs = ObFormIDRecord.baseattrs + ['base', 'owner', 'rank', 'globalVariable',
+                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
+                                        'scale', 'posX', 'posY', 'posZ', 'rotX',
+                                        'rotY', 'rotZ'] #'xrgd_p', 
 
 class ObREFRRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2243,7 +2261,7 @@ class ObREFRRecord(ObFormIDRecord):
     IsCommonSoul = CBashBasicType('soulType', 3, 'IsNoSoul')
     IsGreaterSoul = CBashBasicType('soulType', 4, 'IsNoSoul')
     IsGrandSoul = CBashBasicType('soulType', 5, 'IsNoSoul')
-    copyattrs = ObFormIDRecord.baseattrs + ['base', 'destination',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['base', 'destination',
                                         'destinationPosX', 'destinationPosY',
                                         'destinationPosZ', 'destinationRotX',
                                         'destinationRotY', 'destinationRotZ',
@@ -2252,13 +2270,10 @@ class ObREFRRecord(ObFormIDRecord):
                                         'globalVariable', 'parent',
                                         'parentFlags', 'target', 'seed',
                                         'seed_as_offset', 'lod1', 'lod2', 'lod3',
-                                        'charge', 'health',
-                                        'unknownXPCIFormID',
-                                        'unknownXPCIString', 'levelMod',
-                                        'unknownXRTMFormID', 'actionFlags',
+                                        'charge', 'health','levelMod','actionFlags',
                                         'count', 'markerFlags', 'markerName',
-                                        'markerType', 'markerUnused', 'scale',
-                                        'soulType', 'posX', 'posY', 'posZ', 'rotX',
+                                        'markerType', 'scale','soulType',
+                                        'posX', 'posY', 'posZ', 'rotX',
                                         'rotY', 'rotZ']
 
 class ObINFORecord(ObFormIDRecord):
@@ -2282,8 +2297,8 @@ class ObINFORecord(ObFormIDRecord):
         IsSad = CBashBasicType('emotionType', 4, 'IsNeutral')
         IsHappy = CBashBasicType('emotionType', 5, 'IsNeutral')
         IsSurprise = CBashBasicType('emotionType', 6, 'IsNeutral')
-        copyattrs = ['emotionType', 'emotionValue', 'unused1', 'responseNum',
-                     'unused2', 'responseText', 'actorNotes']
+        exportattrs = copyattrs = ['emotionType', 'emotionValue', 'responseNum',
+                                   'responseText', 'actorNotes']
 
     dialType = CBashGeneric(5, c_ushort)
     flags = CBashGeneric(6, c_ubyte)
@@ -2336,6 +2351,12 @@ class ObINFORecord(ObFormIDRecord):
                                         'numRefs', 'compiledSize', 'lastIndex',
                                         'scriptType', 'compiled_p', 'scriptText',
                                         'references']
+    exportattrs = ObFormIDRecord.baseattrs + ['dialType', 'flags', 'quest', 'topic',
+                                        'prevInfo', 'addTopics', 'responses_list',
+                                        'conditions_list', 'choices', 'linksFrom',
+                                        'numRefs', 'compiledSize', 'lastIndex',
+                                        'scriptType', 'scriptText',
+                                        'references'] #'compiled_p', 
 
 class ObLANDRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2347,31 +2368,31 @@ class ObLANDRecord(ObFormIDRecord):
         x = CBashGeneric_LISTX2(6, 0, 1, c_ubyte)
         y = CBashGeneric_LISTX2(6, 0, 2, c_ubyte)
         z = CBashGeneric_LISTX2(6, 0, 3, c_ubyte)
-        copyattrs = ['x', 'y', 'z']
+        exportattrs = copyattrs = ['x', 'y', 'z']
 
     class Height(ListX2Component):
         height = CBashGeneric_LISTX2(8, 0, 1, c_byte)
-        copyattrs = ['height']
+        exportattrs = copyattrs = ['height']
 
     class Color(ListX2Component):
         red = CBashGeneric_LISTX2(11, 0, 1, c_ubyte)
         green = CBashGeneric_LISTX2(11, 0, 2, c_ubyte)
         blue = CBashGeneric_LISTX2(11, 0, 3, c_ubyte)
-        copyattrs = ['red', 'green', 'blue']
+        exportattrs = copyattrs = ['red', 'green', 'blue']
 
     class BaseTexture(ListComponent):
         texture = CBashFORMID_LIST(1)
         quadrant = CBashGeneric_LIST(2, c_byte)
         unused1 = CBashUINT8ARRAY_LIST(3, 1)
         layer = CBashGeneric_LIST(4, c_short)
-        copyattrs = ['texture', 'quadrant', 'unused1', 'layer']
+        exportattrs = copyattrs = ['texture', 'quadrant', 'layer']
 
     class AlphaLayer(ListComponent):
         class Opacity(ListX2Component):
             position = CBashGeneric_LISTX2(12, 5, 1, c_ushort)
             unused1 = CBashUINT8ARRAY_LISTX2(12, 5, 2, 2)
             opacity = CBashFLOAT32_LISTX2(12, 5, 3)
-            copyattrs = ['position', 'unused1', 'opacity']
+            exportattrs = copyattrs = ['position', 'opacity']
         texture = CBashFORMID_LIST(1)
         quadrant = CBashGeneric_LIST(2, c_byte)
         unused1 = CBashUINT8ARRAY_LIST(3, 1)
@@ -2384,11 +2405,11 @@ class ObLANDRecord(ObFormIDRecord):
         opacities = CBashLIST_LIST(5, Opacity)
         opacities_list = CBashLIST_LIST(5, Opacity, True)
 
-        copyattrs = ['texture', 'quadrant', 'unused1', 'layer', 'opacities_list']
+        exportattrs = copyattrs = ['texture', 'quadrant', 'layer', 'opacities_list']
 
     class VertexTexture(ListComponent):
         texture = CBashFORMID_LIST(1)
-        copyattrs = ['texture']
+        exportattrs = copyattrs = ['texture']
 
     class Position(ListX2Component):
         height = CBashFLOAT32_LISTX2(14, 0, 1)
@@ -2415,7 +2436,7 @@ class ObLANDRecord(ObFormIDRecord):
         alphaLayer7Opacity = CBashFLOAT32_LISTX2(14, 0, 22)
         alphaLayer8Texture = CBashFORMID_LISTX2(14, 0, 23)
         alphaLayer8Opacity = CBashFLOAT32_LISTX2(14, 0, 24)
-        copyattrs = ['height', 'normalX', 'normalY', 'normalZ',
+        exportattrs = copyattrs = ['height', 'normalX', 'normalY', 'normalZ',
                      'red', 'green', 'blue', 'baseTexture',
                      'alphaLayer1Texture', 'alphaLayer1Opacity',
                      'alphaLayer2Texture', 'alphaLayer2Opacity',
@@ -2504,6 +2525,9 @@ class ObLANDRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['data_p', 'normals_list', 'heights_list', 'heightOffset',
                                         'colors_list', 'baseTextures_list', 'alphaLayers_list',
                                         'vertexTextures_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['normals_list', 'heights_list', 'heightOffset',
+                                        'colors_list', 'baseTextures_list', 'alphaLayers_list',
+                                        'vertexTextures_list'] #'data_p', 
 
 class ObPGRDRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2517,12 +2541,12 @@ class ObPGRDRecord(ObFormIDRecord):
         x = CBashFLOAT32_LIST(3)
         y = CBashFLOAT32_LIST(4)
         z = CBashFLOAT32_LIST(5)
-        copyattrs = ['point', 'x', 'y', 'z']
+        exportattrs = copyattrs = ['point', 'x', 'y', 'z']
 
     class PGRL(ListComponent):
         reference = CBashFORMID_LIST(1)
         points = CBashUINT32ARRAY_LIST(2)
-        copyattrs = ['reference', 'points']
+        exportattrs = copyattrs = ['reference', 'points']
 
     count = CBashGeneric(5, c_ushort)
 
@@ -2552,6 +2576,8 @@ class ObPGRDRecord(ObFormIDRecord):
 
     copyattrs = ObFormIDRecord.baseattrs + ['count', 'pgrp_list', 'pgag_p', 'pgrr_p',
                                         'pgri_list', 'pgrl_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['count', 'pgrp_list',
+                                        'pgri_list', 'pgrl_list'] # 'pgag_p', 'pgrr_p',
 
 class ObROADRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2563,7 +2589,7 @@ class ObROADRecord(ObFormIDRecord):
         x = CBashFLOAT32_LIST(1)
         y = CBashFLOAT32_LIST(2)
         z = CBashFLOAT32_LIST(3)
-        copyattrs = ['x', 'y', 'z']
+        exportattrs = copyattrs = ['x', 'y', 'z']
 
     def create_pgrp(self):
         length = CBash.GetFieldAttribute(self._CollectionID, self._ModID, self._RecordID, 0, 5, 0, 0, 0, 0, 0, 0, 1)
@@ -2579,7 +2605,7 @@ class ObROADRecord(ObFormIDRecord):
     pgrr = CBashLIST(6, PGRR)
     pgrr_list = CBashLIST(6, PGRR, True)
 
-    copyattrs = ObFormIDRecord.baseattrs + ['pgrp_list', 'pgrr_list']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['pgrp_list', 'pgrr_list']
 
 class ObACTIRecord(ObFormIDRecord):
     _Type = 'ACTI'
@@ -2591,6 +2617,7 @@ class ObACTIRecord(ObFormIDRecord):
     sound = CBashFORMID(10)
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'script',
                                         'sound']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'script', 'sound'] #'modt_p', 
 
 class ObALCHRecord(ObFormIDRecord):
     _Type = 'ALCH'
@@ -2625,9 +2652,12 @@ class ObALCHRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
                                         'iconPath', 'script', 'weight',
                                         'value', 'flags', 'effects_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'script', 'weight',
+                                        'value', 'flags', 'effects_list'] # 'modt_p',
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved', 'datx_p']
+                                 'reserved'] #, 'datx_p'
 
 class ObAMMORecord(ObFormIDRecord):
     _Type = 'AMMO'
@@ -2653,6 +2683,11 @@ class ObAMMORecord(ObFormIDRecord):
                                         'enchantPoints', 'speed', 'flags',
                                         'value', 'weight', 'damage']
 
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'enchantment',
+                                        'enchantPoints', 'speed', 'flags',
+                                        'value', 'weight', 'damage'] # 'modt_p',
+
 class ObANIORecord(ObFormIDRecord):
     _Type = 'ANIO'
     modPath = CBashISTRING(5)
@@ -2660,6 +2695,7 @@ class ObANIORecord(ObFormIDRecord):
     modt_p = CBashUINT8ARRAY(7)
     animationId = CBashFORMID(8)
     copyattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'animationId']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'animationId'] #'modt_p', 
 
 class ObAPPARecord(ObFormIDRecord):
     _Type = 'APPA'
@@ -2680,6 +2716,9 @@ class ObAPPARecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
                                         'iconPath', 'script', 'apparatusType',
                                         'value', 'weight', 'quality']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'script', 'apparatusType',
+                                        'value', 'weight', 'quality'] # 'modt_p',
 
 class ObARMORecord(ObFormIDRecord):
     _Type = 'ARMO'
@@ -2689,10 +2728,18 @@ class ObARMORecord(ObFormIDRecord):
     enchantPoints = CBashGeneric(8, c_ushort)
     flags = CBashGeneric(9, c_ulong)
     maleBody = CBashGrouped(10, Model)
+    maleBody_list = CBashGrouped(10, Model, True)
+
     maleWorld = CBashGrouped(13, Model)
+    maleWorld_list = CBashGrouped(13, Model, True)
+
     maleIconPath = CBashISTRING(16)
     femaleBody = CBashGrouped(17, Model)
+    femaleBody_list = CBashGrouped(17, Model, True)
+
     femaleWorld = CBashGrouped(20, Model)
+    femaleWorld_list = CBashGrouped(20, Model, True)
+
     femaleIconPath = CBashISTRING(23)
     strength = CBashGeneric(24, c_ushort)
     value = CBashGeneric(25, c_ulong)
@@ -2719,9 +2766,9 @@ class ObARMORecord(ObFormIDRecord):
     IsNonPlayable = CBashBasicFlag('flags', 0x00400000)
     IsPlayable = CBashInvertedFlag('IsNonPlayable')
     IsHeavyArmor = CBashBasicFlag('flags', 0x00800000)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'script', 'enchantment', 'enchantPoints',
-                                        'flags', 'maleBody', 'maleWorld', 'maleIconPath',
-                                        'femaleBody', 'femaleWorld', 'femaleIconPath',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'script', 'enchantment', 'enchantPoints',
+                                        'flags', 'maleBody_list', 'maleWorld_list', 'maleIconPath',
+                                        'femaleBody_list', 'femaleWorld_list', 'femaleIconPath',
                                         'strength', 'value', 'health', 'weight']
 
 class ObBOOKRecord(ObFormIDRecord):
@@ -2746,6 +2793,10 @@ class ObBOOKRecord(ObFormIDRecord):
                                         'iconPath', 'text', 'script',
                                         'enchantment', 'enchantPoints',
                                         'flags', 'teaches', 'value', 'weight']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'text', 'script',
+                                        'enchantment', 'enchantPoints',
+                                        'flags', 'teaches', 'value', 'weight'] # 'modt_p',
 
 class ObBSGNRecord(ObFormIDRecord):
     _Type = 'BSGN'
@@ -2753,7 +2804,7 @@ class ObBSGNRecord(ObFormIDRecord):
     iconPath = CBashISTRING(6)
     text = CBashSTRING(7)
     spells = CBashFORMIDARRAY(8)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'iconPath', 'text', 'spells']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'iconPath', 'text', 'spells']
 
 class ObCELLRecord(ObFormIDRecord):
     _Type = 'CELL'
@@ -2841,7 +2892,7 @@ class ObCELLRecord(ObFormIDRecord):
     IsDefault = CBashBasicType('music', 0, 'IsPublic')
     IsPublic = CBashBasicType('music', 1, 'IsDefault')
     IsDungeon = CBashBasicType('music', 2, 'IsDefault')
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'flags', 'ambientRed', 'ambientGreen', 'ambientBlue',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'flags', 'ambientRed', 'ambientGreen', 'ambientBlue',
                                         'directionalRed', 'directionalGreen', 'directionalBlue',
                                         'fogRed', 'fogGreen', 'fogBlue', 'fogNear', 'fogFar',
                                         'directionalXY', 'directionalZ', 'directionalFade', 'fogClip',
@@ -2885,7 +2936,7 @@ class ObCLASRecord(ObFormIDRecord):
     IsServicesTraining = CBashBasicFlag('services', 0x00004000)
     IsServicesRecharge = CBashBasicFlag('services', 0x00010000)
     IsServicesRepair = CBashBasicFlag('services', 0x00020000)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'description', 'iconPath', 'primary1',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'description', 'iconPath', 'primary1',
                                         'primary2', 'specialization', 'major1',
                                         'major2', 'major3', 'major4', 'major5',
                                         'major6', 'major7', 'flags', 'services',
@@ -2919,6 +2970,9 @@ class ObCLMTRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['weathers_list', 'sunPath', 'glarePath', 'modPath',
                                         'modb', 'modt_p', 'riseBegin', 'riseEnd',
                                         'setBegin', 'setEnd', 'volatility', 'phaseLength']
+    exportattrs = ObFormIDRecord.baseattrs + ['weathers_list', 'sunPath', 'glarePath', 'modPath',
+                                        'modb', 'riseBegin', 'riseEnd',
+                                        'setBegin', 'setEnd', 'volatility', 'phaseLength'] #'modt_p', 
 
 class ObCLOTRecord(ObFormIDRecord):
     _Type = 'CLOT'
@@ -2928,10 +2982,18 @@ class ObCLOTRecord(ObFormIDRecord):
     enchantPoints = CBashGeneric(8, c_ushort)
     flags = CBashGeneric(9, c_ulong)
     maleBody = CBashGrouped(10, Model)
+    maleBody_list = CBashGrouped(10, Model, True)
+
     maleWorld = CBashGrouped(13, Model)
+    maleWorld_list = CBashGrouped(13, Model, True)
+
     maleIconPath = CBashISTRING(16)
     femaleBody = CBashGrouped(17, Model)
+    femaleBody_list = CBashGrouped(17, Model, True)
+
     femaleWorld = CBashGrouped(20, Model)
+    femaleWorld_list = CBashGrouped(20, Model, True)
+
     femaleIconPath = CBashISTRING(23)
     value = CBashGeneric(24, c_ulong)
     weight = CBashFLOAT32(25)
@@ -2956,6 +3018,10 @@ class ObCLOTRecord(ObFormIDRecord):
     IsNonPlayable = CBashBasicFlag('flags', 0x00400000)
     IsPlayable = CBashInvertedFlag('IsNonPlayable')
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'script', 'enchantment',
+                                        'enchantPoints', 'flags', 'maleBody_list', 'maleWorld_list',
+                                        'maleIconPath', 'femaleBody_list', 'femaleWorld_list',
+                                        'femaleIconPath', 'value', 'weight']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'script', 'enchantment',
                                         'enchantPoints', 'flags', 'maleBody', 'maleWorld',
                                         'maleIconPath', 'femaleBody', 'femaleWorld',
                                         'femaleIconPath', 'value', 'weight']
@@ -2989,6 +3055,10 @@ class ObCONTRecord(ObFormIDRecord):
                                         'script', 'items_list', 'flags', 'weight',
                                         'soundOpen', 'soundClose']
 
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'script', 'items_list', 'flags', 'weight',
+                                        'soundOpen', 'soundClose'] # 'modt_p',
+
 class ObCREARecord(ObFormIDRecord):
     _Type = 'CREA'
     def mergeFilter(self,modSet):
@@ -3002,7 +3072,7 @@ class ObCREARecord(ObFormIDRecord):
         type = CBashGeneric_LIST(1, c_ulong)
         sound = CBashFORMID_LIST(2)
         chance = CBashGeneric_LIST(3, c_ubyte)
-        copyattrs = ['type', 'sound', 'chance']
+        exportattrs = copyattrs = ['type', 'sound', 'chance']
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -3147,6 +3217,21 @@ class ObCREARecord(ObFormIDRecord):
                                         'baseScale', 'footWeight',
                                         'inheritsSoundsFrom', 'bloodSprayPath',
                                         'bloodDecalPath', 'sounds_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'spells',
+                                        'bodyParts', 'flags', 'baseSpell',
+                                        'fatigue', 'barterGold', 'level', 'calcMin',
+                                        'calcMax', 'factions_list', 'deathItem',
+                                        'script', 'items_list', 'aggression', 'confidence',
+                                        'energyLevel', 'responsibility', 'services',
+                                        'trainSkill', 'trainLevel', 'aiPackages',
+                                        'animations', 'creatureType', 'combat', 'magic',
+                                        'stealth', 'soulType', 'health', 'attackDamage',
+                                        'strength', 'intelligence', 'willpower', 'agility',
+                                        'speed', 'endurance', 'personality', 'luck',
+                                        'attackReach', 'combatStyle', 'turningSpeed',
+                                        'baseScale', 'footWeight',
+                                        'inheritsSoundsFrom', 'bloodSprayPath',
+                                        'bloodDecalPath', 'sounds_list'] #'modt_p', 'nift_p', 
 
 class ObCSTYRecord(ObFormIDRecord):
     _Type = 'CSTY'
@@ -3223,7 +3308,7 @@ class ObCSTYRecord(ObFormIDRecord):
     IsPrefersRanged = CBashBasicFlag('flagsA', 0x00000040)
     IsMeleeAlertOK = CBashBasicFlag('flagsA', 0x00000080)
     IsDoNotAcquire = CBashBasicFlag('flagsB', 0x00000001)
-    copyattrs = ObFormIDRecord.baseattrs + ['dodgeChance', 'lrChance', 'lrTimerMin', 'lrTimerMax',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['dodgeChance', 'lrChance', 'lrTimerMin', 'lrTimerMax',
                                         'forTimerMin', 'forTimerMax', 'backTimerMin',
                                         'backTimerMax', 'idleTimerMin', 'idleTimerMax',
                                         'blkChance', 'atkChance', 'atkBRecoil', 'atkBUnc',
@@ -3258,7 +3343,7 @@ class ObDIALRecord(ObFormIDRecord):
     IsDetection = CBashBasicType('dialType', 4, 'IsTopic')
     IsService = CBashBasicType('dialType', 5, 'IsTopic')
     IsMisc = CBashBasicType('dialType', 6, 'IsTopic')
-    copyattrs = ObFormIDRecord.baseattrs + ['quests', 'removedQuests',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['quests', 'removedQuests',
                                         'full', 'dialType']
 
 class ObDOORRecord(ObFormIDRecord):
@@ -3281,6 +3366,10 @@ class ObDOORRecord(ObFormIDRecord):
                                         'script', 'soundOpen',
                                         'soundClose', 'soundLoop',
                                         'flags', 'destinations']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'script', 'soundOpen',
+                                        'soundClose', 'soundLoop',
+                                        'flags', 'destinations'] # 'modt_p',
 
 class ObEFSHRecord(ObFormIDRecord):
     _Type = 'EFSH'
@@ -3366,7 +3455,7 @@ class ObEFSHRecord(ObFormIDRecord):
     IsEdgeEffectInverse = CBashAlias('IsEdgeInverse')
     IsMemSkinOnly = CBashBasicFlag('flags', 0x00000020)
     IsMembraneShaderSkinOnly = CBashAlias('IsMemSkinOnly')
-    copyattrs = ObFormIDRecord.baseattrs + ['fillTexturePath', 'particleTexturePath', 'flags', 'memSBlend', 'memBlendOp',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['fillTexturePath', 'particleTexturePath', 'flags', 'memSBlend', 'memBlendOp',
                                         'memZFunc', 'fillRed', 'fillGreen', 'fillBlue', 'fillAIn', 'fillAFull',
                                         'fillAOut', 'fillAPRatio', 'fillAAmp', 'fillAFreq', 'fillAnimSpdU',
                                         'fillAnimSpdV', 'edgeOff', 'edgeRed', 'edgeGreen', 'edgeBlue', 'edgeAIn',
@@ -3409,11 +3498,11 @@ class ObENCHRecord(ObFormIDRecord):
     majorVersion = CBashGeneric(15, c_ubyte)
     reserved = CBashUINT8ARRAY(16, 0x1C)
     datx_p = CBashUINT8ARRAY(17, 0x20)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'itemType', 'chargeAmount',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'itemType', 'chargeAmount',
                                         'enchantCost', 'flags', 'effects_list']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved', 'datx_p']
+                                 'reserved'] #, 'datx_p'
 
 class ObEYESRecord(ObFormIDRecord):
     _Type = 'EYES'
@@ -3421,7 +3510,7 @@ class ObEYESRecord(ObFormIDRecord):
     iconPath = CBashISTRING(6)
     flags = CBashGeneric(7, c_ubyte)
     IsPlayable = CBashBasicFlag('flags', 0x00000001)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'iconPath', 'flags']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'iconPath', 'flags']
 
 class ObFACTRecord(ObFormIDRecord):
     _Type = 'FACT'
@@ -3430,7 +3519,7 @@ class ObFACTRecord(ObFormIDRecord):
         male = CBashSTRING_LIST(2)
         female = CBashSTRING_LIST(3)
         insigniaPath = CBashISTRING_LIST(4)
-        copyattrs = ['rank', 'male', 'female', 'insigniaPath']
+        exportattrs = copyattrs = ['rank', 'male', 'female', 'insigniaPath']
 
     full = CBashSTRING(5)
 
@@ -3454,7 +3543,7 @@ class ObFACTRecord(ObFormIDRecord):
     IsHiddenFromPC = CBashBasicFlag('flags', 0x00000001)
     IsEvil = CBashBasicFlag('flags', 0x00000002)
     IsSpecialCombat = CBashBasicFlag('flags', 0x00000004)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'relations_list', 'flags',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'relations_list', 'flags',
                                         'crimeGoldMultiplier', 'ranks_list']
 
 class ObFLORRecord(ObFormIDRecord):
@@ -3472,6 +3561,9 @@ class ObFLORRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
                                         'script', 'ingredient', 'spring',
                                         'summer', 'fall', 'winter']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'script', 'ingredient', 'spring',
+                                        'summer', 'fall', 'winter'] # 'modt_p',
 
 class ObFURNRecord(ObFormIDRecord):
     _Type = 'FURN'
@@ -3515,12 +3607,14 @@ class ObFURNRecord(ObFormIDRecord):
     IsSleepAnim = CBashMaskedType('flags', 0xC0000000, 0x80000000, 'IsSitAnim')
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
                                         'modt_p', 'script', 'flags']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'script', 'flags'] #'modt_p', 
 
 class ObGLOBRecord(ObFormIDRecord):
     _Type = 'GLOB'
     format = CBashGeneric(5, c_char)
     value = CBashFLOAT32(6)
-    copyattrs = ObFormIDRecord.baseattrs + ['format', 'value']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['format', 'value']
 
 class ObGRASRecord(ObFormIDRecord):
     _Type = 'GRAS'
@@ -3550,6 +3644,10 @@ class ObGRASRecord(ObFormIDRecord):
                                         'minSlope', 'maxSlope', 'waterDistance',
                                         'waterOp', 'posRange', 'heightRange',
                                         'colorRange', 'wavePeriod', 'flags']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'density',
+                                        'minSlope', 'maxSlope', 'waterDistance',
+                                        'waterOp', 'posRange', 'heightRange',
+                                        'colorRange', 'wavePeriod', 'flags'] #'modt_p', 
 
 class ObHAIRRecord(ObFormIDRecord):
     _Type = 'HAIR'
@@ -3567,6 +3665,8 @@ class ObHAIRRecord(ObFormIDRecord):
     IsFixedColor = CBashBasicFlag('flags', 0x00000008)
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
                                         'modt_p', 'iconPath', 'flags']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'flags'] #'modt_p', 
 
 class ObIDLERecord(ObFormIDRecord):
     _Type = 'IDLE'
@@ -3595,6 +3695,8 @@ class ObIDLERecord(ObFormIDRecord):
     IsReturnFile = CBashInvertedFlag('IsNotReturnFile')
     copyattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'modt_p',
                                         'conditions_list', 'group', 'parent', 'prevId']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'conditions_list', 
+                                            'group', 'parent', 'prevId'] # 'modt_p',
 
 class ObINGRRecord(ObFormIDRecord):
     _Type = 'INGR'
@@ -3629,9 +3731,12 @@ class ObINGRRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
                                         'script', 'weight', 'value', 'flags',
                                         'effects_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
+                                        'script', 'weight', 'value', 'flags',
+                                        'effects_list'] #'modt_p', 
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved', 'datx_p']
+                                 'reserved'] #, 'datx_p'
 
 class ObKEYMRecord(ObFormIDRecord):
     _Type = 'KEYM'
@@ -3645,6 +3750,8 @@ class ObKEYMRecord(ObFormIDRecord):
     weight = CBashFLOAT32(12)
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
                                         'script', 'value', 'weight']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
+                                        'script', 'value', 'weight'] #'modt_p', 
 
 class ObLIGHRecord(ObFormIDRecord):
     _Type = 'LIGH'
@@ -3681,6 +3788,10 @@ class ObLIGHRecord(ObFormIDRecord):
                                         'iconPath', 'duration', 'radius', 'red',
                                         'green', 'blue', 'flags', 'falloff', 'fov',
                                         'value', 'weight', 'fade', 'sound']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'script', 'full',
+                                        'iconPath', 'duration', 'radius', 'red',
+                                        'green', 'blue', 'flags', 'falloff', 'fov',
+                                        'value', 'weight', 'fade', 'sound'] #'modt_p', 
 
 class ObLSCRRecord(ObFormIDRecord):
     _Type = 'LSCR'
@@ -3689,7 +3800,7 @@ class ObLSCRRecord(ObFormIDRecord):
         indirect = CBashFORMID_LIST(2)
         gridY = CBashGeneric_LIST(3, c_short)
         gridX = CBashGeneric_LIST(4, c_short)
-        copyattrs = ['direct', 'indirect', 'gridY', 'gridX']
+        exportattrs = copyattrs = ['direct', 'indirect', 'gridY', 'gridX']
 
     iconPath = CBashISTRING(5)
     text = CBashSTRING(6)
@@ -3701,7 +3812,7 @@ class ObLSCRRecord(ObFormIDRecord):
     locations = CBashLIST(7, Location)
     locations_list = CBashLIST(7, Location, True)
 
-    copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'text', 'locations_list']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'text', 'locations_list']
 
 class ObLTEXRecord(ObFormIDRecord):
     _Type = 'LTEX'
@@ -3726,7 +3837,7 @@ class ObLTEXRecord(ObFormIDRecord):
     IsHeavyWood = CBashBasicFlag('flags', 0x00001000)
     IsChain = CBashBasicFlag('flags', 0x00002000)
     IsSnow = CBashBasicFlag('flags', 0x00004000)
-    copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'flags', 'friction', 'restitution',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'flags', 'friction', 'restitution',
                                         'specular', 'grass']
 
 class ObLVLCRecord(ObFormIDRecord):
@@ -3737,7 +3848,7 @@ class ObLVLCRecord(ObFormIDRecord):
         listId = CBashFORMID_LIST(3)
         count = CBashGeneric_LIST(4, c_short)
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
-        copyattrs = ['level', 'listId', 'count']
+        exportattrs = copyattrs = ['level', 'listId', 'count']
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -3758,7 +3869,7 @@ class ObLVLCRecord(ObFormIDRecord):
     IsCalcFromAllLevels = CBashBasicFlag('flags', 0x00000001)
     IsCalcForEachItem = CBashBasicFlag('flags', 0x00000002)
     IsUseAllSpells = CBashBasicFlag('flags', 0x00000004)
-    copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'script',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'script',
                                         'template', 'entries_list']
 
 class ObLVLIRecord(ObFormIDRecord):
@@ -3769,7 +3880,7 @@ class ObLVLIRecord(ObFormIDRecord):
         listId = CBashFORMID_LIST(3)
         count = CBashGeneric_LIST(4, c_short)
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
-        copyattrs = ['level', 'listId', 'count']
+        exportattrs = copyattrs = ['level', 'listId', 'count']
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -3788,7 +3899,7 @@ class ObLVLIRecord(ObFormIDRecord):
     IsCalcFromAllLevels = CBashBasicFlag('flags', 0x00000001)
     IsCalcForEachItem = CBashBasicFlag('flags', 0x00000002)
     IsUseAllSpells = CBashBasicFlag('flags', 0x00000004)
-    copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
 
 class ObLVSPRecord(ObFormIDRecord):
     _Type = 'LVSP'
@@ -3798,7 +3909,7 @@ class ObLVSPRecord(ObFormIDRecord):
         listId = CBashFORMID_LIST(3)
         count = CBashGeneric_LIST(4, c_short)
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
-        copyattrs = ['level', 'listId', 'count']
+        exportattrs = copyattrs = ['level', 'listId', 'count']
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -3817,7 +3928,7 @@ class ObLVSPRecord(ObFormIDRecord):
     IsCalcFromAllLevels = CBashBasicFlag('flags', 0x00000001)
     IsCalcForEachItem = CBashBasicFlag('flags', 0x00000002)
     IsUseAllSpells = CBashBasicFlag('flags', 0x00000004)
-    copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
 
 class ObMGEFRecord(ObEditorIDRecord):
     _Type = 'MGEF'
@@ -3936,11 +4047,19 @@ class ObMGEFRecord(ObEditorIDRecord):
                                           'castingSound', 'boltSound', 'hitSound',
                                           'areaSound', 'cefEnchantment', 'cefBarter',
                                           'counterEffects']
+    exportattrs = ObEditorIDRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
+                                          'modb', 'flags', 'baseCost',
+                                          'associated', 'school', 'resistValue',
+                                          'numCounters', 'light', 'projectileSpeed',
+                                          'effectShader', 'enchantEffect',
+                                          'castingSound', 'boltSound', 'hitSound',
+                                          'areaSound', 'cefEnchantment', 'cefBarter',
+                                          'counterEffects'] #'modt_p', 
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
                                  'mgefParamAInfo', 'mgefParamBInfo',
                                  'reserved1', 'handlerCode', 'OBMEFlags',
-                                 'mgefParamB', 'reserved2', 'mgefCode', 'datx_p']
+                                 'mgefParamB', 'reserved2', 'mgefCode'] #, 'datx_p'
 
 class ObMISCRecord(ObFormIDRecord):
     _Type = 'MISC'
@@ -3954,6 +4073,8 @@ class ObMISCRecord(ObFormIDRecord):
     weight = CBashFLOAT32(12)
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
                                         'script', 'value', 'weight']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
+                                        'script', 'value', 'weight'] #'modt_p', 
 
 class ObNPC_Record(ObFormIDRecord):
     _Type = 'NPC_'
@@ -4099,6 +4220,28 @@ class ObNPC_Record(ObFormIDRecord):
                                         'hairLength', 'eye', 'hairRed',
                                         'hairGreen', 'hairBlue', 'combatStyle',
                                         'fggs_p', 'fgga_p', 'fgts_p', 'fnam']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'flags', 'baseSpell', 'fatigue',
+                                        'barterGold', 'level', 'calcMin',
+                                        'calcMax', 'factions_list', 'deathItem',
+                                        'race', 'spells', 'script',
+                                        'items_list', 'aggression', 'confidence',
+                                        'energyLevel', 'responsibility',
+                                        'services', 'trainSkill', 'trainLevel',
+                                        'aiPackages', 'animations', 'iclass',
+                                        'armorer', 'athletics', 'blade',
+                                        'block', 'blunt', 'h2h', 'heavyArmor',
+                                        'alchemy', 'alteration', 'conjuration',
+                                        'destruction', 'illusion', 'mysticism',
+                                        'restoration', 'acrobatics', 'lightArmor',
+                                        'marksman', 'mercantile', 'security',
+                                        'sneak', 'speechcraft', 'health',
+                                        'strength', 'intelligence', 'willpower',
+                                        'agility', 'speed', 'endurance',
+                                        'personality', 'luck', 'hair',
+                                        'hairLength', 'eye', 'hairRed',
+                                        'hairGreen', 'hairBlue', 'combatStyle',
+                                        'fnam'] # 'modt_p', 'fggs_p', 'fgga_p', 'fgts_p', 
 
 class ObPACKRecord(ObFormIDRecord):
     _Type = 'PACK'
@@ -4166,7 +4309,7 @@ class ObPACKRecord(ObFormIDRecord):
     IsTargetReference = CBashBasicType('locType', 0, 'IsTargetObjectID')
     IsTargetObjectID = CBashBasicType('locType', 1, 'IsTargetReference')
     IsTargetObjectType = CBashBasicType('locType', 2, 'IsTargetReference')
-    copyattrs = ObFormIDRecord.baseattrs + ['flags', 'aiType', 'locType', 'locId',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['flags', 'aiType', 'locType', 'locId',
                                         'locRadius', 'month', 'day', 'date', 'time',
                                         'duration', 'targetType', 'targetId',
                                         'targetCount', 'conditions_list']
@@ -4192,7 +4335,7 @@ class ObQUSTRecord(ObFormIDRecord):
                 IsOr = CBashBasicFlag('operType', 0x01)
                 IsRunOnTarget = CBashBasicFlag('operType', 0x02)
                 IsUseGlobal = CBashBasicFlag('operType', 0x04)
-                copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
+                exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
                              'param2']
 
             flags = CBashGeneric_LISTX2(11, 2, 1, c_ubyte)
@@ -4217,6 +4360,9 @@ class ObQUSTRecord(ObFormIDRecord):
             copyattrs = ['flags', 'conditions_list', 'text', 'numRefs', 'compiledSize',
                          'lastIndex', 'scriptType', 'compiled_p', 'scriptText',
                          'references']
+            exportattrs = ['flags', 'conditions_list', 'text', 'numRefs', 'compiledSize',
+                         'lastIndex', 'scriptType', 'scriptText',
+                         'references'] #'compiled_p', 
 
         stage = CBashGeneric_LIST(1, c_ushort)
 
@@ -4227,7 +4373,7 @@ class ObQUSTRecord(ObFormIDRecord):
         entries = CBashLIST_LIST(2, Entry)
         entries_list = CBashLIST_LIST(2, Entry, True)
 
-        copyattrs = ['stage', 'entries_list']
+        exportattrs = copyattrs = ['stage', 'entries_list']
 
     class Target(ListComponent):
         class ConditionX2(ListX2Component):
@@ -4247,7 +4393,7 @@ class ObQUSTRecord(ObFormIDRecord):
             IsOr = CBashBasicFlag('operType', 0x01)
             IsRunOnTarget = CBashBasicFlag('operType', 0x02)
             IsUseGlobal = CBashBasicFlag('operType', 0x04)
-            copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
+            exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
                          'param2']
 
         targetId = CBashFORMID_LIST(1)
@@ -4262,7 +4408,7 @@ class ObQUSTRecord(ObFormIDRecord):
         conditions_list = CBashLIST_LIST(4, ConditionX2, True)
 
         IsIgnoresLocks = CBashBasicFlag('flags', 0x00000001)
-        copyattrs = ['targetId', 'flags', 'conditions_list']
+        exportattrs = copyattrs = ['targetId', 'flags', 'conditions_list']
 
     script = CBashFORMID(5)
     full = CBashSTRING(6)
@@ -4294,7 +4440,7 @@ class ObQUSTRecord(ObFormIDRecord):
     IsStartEnabled = CBashBasicFlag('flags', 0x00000001)
     IsRepeatedTopics = CBashBasicFlag('flags', 0x00000004)
     IsRepeatedStages = CBashBasicFlag('flags', 0x00000008)
-    copyattrs = ObFormIDRecord.baseattrs + ['script', 'full', 'iconPath',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['script', 'full', 'iconPath',
                                         'flags', 'priority', 'conditions_list',
                                         'stages_list', 'targets_list']
 
@@ -4306,6 +4452,7 @@ class ObRACERecord(ObFormIDRecord):
         iconPath = CBashISTRING_GROUP(2)
         modt_p = CBashUINT8ARRAY_GROUP(3)
         copyattrs = ['modPath', 'modb', 'iconPath', 'modt_p']
+        exportattrs = ['modPath', 'modb', 'iconPath']#, 'modt_p']
 
     full = CBashSTRING(5)
     text = CBashSTRING(6)
@@ -4362,21 +4509,43 @@ class ObRACERecord(ObFormIDRecord):
     femalePersonality = CBashGeneric(50, c_ubyte)
     femaleLuck = CBashGeneric(51, c_ubyte)
     head = CBashGrouped(52, RaceModel)
+    head_list = CBashGrouped(52, RaceModel, True)
+
     maleEars = CBashGrouped(56, RaceModel)
+    maleEars_list = CBashGrouped(56, RaceModel, True)
+
     femaleEars = CBashGrouped(60, RaceModel)
+    femaleEars_list = CBashGrouped(60, RaceModel, True)
+
     mouth = CBashGrouped(64, RaceModel)
+    mouth_list = CBashGrouped(64, RaceModel, True)
+
     teethLower = CBashGrouped(68, RaceModel)
+    teethLower_list = CBashGrouped(68, RaceModel, True)
+
     teethUpper = CBashGrouped(72, RaceModel)
+    teethUpper_list = CBashGrouped(72, RaceModel, True)
+
     tongue = CBashGrouped(76, RaceModel)
+    tongue_list = CBashGrouped(76, RaceModel, True)
+
     leftEye = CBashGrouped(80, RaceModel)
+    leftEye_list = CBashGrouped(80, RaceModel, True)
+
     rightEye = CBashGrouped(84, RaceModel)
+    rightEye_list = CBashGrouped(84, RaceModel, True)
+
     maleTail = CBashGrouped(88, Model)
+    maleTail_list = CBashGrouped(88, Model, True)
+
     maleUpperBodyPath = CBashISTRING(91)
     maleLowerBodyPath = CBashISTRING(92)
     maleHandPath = CBashISTRING(93)
     maleFootPath = CBashISTRING(94)
     maleTailPath = CBashISTRING(95)
     femaleTail = CBashGrouped(96, Model)
+    femaleTail_list = CBashGrouped(96, Model, True)
+
     femaleUpperBodyPath = CBashISTRING(99)
     femaleLowerBodyPath = CBashISTRING(100)
     femaleHandPath = CBashISTRING(101)
@@ -4409,17 +4578,47 @@ class ObRACERecord(ObFormIDRecord):
                                         'femaleWillpower', 'femaleAgility',
                                         'femaleSpeed', 'femaleEndurance',
                                         'femalePersonality', 'femaleLuck',
-                                        'head', 'maleEars', 'femaleEars',
-                                        'mouth', 'teethLower', 'teethUpper',
-                                        'tongue', 'leftEye', 'rightEye',
-                                        'maleTail', 'maleUpperBodyPath',
+                                        'head_list', 'maleEars_list', 'femaleEars_list',
+                                        'mouth_list', 'teethLower_list', 'teethUpper_list',
+                                        'tongue_list', 'leftEye_list', 'rightEye_list',
+                                        'maleTail_list', 'maleUpperBodyPath',
                                         'maleLowerBodyPath', 'maleHandPath',
                                         'maleFootPath', 'maleTailPath',
-                                        'femaleTail', 'femaleUpperBodyPath',
+                                        'femaleTail_list', 'femaleUpperBodyPath',
                                         'femaleLowerBodyPath', 'femaleHandPath',
                                         'femaleFootPath', 'femaleTailPath',
                                         'hairs', 'eyes', 'fggs_p',
                                         'fgga_p', 'fgts_p', 'snam_p']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'text', 'spells',
+                                        'relations_list', 'skill1', 'skill1Boost',
+                                        'skill2', 'skill2Boost', 'skill3',
+                                        'skill3Boost', 'skill4', 'skill4Boost',
+                                        'skill5', 'skill5Boost', 'skill6',
+                                        'skill6Boost', 'skill7', 'skill7Boost',
+                                        'maleHeight', 'femaleHeight',
+                                        'maleWeight', 'femaleWeight', 'flags',
+                                        'maleVoice', 'femaleVoice',
+                                        'defaultHairMale',
+                                        'defaultHairFemale',
+                                        'defaultHairColor', 'mainClamp',
+                                        'faceClamp', 'maleStrength',
+                                        'maleIntelligence', 'maleAgility',
+                                        'maleSpeed', 'maleEndurance',
+                                        'malePersonality', 'maleLuck',
+                                        'femaleStrength', 'femaleIntelligence',
+                                        'femaleWillpower', 'femaleAgility',
+                                        'femaleSpeed', 'femaleEndurance',
+                                        'femalePersonality', 'femaleLuck',
+                                        'head_list', 'maleEars_list', 'femaleEars_list',
+                                        'mouth_list', 'teethLower_list', 'teethUpper_list',
+                                        'tongue_list', 'leftEye_list', 'rightEye_list',
+                                        'maleTail_list', 'maleUpperBodyPath',
+                                        'maleLowerBodyPath', 'maleHandPath',
+                                        'maleFootPath', 'maleTailPath',
+                                        'femaleTail_list', 'femaleUpperBodyPath',
+                                        'femaleLowerBodyPath', 'femaleHandPath',
+                                        'femaleFootPath', 'femaleTailPath',
+                                        'hairs', 'eyes'] # 'fggs_p','fgga_p', 'fgts_p', 'snam_p'
 
 class ObREGNRecord(ObFormIDRecord):
     _Type = 'REGN'
@@ -4427,7 +4626,7 @@ class ObREGNRecord(ObFormIDRecord):
         class Point(ListX2Component):
             posX = CBashFLOAT32_LISTX2(11, 2, 1)
             posY = CBashFLOAT32_LISTX2(11, 2, 2)
-            copyattrs = ['posX', 'posY']
+            exportattrs = copyattrs = ['posX', 'posY']
 
         edgeFalloff = CBashFORMID_LIST(1)
 
@@ -4438,7 +4637,7 @@ class ObREGNRecord(ObFormIDRecord):
         points = CBashLIST_LIST(2, Point)
         points_list = CBashLIST_LIST(2, Point, True)
 
-        copyattrs = ['edgeFalloff', 'points_list']
+        exportattrs = copyattrs = ['edgeFalloff', 'points_list']
 
     class Entry(ListComponent):
         class Object(ListX2Component):
@@ -4470,7 +4669,7 @@ class ObREGNRecord(ObFormIDRecord):
             IsZVariance = CBashBasicFlag('flags', 0x00000020)
             IsTree = CBashBasicFlag('flags', 0x00000040)
             IsHugeRock = CBashBasicFlag('flags', 0x00000080)
-            copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
+            exportattrs = copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
                          'minSlope', 'maxSlope', 'flags', 'radiusWRTParent',
                          'radius', 'unk1', 'maxHeight', 'sink', 'sinkVar',
                          'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
@@ -4479,7 +4678,7 @@ class ObREGNRecord(ObFormIDRecord):
         class Grass(ListX2Component):
             grass = CBashFORMID_LISTX2(12, 8, 1)
             unk1 = CBashUINT8ARRAY_LISTX2(12, 8, 2, 4)
-            copyattrs = ['grass', 'unk1']
+            exportattrs = copyattrs = ['grass', 'unk1']
 
         class Sound(ListX2Component):
             sound = CBashFORMID_LISTX2(12, 10, 1)
@@ -4489,12 +4688,12 @@ class ObREGNRecord(ObFormIDRecord):
             IsCloudy = CBashBasicFlag('flags', 0x00000002)
             IsRainy = CBashBasicFlag('flags', 0x00000004)
             IsSnowy = CBashBasicFlag('flags', 0x00000008)
-            copyattrs = ['sound', 'flags', 'chance']
+            exportattrs = copyattrs = ['sound', 'flags', 'chance']
 
         class Weather(ListX2Component):
             weather = CBashFORMID_LISTX2(12, 11, 1)
             chance = CBashGeneric_LISTX2(12, 11, 2, c_ulong)
-            copyattrs = ['weather', 'chance']
+            exportattrs = copyattrs = ['weather', 'chance']
 
         entryType = CBashGeneric_LIST(1, c_ulong)
         flags = CBashGeneric_LIST(2, c_ubyte)
@@ -4544,7 +4743,7 @@ class ObREGNRecord(ObFormIDRecord):
         IsPublic = CBashBasicType('musicType', 1, 'IsDefault')
         IsDungeon = CBashBasicType('musicType', 2, 'IsDefault')
         IsOverride = CBashBasicFlag('flags', 0x00000001)
-        copyattrs = ['entryType', 'flags', 'priority', 'objects_list', 'mapName',
+        exportattrs = copyattrs = ['entryType', 'flags', 'priority', 'objects_list', 'mapName',
                      'iconPath', 'grasses_list', 'musicType', 'sounds_list', 'weathers_list']
 
     iconPath = CBashISTRING(5)
@@ -4568,7 +4767,7 @@ class ObREGNRecord(ObFormIDRecord):
     entries = CBashLIST(12, Entry)
     entries_list = CBashLIST(12, Entry, True)
 
-    copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'mapRed', 'mapGreen',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['iconPath', 'mapRed', 'mapGreen',
                                         'mapBlue', 'worldspace', 'areas_list',
                                         'entries_list']
 
@@ -4577,7 +4776,7 @@ class ObSBSPRecord(ObFormIDRecord):
     sizeX = CBashFLOAT32(5)
     sizeY = CBashFLOAT32(6)
     sizeZ = CBashFLOAT32(7)
-    copyattrs = ObFormIDRecord.baseattrs + ['sizeX', 'sizeY', 'sizeZ']
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['sizeX', 'sizeY', 'sizeZ']
 
 class ObSCPTRecord(ObFormIDRecord):
     _Type = 'SCPT'
@@ -4588,7 +4787,7 @@ class ObSCPTRecord(ObFormIDRecord):
         unused2 = CBashUINT8ARRAY_LIST(4, 7)
         name = CBashSTRING_LIST(5)
         IsLongOrShort = CBashBasicFlag('flags', 0x00000001)
-        copyattrs = ['index', 'flags', 'name']
+        exportattrs = copyattrs = ['index', 'flags', 'name']
 
     unused1 = CBashUINT8ARRAY(5, 2)
     numRefs = CBashGeneric(6, c_ulong)
@@ -4609,6 +4808,9 @@ class ObSCPTRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['numRefs', 'compiledSize', 'lastIndex',
                                         'scriptType', 'compiled_p', 'scriptText',
                                         'vars_list', 'references']
+    exportattrs = ObFormIDRecord.baseattrs + ['numRefs', 'compiledSize', 'lastIndex',
+                                        'scriptType', 'scriptText',
+                                        'vars_list', 'references'] #'compiled_p', 
 
 class ObSGSTRecord(ObFormIDRecord):
     _Type = 'SGST'
@@ -4640,9 +4842,12 @@ class ObSGSTRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
                                         'iconPath', 'script', 'effects_list',
                                         'uses', 'value', 'weight']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'script', 'effects_list',
+                                        'uses', 'value', 'weight'] # 'modt_p',
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved', 'datx_p']
+                                 'reserved'] #, 'datx_p'
 
 class ObSKILRecord(ObFormIDRecord):
     _Type = 'SKIL'
@@ -4658,7 +4863,7 @@ class ObSKILRecord(ObFormIDRecord):
     journeyman = CBashSTRING(14)
     expert = CBashSTRING(15)
     master = CBashSTRING(16)
-    copyattrs = ObFormIDRecord.baseattrs + ['skill', 'description', 'iconPath',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['skill', 'description', 'iconPath',
                                         'action', 'attribute', 'specialization',
                                         'use0', 'use1', 'apprentice',
                                         'journeyman', 'expert', 'master']
@@ -4690,6 +4895,9 @@ class ObSLGMRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
                                         'iconPath', 'script', 'value',
                                         'weight', 'soulType', 'capacityType']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'script', 'value',
+                                        'weight', 'soulType', 'capacityType'] # 'modt_p',
 
 class ObSOUNRecord(ObFormIDRecord):
     _Type = 'SOUN'
@@ -4711,7 +4919,7 @@ class ObSOUNRecord(ObFormIDRecord):
     IsMenuSound = CBashBasicFlag('flags', 0x00000020)
     Is2D = CBashBasicFlag('flags', 0x00000040)
     Is360LFE = CBashBasicFlag('flags', 0x00000080)
-    copyattrs = ObFormIDRecord.baseattrs + ['soundPath', 'minDistance', 'maxDistance',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['soundPath', 'minDistance', 'maxDistance',
                                         'freqAdjustment', 'flags', 'staticAtten',
                                         'stopTime', 'startTime']
 
@@ -4761,11 +4969,11 @@ class ObSPELRecord(ObFormIDRecord):
     majorVersion = CBashGeneric(15, c_ubyte)
     reserved = CBashUINT8ARRAY(16, 0x1C)
     datx_p = CBashUINT8ARRAY(17, 0x20)
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'spellType', 'cost',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'spellType', 'cost',
                                         'level', 'flags', 'effects_list']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved', 'datx_p']
+                                 'reserved'] #, 'datx_p'
 
 class ObSTATRecord(ObFormIDRecord):
     _Type = 'STAT'
@@ -4773,6 +4981,7 @@ class ObSTATRecord(ObFormIDRecord):
     modb = CBashFLOAT32(6)
     modt_p = CBashUINT8ARRAY(7)
     copyattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'modt_p']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb']#, 'modt_p']
 
 class ObTREERecord(ObFormIDRecord):
     _Type = 'TREE'
@@ -4796,6 +5005,11 @@ class ObTREERecord(ObFormIDRecord):
                                         'maxAngle', 'branchDim', 'leafDim',
                                         'shadowRadius', 'rockSpeed',
                                         'rustleSpeed', 'widthBill', 'heightBill']
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'iconPath',
+                                        'speedTree', 'curvature', 'minAngle',
+                                        'maxAngle', 'branchDim', 'leafDim',
+                                        'shadowRadius', 'rockSpeed',
+                                        'rustleSpeed', 'widthBill', 'heightBill'] #'modt_p', 
 
 class ObWATRRecord(ObFormIDRecord):
     _Type = 'WATR'
@@ -4846,7 +5060,7 @@ class ObWATRRecord(ObFormIDRecord):
     IsCausesDamage = CBashBasicFlag('flags', 0x00000001)
     IsCausesDmg = CBashAlias('IsCausesDamage')
     IsReflective = CBashBasicFlag('flags', 0x00000002)
-    copyattrs = ObFormIDRecord.baseattrs + ['texturePath', 'opacity', 'flags', 'materialPath',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['texturePath', 'opacity', 'flags', 'materialPath',
                                         'sound', 'windVelocity', 'windDirection',
                                         'waveAmp', 'waveFreq', 'sunPower',
                                         'reflectAmt', 'fresnelAmt', 'xSpeed',
@@ -4893,6 +5107,11 @@ class ObWEAPRecord(ObFormIDRecord):
                                         'enchantPoints', 'weaponType',
                                         'speed', 'reach', 'flags', 'value',
                                         'health', 'weight', 'damage']
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
+                                        'iconPath', 'script', 'enchantment',
+                                        'enchantPoints', 'weaponType',
+                                        'speed', 'reach', 'flags', 'value',
+                                        'health', 'weight', 'damage'] # 'modt_p',
 
 class ObWRLDRecord(ObFormIDRecord):
     _Type = 'WRLD'
@@ -4941,10 +5160,10 @@ class ObWRLDRecord(ObFormIDRecord):
     IsDefault = CBashBasicType('musicType', 0, 'IsPublic')
     IsPublic = CBashBasicType('musicType', 1, 'IsDefault')
     IsDungeon = CBashBasicType('musicType', 2, 'IsDefault')
-    copyattrs = ObFormIDRecord.baseattrs + ['full', 'parent', 'climate', 'water', 'mapPath',
+    exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'parent', 'climate', 'water', 'mapPath',
                                         'dimX', 'dimY', 'NWCellX', 'NWCellY', 'SECellX',
                                         'SECellY', 'flags', 'unknown00', 'unknown01',
-                                        'unknown90', 'unknown91', 'musicType', 'ofst_p', 'ROAD', 'WorldCELL']
+                                        'unknown90', 'unknown91', 'musicType', 'ROAD', 'WorldCELL'] #'ofst_p', 
 
 class ObWTHRRecord(ObFormIDRecord):
     _Type = 'WTHR'
@@ -4965,7 +5184,7 @@ class ObWTHRRecord(ObFormIDRecord):
         nightGreen = CBashGeneric_GROUP(13, c_ubyte)
         nightBlue = CBashGeneric_GROUP(14, c_ubyte)
         unused4 = CBashUINT8ARRAY_GROUP(15, 1)
-        copyattrs = ['riseRed', 'riseGreen', 'riseBlue',
+        exportattrs = copyattrs = ['riseRed', 'riseGreen', 'riseBlue',
                      'dayRed', 'dayGreen', 'dayBlue',
                      'setRed', 'setGreen', 'setBlue',
                      'nightRed', 'nightGreen', 'nightBlue']
@@ -4978,7 +5197,7 @@ class ObWTHRRecord(ObFormIDRecord):
         IsPrecip = CBashAlias('IsPrecipitation')
         IsWind = CBashBasicType('type', 2, 'IsDefault')
         IsThunder = CBashBasicType('type', 3, 'IsDefault')
-        copyattrs = ['sound', 'type']
+        exportattrs = copyattrs = ['sound', 'type']
 
     lowerLayerPath = CBashISTRING(5)
     upperLayerPath = CBashISTRING(6)
@@ -4986,15 +5205,35 @@ class ObWTHRRecord(ObFormIDRecord):
     modb = CBashFLOAT32(8)
     modt_p = CBashUINT8ARRAY(9)
     upperSky = CBashGrouped(10, WTHRColor)
+    upperSky_list = CBashGrouped(10, WTHRColor, True)
+
     fog = CBashGrouped(26, WTHRColor)
+    fog_list = CBashGrouped(26, WTHRColor, True)
+
     lowerClouds = CBashGrouped(42, WTHRColor)
+    lowerClouds_list = CBashGrouped(42, WTHRColor, True)
+
     ambient = CBashGrouped(58, WTHRColor)
+    ambient_list = CBashGrouped(58, WTHRColor, True)
+
     sunlight = CBashGrouped(74, WTHRColor)
+    sunlight_list = CBashGrouped(74, WTHRColor, True)
+
     sun = CBashGrouped(90, WTHRColor)
+    sun_list = CBashGrouped(90, WTHRColor, True)
+
     stars = CBashGrouped(106, WTHRColor)
+    stars_list = CBashGrouped(106, WTHRColor, True)
+
     lowerSky = CBashGrouped(122, WTHRColor)
+    lowerSky_list = CBashGrouped(122, WTHRColor, True)
+
     horizon = CBashGrouped(138, WTHRColor)
+    horizon_list = CBashGrouped(138, WTHRColor, True)
+
     upperClouds = CBashGrouped(154, WTHRColor)
+    upperClouds_list = CBashGrouped(154, WTHRColor, True)
+
     fogDayNear = CBashFLOAT32(170)
     fogDayFar = CBashFLOAT32(171)
     fogNightNear = CBashFLOAT32(172)
@@ -5046,10 +5285,10 @@ class ObWTHRRecord(ObFormIDRecord):
     IsUnk1 = CBashBasicFlag('weatherType', 0x40)
     IsUnk2 = CBashBasicFlag('weatherType', 0x80)
     copyattrs = ObFormIDRecord.baseattrs + ['lowerLayerPath', 'upperLayerPath', 'modPath',
-                                        'modb', 'modt_p', 'upperSky', 'fog',
-                                        'lowerClouds', 'ambient', 'sunlight',
-                                        'sun', 'stars', 'lowerSky', 'horizon',
-                                        'upperClouds', 'fogDayNear', 'fogDayFar',
+                                        'modb', 'modt_p', 'upperSky_list', 'fog_list',
+                                        'lowerClouds_list', 'ambient_list', 'sunlight_list',
+                                        'sun_list', 'stars_list', 'lowerSky_list', 'horizon_list',
+                                        'upperClouds_list', 'fogDayNear', 'fogDayFar',
                                         'fogNightNear', 'fogNightFar', 'eyeAdaptSpeed',
                                         'blurRadius', 'blurPasses', 'emissiveMult',
                                         'targetLum', 'upperLumClamp', 'brightScale',
@@ -5060,6 +5299,21 @@ class ObWTHRRecord(ObFormIDRecord):
                                         'sunDamage', 'rainFadeIn', 'rainFadeOut',
                                         'boltFadeIn', 'boltFadeOut', 'boltFrequency',
                                         'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list']
+    exportattrs = ObFormIDRecord.baseattrs + ['lowerLayerPath', 'upperLayerPath', 'modPath',
+                                        'modb', 'upperSky_list', 'fog_list',
+                                        'lowerClouds_list', 'ambient_list', 'sunlight_list',
+                                        'sun_list', 'stars_list', 'lowerSky_list', 'horizon_list',
+                                        'upperClouds_list', 'fogDayNear', 'fogDayFar',
+                                        'fogNightNear', 'fogNightFar', 'eyeAdaptSpeed',
+                                        'blurRadius', 'blurPasses', 'emissiveMult',
+                                        'targetLum', 'upperLumClamp', 'brightScale',
+                                        'brightClamp', 'lumRampNoTex', 'lumRampMin',
+                                        'lumRampMax', 'sunlightDimmer', 'grassDimmer',
+                                        'treeDimmer', 'windSpeed', 'lowerCloudSpeed',
+                                        'upperCloudSpeed', 'transDelta', 'sunGlare',
+                                        'sunDamage', 'rainFadeIn', 'rainFadeOut',
+                                        'boltFadeIn', 'boltFadeOut', 'boltFrequency',
+                                        'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list'] #'modt_p', 
 
 #Helper functions
 validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
@@ -5137,16 +5391,18 @@ class ObModFile(object):
         return GPath(self.NormModName)
     
     def HasRecord(self,RecordID):
-        if isinstance(RecordID, basestring): TestRecord = GMSTRecord
-        else: TestRecord = BaseRecord
+        if not RecordID: return False
+        if isinstance(RecordID, basestring): TestRecord = ObEditorIDRecord
+        else: TestRecord = ObFormIDRecord
         return TestRecord(self._CollectionID, self._ModID, RecordID, 0, 0).fid
 
     def LookupRecord(self, RecordID):
         if isinstance(RecordID, basestring):
-            RecordType = GMSTRecord
+            RecordType = ObEditorIDRecord
         else:
             RecordID = MakeShortFid(self._CollectionID, RecordID)
-            RecordType = BaseRecord
+            RecordType = ObFormIDRecord
+        if not RecordID: return None
         testRecord = RecordType(self._CollectionID, self._ModID, RecordID, 0, 0)
         RecordType = type_record[testRecord.recType]
         if RecordType:
@@ -5750,11 +6006,12 @@ class ObCollection:
         if isinstance(RecordID, basestring):
             _FormID = 0
             _EditorID = RecordID
-            RecordType = GMSTRecord
+            RecordType = ObEditorIDRecord
         else:
             _FormID = MakeShortFid(self._CollectionID, RecordID)
             _EditorID = 0
-            RecordType = BaseRecord
+            RecordType = ObFormIDRecord
+        if not (_FormID or _EditorID): return None
         numRecords = _CGetNumRecordConflicts(self._CollectionID, _FormID, _EditorID, c_ulong(GetExtendedConflicts))
         if(numRecords > 0):
             cModIDs = (c_ulong * numRecords)()
