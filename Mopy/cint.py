@@ -1679,6 +1679,21 @@ class ObFormIDRecord(object):
         self._RecordID = RecordID
         self._CopyFlags = CopyFlags
         #ParentID isn't kept for most records
+        
+    @property
+    def ModName(self):
+        return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+
+    @property
+    def NormModName(self):
+        ModName = _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        if ModName[-6:] == '.ghost':
+            return ModName[:-6]
+        return ModName
+
+    @property
+    def GName(self):
+        return GPath(self.NormModName)
 
     def LoadRecord(self):
         _CLoadRecord(self._CollectionID, self._ModID, self._RecordID, 0)
@@ -1872,6 +1887,21 @@ class ObEditorIDRecord(object):
         self._ModID = ModID
         self._RecordID = RecordID
         self._CopyFlags = CopyFlags
+        
+    @property
+    def ModName(self):
+        return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+
+    @property
+    def NormModName(self):
+        ModName = _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        if ModName[-6:] == '.ghost':
+            return ModName[:-6]
+        return ModName
+
+    @property
+    def GName(self):
+        return GPath(self.NormModName)        
 
     def UnloadRecord(self):
         _CUnloadRecord(self._CollectionID, self._ModID, 0, self._RecordID)
@@ -5928,7 +5958,7 @@ class ObCollection:
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def addMod(self, ModName, MinLoad=True, NoLoad=False, Flags=0x00000078):
+    def addMod(self, ModName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Flags=0x00000078):
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
 ##        // If neither is set, the mod isn't loaded
@@ -5984,7 +6014,11 @@ class ObCollection:
         fIsTrackNewTypes      = 0x00000100
         fIsIndexLANDs         = 0x00000200
         fIsFixupPlaceables    = 0x00000400
-
+        fIsIgnoreExisting     = 0x00000800
+        if IgnoreExisting:
+            Flags |= fIsIgnoreExisting            
+        else:
+            Flags &= ~fIsIgnoreExisting
         if NoLoad:
             Flags &= ~fIsFullLoad
             Flags &= ~fIsMinLoad            
