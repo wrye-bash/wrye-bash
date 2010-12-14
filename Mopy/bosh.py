@@ -14871,173 +14871,231 @@ class ScriptText:
     """import & export functions for script text."""
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        self.type_stats = {'SCPT':{},}
-        self.type_attrs = {
-            'SCPT':('eid', 'scriptText'),
-            }
+        self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        self.importscripts = {}
 
     def readFromMod(self, modInfo, file):
         """Reads stats from specified mod."""
-        ###Remove from Bash after CBash integrated
-        if not CBash:
-            loadFactory= LoadFactory(False,MreScpt)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            progress = balt.Progress(_("Export Scripts"))
-            for type in self.type_stats:
-                y = len(getattr(modFile,type).getActiveRecords())
-                z = 0
-                ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
-                for record in getattr(modFile,type).getActiveRecords():
-                    z +=1
-                    progress((0.5/y*z),_("reading scripts in %s.")%(file))
-                    longid = mapper(record.fid)
-                    recordGetAttr = record.__getattribute__
-                    ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-                    #return stats
-            progress = progress.Destroy()
-        else:
-            Current = ObCollection(ModsPath=dirs['mods'].s)
-            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
-            Current.load()
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-
-            progress = balt.Progress(_("Export Scripts"))
-            for type in self.type_stats:
-                records = getattr(modFile,type)
-                y = len(records)
-                z = 0
-                ScriptTexts, attrs = self.type_stats[type], self.type_attrs[type]
-                for record in records:
-                    z +=1
-                    progress((0.5/y*z),_("reading scripts in %s.")%(file))
-                    longid = record.fid
-                    recordGetAttr = record.__getattribute__
-                    ScriptTexts[longid] = tuple(recordGetAttr(attr) for attr in attrs)
-                    record.UnloadRecord()
-                    #return stats
+        eid_data = self.eid_data
+        loadFactory= LoadFactory(False,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        
+        progress = balt.Progress(_("Export Scripts"))
+        try:
+            records = modFile.SCPT.getActiveRecords()
+            y = len(records)
+            z = 0
+            for record in records:
+                z += 1
+                progress((0.5/y*z),_("Reading scripts in %s.")%(file))
+                eid_data[record.eid] = (record.scriptText, mapper(record.fid))
+        finally:
             progress = progress.Destroy()
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
-        ###Remove from Bash after CBash integrated
-        importscripts = self.importscripts
-        eids_imported = []
-        if not CBash:
-            loadFactory = LoadFactory(True,MreScpt)
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
+        eid_data = self.eid_data
+        changed = []
+        added = []
+        loadFactory = LoadFactory(True,MreScpt)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
 
-            for type in self.type_stats:
-                scriptData, attrs = self.type_stats[type], self.type_attrs[type]
-                for record in getattr(modFile,type).getActiveRecords():
-                    eid = record.eid
-                    if eid in importscripts:
-                        if str(record.scriptText) != importscripts[eid]:
-                            record.scriptText = importscripts[eid]
-                            record.setChanged()
-                            eids_imported.append(eid)
-                        del importscripts[eid]
-                if makeNew and importscripts:
-                    tes4 = modFile.tes4
-                    for eid in importscripts:
-                        scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
-                        newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
-                        newScript.eid = eid
-                        newScript.scriptText = importscripts[eid]
-                        newScript.setChanged()
-                        modFile.SCPT.records.append(newScript)
-                        eids_imported.append(eid)
-            if len(eids_imported):
-                modFile.safeSave()
-            return eids_imported
-        else:
-            Current = ObCollection(ModsPath=dirs['mods'].s)
-            Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
-            Current.load()
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-
-            for type in self.type_stats:
-                attrs = self.type_attrs[type]
-                for record in getattr(modFile,type):
-                    eid = record.eid
-                    if eid in importscripts:
-                        if str(record.scriptText) != importscripts[eid]:
-                            record.scriptText = importscripts[eid]
-                            eids_imported.append(eid)
-                        del importscripts[eid]
-                if makeNew and importscripts:
-                    for eid in importscripts:
-                        newScript = modFile.createSCPTRecord()
-                        newScript.eid = eid
-                        newScript.scriptText = importscripts[eid]
-                        eids_imported.append(eid)
-            if len(eids_imported):
-                modFile.safeCloseSave()
-            return eids_imported
+        for record in modFile.SCPT.getActiveRecords():
+            eid = record.eid
+            data = eid_data.get(eid,None)
+            if data is not None:
+                newText, longid = data
+                oldText = record.scriptText
+                if oldText.lower() != newText.lower():
+                    record.scriptText = newText
+                    record.setChanged()
+                    changed.append(eid)
+                del eid_data[eid]
+        if makeNew and eid_data:
+            tes4 = modFile.tes4
+            for eid, data in eid_data.iteritems():
+                newText, longid = data
+                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                newScript = MreScpt(('SCPT',0,0x40000,scriptFid,0))
+                newScript.eid = eid
+                newScript.scriptText = newText
+                newScript.setChanged()
+                modFile.SCPT.records.append(newScript)
+                added.append(eid)
+        if changed or added: modFile.safeSave()
+        return (changed, added)
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
-        aliases = self.aliases
-        importscripts = self.importscripts
+        eid_data, aliases = self.eid_data, self.aliases
         progress = balt.Progress(_("Import Scripts"))
-        for root, dirs, files in os.walk(textPath):
-            y = len(files)
-            z = 0
-            for name in files:
-                z += 1
-                nPath = GPath(name)
-                if(nPath.cext != inisettings['ScriptFileExt']):
-                    progress(((1/y)*z),_("skipping file %s.") % (name))
-                    continue
-                progress(((1/y)*z),_("reading file %s.") % (name))
-                text = open(os.path.join(root, name),"r")
-                lines = text.readlines()
-                modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
-                scriptText = ''
-                for line in lines[3:]:
-                    scriptText = (scriptText+line)
-                text.close()
-                importscripts[eid] = scriptText.replace('\n','\r\n') #because the cs writes it in \r\n format.
-        progress = progress.Destroy()
-        if importscripts: return True
+        try:
+            for root, dirs, files in os.walk(textPath):
+                y = len(files)
+                z = 0
+                for name in files:
+                    z += 1
+                    nPath = GPath(name)
+                    if(nPath.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_("Skipping file %s.") % (name))
+                        continue
+                    progress(((1/y)*z),_("Reading file %s.") % (name))
+                    with open(os.path.join(root, name),"r") as text:
+                        lines = text.readlines()
+                    modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
+                    eid_data[eid] = (scriptText, FormID)
+        finally: #just to ensure the progress bar gets destroyed
+            progress = progress.Destroy()
+        if eid_data: return True
         return False
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
         """Writes stats to specified text file."""
+        eid_data = self.eid_data
         progress = balt.Progress(_("Export Scripts"))
-        def getSortedIds(ScriptTexts):
-            longids = ScriptTexts.keys()
-            longids.sort(key=lambda a: ScriptTexts[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
-        scriptTexts = self.type_stats['SCPT']
         x = len(skip)
-        exportedScripts = ''
-        y = len(getSortedIds(scriptTexts))
+        exportedScripts = []
+        y = len(eid_data)
         z = 0
         num = 0
         r = len(deprefix)
-        for longid in getSortedIds(scriptTexts):
-            z += 1
-            progress((0.5+0.5/y*z),_("exporting script %s.") % (scriptTexts[longid][0]))
-            if x == 0 or skip.lower() != scriptTexts[longid][0][:x].lower():
-                name = scriptTexts[longid][0]
-                if r >= 1 and deprefix == name[:r]:
-                    name = name[r:]
-                num += 1
-                outpath = dirs['patches'].join(folder).join(name+inisettings['ScriptFileExt'])
-                out = outpath.open('wb')
-                formid = '0x%06X' %(longid[1])
-                out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+scriptTexts[longid][0]+'\r\n'+scriptTexts[longid][1])
-                out.close
-                exportedScripts += scriptTexts[longid][0]+'\n'
-        exportedScripts = (_('Exported %d scripts from %s:\n') % (num,esp)+exportedScripts)
-        progress = progress.Destroy()
-        return exportedScripts
+        try:
+            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
+                text, longid = eid_data[eid]
+                z += 1
+                progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
+                if x == 0 or skip.lower() != eid[:x].lower():
+                    fileName = eid
+                    if r >= 1 and deprefix == fileName[:r]:
+                        fileName = fileName[r:]
+                    num += 1
+                    outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
+                    with outpath.open('wb') as out:
+                        formid = '0x%06X' %(longid[1])
+                        out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                    exportedScripts.append(eid)
+        finally: #just to ensure the progress bar gets destroyed
+            progress = progress.Destroy()
+        return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
+    
+class CBash_ScriptText:
+    """import & export functions for script text."""
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.eid_data = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self, modInfo, file):
+        """Reads stats from specified mod."""
+        eid_data = self.eid_data
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+
+        progress = balt.Progress(_("Export Scripts"))
+        try:
+            records = modFile.SCPT
+            y = len(records)
+            z = 0
+            for record in records:
+                z += 1
+                progress((0.5/y*z),_("Reading scripts in %s.") % (file))
+                eid_data[record.eid] = (record.scriptText, record.fid)
+                record.UnloadRecord()
+        finally: #just to ensure the progress bar gets destroyed
+            progress = progress.Destroy()
+            del Current
+
+    def writeToMod(self, modInfo, makeNew=False):
+        """Writes scripts to specified mod."""
+        eid_data = self.eid_data
+        changed = []
+        added = []
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
+        Current.load()
+        modFile = Current.LookupModFile(modInfo.getPath().stail)
+
+        for record in modFile.SCPT:
+            eid = record.eid
+            data = eid_data.get(eid,None)
+            if data is not None:
+                newText, longid = data
+                oldText = record.scriptText
+                if oldText != newText:
+                    record.scriptText = newText
+                    changed.append(eid)
+                del eid_data[eid]
+        if makeNew and eid_data:
+            for eid, data in eid_data.iteritems():
+                newText, longid = data
+                newScript = modFile.create_SCPT()
+                if newScript is not None:
+                    newScript.eid = eid
+                    newScript.scriptText = newText
+                    added.append(eid)
+        if changed or added: modFile.save()
+        del Current
+        return (changed, added)
+
+    def readFromText(self,textPath,modInfo):
+        """Reads scripts from files in specified mods' directory in bashed patches folder."""
+        eid_data, aliases = self.eid_data, self.aliases
+        progress = balt.Progress(_("Import Scripts"))
+        try:
+            for root, dirs, files in os.walk(textPath):
+                y = len(files)
+                z = 0
+                for name in files:
+                    z += 1
+                    nPath = GPath(name)
+                    if(nPath.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_("Skipping file %s.") % (name))
+                        continue
+                    progress(((1/y)*z),_("Reading file %s.") % (name))
+                    with open(os.path.join(root, name),"r") as text:
+                        lines = text.readlines()
+                    modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
+                    eid_data[ISTRING(eid)] = (ISTRING(scriptText), FormID) #script text is case insensitive
+        finally: #just to ensure the progress bar gets destroyed
+            progress = progress.Destroy()
+        if eid_data: return True
+        return False
+
+    def writeToText(self,textPath,skip,folder,deprefix,esp):
+        """Writes stats to specified text file."""
+        eid_data = self.eid_data
+        progress = balt.Progress(_("Export Scripts"))
+        x = len(skip)
+        exportedScripts = []
+        y = len(eid_data)
+        z = 0
+        num = 0
+        r = len(deprefix)
+        try:
+            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
+                text, longid = eid_data[eid]
+                z += 1
+                progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
+                if x == 0 or skip.lower() != eid[:x].lower():
+                    fileName = eid
+                    if r >= 1 and deprefix == fileName[:r]:
+                        fileName = fileName[r:]
+                    num += 1
+                    outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
+                    with outpath.open('wb') as out:
+                        formid = '0x%06X' %(longid[1])
+                        out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                    exportedScripts.append(eid)
+        finally: #just to ensure the progress bar gets destroyed
+            progress = progress.Destroy()
+        return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
 
 #------------------------------------------------------------------------------
 class SpellRecords:
