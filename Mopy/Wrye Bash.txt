@@ -994,13 +994,19 @@ These are the commands found on context menu for mods...
   * As of version 283 can also now import and build the record for new scripts.
   
 === Export/Import Spell Stats
-* These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
+* These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]]. These functions have a basic and detailed mode. They do not support JRoush's OBME at this point.
+* __Basic__
+  * Only the form Id, editor Id, name, cost, level type, and spell types are exported/imported
+* __Detailed__
+  * All basic fields are exported/imported as well as a variety of flags and all spell effects
 * __Uses__
   * Systematically editing spell statistics to fit a spell quality paradigm etc. The spreadsheet makes it easy to view and edit the stats in a systematic way.
-  * Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
+  * Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
 * __Spreadsheet Format__
   * The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
-  * Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.  
+  * Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
+  * More effects may be added as long as they follow the same listed format with one blank column between each effect.
+  * If any of the Script Effect columns are set to "None", all the Script Effects values for that effect will be ignored.
   
 === Details
 * Displays list of records in mod, similar to Details view in TESCS.
@@ -2272,6 +2278,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names
   * Minor improvements to Export/Import Map Markers 
   * [[#|Export/Import Sigil Stones]] added
+  * [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)

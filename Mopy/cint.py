@@ -267,14 +267,14 @@ def setattr_deep(obj, attr, value):
     setattr(reduce(getattr, attrs[:-1], obj), attrs[-1], value)
 
 def MakeLongFid(CollectionID, fid):
-    if fid is None or fid == 0: return None
+    if fid is None or fid == 0: return 0
     masterIndex = int(fid >> 24)
     object = int(fid & 0x00FFFFFFL)
     master = _CGetModName(CollectionID, masterIndex)
     return (GPath(master),object)
 
 def MakeShortFid(CollectionID, fid):
-    if fid is None or fid == 0: return None
+    if fid is None or fid == 0: return 0
     if not isinstance(fid,tuple): return fid
     master, object = fid
     masterIndex = _CGetModID(CollectionID, str(master))
@@ -284,7 +284,7 @@ def MakeShortFid(CollectionID, fid):
     return masterIndex | object
 
 def MakeLongMGEFCode(CollectionID, MGEFCode):
-    if MGEFCode is None or MGEFCode == 0: return None
+    if MGEFCode is None or MGEFCode == 0: return 0
     masterIndex = int(MGEFCode & 0x000000FFL)
     object = int(MGEFCode & 0xFFFFFF00L)
     master = _CGetModName(CollectionID, masterIndex)
@@ -292,7 +292,7 @@ def MakeLongMGEFCode(CollectionID, MGEFCode):
 
 def MakeShortMGEFCode(CollectionID, MGEFCode):
     if isinstance(MGEFCode, basestring): MGEFCode = cast(MGEFCode, POINTER(c_ulong)).contents.value
-    if MGEFCode is None or MGEFCode == 0: return None
+    if MGEFCode is None or MGEFCode == 0: return 0
     if not isinstance(MGEFCode,tuple): return MGEFCode
     masterIndex = _CGetModID(CollectionID, str(MGEFCode[0]))
     if(masterIndex == -1):
@@ -356,7 +356,8 @@ class CBashBasicFlag(object):
         self._Value = Value
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        return field != None and (field & self._Value) != 0
+        if field is None: return None
+        return (field & self._Value) != 0
     def __set__(self, instance, nValue):
         field = getattr(instance, self._AttrName, None)
         if nValue:
@@ -371,7 +372,9 @@ class CBashInvertedFlag(object):
     def __init__(self, AttrName):
         self._AttrName = AttrName
     def __get__(self, instance, owner):
-        return not getattr(instance, self._AttrName, None)
+        field = getattr(instance, self._AttrName, None)
+        if field is None: return None
+        return not field
     def __set__(self, instance, nValue):
         setattr(instance, self._AttrName, not nValue)
 
@@ -382,7 +385,8 @@ class CBashBasicType(object):
         self._DefaultFieldName = default
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        return field != None and field == self._Value
+        if field is None: return None
+        return field == self._Value
     def __set__(self, instance, nValue):
         if nValue: setattr(instance, self._AttrName, self._Value)
         else: setattr(instance, self._DefaultFieldName, True)
@@ -395,7 +399,8 @@ class CBashMaskedType(object):
         self._DefaultFieldName = default
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        return field != None and (field & self._TypeMask) == self._Value
+        if field is None: return None
+        return (field & self._TypeMask) == self._Value
     def __set__(self, instance, nValue):
         if nValue:
             field = getattr(instance, self._AttrName, 0)
@@ -1637,7 +1642,7 @@ class Effect(ListComponent):
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
     exportattrs = copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
-                 'actorValue', 'script', 'school', 'visual', 'flags',
+                 'actorValue', 'script', 'school', 'visual', 'IsHostile',
                  'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
@@ -4928,7 +4933,7 @@ class ObSPELRecord(ObFormIDRecord):
     full = CBashSTRING(5)
     spellType = CBashGeneric(6, c_ulong)
     cost = CBashGeneric(7, c_ulong)
-    level = CBashGeneric(8, c_ulong)
+    levelType = CBashGeneric(8, c_ulong)
     flags = CBashGeneric(9, c_ubyte)
     unused1 = CBashUINT8ARRAY(10, 3)
 
@@ -4956,11 +4961,11 @@ class ObSPELRecord(ObFormIDRecord):
     IsLesserPower = CBashBasicType('spellType', 3, 'IsSpell')
     IsAbility = CBashBasicType('spellType', 4, 'IsSpell')
     IsPoison = CBashBasicType('spellType', 5, 'IsSpell')
-    IsNovice = CBashBasicType('level', 0, 'IsApprentice')
-    IsApprentice = CBashBasicType('level', 1, 'IsNovice')
-    IsJourneyman = CBashBasicType('level', 2, 'IsNovice')
-    IsExpert = CBashBasicType('level', 3, 'IsNovice')
-    IsMaster = CBashBasicType('level', 4, 'IsNovice')
+    IsNovice = CBashBasicType('levelType', 0, 'IsApprentice')
+    IsApprentice = CBashBasicType('levelType', 1, 'IsNovice')
+    IsJourneyman = CBashBasicType('levelType', 2, 'IsNovice')
+    IsExpert = CBashBasicType('levelType', 3, 'IsNovice')
+    IsMaster = CBashBasicType('levelType', 4, 'IsNovice')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     recordVersion = CBashGeneric(12, c_ubyte)
