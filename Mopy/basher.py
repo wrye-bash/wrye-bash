@@ -5804,7 +5804,7 @@ class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 
 ##class ForceMerger(bosh.ForceMerger,Patcher): pass
-class CBash_ForceMerger(bosh.CBash_ForceMerger,ListPatcher): pass
+##class CBash_ForceMerger(bosh.CBash_ForceMerger,ListPatcher): pass
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5884,7 +5884,7 @@ else:
         CBash_StatsPatcher(),
         CBash_SEWorldEnforcer(),
         CBash_ContentsChecker(),
-        CBash_ForceMerger(),
+##        CBash_ForceMerger(),
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
