@@ -1961,7 +1961,7 @@ class INIPanel(NotebookPanel):
         path = self.choices[selection]
         if not path:
             # 'Browse...'
-            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard='INI files (*.ini)|*.ini')
+            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard='INI files (*.ini)|*.ini',mustExist=True)
             if not path:
                 self.comboBox.SetSelection(self.choice)
                 return
@@ -4400,7 +4400,7 @@ class DocBrowser(wx.Frame):
             fileName = GPath('')
         #--Dialog
         path = balt.askOpen(self,_("Select doc for %s:") % (modName.s,),
-            docsDir,fileName, '*.*')
+            docsDir,fileName, '*.*',mustExist=True)
         if not path: return
         settings['bash.modDocs.dir'] = path.head
         if modName not in self.data:
@@ -5154,7 +5154,7 @@ class PatchDialog(wx.Dialog):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent,_('Import Bashed Patch configuration from:'),textDir,patchName, '*.dat')
+        textPath = balt.askOpen(self.parent,_('Import Bashed Patch configuration from:'),textDir,patchName, '*.dat',mustExist=True)
         if not textPath: return
         pklPath = textPath+'.pkl'
         table = bolt.Table(bosh.PickleDict(
@@ -6246,7 +6246,7 @@ class File_RevertToSnapshot(Link):
         #--File dialog
         srcDir.makedirs()
         snapPath = balt.askOpen(self.window,_('Revert %s to snapshot:') % (fileName.s,),
-            srcDir, '', wildcard)
+            srcDir, '', wildcard,mustExist=True)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
@@ -7906,7 +7906,7 @@ class InstallerConverter_Create(InstallerLink):
         #--Generate allowable targets
         readTypes = '*%s' % ';*'.join(bosh.readExts)
         #--Select target archive
-        destArchive = balt.askOpen(self.gTank,_('Select the BAIN\'ed Archive:'),self.data.dir,'', readTypes)
+        destArchive = balt.askOpen(self.gTank,_('Select the BAIN\'ed Archive:'),self.data.dir,'', readTypes,mustExist=True)
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
@@ -8535,7 +8535,7 @@ class Mod_ActorLevels_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import NPC levels from:'),
-            textDir, textName, '*_NPC_Levels.csv')
+            textDir, textName, '*_NPC_Levels.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -8581,7 +8581,7 @@ class Mod_AddMaster(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         wildcard = _('Oblivion Masters')+' (*.esm;*.esp)|*.esm;*.esp'
-        masterPath = balt.askOpen(self.window,_('Add master:'),fileInfo.dir, '', wildcard)
+        masterPath = balt.askOpen(self.window,_('Add master:'),fileInfo.dir, '', wildcard,mustExist=True)
         if not masterPath: return
         (dir,name) = masterPath.headTail
         if dir != fileInfo.dir:
@@ -9070,7 +9070,7 @@ class Mod_FactionRelations_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import faction relations from:'),
-            textDir, textName, '*_Relations.csv')
+            textDir, textName, '*_Relations.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -9157,7 +9157,7 @@ class Mod_Factions_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import Factions from:'),
-            textDir, textName, '*_Factions.csv')
+            textDir, textName, '*_Factions.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -9296,7 +9296,7 @@ class Mod_Face_Import(Link):
         srcDir = bosh.saveInfos.dir
         wildcard = _('Oblivion Files')+' (*.ess;*.esr)|*.ess;*.esr'
         #--File dialog
-        srcPath = balt.askOpen(self.window,'Face Source:',srcDir, '', wildcard)
+        srcPath = balt.askOpen(self.window,'Face Source:',srcDir, '', wildcard,mustExist=True)
         if not srcPath: return
         #--Get face
         srcDir,srcName = srcPath.headTail
@@ -9582,7 +9582,7 @@ class Mod_Groups_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import names from:'),textDir,
-            '', '*Groups.csv')
+            '', '*Groups.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -9657,7 +9657,7 @@ class Mod_EditorIds_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import names from:'),textDir,
-            textName, '*Eids.csv')
+            textName, '*Eids.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -9767,7 +9767,7 @@ class Mod_Fids_Replace(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Form ID mapper file:'),textDir,
-            '', '*Formids.csv')
+            '', '*Formids.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -9854,7 +9854,7 @@ class Mod_FullNames_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import names from:'),
-            textDir,textName, 'Mod/Text File|*Names.csv;*.esp;*.esm')
+            textDir,textName, 'Mod/Text File|*Names.csv;*.esp;*.esm',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10256,7 +10256,7 @@ class Mod_Stats_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import stats from:'),
-            textDir, textName, '*Stats.csv')
+            textDir, textName, '*Stats.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10350,7 +10350,7 @@ class Mod_ItemData_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import item data from:'),
-            textDir, textName, '*ItemData.csv')
+            textDir, textName, '*ItemData.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10442,7 +10442,7 @@ class Mod_Prices_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import prices from:'),
-            textDir, textName, '*Prices.csv')
+            textDir, textName, '*Prices.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10534,7 +10534,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_('Import Map Markers from:'),
-            textDir, textName, '*MapMarkers.csv')
+            textDir, textName, '*MapMarkers.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10620,8 +10620,8 @@ class Mod_SigilStoneDetails_Import(Link):
         textName = fileName.root+_('_SigilStones.csv')
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_('Import Map Markers from:'),
-            textDir, textName, '*_SigilStones.csv')
+        textPath = balt.askOpen(self.window,_('Import Sigil Stone details from:'),
+            textDir, textName, '*_SigilStones.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -10630,7 +10630,7 @@ class Mod_SigilStoneDetails_Import(Link):
             balt.showError(self.window,_('Source file must be a _SigilStones.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Sigil Stones details"))
+        progress = balt.Progress(_("Import Sigil Stone details"))
         changed = None
         try:
             if CBash:
@@ -10646,13 +10646,106 @@ class Mod_SigilStoneDetails_Import(Link):
             progress = progress.Destroy()
         #--Log
         if not changed:
-            balt.showOk(self.window,_("No relevant Sigil Stones details to import."),_("Import Sigil Stones details"))
+            balt.showOk(self.window,_("No relevant Sigil Stone details to import."),_("Import Sigil Stone details"))
         else:
             buff = cStringIO.StringIO()
-            buff.write('Imported Sigil Stones details to mod %s:\n' % (fileName.s,))
+            buff.write('Imported Sigil Stone details to mod %s:\n' % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
-            balt.showLog(self.window,buff.getvalue(),_('Import Sigil Stones details'),icons=bashBlue)
+            balt.showLog(self.window,buff.getvalue(),_('Import Sigil Stone details'),icons=bashBlue)
+#------------------------------------------------------------------------------
+class Mod_SpellRecords_Export(Link):
+    """Export Spell details from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Spells...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Spells.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export Spell details to:'),textDir,textName, '*_Spells.csv')
+        if not textPath: return
+        message = _("Export flags and effects?\n(If not they will just be skipped).")
+        doDetailed = balt.askYes(self.window,message,_('Export Spells'),icon=wx.ICON_QUESTION)
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Spell details"))
+        try:
+            if CBash:
+                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+            else:
+                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                spellRecords.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            spellRecords.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+#------------------------------------------------------------------------------
+class Mod_SpellRecords_Import(Link):
+    """Import Spell details from text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Spells...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data) == 1)
+        
+    def Execute(self,event):
+        message = (_("Import Spell details from a text file. This will replace existing the data on spells with the same form ids and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.SpellRecords.import.continue',
+            _('Import Spell details')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Spells.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import Spell details from:'),
+            textDir, textName, '*_Spells.csv',mustExist=True)
+        if not textPath: return
+        message = _("Import flags and effects?\n(If not they will just be skipped).")
+        doDetailed = balt.askYes(self.window,message,_('Import Spell details'),icon=wx.ICON_QUESTION)
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext not in ['.csv']:
+            balt.showError(self.window,_('Source file must be a _Spells.csv file'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Spell details"))
+        changed = None
+        try:
+            if CBash:
+                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+            else:
+                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            spellRecords.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = spellRecords.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant Spell details to import."),_("Import Spell details"))
+        else:
+            buff = cStringIO.StringIO()
+            buff.write('Imported Spell details to mod %s:\n' % (fileName.s,))
+            for eid in sorted(changed):
+                buff.write('* %s\n' % (eid))
+            balt.showLog(self.window,buff.getvalue(),_('Import Spell details'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
@@ -10903,7 +10996,7 @@ class Save_ImportFace(Link):
         srcDir = fileInfo.dir
         wildcard = _('Oblivion Files')+' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
         #--File dialog
-        srcPath = balt.askOpen(self.window,'Face Source:',srcDir, '', wildcard)
+        srcPath = balt.askOpen(self.window,'Face Source:',srcDir, '', wildcard,mustExist=True)
         if not srcPath: return
         if bosh.reSaveExt.search(srcPath.s):
             self.FromSave(fileInfo,srcPath)
@@ -11958,7 +12051,7 @@ class People_Import(Link):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
         path = balt.askOpen(self.gTank,_('Import people from text file:'),textDir,
-            '', '*.txt')
+            '', '*.txt',mustExist=True)
         if not path: return
         settings['bash.workDir'] = path.head
         newNames = self.data.loadText(path)
@@ -12007,7 +12100,7 @@ class Master_ChangeTo(Link):
         #--File Dialog
         wildcard = _('Oblivion Mod Files')+' (*.esp;*.esm)|*.esp;*.esm'
         newPath = balt.askOpen(self.window,_('Change master name to:'),
-            bosh.modInfos.dir, masterName, wildcard)
+            bosh.modInfos.dir, masterName, wildcard,mustExist=True)
         if not newPath: return
         (newDir,newName) = newPath.headTail
         #--Valid directory?
@@ -13311,6 +13404,7 @@ def InitModLinks():
         exportMenu.links.append(Mod_FactionRelations_Export())
         exportMenu.links.append(Mod_Scripts_Export())
         exportMenu.links.append(Mod_SigilStoneDetails_Export())
+        exportMenu.links.append(Mod_SpellRecords_Export())
         exportMenu.links.append(Mod_Stats_Export())
         ModList.itemMenu.append(exportMenu)
     if True: #--Import
@@ -13326,6 +13420,7 @@ def InitModLinks():
         importMenu.links.append(Mod_FactionRelations_Import())
         importMenu.links.append(Mod_Scripts_Import())
         importMenu.links.append(Mod_SigilStoneDetails_Import())
+        importMenu.links.append(Mod_SpellRecords_Import())
         importMenu.links.append(Mod_Stats_Import())
         importMenu.links.append(SeparatorLink())
         importMenu.links.append(Mod_Face_Import())

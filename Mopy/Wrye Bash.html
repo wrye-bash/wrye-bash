@@ -1193,13 +1193,19 @@
   <p class=list-2>&bull;&nbsp; As of version 283 can also now import and build the record for new scripts.
   <p class=empty>&nbsp;</p>
 <h3><a name='ExportImportSpellStats'>Export/Import Spell Stats</a></h3>
-<p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the [[#|Import Spell Stats]. 
+<p class=list-1>&bull;&nbsp; These paired functions allow you to export spell stats to a spreadsheet file, edit the file and then reimport the stats. The exported file can also be used with the <a href="#ImportSpellStats">Import Spell Stats</a>. These functions have a basic and detailed mode. They do not support JRoush's OBME at this point.
+<p class=list-1>&bull;&nbsp; <B>Basic</B>
+  <p class=list-2>&bull;&nbsp; Only the form Id, editor Id, name, cost, level type, and spell types are exported/imported
+<p class=list-1>&bull;&nbsp; <B>Detailed</B>
+  <p class=list-2>&bull;&nbsp; All basic fields are exported/imported as well as a variety of flags and all spell effects
 <p class=list-1>&bull;&nbsp; <B>Uses</B>
   <p class=list-2>&bull;&nbsp; Systematically editing spell statistics to fit a spell quality paradigm etc. The spreadsheet makes it easy to view and edit the stats in a systematic way.
-  <p class=list-2>&bull;&nbsp; Patching miscellaneous mods to fit a balance system through [[#|Import Spell Stats]. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
+  <p class=list-2>&bull;&nbsp; Patching miscellaneous mods to fit a balance system through <a href="#ImportSpellStats">Import Spell Stats</a>. Stats for spells for multiple mods can all be covered in a single spreadsheet file. The spell stats patcher will then apply changes only for those mods that are active when the patch is updated.
 <p class=list-1>&bull;&nbsp; <B>Spreadsheet Format</B>
   <p class=list-2>&bull;&nbsp; The spreadsheet is written/read as a csv file. After making changes, be sure to save in this format. Also, stat values must be numbers, not formulas.
-  <p class=list-2>&bull;&nbsp; Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.  
+  <p class=list-2>&bull;&nbsp; Any line in which the entry in the third column does not begin with "0x" will be ignored when Bash reads the file, and so can be used for comments, etc.
+  <p class=list-2>&bull;&nbsp; More effects may be added as long as they follow the same listed format with one blank column between each effect.
+  <p class=list-2>&bull;&nbsp; If any of the Script Effect columns are set to "None", all the Script Effects values for that effect will be ignored.
   <p class=empty>&nbsp;</p>
 <h3><a name='Details'>Details</a></h3>
 <p class=list-1>&bull;&nbsp; Displays list of records in mod, similar to Details view in TESCS.
@@ -2470,6 +2476,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names
   <p class=list-2>&bull;&nbsp; Minor improvements to Export/Import Map Markers 
   <p class=list-2>&bull;&nbsp; <a href="#ExportImportSigilStones">Export/Import Sigil Stones</a> added
+  <p class=list-2>&bull;&nbsp; <a href="#ExportImportSpellStats">Export/Import Spell Stats</a> re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
   <p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)

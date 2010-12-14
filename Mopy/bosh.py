@@ -14657,215 +14657,6 @@ class CBash_CompleteItemData:
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
 
-    
-##    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
-##
-##    def __init__(self,types=None,aliases=None):
-##        """Initialize."""
-##        self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
-##        self.type_attrs = {
-##            'ALCH':('eid', 'full', 'weight', 'value', 'iconPath', 'model','IsFood','IsNoAutoCalc','script','effects'), #TODO: proper effects export
-##            'AMMO':('eid', 'full', 'weight', 'value', 'damage', 'speed', 'enchantPoints', 'iconPath','model','script','enchantment','IsNormal'),
-##            'APPA':('eid', 'full', 'weight', 'value', 'quality', 'iconPath'),
-##            'ARMO':('eid', 'full', 'weight', 'value', 'health', 'strength', 'maleIconPath', 'femaleIconPath'),
-##            'BOOK':('eid', 'full', 'weight', 'value', 'enchantPoints', 'iconPath'),
-##            'CLOT':('eid', 'full', 'weight', 'value', 'enchantPoints', 'maleIconPath', 'femaleIconPath'),
-##            'INGR':('eid', 'full', 'weight', 'value', 'iconPath'),
-##            'KEYM':('eid', 'full', 'weight', 'value', 'iconPath'),
-##            'LIGH':('eid', 'full', 'weight', 'value', 'duration', 'iconPath'),
-##            'MISC':('eid', 'full', 'weight', 'value', 'iconPath'),
-##            'SGST':('eid', 'full', 'weight', 'value', 'uses', 'iconPath'),
-##            'SLGM':('eid', 'full', 'weight', 'value', 'iconPath'),
-##            'WEAP':('eid', 'full', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints', 'iconPath'),
-##            }
-##        self.aliases = aliases or {} #--For aliasing mod fulls
-##
-##    def readFromMod(self,modInfo):
-##        """Reads stats from specified mod."""
-##        Current = ObCollection(ModsPath=dirs['mods'].s)
-##        Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
-##        Current.load()
-##        modFile = Current.LookupModFile(modInfo.getPath().stail)
-##
-##        for type,stats in self.type_stats.iteritems():
-##            if type in ['KEYM',]:
-##                for record in getattr(modFile,type):
-##                    longid = record.fid
-##                    stats[longid] = record.Export()
-##            if type not in ['ALCH',]: continue
-##            attrs = self.type_attrs[type]
-##            for record in getattr(modFile,type):
-##                longid = record.fid
-##                stats[longid] = tuple(getattr(record,attr) for attr in attrs)
-##
-##    def writeToMod(self,modInfo):
-##        """Writes stats to specified mod."""
-##        Current = ObCollection(ModsPath=dirs['mods'].s)
-##        modFile = Current.addMod(modInfo.getPath().stail)
-##        Current.minimalLoad(LoadMasters=False)
-##
-##        changed = {} #--changed[modName] = numChanged
-##        for type,stats in self.type_stats.iteritems():
-##            attrs = self.type_attrs[type]
-##            for record in getattr(modFile,type):
-##                longid = record.fid
-##                itemStats = stats.get(longid,None)
-##                if not itemStats: continue
-##                for attr,stat in attrs,itemStats:
-##                    if(stat != "NONE"):
-##                        setattr(record,attr,stat)
-##                changed[longid[0]] = 1 + changed.get(longid[0],0)
-##        if changed: modFile.safeCloseSave()
-##        return changed
-##
-##    def readFromText(self,textPath):
-##        """Reads stats from specified text file."""
-##        alch, ammo, appa, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
-##        aliases = self.aliases
-##        ins = bolt.CsvReader(textPath)
-##        pack,unpack = struct.pack,struct.unpack
-##        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
-##        for fields in ins:
-##            if len(fields) < 3 or fields[2][:2] != '0x': continue
-##            type,modName,objectStr,eid = fields[0:4]
-##            modName = GPath(modName)
-##            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
-##            if type == 'ALCH':
-##                alch[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value)
-##                    zip((str,sfloat,int,str),fields[4:8]))
-##            elif type == 'AMMO':
-##                ammo[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, damage, speed, enchantPoints)
-##                    zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
-##            elif type == 'APPA':
-##                appa[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight,value,quantity)
-##                    zip((str,sfloat,int,sfloat,str),fields[4:9]))
-##            elif type == 'ARMO':
-##                armor[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, health, strength)
-##                    zip((str,sfloat,int,int,int,str,str),fields[4:10]))
-##            elif type == 'BOOK':
-##               books[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, echantPoints)
-##                    zip((str,sfloat,int,int,str),fields[4:9]))
-##            elif type == 'CLOT':
-##                clothing[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, echantPoints)
-##                    zip((str,sfloat,int,int,str,str),fields[4:10]))
-##            elif type == 'INGR':
-##                ingredients[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value)
-##                    zip((str,sfloat,int,str),fields[4:8]))
-##            elif type == 'KEYM':
-##                keys[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value)
-##                    zip((str,sfloat,int,str),fields[4:8]))
-##            elif type == 'LIGH':
-##               lights[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, duration)
-##                    zip((str,sfloat,int,int,str),fields[4:9]))
-##            elif type == 'MISC':
-##                misc[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value)
-##                    zip((str,sfloat,int,str),fields[4:8]))
-##            elif type == 'SGST':
-##               sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, uses)
-##                    zip((str,sfloat,int,int,str),fields[4:9]))
-##            elif type == 'SLGM':
-##                soulgems[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value)
-##                    zip((str,sfloat,int,str),fields[4:8]))
-##            elif type == 'WEAP':
-##                weapons[longid] = (eid,) + tuple(func(field) for func,field in
-##                    #--(weight, value, health, damage, speed, reach, epoints)
-##                    zip((str,sfloat,int,int,int,sfloat,sfloat,int,str),fields[4:13]))
-##        ins.close()
-##
-##    def writeToText(self,textPath):
-##        """Writes stats to specified text file."""
-##        out = textPath.open('w')
-##        def getSortedIds(stats):
-##            longids = stats.keys()
-##            longids.sort(key=lambda a: stats[a][0])
-##            longids.sort(key=itemgetter(0))
-##            return longids
-##        for type,format,header in (
-##            ('ALCH', bolt.csvFormat('ssfissssss')+'\n', #--Potions
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),
-##                _('modPath'),_('IsFood'),_('IsNoAutoCalc'),_('Script'),_('Effects'))) + '"\n')),
-##            ('AMMO', bolt.csvFormat('ssfiifisssss')+'\n', #--Ammo
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed')
-##                ,_('Enchant Points'),_('Icon Path'),_('Model'),_('Script'),_('Enchantment'),_('Normal Weapon'))) + '"\n')),
-##            #--Apparatus
-##            ('APPA', bolt.csvFormat('ssfifss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #--Armor
-##            ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
-##                _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-##                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-##            #Books
-##            ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #Clothing
-##            ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
-##                _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-##                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-##            #Ingredients
-##            ('INGR', bolt.csvFormat('ssfiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-##            ('KEYM', bolt.csvFormat('sssssssss')+'\n',     #--Keys
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Value'),_('Weight'),_('Model'),_('Icon'),_('Script'),_('MODB'),_('MODT_P'))) + '"\n')),
-##
-##            #Lights
-##            ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #--Misc
-##            ('MISC', bolt.csvFormat('ssfiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #Sigilstones
-##            ('SGST', bolt.csvFormat('ssfiiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #Soulgems
-##            ('SLGM', bolt.csvFormat('ssfiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-##            #--Weapons
-##            ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
-##                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-##                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
-##                _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-##            ):
-##            stats = self.type_stats[type]
-##            if not stats: continue
-##            out.write('\n'+header)
-##            if type != 'KEYM':
-##                for longid in getSortedIds(stats):
-##                    out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-##                    out.write(format % stats[longid])
-##            else:
-##                format = bolt.csvFormat('sssssssss')
-##                for longid in getSortedIds(stats):
-##                    out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-##                    out.write(format % stats[longid])
-##                    out.write('\n')
-##        out.close()
-
 #------------------------------------------------------------------------------
 class ScriptText:
     """import & export functions for script text."""
@@ -15101,175 +14892,429 @@ class CBash_ScriptText:
 class SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self,types=None,aliases=None,detailed=False):
         """Initialize."""
-        #--type_stats[type] = ...
-        #--SPEL: (eid, weight, value)
-        self.type_stats = {'SPEL':{},}
-        self.type_attrs = {
-            'SPEL':('eid', 'full', 'cost', 'level', 'spellType'),
-            }
+        self.fid_stats = {}
+        self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+        self.detailed = detailed
+        if detailed:            
+            self.attrs = self.attrs + ('flags.noAutoCalc', 'flags.startSpell', 'flags.immuneToSilence',
+                                       'flags.ignoreLOS', 'flags.scriptEffectAlwaysApplies',
+                                       'flags.disallowAbsorbReflect', 
+                                       'flags.touchExplodesWOTarget') #, 'effects_list' is special cased
+        self.spellTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Spell',
+                                     1 : 'Disease',
+                                     2 : 'Power',
+                                     3 : 'LesserPower',
+                                     4 : 'Ability',
+                                     5 : 'Poison',}
+        self.spellTypeName_Number = dict([(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if x is not None])
+
+        self.levelTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Novice',
+                                     1 : 'Apprentice',
+                                     2 : 'Journeyman',
+                                     3 : 'Expert',
+                                     4 : 'Master',}
+        self.levelTypeName_Number = dict([(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if x is not None])
+
+        self.recipientTypeNumber_Name = {
+            None : 'NONE',
+            0 : 'Self',
+            1 : 'Touch',
+            2 : 'Target',}
+        self.recipientTypeName_Number = dict([(y.lower(),x) for x,y in self.recipientTypeNumber_Name.iteritems() if x is not None])
+
+        self.actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
+        self.actorValueNumber_Name[None] = 'NONE'
+        self.actorValueName_Number = dict([(y.lower(),x) for x,y in self.actorValueNumber_Name.iteritems() if x is not None])
+        
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
+        detailed = self.detailed
         loadFactory= LoadFactory(False,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
-        for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                recordGetAttr = record.__getattribute__
-                stats[longid] = tuple(recordGetAttr(attr) for attr in attrs)
+        modFile.convertToLongFids(['SPEL'])     
+        for record in modFile.SPEL.getActiveRecords():
+            fid_stats[record.fid] = [getattr_deep(record, attr) for attr in attrs]
+            if detailed:
+                effects = []
+                for effect in record.effects:
+                    effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                    if effect.scriptEffect:
+                        effectlist.append([effect.scriptEffect.script, effect.scriptEffect.school, effect.scriptEffect.visual,
+                                           effect.scriptEffect.flags.hostile, effect.scriptEffect.full])
+                    else: effectlist.append([])
+                    effects.append(effectlist)
+                fid_stats[record.fid].append(effects)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        loadFactory= LoadFactory(False,MreSpel)
+        fid_stats, attrs = self.fid_stats, self.attrs
+        detailed = self.detailed
+        loadFactory= LoadFactory(True,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
-        for type in self.type_stats:
-            stats, attrs = self.type_stats[type], self.type_attrs[type]
-            for record in getattr(modFile,type).getActiveRecords():
-                longid = mapper(record.fid)
-                itemStats = stats.get(longid,None)
-                if not itemStats: continue
-                map(record.__setattr__,attrs,itemStats)
+        shortMapper = modFile.getShortMapper()
+        
+        changed = [] #eids
+        for record in modFile.SPEL.getActiveRecords():
+            newStats = fid_stats.get(mapper(record.fid), None)
+            if not newStats: continue
+            oldStats = [getattr_deep(record, attr) for attr in attrs]
+            if detailed:
+                effects = []
+                for effect in record.effects:
+                    effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                    if effect.scriptEffect:
+                        effectlist.append([mapper(effect.scriptEffect.script), effect.scriptEffect.school, effect.scriptEffect.visual,
+                                           effect.scriptEffect.flags, effect.scriptEffect.full])
+                    else: effectlist.append([])
+                    effects.append(effectlist)
+                oldStats.append(effects)
+            if oldStats != newStats:
+                changed.append(oldStats[0]) #eid
+                for attr, value in zip(attrs, newStats):
+                    setattr_deep(record, attr, value)
+                if detailed and len(newStats) > len(attrs):
+                    effects = newStats[-1]
+                    record.effects = []
+                    for effect in effects:
+                        neweffect = record.getDefault('effects')
+                        neweffect.name, neweffect.magnitude, neweffect.area, neweffect.duration, neweffect.recipient, neweffect.actorValue, scripteffect = effect
+                        if len(scripteffect):
+                            scriptEffect = record.getDefault('effects.scriptEffect')
+                            script, scriptEffect.school, scriptEffect.visual, scriptEffect.flags.hostile, scriptEffect.full = scripteffect
+                            scriptEffect.script = shortMapper(script)
+                            neweffect.scriptEffect = scriptEffect
+                        record.effects.append(neweffect)
                 record.setChanged()
-                changed[longid[0]] = 1 + changed.get(longid[0],0)
         if changed: modFile.safeSave()
         return changed
 
     def readFromText(self,textPath):
-        """Reads stats from specified text file."""
-        Spells = [self.type_stats[type] for type in ('SPEL',)]
-        aliases = self.aliases
+        """Imports stats from specified text file."""
+        detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
+        fid_stats,recipientTypeName_Number,actorValueName_Number = self.fid_stats,self.recipientTypeName_Number,self.actorValueName_Number
         ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            type,modName,objectStr,eid = fields[0:4]
-            modName = GPath(modName)
-            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
-            if type == 'SPEL':
-                Spells[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(name, cost, level, spelltype)
-                    zip((str,str,int,int,sfloat,),fields[4:9]))
-        ins.close()
+        try:
+            for fields in ins:
+                if len(fields) < 8 or fields[2][:2] != '0x': continue
+                group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
+                fields = fields[8:]
+                group = _coerce(group, str)
+                if group.lower() != 'spel': continue
+                mmod = _coerce(mmod, str)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                cost = _coerce(cost, int)
+                levelType = _coerce(levelType, str)
+                levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
+                spellType = _coerce(spellType, str)
+                spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
+                if not detailed or len(fields) < 7:
+                    fid_stats[mid] = [eid,full,cost,levelType,spellType]
+                    continue
+                mc,ss,its,aeil,saa,daar,tewt = fields[:7]
+                fields = fields[7:]
+                mc = _coerce(mc, bool)
+                ss = _coerce(ss, bool)
+                its = _coerce(its, bool)
+                aeil = _coerce(aeil, bool)
+                saa = _coerce(saa, bool)
+                daar = _coerce(daar, bool)
+                tewt = _coerce(tewt, bool)
+                    
+                effects = []
+                _effects = fields
+                while len(_effects) >= 13:
+                    _effect, _effects = _effects[1:13], _effects[13:]
+                    name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
+                    name = _coerce(name, str, AllowNone=True)
+                    magnitude = _coerce(magnitude, int, AllowNone=True)
+                    area = _coerce(area, int, AllowNone=True)
+                    duration = _coerce(duration, int, AllowNone=True)
+                    range = _coerce(range, str, AllowNone=True)
+                    if range:
+                        range = recipientTypeName_Number.get(range.lower(),_coerce(range,int))
+                    actorvalue = _coerce(actorvalue, str, AllowNone=True)
+                    if actorvalue:
+                        actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
+                    if None in (name,magnitude,area,duration,range,actorvalue):
+                        continue
+                    effect = [name,magnitude,area,duration,range,actorvalue]
+                    semod = _coerce(semod, str, AllowNone=True)
+                    seobj = _coerce(seobj, int, 16, AllowNone=True)
+                    seschool = _coerce(seschool, int, AllowNone=True)
+                    sevisual = _coerce(sevisual, str, AllowNone=True)
+                    seflags = _coerce(seflags, bool, AllowNone=True)
+                    sename = _coerce(sename, str, AllowNone=True)
+                    if None in (semod,seobj,seschool,sevisual,seflags,sename):
+                        effect.append([])
+                    else:
+                        if sevisual.strip() == '':
+                            sevisual = '\x00\x00\x00\x00'
+                        sefid = (GPath(aliases.get(semod,semod)),seobj)
+                        effect.append([sefid, seschool, sevisual,seflags, sename])
+                    effects.append(effect)
+                fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
+        finally:
+            ins.close()
 
     def writeToText(self,textPath):
-        """Writes stats to specified text file."""
+        """Exports stats to specified text file."""
+        detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = self.detailed,self.fid_stats,self.spellTypeNumber_Name,self.levelTypeNumber_Name
+        recipientTypeNumber_Name,actorValueNumber_Name = self.recipientTypeNumber_Name,self.actorValueNumber_Name
+        header = (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+                  _('Name'),_('Cost'),_('Level Type'),_('Spell Type'))
+        rowFormat = '"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
+        if detailed:
+            header = header + (_('Manual Cost'),_('Start Spell'),_('Immune To Silence'),_('Area Effect Ignores LOS'),
+                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),                      
+                               _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
+                               _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
+                               _('Additional Effects (Same format)'))
+            rowFormat = rowFormat + ',"%s","%s","%s","%s","%s","%s","%s"'
+            effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
+            scriptEffectFormat = ',"%s","0x%06X","%d","%s","%s","%s"'
+            noscriptEffectFiller = ',"None","None","None","None","None","None"'
+        headFormat = '"%s",' * len(header)
+        headFormat = headFormat[:-1] + '\n' #chop trailing comma
+            
         out = textPath.open('w')
-        def getSortedIds(stats):
-            longids = stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
-        for type,format,header in (
-            #--Spells
-            ('SPEL', bolt.csvFormat('ssiis')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Cost'),_('Level'),_('Spell Type')
-                )) + '"\n')),
-            ):
-            stats = self.type_stats[type]
-            if not stats: continue
-            out.write(header)
-            for longid in getSortedIds(stats):
-                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-                out.write(format % stats[longid])
+        out.write(headFormat % header)
+        for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
+            if detailed:
+                eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                for effect in effects:
+                    efname,magnitude,area,duration,range,actorvalue = effect[:-1]
+                    range = recipientTypeNumber_Name.get(range,range)
+                    actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
+                    scripteffect = effect[-1]
+                    output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                    if len(scripteffect):
+                        longid,seschool,sevisual,seflags,sename = scripteffect
+                        if sevisual == '\x00\x00\x00\x00':
+                            sevisual = ''
+                        output += scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename)
+                    else:
+                        output += noscriptEffectFiller
+            else:
+                eid,name,cost,levelType,spellType = fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+            output += '\n'
+            out.write(output)
         out.close()
+
 class CBash_SpellRecords:
     """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None,detailed=False):
         """Initialize."""
-        self.type_id_stats = {}
-        self.type_attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+        self.fid_stats = {}
+        self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
+        self.detailed = detailed
         if detailed:
-            self.type_attrs = ('eid', 'full', 'cost', 'level', 'spellType')
-            ##todo: will include effects, and flags.
+            self.attrs = self.attrs + ('IsManualCost', 'IsStartSpell', 'IsSilenceImmune', 
+                                       'IsAreaEffectIgnoresLOS', 'IsScriptAlwaysApplies',
+                                       'IsDisallowAbsorbReflect', 
+                                       'IsTouchExplodesWOTarget', 'effects_list')
+        self.spellTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Spell',
+                                     1 : 'Disease',
+                                     2 : 'Power',
+                                     3 : 'LesserPower',
+                                     4 : 'Ability',
+                                     5 : 'Poison',}
+        self.spellTypeName_Number = dict([(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if x is not None])
+
+        self.levelTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Novice',
+                                     1 : 'Apprentice',
+                                     2 : 'Journeyman',
+                                     3 : 'Expert',
+                                     4 : 'Master',}
+        self.levelTypeName_Number = dict([(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if x is not None])
+
+        self.recipientTypeNumber_Name = {
+            None : 'NONE',
+            0 : 'Self',
+            1 : 'Touch',
+            2 : 'Target',}
+        self.recipientTypeName_Number = dict([(y.lower(),x) for x,y in self.recipientTypeNumber_Name.iteritems() if x is not None])
+
+        self.actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
+        self.actorValueNumber_Name[None] = 'NONE'
+        self.actorValueName_Number = dict([(y.lower(),x) for x,y in self.actorValueNumber_Name.iteritems() if x is not None])
+        
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
-        id_stats, attrs = self.type_id_stats, self.type_attrs
-        for record in getattr(modFile,'SPEL'):
-            id_stats[record.fid] = [getattr(record,attr) for attr in attrs]
+        for record in modFile.SPEL:
+            fid_stats[record.fid] = map(record.__getattribute__, attrs)
             record.UnloadRecord()
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
         modFile = Current.LookupModFile(modInfo.getPath().stail)
 
-        changed = 0
-        attrs = self.type_attrs
-        id_stats = self.type_id_stats
-        for record in getattr(modFile,'SPEL'):
-            longFid = record.fid
-            if longFid in id_stats:
-                prevValues = id_stats[longFid]
-                recValues = map(record.__getattribute__,attrs)
-                if recValues != prevValues:
-                     map(record.__setattr__,attrs,prevValues)
-                changed += 1
+        changed = []
+        for record in modFile.SPEL:
+            newStats = fid_stats.get(record.fid, None)
+            if not newStats: continue
+            oldStats = map(record.__getattribute__,attrs)
+            if oldStats != newStats:
+                changed.append(oldStats[0]) #eid
+                map(record.__setattr__,attrs,newStats)
+
         #--Done
-        if changed: modFile.safeCloseSave()
+        if changed: modFile.save()
         return changed
 
     def readFromText(self,textPath):
-        """Reads stats from specified text file."""
-        Spells = [self.type_id_stats]
-        aliases = self.aliases
+        """Imports stats from specified text file."""
+        detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
+        fid_stats,recipientTypeName_Number,actorValueName_Number = self.fid_stats,self.recipientTypeName_Number,self.actorValueName_Number
         ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            type,modName,objectStr,eid = fields[0:4]
-            modName = GPath(modName)
-            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
-            if type == 'SPEL':
-                Spells[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(name, cost, level, spelltype)
-                    zip((str,str,int,int,sfloat,),fields[4:9]))
-        ins.close()
+        try:
+            for fields in ins:
+                if len(fields) < 8 or fields[2][:2] != '0x': continue
+                group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
+                fields = fields[8:]
+                group = _coerce(group, str)
+                if group.lower() != 'spel': continue
+                mmod = _coerce(mmod, str)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                cost = _coerce(cost, int)
+                levelType = _coerce(levelType, str)
+                levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
+                spellType = _coerce(spellType, str)
+                spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
+                if not detailed or len(fields) < 7:
+                    fid_stats[mid] = [eid,full,cost,levelType,spellType]
+                    continue
+                mc,ss,its,aeil,saa,daar,tewt = fields[:7]
+                fields = fields[7:]
+                mc = _coerce(mc, bool)
+                ss = _coerce(ss, bool)
+                its = _coerce(its, bool)
+                aeil = _coerce(aeil, bool)
+                saa = _coerce(saa, bool)
+                daar = _coerce(daar, bool)
+                tewt = _coerce(tewt, bool)
+                    
+                effects = []
+                _effects = fields
+                while len(_effects) >= 13:
+                    _effect, _effects = _effects[1:13], _effects[13:]
+                    name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
+                    name = _coerce(name, str, AllowNone=True)
+                    if name is not None:
+                        name = cast(name, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
+                    magnitude = _coerce(magnitude, int, AllowNone=True)
+                    area = _coerce(area, int, AllowNone=True)
+                    duration = _coerce(duration, int, AllowNone=True)
+                    range = _coerce(range, str, AllowNone=True)
+                    if range:
+                        range = recipientTypeName_Number.get(range.lower(),_coerce(range,int))
+                    actorvalue = _coerce(actorvalue, str, AllowNone=True)
+                    if actorvalue:
+                        actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
+                    if None in (name,magnitude,area,duration,range,actorvalue):
+                        continue
+                    effect = [name,magnitude,area,duration,range,actorvalue]
+                    semod = _coerce(semod, str, AllowNone=True)
+                    seobj = _coerce(seobj, int, 16, AllowNone=True)
+                    seschool = _coerce(seschool, int, AllowNone=True)
+                    sevisual = _coerce(sevisual, str, AllowNone=True)
+                    seflags = _coerce(seflags, bool, AllowNone=True)
+                    sename = _coerce(sename, str, AllowNone=True)
+                    if None in (semod,seobj,seschool,sevisual,seflags,sename):
+                        effect.extend([None,None,None,None,None])
+                    else:
+                        sevisual = cast(sevisual, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
+                        sefid = (GPath(aliases.get(semod,semod)),seobj)
+                        effect.extend([sefid, seschool, sevisual,seflags, sename])
+                    effects.append(tuple(effect))
+                fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
+        finally:
+            ins.close()
 
     def writeToText(self,textPath):
-        """Writes stats to specified text file."""
+        """Exports stats to specified text file."""
+        detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = self.detailed,self.fid_stats,self.spellTypeNumber_Name,self.levelTypeNumber_Name
+        recipientTypeNumber_Name,actorValueNumber_Name = self.recipientTypeNumber_Name,self.actorValueNumber_Name
+        header = (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+                  _('Name'),_('Cost'),_('Level Type'),_('Spell Type'))
+        rowFormat = '"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
+        if detailed:
+            header = header + (_('Manual Cost'),_('Start Spell'),_('Immune To Silence'),_('Area Effect Ignores LOS'),
+                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),                      
+                               _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
+                               _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
+                               _('Additional Effects (Same format)'))
+            rowFormat = rowFormat + ',"%s","%s","%s","%s","%s","%s","%s"'
+            effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
+            scriptEffectFormat = ',"%s","0x%06X","%d","%s","%s","%s"'
+            noscriptEffectFiller = ',"None","None","None","None","None","None"'
+        headFormat = '"%s",' * len(header)
+        headFormat = headFormat[:-1] + '\n' #chop trailing comma
+            
         out = textPath.open('w')
-        def getSortedIds(id_stats):
-            longids = id_stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
-        for type,format,header in (
-            #--Spells
-            ('SPEL', bolt.csvFormat('ssiis')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Cost'),_('Level'),_('Spell Type')
-                )) + '"\n')),
-            ):
-            id_stats = self.type_id_stats
-            if not id_stats: continue
-            out.write(header)
-            for longid in getSortedIds(id_stats):
-                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-                out.write(format % id_stats[longid])
+        out.write(headFormat % header)
+        for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
+            if detailed:
+                eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                for effect in effects:
+                    efname,magnitude,area,duration,range,actorvalue = effect[:6]
+                    efname = c_ulong(efname)
+                    efname = cast(byref(efname), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
+                    range = recipientTypeNumber_Name.get(range,range)
+                    actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
+                    output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                    longid,seschool,sevisual,seflags,sename = effect[6:]
+                    if None not in (longid,seschool,sevisual,seflags,sename):
+                        sevisual = c_ulong(sevisual)
+                        sevisual = cast(byref(sevisual), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
+                        output += scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename)
+                    else:
+                        output += noscriptEffectFiller
+            else:
+                eid,name,cost,levelType,spellType = fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+            output += '\n'
+            out.write(output)
         out.close()
-
 #------------------------------------------------------------------------------
 class ExportAlchInfo:
     """Updates COBL alchemical catalogs."""
