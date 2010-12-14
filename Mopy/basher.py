@@ -10136,7 +10136,10 @@ class Mod_Scripts_Export(Link):
         if not textDir: return
         #--Export
         #try:
-        ScriptText = bosh.ScriptText()
+        if not CBash:
+            ScriptText = bosh.ScriptText()
+        else:
+            ScriptText = bosh.CBash_ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = ScriptText.writeToText(fileInfo,skip,textDir,deprefix,fileName.s)
         #finally:
@@ -10158,22 +10161,41 @@ class Mod_Scripts_Import(Link):
             return
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
+        defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
+        if not defaultPath.exists():
+            defaultPath = bosh.dirs['patches']
         textDir = balt.askDirectory(self.window,
-            _('Choose directory to import scripts from'),bosh.dirs['patches'].join(fileName.s+' Exported Scripts'))
+            _('Choose directory to import scripts from'),defaultPath)
         if textDir == None:
             balt.showError(self.window,_('Source folder must be selected.'))
             return
         message = _("Import scripts that don't exist in the esp as new scripts?\n(If not they will just be skipped).")
         makeNew = balt.askYes(self.window,message,_('Import Scripts'),icon=wx.ICON_QUESTION)
-        ScriptText = bosh.ScriptText()
-        ScriptText.readFromText(textDir.s,fileInfo)
-        changed = ScriptText.writeToMod(fileInfo,makeNew)
-    #--Log
-        if not len(changed):
-            balt.showOk(self.window,_("No changed scripts to import."),_("Import Scripts"))
+        if not CBash:
+            ScriptText = bosh.ScriptText()
         else:
-            changedScripts = (_('Imported %d changed scripts from %s:\n%s') % (len(changed),textDir.s,'*'+'\n*'.join(sorted(changed))))
-            balt.showLog(self.window,changedScripts,_('Import Scripts'),icons=bashBlue)
+            ScriptText = bosh.CBash_ScriptText()
+        ScriptText.readFromText(textDir.s,fileInfo)
+        changed, added = ScriptText.writeToMod(fileInfo,makeNew)
+    #--Log
+        if not (len(changed) or len(added)):
+            balt.showOk(self.window,_("No changed or new scripts to import."),_("Import Scripts"))
+        else:
+            if changed:
+                changedScripts = (_('Imported %d changed scripts from %s:\n%s') % (len(changed),textDir.s,'*'+'\n*'.join(sorted(changed))))
+            else:
+                changedScripts = ''
+            if added:
+                addedScripts = (_('Imported %d new scripts from %s:\n%s') % (len(added),textDir.s,'*'+'\n*'.join(sorted(added))))
+            else:
+                addedScripts = ''
+            if changed and added:
+                report = changedScripts + '\n\n' + addedScripts
+            elif changed:
+                report = changedScripts
+            elif added:
+                report = addedScripts
+            balt.showLog(self.window,report,_('Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Export(Link):
