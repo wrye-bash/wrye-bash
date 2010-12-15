@@ -5089,12 +5089,20 @@ class ModFile:
             if type != 'GRUP' or groupType != 0:
                 raise ModError(self.fileInfo.name,_('Improperly grouped file.'))
             topClass = selfGetTopClass(label)
-            if topClass:
-                self.tops[label] = topClass(header,selfLoadFactory)
-                self.tops[label].load(ins,unpack and (topClass != MobBase))
-            else:
-                selfTopsSkipAdd(label)
-                insSeek(size-20,1,type + '.' + label)
+            try:
+                if topClass:
+                    self.tops[label] = topClass(header,selfLoadFactory)
+                    self.tops[label].load(ins,unpack and (topClass != MobBase))
+                else:
+                    selfTopsSkipAdd(label)
+                    insSeek(size-20,1,type + '.' + label)
+            except:
+                if isinstance(self.fileInfo.name,str):
+                    print "Error in %s" % self.fileInfo.name
+                    raise
+                else:
+                    print "Error in %s" % self.fileInfo.name.s
+                    raise
         #--Done Reading
         ins.close()
 
@@ -10008,7 +10016,7 @@ class Installer(object):
             setter(clone,attr,copier(getter(self,attr)))
         return clone
 
-    def refreshDataSizeCrc(self):
+    def refreshDataSizeCrc(self,checkOBSE=False):
         """Updates self.data_sizeCrc and related variables.
         Also, returns dest_src map for install operation."""
         if isinstance(self,InstallerArchive):
@@ -10128,18 +10136,19 @@ class Installer(object):
                 continue
             elif fileStartsWith('--'):
                 continue
-            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse'):
+            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse\\'):
                 continue
             elif fileExt == '.dll':
                 if not fileStartsWith('obse\\'):
-                        continue
+                    continue
                 if full in badDlls: continue
-                if full not in goodDlls:
+                if checkOBSE and full not in goodDlls:
                     message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
                     if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
                         badDlls.append(full)
                         continue
                     goodDlls.append(full)
+                elif full not in goodDlls: continue
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFilesAdd(full)
@@ -10826,7 +10835,7 @@ class InstallerArchive(Installer):
         destFiles = set(destFiles)
         norm_ghost = Installer.getGhosted()
         data_sizeCrc = self.data_sizeCrc
-        dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc().iteritems() if x in destFiles)
+        dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
         #--Extract
         progress(0,archive.s+_("\nExtracting files..."))
@@ -10962,7 +10971,7 @@ class InstallerProject(Installer):
         destDir = dirs['mods']
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
-        dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc().iteritems() if x in destFiles)
+        dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
         #--Copy Files
         count = 0
