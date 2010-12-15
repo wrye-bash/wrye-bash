@@ -25,6 +25,7 @@ that are used by multiple objects."""
 
 # Imports ---------------------------------------------------------------------
 import struct
+import ctypes
 
 from bolt import _,GPath
 
@@ -548,8 +549,11 @@ magicEffects = {
 mgef_school = dict((x,y) for x,[y,z,a] in magicEffects.items())
 mgef_name = dict((x,z) for x,[y,z,a] in magicEffects.items())
 mgef_basevalue = dict((x,a) for x,[y,z,a] in magicEffects.items())
+mgef_school.update(dict((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value ,y) for x,[y,z,a] in magicEffects.items()))
+mgef_name.update(dict((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value,z) for x,[y,z,a] in magicEffects.items()))
+mgef_basevalue.update(dict((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value,a) for x,[y,z,a] in magicEffects.items()))
 
-poisonEffects = set((
+hostileEffects = set((
     'ABAT', #--Absorb Attribute
     'ABFA', #--Absorb Fatigue
     'ABHE', #--Absorb Health
@@ -586,17 +590,23 @@ poisonEffects = set((
     'WKPO', #--Weakness to Poison
     'WKSH', #--Weakness to Shock
     ))
+hostileEffects |= set((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value for x in hostileEffects))
 
-actorValueEffects = set([
-    'ABAT', #--Absorb Attribute
-    'ABSK', #--Absorb Skill
-    'DGAT', #--Damage Attribute
-    'DRAT', #--Drain Attribute
-    'DRSK', #--Drain Skill
-    'FOAT', #--Fortify Attribute
-    'FOSK', #--Fortify Skill
-    'REAT', #--Restore Attribute
+#Doesn't list mgefs that use actor values, but rather mgefs that have a generic name
+#Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue field contains 9
+#    But it is actually using an attribute rather than an actor value
+#Ex: Burden uses an actual actor value (encumbrance) but it isn't listed since its name doesn't change
+genericAVEffects = set([
+    'ABAT', #--Absorb Attribute (Use Attribute)
+    'ABSK', #--Absorb Skill (Use Skill)
+    'DGAT', #--Damage Attribute (Use Attribute)
+    'DRAT', #--Drain Attribute (Use Attribute)
+    'DRSK', #--Drain Skill (Use Skill)
+    'FOAT', #--Fortify Attribute (Use Attribute)
+    'FOSK', #--Fortify Skill (Use Skill)
+    'REAT', #--Restore Attribute (Use Attribute)
     ])
+genericAVEffects |= set((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value for x in genericAVEffects))
 
 actorValues = [
     _('Strength'), #--00

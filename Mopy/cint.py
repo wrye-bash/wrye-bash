@@ -346,7 +346,7 @@ class CBashJunk(object):
     def __init__(self, FieldID):
         pass
     def __get__(self, instance, owner):
-        return 0
+        return None
     def __set__(self, instance, nValue):
         pass
 
@@ -1132,7 +1132,7 @@ class CBashMGEFCODE_OR_UINT32_LIST(object):
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_long(MakeShortMGEFCode(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, nValue))), 0)
 
 class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
     def __init__(self, ListFieldID):
@@ -1901,7 +1901,7 @@ class ObEditorIDRecord(object):
 
     @property
     def GName(self):
-        return GPath(self.NormModName)        
+        return GPath(self.NormModName)
 
     def UnloadRecord(self):
         _CUnloadRecord(self._CollectionID, self._ModID, 0, self._RecordID)
@@ -3104,10 +3104,20 @@ class ObCREARecord(ObFormIDRecord):
         self.items = [x for x in self.items if x.item[0] in modSet]
 
     class Sound(ListComponent):
-        type = CBashGeneric_LIST(1, c_ulong)
+        soundType = CBashGeneric_LIST(1, c_ulong)
         sound = CBashFORMID_LIST(2)
         chance = CBashGeneric_LIST(3, c_ubyte)
-        exportattrs = copyattrs = ['type', 'sound', 'chance']
+        IsLeftFoot = CBashBasicType('soundType', 0, 'IsRightFoot')
+        IsRightFoot = CBashBasicType('soundType', 1, 'IsLeftFoot')
+        IsLeftBackFoot = CBashBasicType('soundType', 2, 'IsLeftFoot')
+        IsRightBackFoot = CBashBasicType('soundType', 3, 'IsLeftFoot')
+        IsIdle = CBashBasicType('soundType', 4, 'IsLeftFoot')
+        IsAware = CBashBasicType('soundType', 5, 'IsLeftFoot')
+        IsAttack = CBashBasicType('soundType', 6, 'IsLeftFoot')
+        IsHit = CBashBasicType('soundType', 7, 'IsLeftFoot')
+        IsDeath = CBashBasicType('soundType', 8, 'IsLeftFoot')
+        IsWeapon = CBashBasicType('soundType', 9, 'IsLeftFoot')
+        exportattrs = copyattrs = ['soundType', 'sound', 'chance']
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -3923,6 +3933,8 @@ class ObLVLIRecord(ObFormIDRecord):
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
+    script = CBashJunk(7) #Doesn't actually exist, but is here so that LVLC,LVLI,LVSP can be processed similarly
+    template = CBashJunk(8) #ditto
 
     def create_entry(self):
         length = CBash.GetFieldAttribute(self._CollectionID, self._ModID, self._RecordID, 0, 9, 0, 0, 0, 0, 0, 0, 1)
@@ -3952,6 +3964,8 @@ class ObLVSPRecord(ObFormIDRecord):
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
+    script = CBashJunk(7) #Doesn't actually exist, but is here so that LVLC,LVLI,LVSP can be processed similarly
+    template = CBashJunk(8) #ditto
 
     def create_entry(self):
         length = CBash.GetFieldAttribute(self._CollectionID, self._ModID, self._RecordID, 0, 9, 0, 0, 0, 0, 0, 0, 1)
