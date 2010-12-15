@@ -764,6 +764,7 @@ class CBashFORMIDARRAY(object):
         if nValue is None or not len(nValue): _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
+            nValue = [MakeShortFid(instance._CollectionID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -1092,6 +1093,7 @@ class CBashFORMIDARRAY_LIST(object):
         if nValue is None or not len(nValue): _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             length = len(nValue)
+            nValue = [MakeShortFid(instance._CollectionID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -1830,7 +1832,7 @@ class ObFormIDRecord(object):
         _CGetFieldAttribute.restype = (c_char * 4)
         retValue = _CGetFieldAttribute(self._CollectionID, self._ModID, self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         _CGetFieldAttribute.restype = c_ulong
-        if(retValue): return retValue.value
+        if(retValue and retValue.value != ''): return retValue.value
         return None
 
     flags1 = CBashGeneric(1, c_ulong)
@@ -2021,7 +2023,11 @@ class ObEditorIDRecord(object):
 
     @property
     def recType(self):
-        return self._Type
+        _CGetFieldAttribute.restype = (c_char * 4)
+        retValue = _CGetFieldAttribute(self._CollectionID, self._ModID, 0, self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0)
+        _CGetFieldAttribute.restype = c_ulong
+        if(retValue and retValue.value != ''): return retValue.value
+        return None
 
     flags1 = CBashEDIDGeneric(1, c_ulong)
 
@@ -5439,11 +5445,13 @@ class ObModFile(object):
     def GName(self):
         return GPath(self.NormModName)
     
-    def HasRecord(self,RecordID):
+    def HasRecord(self, RecordID):
         if not RecordID: return False
         if isinstance(RecordID, basestring): TestRecord = ObEditorIDRecord
-        else: TestRecord = ObFormIDRecord
-        return TestRecord(self._CollectionID, self._ModID, RecordID, 0, 0).fid
+        else:
+            RecordID = MakeShortFid(self._CollectionID, RecordID)
+            TestRecord = ObFormIDRecord
+        return TestRecord(self._CollectionID, self._ModID, RecordID, 0, 0).recType is not None
 
     def LookupRecord(self, RecordID):
         if isinstance(RecordID, basestring):
@@ -5981,7 +5989,7 @@ class ObCollection:
 ##        // This may leave broken records behind (such as a quest override pointing to a new script that was ignored)
 ##        // So it shouldn't be used if planning on copying records unless you either check that there are no new records being referenced
 ##
-##        //InLoadOrder makes the mod count towards the 255 limit and enables record creation / deletion / copying to.
+##        //InLoadOrder makes the mod count towards the 255 limit and enables record creation and copying as new.
 ##        // If it is false, it forces Saveable to be false.
 ##        // Any mod with new records should have this set unless you're ignoring the new records.
 ##        // It causes the mod to be reported by GetNumModIDs, GetModIDs

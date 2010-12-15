@@ -5080,7 +5080,7 @@ class PatchDialog(wx.Dialog):
                 patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
                 progress(1.0,patchName.s+_('\nSaving...'))
-                patchFile.safeCloseSave()
+                patchFile.save()
                 patchTime = fullName.mtime
                 patchName.untemp()
                 patchName.mtime = patchTime

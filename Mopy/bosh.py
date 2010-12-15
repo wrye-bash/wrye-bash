@@ -14245,7 +14245,7 @@ class CompleteItemData:
 ##                        if(stat != "NONE"):
 ##                            setattr(record,attr,stat)
 ##                    changed[longid[0]] = 1 + changed.get(longid[0],0)
-##            if changed: modFile.safeCloseSave()
+##            if changed: modFile.save()
 ##            return changed
 
     def readFromText(self,textPath):
@@ -16627,7 +16627,6 @@ class CBash_PatchFile(ObModFile):
     """Defines and executes patcher configuration."""
 
     #--Class
-
     @staticmethod
     def modIsMergeableNoLoad(modInfo,verbose=False):
         reasons = ''
@@ -16778,7 +16777,7 @@ class CBash_PatchFile(ObModFile):
                         if not record.fid[0] in loadSet: continue
                         record.mergeFilter(loadSet)
                     if hasattr(record, '_ParentID'):
-                        if self.HasRecord(record._ParentID) is None:
+                        if self.HasRecord(record._ParentID) == False:
                             #Copy the winning version of the parent over if it isn't in the patch
                             parent = self.ObCollection.LookupRecords(record._ParentID)
                             if parent:
@@ -16786,7 +16785,7 @@ class CBash_PatchFile(ObModFile):
                     override = record.CopyAsOverride(self)
                     if override:
                         mergeIds.add(override.fid)
-                        
+
 ##    def forceMergeModFile(self,modFile,progress,doFilter,iiMode):
 ##        """Copies contents of modFile into self; as new records in the patch not as overrides including new records so can be dangerous!."""
 ##        badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
@@ -16836,7 +16835,7 @@ class CBash_PatchFile(ObModFile):
         self.ObCollection.addMod(self.patchName.temp.s, IgnoreExisting=True)
         self.ObCollection.load()
         patchFile = self.patchFile = self.ObCollection.LookupModFile(self.patchName.temp.s)
-        ObModFile.__init__(self, patchFile._CollectionIndex, patchFile._ModID)
+        ObModFile.__init__(self, patchFile._CollectionID, patchFile._ModID)
 
         self.TES4.author = 'BASHED PATCH'
 
@@ -16881,8 +16880,8 @@ class CBash_PatchFile(ObModFile):
             iiMode = isMerged and bool(iiModeSet & bashTags)
             modFile = self.ObCollection.LookupModFile(modInfo.getPath().stail)
             #--Error checks
-            gls = ObSCPTRecord(modFile._CollectionIndex, modFile._ModID, 0x00025811)
-            if gls.fid != None and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
+            gls = modFile.LookupRecord(0x00025811)
+            if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
                 self.compiledAllMods.append(modName)
             pstate = 0
             subProgress = SubProgress(progress,index)
@@ -18681,7 +18680,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -19132,7 +19131,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -19976,7 +19975,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         if(record.fid in self.fid_faction_mod):
@@ -20791,7 +20790,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
             curData = {'deleted':[],'merged':[]}
             curspells = record.spells
 ##            print curspells
-            recordMasters = set(ObModFile(record._CollectionIndex, record._ModID).TES4.masters)
+            recordMasters = set(ObModFile(record._CollectionID, record._ModID).TES4.masters)
             parentRecords = [parent for parent in record.Conflicts(True) if ISTRING(parent.NormName) in recordMasters]
             if parentRecords:
                 if parentRecords[-1].spells != curspells or 'Actors.SpellsForceAdd' in bashTags:
@@ -21009,7 +21008,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -21190,7 +21189,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -21754,7 +21753,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -21961,7 +21960,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
                 scanConflicts.append(conflict)
             else: break
         for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionIndex, conflict._ModID)
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
         recordId = record.fid
@@ -27919,8 +27918,8 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         actorNames = bush.actorValues
         #--Book generator
         def getBook(patchFile, objectId):
-            fid = MakeShortFid(patchFile._CollectionIndex, (GPath('Cobl Main.esm'),objectId))
-            book = ObBOOKRecord(patchFile._CollectionIndex, coblID, fid)
+            fid = MakeShortFid(patchFile._CollectionID, (GPath('Cobl Main.esm'),objectId))
+            book = ObBOOKRecord(patchFile._CollectionID, coblID, fid)
             #There have been reports of this patcher failing, hence the sanity checks
             if book.recType != 'BOOK':
                 print PrintFormID(fid)
@@ -27934,7 +27933,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 for mod in self.patchFile.ObCollection:
                     print mod.ModName
                 print book
-                book = ObBOOKRecord(patchFile._CollectionIndex, coblID, fid)
+                book = ObBOOKRecord(patchFile._CollectionID, coblID, fid)
                 print book
                 print book.text
                 print
@@ -28788,11 +28787,11 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         if coblMod is None:
             raise StateError(_("Cobl Morph Factions: Unable to lookup Cobl Main.esm!"))
         coblID = coblMod._ModID
-        fid = MakeShortFid(patchFile._CollectionIndex, mFactLong)
+        fid = MakeShortFid(patchFile._CollectionID, mFactLong)
         if not fid:
             raise StateError(_("Cobl Morph Factions: Unable to convert (%s, %06X) to a form id!") % (mFactLong[0].s, mFactLong[1]))
             
-        record = ObFACTRecord(patchFile._CollectionIndex, coblID, fid)
+        record = ObFACTRecord(patchFile._CollectionID, coblID, fid)
         if record.recType != 'FACT':
             print PrintFormID(fid)
             for mod in self.patchFile.ObCollection:
@@ -30243,7 +30242,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 for id, badEntries in id_badEntries.iteritems():
                     log('    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
-                        longId = MakeLongFid(self.patchFile._CollectionIndex, entry[1])
+                        longId = MakeLongFid(self.patchFile._CollectionID, entry[1])
                         if entry[2]:
                             modName = entry[2].s
                         else:
