@@ -46,7 +46,6 @@ if(exists(".\\CBash.dll")):
         _CCreateRecord = CBash.CreateRecord
         _CDeleteRecord = CBash.DeleteRecord
         _CCopyRecord = CBash.CopyRecord
-        _CLoadRecord = CBash.LoadRecord
         _CUnloadRecord = CBash.UnloadRecord
         _CSetRecordIDs = CBash.SetRecordIDs
         _CGetNumRecords = CBash.GetNumRecords
@@ -82,7 +81,6 @@ if(exists(".\\CBash.dll")):
         _CCreateRecord.restype = c_ulong
         _CDeleteRecord.restype = c_long
         _CCopyRecord.restype = c_ulong
-        _CLoadRecord.restype = c_long
         _CUnloadRecord.restype = c_long
         _CSetRecordIDs.restype = c_long
         _CGetNumRecords.restype = c_long
@@ -1696,9 +1694,6 @@ class ObFormIDRecord(object):
     @property
     def GName(self):
         return GPath(self.NormModName)
-
-    def LoadRecord(self):
-        _CLoadRecord(self._CollectionID, self._ModID, self._RecordID, 0)
 
     def UnloadRecord(self):
         _CUnloadRecord(self._CollectionID, self._ModID, self._RecordID, 0)
@@ -6020,23 +6015,29 @@ class ObCollection:
 ##        // Use if you're planning on iterating through every placeable in a specific cell 
 ##        //   so that you don't have to check the world cell as well.
 ##
+##        //IgnoreAbsentMasters causes any records that override masters not in the load order to be dropped
+##        // If it is true, it forces IsAddMasters to be false.
+##        // Allows mods not in load order to copy records
+##
 ##        //Only the following combinations are tested:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
-##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords
+##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
 ##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIsExtendedConflicts
         
-        fIsMinLoad            = 0x00000001
-        fIsFullLoad           = 0x00000002
-        fIsSkipNewRecords     = 0x00000004
-        fIsInLoadOrder        = 0x00000008
-        fIsSaveable           = 0x00000010
-        fIsAddMasters         = 0x00000020
-        fIsLoadMasters        = 0x00000040
-        fIsExtendedConflicts  = 0x00000080
-        fIsTrackNewTypes      = 0x00000100
-        fIsIndexLANDs         = 0x00000200
-        fIsFixupPlaceables    = 0x00000400
-        fIsIgnoreExisting     = 0x00000800
+        fIsMinLoad             = 0x00000001
+        fIsFullLoad            = 0x00000002
+        fIsSkipNewRecords      = 0x00000004
+        fIsInLoadOrder         = 0x00000008
+        fIsSaveable            = 0x00000010
+        fIsAddMasters          = 0x00000020
+        fIsLoadMasters         = 0x00000040
+        fIsExtendedConflicts   = 0x00000080
+        fIsTrackNewTypes       = 0x00000100
+        fIsIndexLANDs          = 0x00000200
+        fIsFixupPlaceables     = 0x00000400
+        fIsIgnoreExisting      = 0x00000800
+        fIsIgnoreAbsentMasters = 0x00001000
+        
         if IgnoreExisting:
             Flags |= fIsIgnoreExisting            
         else:
@@ -6054,10 +6055,10 @@ class ObCollection:
         return None
 
     def addMergeMod(self, ModName):
-        return self.addMod(ModName, Flags=0x00000005)
+        return self.addMod(ModName, Flags=0x00001004)
 
     def addScanMod(self, ModName):
-        return self.addMod(ModName, Flags=0x00000085)
+        return self.addMod(ModName, Flags=0x00000084)
 
     def load(self):
         _CLoadCollection(self._CollectionID)
