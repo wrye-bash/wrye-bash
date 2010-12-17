@@ -18908,7 +18908,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 }
         class_tag_attrs['CREA'] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower',
+                'Actors.Stats': ('combat','magic','stealth','soulType','health','attackDamage','strength','intelligence','willpower',
                                  'agility','speed','endurance','personality','luck'),
                 'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','IsBiped','IsEssential',
                                 'IsWeaponAndShield','IsRespawn','IsSwims','IsFlies','IsWalks','IsPCLevelOffset',
@@ -28565,7 +28565,6 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                     if set(prevRecord.entries_list) == set(record.entries_list) and [record.chanceNone, record.script, record.template, record.flags] == [prevRecord.chanceNone, prevRecord.script, prevRecord.template, prevRecord.flags]:
                         record.DeleteRecord()
             pstate += 1
-        patchFile.CleanMasters()
         self.empties = None
 
     def buildPatchLog(self,log):

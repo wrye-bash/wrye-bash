@@ -1722,7 +1722,7 @@ class ObFormIDRecord(object):
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
-           If ignoreScanned is True, scanned records will never be considered winning.
+           If GetExtendedConflicts is True, scanned records will be considered.
            More efficient than running Conflicts() and checking the first value."""
         return _CIsRecordWinning(self._CollectionID, self._ModID, self._RecordID, 0, c_ulong(GetExtendedConflicts))
 
@@ -1743,10 +1743,10 @@ class ObFormIDRecord(object):
             return conflicting
         recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
         #sort oldest to newest rather than newest to oldest
-        conflicts = self.Conflicts(ignoreScanned)
+        conflicts = self.Conflicts(GetExtendedConflicts)
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        parentRecords = [parent for parent in conflicts if parent._NormName in recordMasters]
+        parentRecords = [parent for parent in conflicts if parent.NormModName in recordMasters]
         parentRecords.reverse()
         if parentRecords:
             conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
@@ -1765,7 +1765,7 @@ class ObFormIDRecord(object):
     def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, GetExtendedConflicts=False):
         conflicting = {}
         recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
-        conflicts = self.Conflicts(ignoreScanned)
+        conflicts = self.Conflicts(GetExtendedConflicts)
         if conflicts:
             newest = conflicts[0]
             baseValues = {}
@@ -1922,7 +1922,7 @@ class ObEditorIDRecord(object):
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
-           If ignoreScanned is True, scanned records will never be considered winning.
+           If GetExtendedConflicts is True, scanned records will be considered.
            More efficient than running Conflicts() and checking the first value."""
         return _CIsRecordWinning(self._CollectionID, self._ModID, 0, self._RecordID, c_ulong(GetExtendedConflicts))
 
@@ -1943,10 +1943,10 @@ class ObEditorIDRecord(object):
             return conflicting
         recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
         #sort oldest to newest rather than newest to oldest
-        conflicts = self.Conflicts(ignoreScanned)
+        conflicts = self.Conflicts(GetExtendedConflicts)
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        parentRecords = [parent for parent in conflicts if parent._ModID in recordMasters].reverse()
+        parentRecords = [parent for parent in conflicts if parent.NormModName in recordMasters].reverse()
         if parentRecords:
             conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
         else: #is the first instance of the record
@@ -1964,7 +1964,7 @@ class ObEditorIDRecord(object):
     def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, GetExtendedConflicts=False):
         conflicting = {}
         recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
-        conflicts = self.Conflicts(ignoreScanned)
+        conflicts = self.Conflicts(GetExtendedConflicts)
         if conflicts:
             newest = conflicts[0]
             baseValues = {}
