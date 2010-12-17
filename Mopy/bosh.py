@@ -16819,18 +16819,21 @@ class CBash_PatchFile(ObModFile):
 
         self.ObCollection = ObCollection(ModsPath=dirs['mods'].s)
 
-        for name in self.loadSet:
-            if modInfos[name].mtime < self.patchTime:
-                self.ObCollection.addMod(modInfos[name].getPath().stail)
+        #add order reordered
+        #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet
+        #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         for name in self.mergeSet:
             if modInfos[name].mtime < self.patchTime:
                 self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
-##        for name in self.forceMergeSet:
-##            if modInfos[name].mtime < self.patchTime:
-##                self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
         for name in self.scanSet:
             if modInfos[name].mtime < self.patchTime:
                 self.ObCollection.addScanMod(modInfos[name].getPath().stail)
+        for name in self.loadSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.ObCollection.addMod(modInfos[name].getPath().stail)
+##        for name in self.forceMergeSet:
+##            if modInfos[name].mtime < self.patchTime:
+##                self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
         self.ObCollection.addMod(self.patchName.temp.s, IgnoreExisting=True)
         self.ObCollection.load()
@@ -17788,6 +17791,9 @@ class UpdateReferences(ListPatcher):
 
 class CBash_UpdateReferences(CBash_ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
+    #Much slower than it can be.
+    #At the least, it would be better to pass all possible old_new values to CBash at once
+    #Works though, so updating it comes later
     scanOrder = 15
     editOrder = 15
     group = _('General')
@@ -17859,8 +17865,8 @@ class CBash_UpdateReferences(CBash_ListPatcher):
                 mod_old_count = self.mod_old_count
                 old_count = mod_old_count.setdefault(modFile.GName,{})
                 for oldId, newId in old_new.iteritems():
-                    count = override.UpdateReferences(oldId,newId)
-                    if count: old_count[oldId] = old_count.get(oldId,0) + count
+                    count = override.UpdateReferences(oldId,newId) #returns -1 on error
+                    if count > 0: old_count[oldId] = old_count.get(oldId,0) + count
                 record.UnloadRecord()
                 record._ModID = override._ModID
 
