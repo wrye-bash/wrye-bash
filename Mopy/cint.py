@@ -38,8 +38,12 @@ if(exists(".\\CBash.dll")):
         _CSaveMod = CBash.SaveMod
         _CGetNumMods = CBash.GetNumMods
         _CGetModIDs = CBash.GetModIDs
-        _CGetModName = CBash.GetModName
-        _CGetModID = CBash.GetModID
+        _CGetModNameByID = CBash.GetModNameByID
+        _CGetModNameByLoadOrder = CBash.GetModNameByLoadOrder
+        _CGetModIDByName = CBash.GetModIDByName
+        _CGetModIDByLoadOrder = CBash.GetModIDByLoadOrder
+        _CGetModLoadOrderByName = CBash.GetModLoadOrderByName
+        _CGetModLoadOrderByID = CBash.GetModLoadOrderByID
         _CIsModEmpty = CBash.IsModEmpty
         _CGetModNumTypes = CBash.GetModNumTypes
         _CGetModTypes = CBash.GetModTypes
@@ -74,8 +78,12 @@ if(exists(".\\CBash.dll")):
         _CCleanModMasters.restype = c_long
         _CGetNumMods.restype = c_long
         _CGetModIDs.restype = c_long
-        _CGetModName.restype = c_char_p
-        _CGetModID.restype = c_long
+        _CGetModNameByID.restype = c_char_p
+        _CGetModNameByLoadOrder.restype = c_char_p
+        _CGetModIDByName.restype = c_long
+        _CGetModIDByLoadOrder.restype = c_long
+        _CGetModLoadOrderByName.restype = c_long
+        _CGetModLoadOrderByID.restype = c_long
         _CIsModEmpty.restype = c_ulong
         _CGetModNumTypes.restype = c_long
         _CCreateRecord.restype = c_ulong
@@ -268,14 +276,14 @@ def MakeLongFid(CollectionID, fid):
     if fid is None or fid == 0: return 0
     masterIndex = int(fid >> 24)
     object = int(fid & 0x00FFFFFFL)
-    master = _CGetModName(CollectionID, masterIndex)
+    master = _CGetModNameByLoadOrder(CollectionID, masterIndex)
     return (GPath(master),object)
 
 def MakeShortFid(CollectionID, fid):
     if fid is None or fid == 0: return 0
     if not isinstance(fid,tuple): return fid
     master, object = fid
-    masterIndex = _CGetModID(CollectionID, str(master))
+    masterIndex = _CGetModLoadOrderByName(CollectionID, str(master))
     if(masterIndex == -1): return None
     masterIndex = int(masterIndex << 24)
     object = int(object & 0x00FFFFFFL)
@@ -285,14 +293,14 @@ def MakeLongMGEFCode(CollectionID, MGEFCode):
     if MGEFCode is None or MGEFCode == 0: return 0
     masterIndex = int(MGEFCode & 0x000000FFL)
     object = int(MGEFCode & 0xFFFFFF00L)
-    master = _CGetModName(CollectionID, masterIndex)
+    master = _CGetModNameByLoadOrder(CollectionID, masterIndex)
     return (GPath(master),object)
 
 def MakeShortMGEFCode(CollectionID, MGEFCode):
     if isinstance(MGEFCode, basestring): MGEFCode = cast(MGEFCode, POINTER(c_ulong)).contents.value
     if MGEFCode is None or MGEFCode == 0: return 0
     if not isinstance(MGEFCode,tuple): return MGEFCode
-    masterIndex = _CGetModID(CollectionID, str(MGEFCode[0]))
+    masterIndex = _CGetModLoadOrderByName(CollectionID, str(MGEFCode[0]))
     if(masterIndex == -1):
         return None
     masterIndex = int(masterIndex & 0x000000FFL)
@@ -1682,11 +1690,11 @@ class ObFormIDRecord(object):
         
     @property
     def ModName(self):
-        return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
     def NormModName(self):
-        ModName = _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
         if ModName[-6:] == '.ghost':
             return ModName[:-6]
         return ModName
@@ -1887,11 +1895,11 @@ class ObEditorIDRecord(object):
         
     @property
     def ModName(self):
-        return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
     def NormModName(self):
-        ModName = _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
         if ModName[-6:] == '.ghost':
             return ModName[:-6]
         return ModName
@@ -5427,11 +5435,11 @@ class ObModFile(object):
 
     @property
     def ModName(self):
-        return _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
     def NormModName(self):
-        ModName = _CGetModName(self._CollectionID, self._ModID) or 'Missing'
+        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
         if ModName[-6:] == '.ghost':
             return ModName[:-6]
         return ModName
@@ -6084,7 +6092,7 @@ class ObCollection:
         return []
 
     def LookupModFile(self, ModName):
-        ModID = _CGetModID(self._CollectionID, str(ModName))
+        ModID = _CGetModIDByName(self._CollectionID, str(ModName))
         if(ModID != -1):
             return ObModFile(self._CollectionID, ModID)
         return None
