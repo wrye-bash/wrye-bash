@@ -16859,7 +16859,7 @@ class CBash_PatchFile(ObModFile):
                         self.mgef_name[mgefId] = full
                         mgefId_hostile[mgefId] = record.IsHostile
                     record.UnloadRecord()
-            self.hostileEffects = set((mgefId for mgefId, hostile in mgefId_hostile if hostile))
+            self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
         type_patchers = self.type_patchers
         numFinishers = 0
@@ -19753,6 +19753,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_factions = {}
+        self.csvId_factions = {}
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
@@ -19771,11 +19772,11 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                 actorFactions.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        id_factions = self.id_factions
+        csvId_factions = self.csvId_factions
         for group,aFid_factions in actorFactions.group_fid_factions.iteritems():
             if group not in ('CREA','NPC_'): continue
             for fid,factions in aFid_factions.iteritems():
-                id_factions[fid] = factions
+                csvId_factions[fid] = factions
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -19791,25 +19792,30 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
-        if(record.fid in self.id_factions):
-            newFactions = self.id_factions[record.fid]
-            curFactions = dict((faction[0],faction[1]) for faction in record.factions_list)
-            if newFactions != curFactions:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    for faction in newFactions:
-                        for entry in override.factions:
-                            if entry.faction == faction:
-                                entry.rank = newFactions[faction]
-                                break
-                        else:
-                            entry = override.create_faction()
-                            entry.faction = faction
+        fid = record.fid
+        if(fid in self.csvId_factions):
+            newFactions = self.csvId_factions[fid]
+        elif(fid in self.id_factions):
+            newFactions = self.id_factions[fid]
+        else:
+            return
+        curFactions = dict((faction[0],faction[1]) for faction in record.factions_list)
+        if newFactions != curFactions:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for faction in newFactions:
+                    for entry in override.factions:
+                        if entry.faction == faction:
                             entry.rank = newFactions[faction]
-                    class_mod_count = self.class_mod_count
-                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModID = override._ModID
+                            break
+                    else:
+                        entry = override.create_faction()
+                        entry.faction = faction
+                        entry.rank = newFactions[faction]
+                class_mod_count = self.class_mod_count
+                class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID = override._ModID
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -19938,6 +19944,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.fid_faction_mod = {}
+        self.csvFid_faction_mod = {}
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.mod_count = {}
@@ -19956,7 +19963,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
                 factionRelations.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        self.fid_faction_mod.update(factionRelations.fid_faction_mod)
+        self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -19984,25 +19991,30 @@ class CBash_ImportRelations(CBash_ImportPatcher):
             mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
-        if(record.fid in self.fid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[record.fid].iteritems() if faction[0] in self.patchFile.allMods)
-            curRelations = set(record.relations_list)
-            changed = newRelations - curRelations
-            if changed:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    for faction,mod in changed:
-                        for relation in override.relations:
-                            if relation.faction == faction:
-                                relation.mod = mod
-                                break
-                        else:
-                            relation = override.create_relation()
-                            relation.faction,relation.mod = faction,mod
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModID = override._ModID
+        fid = record.fid
+        if(fid in self.csvFid_faction_mod):
+            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.allMods)
+        elif(fid in self.fid_faction_mod):
+            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.allMods)
+        else:
+            return
+        curRelations = set(record.relations_list)
+        changed = newRelations - curRelations
+        if changed:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for faction,mod in changed:
+                    for relation in override.relations:
+                        if relation.faction == faction:
+                            relation.mod = mod
+                            break
+                    else:
+                        relation = override.create_relation()
+                        relation.faction,relation.mod = faction,mod
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID = override._ModID
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -20961,6 +20973,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_full = {}
+        self.csvId_full = {}
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
@@ -20980,12 +20993,12 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             progress.plus()
 
         #--Finish
-        id_full = self.id_full
+        csvId_full = self.csvId_full
         for group,fid_name in fullNames.group_fid_name.iteritems():
             if group not in validTypes: continue
             for fid,(eid,name) in fid_name.iteritems():
                 if name != 'NO NAME':
-                    id_full[fid] = name
+                    csvId_full[fid] = name
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -21019,6 +21032,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid
         full = self.id_full.get(recordId, None)
+        full = self.csvId_full.get(recordId, full)
         if(full and record.full != full):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -21164,7 +21178,9 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         self.id_face = {}
         self.srcMods = self.getConfigChecked()
         self.isActive = bool(self.srcMods)
-        self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
+        ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
+        ##self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
+        self.faceData = ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','fnam')
         self.mod_count = {}
 
     def getTypes(self):
@@ -21712,6 +21728,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.fid_attr_value = {}
+        self.csvFid_attr_value = {}
         self.class_attrs = CBash_ItemStats.class_attrs
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
@@ -21733,7 +21750,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
             if group not in validTypes: continue
-            self.fid_attr_value.update(nId_attr_value)
+            self.csvFid_attr_value.update(nId_attr_value)
 
         for group in self.getTypes():
              type_patchers.setdefault(group,[]).append(self)
@@ -21764,6 +21781,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId, None)
+        prev_attr_value = self.csvFid_attr_value.get(recordId, prev_attr_value)
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
@@ -21925,6 +21943,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.id_stats = {}
+        self.csvId_stats = {}
         self.mod_count = {}
         self.attrs = None #set in initData
 
@@ -21943,7 +21962,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
                 spellStats.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        self.id_stats.update(spellStats.fid_stats)
+        self.csvId_stats.update(spellStats.fid_stats)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -21971,6 +21990,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         recordId = record.fid
         prev_values = self.id_stats.get(recordId, None)
+        prev_values = self.csvId_stats.get(recordId, prev_values)
         if prev_values:
             rec_values = dict((attr,getattr(record,attr)) for attr in prev_values)
             if rec_values != prev_values:
@@ -24563,8 +24583,9 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         values = self.values = self.choiceValues[self.chosen]
+        recEid = record.eid
         for eid,value in zip(self.key,values):
-            if eid == record.eid:
+            if eid == recEid:
                 newValue = value
                 break
         else:
@@ -26493,7 +26514,7 @@ class NamesTweak_Dwarven(MultiTweakItem):
                         newString = record.description
                         if newString:
                             record.description = reDwarf.sub(r'\1wemer', newString)
-                    if type == 'GMST' and record._recordID[0] == 's':
+                    if type == 'GMST' and record.eid[0] == 's':
                         newString = record.value
                         if newString:
                             record.value = reDwarf.sub(r'\1wemer', newString)
@@ -26574,7 +26595,7 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
             if hasattr(record, 'description'):
                 changed = self.reDwarf.search(record.description or '')
         if not changed:
-            if record._Type == 'GMST' and record._recordID[0] == 's':
+            if record._Type == 'GMST' and record.eid[0] == 's':
                 changed = self.reDwarf.search(record.value or '')
         if not changed:
             if hasattr(record, 'stages'):
@@ -26631,7 +26652,7 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
                     if newString:
                         override.description = self.reDwarf.sub(r'\1wemer', newString)
 
-                if override._Type == 'GMST' and override._recordID[0] == 's':
+                if override._Type == 'GMST' and override.eid[0] == 's':
                     newString = override.value
                     if newString:
                         override.value = self.reDwarf.sub(r'\1wemer', newString)
@@ -29668,7 +29689,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         mod_npcsFixed = self.mod_npcsFixed
         ObCollection = patchFile.ObCollection
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(Collection) * 2)
+        subProgress.setFull(len(ObCollection) * 2)
         reX117 = self.reX117
         defaultEyes = {}
         defaultMaleHair = {}
@@ -29689,7 +29710,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
             print
             print _("Load order:")
-            for mod in self.patchFile.ObCollection:
+            for mod in ObCollection:
                 print "   %02X:" % (mod._ModID,), mod.ModName
             print
             print _("eye_meshes contents")
@@ -29704,7 +29725,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
             print
             print _("Load order:")
-            for mod in self.patchFile.ObCollection:
+            for mod in ObCollection:
                 print "   %02X:" % (mod._ModID,), mod.ModName
             print
             print _("eye_meshes contents")
@@ -30247,7 +30268,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 for id, badEntries in id_badEntries.iteritems():
                     log('    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
-                        longId = MakeLongFid(self.patchFile._CollectionID, entry[1])
+                        longId = entry[1]
                         if entry[2]:
                             modName = entry[2].s
                         else:
