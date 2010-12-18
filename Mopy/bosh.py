@@ -29733,7 +29733,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 print PrintFormID(eye), ":", meshes
             return
         fixedRaces = set()
-        fixedNPCs = set()
+        fixedNPCs = set([(GPath('Oblivion.esm'), 0x000007)]) #causes player to be skipped
         for eye in (
             (GPath('Oblivion.esm'),0x1a), #--Reanimate
             (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
