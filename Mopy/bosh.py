@@ -13663,7 +13663,7 @@ class ItemStats:
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
-            for record in getattr(modFile,type).getActiveRecords():
+            for record in getattr(modFile,group).getActiveRecords():
                 longid = mapper(record.fid)
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
@@ -21620,9 +21620,9 @@ class StatsPatcher(ImportPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         #--To be filled by initData
-        self.id_stat = {} #--Stats keyed by long fid.
+        self.fid_attr_value = {} #--Stats keyed by long fid.
         self.activeTypes = [] #--Types ('ARMO', etc.) of data actually provided by src mods/files.
-        self.typeFields = {}
+        self.class_attrs = {}
 
     def initData(self,progress):
         """Get stats from source files."""
@@ -21640,14 +21640,15 @@ class StatsPatcher(ImportPatcher):
                 if srcPath not in patchesDir: continue
                 itemStats.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
+
         #--Finish
-        id_stat = self.id_stat
-        for type in itemStats.type_stats:
-            typeStats = itemStats.type_stats[type]
-            if typeStats:
-                self.activeTypes.append(type)
-                id_stat.update(typeStats)
-                self.typeFields[type] = itemStats.type_attrs[type][1:]
+        for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
+            self.activeTypes.append(group)
+            for id, attr_value in nId_attr_value.iteritems():
+                del attr_value['eid']
+            self.fid_attr_value.update(nId_attr_value)
+            self.class_attrs[group] = itemStats.class_attrs[group][1:]
+
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -21663,46 +21664,46 @@ class StatsPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress):
         """Add affected items to patchFile."""
         if not self.isActive: return
-        id_stat = self.id_stat
+        fid_attr_value = self.fid_attr_value
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            typeFields = self.typeFields[type]
-            patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid in id_records: continue
-                stats = id_stat.get(fid)
-                if not stats: continue
-                modStats = tuple(record.__getattribute__(attr) for attr in typeFields)
-                if modStats != stats[1:]:
+        for group in self.activeTypes:
+            if group not in modFile.tops: continue
+            attrs = self.class_attrs[group]
+            patchBlock = getattr(self.patchFile,group)
+            id_records = patchBlock.id_records                
+            for record in getattr(modFile,group).getActiveRecords():
+                longid = record.fid
+                if not record.longFids: longid = mapper(longid)    
+                if longid in id_records: continue 
+                itemStats = fid_attr_value.get(longid,None)
+                if not itemStats: continue
+                oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
+                if oldValues != itemStats:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_stat = self.id_stat
+        keep = self.patchFile.getKeeper()        
+        fid_attr_value = self.fid_attr_value
         allCounts = []
-        for type in self.activeTypes:
-            if type not in patchFile.tops: continue
-            typeFields = self.typeFields[type]
+        for group in self.activeTypes:
+            if group not in patchFile.tops: continue
+            attrs = self.class_attrs[group]
             count,counts = 0,{}
-            for record in patchFile.tops[type].records:
+            for record in patchFile.tops[group].records:
                 fid = record.fid
-                stats = id_stat.get(fid)
-                if not stats: continue
-                modStats = tuple(record.__getattribute__(attr) for attr in typeFields)
-                if modStats == stats[1:]: continue
-                for attr,value in zip(typeFields,stats[1:]):
-                    record.__setattr__(attr,value)
-                keep(fid)
-                count += 1
-                counts[fid[0]] = 1 + counts.get(fid[0],0)
-            allCounts.append((type,count,counts))
+                itemStats = fid_attr_value.get(fid,None)
+                if not itemStats: continue
+                oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
+                if oldValues != itemStats:
+                    for attr, value in itemStats.iteritems():
+                        setattr(record,attr,value)
+                    keep(fid)
+                    count += 1
+                    counts[fid[0]] = 1 + counts.get(fid[0],0)
+            allCounts.append((group,count,counts))
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods/Files"))
         for file in self.srcFiles:
@@ -21710,7 +21711,7 @@ class StatsPatcher(ImportPatcher):
         log(_("\n=== Modified Stats"))
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'ALCH':_('alch'),'AMMO':_('Ammo'),'ARMO':_('Armor'),'INGR':_('Ingr'),'MISC':_('Misc'),'WEAP':_('Weapons'),'SLGM':_('Soulgem'),'SGST':_('Sigil Stone'),'LIGH':_('Lights'),'KEYM':_('Keys'),'CLOT':_('Clothes'),'BOOK':_('Books'),'APPA':_('Apparatus')}[type]
+            typeName = {'ALCH':_('Potions'),'AMMO':_('Ammo'),'ARMO':_('Armors'),'INGR':_('Ingredients'),'MISC':_('Misc'),'WEAP':_('Weapons'),'SLGM':_('Soulgems'),'SGST':_('Sigil Stones'),'LIGH':_('Lights'),'KEYM':_('Keys'),'CLOT':_('Clothes'),'BOOK':_('Books'),'APPA':_('Apparatuses')}[type]
             log("* %s: %d" % (typeName,count))
             for modName in sorted(counts):
                 log("  * %s: %d" % (modName.s,counts[modName]))
