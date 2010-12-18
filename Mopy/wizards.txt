@@ -180,7 +180,7 @@ Used to find the length of a string.
 Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.
 
 == SelectSubPackage
-Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package in the BAIN window.
+Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
 
 * __Usage:__
   * __SelectSubPackage **name**__
