@@ -19776,7 +19776,9 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         for group,aFid_factions in actorFactions.group_fid_factions.iteritems():
             if group not in ('CREA','NPC_'): continue
             for fid,factions in aFid_factions.iteritems():
-                csvId_factions[fid] = factions
+                factions = [faction for faction in factions if faction[0][0] in self.patchFile.loadSet]
+                if factions:
+                    csvId_factions[fid] = factions
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -19794,24 +19796,25 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.scan(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvId_factions):
-            newFactions = self.csvId_factions[fid]
+            newFactions = set(self.csvId_factions[fid])
         elif(fid in self.id_factions):
-            newFactions = self.id_factions[fid]
+            newFactions = set([(faction,rank) for faction, rank in self.id_factions[fid].iteritems()])
         else:
             return
-        curFactions = dict((faction[0],faction[1]) for faction in record.factions_list)
-        if newFactions != curFactions:
+        curFactions = set([(faction[0],faction[1]) for faction in record.factions_list])
+        changed = newFactions - curFactions
+        if changed:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                for faction in newFactions:
+                for faction,rank in changed:
                     for entry in override.factions:
                         if entry.faction == faction:
-                            entry.rank = newFactions[faction]
+                            entry.rank = rank
                             break
                     else:
                         entry = override.create_faction()
                         entry.faction = faction
-                        entry.rank = newFactions[faction]
+                        entry.rank = rank
                 class_mod_count = self.class_mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -19993,9 +19996,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         fid = record.fid
         if(fid in self.csvFid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.allMods)
+            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.loadSet)
         elif(fid in self.fid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.allMods)
+            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.loadSet)
         else:
             return
         curRelations = set(record.relations_list)
