@@ -18967,7 +18967,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
 
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
+    """Merges changes to actor animation lists."""
     name = _('Import Actors: Animations')
     text = _("Import Actor animations from source mods.")
     tip = text
@@ -18991,7 +18991,7 @@ class KFFZPatcher(ImportPatcher):
         self.longTypes = set(('CREA','NPC_'))
 
     def initData(self,progress):
-        """Get graphics from source files."""
+        """Get actor animation lists from source files."""
         if not self.isActive: return
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
@@ -19442,7 +19442,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
 #------------------------------------------------------------------------------
 class DeathItemPatcher(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
+    """Merges changes to actor death items."""
     name = _('Import Actors: Death Items')
     text = _("Import Actor death items from source mods.")
     tip = text
@@ -19465,7 +19465,7 @@ class DeathItemPatcher(ImportPatcher):
         self.longTypes = set(('CREA','NPC_'))
 
     def initData(self,progress):
-        """Get graphics from source files."""
+        """Get actor death items from source files."""
         if not self.isActive: return
         self.classestemp = set()
         id_data = self.id_data
@@ -19542,7 +19542,7 @@ class DeathItemPatcher(ImportPatcher):
                         break
 
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
+        """Merge last version of record with patched actor death item as needed."""
         if not self.isActive: return
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
@@ -20131,7 +20131,7 @@ class ImportScripts(ImportPatcher):
                         break
 
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
+        """Merge last version of record with patched scripts link as needed."""
         if not self.isActive: return
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
