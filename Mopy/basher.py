@@ -4105,6 +4105,8 @@ class BashFrame(wx.Frame):
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
+            if bosh.modInfos.mtimesReset[0] == 'FAILED':
+                balt.showWarning(self,_("It appears that the current user doesn't have permissions for some or all of the files in Oblivion\\Data.\nSpecifically had permission denied to change the time on:\n%s") % bosh.modInfos.mtimesReset[1].s)
             if not bosh.inisettings['SkipResetTimeNotifications']:
                 message = _('Modified dates have been reset for some mod files:')
                 message += listFiles(sorted(bosh.modInfos.mtimesReset))
@@ -13260,6 +13262,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
     #InstallersPanel.itemMenu.append(Installer_OpenSearch())
     InstallersPanel.itemMenu.append(Installer_OpenTESA())
+    InstallersPanel.itemMenu.append(Installer_OpenPES())
     InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.

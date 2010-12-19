@@ -8150,13 +8150,16 @@ class ModInfos(FileInfos):
         """Remember/reset mtimes of member files."""
         if not self.canSetTimes(): return
         del self.mtimesReset[:]
-        for fileName, fileInfo in sorted(self.data.iteritems(),key=lambda x: x[1].mtime):
-            oldMTime = int(self.mtimes.get(fileName,fileInfo.mtime))
-            self.mtimes[fileName] = oldMTime
-            if fileInfo.mtime != oldMTime and oldMTime  > 0:
-                #deprint(fileInfo.name, oldMTime - fileInfo.mtime)
-                fileInfo.setmtime(oldMTime)
-                self.mtimesReset.append(fileName)
+        try:
+            for fileName, fileInfo in sorted(self.data.iteritems(),key=lambda x: x[1].mtime):
+                oldMTime = int(self.mtimes.get(fileName,fileInfo.mtime))
+                self.mtimes[fileName] = oldMTime
+                if fileInfo.mtime != oldMTime and oldMTime  > 0:
+                    #deprint(fileInfo.name, oldMTime - fileInfo.mtime)
+                    fileInfo.setmtime(oldMTime)
+                    self.mtimesReset.append(fileName)
+        except:
+            self.mtimesReset = ['FAILED',fileName]
 
     def updateAutoGroups(self):
         """Update autogroup definitions."""
