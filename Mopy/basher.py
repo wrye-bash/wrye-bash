@@ -7277,6 +7277,21 @@ class Installer_OpenTESA(InstallerLink):
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(1)
             os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
+            
+class Installer_OpenPES(InstallerLink):
+    """Open selected file(s)."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Open at Planet Elderscrolls'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTESA.search(data[0].s)))
+
+    def Execute(self,event):
+        """Handle selection."""
+        message = _("Attempt to open this as a mod at Planet Elderscrolls? This assumes that the trailing digits in the package's name are actually the id number of the mod at Planet Elderscrolls. If this assumption is wrong, you'll just get a random mod page (or error notice) at Planet Elderscrolls.")
+        if balt.askContinue(self.gTank,message,'bash.installers.openPES',_('Open at Planet Elderscrolls')):
+            id = bosh.reTESA.search(self.selected[0].s).group(1)
+            os.startfile('http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
     """Rescans selected Installers."""
