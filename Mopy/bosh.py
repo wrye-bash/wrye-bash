@@ -20815,8 +20815,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
             curData = {'deleted':[],'merged':[]}
             curspells = record.spells
 ##            print curspells
-            recordMasters = set(ObModFile(record._CollectionID, record._ModID).TES4.masters)
-            parentRecords = [parent for parent in record.Conflicts(True) if ISTRING(parent.NormName) in recordMasters]
+            parentRecords = record.History()
             if parentRecords:
                 if parentRecords[-1].spells != curspells or 'Actors.SpellsForceAdd' in bashTags:
                     for spell in parentRecords[-1].spells:
