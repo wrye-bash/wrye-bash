@@ -16820,17 +16820,18 @@ class CBash_PatchFile(ObModFile):
         self.ObCollection = ObCollection(ModsPath=dirs['mods'].s)
 
         #add order reordered
-        #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet
+        #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
+        #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
         for name in self.mergeSet:
             if modInfos[name].mtime < self.patchTime:
                 self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
-        for name in self.scanSet:
-            if modInfos[name].mtime < self.patchTime:
-                self.ObCollection.addScanMod(modInfos[name].getPath().stail)
         for name in self.loadSet:
             if modInfos[name].mtime < self.patchTime:
                 self.ObCollection.addMod(modInfos[name].getPath().stail)
+        for name in self.scanSet:
+            if modInfos[name].mtime < self.patchTime:
+                self.ObCollection.addScanMod(modInfos[name].getPath().stail)
 ##        for name in self.forceMergeSet:
 ##            if modInfos[name].mtime < self.patchTime:
 ##                self.ObCollection.addMergeMod(modInfos[name].getPath().stail)
