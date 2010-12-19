@@ -21838,13 +21838,13 @@ class SpellsPatcher(ImportPatcher):
         self.isActive = bool(self.srcFiles)
         #--To be filled by initData
         self.id_stat = {} #--Stats keyed by long fid.
-        self.activeTypes = [] #--Types ('Spells', etc.) of data actually provided by src mods/files.
-        self.typeFields = {}
+        self.attrs = None #set in initData
 
     def initData(self,progress):
         """Get stats from source files."""
         if not self.isActive: return
-        itemStats = SpellRecords(aliases=self.patchFile.aliases)
+        spellStats = SpellRecords(aliases=self.patchFile.aliases)
+        self.attrs = spellStats.attrs
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
@@ -21852,50 +21852,43 @@ class SpellsPatcher(ImportPatcher):
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
-                itemStats.readFromMod(srcInfo)
+                spellStats.readFromMod(srcInfo)
             else:
                 if srcPath not in patchesDir: continue
-                itemStats.readFromText(dirs['patches'].join(srcFile))
+                spellStats.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        id_stat = self.id_stat
-        for type in itemStats.type_stats:
-            typeStats = itemStats.type_stats[type]
-            if typeStats:
-                self.activeTypes.append(type)
-                id_stat.update(typeStats)
-                self.typeFields[type] = itemStats.type_attrs[type][1:]
-        self.isActive = bool(self.activeTypes)
+        self.id_stat.update(spellStats.fid_stats)
+        self.isActive = bool(self.id_stat)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         if not self.isActive: return None
-        return [MreRecord.type_class[type] for type in self.activeTypes]
+        return [MreSpel]
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         if not self.isActive: return None
-        return [MreRecord.type_class[type] for type in self.activeTypes]
+        return [MreSpel]
 
     def scanModFile(self, modFile, progress):
         """Add affected items to patchFile."""
-        if not self.isActive: return
+        if not self.isActive or 'SPEL' not in modFile.tops:
+            return
         id_stat = self.id_stat
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            typeFields = self.typeFields[type]
-            patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid in id_records: continue
-                stats = id_stat.get(fid)
-                if not stats: continue
-                modStats = tuple(record.__getattribute__(attr) for attr in typeFields)
-                if modStats != stats[1:]:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
+        attrs = self.attrs
+        patchBlock = self.patchFile.SPEL
+        id_records = patchBlock.id_records
+        for record in modFile.SPEL.getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid in id_records: continue
+            spellStats = id_stat.get(fid)
+            if not spellStats: continue
+            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            if oldValues != spellStats:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
         """Adds merged lists to patchfile."""
@@ -21904,22 +21897,20 @@ class SpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_stat = self.id_stat
         allCounts = []
-        for type in self.activeTypes:
-            if type not in patchFile.tops: continue
-            typeFields = self.typeFields[type]
-            count,counts = 0,{}
-            for record in patchFile.tops[type].records:
-                fid = record.fid
-                stats = id_stat.get(fid)
-                if not stats: continue
-                modStats = tuple(record.__getattribute__(attr) for attr in typeFields)
-                if modStats == stats[1:]: continue
-                for attr,value in zip(typeFields,stats[1:]):
-                    record.__setattr__(attr,value)
-                keep(fid)
-                count += 1
-                counts[fid[0]] = 1 + counts.get(fid[0],0)
-            allCounts.append((type,count,counts))
+        attrs = self.attrs
+        count,counts = 0,{}
+        for record in patchFile.SPEL.records:
+            fid = record.fid
+            spellStats = id_stat.get(fid)
+            if not spellStats: continue
+            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            if oldValues == spellStats: continue
+            for attr,value in zip(attrs,spellStats):
+                setattr_deep(record,attr,value)
+            keep(fid)
+            count += 1
+            counts[fid[0]] = 1 + counts.get(fid[0],0)
+        allCounts.append(('SPEL',count,counts))
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods/Files"))
         for file in self.srcFiles:
