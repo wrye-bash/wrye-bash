@@ -2279,6 +2279,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Minor improvements to Export/Import Map Markers 
   * [[#|Export/Import Sigil Stones]] added
   * [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
+  * Experimental unicode support re-added as an option that is disabled by default.
+    * Allows Bash and BAIN to work with extended character sets.
+    * Requires the unicode version of wxPython to be installed.
+    * Set bEnableUnicode in bash.ini to True to test it.
 
 === 290 [15/10/2010] [PacificMorrowind]
 * fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
