@@ -203,10 +203,6 @@ class Path(object):
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
     mtimeResets = [] #--Used by getmtime
-    ascii = '[\x00-\x7F]'
-    japanese_hankana = '[\xA1-\xDF]'
-    japanese_zenkaku ='[\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]'
-    reChar = re.compile('('+ascii+'|'+japanese_hankana+'|'+japanese_zenkaku+')', re.M)
 
     @staticmethod
     def get(name):
@@ -239,23 +235,6 @@ class Path(object):
         else: dir = self
         os.chdir(dir)
 
-    @staticmethod
-    def mbSplit(path):
-        """Split path to consider multibyte character boundary."""
-        # Should also add Chinese fantizi and zhengtizi, Korean Hangul, etc.
-        match = Path.reChar.split(path)
-        result = []
-        curResult = ''
-        resultAppend = result.append
-        for c in match:
-            if c == '\\':
-                resultAppend(curResult)
-                curResult = ''
-            else:
-                curResult += c
-        resultAppend(curResult)
-        return result
-
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
@@ -264,12 +243,20 @@ class Path(object):
     def __init__(self, name):
         """Initialize."""
         if isinstance(name,Path):
-            self.__setstate__(name._s)
+            self.__setstate__(unicode(name._s,'UTF8'))
         elif isinstance(name,unicode):
             self.__setstate__(name)
         else:
-            self.__setstate__(str(name))
-
+            try:
+                self.__setstate__(unicode(str(name),'UTF8'))
+            except UnicodeDecodeError:
+                try: 
+                    # A fair number of file names require UTF16 instead...
+                    self.__setstate__(unicode(str(name),'U16'))
+                except UnicodeDecodeError: 
+                    # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                    self.__setstate__(unicode(str(name),'cp500'))
+            
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
@@ -279,14 +266,7 @@ class Path(object):
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
-##        self._shead,self._stail = os.path.split(self._s)
-        pathParts = Path.mbSplit(self._s)
-        if len(pathParts) == 1:
-            self._shead = ''
-            self._stail = pathParts[0]
-        else:
-            self._shead = '\\'.join(pathParts[0:-1])
-            self._stail = pathParts[-1]
+        self._shead,self._stail = os.path.split(self._s)
         self._cext = os.path.normcase(self._ext)
         self._csroot = os.path.normcase(self._sroot)
         self._sbody = os.path.basename(os.path.splitext(self._s)[0])
