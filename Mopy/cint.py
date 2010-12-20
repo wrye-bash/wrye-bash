@@ -859,25 +859,12 @@ class CBashUINT8ARRAY(object):
         self._FieldID = FieldID
         self._Size = Size
     def __get__(self, instance, owner):
-        try:
-            numRecords = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
-            if(numRecords > 0):
-                cRecords = POINTER(c_ubyte * numRecords)()
-                _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-                return [cRecords.contents[x] for x in range(0, numRecords)]
-            return []
-        except:
-            print instance.ModName
-            print instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1
-            print _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
-            try:
-                cRecords = POINTER(c_ubyte * numRecords)()
-                _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-                for x in range(0, numRecords):
-                    print x, "=",cRecords.contents[x]
-            except:
-                pass
-            raise
+        numRecords = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
+        if(numRecords > 0):
+            cRecords = POINTER(c_ubyte * numRecords)()
+            _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
+            return [cRecords.contents[x] for x in range(0, numRecords)]
+        return []
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:

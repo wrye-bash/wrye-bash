@@ -18788,13 +18788,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            try:
-                self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
-            except:
-                print record.ModName
-                print PrintFormID(record.fid)
-                print record._Type
-                print self.class_attrs[record._Type]
+            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
