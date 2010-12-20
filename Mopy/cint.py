@@ -1751,12 +1751,12 @@ class ObFormIDRecord(object):
         return _CIsRecordWinning(self._CollectionID, self._ModID, self._RecordID, 0, c_ulong(GetExtendedConflicts))
 
     def Conflicts(self, GetExtendedConflicts=False):
-        numRecords = _CGetNumRecordConflicts(self._CollectionID, self._RecordID, 0, c_ulong(GetExtendedConflicts))
+        numRecords = _CGetNumRecordConflicts(self._CollectionID, self._RecordID, 0, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 1):
-            cModIDs = (c_ulong * numRecords)()
-            _CGetRecordConflicts(self._CollectionID, self._RecordID, 0, byref(cModIDs), c_ulong(GetExtendedConflicts))
+            cModIDs = (c_ulong * (numRecords + 1))()
+            _CGetRecordConflicts(self._CollectionID, self._RecordID, 0, byref(cModIDs), c_ulong(GetExtendedConflicts)) #first element is size of array
             parent = getattr(self, '_ParentID', 0)
-            return [self.__class__(self._CollectionID, cModIDs[x], self._RecordID, parent, self._CopyFlags) for x in range(0, numRecords)]
+            return [self.__class__(self._CollectionID, cModIDs[x], self._RecordID, parent, self._CopyFlags) for x in range(1, cModIDs[0] + 1)]
         return []
 
     def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
@@ -1958,12 +1958,12 @@ class ObEditorIDRecord(object):
         return _CIsRecordWinning(self._CollectionID, self._ModID, 0, self._RecordID, c_ulong(GetExtendedConflicts))
 
     def Conflicts(self, GetExtendedConflicts=False):
-        numRecords = _CGetNumRecordConflicts(self._CollectionID, 0, self._RecordID, c_ulong(GetExtendedConflicts))
+        numRecords = _CGetNumRecordConflicts(self._CollectionID, 0, self._RecordID, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 1):
-            cModIDs = (c_ulong * numRecords)()
-            _CGetRecordConflicts(self._CollectionID, 0, self._RecordID, byref(cModIDs), c_ulong(GetExtendedConflicts))
+            cModIDs = (c_ulong * (numRecords + 1))()
+            _CGetRecordConflicts(self._CollectionID, 0, self._RecordID, byref(cModIDs), c_ulong(GetExtendedConflicts)) #first element is size of array
             parent = getattr(self, '_ParentID', 0)
-            return [self.__class__(self._CollectionID, cModIDs[x], self._RecordID, parent, self._CopyFlags) for x in range(0, numRecords)]
+            return [self.__class__(self._CollectionID, cModIDs[x], self._RecordID, parent, self._CopyFlags) for x in range(1, cModIDs[0] + 1)]
         return []
 
     def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
@@ -6114,13 +6114,13 @@ class ObCollection:
             _EditorID = 0
             RecordType = ObFormIDRecord
         if not (_FormID or _EditorID): return None
-        numRecords = _CGetNumRecordConflicts(self._CollectionID, _FormID, _EditorID, c_ulong(GetExtendedConflicts))
+        numRecords = _CGetNumRecordConflicts(self._CollectionID, _FormID, _EditorID, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 0):
-            cModIDs = (c_ulong * numRecords)()
-            _CGetRecordConflicts(self._CollectionID, _FormID, _EditorID, byref(cModIDs), c_ulong(GetExtendedConflicts))
+            cModIDs = (c_ulong * (numRecords + 1))()
+            _CGetRecordConflicts(self._CollectionID, _FormID, _EditorID, byref(cModIDs), c_ulong(GetExtendedConflicts)) #first element is size of array
             testRecord = RecordType(self._CollectionID, cModIDs[0], RecordID, 0, 0)
             RecordType = type_record[testRecord.recType]
-            return [RecordType(self._CollectionID, cModIDs[x], RecordID, 0, 0) for x in range(0, numRecords)]
+            return [RecordType(self._CollectionID, cModIDs[x], RecordID, 0, 0) for x in range(1, cModIDs[0] + 1)]
         return []
 
     def LookupModFile(self, ModName):
