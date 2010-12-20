@@ -25201,7 +25201,7 @@ class GmstTweaker(MultiTweaker):
             (_('Custom'),0),
             ),
         GmstTweak(False,_('Crime: Pickpocketing Fine'),
-            _("Fine in septims for trespassing."),
+            _("Fine in septims for pickpocketing."),
             ('iCrimeGoldPickpocket',),
             ('5',5),
             ('8',8),
