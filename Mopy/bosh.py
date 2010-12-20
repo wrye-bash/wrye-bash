@@ -56,7 +56,6 @@ def unformatDate(str,format):
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
-import cStringIO
 import StringIO #cStringIO doesn't support unicode very well
 import ConfigParser
 import copy
@@ -1530,7 +1529,7 @@ class MelSet:
 
     def getReport(self):
         """Returns a report of structure."""
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         for element in self.elements:
             element.report(None,buff,'')
         return buff.getvalue()
@@ -1572,7 +1571,7 @@ class MreSubrecord:
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         #--StringIO Object
-        out = ModWriter(cStringIO.StringIO())
+        out = ModWriter(StringIO.StringIO())
         self.dumpData(out)
         #--Done
         self.data = out.getvalue()
@@ -1747,7 +1746,7 @@ class MreRecord(object):
         if self.longFids: raise StateError(
             _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(cStringIO.StringIO())
+        out = ModWriter(StringIO.StringIO())
         self.dumpData(out)
         data = out.getvalue()
         self.data = out.getvalue()
@@ -1780,7 +1779,7 @@ class MreRecord(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,cStringIO.StringIO(self.getDecompressed()))
+        return ModReader(self.inName,StringIO.StringIO(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
@@ -2006,7 +2005,7 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         avEffects = bush.genericAVEffects
         aValues = bush.actorValues
         buffWrite = buff.write
@@ -4171,7 +4170,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,cStringIO.StringIO(self.data))
+        return ModReader(self.inName,StringIO.StringIO(self.data))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -5309,7 +5308,7 @@ class SreNPC(object):
 
     def load(self,flags,data):
         """Loads variables from data."""
-        ins = cStringIO.StringIO(data)
+        ins = StringIO.StringIO(data)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         flags = SreNPC.flags(flags)
@@ -5356,7 +5355,7 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        out = cStringIO.StringIO()
+        out = StringIO.StringIO()
         def pack(format,*args):
             out.write(struct.pack(format,*args))
         #--Form
@@ -5407,7 +5406,7 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         fids = saveFile.fids
         if self.form != None:
             buff.write('Form:\n  %d' % self.form)
@@ -5470,7 +5469,7 @@ class PluggyFile:
         if crc32 != crcNew:
             raise FileError(self.name,'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
         #--Header
-        ins = cStringIO.StringIO(buff)
+        ins = StringIO.StringIO(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         if ins.read(10) != 'PluggySave':
@@ -5501,7 +5500,7 @@ class PluggyFile:
         import binascii
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5555,7 +5554,7 @@ class ObseFile:
         buff = ins.read(size)
         ins.close()
         #--Header
-        ins = cStringIO.StringIO(buff)
+        ins = StringIO.StringIO(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         self.signature = ins.read(4)
@@ -5570,7 +5569,7 @@ class ObseFile:
         for x in range(numPlugins):
             opcodeBase,numChunks,pluginLength, = unpack('III',12)
             pluginBuff = ins.read(pluginLength)
-            pluginIns = cStringIO.StringIO(pluginBuff)
+            pluginIns = StringIO.StringIO(pluginBuff)
             chunks = []
             for y in range(numChunks):
                 chunkType = pluginIns.read(4)
@@ -5589,7 +5588,7 @@ class ObseFile:
         """Saves."""
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5633,10 +5632,10 @@ class ObseFile:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkTypeNum == 1):
-                        ins = cStringIO.StringIO(chunkBuff)
+                        ins = StringIO.StringIO(chunkBuff)
                         def unpack(format,size):
                             return struct.unpack(format,ins.read(size))
-                        buff = cStringIO.StringIO()
+                        buff = StringIO.StringIO()
                         def pack(format,*args):
                             buff.write(struct.pack(format,*args))
                         while (ins.tell() < len(chunkBuff)):
@@ -5861,7 +5860,7 @@ class SaveFile:
         globalsNum, = ins.unpack('H',2)
         self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
         #--Pre-Created (Class, processes, spectator, sky)
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -5875,7 +5874,7 @@ class SaveFile:
             header = ins.unpack('4s4I',20)
             self.created.append(MreRecord(header,modReader))
         #--Pre-records: Quickkeys, reticule, interface, regions
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -6204,7 +6203,7 @@ class SaveFile:
                         log('  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
                         log('  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
-                    ins = cStringIO.StringIO(chunkBuff)
+                    ins = StringIO.StringIO(chunkBuff)
                     def unpack(format,size):
                         return struct.unpack(format,ins.read(size))
                     if (opcodeBase == 0x1400):  # OBSE
@@ -6483,7 +6482,7 @@ class SaveFile:
         data = self.preCreated
         tesClassSize, = struct.unpack('H',data[:2])
         if tesClassSize < 4: return
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         buff.write(data)
         buff.seek(2+tesClassSize-4)
         buff.write(struct.pack('I',value))
@@ -7655,7 +7654,7 @@ class INIInfo(FileInfo):
         if len(text) == 1:
             text.append(' None')
 
-        log = bolt.LogFile(cStringIO.StringIO())
+        log = bolt.LogFile(StringIO.StringIO())
         for line in text:
             log(line)
         return bolt.winNewLines(log.out.getvalue())
@@ -8573,7 +8572,7 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        log = bolt.LogFile(cStringIO.StringIO())
+        log = bolt.LogFile(StringIO.StringIO())
         head = ('','=== ')[wtxt]
         bul = ('','* ')[wtxt]
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
@@ -9309,7 +9308,7 @@ class ConfigHelpers:
         activeMerged = active | merged
         warning = _('=== <font color=red>WARNING:</font> ')
         #--Header
-        log = bolt.LogFile(cStringIO.StringIO())
+        log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(_('= Check Mods'),True)
         log(_("This is a report on your currently active/merged mods."))
         #--Mergeable/NoMerge/Deactivate tagged mods
@@ -9599,7 +9598,7 @@ class Messages(DataDict):
                 if mode == BODY:
                     if reMessage.search(line):
                         subject = "<No Subject>"
-                        buff = cStringIO.StringIO()
+                        buff = StringIO.StringIO()
                         buff.write(reWrapper.sub('',line))
                         mode = MESSAGE
                 elif mode == MESSAGE:
@@ -9641,7 +9640,7 @@ class Messages(DataDict):
                         mode = MESSAGE
                 elif mode == MESSAGE:
                     if reMessageNew.search(line):
-                        buff = cStringIO.StringIO()
+                        buff = StringIO.StringIO()
                         buff.write('<br /><div class="borderwrapm">\n')
                         buff.write('	<div class="maintitle">PM: %s</div>\n' % subject)
                         buff.write('	<div class="tablefill"><div class="postcolor">')
@@ -9783,7 +9782,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
                 buffer.close()
                 buffer = None
             name = maName.group(1).strip()
-            if name: buffer = cStringIO.StringIO()
+            if name: buffer = StringIO.StringIO()
         ins.close()
         if newNames: self.setChanged()
         return newNames
@@ -10427,7 +10426,7 @@ class InstallerConverter(object):
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
-        ins = cStringIO.StringIO(ins)
+        ins = StringIO.StringIO(ins)
         setter = object.__setattr__
         map(self.__setattr__, self.persistBCF, cPickle.load(ins))
         if fullLoad:
@@ -10463,7 +10462,7 @@ class InstallerConverter(object):
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        ins = cStringIO.StringIO(ins)
+        ins = StringIO.StringIO(ins)
         #--Error checking
         reError = re.compile('Error:')
         regMatch = reError.match
@@ -11136,7 +11135,7 @@ class InstallerProject(Installer):
              else:
                  log(' ' * depth + file)
         #--Setup
-        log = bolt.LogFile(cStringIO.StringIO())
+        log = bolt.LogFile(StringIO.StringIO())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
         apath = dirs['installers'].join(archive)
@@ -11831,7 +11830,7 @@ class InstallersData(bolt.TankData, DataDict):
             if curConflicts: packConflicts.append((installer.order,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         for order,package,files in packConflicts:
             if showLower and (order > srcOrder) != isHigher:
                 isHigher = (order > srcOrder)
@@ -11849,7 +11848,7 @@ class InstallersData(bolt.TankData, DataDict):
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        log = bolt.LogFile(cStringIO.StringIO())
+        log = bolt.LogFile(StringIO.StringIO())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
@@ -15436,7 +15435,7 @@ class CBash_SpellRecords:
 ####        iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
 ####        for (num,objectId,full,value) in bush.ingred_alchem:
 ####            book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-####            buff = cStringIO.StringIO()
+####            buff = StringIO.StringIO()
 ####            buff.write(book.text)
 ####            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
 ####                buff.write(full+'\r\n')
@@ -15458,7 +15457,7 @@ class CBash_SpellRecords:
 ####        iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
 ####        for (num,objectId,full,value) in bush.effect_alchem:
 ####            book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-####            buff = cStringIO.StringIO()
+####            buff = StringIO.StringIO()
 ####            buff.write(book.text)
 ####            for effectName in sorted(effect_ingred.keys()):
 ####                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -15494,7 +15493,7 @@ class ModDetails:
                 if len(decomp) != sizeCheck:
                     raise ModError(self.inName,
                         _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-                reader = ModReader(modInfo.name,cStringIO.StringIO(decomp))
+                reader = ModReader(modInfo.name,StringIO.StringIO(decomp))
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
@@ -15832,7 +15831,7 @@ class PCFaces:
 
         #--Player ACHR
         #--Buffer for modified record data
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         def buffPack(format,*args):
             buff.write(struct.pack(format,*args))
         def buffPackRef(oldFid,doPack=True):
@@ -27822,7 +27821,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
             book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = cStringIO.StringIO()
+            buff = StringIO.StringIO()
             buff.write(book.text)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
@@ -27844,7 +27843,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
             book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = cStringIO.StringIO()
+            buff = StringIO.StringIO()
             buff.write(book.text)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -27934,7 +27933,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.ingred_alchem:
             subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
             book = getBook(patchFile, objectId)
-            buff = cStringIO.StringIO()
+            buff = StringIO.StringIO()
             buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
@@ -27958,7 +27957,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.effect_alchem:
             subProgress(pstate, _("Cataloging Effects...\n%s") % full)
             book = getBook(patchFile,objectId)
-            buff = cStringIO.StringIO()
+            buff = StringIO.StringIO()
             buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]

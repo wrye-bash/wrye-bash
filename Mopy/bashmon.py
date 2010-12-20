@@ -27,7 +27,7 @@ Note: bashmon is based on Breeze582000's brzMonitor (which it replaces).
 """
 # Imports ----------------------------------------------------------------------
 #--Standard
-import cStringIO
+import StringIO
 import string
 import struct
 import sys
