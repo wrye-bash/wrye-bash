@@ -6118,9 +6118,11 @@ class ObCollection:
         if(numRecords > 0):
             cModIDs = (c_ulong * (numRecords + 1))()
             _CGetRecordConflicts(self._CollectionID, _FormID, _EditorID, byref(cModIDs), c_ulong(GetExtendedConflicts)) #first element is size of array
-            testRecord = RecordType(self._CollectionID, cModIDs[0], RecordID, 0, 0)
-            RecordType = type_record[testRecord.recType]
-            return [RecordType(self._CollectionID, cModIDs[x], RecordID, 0, 0) for x in range(1, cModIDs[0] + 1)]
+            numRecords = cModIDs[0]
+            if(numRecords > 0):
+                testRecord = RecordType(self._CollectionID, cModIDs[1], RecordID, 0, 0)
+                RecordType = type_record[testRecord.recType]
+                return [RecordType(self._CollectionID, cModIDs[x], RecordID, 0, 0) for x in range(1, numRecords + 1)]
         return []
 
     def LookupModFile(self, ModName):
