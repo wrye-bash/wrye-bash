@@ -9877,7 +9877,6 @@ class Installer(object):
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
-        splitter = bolt.Path.mbSplit
         def sortKey(file):
             dirFile = file.lower().rsplit('\\',1)
             if len(dirFile) == 1: dirFile.insert(0,'')
