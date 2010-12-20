@@ -484,7 +484,7 @@ class CBashSTRING_GROUP(object):
     def __set__(self, instance, nValue):
         FieldID = self._FieldID + instance._FieldID
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING_GROUP(object):
     def __init__(self, FieldID):
@@ -498,7 +498,7 @@ class CBashISTRING_GROUP(object):
     def __set__(self, instance, nValue):
         FieldID = self._FieldID + instance._FieldID
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 # Top level Descriptors
 #  EDID keyed
@@ -538,7 +538,7 @@ class CBashEDIDSTRING(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashEDIDISTRING(object):
     def __init__(self, FieldID):
@@ -550,7 +550,7 @@ class CBashEDIDISTRING(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashEDIDFLOAT32(object):
     def __init__(self, FieldID):
@@ -866,7 +866,7 @@ class CBashUINT8ARRAY(object):
                 _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
                 return [cRecords.contents[x] for x in range(0, numRecords)]
             return []
-        except ValueError:
+        except:
             print instance.ModName
             print instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1
             print _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
@@ -947,7 +947,7 @@ class CBashSTRING(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING(object):
     def __init__(self, FieldID):
@@ -959,7 +959,7 @@ class CBashISTRING(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 
 class CBashRECORDARRAY(object):
@@ -1245,7 +1245,7 @@ class CBashSTRING_LIST(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING_LIST(object):
     def __init__(self, ListFieldID):
@@ -1257,7 +1257,7 @@ class CBashISTRING_LIST(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, str(nValue), 0)
 
 # ListX2 Descriptors
 class CBashLIST_LISTX2(object):
@@ -1394,7 +1394,7 @@ class CBashSTRING_LISTX2(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, str(nValue), 0)
 
 class CBashISTRING_LISTX2(object):
     def __init__(self, FieldID, ListFieldID, ListX2FieldID):
@@ -1408,7 +1408,7 @@ class CBashISTRING_LISTX2(object):
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, nValue, 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, str(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX2(object):
     def __init__(self, FieldID, ListFieldID, ListX2FieldID):
