@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -49,6 +50,7 @@ from cint import *
 #--Python
 import ConfigParser
 import cStringIO
+import StringIO
 import copy
 import os
 import re
@@ -2748,7 +2750,7 @@ class InstallersPanel(SashTankPanel):
             return dirFile
         def dumpFiles(files,default='',header='',isPath=False):
             if files:
-                buff = cStringIO.StringIO()
+                buff = StringIO.StringIO()
                 if isPath: files = [x.s for x in files]
                 else: files = list(files)
                 sortKeys = dict((x,sortKey(x)) for x in files)
