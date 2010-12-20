@@ -27,6 +27,7 @@ Note: bashmon is based on Breeze582000's brzMonitor (which it replaces).
 """
 # Imports ----------------------------------------------------------------------
 #--Standard
+import cStringIO
 import StringIO
 import string
 import struct
@@ -42,6 +43,10 @@ from bolt import _, GPath, intArg
 
 #--Debugging/Info
 bosh.deprintOn = True
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 
 # Utils -----------------------------------------------------------------------
 class Data:

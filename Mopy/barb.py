@@ -24,16 +24,20 @@ import os
 import re
 import datetime
 import cPickle
+import cStringIO
 import StringIO
 from subprocess import Popen, PIPE
-
 import bash
 import bosh
 import basher
 from bosh import startupinfo, dirs
-from bolt import _, BoltError, AbstractError, StateError, GPath, Progress, deprint
+from bolt import _, BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
 
+if bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
 # user cancelled operation
@@ -382,7 +386,10 @@ def pack7z(dstFile, srcDir, progress=None):
     #--Used solely for the progress bar
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
-    app7z = dirs['mopy'].join('7z.exe').s
+    if bosh.inisettings['EnableUnicode']:
+        app7z = dirs['mopy'].join('7zUnicode.exe').s
+    else:
+        app7z = dirs['mopy'].join('7z.exe').s
     command = '"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
     progress(0,_("%s\nCompressing files...") % dstFile.s)
@@ -422,9 +429,12 @@ def unpack7z(srcFile, dstDir, progress=None):
     # count the files in the archive
     length = 0
     reList = re.compile('Path = (.*?)(?:\r\n|\n)')
-    command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)
+    if bosh.inisettings['EnableUnicode']:
+        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, srcFile.s)
+    else:
+        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)        
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-    ins = StringIO.StringIO(ins)
+    ins = stringBuffer(ins)
     for line in ins: length += 1
     ins.close()
 
@@ -433,7 +443,10 @@ def unpack7z(srcFile, dstDir, progress=None):
         progress.setFull(1+length)
     #end if
 
-    app7z = dirs['mopy'].join('7z.exe').s
+    if bosh.inisettings['EnableUnicode']:
+        app7z = dirs['mopy'].join('7zUnicode.exe').s
+    else:
+        app7z = dirs['mopy'].join('7z.exe').s
     command = '"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files

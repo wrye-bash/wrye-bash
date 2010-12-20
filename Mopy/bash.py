@@ -35,8 +35,8 @@ import re
 
 import bolt
 from bolt import _, GPath
-import barb
 import bosh
+import barb
 import basher
 
 # ----------------------------------------------------------------------------------

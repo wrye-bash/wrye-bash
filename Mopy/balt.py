@@ -29,6 +29,7 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 
 #--Python
 import cPickle
+import cStringIO
 import StringIO
 import string
 import struct
@@ -37,6 +38,11 @@ import textwrap
 import time
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 
 # Basics ---------------------------------------------------------------------
 class IdList:
@@ -560,7 +566,7 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
         if not isinstance(logText,bolt.Path):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-            ins = StringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
+            ins = stringBuffer(logText+'\n{{CSS:wtxt_sand_small.css}}')
             out = logPath.open('w')
             bolt.WryeText.genHtml(ins,out,cssDir)
             out.close()
@@ -586,7 +592,7 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     if not isinstance(logText,bolt.Path):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-        ins = StringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
+        ins = stringBuffer(logText+'\n{{CSS:wtxt_sand_small.css}}')
         out = logPath.open('w')
         bolt.WryeText.genHtml(ins,out,cssDir)
         out.close()

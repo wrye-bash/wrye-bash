@@ -44,6 +44,7 @@ import os
 import re
 import string
 import struct
+import cStringIO
 import StringIO
 import sys
 import types
@@ -58,6 +59,10 @@ from bolt import _, GPath, mainfunc
 
 indent = 0
 longest = 0
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 
 # Basics ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -367,7 +372,7 @@ def bookExport(fileName=None):
             if maHeader:
                 if eid and buffer: imported[eid] = bosh.winNewLines(buffer.getvalue())
                 eid = maHeader.group(1)
-                buffer = StringIO.StringIO()
+                buffer = stringBuffer()
                 addTags = True
                 wasBlank = True
                 firstLine = True
@@ -664,7 +669,7 @@ def getIds(fileName=None):
             if len(decomp) != sizeCheck:
                 raise ModError(self.inName,
                     _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-            reader = bosh.ModReader(fileName,StringIO.StringIO(decomp))
+            reader = bosh.ModReader(fileName,stringBuffer(decomp))
             return (reader,sizeCheck)
     init(2)
     modInfo = bosh.modInfos[GPath(fileName)]
@@ -1095,7 +1100,11 @@ class Archive:
         files = {}
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = crc = isDir = 0
-        command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7z.exe').s, self.path.s)
+
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7zUnicode.exe').s, self.path.s)
+        else:
+            command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7z.exe').s, self.path.s)
         out = Popen(command, stdout=PIPE).stdout
         for line in out:
             print line,
@@ -1120,7 +1129,10 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7z.exe'),self.path.s)
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7zUnicode.exe'),self.path.s)
+        else:
+            command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7z.exe'),self.path.s)
         out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         for line in out:
