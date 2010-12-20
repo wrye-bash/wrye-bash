@@ -28,7 +28,8 @@ from bolt import _, GPath, deprint, delist
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 
 #--Python
-import cStringIO, cPickle
+import cPickle
+import StringIO
 import string
 import struct
 import sys
@@ -559,7 +560,7 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
         if not isinstance(logText,bolt.Path):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-            ins = cStringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
+            ins = StringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
             out = logPath.open('w')
             bolt.WryeText.genHtml(ins,out,cssDir)
             out.close()
@@ -585,7 +586,7 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     if not isinstance(logText,bolt.Path):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-        ins = cStringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
+        ins = StringIO.StringIO(logText+'\n{{CSS:wtxt_sand_small.css}}')
         out = logPath.open('w')
         bolt.WryeText.genHtml(ins,out,cssDir)
         out.close()

@@ -24,7 +24,7 @@ import os
 import re
 import datetime
 import cPickle
-import cStringIO
+import StringIO
 from subprocess import Popen, PIPE
 
 import bash
@@ -424,7 +424,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     reList = re.compile('Path = (.*?)(?:\r\n|\n)')
     command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-    ins = cStringIO.StringIO(ins)
+    ins = StringIO.StringIO(ins)
     for line in ins: length += 1
     ins.close()
 

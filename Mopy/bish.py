@@ -44,7 +44,7 @@ import os
 import re
 import string
 import struct
-import cStringIO
+import StringIO
 import sys
 import types
 from subprocess import *
@@ -367,7 +367,7 @@ def bookExport(fileName=None):
             if maHeader:
                 if eid and buffer: imported[eid] = bosh.winNewLines(buffer.getvalue())
                 eid = maHeader.group(1)
-                buffer = cStringIO.StringIO()
+                buffer = StringIO.StringIO()
                 addTags = True
                 wasBlank = True
                 firstLine = True
@@ -664,7 +664,7 @@ def getIds(fileName=None):
             if len(decomp) != sizeCheck:
                 raise ModError(self.inName,
                     _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-            reader = bosh.ModReader(fileName,cStringIO.StringIO(decomp))
+            reader = bosh.ModReader(fileName,StringIO.StringIO(decomp))
             return (reader,sizeCheck)
     init(2)
     modInfo = bosh.modInfos[GPath(fileName)]
