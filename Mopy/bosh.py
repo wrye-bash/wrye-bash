@@ -18665,7 +18665,13 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
+            try:
+                self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
+            except ValueError:
+                print record.ModName
+                print PrintFormID(record.fid)
+                print record._Type
+                print self.class_attrs[record._Type]
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -28481,13 +28487,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 mergedList += record.entries_list
                 #Remove the added items from the deleveled list
                 delevs -= curItems
-                self.id_attrs[recordId] = [record.chanceNone, record.script, record.template, record.flags]
+                self.id_attrs[recordId] = [record.chanceNone, record.script, record.template, (record.flags or 0)]
             else:
                 #Can add new items, but can't change existing ones
                 items = set([entry[1] for entry in mergedList]) #entry[1] = listId
                 mergedList += [entry for entry in record.entries_list if entry[1] not in items] #entry[1] = listId
                 mergedAttrs = self.id_attrs[recordId]
-                self.id_attrs[recordId] = [record.chanceNone or mergedAttrs[0], record.script or mergedAttrs[1], record.template or mergedAttrs[2], record.flags | mergedAttrs[3]]
+                self.id_attrs[recordId] = [record.chanceNone or mergedAttrs[0], record.script or mergedAttrs[1], record.template or mergedAttrs[2], (record.flags or 0) | mergedAttrs[3]]
             #--Delevs: all items in masters minus current items
             if isDelev:
                 deletedItems = set()
@@ -28514,7 +28520,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             mergedList = self.id_list[recordId]
             mergedAttrs = self.id_attrs[recordId]
             newList = record.entries_list
-            newAttrs = [record.chanceNone, record.script, record.template, record.flags]
+            newAttrs = [record.chanceNone, record.script, record.template, (record.flags or 0)]
         #Can't tell if any sublists are actually empty until they've all been processed/merged
         #So every level list gets copied into the patch, so that they can be checked after the regular patch process
         #They'll get deleted from the patch there as needed.
