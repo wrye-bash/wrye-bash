@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -49,6 +48,7 @@ from cint import *
 
 #--Python
 import ConfigParser
+import cStringIO
 import StringIO
 import copy
 import os
@@ -315,6 +315,11 @@ settingDefaults = {
     'BOSS.ClearLockTimes':False,
     'BOSS.AlwaysUpdate':False,
     }
+
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
@@ -2749,7 +2754,7 @@ class InstallersPanel(SashTankPanel):
             return dirFile
         def dumpFiles(files,default='',header='',isPath=False):
             if files:
-                buff = StringIO.StringIO()
+                buff = stringBuffer()
                 if isPath: files = [x.s for x in files]
                 else: files = list(files)
                 sortKeys = dict((x,sortKey(x)) for x in files)
@@ -4642,7 +4647,7 @@ class ModChecker(wx.Frame):
             )
         logPath = bosh.dirs['saveBase'].join('ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(''))
-        ins = StringIO.StringIO(self.text+'\n{{CSS:wtxt_sand_small.css}}')
+        ins = stringBuffer(self.text+'\n{{CSS:wtxt_sand_small.css}}')        
         out = logPath.open('w')
         bolt.WryeText.genHtml(ins,out,cssDir)
         out.close()
@@ -5015,7 +5020,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
+                log = bolt.LogFile(stringBuffer())
                 nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
                 patchFile = bosh.PatchFile(self.patchInfo,patchers)
@@ -5075,7 +5080,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
+                log = bolt.LogFile(stringBuffer())
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
 
                 patchFile = bosh.CBash_PatchFile(patchName,patchers)
@@ -7975,7 +7980,7 @@ class InstallerConverter_Create(InstallerLink):
             #--Refresh UI
             self.data.refresh(what='C')
             #--Generate log
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(stringBuffer())
             log.setHeader(_('== Overview\n'))
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(_('. Name: %s') % BCFArchive.s)
@@ -8582,7 +8587,7 @@ class Mod_ActorLevels_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant NPC levels to import."),_("Import NPC Levels"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('* %03d  %s\n' % (changed, fileName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import NPC Levels'),icons=bashBlue)
 #------------------------------------------------------------------------------
@@ -9117,7 +9122,7 @@ class Mod_FactionRelations_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant faction relations to import."),_("Import Relations"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('* %03d  %s\n' % (changed, fileName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import Relations'),icons=bashBlue)
 #------------------------------------------------------------------------------
@@ -9204,7 +9209,7 @@ class Mod_Factions_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant faction ranks to import."),_("Import Factions"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             for groupName in sorted(changed):
                 buff.write('* %s : %03d  %s\n' % (groupName, changed[groupName], fileName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import Factions'),icons=bashBlue)
@@ -9703,7 +9708,7 @@ class Mod_EditorIds_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No changes required."))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             format = '%s >> %s\n'
             for old_new in sorted(changed):
                 buff.write(format % old_new)
@@ -9905,7 +9910,7 @@ class Mod_FullNames_Import(Link):
         if not renamed:
             balt.showOk(self.window,_("No changes required."))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             format = '%s:   %s >> %s\n'
             #buff.write(format % (_('Editor Id'),_('Name')))
             for eid in sorted(renamed.keys()):
@@ -10047,7 +10052,7 @@ class Mod_Details(Link):
         try:
             modDetails = bosh.ModDetails()
             modDetails.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             progress(0.7,_("Sorting records."))
             for group in sorted(modDetails.group_records):
                 buff.write(group+'\n')
@@ -10306,7 +10311,7 @@ class Mod_Stats_Import(Link):
             if not len(changed):
                 balt.showOk(self.window,_("No changed stats to import."),_("Import Stats"))
             else:
-                buff = StringIO.StringIO()
+                buff = stringBuffer()
                 for modName in sorted(changed):
                     buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
                 balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
@@ -10398,7 +10403,7 @@ class Mod_ItemData_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant data to import."),_("Import Item Data"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             for modName in sorted(changed):
                 buff.write(_('Imported Item Data:\n* %03d  %s:\n') % (changed[modName], modName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import Item Data'),icons=bashBlue)
@@ -10493,7 +10498,7 @@ class Mod_Prices_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant prices to import."),_("Import Prices"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             for modName in sorted(changed):
                 buff.write(_('Imported Prices:\n* %s: %d\n') % (modName.s,changed[modName]))
             balt.showLog(self.window,buff.getvalue(),_('Import Prices'),icons=bashBlue)
@@ -10578,7 +10583,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import Map Markers"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('Imported Map Markers to mod %s:\n' % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
@@ -10668,7 +10673,7 @@ class Mod_SigilStoneDetails_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant Sigil Stone details to import."),_("Import Sigil Stone details"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('Imported Sigil Stone details to mod %s:\n' % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
@@ -10761,7 +10766,7 @@ class Mod_SpellRecords_Import(Link):
         if not changed:
             balt.showOk(self.window,_("No relevant Spell details to import."),_("Import Spell details"))
         else:
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('Imported Spell details to mod %s:\n' % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
@@ -10785,7 +10790,7 @@ class Mod_UndeleteRefs(Link):
         progress.setFull(len(self.data))
         try:
             hasFixed = False
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(stringBuffer())
             for index,fileName in enumerate(map(GPath,self.data)):
                 if fileName == 'Oblivion.esm'or fileName == 'Oblivion_1.1.esm':
                     balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Undelete Refs'))
@@ -11212,7 +11217,7 @@ class Save_EditCreatedData(balt.ListEditorData):
 
     def getInfo(self,item):
         """Returns string info on specified item."""
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         name,records = self.data[item]
         record = records[0]
         #--Armor, clothing, weapons
@@ -11509,7 +11514,7 @@ class Save_RepairFactions(Link):
         legitDroppedFactions = bush.repairFactions_legitDroppedFactions
         try:
             #--Loop over active mods
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(stringBuffer())
             offsetFlag = 0x80
             npc_info = {}
             fact_eid = {}
@@ -11704,7 +11709,7 @@ class Save_Stats(Link):
         progress = balt.Progress(_("Statistics"))
         try:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(stringBuffer())
             progress(0.9,_("Calculating statistics."))
             saveFile.logStats(log)
             progress.Destroy()
@@ -11735,7 +11740,7 @@ class Save_StatObse(Link):
         progress = balt.Progress(_(".obse"))
         try:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(stringBuffer())
             progress(0.9,_("Calculating statistics."))
             saveFile.logStatObse(log)
             progress.Destroy()

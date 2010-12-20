@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -56,6 +55,7 @@ def unformatDate(str,format):
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
+import cStringIO
 import StringIO #cStringIO doesn't support unicode very well
 import ConfigParser
 import copy
@@ -83,6 +83,10 @@ from bolt import _, LString, GPath, Flags, DataDict, SubProgress, cstrip, deprin
 from cint import *
 startupinfo = bolt.startupinfo
 
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 # Singletons, Constants -------------------------------------------------------
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
@@ -101,7 +105,7 @@ messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
 def listArchiveContents(fileName):
-    command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, fileName)
+    command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, fileName)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
@@ -1529,7 +1533,7 @@ class MelSet:
 
     def getReport(self):
         """Returns a report of structure."""
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         for element in self.elements:
             element.report(None,buff,'')
         return buff.getvalue()
@@ -1571,7 +1575,7 @@ class MreSubrecord:
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         #--StringIO Object
-        out = ModWriter(StringIO.StringIO())
+        out = ModWriter(stringBuffer())
         self.dumpData(out)
         #--Done
         self.data = out.getvalue()
@@ -1746,7 +1750,7 @@ class MreRecord(object):
         if self.longFids: raise StateError(
             _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(StringIO.StringIO())
+        out = ModWriter(stringBuffer())
         self.dumpData(out)
         data = out.getvalue()
         self.data = out.getvalue()
@@ -1779,7 +1783,7 @@ class MreRecord(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,StringIO.StringIO(self.getDecompressed()))
+        return ModReader(self.inName,stringBuffer(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
@@ -2005,7 +2009,7 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         avEffects = bush.genericAVEffects
         aValues = bush.actorValues
         buffWrite = buff.write
@@ -4170,7 +4174,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,StringIO.StringIO(self.data))
+        return ModReader(self.inName,stringBuffer(self.data))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -5308,7 +5312,7 @@ class SreNPC(object):
 
     def load(self,flags,data):
         """Loads variables from data."""
-        ins = StringIO.StringIO(data)
+        ins = stringBuffer(data)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         flags = SreNPC.flags(flags)
@@ -5355,7 +5359,7 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        out = StringIO.StringIO()
+        out = stringBuffer()
         def pack(format,*args):
             out.write(struct.pack(format,*args))
         #--Form
@@ -5406,7 +5410,7 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         fids = saveFile.fids
         if self.form != None:
             buff.write('Form:\n  %d' % self.form)
@@ -5469,7 +5473,7 @@ class PluggyFile:
         if crc32 != crcNew:
             raise FileError(self.name,'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
         #--Header
-        ins = StringIO.StringIO(buff)
+        ins = stringBuffer(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         if ins.read(10) != 'PluggySave':
@@ -5500,7 +5504,7 @@ class PluggyFile:
         import binascii
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5554,7 +5558,7 @@ class ObseFile:
         buff = ins.read(size)
         ins.close()
         #--Header
-        ins = StringIO.StringIO(buff)
+        ins = stringBuffer(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         self.signature = ins.read(4)
@@ -5569,7 +5573,7 @@ class ObseFile:
         for x in range(numPlugins):
             opcodeBase,numChunks,pluginLength, = unpack('III',12)
             pluginBuff = ins.read(pluginLength)
-            pluginIns = StringIO.StringIO(pluginBuff)
+            pluginIns = stringBuffer(pluginBuff)
             chunks = []
             for y in range(numChunks):
                 chunkType = pluginIns.read(4)
@@ -5588,7 +5592,7 @@ class ObseFile:
         """Saves."""
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5632,10 +5636,10 @@ class ObseFile:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkTypeNum == 1):
-                        ins = StringIO.StringIO(chunkBuff)
+                        ins = stringBuffer(chunkBuff)
                         def unpack(format,size):
                             return struct.unpack(format,ins.read(size))
-                        buff = StringIO.StringIO()
+                        buff = stringBuffer()
                         def pack(format,*args):
                             buff.write(struct.pack(format,*args))
                         while (ins.tell() < len(chunkBuff)):
@@ -5860,7 +5864,7 @@ class SaveFile:
         globalsNum, = ins.unpack('H',2)
         self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
         #--Pre-Created (Class, processes, spectator, sky)
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -5874,7 +5878,7 @@ class SaveFile:
             header = ins.unpack('4s4I',20)
             self.created.append(MreRecord(header,modReader))
         #--Pre-records: Quickkeys, reticule, interface, regions
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -6203,7 +6207,7 @@ class SaveFile:
                         log('  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
                         log('  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
-                    ins = StringIO.StringIO(chunkBuff)
+                    ins = stringBuffer(chunkBuff)
                     def unpack(format,size):
                         return struct.unpack(format,ins.read(size))
                     if (opcodeBase == 0x1400):  # OBSE
@@ -6482,7 +6486,7 @@ class SaveFile:
         data = self.preCreated
         tesClassSize, = struct.unpack('H',data[:2])
         if tesClassSize < 4: return
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         buff.write(data)
         buff.seek(2+tesClassSize-4)
         buff.write(struct.pack('I',value))
@@ -7654,7 +7658,7 @@ class INIInfo(FileInfo):
         if len(text) == 1:
             text.append(' None')
 
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(stringBuffer())
         for line in text:
             log(line)
         return bolt.winNewLines(log.out.getvalue())
@@ -8572,7 +8576,7 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(stringBuffer())
         head = ('','=== ')[wtxt]
         bul = ('','* ')[wtxt]
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
@@ -9308,7 +9312,7 @@ class ConfigHelpers:
         activeMerged = active | merged
         warning = _('=== <font color=red>WARNING:</font> ')
         #--Header
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(stringBuffer())
         log.setHeader(_('= Check Mods'),True)
         log(_("This is a report on your currently active/merged mods."))
         #--Mergeable/NoMerge/Deactivate tagged mods
@@ -9598,7 +9602,7 @@ class Messages(DataDict):
                 if mode == BODY:
                     if reMessage.search(line):
                         subject = "<No Subject>"
-                        buff = StringIO.StringIO()
+                        buff = stringBuffer()
                         buff.write(reWrapper.sub('',line))
                         mode = MESSAGE
                 elif mode == MESSAGE:
@@ -9640,7 +9644,7 @@ class Messages(DataDict):
                         mode = MESSAGE
                 elif mode == MESSAGE:
                     if reMessageNew.search(line):
-                        buff = StringIO.StringIO()
+                        buff = stringBuffer()
                         buff.write('<br /><div class="borderwrapm">\n')
                         buff.write('	<div class="maintitle">PM: %s</div>\n' % subject)
                         buff.write('	<div class="tablefill"><div class="postcolor">')
@@ -9782,7 +9786,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
                 buffer.close()
                 buffer = None
             name = maName.group(1).strip()
-            if name: buffer = StringIO.StringIO()
+            if name: buffer = stringBuffer()
         ins.close()
         if newNames: self.setChanged()
         return newNames
@@ -9876,10 +9880,20 @@ class Installer(object):
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
-        def sortKey(file):
-            dirFile = file.lower().rsplit('\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,'')
-            return dirFile
+        if inisettings['EnableUnicode']:
+            def sortKey(file):
+                dirFile = file.lower().rsplit('\\',1)
+                if len(dirFile) == 1: dirFile.insert(0,'')
+                return dirFile
+        else:
+            splitter = bolt.Path.mbSplit
+            def sortKey(file):
+                pathParts = splitter(file)
+                if len(pathParts) == 1:
+                    dirFile = ['', pathParts[0]]
+                else:
+                    dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
+                return dirFile
         sortKeys = dict((x,sortKey(x)) for x in files)
         return sorted(files,key=lambda x: sortKeys[x])
 
@@ -10120,6 +10134,9 @@ class Installer(object):
         goodDlls, badDlls = self.goodDlls, self.badDlls
         espms = self.espms
         espmsAdd = espms.add
+        bUseUnicode = inisettings['EnableUnicode']
+        if not bUseUnicode:
+            splitter = bolt.Path.mbSplit
         espmMap = self.espmMap
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
@@ -10136,16 +10153,31 @@ class Installer(object):
             sub = ''
             bSkip = False
             if type == 2: #--Complex archive
-                subFile = full.split('\\',1)
-                if len(subFile) == 2:
-                    sub,file = subFile
-                    if sub not in activeSubs:
-                        if sub not in allSubs:
-                            skipDirFilesAdd(file)
-                        bSkip = True
-                    fileLower = file.lower()
+                if bUseUnicode:
+                    subFile = full.split('\\',1)
+                    if len(subFile) == 2:
+                        sub,file = subFile
+                        if sub not in activeSubs:
+                            if sub not in allSubs:
+                                skipDirFilesAdd(file)
+                            bSkip = True
+                        fileLower = file.lower()
+                else:
+                    pathParts = splitter(full)
+                    if len(pathParts) > 1:
+                        sub = pathParts[0]
+                        file = '\\'.join(pathParts[1:])
+                        if sub not in activeSubs:
+                            if sub not in allSubs:
+                                skipDirFilesAdd(file)
+                            bSkip = True
+                        fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
-            rootPos = file.find('\\')
+            if bUseUnicode:
+                rootPos = file.find('\\')
+            else:
+                pathParts = splitter(file)
+                rootPos = len(pathParts[0]) if len(pathParts) > 1 else -1
             extPos = file.rfind('.')
             rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
@@ -10212,7 +10244,11 @@ class Installer(object):
                 if pFile in espmNots: continue
             elif bSkip: continue
             if skipEspmVoices and fileStartsWith('sound\\voice\\'):
-                farPos = file.find('\\',12)
+                if bUseUnicode:
+                    farPos = file.find('\\',12)
+                else:
+                    pathParts = splitter(file[12:])
+                    farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
             #--Remap docs
@@ -10262,10 +10298,20 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
-        def fscSortKey(fsc):
-            dirFile = fsc[0].lower().rsplit('\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,'')
-            return dirFile
+        if inisettings['EnableUnicode']:
+            def fscSortKey(fsc):
+                dirFile = fsc[0].lower().rsplit('\\',1)
+                if len(dirFile) == 1: dirFile.insert(0,'')
+                return dirFile
+        else:
+            splitter = bolt.Path.mbSplit
+            def fscSortKey(fsc):
+                pathParts = splitter(fsc[0])
+                if len(pathParts) == 1:
+                    dirFile = ['', pathParts[0]]
+                else:
+                    dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
+                return dirFile
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
@@ -10275,10 +10321,14 @@ class Installer(object):
         type = 0
         subNameSet = set()
         subNameSet.add('')
+        bUseUnicode = inisettings['EnableUnicode']
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
-                frags = file.split('\\')
+                if bUseUnicode:
+                    frags = file.split('\\')
+                else:
+                    frags = splitter(file)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFile.search(frags[0]) or
@@ -10421,12 +10471,15 @@ class InstallerConverter(object):
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
-        command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s)
+        else:
+            command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
         try:
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
-        ins = StringIO.StringIO(ins)
+        ins = stringBuffer(ins)
         setter = object.__setattr__
         map(self.__setattr__, self.persistBCF, cPickle.load(ins))
         if fullLoad:
@@ -10460,9 +10513,12 @@ class InstallerConverter(object):
         self.clearTemp()
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
-        command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s)
+        else:                                                                                                
+            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        ins = StringIO.StringIO(ins)
+        ins = stringBuffer(ins)
         #--Error checking
         reError = re.compile('Error:')
         regMatch = reError.match
@@ -10663,7 +10719,12 @@ class InstallerConverter(object):
             solid = '-ms=off'
         if inisettings['7zExtraCompressionArguments']:
             solid += ' %s' % inisettings['7zExtraCompressionArguments']
-        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+        else:
+            command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
         #--Pack the files
@@ -10715,7 +10776,10 @@ class InstallerConverter(object):
         if progress:
             progress(0,_("%s\nExtracting files...") % srcInstaller.s)
             progress.setFull(1+len(fileNames))
-        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, subTempDir.s, self.tempList.s)
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, subTempDir.s, self.tempList.s)
+        else:
+            command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
@@ -10786,28 +10850,66 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         oldstylefileSizeCrcs = []
-        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        if inisettings['EnableUnicode']:
+            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        else:
+            reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
         file = size = crc = isdir = 0
         self.isSolid = False
-        ins = listArchiveContents(archive.s)
+        if inisettings['EnableUnicode']:
+            ins = listArchiveContents(archive.s)
+        else:
+            command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s)
+            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            ins = stringBuffer(ins)
+            
         cumCRC = 0
-        for line in ins.splitlines(True):
-            maList = reList.match(line)
-            if maList:
-                key,value = maList.groups()
-                if key == u'Solid': self.isSolid = (value[0] == u'+')
-                elif key == u'Path':
-                    file = value.decode('utf8')
-                elif key == u'Size': size = int(value)
-                elif key == u'Attributes': isdir = (value[0] == u'D')
-                elif key == u'CRC' and value:
-                    crc = int(value,16)
-                elif key == u'Method':
-                    if file and not isdir and file != archive.s:
-                        fileSizeCrcs.append((file,size,crc))
-                        cumCRC += crc
-                    file = size = crc = isdir = 0
+        if inisettings['EnableUnicode']:
+            for line in ins.splitlines(True):
+                maList = reList.match(line)
+                if maList:
+                    key,value = maList.groups()
+                    if key == u'Solid': self.isSolid = (value[0] == u'+')
+                    elif key == u'Path':
+                        file = value.decode('utf8')
+                    elif key == u'Size': size = int(value)
+                    elif key == u'Attributes': isdir = (value[0] == u'D')
+                    elif key == u'CRC' and value:
+                        crc = int(value,16)
+                    elif key == u'Method':
+                        if file and not isdir and file != archive.s:
+                            fileSizeCrcs.append((file,size,crc))
+                            cumCRC += crc
+                        file = size = crc = isdir = 0
+        else:
+            for line in ins:
+                maList = reList.match(line)
+                if maList:
+                    key,value = maList.groups()
+                    if key == 'Solid': self.isSolid = (value[0] == '+')
+                    elif key == 'Path':
+                        #--Should be able to twist 7z to export names in UTF-8, but can't (at
+                        #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
+                        #  assume file is encoded in cp437 and that we want to decode to cp1252.
+                        #--Hopefully this will mostly resolve problem with german umlauts, etc.
+                        #  It won't solve problems with non-european characters though.
+                       ## try: file = value.decode('cp437').encode('cp1252')
+                       ## except: pass
+                        file = value
+                    elif key == 'Size': size = int(value)
+                    elif key == 'Attributes': isdir = (value[0] == 'D')
+                    elif key == 'CRC' and value:
+                        crc = int(value,16)
+                    elif key == 'Method':
+                        if file and not isdir and file != archive.s:
+                            fileSizeCrcs.append((file,size,crc))
+                            cumCRC += crc
+                        file = size = crc = isdir = 0
         self.crc = cumCRC & 0xFFFFFFFFL
+        if not inisettings['EnableUnicode']:
+            result = ins.close()
+            if result:
+                raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (archive.s,result))
 
     def unpackToTemp(self,archive,fileNames,progress=None):
         """Erases all files from self.tempDir and then extracts specified files
@@ -10816,28 +10918,44 @@ class InstallerArchive(Installer):
         if not fileNames: raise ArgumentError(_("No files to extract for %s.") % archive.s)
         progress = progress or bolt.Progress()
         progress.state,progress.full = 0,len(fileNames)
+        bUseUnicode = inisettings['EnableUnicode']
         #--Dump file list
-        out = codecs.open(self.tempList.s, encoding='utf8', mode='w')
+        if bUseUnicode:
+            out = codecs.open(self.tempList.s, encoding='utf8', mode='w')
+        else:
+            out = self.tempList.open('w')
         out.write('\n'.join(fileNames))
         out.close()
         #--Extract files
         self.clearTemp()
         apath = dirs['installers'].join(archive)
-        command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        if bUseUnicode:
+            command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        else:
+            command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+            
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        reExtracting = re.compile(u'Extracting\s+(.+)')
-        reError = re.compile(u'Error:')
+        if bUseUnicode:
+            reExtracting = re.compile(u'Extracting\s+(.+)')
+            reError = re.compile(u'Error:')
+        else:
+            reExtracting = re.compile('Extracting\s+(.+)')
+            reError = re.compile('Error:')
         extracted = []
         errorLine = []
         index = 0
         for line in ins:
-            line = unicode(line,'UTF8')
+            if bUseUnicode:
+                line = unicode(line,'UTF8')
             maExtracting = reExtracting.match(line)
             if len(errorLine) or reError.match(line):
                 errorLine.append(line)
             if maExtracting:
                 extracted.append(maExtracting.group(1).strip())
-                progress(index,_("%s\nExtracting files...\n%s") % (archive.s.encode('UTF8'), maExtracting.group(1).strip()))
+                if bUseUnicode:
+                    progress(index,_("%s\nExtracting files...\n%s") % (archive.s.encode('UTF8'), maExtracting.group(1).strip()))
+                else:
+                    progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
@@ -10845,7 +10963,10 @@ class InstallerArchive(Installer):
         cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
-            raise StateError(_("%s: Extraction failed\n%s") % (archive.s.encode('UTF8'),"\n".join(errorLine)))
+            if bUseUnicode:
+                raise StateError(_("%s: Extraction failed\n%s") % (archive.s.encode('UTF8'),"\n".join(errorLine)))
+            else:
+                raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -10907,37 +11028,78 @@ class InstallerArchive(Installer):
     def listSource(self, archive):
         """Returns package structure as text."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
-        log.out.write(u'[spoiler][code]')
-        log.setHeader(_(u'Package Structure:'))
-
-        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-        file = u''
+        bUseUnicode = inisettings['EnableUnicode']
+        log = bolt.LogFile(stringBuffer())
+        if bUseUnicode:
+            log.out.write(u'[spoiler][code]')
+            log.setHeader(_(u'Package Structure:'))
+            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+            file = u''
+        else:
+            log.out.write('[spoiler][code]')
+            log.setHeader(_('Package Structure:'))
+            reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+            file = ''
         isdir = False
         apath = dirs['installers'].join(archive)
-        ins = listArchiveContents(apath.s)
+        if bUseUnicode:
+            ins = listArchiveContents(apath.s)
+        else:
+            command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
+            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            ins = stringBuffer(ins)
+            
         text = []
-        for line in ins.splitlines(True):
-            maList = reList.match(line)
-            if maList:
-                key,value = maList.groups()
-                if key == u'Path':
-                    file = value.decode('utf8')
-                elif key == u'Attributes':
-                    isdir = (value[0] == u'D')
-                    text.append((u'%s' % (file), isdir))
-                elif key == u'Method':
-                    file = u''
-                    isdir = False
+        if bUseUnicode:
+            for line in ins.splitlines(True):
+                maList = reList.match(line)
+                if maList:
+                    key,value = maList.groups()
+                    if key == u'Path':
+                        file = value.decode('utf8')
+                    elif key == u'Attributes':
+                        isdir = (value[0] == u'D')
+                        text.append((u'%s' % (file), isdir))
+                    elif key == u'Method':
+                        file = u''
+                        isdir = False
+        else:
+            for line in ins:
+                maList = reList.match(line)
+                if maList:
+                    key,value = maList.groups()
+                    if key == 'Path':
+                        #--Should be able to twist 7z to export names in UTF-8, but can't (at
+                        #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
+                        #  assume file is encoded in cp437 and that we want to decode to cp1252.
+                        #--Hopefully this will mostly resolve problem with german umlauts, etc.
+                        #  It won't solve problems with non-european characters though.
+                        try: file = value.decode('cp437').encode('cp1252')
+                        except: pass
+                    elif key == 'Attributes':
+                        isdir = (value[0] == 'D')
+                        text.append(('%s' % (file), isdir))
+                    elif key == 'Method':
+                        file = ''
+                        isdir = False
+            result = ins.close()
+            if result:
+                raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
+            
         text.sort()
-
         for line in text:
             dir = line[0]
             isdir = line[1]
-            if isdir:
-                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
+            if bUseUnicode:
+                if isdir:
+                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
+                else:
+                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
             else:
-                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
+                if isdir:
+                    log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
+                else:
+                    log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
         log('[/code][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
@@ -11050,7 +11212,10 @@ class InstallerProject(Installer):
             out.write('--*\\')
         out.close()
         #--Compress
-        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
+        if bosh.inisettings['EnableUnicode']:
+            command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7zUnicode.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
+        else:
+            command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
@@ -11135,7 +11300,7 @@ class InstallerProject(Installer):
              else:
                  log(' ' * depth + file)
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(stringBuffer())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Package Structure:'))
         apath = dirs['installers'].join(archive)
@@ -11830,7 +11995,7 @@ class InstallersData(bolt.TankData, DataDict):
             if curConflicts: packConflicts.append((installer.order,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         for order,package,files in packConflicts:
             if showLower and (order > srcOrder) != isHigher:
                 isHigher = (order > srcOrder)
@@ -11848,7 +12013,7 @@ class InstallersData(bolt.TankData, DataDict):
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(stringBuffer())
         log.out.write('[spoiler][code]')
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
@@ -15435,7 +15600,7 @@ class CBash_SpellRecords:
 ####        iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
 ####        for (num,objectId,full,value) in bush.ingred_alchem:
 ####            book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-####            buff = StringIO.StringIO()
+####            buff = stringBuffer()
 ####            buff.write(book.text)
 ####            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
 ####                buff.write(full+'\r\n')
@@ -15457,7 +15622,7 @@ class CBash_SpellRecords:
 ####        iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
 ####        for (num,objectId,full,value) in bush.effect_alchem:
 ####            book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-####            buff = StringIO.StringIO()
+####            buff = stringBuffer()
 ####            buff.write(book.text)
 ####            for effectName in sorted(effect_ingred.keys()):
 ####                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -15493,7 +15658,7 @@ class ModDetails:
                 if len(decomp) != sizeCheck:
                     raise ModError(self.inName,
                         _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-                reader = ModReader(modInfo.name,StringIO.StringIO(decomp))
+                reader = ModReader(modInfo.name,stringBuffer(decomp))
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
@@ -15831,7 +15996,7 @@ class PCFaces:
 
         #--Player ACHR
         #--Buffer for modified record data
-        buff = StringIO.StringIO()
+        buff = stringBuffer()
         def buffPack(format,*args):
             buff.write(struct.pack(format,*args))
         def buffPackRef(oldFid,doPack=True):
@@ -27821,7 +27986,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
             book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write(book.text)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
@@ -27843,7 +28008,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
             book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write(book.text)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -27933,7 +28098,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.ingred_alchem:
             subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
             book = getBook(patchFile, objectId)
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
@@ -27957,7 +28122,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.effect_alchem:
             subProgress(pstate, _("Cataloging Effects...\n%s") % full)
             book = getBook(patchFile,objectId)
-            buff = StringIO.StringIO()
+            buff = stringBuffer()
             buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -30480,6 +30645,7 @@ def initDefaultTools():
 
 def initDefaultSettings():
     #other settings from the INI:
+    inisettings['EnableUnicode'] = False
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
