@@ -679,6 +679,8 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * __Text Colors__
   * **Blue:** An esm file.
   * **Green:** A mod marked as mergeable (see [[#|Merge Patches]]).
+  * **Black:** A normal esp.
+  * **Purple:** A mod tagged with NoMerge.
 * __Line Colors__ 
   * **Pink:** A file that shares a modification date/time with another file.
     Not a problem unless they're both activated, in which case, the lines turn...
@@ -1778,6 +1780,7 @@ The Mod Checker allows you to run a check of your active and [[#MergePatches|mer
 At the top of the report are generic warnings.
 * __Missing Master:__ A note like this indicates that an active mod has a master that should be active, but is not. This sort of problem will result in an immediate CTD while trying to launch the game.
 * __Delinquent Master:__ This warning indicates that a mod depends on a master that is set to load ~~after~~ the mod itself. This won't necessarily result in a problem, but it's best to fix it anyway (by reordering mods).
+* __Version Info:__ In the mod list (if active) mods will display version strings after their name if Bash can find version info (basically anything along the lines of rev 1.2c or version 1.3 or v.12Alpha1) in the esp/m header description.
 
 === Ruleset Information
 The rest of the report is divided into rulesets reports. Rulesets are text files provided by modders and other modders and other players. They basically tell Bash's mod checker which things to look out for and what to say about them in the Mod Checker report. 
@@ -2252,6 +2255,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 7z dll/exe updated to version 9.20
   * new Option to enable installation of OBSE Plugin dlls with large warning.
   * hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
+  * new 'Open at Planet Elderscrolls' menu item.
 * Saves Tab:
   * Rename Save(s) command added (in the saves menu->file).
   * Re-number Save(s) command added (in the saves menu->file).
@@ -2279,6 +2283,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Minor improvements to Export/Import Map Markers 
   * [[#|Export/Import Sigil Stones]] added
   * [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
+  * Status bar text when mousing over improved to display al applicable messages instead of only one.
+  * Fixes/clarifications in wizards.txt/html
+  * Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dieing warns ands continues to launch.
   * Experimental unicode support re-added as an option that is disabled by default.
     * Allows Bash and BAIN to work with extended character sets.
     * Requires the unicode version of wxPython to be installed.
