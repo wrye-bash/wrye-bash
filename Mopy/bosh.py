@@ -9848,11 +9848,11 @@ class Installer(object):
     docDirs = set(('screenshots',))
     dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
         'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini'))
+    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
     dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
-    skipExts = set(('.dlx','.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
+    skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
     imageExts = set(('.gif','.jpg','.png'))
@@ -10210,11 +10210,14 @@ class Installer(object):
                 continue
             elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse\\'):
                 continue
-            elif fileExt == '.dll':
+            elif fileExt in ['.dll','.dlx']:
+                if not settings['bash.installers.allowOBSEPlugins']: continue
                 if not fileStartsWith('obse\\'):
                     continue
                 if full in badDlls: continue
-                if checkOBSE and full not in goodDlls:
+                if not checkOBSE:
+                    pass
+                elif checkOBSE and full not in goodDlls:
                     message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
                     if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
                         badDlls.append(full)
