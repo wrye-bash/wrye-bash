@@ -10263,12 +10263,12 @@ class Installer(object):
                 continue
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
-                    if file not in subList:
-                        subList.append(file)
-                    if bSkip: continue
-                    pFile = GPath(file)
-                    espmsAdd(pFile)
-                    if pFile in espmNots: continue
+                if file not in subList:
+                    subList.append(file)
+                if bSkip: continue
+                pFile = GPath(file)
+                espmsAdd(pFile)
+                if pFile in espmNots: continue
             elif bSkip: continue
             if skipEspmVoices and fileStartsWith('sound\\voice\\'):
                 if bUseUnicode:
