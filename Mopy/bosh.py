@@ -10133,7 +10133,7 @@ class Installer(object):
         skipExtFilesAdd = skipExtFiles.add
         goodDlls, badDlls = self.goodDlls, self.badDlls
         # to account for initial version with these being lists:
-        if is instance(goodDlls,list):
+        if isinstance(goodDlls,list):
             if not goodDlls:
                 goodDlls = {}
             else:
@@ -10141,7 +10141,7 @@ class Installer(object):
                 goodDlls = {}
                 for item in temp:
                     goodDlls[item] = []
-        if is instance(badDlls,list):
+        if isinstance(badDlls,list):
             if not badDlls:
                 badDlls = {}
             else:
