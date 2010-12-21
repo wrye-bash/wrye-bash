@@ -116,10 +116,10 @@ inisettings = {}
 inisettings['AutoItemCheck'] = False
 defaultExt = '.7z'
 writeExts = dict({'.7z':'7z','.zip':'zip'})
-readExts = set(('.rar',))
+readExts = set(('.rar','.7z.001','.001'))
 readExts.update(set(writeExts))
 noSolidExts = set(('.zip',))
-settings  = None
+settings = None
 installersWindow = None
 
 allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
@@ -10132,6 +10132,23 @@ class Installer(object):
         skipDirFilesAdd = skipDirFiles.add
         skipExtFilesAdd = skipExtFiles.add
         goodDlls, badDlls = self.goodDlls, self.badDlls
+        # to account for initial version with these being lists:
+        if is instance(goodDlls,list):
+            if not goodDlls:
+                goodDlls = {}
+            else:
+                temp = goodDlls[:]
+                goodDlls = {}
+                for item in temp:
+                    goodDlls[item] = []
+        if is instance(badDlls,list):
+            if not badDlls:
+                badDlls = {}
+            else:
+                temp = badDlls[:]
+                badDlls = {}
+                for item in temp:
+                    badDlls[item] = []
         espms = self.espms
         espmsAdd = espms.add
         bUseUnicode = inisettings['EnableUnicode']
@@ -10214,16 +10231,23 @@ class Installer(object):
                 if not settings['bash.installers.allowOBSEPlugins']: continue
                 if not fileStartsWith('obse\\'):
                     continue
-                if full in badDlls: continue
+                if fileLower in badDlls and (archiveRoot,size,crc) in badDlls[fileLower] continue
                 if not checkOBSE:
                     pass
-                elif checkOBSE and full not in goodDlls:
+                elif fileLower in goodDlls and (archiveRoot,size,crc) in goodDlls[fileLower]: pass
+                elif checkOBSE:
                     message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
+                    if fileLower in goodDlls:
+                        message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
+                    elif fileLower in badDlls:
+                        message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
                     if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
-                        badDlls.append(full)
+                        badDlls.setdefault(fileLower,[])
+                        badDlls[fileLower].append((archiveRoot,size,crc))
                         continue
-                    goodDlls.append(full)
-                elif full not in goodDlls: continue
+                    goodDlls.setdefault(fileLower,[])
+                    goodDlls[fileLower].append((archiveRoot,size,crc))
+                elif fileLower not in goodDlls: continue
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFilesAdd(full)
@@ -10239,12 +10263,12 @@ class Installer(object):
                 continue
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
-                if file not in subList:
-                    subList.append(file)
-                if bSkip: continue
-                pFile = GPath(file)
-                espmsAdd(pFile)
-                if pFile in espmNots: continue
+                    if file not in subList:
+                        subList.append(file)
+                    if bSkip: continue
+                    pFile = GPath(file)
+                    espmsAdd(pFile)
+                    if pFile in espmNots: continue
             elif bSkip: continue
             if skipEspmVoices and fileStartsWith('sound\\voice\\'):
                 if bUseUnicode:
