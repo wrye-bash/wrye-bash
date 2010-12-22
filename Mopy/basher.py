@@ -12448,7 +12448,7 @@ class App_Help(Link):
 
     def Execute(self,event):
         """Handle menu selection."""
-        bolt.Path.getcwd().join('Wrye Bash.html').start()
+        bosh.dirs['mopy'].join('Wrye Bash.html').start()
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(Link):
