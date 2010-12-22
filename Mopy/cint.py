@@ -1774,33 +1774,6 @@ class ObFormIDRecord(object):
 ##                conflicting[attr] = getattr_deep(self,attr)
         return conflicting
 
-    def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, GetExtendedConflicts=False):
-        conflicting = {}
-        recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
-        conflicts = self.Conflicts(GetExtendedConflicts)
-        if conflicts:
-            newest = conflicts[0]
-            baseValues = {}
-            baseValues.update([(attr,reduce(getattr, attr.split('.'), newest)) for attrs in tag_attrs.values() for attr in attrs])
-            #sort oldest to newest rather than newest to oldest
-            conflicts.reverse()
-            #Less pythonic, but optimized for better speed.
-            #Equivalent to commented out code.
-            conflicting.update([(attr,reduce(getattr, attr.split('.'), parentRecord)) for parentRecord in conflicts if parentRecord.GName in srcMods for bashKey in tags if bashKey in bosh.modInfos[parentRecord.GName].getBashTags() for attr in tag_attrs[bashKey] if baseValues[attr] != reduce(getattr, attr.split('.'), parentRecord)])
-##            for parentRecord in conflicts:
-##                if parentRecord.GName in srcMods:
-##                    modInfo = bosh.modInfos[parentRecord.GName]
-##                    bashTags = modInfo.getBashTags()
-##                    attrs = []
-##                    for bashKey in tags:
-##                        if bashKey in bashTags:
-##                            attrs += tag_attrs[bashKey]
-##                    for attr in attrs:
-##                        value = getattr_deep(parentRecord,attr)
-##                        if baseValues[attr] != value:
-##                            conflicting[attr] = value
-        return conflicting
-
     def mergeFilter(self,modSet):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
@@ -1978,33 +1951,6 @@ class ObEditorIDRecord(object):
 ##        else:
 ##            for attr in attrs:
 ##                conflicting[attr] = getattr_deep(self,attr)
-        return conflicting
-
-    def ConflictDetailsDeux(self, tags, tag_attrs, srcMods, GetExtendedConflicts=False):
-        conflicting = {}
-        recordMasters = set(ObModFile(self._CollectionID, self._ModID).TES4.masters)
-        conflicts = self.Conflicts(GetExtendedConflicts)
-        if conflicts:
-            newest = conflicts[0]
-            baseValues = {}
-            baseValues.update([(attr,reduce(getattr, attr.split('.'), newest)) for attrs in tag_attrs.values() for attr in attrs])
-            #sort oldest to newest rather than newest to oldest
-            conflicts.reverse()
-            #Less pythonic, but optimized for better speed.
-            #Equivalent to commented out code.
-            conflicting.update([(attr,reduce(getattr, attr.split('.'), parentRecord)) for parentRecord in conflicts if parentRecord.GName in srcMods for bashKey in tags if bashKey in bosh.modInfos[parentRecord.GName].getBashTags() for attr in tag_attrs[bashKey] if baseValues[attr] != reduce(getattr, attr.split('.'), parentRecord)])
-##            for parentRecord in conflicts:
-##                if parentRecord.GName in srcMods:
-##                    modInfo = bosh.modInfos[parentRecord.GName]
-##                    bashTags = modInfo.getBashTags()
-##                    attrs = []
-##                    for bashKey in tags:
-##                        if bashKey in bashTags:
-##                            attrs += tag_attrs[bashKey]
-##                    for attr in attrs:
-##                        value = getattr_deep(parentRecord,attr)
-##                        if baseValues[attr] != value:
-##                            conflicting[attr] = value
         return conflicting
 
     def CopyAsNew(self, target, RecordID, CopyFlags=None):
