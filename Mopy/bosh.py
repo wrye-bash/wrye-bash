@@ -10131,24 +10131,7 @@ class Installer(object):
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
         skipExtFilesAdd = skipExtFiles.add
-        goodDlls, badDlls = self.goodDlls, self.badDlls
-        # to account for initial version with these being lists:
-        if isinstance(goodDlls,list):
-            if not goodDlls:
-                goodDlls = {}
-            else:
-                temp = goodDlls[:]
-                goodDlls = {}
-                for item in temp:
-                    goodDlls[item] = []
-        if isinstance(badDlls,list):
-            if not badDlls:
-                badDlls = {}
-            else:
-                temp = badDlls[:]
-                badDlls = {}
-                for item in temp:
-                    badDlls[item] = []
+        goodDlls, badDlls = settings['bash.installers.goodDlls'],settings['bash.installers.badDlls']
         espms = self.espms
         espmsAdd = espms.add
         bUseUnicode = inisettings['EnableUnicode']
@@ -10231,11 +10214,13 @@ class Installer(object):
                 if not settings['bash.installers.allowOBSEPlugins']: continue
                 if not fileStartsWith('obse\\'):
                     continue
-                if fileLower in badDlls and (archiveRoot,size,crc) in badDlls[fileLower] continue
+                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
                 if not checkOBSE:
                     pass
-                elif fileLower in goodDlls and (archiveRoot,size,crc) in goodDlls[fileLower]: pass
+                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
+                    #print goodDlls
+                    #print [(archiveRoot,size,crc)]
                     message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
                     if fileLower in goodDlls:
                         message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
@@ -10243,11 +10228,11 @@ class Installer(object):
                         message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
                     if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
                         badDlls.setdefault(fileLower,[])
-                        badDlls[fileLower].append((archiveRoot,size,crc))
+                        badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
                     goodDlls.setdefault(fileLower,[])
-                    goodDlls[fileLower].append((archiveRoot,size,crc))
-                elif fileLower not in goodDlls: continue
+                    goodDlls[fileLower].append([archiveRoot,size,crc])
+                #elif fileLower not in goodDlls: continue
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFilesAdd(full)

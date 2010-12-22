@@ -208,6 +208,8 @@ settingDefaults = {
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
+    'bash.installers.goodDlls':{},
+    'bash.installers.badDlls':{},
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
