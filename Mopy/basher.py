@@ -6735,6 +6735,78 @@ class Installers_SortStructure(Link):
         settings['bash.installers.sortStructure'] ^= True
         self.gTank.SortItems()
 
+#------------------------------------------------------------------------------
+class Installers_ExportDllInfo(Link):
+    """Sort by type."""
+    def AppendToMenu(self,menu,window,data):
+        self.wdw = window
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed OBSE plugin dlls"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.wdw,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
+        if not textPath: return
+        try:
+            out = textPath.open("w")
+            out.write('goodDlls (those dlls that you have chosen to allow to be installed)\n')
+            if settings['bash.installers.goodDlls']:
+                for dll in settings['bash.installers.goodDlls']:
+                    out.write('dll:'+dll+':\n')
+                    for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
+                        out.write('version %02d: %s\n' % (index, version))
+            else: out.write("None")
+            out.write('badDlls (those dlls that you have chosen to NOT allow to be installed)\n')
+            if settings['bash.installers.badDlls']:
+                for dll in settings['bash.installers.badDlls']:
+                    out.write('dll:'+dll+':\n')
+                    for index, version in enumerate(settings['bash.installers.badDlls'][dll]):
+                        out.write('version %02d: %s\n' % (index, version))
+            else: out.write("None")
+        finally: out.close
+        
+class Installers_ImportDllInfo(Link):
+    """Sort by type."""
+    def AppendToMenu(self,menu,window,data):
+        self.wdw = window
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed OBSE plugin dlls"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askOpen(self.wdw,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
+            textDir, _("OBSE dll permissions.txt"), '*.txt',mustExist=True)
+        if not textPath: return
+        message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
+        if not balt.askYes(self.wdw,message,_('Merge permissions?')): replace = True
+        else: replace = False
+        try:
+            inp = textPath.open("r")
+            Dlls = {'goodDlls':{},'badDlls':{}}
+            for line in inp:
+                if line.startswith('goodDlls'):
+                    current = Dlls['goodDlls']
+                if line.startswith('badDlls'):
+                    current = Dlls['badDlls']
+                elif line.startswith('dll:'):
+                    dll = line[4:-2]
+                    current.setdefault(dll,[])
+                elif line.startswith('version'):
+                    ver = line[13:-2].strip("'").split(",")
+                    current[dll].append([ver[0].strip("'"),int(ver[1]),long(ver[2])])
+        finally: inp.close
+        if not replace:
+            settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
+            settings['bash.installers.badDlls'].update(Dlls['badDlls'])
+        else:
+            settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
+        
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerLink(Link):
@@ -13261,6 +13333,8 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(User_BackupSettings())
     InstallersPanel.mainMenu.append(User_RestoreSettings())
     InstallersPanel.mainMenu.append(User_SaveSettings())
+    InstallersPanel.mainMenu.append(Installers_ExportDllInfo())
+    InstallersPanel.mainMenu.append(Installers_ImportDllInfo())
 
     #--Item links
     #--File
@@ -13322,6 +13396,8 @@ def InitINILinks():
     INIList.mainMenu.append(User_BackupSettings())
     INIList.mainMenu.append(User_RestoreSettings())
     INIList.mainMenu.append(User_SaveSettings())
+    INIList.mainMenu.append(Installers_ExportDllInfo())
+    INIList.mainMenu.append(Installers_ImportDllInfo())
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -13379,6 +13455,8 @@ def InitModLinks():
     ModList.mainMenu.append(User_BackupSettings())
     ModList.mainMenu.append(User_RestoreSettings())
     ModList.mainMenu.append(User_SaveSettings())
+    ModList.mainMenu.append(Installers_ExportDllInfo())
+    ModList.mainMenu.append(Installers_ImportDllInfo())
 
     #--ModList: Item Links
     if True: #--File
@@ -13497,6 +13575,8 @@ def InitSaveLinks():
     SaveList.mainMenu.append(User_BackupSettings())
     SaveList.mainMenu.append(User_RestoreSettings())
     SaveList.mainMenu.append(User_SaveSettings())
+    SaveList.mainMenu.append(Installers_ExportDllInfo())
+    SaveList.mainMenu.append(Installers_ImportDllInfo())
 
     #--SaveList: Item Links
     if True: #--File
@@ -13604,6 +13684,8 @@ def InitScreenLinks():
     ScreensList.mainMenu.append(User_BackupSettings())
     ScreensList.mainMenu.append(User_RestoreSettings())
     ScreensList.mainMenu.append(User_SaveSettings())
+    ScreensList.mainMenu.append(Installers_ExportDllInfo())
+    ScreensList.mainMenu.append(Installers_ImportDllInfo())
 
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
@@ -13626,6 +13708,8 @@ def InitMessageLinks():
     MessageList.mainMenu.append(User_BackupSettings())
     MessageList.mainMenu.append(User_RestoreSettings())
     MessageList.mainMenu.append(User_SaveSettings())
+    MessageList.mainMenu.append(Installers_ExportDllInfo())
+    MessageList.mainMenu.append(Installers_ImportDllInfo())
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -13639,6 +13723,8 @@ def InitPeopleLinks():
     PeoplePanel.mainMenu.append(User_BackupSettings())
     PeoplePanel.mainMenu.append(User_RestoreSettings())
     PeoplePanel.mainMenu.append(User_SaveSettings())
+    PeoplePanel.mainMenu.append(Installers_ExportDllInfo())
+    PeoplePanel.mainMenu.append(Installers_ImportDllInfo())
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())
     PeoplePanel.itemMenu.append(SeparatorLink())

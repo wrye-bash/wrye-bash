@@ -9840,7 +9840,7 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','goodDlls','badDlls')
+        'skipVoices','espmNots','isSolid','blockSize','overrideSkips')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap',)
     __slots__ = persistent+volatile
@@ -10019,8 +10019,6 @@ class Installer(object):
         self.skipVoices = False
         self.hasExtraData = False
         self.overrideSkips = False
-        self.goodDlls = []
-        self.badDlls = []
         self.comments = ''
         self.group = '' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
@@ -10219,8 +10217,6 @@ class Installer(object):
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    #print goodDlls
-                    #print [(archiveRoot,size,crc)]
                     message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
                     if fileLower in goodDlls:
                         message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
@@ -10232,7 +10228,6 @@ class Installer(object):
                         continue
                     goodDlls.setdefault(fileLower,[])
                     goodDlls[fileLower].append([archiveRoot,size,crc])
-                #elif fileLower not in goodDlls: continue
             #--Noisy skips
             elif file in bethFiles:
                 if not bSkip: skipDirFilesAdd(full)
@@ -10293,6 +10288,7 @@ class Installer(object):
             dest_src[key] = full
             unSize += size
         self.unSize = unSize
+        settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = goodDlls, badDlls
         (self.data_sizeCrc,old_sizeCrc) = (data_sizeCrc,self.data_sizeCrc)
         #--Update dirty?
         if self.isActive and data_sizeCrc != old_sizeCrc:
