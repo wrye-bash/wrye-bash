@@ -7311,68 +7311,86 @@ class Installer_Open(balt.Tank_Open):
         menuItem.Enable(bool(self.selected))
 
 #------------------------------------------------------------------------------
+class InstallerOpenAt_MainMenu(balt.MenuLink):
+    """Main Open At Menu"""
+    def AppendToMenu(self,menu,window,data):
+        subMenu = wx.Menu()
+        menu.AppendMenu(-1,self.name,subMenu)
+        #--Only enable the menu and append the subMenu's if one archive is selected
+        if len(window.GetSelected()) > 1:
+            id = menu.FindItem(self.name)
+            menu.Enable(id,False)
+        else:
+            for item in window.GetSelected():
+                if not isinstance(window.data[item],bosh.InstallerArchive):
+                    id = menu.FindItem(self.name)
+                    menu.Enable(id,False)
+                    break
+            else:
+                for link in self.links:
+                    link.AppendToMenu(subMenu,window,data)
+                
 class Installer_OpenTesNexus(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open at TesNexus'))
+        menuItem = wx.MenuItem(menu,self.id,_('TES Nexus...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTesNexus.search(data[0].s)))
+        x = bosh.reTesNexus.search(data[0].s)
+        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
         """Handle selection."""
-        message = _("Attempt to open this as a mod at TesNexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesNexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesNexus.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TesNexus')):
-            id = bosh.reTesNexus.search(self.selected[0].s).group(1)
+        message = _("Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
+        if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TES Nexus')):
+            id = bosh.reTesNexus.search(self.selected[0].s).group(2)
             os.startfile('http://tesnexus.com/downloads/file.php?id='+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open Google search for file'))
+        menuItem = wx.MenuItem(menu,self.id,_('Google...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.isSingleArchive))
+        x = bosh.reTesNexus.search(data[0].s)
+        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(1)))
 
     def Execute(self,event):
         """Handle selection."""
         message = _("Open a search for this on Google?")
         if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open a search')):
-            fileName = self.selected[0].s
-            print fileName
-            #filename = 'Wrye Bash'
-            filename = filename.strip('0123456789')
-            print filename+str(len(filename))
-            os.startfile('http://www.google.com/search?hl=en&q='+filename+'aq=f&oq=&aqi=')
+            os.startfile('http://www.google.com/search?hl=en&q='+bosh.reTesNexus.search(self.selected[0].s).group(1))
 
 class Installer_OpenTESA(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open at TesAlliance'))
+        menuItem = wx.MenuItem(menu,self.id,_('TES Alliance...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTESA.search(data[0].s)))
+        x = bosh.reTESA.search(data[0].s)
+        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
         """Handle selection."""
-        message = _("Attempt to open this as a mod at TesAlliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TesAlliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TesAlliance.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TesAlliance')):
-            id = bosh.reTESA.search(self.selected[0].s).group(1)
+        message = _("Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance.")
+        if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TES Alliance')):
+            id = bosh.reTESA.search(self.selected[0].s).group(2)
             os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
             
 class Installer_OpenPES(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open at Planet Elderscrolls'))
+        menuItem = wx.MenuItem(menu,self.id,_('Planet Elderscrolls...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.isSingleArchive() and bosh.reTESA.search(data[0].s)))
+        x = bosh.reTESA.search(data[0].s)
+        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
         """Handle selection."""
         message = _("Attempt to open this as a mod at Planet Elderscrolls? This assumes that the trailing digits in the package's name are actually the id number of the mod at Planet Elderscrolls. If this assumption is wrong, you'll just get a random mod page (or error notice) at Planet Elderscrolls.")
         if balt.askContinue(self.gTank,message,'bash.installers.openPES',_('Open at Planet Elderscrolls')):
-            id = bosh.reTESA.search(self.selected[0].s).group(1)
+            id = bosh.reTESA.search(self.selected[0].s).group(2)
             os.startfile('http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
@@ -13341,10 +13359,13 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Open())
     InstallersPanel.itemMenu.append(Installer_Duplicate())
     InstallersPanel.itemMenu.append(balt.Tank_Delete())
-    InstallersPanel.itemMenu.append(Installer_OpenTesNexus())
-    #InstallersPanel.itemMenu.append(Installer_OpenSearch())
-    InstallersPanel.itemMenu.append(Installer_OpenTESA())
-    InstallersPanel.itemMenu.append(Installer_OpenPES())
+    if True: #--Open At...
+        openAtMenu = InstallerOpenAt_MainMenu(_("Open at"))
+        openAtMenu.links.append(Installer_OpenSearch())
+        openAtMenu.links.append(Installer_OpenTesNexus())
+        openAtMenu.links.append(Installer_OpenTESA())
+        openAtMenu.links.append(Installer_OpenPES())
+        InstallersPanel.itemMenu.append(openAtMenu)
     InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.
