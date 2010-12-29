@@ -1466,13 +1466,17 @@ class ModList(List):
                 else:
                     orderKey = lambda x: self.items.index(x)
                     moveMod = (-1,1)[event.GetKeyCode() == wx.WXK_DOWN]
-                    for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=(moveMod != -1)):
+                    isReversed = (moveMod != -1)
+                    for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
                         swapItem = self.items.index(thisFile) + moveMod
                         if swapItem < 0 or len(self.items) - 1 < swapItem: break
                         swapFile = self.items[swapItem]
                         if thisFile.cext != swapFile.cext: break
                         thisInfo, swapInfo = bosh.modInfos[thisFile], bosh.modInfos[swapFile]
                         thisTime, swapTime = thisInfo.mtime, swapInfo.mtime
+                        if thisTime == swapTime:
+                            thisTime = bosh.modInfos.getFreeTime(thisTime,thisTime,reverse=isReversed)
+                            #swapTime = bosh.modInfos.getFreeTime(swapTime,swapTime,reverse=isReversed)
                         thisInfo.setmtime(swapTime)
                         swapInfo.setmtime(thisTime)
                         bosh.modInfos.refreshInfoLists()

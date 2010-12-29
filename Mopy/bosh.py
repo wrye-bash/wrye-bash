@@ -8706,10 +8706,16 @@ class ModInfos(FileInfos):
         mods = self.mtime_selected.get(mtime,tuple())
         return len(mods) > 1
         
-    def getFreeTime(self, startTime, defaultTime='+1'):
+    def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""        
         haskey = self.mtime_mods.has_key
-        for testTime in range(startTime, startTime + 1000): #1000 is an arbitrary limit
+        if reverse:
+            endTime = startTime - 1000
+            step = -1
+        else:
+            endTime = startTime + 1000
+            step = 1
+        for testTime in range(startTime, endTime, step): #1000 is an arbitrary limit
             if not haskey(testTime):
                 return testTime
         return defaultTime
@@ -10995,12 +11001,19 @@ class InstallerArchive(Installer):
         count = 0
         tempDir = self.tempDir
         norm_ghost = Installer.getGhosted()
+        mtimes = set()
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = tempDir.join(src)
             destFull = destDir.join(norm_ghost.get(dest,dest))
             if srcFull.exists():
                 srcFull.moveTo(destFull)
+                if reModExt.search(destFull.s):
+                    newTime = destFull.mtime
+                    while newTime in mtimes:
+                        newTime += 1
+                    destFull.mtime = newTime
+                    mtimes.add(newTime)
                 data_sizeCrcDate[dest] = (size,crc,destFull.mtime)
                 count += 1
         self.clearTemp()
@@ -11156,12 +11169,19 @@ class InstallerProject(Installer):
         count = 0
         norm_ghost = Installer.getGhosted()
         srcDir = dirs['installers'].join(name)
+        mtimes = set()
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDir.join(src)
             destFull = destDir.join(norm_ghost.get(dest,dest))
             if srcFull.exists():
                 srcFull.copyTo(destFull)
+                if reModExt.search(destFull.s):
+                    newTime = destFull.mtime
+                    while newTime in mtimes:
+                        newTime += 1
+                    destFull.mtime = newTime
+                    mtimes.add(newTime)
                 data_sizeCrcDate[dest] = (size,crc,destFull.mtime)
                 count += 1
         return count
@@ -24166,11 +24186,51 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         log(_('* %s: %d') % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            
 class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
     scanOrder = 32
     editOrder = 32
     name = _('Default Icons')
+    type_defaultIcon = {
+                'ALCH': r"Clutter\Potions\IconPotion01.dds",
+                'AMMO': r"Weapons\IronArrow.dds",
+                'APPA': r"Clutter\IconMortarPestle.dds",
+                'AMMO': r"Weapons\IronArrow.dds",
+                'ARMO': ((r"Armor\Iron\M\Cuirass.dds",r"Armor\Iron\F\Cuirass.dds"),
+                         (r"Armor\Iron\M\Greaves.dds",r"Armor\Iron\F\Greaves.dds"),
+                         (r"Armor\Iron\M\Helmet.dds",),
+                         (r"Armor\Iron\M\Gauntlets.dds",r"Armor\Iron\F\Gauntlets.dds"),
+                         (r"Armor\Iron\M\Boots.dds",),
+                         (r"Armor\Iron\M\Shield.dds",),
+                         ),
+                'BOOK': r"Clutter\iconbook%d.dds",
+                'BSGN': r"Clutter\iconbook%d.dds",
+                'CLAS': r"Clutter\iconbook%d.dds",
+                'CLOT': ((r"Clothes\MiddleClass\01\M\Shirt.dds",r"Clothes\MiddleClass\01\F\Shirt.dds"),
+                         (r"Clothes\MiddleClass\01\M\Pants.dds",r"Clothes\MiddleClass\01\F\Pants.dds"),
+                         (r"Clothes\MythicDawnrobe\hood.dds",),
+                         (r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds",),
+                         (r"Clothes\MiddleClass\01\M\Shoes.dds",r"Clothes\MiddleClass\01\F\Shoes.dds"),
+                         (r"Clothes\Ring\RingNovice.dds",),
+                         (r"Clothes\Amulet\AmuletSilver.dds",),
+                         ),
+##                'FACT': r"", ToDo
+                'INGR': r"Clutter\IconSeeds.dds",
+                'KEYM': (r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"),
+                'LIGH': r"Lights\IconTorch02.dds",
+                'MISC': r"Clutter\Soulgems\AzurasStar.dds",
+                'QUST': r"Quest\icon_miscellaneous.dds",
+                'SGST': r"IconSigilStone.dds",
+                'SLGM': r"Clutter\Soulgems\AzurasStar.dds",
+                'WEAP': (r"Weapons\IronDagger.dds",
+                         r"Weapons\IronClaymore.dds",
+                         r"Weapons\IronMace.dds",
+                         r"Weapons\IronBattleAxe.dds",
+                         r"Weapons\Staff.dds",
+                         r"Weapons\IronBow.dds",
+                         ),
+                }
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -24182,111 +24242,69 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
         self.mod_count = {}
 
     def getTypes(self):
-        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
-                'MISC','QUST','SGST','SLGM','WEAP']
+        return [_type for _type in self.type_defaultIcon.keys()]
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        try:
-            if record.icon: return
-        except:
-            try:
-                if record.maleIcon or record.femaleIcon: return
-            except: return
+        if getattr(record, 'iconPath', None): return
+        if getattr(record, 'maleIconPath', None): return
+        if getattr(record, 'femaleIconPath', None): return
+        if record._Type == 'LIGH' and not record.IsCanTake: return
+
         override = record.CopyAsOverride(self.patchFile)
         if override:
-            if override._Type == 'ALCH':
-                record.icon = r"Clutter\Potions\IconPotion01.dds"
-            elif override._Type == 'AMMO':
-                record.icon = r"Weapons\IronArrow.dds"
-            elif override._Type == 'APPA':
-                record.icon = r"Clutter\IconMortarPestle.dds"
-            elif override._Type == 'AMMO':
-                record.icon = r"Weapons\IronArrow.dds"
-            elif override._Type == 'ARMO':
-                #choose based on body flags:
-                if record.flags.upperBody != 0:
-                    record.maleIcon = r"Armor\Iron\M\Cuirass.dds"
-                    record.femaleIcon = r"Armor\Iron\F\Cuirass.dds"
-                    changed = True
-                elif record.flags.lowerBody != 0:
-                    record.maleIcon = r"Armor\Iron\M\Greaves.dds"
-                    record.femaleIcon = r"Armor\Iron\F\Greaves.dds"
-                    changed = True
-                elif record.flags.head != 0 or record.flags.hair != 0:
-                    record.maleIcon = r"Armor\Iron\M\Helmet.dds"
-                    changed = True
-                elif record.flags.hand != 0:
-                    record.maleIcon = r"Armor\Iron\M\Gauntlets.dds"
-                    record.femaleIcon = r"Armor\Iron\F\Gauntlets.dds"
-                    changed = True
-                elif record.flags.foot != 0:
-                    record.maleIcon = r"Armor\Iron\M\Boots.dds"
-                    changed = True
-                elif record.flags.shield != 0:
-                    record.maleIcon = r"Armor\Iron\M\Shield.dds"
-                    changed = True
-            elif override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
-            elif override._Type == 'CLOT':
-                #choose based on body flags:
-                if record.flags.upperBody != 0:
-                    record.maleIcon = r"Clothes\MiddleClass\01\M\Shirt.dds"
-                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Shirt.dds"
-                    changed = True
-                elif record.flags.lowerBody != 0:
-                    record.maleIcon = r"Clothes\MiddleClass\01\M\Pants.dds"
-                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Pants.dds"
-                    changed = True
-                elif record.flags.head or record.flags.hair:
-                    record.maleIcon = r"Clothes\MythicDawnrobe\hood.dds"
-                    changed = True
-                elif record.flags.hand != 0:
-                    record.maleIcon = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
-                    changed = True
-                elif record.flags.foot != 0:
-                    record.maleIcon = r"Clothes\MiddleClass\01\M\Shoes.dds"
-                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Shoes.dds"
-                    changed = True
-                elif record.flags.leftRing or record.flags.rightRing:
-                    record.maleIcon = r"Clothes\Ring\RingNovice.dds"
-                    changed = True
-                else: #amulet
-                    record.maleIcon = r"Clothes\Amulet\AmuletSilver.dds"
-                    changed = True
-            elif override._Type == 'FACT':
-                #todo
-                pass
-            elif override._Type == 'INGR':
-                record.icon = r"Clutter\IconSeeds.dds"
-            elif override._Type == 'KEYM':
-                record.icon = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
-            elif override._Type == 'LIGH':
-                record.icon = r"Lights\IconTorch02.dds"
-            elif override._Type == 'MISC':
-                record.icon = r"Clutter\Soulgems\AzurasStar.dds"
-            elif override._Type == 'QUST':
-                record.icon = r"Quest\icon_miscellaneous.dds"
-            elif override._Type == 'SGST':
-                record.icon = r"IconSigilStone.dds"
-            elif override._Type == 'SLGM':
-                record.icon = r"Clutter\Soulgems\AzurasStar.dds"
-            elif override._Type == 'WEAP':
-                    if record.type == 0:
-                        record.icon = r"Weapons\IronDagger.dds"
-                    elif record.type == 1:
-                        record.icon = r"Weapons\IronClaymore.dds"
-                    elif record.type == 2:
-                        record.icon = r"Weapons\IronMace.dds"
-                    elif record.type == 3:
-                        record.icon = r"Weapons\IronBattleAxe.dds"
-                    elif record.type == 4:
-                        record.icon = r"Weapons\Staff.dds"
-                    elif record.type == 5:
-                        record.icon = r"Weapons\IronBow.dds"
-                    changed = True
+            icons = self.type_defaultIcon[override._Type]
+            if isinstance(icons, tuple):
+                if override._Type == 'ARMO':
+                    #choose based on body flags:
+                    if override.IsUpperBody:
+                        icons = icons[0]
+                    elif override.IsLowerBody:
+                        icons = icons[1]
+                    elif override.IsHead or record.IsHair:
+                        icons = icons[2]
+                    elif override.IsHand:
+                        icons = icons[3]
+                    elif override.IsFoot:
+                        icons = icons[4]
+                    elif override.IsShield:
+                        icons = icons[5]
+                elif override._Type == 'CLOT':
+                    #choose based on body flags:
+                    if override.IsUpperBody:
+                        icons = icons[0]
+                    elif override.IsLowerBody:
+                        icons = icons[1]
+                    elif override.IsHead or record.IsHair:
+                        icons = icons[2]
+                    elif override.IsHand:
+                        icons = icons[3]
+                    elif override.IsFoot:
+                        icons = icons[4]
+                    elif override.IsLeftRing or override.IsRightRing:
+                        icons = icons[5]
+                    else:
+                        icons = icons[6]
+                elif override._Type == 'KEYM':
+                    icons = icons[random.randint(0,1)]
+                elif override._Type == 'WEAP':
+                    #choose based on weapon type:
+                    try:
+                        icons = icons[override.weaponType]
+                    except IndexError: #just in case
+                        icons = icons[0]
+            else:
+                if override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
+                    icons = icons % (random.randint(1,13))
+
+            if isinstance(icons, tuple):
+                if len(icons) == 1:
+                    override.maleIconPath = icons[0]
+                else:
+                    override.maleIconPath, override.femaleIconPath = icons
+            else:
+                override.iconPath = icons
             mod_count = self.mod_count
             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
             record.UnloadRecord()
