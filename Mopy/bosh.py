@@ -24004,6 +24004,304 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class AssortedTweak_DefaultIcons(MultiTweakItem):
+    """Sets a default icon for any records that don't have any icon assigned."""
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                            'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
+                            'MISC','QUST','SGST','SLGM','WEAP']
+        MultiTweakItem.__init__(self,False,_("Default Icons"),
+            _("Sets a default icon for any records that don't have any icon assigned"),
+            'icons',
+            (_('1'), 1),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreFact,MreIngr,MreKeym,MreLigh,
+                MreMisc,MreQust,MreSgst,MreSlgm,MreWeap)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreFact,MreIngr,MreKeym,MreLigh,
+                MreMisc,MreQust,MreSgst,MreSlgm,MreWeap)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        for blockType in self.activeTypes:
+            if blockType not in modFile.tops: continue
+            modBlock = getattr(modFile,blockType)
+            patchBlock = getattr(patchFile,blockType)
+            id_records = patchBlock.id_records
+            for record in modBlock.getActiveRecords():
+                if mapper(record.fid) not in id_records:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        count = {}
+        keep = patchFile.getKeeper()
+        for type in self.activeTypes:
+            if type not in patchFile.tops: continue
+            for record in patchFile.tops[type].records:
+                changed = False
+                try:
+                    if record.icon: continue
+                except:
+                    try:
+                        if record.maleIcon or record.femaleIcon: continue
+                    except: continue
+                if type == 'ALCH':
+                    record.icon = r"Clutter\Potions\IconPotion01.dds"
+                    changed = True
+                elif type == 'AMMO':
+                    record.icon = r"Weapons\IronArrow.dds"
+                    changed = True
+                elif type == 'APPA':
+                    record.icon = r"Clutter\IconMortarPestle.dds"
+                    changed = True
+                elif type == 'AMMO':
+                    record.icon = r"Weapons\IronArrow.dds"
+                    changed = True
+                elif type == 'ARMO':
+                    #choose based on body flags:
+                    if record.flags.upperBody != 0:
+                        record.maleIcon = r"Armor\Iron\M\Cuirass.dds"
+                        record.femaleIcon = r"Armor\Iron\F\Cuirass.dds"
+                        changed = True
+                    elif record.flags.lowerBody != 0:
+                        record.maleIcon = r"Armor\Iron\M\Greaves.dds"
+                        record.femaleIcon = r"Armor\Iron\F\Greaves.dds"
+                        changed = True
+                    elif record.flags.head != 0 or record.flags.hair != 0:
+                        record.maleIcon = r"Armor\Iron\M\Helmet.dds"
+                        changed = True
+                    elif record.flags.hand != 0:
+                        record.maleIcon = r"Armor\Iron\M\Gauntlets.dds"
+                        record.femaleIcon = r"Armor\Iron\F\Gauntlets.dds"
+                        changed = True
+                    elif record.flags.foot != 0:
+                        record.maleIcon = r"Armor\Iron\M\Boots.dds"
+                        changed = True
+                    elif record.flags.shield != 0:
+                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        changed = True
+                elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
+                    record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
+                    changed = True
+                elif type == 'CLOT':
+                    #choose based on body flags:
+                    if record.flags.upperBody != 0:
+                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shirt.dds"
+                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shirt.dds"
+                        changed = True
+                    elif record.flags.lowerBody != 0:
+                        record.maleIcon = r"Clothes\MiddleClass\01\M\Pants.dds"
+                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Pants.dds"
+                        changed = True
+                    elif record.flags.head or record.flags.hair:
+                        record.maleIcon = r"Clothes\MythicDawnrobe\hood.dds"
+                        changed = True
+                    elif record.flags.hand != 0:
+                        record.maleIcon = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
+                        changed = True
+                    elif record.flags.foot != 0:
+                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shoes.dds"
+                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shoes.dds"
+                        changed = True
+                    elif record.flags.leftRing or record.flags.rightRing:
+                        record.maleIcon = r"Clothes\Ring\RingNovice.dds"
+                        changed = True
+                    else: #amulet
+                        record.maleIcon = r"Clothes\Amulet\AmuletSilver.dds"
+                        changed = True
+                elif type == 'FACT':
+                    #todo
+                    changed = True
+                elif type == 'INGR':
+                    record.icon = r"Clutter\IconSeeds.dds"
+                    changed = True
+                elif type == 'KEYM':
+                    record.icon = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
+                    changed = True
+                elif type == 'LIGH':
+                    record.icon = r"Lights\IconTorch02.dds"
+                    changed = True
+                elif type == 'MISC':
+                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    changed = True
+                elif type == 'QUST':
+                    record.icon = r"Quest\icon_miscellaneous.dds"
+                    changed = True
+                elif type == 'SGST':
+                    record.icon = r"IconSigilStone.dds"
+                    changed = True
+                elif type == 'SLGM':
+                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    changed = True
+                elif type == 'WEAP':
+                    if record.type == 0:
+                        record.icon = r"Weapons\IronDagger.dds"
+                    elif record.type == 1:
+                        record.icon = r"Weapons\IronClaymore.dds"
+                    elif record.type == 2:
+                        record.icon = r"Weapons\IronMace.dds"
+                    elif record.type == 3:
+                        record.icon = r"Weapons\IronBattleAxe.dds"
+                    elif record.type == 4:
+                        record.icon = r"Weapons\Staff.dds"
+                    elif record.type == 5:
+                        record.icon = r"Weapons\IronBow.dds"
+                    changed = True
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log(_('* %s: %d') % (self.label,sum(count.values())))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
+    """Sets a default icon for any records that don't have any icon assigned."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Default Icons')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Default Icons"),
+            _("Sets a default icon for any records that don't have any icon assigned"),
+            'icons',
+            (_('1'), 1),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
+                'MISC','QUST','SGST','SLGM','WEAP']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        try:
+            if record.icon: return
+        except:
+            try:
+                if record.maleIcon or record.femaleIcon: return
+            except: return
+        override = record.CopyAsOverride(self.patchFile)
+        if override:
+            if override._Type == 'ALCH':
+                record.icon = r"Clutter\Potions\IconPotion01.dds"
+            elif override._Type == 'AMMO':
+                record.icon = r"Weapons\IronArrow.dds"
+            elif override._Type == 'APPA':
+                record.icon = r"Clutter\IconMortarPestle.dds"
+            elif override._Type == 'AMMO':
+                record.icon = r"Weapons\IronArrow.dds"
+            elif override._Type == 'ARMO':
+                #choose based on body flags:
+                if record.flags.upperBody != 0:
+                    record.maleIcon = r"Armor\Iron\M\Cuirass.dds"
+                    record.femaleIcon = r"Armor\Iron\F\Cuirass.dds"
+                    changed = True
+                elif record.flags.lowerBody != 0:
+                    record.maleIcon = r"Armor\Iron\M\Greaves.dds"
+                    record.femaleIcon = r"Armor\Iron\F\Greaves.dds"
+                    changed = True
+                elif record.flags.head != 0 or record.flags.hair != 0:
+                    record.maleIcon = r"Armor\Iron\M\Helmet.dds"
+                    changed = True
+                elif record.flags.hand != 0:
+                    record.maleIcon = r"Armor\Iron\M\Gauntlets.dds"
+                    record.femaleIcon = r"Armor\Iron\F\Gauntlets.dds"
+                    changed = True
+                elif record.flags.foot != 0:
+                    record.maleIcon = r"Armor\Iron\M\Boots.dds"
+                    changed = True
+                elif record.flags.shield != 0:
+                    record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                    changed = True
+            elif override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
+                record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
+            elif override._Type == 'CLOT':
+                #choose based on body flags:
+                if record.flags.upperBody != 0:
+                    record.maleIcon = r"Clothes\MiddleClass\01\M\Shirt.dds"
+                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Shirt.dds"
+                    changed = True
+                elif record.flags.lowerBody != 0:
+                    record.maleIcon = r"Clothes\MiddleClass\01\M\Pants.dds"
+                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Pants.dds"
+                    changed = True
+                elif record.flags.head or record.flags.hair:
+                    record.maleIcon = r"Clothes\MythicDawnrobe\hood.dds"
+                    changed = True
+                elif record.flags.hand != 0:
+                    record.maleIcon = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
+                    changed = True
+                elif record.flags.foot != 0:
+                    record.maleIcon = r"Clothes\MiddleClass\01\M\Shoes.dds"
+                    record.femaleIcon = r"Clothes\MiddleClass\01\F\Shoes.dds"
+                    changed = True
+                elif record.flags.leftRing or record.flags.rightRing:
+                    record.maleIcon = r"Clothes\Ring\RingNovice.dds"
+                    changed = True
+                else: #amulet
+                    record.maleIcon = r"Clothes\Amulet\AmuletSilver.dds"
+                    changed = True
+            elif override._Type == 'FACT':
+                #todo
+                pass
+            elif override._Type == 'INGR':
+                record.icon = r"Clutter\IconSeeds.dds"
+            elif override._Type == 'KEYM':
+                record.icon = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
+            elif override._Type == 'LIGH':
+                record.icon = r"Lights\IconTorch02.dds"
+            elif override._Type == 'MISC':
+                record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+            elif override._Type == 'QUST':
+                record.icon = r"Quest\icon_miscellaneous.dds"
+            elif override._Type == 'SGST':
+                record.icon = r"IconSigilStone.dds"
+            elif override._Type == 'SLGM':
+                record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+            elif override._Type == 'WEAP':
+                    if record.type == 0:
+                        record.icon = r"Weapons\IronDagger.dds"
+                    elif record.type == 1:
+                        record.icon = r"Weapons\IronClaymore.dds"
+                    elif record.type == 2:
+                        record.icon = r"Weapons\IronMace.dds"
+                    elif record.type == 3:
+                        record.icon = r"Weapons\IronBattleAxe.dds"
+                    elif record.type == 4:
+                        record.icon = r"Weapons\Staff.dds"
+                    elif record.type == 5:
+                        record.icon = r"Weapons\IronBow.dds"
+                    changed = True
+            mod_count = self.mod_count
+            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            record.UnloadRecord()
+            record._ModID = override._ModID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Default Icons'))
+        log(_('* Default Icons set: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -24043,6 +24341,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
         AssortedTweak_ScriptEffectSilencer(),
+        AssortedTweak_DefaultIcons(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -24111,6 +24410,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
+        CBash_AssortedTweak_DefaultIcons(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
