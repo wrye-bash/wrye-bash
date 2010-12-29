@@ -573,12 +573,13 @@ The following commands are available from context menu of packages.
   * __Open:__ Open package(s) in the file system.
   * __Duplicate:__ Duplicate package.
   * __Delete:__ Delete the package(s).
-  * __Open at TesNexus:__ Attempts to open the TesNexus page for the selected package.
-    * **This command may fail!** The function works by assuming that the trailing 4-5 digits in the archives name are a package id at TesNexus. 
-    * If the assumption is wrong, then some random TesNexus page will be selected or an error page.
-  * __Open at TesAlliance:__ Attempts to open the TesAlliance page for the selected package.
-    * **This command may fail!** The function works by assuming that the trailing 1-5 digits in the archives name are a package id at TesAlliance. 
-    * If the assumption is wrong, then some random TesAlliance page will be selected or an error page.
+  * __Open at submenu:__
+    * __TesNexus:__ Attempts to open the TesNexus page for the selected package.
+    * __TesAlliance:__ Attempts to open the TesAlliance page for the selected package.
+    * __Planet Elderscrolls:__ Attempts to open the Planet Elderscrolls page for the selected package.
+      * **These 3 commands may fail!** The function works by assuming that the trailing 1-5 digits in the archives name are a package id at selected Site. 
+      * If the assumption is wrong, then some random TesNexus/TesAlliance/Planet Elderscrolls page will be selected or an error page.
+    * __Google:__ Attempts to extract a useable name from the package name and launch a google search for that name.
   * __Hide:__ Hide the package by moving it to Oblivion Mods/Bash Mod Data/Hidden.
   * __Rename:__ Renames the package or marker to the entered text.
 * __Archive Info__
@@ -2223,7 +2224,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 291 [5/12/2010] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
+=== 291 [1/1/2011] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
@@ -2232,6 +2233,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Tweak Assorted:
     * another skip added to All Clothes Playable patcher
     * Script Effect Silencer added.
+    * Default Icons tweaker added.
   * Import Names
     * Crowded Roads Revisited NPC names csv file added (contributed by Smooth)
     * Crowded Roads Revamped NPC names csv file added (contributed by Spotty42)
@@ -2250,12 +2252,16 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New keyboard shortcuts added:
     * Enter: Open archive/project.
     * F2: Rename archive/project.
-  * new ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
+  * New ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
   * 3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
   * 7z dll/exe updated to version 9.20
-  * new Option to enable installation of OBSE Plugin dlls with large warning.
+  * New Option to enable installation of OBSE Plugin dlls with large warning.
+    . Also main menu options for import/export of the dll installation permissions.
   * hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
   * new 'Open at Planet Elderscrolls' menu item.
+  * new 'Open at Google' menu item
+  * all Open at * menu items moved into 'Open At' submenu.
+  * added .001 as a valid read extension - as in BAIN now supports multipart archives.
 * Saves Tab:
   * Rename Save(s) command added (in the saves menu->file).
   * Re-number Save(s) command added (in the saves menu->file).
@@ -2283,7 +2289,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Minor improvements to Export/Import Map Markers 
   * [[#|Export/Import Sigil Stones]] added
   * [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
-  * Status bar text when mousing over improved to display al applicable messages instead of only one.
+  * Status bar text when mousing over improved to display all applicable messages instead of only one.
   * Fixes/clarifications in wizards.txt/html
   * Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dieing warns ands continues to launch.
   * Experimental unicode support re-added as an option that is disabled by default.
