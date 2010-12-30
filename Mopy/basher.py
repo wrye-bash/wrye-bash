@@ -80,9 +80,14 @@ from balt import ListCtrl
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
     import belt
+    import win32gui
+    dclicktime = win32gui.GetDoubleClickTime() / 10
+    renametime = 2 * dclicktime
     bEnableWizard = True
 except:
     bEnableWizard = False
+    dclicktime = 50
+    renametime = 2 * dclicktime
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
@@ -2424,6 +2429,8 @@ class InstallersList(balt.Tank):
             details,id,style,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.hitItem = None
+        self.hitTime = 0
 
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
@@ -2459,7 +2466,91 @@ class InstallersList(balt.Tank):
         if hitItem < 0: return
         path = self.data.dir.join(self.GetItem(hitItem))
         if path.exists(): path.start()
+        
+    def OnLeftDown(self,event):
+        """Left click, do stuff; currently only rename.."""
+        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        if hitItem < 0: return
+        hitTime = time.time()*100
+        if self.hitItem != hitItem: 
+            self.hitItem = hitItem
+            self.hitTime = hitTime
+            event.Skip()
+            return
+        if not dclicktime < (hitTime - self.hitTime) <= renametime:
+            self.hitTime = hitTime
+            event.Skip()
+            return
+        item = self.GetItem(hitItem)
+        itemType = self.data.data[item]
+        if isinstance(itemType, bosh.InstallerArchive):
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+            pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
+                _("Rename Files"),item.s)
+        else:
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
+            if isinstance(itemType, bosh.InstallerProject):
+                name = item.s
+                msg = _("Enter new name. E.g. VASE")
+            else:
+                name = item.s[2:-2]
+                msg = _("Enter new name, '==' will be added for you.  E.g.  WEATHER")
+            pattern = balt.askText(self, msg, _("Rename Files"), name)
+        if not pattern: return
 
+        maPattern = rePattern.match(pattern)
+        if not maPattern:
+            balt.showError(self,_("Bad extension or file root: ")+pattern)
+            return
+        wx.BeginBusyCursor()
+        if isinstance(itemType, bosh.InstallerArchive):
+            root,numStr,ext = maPattern.groups()[:3]
+        else:
+            ext = ''
+            root,numStr = maPattern.groups()[:2]
+        if isinstance(itemType, bosh.InstallerMarker):
+            # Add leading '==' for markers
+            root = '==' + root
+        numLen = len(numStr)
+        num = int(numStr or 0)
+        installersDir = bosh.dirs['installers']
+        newName = GPath(root)+numStr
+        if isinstance(itemType, bosh.InstallerMarker):
+            # Add trailing '==' for markers
+            newName += '=='
+        if isinstance(itemType, bosh.InstallerArchive):
+            newName += item.ext
+        if newName != item:
+            oldPath = installersDir.join(item)
+            newPath = installersDir.join(newName)
+            if not newPath.exists():
+                if not isinstance(itemType, bosh.InstallerMarker):
+                    oldPath.moveTo(newPath)
+                self.data.data.pop(item)
+                itemType.archive = newName.s
+                #--Add the new archive to Bash
+                self.data.data[newName] = itemType
+                #--Update the iniInfos & modInfos for 'installer'
+                if not isinstance(itemType, bosh.InstallerMarker):
+                    mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                    ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                    for i in mfiles:
+                        bosh.modInfos.table[i]['installer'] = newPath.stail
+                    for i in ifiles:
+                        bosh.iniInfos.table[i]['installer'] = newPath.stail
+        if isinstance(itemType, bosh.InstallerMarker):
+            # For markers, we're actually making a new one, and deleting the old ones
+            items = self.GetSelected()
+            for item in items:
+                del self.data.data[item]
+            #self.data.setChanged()
+        #--Refresh UI
+        #self.data.data.refresh(what='I')
+        modList.RefreshUI()
+        iniList.RefreshUI()
+        self.RefreshUI()
+        wx.EndBusyCursor()
+        
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         ##Ctrl+A - select all
