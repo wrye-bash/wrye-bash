@@ -640,10 +640,10 @@ class CBashLIST(object):
         if(self._AsList): return ExtractCopyList(oElements)
         return oElements
     def __set__(self, instance, nElements):
-        length = len(nElements)
-        if nElements is None or not length:
+        if nElements is None or not len(nElements):
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
+            length = len(nElements)
             if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
@@ -1033,10 +1033,10 @@ class CBashLIST_LIST(object):
         if(self._AsList): return ExtractCopyList(oElements)
         return oElements
     def __set__(self, instance, nElements):
-        length = len(nElements)
-        if nElements is None or not length:
+        if nElements is None or not len(nElements):
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
+            length = len(nElements)
             if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
@@ -1260,10 +1260,10 @@ class CBashLIST_LISTX2(object):
         if(self._AsList): return ExtractCopyList(oElements)
         return oElements
     def __set__(self, instance, nElements):
-        length = len(nElements)
-        if nElements is None or not length:
+        if nElements is None or not len(nElements):
             _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else:
+            length = len(nElements)
             if isinstance(nElements[0], tuple): nValues = nElements
             else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
