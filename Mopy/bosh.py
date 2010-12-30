@@ -1533,7 +1533,7 @@ class MelSet:
 
     def getReport(self):
         """Returns a report of structure."""
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         for element in self.elements:
             element.report(None,buff,'')
         return buff.getvalue()
@@ -1575,7 +1575,7 @@ class MreSubrecord:
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         #--StringIO Object
-        out = ModWriter(stringBuffer())
+        out = ModWriter(cStringIO.StringIO())
         self.dumpData(out)
         #--Done
         self.data = out.getvalue()
@@ -1750,9 +1750,8 @@ class MreRecord(object):
         if self.longFids: raise StateError(
             _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(stringBuffer())
+        out = ModWriter(cStringIO.StringIO())
         self.dumpData(out)
-        data = out.getvalue()
         self.data = out.getvalue()
         out.close()
         if self.flags1.compressed:
@@ -1783,7 +1782,7 @@ class MreRecord(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,stringBuffer(self.getDecompressed()))
+        return ModReader(self.inName,cStringIO.StringIO(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
@@ -4174,7 +4173,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,stringBuffer(self.data))
+        return ModReader(self.inName,cStringIO.StringIO(self.data))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -5312,7 +5311,7 @@ class SreNPC(object):
 
     def load(self,flags,data):
         """Loads variables from data."""
-        ins = stringBuffer(data)
+        ins = cStringIO.StringIO(data)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         flags = SreNPC.flags(flags)
@@ -5359,7 +5358,7 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        out = stringBuffer()
+        out = cStringIO.StringIO()
         def pack(format,*args):
             out.write(struct.pack(format,*args))
         #--Form
@@ -5473,7 +5472,7 @@ class PluggyFile:
         if crc32 != crcNew:
             raise FileError(self.name,'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
         #--Header
-        ins = stringBuffer(buff)
+        ins = cStringIO.StringIO(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         if ins.read(10) != 'PluggySave':
@@ -5504,7 +5503,7 @@ class PluggyFile:
         import binascii
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5558,7 +5557,7 @@ class ObseFile:
         buff = ins.read(size)
         ins.close()
         #--Header
-        ins = stringBuffer(buff)
+        ins = cStringIO.StringIO(buff)
         def unpack(format,size):
             return struct.unpack(format,ins.read(size))
         self.signature = ins.read(4)
@@ -5573,7 +5572,7 @@ class ObseFile:
         for x in range(numPlugins):
             opcodeBase,numChunks,pluginLength, = unpack('III',12)
             pluginBuff = ins.read(pluginLength)
-            pluginIns = stringBuffer(pluginBuff)
+            pluginIns = cStringIO.StringIO(pluginBuff)
             chunks = []
             for y in range(numChunks):
                 chunkType = pluginIns.read(4)
@@ -5592,7 +5591,7 @@ class ObseFile:
         """Saves."""
         if not self.valid: raise FileError(self.name,"File not initialized.")
         #--Buffer
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         #--Save
         def pack(format,*args):
             buff.write(struct.pack(format,*args))
@@ -5636,10 +5635,10 @@ class ObseFile:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkTypeNum == 1):
-                        ins = stringBuffer(chunkBuff)
+                        ins = cStringIO.StringIO(chunkBuff)
                         def unpack(format,size):
                             return struct.unpack(format,ins.read(size))
-                        buff = stringBuffer()
+                        buff = cStringIO.StringIO()
                         def pack(format,*args):
                             buff.write(struct.pack(format,*args))
                         while (ins.tell() < len(chunkBuff)):
@@ -5864,7 +5863,7 @@ class SaveFile:
         globalsNum, = ins.unpack('H',2)
         self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
         #--Pre-Created (Class, processes, spectator, sky)
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -5878,7 +5877,7 @@ class SaveFile:
             header = ins.unpack('4s4I',20)
             self.created.append(MreRecord(header,modReader))
         #--Pre-records: Quickkeys, reticule, interface, regions
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         for count in range(4):
             size, = ins.unpack('H',2)
             insCopy(buff,size,2)
@@ -6207,7 +6206,7 @@ class SaveFile:
                         log('  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
                         log('  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
-                    ins = stringBuffer(chunkBuff)
+                    ins = cStringIO.StringIO(chunkBuff)
                     def unpack(format,size):
                         return struct.unpack(format,ins.read(size))
                     if (opcodeBase == 0x1400):  # OBSE
@@ -6486,7 +6485,7 @@ class SaveFile:
         data = self.preCreated
         tesClassSize, = struct.unpack('H',data[:2])
         if tesClassSize < 4: return
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         buff.write(data)
         buff.seek(2+tesClassSize-4)
         buff.write(struct.pack('I',value))
@@ -15686,7 +15685,7 @@ class ModDetails:
                 if len(decomp) != sizeCheck:
                     raise ModError(self.inName,
                         _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-                reader = ModReader(modInfo.name,stringBuffer(decomp))
+                reader = ModReader(modInfo.name,cStringIO.StringIO(decomp))
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
@@ -16024,7 +16023,7 @@ class PCFaces:
 
         #--Player ACHR
         #--Buffer for modified record data
-        buff = stringBuffer()
+        buff = cStringIO.StringIO()
         def buffPack(format,*args):
             buff.write(struct.pack(format,*args))
         def buffPackRef(oldFid,doPack=True):
@@ -17028,7 +17027,7 @@ class CBash_PatchFile(ObModFile):
             if modName == self.patchName: continue
             modInfo = modInfos[modName]
             bashTags = modInfo.getBashTags()
-            isScanned = modName in self.scanSet
+            isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if modName in self.loadMods and 'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             isMerged = modName in self.mergeSet
@@ -17294,8 +17293,6 @@ class CBash_Patcher:
                 return
             loadMods = set([mod for mod in srcMods if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
-            for type in self.getTypes():
-                self.patchFile.type_patchers.setdefault(type,[]).append(self)
 
     def buildPatchLog(self,log):
         """Write to log."""
@@ -18844,8 +18841,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
             mod = ObModFile(conflict._CollectionID, conflict._ModID)
             tags = modInfos[mod.GName].getBashTags()
             self.scan(mod,conflict,tags)
-        recordId = record.fid
-        prev_attr_value = self.fid_attr_value.get(recordId,None)
+        prev_attr_value = self.fid_attr_value.get(record.fid,None)
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:

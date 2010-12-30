@@ -5036,7 +5036,19 @@ class PatchDialog(wx.Dialog):
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
                 progress(0.9,patchName.s+_('\nSaving...'))
-                patchFile.safeSave()
+                try:
+                    patchFile.safeSave()
+                except WindowsError as werr:
+                    if werr.winerror != 32: raise
+                    while balt.askYes(self,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.s,patchName.s),_('Bash Patch - Save Error')):
+                        try:
+                            patchFile.safeSave()
+                        except WindowsError as werr:
+                            continue
+                        break
+                    else:
+                        raise
+
                 #--Cleanup
                 self.patchInfo.refresh()
                 modList.RefreshUI(patchName)
@@ -5098,7 +5110,18 @@ class PatchDialog(wx.Dialog):
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.save()
                 patchTime = fullName.mtime
-                patchName.untemp()
+                try:
+                    patchName.untemp()
+                except WindowsError as werr:
+                    if werr.winerror != 32: raise
+                    while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.temp.s, patchName.s, patchName.s),_('Bash Patch - Save Error')):
+                        try:
+                            patchName.untemp()
+                        except WindowsError as werr:
+                            continue
+                        break
+                    else:
+                        raise
                 patchName.mtime = patchTime
                 #--Cleanup
                 self.patchInfo.refresh()
