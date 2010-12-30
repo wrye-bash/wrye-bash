@@ -555,13 +555,14 @@ class Path(object):
             self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
-        if self.exists():
-            if doBackup:
-                self.backup.remove()
-                shutil.move(self._s, self.backup._s)
-            else:
-                os.remove(self._s)
-        shutil.move(self.temp._s, self._s)
+        if self.temp.exists():
+            if self.exists():
+                if doBackup:
+                    self.backup.remove()
+                    shutil.move(self._s, self.backup._s)
+                else:
+                    os.remove(self._s)
+            shutil.move(self.temp._s, self._s)
 
     #--Hash/Compare
     def __hash__(self):
