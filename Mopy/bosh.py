@@ -19273,7 +19273,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            animations = self.id_animations.setdefault([record.fid],[])
+            animations = self.id_animations.setdefault(record.fid,[])
             animations.append(anim for anim in record.animations if anim not in animations)
 
     def apply(self,modFile,record,bashTags):
