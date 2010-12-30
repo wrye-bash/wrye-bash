@@ -966,12 +966,14 @@ Duke Patricks - Semi Unlimited Rings And Amulets.esp
 DLCHorseArmor.esp
 % {{BASH:Scripts}}
 DLCHorseArmor - Unofficial Patch.esp
-% {{BASH:C.Owner}}
+% {{BASH:C.Owner,Scripts}}
 Marts Monster Mod - DLCHorseArmor+Slof.esp
 % {{BASH:Graphics}}
 Mart's Monster Mod - DLCHorseArmor+Slofs .esp
 % {{BASH:Graphics}}
 DLCOrrery.esp
+% {{BASH:Actors.AIPackages}}
+DLCOrrery - Unofficial Patch.esp
 % {{BASH:Actors.AIPackages}}
 DLCOrrery Vwalk.esp
 % {{BASH:Actors.Anims,NoMerge}}
@@ -988,6 +990,8 @@ DLCMehrunesRazor Vwalk.esp
 DLCMehrunesRazor Vwalk UOP.esp
 % {{BASH:Actors.Anims,NoMerge}}
 DLCSpellTomes.esp
+% {{BASH:Relev}}
+DLCSpellTomes - Unofficial Patch.esp
 % {{BASH:Relev}}
 Book Jackets DLC.esp
 % {{BASH:Graphics,NoMerge}}
@@ -3487,7 +3491,7 @@ Ranokoas Organized Potions.esp
 DLCThievesDen.esp
 % {{BASH:C.Name,C.Light,Actors.ACBS,Actors.AIPackages,Actors.Stats}}
 DLCThievesDen - Unofficial Patch.esp
-% {{BASH:C.Light,C.Name,C.Music}}
+% {{BASH:C.Light,C.Name,C.Music,Actors.ACBS,Actors.AIPackages,Actors.Stats}}
 Correctif ThievesDen.esp
 Correctif ThievesDen RP.esp
 DLCThievesDen - Unofficial Patch - SSSB.esp
@@ -7136,7 +7140,7 @@ Kvatch Rebuilt_Frostcrag Reborn.esp
 Kvatch Rebuilt_Frostcrag.esp
 DLCFrostcrag - Unofficial Patch.esp
 ? Possible conflict with Frostcrag Reborn. Do not use both or land tearing will occur.
-% {{BASH:C.Name,C.Owner}} and remove the C.Climate and C.Light tags
+% {{BASH:C.Name,C.Owner,Factions}} and remove the C.Climate and C.Light tags
 OCOD+FrostcragSpire Patch.esp
 Correctif Frostcrag.esp
 Correctif Frostcrag RP.esp

@@ -6031,7 +6031,7 @@ class ObCollection:
         return self.addMod(ModName, Flags=0x00001004)
 
     def addScanMod(self, ModName):
-        return self.addMod(ModName, Flags=0x00000084)
+        return self.addMod(ModName, Flags=0x00001084)
 
     def load(self):
         _CLoadCollection(self._CollectionID)
