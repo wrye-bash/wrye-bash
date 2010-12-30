@@ -28420,7 +28420,12 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 buff.write(full+'\r\n')
                 for effect in effects_list[:num]:
                     mgef = effect[0] #name field
-                    effectName = mgef_name[mgef]
+                    try:
+                        effectName = mgef_name[mgef]
+                    except KeyError:
+                        print mgef_name
+                        print
+                        raise
                     if mgef in actorEffects: effectName += actorNames[effect[5]] #actorValue field
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
@@ -28628,7 +28633,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             if override:
                 override.full = '+'+override.full
                 override.spellType = 3 #--Lesser power
-                effect = override.newEffectsElement()
+                effect = override.create_effect()
                 effect.name = 'SEFF'
                 effect.duration = duration
                 effect.full = _("Power Exhaustion")
