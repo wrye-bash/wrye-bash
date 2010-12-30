@@ -29017,7 +29017,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 if numConflicts:
                     curConflict = 1 #Conflict at 0 will be the patchfile. No sense comparing it to itself.
                     #Find the first conflicting record that wasn't merged
-                    while curConflict <= numConflicts:
+                    while curConflict < numConflicts:
                         prevRecord = conflicts[curConflict]
                         if prevRecord.GName not in patchFile.mergeSet:
                             break
