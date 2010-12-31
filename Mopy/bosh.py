@@ -30323,7 +30323,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eye_meshes = self.eye_meshes
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
-        except KeyError as errd:
+        except KeyError, errd:
             print errd
             print _("Skipping the race eye patcher: unable to locate the default blue eye (%s, %06X).") % (self.blueEye[0].s, self.blueEye[1])
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
@@ -30338,7 +30338,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
-        except KeyError as errd:
+        except KeyError, errd:
             print errd
             print _("Skipping the race eye patcher: unable to locate the default argonian eye (%s, %06X).") % (self.argonian[0].s, self.argonian[1])
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
