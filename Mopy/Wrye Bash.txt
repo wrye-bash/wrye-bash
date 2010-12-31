@@ -2262,6 +2262,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * new 'Open at Google' menu item
   * all Open at * menu items moved into 'Open At' submenu.
   * added .001 as a valid read extension - as in BAIN now supports multipart archives.
+  * slow double click renames file (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts
 * Saves Tab:
   * Rename Save(s) command added (in the saves menu->file).
   * Re-number Save(s) command added (in the saves menu->file).
@@ -2279,18 +2280,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
   * Bash.ini typo fixes (contributed by Metallicow).
   * Exception handling fixes to maintain Python 2.5 compatibility
-  * Bash Installer automatically handling requirements created
+  * Bash Installer automatically handling requirements created... still a bit fuzzy but *should* work in most cases.
   * File read error warning printout fixed
   * Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
-  * The csv file must now end in "*_NPC_Levels.csv"
-  * [[#|Export/Import Factions]] may now be used directly on a mod
-  * [[#|Export/Import Relations]] may now be used directly on a mod
-  * Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names
-  * Minor improvements to Export/Import Map Markers 
-  * [[#|Export/Import Sigil Stones]] added
+  * The csv file must now end in "*_NPC_Levels.csv".
+  * [[#|Export/Import Factions]] may now be used directly on a mod.
+  * [[#|Export/Import Relations]] may now be used directly on a mod.
+  * Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names.
+  * Minor improvements to Export/Import Map Markers .
+  * [[#|Export/Import Sigil Stones]] added.
   * [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
+  * [[#|Export/Import Ingredients]] added.
   * Status bar text when mousing over improved to display all applicable messages instead of only one.
-  * Fixes/clarifications in wizards.txt/html
+  * Fixes/clarifications in wizards.txt/html.
   * Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dieing warns ands continues to launch.
   * Experimental unicode support re-added as an option that is disabled by default.
     * Allows Bash and BAIN to work with extended character sets.
