@@ -82,12 +82,12 @@ try:
     import belt
     import win32gui
     dclicktime = win32gui.GetDoubleClickTime() / 10
-    renametime = 2 * dclicktime
+    renametime = 4 * dclicktime
     bEnableWizard = True
 except:
     bEnableWizard = False
     dclicktime = 50
-    renametime = 2 * dclicktime
+    renametime = 4 * dclicktime
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
@@ -2468,7 +2468,7 @@ class InstallersList(balt.Tank):
         if path.exists(): path.start()
         
     def OnLeftDown(self,event):
-        """Left click, do stuff; currently only rename.."""
+        """Left click, do stuff; currently only rename."""
         (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         hitTime = time.time()*100
@@ -2543,9 +2543,7 @@ class InstallersList(balt.Tank):
             items = self.GetSelected()
             for item in items:
                 del self.data.data[item]
-            #self.data.setChanged()
         #--Refresh UI
-        #self.data.data.refresh(what='I')
         modList.RefreshUI()
         iniList.RefreshUI()
         self.RefreshUI()
@@ -2974,7 +2972,8 @@ class InstallersPanel(SashTankPanel):
         self.gSubList.SetSelection(index)
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
-        self.refreshCurrent(installer)
+        if not wx.GetKeyState(wx.WXK_SHIFT):
+            self.refreshCurrent(installer)
         
     def SelectionMenu(self,event):
         """Handle right click in espm list."""
@@ -3000,7 +2999,8 @@ class InstallersPanel(SashTankPanel):
         else:
             espmNots.add(espm)
         self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
-        self.refreshCurrent(installer)
+        if not wx.GetKeyState(wx.WXK_SHIFT):
+            self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
 class ReplacersList(List):
@@ -10983,6 +10983,94 @@ class Mod_SpellRecords_Import(Link):
             balt.showLog(self.window,buff.getvalue(),_('Import Spell details'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_IngredientDetails_Export(Link):
+    """Export Ingredient details from mod to text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Ingredients...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Ingredients.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export Ingredient details to:'),textDir,textName, '*_Ingredients.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        progress = balt.Progress(_("Export Ingredient details"))
+        try:
+            if CBash:
+                Ingredients = bosh.CBash_IngredientDetails()
+            else:
+                Ingredients = bosh.IngredientDetails()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                Ingredients.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            Ingredients.writeToText(textPath)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+class Mod_IngredientDetails_Import(Link):
+    """Import Ingredient details from text file."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Ingredients...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data) == 1)
+        
+    def Execute(self,event):
+        message = (_("Import Ingredient details from a text file. This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
+        if not balt.askContinue(self.window,message,'bash.Ingredient.import.continue',
+            _('Import Ingredients details')):
+            return
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('_Ingredients.csv')
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_('Import Ingredient details from:'),
+            textDir, textName, '*_Ingredients.csv',mustExist=True)
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext not in ['.csv']:
+            balt.showError(self.window,_('Source file must be a _Ingredients.csv file'))
+            return
+        #--Export
+        progress = balt.Progress(_("Import Ingredient details"))
+        changed = None
+        try:
+            if CBash:
+                Ingredients = bosh.CBash_IngredientDetails()
+            else:
+                Ingredients = bosh.IngredientDetails()
+            progress(0.1,_("Reading %s.") % (textName.s,))
+            Ingredients.readFromText(textPath)
+            progress(0.2,_("Applying to %s.") % (fileName.s,))
+            changed = Ingredients.writeToMod(fileInfo)
+            progress(1.0,_("Done."))
+        finally:
+            progress = progress.Destroy()
+        #--Log
+        if not changed:
+            balt.showOk(self.window,_("No relevant Ingredient details to import."),_("Import Ingredient details"))
+        else:
+            buff = stringBuffer()
+            buff.write('Imported Ingredient details to mod %s:\n' % (fileName.s,))
+            for eid in sorted(changed):
+                buff.write('* %s\n' % (eid))
+            balt.showLog(self.window,buff.getvalue(),_('Import Ingredient details'),icons=bashBlue)
+#------------------------------------------------------------------------------
 class Mod_UndeleteRefs(Link):
     """Undeletes refs in cells."""
     def AppendToMenu(self,menu,window,data):
@@ -13647,6 +13735,7 @@ def InitModLinks():
         exportMenu.links.append(CBash_Mod_MapMarkers_Export())
         exportMenu.links.append(Mod_Prices_Export())
         exportMenu.links.append(Mod_FactionRelations_Export())
+        exportMenu.links.append(Mod_IngredientDetails_Export())
         exportMenu.links.append(Mod_Scripts_Export())
         exportMenu.links.append(Mod_SigilStoneDetails_Export())
         exportMenu.links.append(Mod_SpellRecords_Export())
@@ -13663,6 +13752,7 @@ def InitModLinks():
         importMenu.links.append(CBash_Mod_MapMarkers_Import())
         importMenu.links.append(Mod_Prices_Import())
         importMenu.links.append(Mod_FactionRelations_Import())
+        importMenu.links.append(Mod_IngredientDetails_Import())
         importMenu.links.append(Mod_Scripts_Import())
         importMenu.links.append(Mod_SigilStoneDetails_Import())
         importMenu.links.append(Mod_SpellRecords_Import())
