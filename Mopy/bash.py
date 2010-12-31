@@ -235,7 +235,7 @@ def exit():
         sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
         try:
             os.spawnv(os.P_NOWAIT, exePath.s, sys.argv)
-        except Exception as error:
+        except Exception, error:
             print error
             print _("Error Attempting to Restart Wrye Bash!")
             print _("cmd line: "), exePath.s, sys.argv

@@ -98,7 +98,7 @@ if(exists(".\\CBash.dll")):
         _CUpdateReferences.restype = c_long
         _CGetNumReferences.restype = c_long
         _CGetFieldAttribute.restype = c_ulong
-    except ImportError as error:
+    except ImportError, error:
         CBash = None
         print error
     except:

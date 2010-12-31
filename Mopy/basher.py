@@ -5129,12 +5129,12 @@ class PatchDialog(wx.Dialog):
                 progress(0.9,patchName.s+_('\nSaving...'))
                 try:
                     patchFile.safeSave()
-                except WindowsError as werr:
+                except WindowsError, werr:
                     if werr.winerror != 32: raise
                     while balt.askYes(self,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.s,patchName.s),_('Bash Patch - Save Error')):
                         try:
                             patchFile.safeSave()
-                        except WindowsError as werr:
+                        except WindowsError, werr:
                             continue
                         break
                     else:
@@ -5203,12 +5203,12 @@ class PatchDialog(wx.Dialog):
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
-                except WindowsError as werr:
+                except WindowsError, werr:
                     if werr.winerror != 32: raise
                     while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.temp.s, patchName.s, patchName.s),_('Bash Patch - Save Error')):
                         try:
                             patchName.untemp()
-                        except WindowsError as werr:
+                        except WindowsError, werr:
                             continue
                         break
                     else:
