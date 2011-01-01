@@ -13571,9 +13571,9 @@ class SigilStoneDetails:
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Uses'),_('Value'),_('Weight'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),_('Additional Effects (Same format)')
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
                                 ))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
@@ -13715,9 +13715,9 @@ class CBash_SigilStoneDetails:
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Uses'),_('Value'),_('Weight'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),_('Additional Effects (Same format)')
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
                                 ))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
@@ -15810,9 +15810,9 @@ class CBash_IngredientDetails:
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Value'),_('Weight'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE flags'),_('SE Name'),_('Additional Effects (Same format)')
+                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
                                 ))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
