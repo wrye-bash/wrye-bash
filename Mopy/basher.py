@@ -2777,6 +2777,7 @@ class InstallersPanel(SashTankPanel):
         """Saves details if they need saving."""
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
         if not self.detailsItem: return
+        if self.detailsItem not in self.data: return
         if not self.gComments.IsModified(): return
         installer = self.data[self.detailsItem]
         installer.comments = self.gComments.GetValue()
