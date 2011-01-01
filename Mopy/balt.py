@@ -206,6 +206,9 @@ def setCheckListItems(gList,names,values):
             if index >= gList.GetCount():
                 gList.Append(name)
             else:
+                if index == -1: 
+                    deprint(_("index = -1, name = %s, value = %s") % (name, value))
+                    continue
                 gList.SetString(index,name)
             gList.Check(index,value)
         for index in range(gList.GetCount(),len(names),-1):
