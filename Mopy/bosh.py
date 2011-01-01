@@ -8801,8 +8801,32 @@ class ModInfos(FileInfos):
         basePath = baseInfo.getPath()
         newPath = newInfo.getPath()
         oldPath = self.dir.join(oldName)
-        basePath.moveTo(oldPath)
-        newPath.moveTo(basePath)
+        try:
+            basePath.moveTo(oldPath)
+        except WindowsError, werr:
+            if werr.winerror != 32: raise
+            while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (basePath.s,oldPath.s,basePath.s),_('Bash Patch - Rename Error')):
+                try:
+                    basePath.moveTo(oldPath)
+                except WindowsError, werr:
+                    continue
+                break
+            else:
+                raise
+        try:
+            newPath.moveTo(basePath)
+        except WindowsError, werr:
+            if werr.winerror != 32: raise
+            while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (newPath.s,basePath.s,newPath.s),_('Bash Patch - Rename Error')):
+                try:
+                    newPath.moveTo(basePath)
+                except WindowsError, werr:
+                    continue
+                break
+            else:
+                #Undo any changes
+                oldPath.moveTo(basePath)
+                raise
         basePath.mtime = baseInfo.mtime
         oldPath.mtime = newInfo.mtime
         self.mtimes[oldName] = newInfo.mtime
