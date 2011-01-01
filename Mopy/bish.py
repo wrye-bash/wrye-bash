@@ -1085,7 +1085,7 @@ def temp1(fileName):
     #saveFile.weather = ''
     #saveFile.safeSave()
 
-# Zip Stuff --------------------------------------------------------------------
+# Zip/Installer Stuff --------------------------------------------------------------------
 class Archive:
     """Installer Archive. Represents a 7z or zip archive in a certain format.
     Can install/uninstall."""
@@ -1146,6 +1146,31 @@ def test(file):
     x = Archive(file)
     x.refresh()
 
+@mainfunc
+def create_sample_project(read_file=None,dest_path=None):
+    """create a sample project for BAIN testing from a text file list of paths - ie as exported by 'list structure'"""
+    if not read_file:
+        print "read file must be specified"
+        return
+    if not dest_path:
+        dest_path = GPath(os.getcwd()).join("Test BAIN Project")
+    try:
+        ins = GPath(read_file).open("r")
+    except: 
+        read_file = GPath(os.getcwd()).join(read_file)
+        ins = GPath(read_file).open("r")
+    for path in ins:
+        if path[0] in [";","#"]: continue #comment lines
+        dest_file = dest_path.join(path[:-1])
+        try:
+            file = dest_file.open("w")
+        except:
+            dest_dir = dest_path.shead()
+            os.makedirs(dest_dir.s)
+            file = dest_file.open("w")
+        file.write("test file")
+        file.close()
+    ins.close()
 
 # Main -------------------------------------------------------------------------
 if __name__ == '__main__':
