@@ -2484,7 +2484,7 @@ class InstallersList(balt.Tank):
         item = self.GetItem(hitItem)
         itemType = self.data.data[item]
         if isinstance(itemType, bosh.InstallerArchive):
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
             pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
                 _("Rename Files"),item.s)
         else:
@@ -2519,7 +2519,7 @@ class InstallersList(balt.Tank):
             # Add trailing '==' for markers
             newName += '=='
         if isinstance(itemType, bosh.InstallerArchive):
-            newName += item.ext
+            newName += ext
         if newName != item:
             oldPath = installersDir.join(item)
             newPath = installersDir.join(newName)
@@ -2570,7 +2570,7 @@ class InstallersList(balt.Tank):
             item = self.GetSelected()[0]
             itemType = self.data.data[item]
             if isinstance(itemType, bosh.InstallerArchive):
-                rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+                rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
                 pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
                     _("Rename Files"),item.s)
             else:
@@ -2607,7 +2607,7 @@ class InstallersList(balt.Tank):
                     # Add trailing '==' for markers
                     newName += '=='
                 if isinstance(itemType, bosh.InstallerArchive):
-                    newName += archive.ext
+                    newName += ext
                 if newName != archive:
                     oldPath = installersDir.join(archive)
                     newPath = installersDir.join(newName)
@@ -7203,7 +7203,7 @@ class Installer_Rename(InstallerLink):
         #--File Info
         fileName = self.selected[0]
         if(self.InstallerType == bosh.InstallerArchive):
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip))$',re.I)
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
             pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
                 _("Rename Files"),fileName.s)
         else:
@@ -7240,7 +7240,7 @@ class Installer_Rename(InstallerLink):
                 # Add trailing '==' for markers
                 newName += '=='
             if(self.InstallerType == bosh.InstallerArchive):
-                newName += archive.ext
+                newName += ext
             if newName != archive:
                 oldPath = installersDir.join(archive)
                 newPath = installersDir.join(newName)
