@@ -44,6 +44,7 @@ if(exists(".\\CBash.dll")):
         _CGetModIDByLoadOrder = CBash.GetModIDByLoadOrder
         _CGetModLoadOrderByName = CBash.GetModLoadOrderByName
         _CGetModLoadOrderByID = CBash.GetModLoadOrderByID
+        _CGetLongIDName = CBash.GetLongIDName
         _CIsModEmpty = CBash.IsModEmpty
         _CGetModNumTypes = CBash.GetModNumTypes
         _CGetModTypes = CBash.GetModTypes
@@ -85,6 +86,7 @@ if(exists(".\\CBash.dll")):
         _CGetModIDByLoadOrder.restype = c_long
         _CGetModLoadOrderByName.restype = c_long
         _CGetModLoadOrderByID.restype = c_long
+        _CGetLongIDName.restype = c_char_p
         _CIsModEmpty.restype = c_ulong
         _CGetModNumTypes.restype = c_long
         _CCreateRecord.restype = c_ulong
@@ -98,6 +100,9 @@ if(exists(".\\CBash.dll")):
         _CUpdateReferences.restype = c_long
         _CGetNumReferences.restype = c_long
         _CGetFieldAttribute.restype = c_ulong
+    except AttributeError, error:
+        CBash = None
+        print error
     except ImportError, error:
         CBash = None
         print error
@@ -275,42 +280,40 @@ def setattr_deep(obj, attr, value):
     attrs = attr.split('.')
     setattr(reduce(getattr, attrs[:-1], obj), attrs[-1], value)
 
-def MakeLongFid(CollectionID, fid):
+def MakeLongFid(CollectionID, ModID, fid):
     if fid is None or fid == 0: return 0
     if isinstance(fid,tuple): return fid
-    masterIndex = int(fid >> 24)
-    object = int(fid & 0x00FFFFFFL)
-    master = _CGetModNameByLoadOrder(CollectionID, masterIndex)
-    return (GPath(master),object)
+    master = _CGetLongIDName(CollectionID, ModID, int(fid >> 24))
+    if not master: return (None,int(fid & 0x00FFFFFFL))
+    return (GPath(master),int(fid & 0x00FFFFFFL))
 
-def MakeShortFid(CollectionID, fid):
+def MakeShortFid(CollectionID, ModID, fid):
     if fid is None or fid == 0: return 0
     if not isinstance(fid,tuple): return fid
     master, object = fid
+    if master is None:
+        raise AttributeError("Unable to convert long fid (None, %06X) into a short formID" % object)
     masterIndex = _CGetModLoadOrderByName(CollectionID, str(master))
     if(masterIndex == -1): return None
-    masterIndex = int(masterIndex << 24)
-    object = int(object & 0x00FFFFFFL)
-    return masterIndex | object
+    return int(masterIndex << 24) | int(object & 0x00FFFFFFL)
 
-def MakeLongMGEFCode(CollectionID, MGEFCode):
+def MakeLongMGEFCode(CollectionID, ModID, MGEFCode):
     if MGEFCode is None or MGEFCode == 0: return 0
     if isinstance(MGEFCode,tuple): return MGEFCode
-    masterIndex = int(MGEFCode & 0x000000FFL)
-    object = int(MGEFCode & 0xFFFFFF00L)
-    master = _CGetModNameByLoadOrder(CollectionID, masterIndex)
-    return (GPath(master),object)
+    master = _CGetLongIDName(CollectionID, ModID, int(MGEFCode & 0x000000FFL))
+    if not master: return (None,int(MGEFCode & 0xFFFFFF00L))
+    return (GPath(master),int(MGEFCode & 0xFFFFFF00L))
 
-def MakeShortMGEFCode(CollectionID, MGEFCode):
+def MakeShortMGEFCode(CollectionID, ModID, MGEFCode):
     if isinstance(MGEFCode, basestring): MGEFCode = cast(MGEFCode, POINTER(c_ulong)).contents.value
     if MGEFCode is None or MGEFCode == 0: return 0
     if not isinstance(MGEFCode,tuple): return MGEFCode
-    masterIndex = _CGetModLoadOrderByName(CollectionID, str(MGEFCode[0]))
-    if(masterIndex == -1):
-        return None
-    masterIndex = int(masterIndex & 0x000000FFL)
-    object = int(MGEFCode & 0xFFFFFF00L)
-    return masterIndex | object
+    master, object = MGEFCode
+    if master is None:
+        raise AttributeError("Unable to convert long MGEFCode (None, %06X) into a short MGEFCode" % object)
+    masterIndex = _CGetModLoadOrderByName(CollectionID, str(master))
+    if(masterIndex == -1): return None
+    return int(masterIndex & 0x000000FFL) | int(object & 0xFFFFFF00L)
 
 def ExtractCopyList(Elements):
     return [tuple(getattr(listElement, attr) for attr in listElement.copyattrs) for listElement in Elements]
@@ -522,11 +525,11 @@ class CBashEDIDFORMID(object):
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return MakeLongFid(instance._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashEDIDSTRING(object):
     def __init__(self, FieldID):
@@ -598,7 +601,7 @@ class CBashEDIDMGEFCODE_OR_UINT32_ARRAY(object):
                 if type in (API_FIELDS.UINT32, API_FIELDS.STATIC_MGEFCODE):
                     values.append(cRecords.contents[x])
                 elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                    values.append(MakeLongMGEFCode(instance._CollectionID, cRecords.contents[x]))
+                    values.append(MakeLongMGEFCode(instance._CollectionID, instance._ModID, cRecords.contents[x]))
         return values
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
@@ -606,7 +609,7 @@ class CBashEDIDMGEFCODE_OR_UINT32_ARRAY(object):
             length = len(nValue)
             if self._Size and length != self._Size: return
             #They are either all MGEFCodes or all UINT32's, so it can be set in one operation
-            nValue = [MakeShortMGEFCode(instance._CollectionID, x) for x in nValue]
+            nValue = [MakeShortMGEFCode(instance._CollectionID, instance._ModID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -621,12 +624,12 @@ class CBashEDIDMGEFCODE(object):
             if type == API_FIELDS.STATIC_MGEFCODE:
                 return retValue.contents.value
             elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                return MakeLongMGEFCode(instance._CollectionID, retValue.contents.value)
+                return MakeLongMGEFCode(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, 0, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, instance._ModID, nValue))), 0)
 
 #  FormID keyed
 class CBashLIST(object):
@@ -737,11 +740,11 @@ class CBashFORMID(object):
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return MakeLongFid(instance._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashMGEFCODE(object):
     def __init__(self, FieldID):
@@ -754,12 +757,12 @@ class CBashMGEFCODE(object):
             if type == API_FIELDS.STATIC_MGEFCODE:
                 return retValue.contents.value
             elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                return MakeLongMGEFCode(instance._CollectionID, retValue.contents.value)
+                return MakeLongMGEFCode(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashFORMIDARRAY(object):
     def __init__(self, FieldID):
@@ -769,13 +772,13 @@ class CBashFORMIDARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [MakeLongFid(instance._CollectionID, cRecords.contents[x]) for x in range(0, numRecords)]
+            return [MakeLongFid(instance._CollectionID, instance._ModID, cRecords.contents[x]) for x in range(0, numRecords)]
         return []
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
-            nValue = [MakeShortFid(instance._CollectionID, x) for x in nValue]
+            nValue = [MakeShortFid(instance._CollectionID, instance._ModID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -790,12 +793,12 @@ class CBashFORMID_OR_UINT32(object):
             if type == API_FIELDS.UINT32:
                 return retValue.contents.value
             elif type == API_FIELDS.FORMID:
-                return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashFORMID_OR_UINT32_ARRAY(object):
     def __init__(self, FieldID, Size=None):
@@ -812,7 +815,7 @@ class CBashFORMID_OR_UINT32_ARRAY(object):
                 if type == API_FIELDS.UINT32:
                     values.append(cRecords[x])
                 elif type == API_FIELDS.FORMID:
-                    values.append(MakeLongFid(instance._CollectionID, cRecords[x]))
+                    values.append(MakeLongFid(instance._CollectionID, instance._ModID, cRecords[x]))
         return values
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
@@ -825,7 +828,7 @@ class CBashFORMID_OR_UINT32_ARRAY(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, tuple)
-                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, value))), IsFormID)
+                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, value))), IsFormID)
 
 class CBashMGEFCODE_OR_UINT32_ARRAY(object):
     def __init__(self, FieldID, Size=None):
@@ -842,7 +845,7 @@ class CBashMGEFCODE_OR_UINT32_ARRAY(object):
                 if type in (API_FIELDS.UINT32, API_FIELDS.STATIC_MGEFCODE):
                     values.append(cRecords.contents[x])
                 elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                    values.append(MakeLongMGEFCode(instance._CollectionID, cRecords.contents[x]))
+                    values.append(MakeLongMGEFCode(instance._CollectionID, instance._ModID, cRecords.contents[x]))
         return values
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0)
@@ -850,7 +853,7 @@ class CBashMGEFCODE_OR_UINT32_ARRAY(object):
             length = len(nValue)
             if self._Size and length != self._Size: return
             #They are either all MGEFCodes or all UINT32's, so it can be set in one operation
-            nValue = [MakeShortMGEFCode(instance._CollectionID, x) for x in nValue]
+            nValue = [MakeShortMGEFCode(instance._CollectionID, instance._ModID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -1065,11 +1068,11 @@ class CBashFORMID_LIST(object):
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return MakeLongFid(instance._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashACTORVALUE_LIST(object):
     def __init__(self, ListFieldID):
@@ -1083,12 +1086,12 @@ class CBashACTORVALUE_LIST(object):
                 return retValue.contents.value
             elif type == API_FIELDS.RESOLVED_ACTORVALUE:
                 #Resolved Actor Value's are not formIDs, but can be treated as such for resolution
-                return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashFORMIDARRAY_LIST(object):
     def __init__(self, ListFieldID):
@@ -1098,13 +1101,13 @@ class CBashFORMIDARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [MakeLongFid(instance._CollectionID, cRecords.contents[x]) for x in range(0, numRecords)]
+            return [MakeLongFid(instance._CollectionID, instance._ModID, cRecords.contents[x]) for x in range(0, numRecords)]
         return []
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             length = len(nValue)
-            nValue = [MakeShortFid(instance._CollectionID, x) for x in nValue]
+            nValue = [MakeShortFid(instance._CollectionID, instance._ModID, x) for x in nValue]
             cRecords = (c_ulong * length)(*nValue)
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords), length)
 
@@ -1120,14 +1123,14 @@ class CBashUNKNOWN_OR_FORMID_OR_UINT32_LIST(object):
                 if type == API_FIELDS.UINT32:
                     return retValue.contents.value
                 elif type == API_FIELDS.FORMID:
-                    return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                    return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         type = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
         if type != API_FIELDS.UNKNOWN:
             if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
             else:
-                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashMGEFCODE_OR_UINT32_LIST(object):
     def __init__(self, ListFieldID):
@@ -1140,12 +1143,12 @@ class CBashMGEFCODE_OR_UINT32_LIST(object):
             if type in (API_FIELDS.UINT32, API_FIELDS.STATIC_MGEFCODE):
                 return retValue.contents.value
             elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                return MakeLongMGEFCode(instance._CollectionID, retValue.contents.value)
+                return MakeLongMGEFCode(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
-            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, nValue))), 0)
+            _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(MakeShortMGEFCode(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
     def __init__(self, ListFieldID):
@@ -1158,17 +1161,17 @@ class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
             if type in (API_FIELDS.UINT32, API_FIELDS.STATIC_MGEFCODE, API_FIELDS.STATIC_ACTORVALUE):
                 return retValue.contents.value
             elif type == API_FIELDS.RESOLVED_MGEFCODE:
-                return MakeLongMGEFCode(instance._CollectionID, retValue.contents.value)
+                return MakeLongMGEFCode(instance._CollectionID, instance._ModID, retValue.contents.value)
             elif type in (API_FIELDS.FORMID, API_FIELDS.RESOLVED_ACTORVALUE):
                 #Resolved Actor Value's are not formIDs, but can be treated as such for resolution
-                return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             type = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-            if type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE): nValue = MakeShortMGEFCode(instance._CollectionID, nValue)
-            elif type in (API_FIELDS.FORMID, API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE): nValue = MakeShortFid(instance._CollectionID, nValue)
+            if type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE): nValue = MakeShortMGEFCode(instance._CollectionID, instance._ModID, nValue)
+            elif type in (API_FIELDS.FORMID, API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE): nValue = MakeShortFid(instance._CollectionID, instance._ModID, nValue)
             elif type == API_FIELDS.UINT32 and isinstance(nValue, tuple): return
             _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
@@ -1340,7 +1343,7 @@ class CBashFORMID_OR_UINT32_ARRAY_LISTX2(object):
                 if type == API_FIELDS.UINT32:
                     values.append(cRecords[x])
                 elif type == API_FIELDS.FORMID:
-                    values.append(MakeLongFid(instance._CollectionID, cRecords[x]))
+                    values.append(MakeLongFid(instance._CollectionID, instance._ModID, cRecords[x]))
         return values
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
@@ -1353,7 +1356,7 @@ class CBashFORMID_OR_UINT32_ARRAY_LISTX2(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, tuple)
-                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, byref(c_ulong(MakeShortFid(instance._CollectionID, value))), IsFormID)
+                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, value))), IsFormID)
                 
 class CBashFORMID_LISTX2(object):
     def __init__(self, FieldID, ListFieldID, ListX2FieldID):
@@ -1363,11 +1366,11 @@ class CBashFORMID_LISTX2(object):
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return MakeLongFid(instance._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+        else: _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 class CBashSTRING_LISTX2(object):
     def __init__(self, FieldID, ListFieldID, ListX2FieldID):
@@ -1411,14 +1414,14 @@ class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX2(object):
                 if type == API_FIELDS.UINT32:
                     return retValue.contents.value
                 elif type == API_FIELDS.FORMID:
-                    return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                    return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         type = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
         if type != API_FIELDS.UNKNOWN:
             if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
             else:
-                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 
 # ListX3 Descriptors
@@ -1491,14 +1494,14 @@ class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX3(object):
                 if type == API_FIELDS.UINT32:
                     return retValue.contents.value
                 elif type == API_FIELDS.FORMID:
-                    return MakeLongFid(instance._CollectionID, retValue.contents.value)
+                    return MakeLongFid(instance._CollectionID, instance._ModID, retValue.contents.value)
         return None
     def __set__(self, instance, nValue):
         type = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
         if type != API_FIELDS.UNKNOWN:
             if nValue is None: _CDeleteField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
             else:
-                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(MakeShortFid(instance._CollectionID, nValue))), 0)
+                _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, nValue))), 0)
 
 
 #Record accessors
@@ -1715,13 +1718,13 @@ class ObFormIDRecord(object):
         _CDeleteRecord(self._CollectionID, self._ModID, self._RecordID, 0, getattr(self, '_ParentID', 0))
 
     def GetNumReferences(self, FormIDToMatch):
-        FormIDToMatch = MakeShortFid(self._CollectionID, FormIDToMatch)
+        FormIDToMatch = MakeShortFid(self._CollectionID, self._ModID, FormIDToMatch)
         if FormIDToMatch is None: return 0
         return _CGetNumReferences(self._CollectionID, self._ModID, self._RecordID, FormIDToMatch)
 
     def UpdateReferences(self, FormIDToReplace, ReplacementFormID):
-        FormIDToReplace = MakeShortFid(self._CollectionID, FormIDToReplace)
-        ReplacementFormID = MakeShortFid(self._CollectionID, ReplacementFormID)
+        FormIDToReplace = MakeShortFid(self._CollectionID, self._ModID, FormIDToReplace)
+        ReplacementFormID = MakeShortFid(self._CollectionID, self._ModID, ReplacementFormID)
         if not (FormIDToReplace or ReplacementFormID): return 0
         return _CUpdateReferences(self._CollectionID, self._ModID, self._RecordID, FormIDToReplace, ReplacementFormID)
 
@@ -1828,11 +1831,11 @@ class ObFormIDRecord(object):
     def get_fid(self):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(self._CollectionID, self._ModID, self._RecordID, 0, 2, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return MakeLongFid(self._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(self._CollectionID, self._ModID, retValue.contents.value)
         return None
     def set_fid(self, nValue):
         if nValue is None: nValue = 0
-        else: nValue = MakeShortFid(self._CollectionID, nValue)
+        else: nValue = MakeShortFid(self._CollectionID, self._ModID, nValue)
         _FormID = self._RecordID
         _EditorID = self.eid or 0
         if(_CSetRecordIDs(self._CollectionID, self._ModID, _FormID, _EditorID, nValue, _EditorID) == 1):
@@ -2002,11 +2005,11 @@ class ObEditorIDRecord(object):
     def get_fid(self):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(self._CollectionID, self._ModID, 0, self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return MakeLongFid(self._CollectionID, retValue.contents.value)
+        if(retValue): return MakeLongFid(self._CollectionID, self._ModID, retValue.contents.value)
         return None
     def set_fid(self, nValue):
         if nValue is None: nValue = 0
-        else: nValue = MakeShortFid(self._CollectionID, nValue)
+        else: nValue = MakeShortFid(self._CollectionID, self._ModID, nValue)
         _CGetField.restype = POINTER(c_ulong)
         _FormID = _CGetField(self._CollectionID, self._ModID, 0, self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0)
         if(_FormID): _FormID = _FormID.contents.value
@@ -5417,7 +5420,7 @@ class ObModFile(object):
         if not RecordID: return False
         if isinstance(RecordID, basestring): TestRecord = ObEditorIDRecord
         else:
-            RecordID = MakeShortFid(self._CollectionID, RecordID)
+            RecordID = MakeShortFid(self._CollectionID, self._ModID, RecordID)
             TestRecord = ObFormIDRecord
         return TestRecord(self._CollectionID, self._ModID, RecordID, 0, 0).recType is not None
 
@@ -5425,7 +5428,7 @@ class ObModFile(object):
         if isinstance(RecordID, basestring):
             RecordType = ObEditorIDRecord
         else:
-            RecordID = MakeShortFid(self._CollectionID, RecordID)
+            RecordID = MakeShortFid(self._CollectionID, self._ModID, RecordID)
             RecordType = ObFormIDRecord
         if not RecordID: return None
         testRecord = RecordType(self._CollectionID, self._ModID, RecordID, 0, 0)
@@ -5446,8 +5449,8 @@ class ObModFile(object):
         return []
 
     def UpdateReferences(self, FormIDToReplace, ReplacementFormID):
-        FormIDToReplace = MakeShortFid(self._CollectionID, FormIDToReplace)
-        ReplacementFormID = MakeShortFid(self._CollectionID, ReplacementFormID)
+        FormIDToReplace = MakeShortFid(self._CollectionID, self._ModID, FormIDToReplace)
+        ReplacementFormID = MakeShortFid(self._CollectionID, self._ModID, ReplacementFormID)
         if not (FormIDToReplace or ReplacementFormID): return 0
         return _CUpdateReferences(self._CollectionID, self._ModID, 0, FormIDToReplace, ReplacementFormID)
 
@@ -5996,7 +5999,7 @@ class ObCollection:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
 ##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
 ##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIsExtendedConflicts
-        
+
         fIsMinLoad             = 0x00000001
         fIsFullLoad            = 0x00000002
         fIsSkipNewRecords      = 0x00000004
@@ -6010,7 +6013,7 @@ class ObCollection:
         fIsFixupPlaceables     = 0x00000400
         fIsIgnoreExisting      = 0x00000800
         fIsIgnoreAbsentMasters = 0x00001000
-        
+
         if IgnoreExisting:
             Flags |= fIsIgnoreExisting            
         else:
@@ -6043,7 +6046,7 @@ class ObCollection:
             _EditorID = RecordID
             RecordType = ObEditorIDRecord
         else:
-            RecordID = _FormID = MakeShortFid(self._CollectionID, RecordID)
+            RecordID = _FormID = MakeShortFid(self._CollectionID, -1, RecordID)
             _EditorID = 0
             RecordType = ObFormIDRecord
         if not (_FormID or _EditorID): return None
