@@ -19057,7 +19057,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
             _Type = record._Type
-            if _Type in class_fidattrs:
+            if _Type in self.class_fidattrs:
                 attr_fidvalue = record.ConflictDetails(self.class_fidattrs[_Type], False)
                 for fidvalue in attr_fidvalue.values():
                     if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
