@@ -16926,7 +16926,7 @@ class PatchFile(ModFile):
             for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
                 log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
                 for mod, skipcount in mod_skipcount.iteritems():
-                    log ('  * The imported mod, %s, skipped %d records:' % (str(mod),skipcount))
+                    log ('  * The imported mod, %s, skipped %d records.' % (str(mod),skipcount))
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
             log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
@@ -17331,7 +17331,7 @@ class CBash_PatchFile(ObModFile):
             for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
                 log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
                 for mod, skipcount in mod_skipcount.iteritems():
-                    log ('  * The imported mod, %s, skipped %d records:' % (str(mod),skipcount))
+                    log ('  * The imported mod, %s, skipped %d records.' % (str(mod),skipcount))
             
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
