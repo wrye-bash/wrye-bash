@@ -17220,6 +17220,9 @@ class CBash_PatchFile(ObModFile):
                         record.UnloadRecord()
                 except:
                     print "CBash read error of modfile: %s" % modName.s
+                    print "CBash contains the following modfiles:"
+                    for mod in self.ObCollection:
+                        print mod._ModID, ":", mod.ModName
                     raise
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
