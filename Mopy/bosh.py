@@ -20262,7 +20262,12 @@ class ImportRelations(ImportPatcher):
                 factionRelations.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        self.id_relations = dict((fid, relations) for fid, relations in factionRelations.id_relations if fid and (fid[0] is not None and fid[0] in self.patchFile.loadSet))
+        for fid, relations in factionRelations.id_relations.iteritems():
+            if fid and (fid[0] is not None and fid[0] in self.patchFile.loadSet):
+                filteredRelations = [relation for relation in relations if relation[0] and (relation[0][0] is not None and relation[0][0] in self.patchFile.loadSet)]
+                if filteredRelations:
+                    self.id_relations[fid] = filteredRelations
+
         self.isActive = bool(self.id_relations)
 
     def getReadClasses(self):
