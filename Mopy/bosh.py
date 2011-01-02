@@ -16763,6 +16763,7 @@ class PatchFile(ModFile):
         self.worldOrphanMods = []
         self.unFilteredMods = []
         self.compiledAllMods = []
+        self.patcher_mod_skipcount = {}
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
@@ -16919,6 +16920,13 @@ class PatchFile(ModFile):
         log.setHeader(_("=== Date/Time"))
         log('* '+formatDate(time.time()))
         log(_('* Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        if self.patcher_mod_skipcount:
+            log.setHeader(_("=== Skipped Imports"))
+            log(_("The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
+                log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
+                for mod, skipcount in mod_skipcount.iteritems():
+                    log ('  * The imported mod, %s, skipped %d records:' % (str(mod),skipcount))
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
             log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
@@ -17082,6 +17090,7 @@ class CBash_PatchFile(ObModFile):
         self.mgef_name = bush.mgef_name.copy()
         self.hostileEffects = bush.hostileEffects.copy()
         self.scanSet = set()
+        self.patcher_mod_skipcount = {}
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
@@ -17269,6 +17278,10 @@ class CBash_PatchFile(ObModFile):
                         conflicts = [conflict for conflict in record.Conflicts() if conflict.GName not in IIMSet]
                         isWinning = (len(conflicts) < 2 or conflicts[0].ModName == record.ModName)
                     else:
+                        #Prevents scanned records from being scanned twice if the scanned record loads later than the real winning record
+                        # (once when the real winning record is applied, and once when the scanned record is later encountered)
+                        if isScanned and record.IsWinning(True): #Not the most optimized, but works well enough
+                            continue
                         isWinning = record.IsWinning()
 
                     if isWinning:
@@ -17312,6 +17325,14 @@ class CBash_PatchFile(ObModFile):
         log.setHeader(_("=== Date/Time"))
         log('* '+formatDate(time.time()))
         log(_('* Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        if self.patcher_mod_skipcount:
+            log.setHeader(_("=== Skipped Imports"))
+            log(_("The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
+                log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
+                for mod, skipcount in mod_skipcount.iteritems():
+                    log ('  * The imported mod, %s, skipped %d records:' % (str(mod),skipcount))
+            
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
             log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
@@ -18792,6 +18813,7 @@ class GraphicsPatcher(ImportPatcher):
         self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
+        recFidAttrs_class = self.recFidAttrs_class = {}
         for recClass in (MreBsgn,MreLscr, MreClas, MreLtex, MreRegn):
             recAttrs_class[recClass] = ('iconPath',)
         for recClass in (MreActi, MreDoor, MreFlor, MreFurn, MreGras, MreStat):
@@ -18803,7 +18825,8 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreCrea,):
             recAttrs_class[recClass] = ('bodyParts','nift_p')
         for recClass in (MreMgef,):
-            recAttrs_class[recClass] = ('iconPath','model','effectShader','enchantEffect','light')
+            recAttrs_class[recClass] = ('iconPath','model')
+            recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
         for recClass in (MreEfsh,):
             recAttrs_class[recClass] = ('particleTexture','fillTexture','flags','unused1','memSBlend',
                                         'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue','unused2',
@@ -18843,9 +18866,22 @@ class GraphicsPatcher(ImportPatcher):
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
+                recFidAttrs = self.recFidAttrs_class.get(recClass, None)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    if recFidAttrs:
+                        attr_fidvalue = dict((attr,record.__getattribute__(attr)) for attr in recFidAttrs)
+                        for fidvalue in attr_fidvalue.values():
+                            if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                                mod_skipcount[srcMod] = mod_skipcount.setdefault(srcMod, 0) + 1
+                                break
+                        else:
+                            temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                            temp_id_data[fid].update(attr_fidvalue)
+                    else:                    
+                        temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -18958,6 +18994,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
         class_attrs = self.class_attrs = {}
+        class_fidattrs = self.class_fidattrs = {}
         model = ('modPath','modb','modt_p')
         icon = ('iconPath',)
         class_attrs['BSGN'] = icon
@@ -18993,8 +19030,8 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         class_attrs['CLOT'] = class_attrs['ARMO']
 
         class_attrs['CREA'] = ('bodyParts', 'nift_p')
-        ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
-        class_attrs['MGEF'] = icon + model## + ('effectShader','enchantEffect','light')
+        class_attrs['MGEF'] = icon + model
+        class_fidattrs['MGEF'] = ('effectShader','enchantEffect','light')
         class_attrs['EFSH'] = ('fillTexturePath','particleTexturePath','flags','memSBlend','memBlendOp',
                                'memZFunc','fillRed','fillGreen','fillBlue','fillAIn','fillAFull',
                                'fillAOut','fillAPRatio','fillAAmp','fillAFreq','fillAnimSpdU',
@@ -19019,7 +19056,17 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
+            _Type = record._Type
+            if _Type in class_fidattrs:
+                attr_fidvalue = record.ConflictDetails(self.class_fidattrs[_Type], False)
+                for fidvalue in attr_fidvalue.values():
+                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                        return
+                self.fid_attr_value.setdefault(record.fid,{}).update(attr_fidvalue)
+            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[_Type], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -20211,7 +20258,7 @@ class ImportRelations(ImportPatcher):
                 factionRelations.readFromText(dirs['patches'].join(srcFile))
             progress.plus()
         #--Finish
-        self.id_relations = factionRelations.id_relations
+        self.id_relations = dict((fid, relations) for fid, relations in factionRelations.id_relations if fid and (fid[0] is not None and fid[0] in self.patchFile.loadSet))
         self.isActive = bool(self.id_relations)
 
     def getReadClasses(self):
@@ -20342,9 +20389,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
             self.scan(mod,conflict,tags)
         fid = record.fid
         if(fid in self.csvFid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.loadSet)
+            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction and (faction[0] is not None and fidvalue[0] in self.patchFile.loadSet))
         elif(fid in self.fid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction[0] in self.patchFile.loadSet)
+            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction and (faction[0] is not None and fidvalue[0] in self.patchFile.loadSet))
         else:
             return
         curRelations = set(record.relations_list)
@@ -21438,10 +21485,17 @@ class NpcFacePatcher(ImportPatcher):
             faceFile.load(True)
             faceFile.convertToLongFids(('NPC_',))
             for npc in faceFile.NPC_.getActiveRecords():
-                if npc.fid[0] != faceMod:
-                    temp_faceData[npc.fid] = {}
-                    for attr in ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','unused3'):
-                        temp_faceData[npc.fid][attr] = npc.__getattribute__(attr)
+                if npc.fid[0] in self.patchFile.loadSet:
+                    attr_fidvalue = dict((attr,npc.__getattribute__(attr)) for attr in ('eye','hair'))
+                    for fidvalue in attr_fidvalue.values():
+                        if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                            #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                            mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
+                            break
+                    else:
+                        temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','unused3'))
+                        temp_faceData[npc.fid].update(attr_fidvalue)
             if 'NpcFacesForceFullImport' in faceInfo.getBashTags():
                 for fid in temp_faceData:
                     faceData[fid] = temp_faceData[fid]
@@ -21529,6 +21583,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
         ##self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
         self.faceData = ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','fnam')
+        self.faceFidData = ('eye','hair')
         self.mod_count = {}
 
     def getTypes(self):
@@ -21539,13 +21594,29 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         if record.GName in self.srcMods:
             if 'NpcFacesForceFullImport' in bashTags:
-                fid = record.fid
-                id_face = self.id_face
-                id_face[fid] = {}
+                face = {}
+                for attr in self.faceFidData:
+                    face[attr] = getattr(record,attr)
+                for fidvalue in face.values():
+                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                        return
                 for attr in self.faceData:
-                    id_face[fid][attr] = getattr(record,attr)
+                    face[attr] = getattr(record,attr)
+                self.id_face[record.fid] = face
             else:
-                self.id_face.setdefault(record.fid,{}).update(record.ConflictDetails(self.faceData, False))
+                attr_fidvalue = record.ConflictDetails(self.faceFidData, False)
+                for fidvalue in attr_fidvalue.values():
+                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                        return
+                fid = record.fid
+                self.id_face.setdefault(fid,{}).update(attr_fidvalue)
+                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -28574,7 +28645,6 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         coblMod = patchFile.ObCollection.LookupModFile('Cobl Main.esm')
         if coblMod is None:
             raise StateError(_("Cobl Catalogs: Unable to lookup Cobl Main.esm!"))
-        coblID = coblMod._ModID
             
         mgef_name = patchFile.mgef_name.copy()
         for mgef in mgef_name:
@@ -28583,8 +28653,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         actorNames = bush.actorValues
         #--Book generator
         def getBook(patchFile, objectId):
-            fid = MakeShortFid(patchFile._CollectionID, (GPath('Cobl Main.esm'),objectId))
-            book = ObBOOKRecord(patchFile._CollectionID, coblID, fid)
+            book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
             #There have been reports of this patcher failing, hence the sanity checks
             if book.recType != 'BOOK':
                 print PrintFormID(fid)
@@ -28598,7 +28667,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 for mod in self.patchFile.ObCollection:
                     print mod.ModName
                 print book
-                book = ObBOOKRecord(patchFile._CollectionID, coblID, fid)
+                book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
                 print book
                 print book.text
                 print
@@ -29450,19 +29519,14 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         subProgress = SubProgress(progress)
         subProgress.setFull(len(mFactable))
         pstate = 0
-        mFactLong = self.mFactLong
         
         coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)
         if coblMod is None:
             raise StateError(_("Cobl Morph Factions: Unable to lookup Cobl Main.esm!"))
-        coblID = coblMod._ModID
-        fid = MakeShortFid(patchFile._CollectionID, mFactLong)
-        if not fid:
-            raise StateError(_("Cobl Morph Factions: Unable to convert (%s, %06X) to a form id!") % (mFactLong[0].s, mFactLong[1]))
             
-        record = ObFACTRecord(patchFile._CollectionID, coblID, fid)
+        record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
-            print PrintFormID(fid)
+            print PrintFormID(mFactLong)
             for mod in self.patchFile.ObCollection:
                 print mod.ModName
             print record
