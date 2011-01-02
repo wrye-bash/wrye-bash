@@ -17208,15 +17208,19 @@ class CBash_PatchFile(ObModFile):
             self.mgef_name.clear()
             for modName in self.allMods:
                 modFile = self.ObCollection.LookupModFile(modName.s)
-                for record in modFile.MGEF:
-                    full = record.full
-                    eid = record.eid
-                    if (full and eid):
-                        mgefId = cast(eid, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
-                        self.mgef_school[mgefId] = record.school
-                        self.mgef_name[mgefId] = full
-                        mgefId_hostile[mgefId] = record.IsHostile
-                    record.UnloadRecord()
+                try:
+                    for record in modFile.MGEF:
+                        full = record.full
+                        eid = record.eid
+                        if (full and eid):
+                            mgefId = cast(eid, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
+                            self.mgef_school[mgefId] = record.school
+                            self.mgef_name[mgefId] = full
+                            mgefId_hostile[mgefId] = record.IsHostile
+                        record.UnloadRecord()
+                except:
+                    print "CBash read error of modfile: %s" % modName.s
+                    raise
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
         type_patchers = self.type_patchers

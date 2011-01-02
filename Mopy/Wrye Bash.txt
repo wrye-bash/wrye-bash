@@ -442,7 +442,7 @@ Details for the currently selected package will be show on the right. There are 
 === Package Structure
 Bain recognizes three package structures:
 * __Simple__
-  * If the package has esps, esms or bsa's at the top level, or if it has any of the regular Oblivion\Data subdirectories (e.g. Meshes, Textures) at that level, then it will be categorized as a simple package.
+  * If the package has esps, esms or bsa's at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejon, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.
 * __Complex__
   * If a package is not simple, but has subdirectories which appear simple (have esps/esms/bsas and/or have standard sub-directories), then it will be categorized as complex. 
   * In this case, each top level subdirectory (that appears simple), will be treated as a sub-package, and you'll be able to activate or deactivate it as desired before installing.
@@ -458,9 +458,9 @@ Bain will skip over (never install) certain types of files in the package.
   * This is for modders who want to keep files related to the project in the project directory, but not have it be considered for syncing with is useful for project directories and files for modders
   * It's also useful for including material in a package archive that is there for background info, but should not be installed. E.g. screenshots, copies of resource readmes, etc.
 * __Directory Skipping__
-. Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon') or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
+. Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
 * __Extension Skipping__
-. Bain will skip files with certain extensions - mostly executables (exe, dll (unless in the OBSE/plugins directory and then only with a large warning), dlx) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
+. Bain will skip files with certain extensions - mostly executables (exe, dll/dlx (unless in the OBSE/plugins directory and then only with a large warning)) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
 * __Other Skips__
 . There are a few options in package/header menus to skip certain file types; voices, distandLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
 
@@ -2262,7 +2262,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * new 'Open at Google' menu item
   * all Open at * menu items moved into 'Open At' submenu.
   * added .001 as a valid read extension - as in BAIN now supports multipart archives.
-  * slow double click renames file (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts
+  * slow double click renames file (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts).
+  * fix for an at exit crash bug.
 * Saves Tab:
   * Rename Save(s) command added (in the saves menu->file).
   * Re-number Save(s) command added (in the saves menu->file).
