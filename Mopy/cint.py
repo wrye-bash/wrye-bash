@@ -130,7 +130,7 @@ class API_FIELDS(object):
                  'FORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32',
                  'RESOLVED_MGEFCODE', 'STATIC_MGEFCODE',
                  'RESOLVED_ACTORVALUE', 'STATIC_ACTORVALUE',
-                 'CHAR', 'CHAR4', 'STRING', 'ISTRING', 
+                 'CHAR', 'CHAR4', 'STRING', 'ISTRING',
                  'STRING_OR_FLOAT32_OR_SINT32','LIST',
                  'PARENTRECORD', 'SUBRECORD', 'SINT8_FLAG',
                  'SINT8_TYPE', 'SINT8_FLAG_TYPE', 'SINT8_ARRAY',
@@ -1357,7 +1357,7 @@ class CBashFORMID_OR_UINT32_ARRAY_LISTX2(object):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, tuple)
                 _CSetField(instance._CollectionID, instance._ModID, instance._RecordID, 0, self._FieldID, instance._ListIndex, self._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, byref(c_ulong(MakeShortFid(instance._CollectionID, instance._ModID, value))), IsFormID)
-                
+
 class CBashFORMID_LISTX2(object):
     def __init__(self, FieldID, ListFieldID, ListX2FieldID):
         self._FieldID = FieldID
@@ -1695,21 +1695,14 @@ class ObFormIDRecord(object):
         self._RecordID = RecordID
         self._CopyFlags = CopyFlags
         #ParentID isn't kept for most records
-        
+
     @property
     def ModName(self):
         return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
-    def NormModName(self):
-        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
-        if ModName[-6:] == '.ghost':
-            return ModName[:-6]
-        return ModName
-
-    @property
     def GName(self):
-        return GPath(self.NormModName)
+        return GPath(self.ModName)
 
     def UnloadRecord(self):
         _CUnloadRecord(self._CollectionID, self._ModID, self._RecordID, 0)
@@ -1760,7 +1753,7 @@ class ObFormIDRecord(object):
         #conflicts = self.Conflicts(GetExtendedConflicts)
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        #parentRecords = [parent for parent in conflicts if parent.NormModName in recordMasters]
+        #parentRecords = [parent for parent in conflicts if parent.ModName in recordMasters]
         #parentRecords.reverse()
         parentRecords = self.History()
         if parentRecords:
@@ -1856,7 +1849,7 @@ class ObFormIDRecord(object):
         _EditorID = self.eid or 0
         _CSetRecordIDs(self._CollectionID, self._ModID, _FormID, _EditorID, _FormID, nValue)
     eid = property(get_eid, set_eid)
-    
+
     IsDeleted = CBashBasicFlag('flags1', 0x00000020)
     IsBorderRegion = CBashBasicFlag('flags1', 0x00000040)
     IsTurnOffFire = CBashBasicFlag('flags1', 0x00000080)
@@ -1880,21 +1873,14 @@ class ObEditorIDRecord(object):
         self._ModID = ModID
         self._RecordID = RecordID
         self._CopyFlags = CopyFlags
-        
+
     @property
     def ModName(self):
         return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
-    def NormModName(self):
-        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
-        if ModName[-6:] == '.ghost':
-            return ModName[:-6]
-        return ModName
-
-    @property
     def GName(self):
-        return GPath(self.NormModName)
+        return GPath(self.ModName)
 
     def UnloadRecord(self):
         _CUnloadRecord(self._CollectionID, self._ModID, 0, self._RecordID)
@@ -1940,7 +1926,7 @@ class ObEditorIDRecord(object):
         #conflicts = self.Conflicts(GetExtendedConflicts)
         #Less pythonic, but optimized for better speed.
         #Equivalent to commented out code.
-        #parentRecords = [parent for parent in conflicts if parent.NormModName in recordMasters].reverse()
+        #parentRecords = [parent for parent in conflicts if parent.ModName in recordMasters].reverse()
         parentRecords = self.History()
         if parentRecords:
             conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
@@ -1973,7 +1959,7 @@ class ObEditorIDRecord(object):
         if(recID):
             return self.__class__(self._CollectionID, target._ModID, RecordID, getattr(self, '_ParentID', 0), CopyFlags)
         return None
-    
+
     def CopyAsOverride(self, target, CopyFlags=None):
         if CopyFlags is None: CopyFlags = self._CopyFlags
         targetID = 0
@@ -2036,7 +2022,7 @@ class ObEditorIDRecord(object):
         if(_CSetRecordIDs(self._CollectionID, self._ModID, _FormID, _EditorID, _FormID, nValue) == 1):
             self._RecordID = nValue
     eid = property(get_eid, set_eid)
-    
+
     IsDeleted = CBashBasicFlag('flags1', 0x00000020)
     IsBorderRegion = CBashBasicFlag('flags1', 0x00000040)
     IsTurnOffFire = CBashBasicFlag('flags1', 0x00000080)
@@ -2149,7 +2135,7 @@ class ObACHRRecord(ObFormIDRecord):
     exportattrs = ObFormIDRecord.baseattrs + ['base', 'unknownXPCIFormID', 'unknownXPCIString',
                                         'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
                                         'merchantContainer', 'horse', 'scale',
-                                        'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ'] #'xrgd_p', 
+                                        'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ'] #'xrgd_p',
 
 class ObACRERecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2186,7 +2172,7 @@ class ObACRERecord(ObFormIDRecord):
     exportattrs = ObFormIDRecord.baseattrs + ['base', 'owner', 'rank', 'globalVariable',
                                         'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
                                         'scale', 'posX', 'posY', 'posZ', 'rotX',
-                                        'rotY', 'rotZ'] #'xrgd_p', 
+                                        'rotY', 'rotZ'] #'xrgd_p',
 
 class ObREFRRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2368,7 +2354,7 @@ class ObINFORecord(ObFormIDRecord):
                                         'conditions_list', 'choices', 'linksFrom',
                                         'numRefs', 'compiledSize', 'lastIndex',
                                         'scriptType', 'scriptText',
-                                        'references'] #'compiled_p', 
+                                        'references'] #'compiled_p',
 
 class ObLANDRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2539,7 +2525,7 @@ class ObLANDRecord(ObFormIDRecord):
                                         'vertexTextures_list']
     exportattrs = ObFormIDRecord.baseattrs + ['normals_list', 'heights_list', 'heightOffset',
                                         'colors_list', 'baseTextures_list', 'alphaLayers_list',
-                                        'vertexTextures_list'] #'data_p', 
+                                        'vertexTextures_list'] #'data_p',
 
 class ObPGRDRecord(ObFormIDRecord):
     def __init__(self, CollectionIndex, ModID, RecordID, ParentID=0, CopyFlags=0):
@@ -2629,7 +2615,7 @@ class ObACTIRecord(ObFormIDRecord):
     sound = CBashFORMID(10)
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'script',
                                         'sound']
-    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'script', 'sound'] #'modt_p', 
+    exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'script', 'sound'] #'modt_p',
 
 class ObALCHRecord(ObFormIDRecord):
     _Type = 'ALCH'
@@ -2707,7 +2693,7 @@ class ObANIORecord(ObFormIDRecord):
     modt_p = CBashUINT8ARRAY(7)
     animationId = CBashFORMID(8)
     copyattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'animationId']
-    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'animationId'] #'modt_p', 
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'animationId'] #'modt_p',
 
 class ObAPPARecord(ObFormIDRecord):
     _Type = 'APPA'
@@ -2984,7 +2970,7 @@ class ObCLMTRecord(ObFormIDRecord):
                                         'setBegin', 'setEnd', 'volatility', 'phaseLength']
     exportattrs = ObFormIDRecord.baseattrs + ['weathers_list', 'sunPath', 'glarePath', 'modPath',
                                         'modb', 'riseBegin', 'riseEnd',
-                                        'setBegin', 'setEnd', 'volatility', 'phaseLength'] #'modt_p', 
+                                        'setBegin', 'setEnd', 'volatility', 'phaseLength'] #'modt_p',
 
 class ObCLOTRecord(ObFormIDRecord):
     _Type = 'CLOT'
@@ -3253,7 +3239,7 @@ class ObCREARecord(ObFormIDRecord):
                                         'attackReach', 'combatStyle', 'turningSpeed',
                                         'baseScale', 'footWeight',
                                         'inheritsSoundsFrom', 'bloodSprayPath',
-                                        'bloodDecalPath', 'sounds_list'] #'modt_p', 'nift_p', 
+                                        'bloodDecalPath', 'sounds_list'] #'modt_p', 'nift_p',
 
 class ObCSTYRecord(ObFormIDRecord):
     _Type = 'CSTY'
@@ -3630,7 +3616,7 @@ class ObFURNRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
                                         'modt_p', 'script', 'flags']
     exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'script', 'flags'] #'modt_p', 
+                                        'script', 'flags'] #'modt_p',
 
 class ObGLOBRecord(ObFormIDRecord):
     _Type = 'GLOB'
@@ -3669,7 +3655,7 @@ class ObGRASRecord(ObFormIDRecord):
     exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'density',
                                         'minSlope', 'maxSlope', 'waterDistance',
                                         'waterOp', 'posRange', 'heightRange',
-                                        'colorRange', 'wavePeriod', 'flags'] #'modt_p', 
+                                        'colorRange', 'wavePeriod', 'flags'] #'modt_p',
 
 class ObHAIRRecord(ObFormIDRecord):
     _Type = 'HAIR'
@@ -3688,7 +3674,7 @@ class ObHAIRRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
                                         'modt_p', 'iconPath', 'flags']
     exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'flags'] #'modt_p', 
+                                        'iconPath', 'flags'] #'modt_p',
 
 class ObIDLERecord(ObFormIDRecord):
     _Type = 'IDLE'
@@ -3717,7 +3703,7 @@ class ObIDLERecord(ObFormIDRecord):
     IsReturnFile = CBashInvertedFlag('IsNotReturnFile')
     copyattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'modt_p',
                                         'conditions_list', 'group', 'parent', 'prevId']
-    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'conditions_list', 
+    exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'conditions_list',
                                             'group', 'parent', 'prevId'] # 'modt_p',
 
 class ObINGRRecord(ObFormIDRecord):
@@ -3755,7 +3741,7 @@ class ObINGRRecord(ObFormIDRecord):
                                         'effects_list']
     exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
                                         'script', 'weight', 'value', 'flags',
-                                        'effects_list'] #'modt_p', 
+                                        'effects_list'] #'modt_p',
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
                                  'reserved'] #, 'datx_p'
@@ -3773,7 +3759,7 @@ class ObKEYMRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
                                         'script', 'value', 'weight']
     exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
-                                        'script', 'value', 'weight'] #'modt_p', 
+                                        'script', 'value', 'weight'] #'modt_p',
 
 class ObLIGHRecord(ObFormIDRecord):
     _Type = 'LIGH'
@@ -3813,7 +3799,7 @@ class ObLIGHRecord(ObFormIDRecord):
     exportattrs = ObFormIDRecord.baseattrs + ['modPath', 'modb', 'script', 'full',
                                         'iconPath', 'duration', 'radius', 'red',
                                         'green', 'blue', 'flags', 'falloff', 'fov',
-                                        'value', 'weight', 'fade', 'sound'] #'modt_p', 
+                                        'value', 'weight', 'fade', 'sound'] #'modt_p',
 
 class ObLSCRRecord(ObFormIDRecord):
     _Type = 'LSCR'
@@ -4080,7 +4066,7 @@ class ObMGEFRecord(ObEditorIDRecord):
                                           'effectShader', 'enchantEffect',
                                           'castingSound', 'boltSound', 'hitSound',
                                           'areaSound', 'cefEnchantment', 'cefBarter',
-                                          'counterEffects'] #'modt_p', 
+                                          'counterEffects'] #'modt_p',
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
                                  'mgefParamAInfo', 'mgefParamBInfo',
@@ -4100,7 +4086,7 @@ class ObMISCRecord(ObFormIDRecord):
     copyattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
                                         'script', 'value', 'weight']
     exportattrs = ObFormIDRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
-                                        'script', 'value', 'weight'] #'modt_p', 
+                                        'script', 'value', 'weight'] #'modt_p',
 
 class ObNPC_Record(ObFormIDRecord):
     _Type = 'NPC_'
@@ -4267,7 +4253,7 @@ class ObNPC_Record(ObFormIDRecord):
                                         'personality', 'luck', 'hair',
                                         'hairLength', 'eye', 'hairRed',
                                         'hairGreen', 'hairBlue', 'combatStyle',
-                                        'fnam'] # 'modt_p', 'fggs_p', 'fgga_p', 'fgts_p', 
+                                        'fnam'] # 'modt_p', 'fggs_p', 'fgga_p', 'fgts_p',
 
 class ObPACKRecord(ObFormIDRecord):
     _Type = 'PACK'
@@ -4388,7 +4374,7 @@ class ObQUSTRecord(ObFormIDRecord):
                          'references']
             exportattrs = ['flags', 'conditions_list', 'text', 'numRefs', 'compiledSize',
                          'lastIndex', 'scriptType', 'scriptText',
-                         'references'] #'compiled_p', 
+                         'references'] #'compiled_p',
 
         stage = CBashGeneric_LIST(1, c_ushort)
 
@@ -4836,7 +4822,7 @@ class ObSCPTRecord(ObFormIDRecord):
                                         'vars_list', 'references']
     exportattrs = ObFormIDRecord.baseattrs + ['numRefs', 'compiledSize', 'lastIndex',
                                         'scriptType', 'scriptText',
-                                        'vars_list', 'references'] #'compiled_p', 
+                                        'vars_list', 'references'] #'compiled_p',
 
 class ObSGSTRecord(ObFormIDRecord):
     _Type = 'SGST'
@@ -5035,7 +5021,7 @@ class ObTREERecord(ObFormIDRecord):
                                         'speedTree', 'curvature', 'minAngle',
                                         'maxAngle', 'branchDim', 'leafDim',
                                         'shadowRadius', 'rockSpeed',
-                                        'rustleSpeed', 'widthBill', 'heightBill'] #'modt_p', 
+                                        'rustleSpeed', 'widthBill', 'heightBill'] #'modt_p',
 
 class ObWATRRecord(ObFormIDRecord):
     _Type = 'WATR'
@@ -5189,7 +5175,7 @@ class ObWRLDRecord(ObFormIDRecord):
     exportattrs = copyattrs = ObFormIDRecord.baseattrs + ['full', 'parent', 'climate', 'water', 'mapPath',
                                         'dimX', 'dimY', 'NWCellX', 'NWCellY', 'SECellX',
                                         'SECellY', 'flags', 'unknown00', 'unknown01',
-                                        'unknown90', 'unknown91', 'musicType', 'ROAD', 'WorldCELL'] #'ofst_p', 
+                                        'unknown90', 'unknown91', 'musicType', 'ROAD', 'WorldCELL'] #'ofst_p',
 
 class ObWTHRRecord(ObFormIDRecord):
     _Type = 'WTHR'
@@ -5339,7 +5325,7 @@ class ObWTHRRecord(ObFormIDRecord):
                                         'upperCloudSpeed', 'transDelta', 'sunGlare',
                                         'sunDamage', 'rainFadeIn', 'rainFadeOut',
                                         'boltFadeIn', 'boltFadeOut', 'boltFrequency',
-                                        'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list'] #'modt_p', 
+                                        'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list'] #'modt_p',
 
 #Helper functions
 validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
@@ -5397,7 +5383,7 @@ class ObModFile(object):
         if type(other) is type(self):
             return self._CollectionID == other._CollectionID and self._ModID == other._ModID
         return False
-        
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -5406,16 +5392,9 @@ class ObModFile(object):
         return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
-    def NormModName(self):
-        ModName = _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
-        if ModName[-6:] == '.ghost':
-            return ModName[:-6]
-        return ModName
-
-    @property
     def GName(self):
-        return GPath(self.NormModName)
-    
+        return GPath(self.ModName)
+
     def HasRecord(self, RecordID):
         if not RecordID: return False
         if isinstance(RecordID, basestring): TestRecord = ObEditorIDRecord
@@ -5947,7 +5926,7 @@ class ObCollection:
         if type(other) is type(self):
             return self._CollectionID == other._CollectionID
         return False
-        
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -5970,7 +5949,7 @@ class ObCollection:
 ##        //AddMasters causes the mod's masters to be added
 ##        // This is essential for most mod editing functions.
 ##
-##        //LoadMasters causes the mod's masters to be added to the load order and loaded into memory 
+##        //LoadMasters causes the mod's masters to be added to the load order and loaded into memory
 ##        // This has no effect if AddMasters is false
 ##        // This is required if you want to lookup overridden records
 ##
@@ -5983,12 +5962,12 @@ class ObCollection:
 ##
 ##        //IndexLANDs causes LAND records to have extra indexing.
 ##        // Increases load time per mod.
-##        // It allows the safe editing of land records heights. 
+##        // It allows the safe editing of land records heights.
 ##        // Modifying one LAND may require changes in an adjacent LAND to prevent seams
 ##
 ##        //FixupPlaceables moves any REFR,ACHR,ACRE records in a world cell to the actual cell they belong to.
 ##        // Increases load time per mod.
-##        // Use if you're planning on iterating through every placeable in a specific cell 
+##        // Use if you're planning on iterating through every placeable in a specific cell
 ##        //   so that you don't have to check the world cell as well.
 ##
 ##        //IgnoreAbsentMasters causes any records that override masters not in the load order to be dropped
@@ -6015,12 +5994,12 @@ class ObCollection:
         fIsIgnoreAbsentMasters = 0x00001000
 
         if IgnoreExisting:
-            Flags |= fIsIgnoreExisting            
+            Flags |= fIsIgnoreExisting
         else:
             Flags &= ~fIsIgnoreExisting
         if NoLoad:
             Flags &= ~fIsFullLoad
-            Flags &= ~fIsMinLoad            
+            Flags &= ~fIsMinLoad
         elif MinLoad:
             Flags |= fIsMinLoad
             Flags &= ~fIsFullLoad

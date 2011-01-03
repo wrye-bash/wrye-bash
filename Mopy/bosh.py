@@ -17268,7 +17268,7 @@ class CBash_PatchFile(ObModFile):
                     scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan')]
                 #See if all the patchers were filtered out
                 if not (applyPatchers or scanPatchers): continue
-                subProgress(pstate,_("Patching...\n%s::%s") % (modFile.NormModName,type))
+                subProgress(pstate,_("Patching...\n%s::%s") % (modFile.ModName,type))
                 pstate += 1
                 for record in getattr(modFile, type):
                     #If conflicts is > 0, it will include all conflicts, even the record that called it
@@ -17299,10 +17299,10 @@ class CBash_PatchFile(ObModFile):
                         patcher(modFile, record, bashTags)
                     record.UnloadRecord()
             if isMerged:
-                progress(index,_("%s\nMerging...") % modFile.NormModName)
+                progress(index,_("%s\nMerging...") % modFile.ModName)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
 ##            if isForceMerged:
-##                progress(index,_("%s\nMerging...") % modFile.NormModName)
+##                progress(index,_("%s\nMerging...") % modFile.ModName)
 ##                self.forceMergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
         self.TES4.version = maxVersion
@@ -17315,7 +17315,7 @@ class CBash_PatchFile(ObModFile):
         for type, patchers in type_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
             if finishPatchers:
-                subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile.NormModName,type))
+                subProgress(pstate,_("Final Patching...\n%s::%s") % (modFile.ModName,type))
                 pstate += 1
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
