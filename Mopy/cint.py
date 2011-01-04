@@ -36,8 +36,12 @@ if(exists(".\\CBash.dll")):
         _CUnloadMod = CBash.UnloadMod
         _CCleanModMasters = CBash.CleanModMasters
         _CSaveMod = CBash.SaveMod
-        _CGetNumMods = CBash.GetNumMods
-        _CGetModIDs = CBash.GetModIDs
+        _CGetAllNumMods = CBash.GetAllNumMods
+        _CGetAllModIDs = CBash.GetAllModIDs
+        _CGetLoadOrderNumMods = CBash.GetLoadOrderNumMods
+        _CGetLoadOrderModIDs = CBash.GetLoadOrderModIDs
+        _CGetFileNameByID = CBash.GetFileNameByID
+        _CGetFileNameByLoadOrder = CBash.GetFileNameByLoadOrder
         _CGetModNameByID = CBash.GetModNameByID
         _CGetModNameByLoadOrder = CBash.GetModNameByLoadOrder
         _CGetModIDByName = CBash.GetModIDByName
@@ -78,8 +82,12 @@ if(exists(".\\CBash.dll")):
         _CLoadMod.restype = c_long
         _CUnloadMod.restype = c_long
         _CCleanModMasters.restype = c_long
-        _CGetNumMods.restype = c_long
-        _CGetModIDs.restype = c_long
+        _CGetAllNumMods.restype = c_long
+        _CGetAllModIDs.restype = c_long
+        _CGetLoadOrderNumMods.restype = c_long
+        _CGetLoadOrderModIDs.restype = c_long
+        _CGetFileNameByID.restype = c_char_p
+        _CGetFileNameByLoadOrder.restype = c_char_p
         _CGetModNameByID.restype = c_char_p
         _CGetModNameByLoadOrder.restype = c_char_p
         _CGetModIDByName.restype = c_long
@@ -1697,6 +1705,10 @@ class ObFormIDRecord(object):
         #ParentID isn't kept for most records
 
     @property
+    def FileName(self):
+        return _CGetFileNameByID(self._CollectionID, self._ModID) or 'Missing'
+
+    @property
     def ModName(self):
         return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
@@ -1873,6 +1885,10 @@ class ObEditorIDRecord(object):
         self._ModID = ModID
         self._RecordID = RecordID
         self._CopyFlags = CopyFlags
+
+    @property
+    def FileName(self):
+        return _CGetFileNameByID(self._CollectionID, self._ModID) or 'Missing'
 
     @property
     def ModName(self):
@@ -5388,6 +5404,10 @@ class ObModFile(object):
         return not self.__eq__(other)
 
     @property
+    def FileName(self):
+        return _CGetFileNameByID(self._CollectionID, self._ModID) or 'Missing'
+
+    @property
     def ModName(self):
         return _CGetModNameByID(self._CollectionID, self._ModID) or 'Missing'
 
@@ -5920,7 +5940,8 @@ class ObCollection:
         else:
             self._CollectionID = _CCreateCollection(str(ModsPath), 0) #Oblivion collection type hardcoded for now
         self._ModIndex = -1
-        self._NumMods = 0
+        self.LoadOrderMods = []
+        self.AllMods = []
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -5930,7 +5951,7 @@ class ObCollection:
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def addMod(self, ModName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Flags=0x00000078):
+    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Flags=0x00000078):
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
 ##        // If neither is set, the mod isn't loaded
@@ -6006,18 +6027,29 @@ class ObCollection:
         else:
             Flags |= fIsFullLoad
             Flags &= ~fIsMinLoad
-        _CAddMod(self._CollectionID, str(ModName), Flags)
+        _CAddMod(self._CollectionID, str(FileName), Flags)
         return None
 
-    def addMergeMod(self, ModName):
-        return self.addMod(ModName, Flags=0x00001004)
+    def addMergeMod(self, FileName):
+        return self.addMod(FileName, Flags=0x00001004)
 
-    def addScanMod(self, ModName):
-        return self.addMod(ModName, Flags=0x00001084)
+    def addScanMod(self, FileName):
+        return self.addMod(FileName, Flags=0x00001084)
 
     def load(self):
         _CLoadCollection(self._CollectionID)
-        self._NumMods = _CGetNumMods(self._CollectionID)
+
+        _NumModsIDs = _CGetLoadOrderNumMods(self._CollectionID)
+        if _NumModsIDs > 0:
+            cModIDs = (c_ulong * _NumModsIDs)()
+            _CGetLoadOrderModIDs(self._CollectionID, byref(cModIDs))
+            self.LoadOrderMods = [ObModFile(self._CollectionID, ModID) for ModID in cModIDs]
+
+        _NumModsIDs = _CGetAllNumMods(self._CollectionID)
+        if _NumModsIDs > 0:
+            cModIDs = (c_ulong * _NumModsIDs)()
+            _CGetAllModIDs(self._CollectionID, byref(cModIDs))
+            self.AllMods = [ObModFile(self._CollectionID, ModID) for ModID in cModIDs]
 
     def LookupRecords(self, RecordID, GetExtendedConflicts=False):
         if isinstance(RecordID, basestring):
@@ -6042,9 +6074,9 @@ class ObCollection:
 
     def LookupModFile(self, ModName):
         ModID = _CGetModIDByName(self._CollectionID, str(ModName))
-        if(ModID != -1):
-            return ObModFile(self._CollectionID, ModID)
-        return None
+        if(ModID == -1):
+            raise KeyError("ModName(%s) not found in collection (%d)\n" % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
+        return ObModFile(self._CollectionID, ModID)
 
     def UpdateReferences(self, FormIDToReplace, ReplacementFormID):
         count = 0
@@ -6057,23 +6089,16 @@ class ObCollection:
 
     def __del__(self):
         _CDeleteCollection(self._CollectionID)
-
-    def __iter__(self):
-        self._ModIndex = -1
-        return self
-
-    def __len__(self):
-        return self._NumMods
-
-    def next(self):
-        self._ModIndex += 1
-        if(self._ModIndex >= self._NumMods):
-            raise StopIteration
-        return ObModFile(self._CollectionID, self._ModIndex)
-
-    def __getitem__(self, ModIndex):
-        if(ModIndex < 0):
-            ModIndex = self._NumMods + ModIndex + 1
-        if(ModIndex >= self._NumMods):
-            raise IndexError
-        return ObModFile(self._CollectionID, ModIndex)
+    
+    def Debug_DumpModFiles(self):
+        value = "Collection (%d) contains the following modfiles:\n" % (self._CollectionID,)
+        for mod in self.AllMods:
+            LoadOrder = _CGetModLoadOrderByID(self._CollectionID, mod._ModID)
+            if LoadOrder == -1: LoadOrder = '--'
+            else: LoadOrder = '%02X' % (LoadOrder,)
+            ModName, FileName = mod.ModName, mod.FileName
+            if ModName == FileName:
+                value += "Load Order (%s), ID (%03d) : Name(%s)\n" % (LoadOrder, mod._ModID, ModName)
+            else:
+                value += "Load Order (%s), ID (%03d) : ModName(%s) FileName(%s)\n" % (LoadOrder, mod._ModID, ModName, FileName)
+        return value

@@ -8322,7 +8322,11 @@ class ModInfos(FileInfos):
                 for index,modInfo in enumerate(_modInfos):
                     name = modInfo.name
                     progress(index,name.s)
-                    _modFile = Current.LookupModFile(modInfo.getPath().stail)
+                    try:
+                        _modFile = Current.LookupModFile(modInfo.getPath().stail)
+                    except KeyError, error:
+                        print error[0]
+                        continue
                     canMerge = testMerge(modInfo,verbose=False,modFile=_modFile) == True
                     if canMerge:
                         mergeableAdd(name)
@@ -12213,9 +12217,13 @@ class CBash_ActorFactions:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
         Current.load()
-        importFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            importFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
-        for modFile in Current:
+        for modFile in Current.LoadOrderMods:
             modName = modFile.GName
             if modName in gotFactions: continue
             for record in modFile.FACT:
@@ -12240,7 +12248,11 @@ class CBash_ActorFactions:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = {'CREA':0,'NPC_':0}
         types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
@@ -12442,7 +12454,7 @@ class CBash_ActorLevels:
         Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
         Current.load()
 
-        for modFile in Current:
+        for modFile in Current.LoadOrderMods:
             modName = modFile.GName
             if modName in gotLevels: continue
             fid_levels = mod_fid_levels.setdefault(modName, {})
@@ -12458,7 +12470,11 @@ class CBash_ActorLevels:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = 0
         fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
@@ -12689,7 +12705,11 @@ class CBash_EditorIds:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for group in groups:
             fid_eid = group_fid_eid.setdefault(group[:4], {})
@@ -12705,7 +12725,11 @@ class CBash_EditorIds:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = []
         for group,block in modFile.aggregates.iteritems():
@@ -12927,9 +12951,13 @@ class CBash_FactionRelations:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000068)
         Current.load()
-        importFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            importFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
-        for modFile in Current:
+        for modFile in Current.LoadOrderMods:
             modName = modFile.GName
             if modName in gotFactions: continue
             if modFile == importFile:
@@ -12971,7 +12999,11 @@ class CBash_FactionRelations:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x00000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = 0
         for record in modFile.FACT:
@@ -13126,9 +13158,13 @@ class CBash_FidReplacer:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         for newId in set(old_new.values()):
             Current.addMod(modInfos[newId[0]].getPath().stail, Flags=0x00000068)
-        modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00000078)
+        Current.addMod(modInfo.getPath().stail, Flags=0x00000078)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for oldId, newId in old_new.iteritems():
             count = modFile.UpdateReferences(oldId,newId) #returns -1 on error
@@ -13255,7 +13291,11 @@ class CBash_FullNames:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for group in self.types:
             fid_name = group_fid_name.setdefault(group[:4],{})
@@ -13274,7 +13314,11 @@ class CBash_FullNames:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = {}
         for type in self.types:
@@ -13377,7 +13421,11 @@ class CBash_MapMarkers:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         for record in modFile.REFRS:
             if record.base == markerFid:
@@ -13394,7 +13442,11 @@ class CBash_MapMarkers:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         for record in modFile.REFRS:
             fid = record.fid
@@ -13644,7 +13696,11 @@ class CBash_SigilStoneDetails:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for record in modFile.SGST:
             fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, record.effects_list]
@@ -13657,7 +13713,11 @@ class CBash_SigilStoneDetails:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         for record in modFile.SGST:
             newStats = fid_stats.get(record.fid, None)
@@ -14026,7 +14086,11 @@ class CBash_ItemStats:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group):
@@ -14039,7 +14103,11 @@ class CBash_ItemStats:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
@@ -14255,7 +14323,11 @@ class CBash_ItemPrices:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group):
@@ -14269,7 +14341,11 @@ class CBash_ItemPrices:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = {} #--changed[modName] = numChanged
         for group, fid_stats in class_fid_stats.iteritems():
@@ -14376,7 +14452,11 @@ class CompleteItemData:
             Current = ObCollection(ModsPath=dirs['mods'].s)
             Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
             Current.load()
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print error[0]
+                return
 
             for type,stats in self.type_stats.iteritems():
                 if type in ['KEYM',]:
@@ -14696,7 +14776,11 @@ class CBash_CompleteItemData:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for group in pickupables:
             for record in getattr(modFile,group):
@@ -14714,7 +14798,11 @@ class CBash_CompleteItemData:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
@@ -15021,7 +15109,11 @@ class CBash_ScriptText:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         progress = balt.Progress(_("Export Scripts"))
         try:
@@ -15045,7 +15137,11 @@ class CBash_ScriptText:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for record in modFile.SCPT:
             eid = record.eid
@@ -15402,7 +15498,11 @@ class CBash_SpellRecords:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for record in modFile.SPEL:
             fid_stats[record.fid] = map(record.__getattribute__, attrs)
@@ -15414,7 +15514,11 @@ class CBash_SpellRecords:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         changed = []
         for record in modFile.SPEL:
@@ -15740,7 +15844,11 @@ class CBash_IngredientDetails:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
 
         for record in modFile.INGR:
             fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
@@ -15753,7 +15861,11 @@ class CBash_IngredientDetails:
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
-        modFile = Current.LookupModFile(modInfo.getPath().stail)
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print error[0]
+            return
         
         for record in modFile.INGR:
             newStats = fid_stats.get(record.fid, None)
@@ -17018,7 +17130,11 @@ class CBash_PatchFile(ObModFile):
             Current = ObCollection(ModsPath=dirs['mods'].s)
             Current.addMod(modInfo.getPath().stail, Flags=0x00000128)
             Current.load()
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print error[0]
+                return
         missingMasters = []
         nonActiveMasters = []
         masters = modFile.TES4.masters
@@ -17195,7 +17311,11 @@ class CBash_PatchFile(ObModFile):
         self.patchName.temp.remove()
         self.ObCollection.addMod(self.patchName.temp.s, IgnoreExisting=True)
         self.ObCollection.load()
-        patchFile = self.patchFile = self.ObCollection.LookupModFile(self.patchName.temp.s)
+        try:
+            patchFile = self.patchFile = self.ObCollection.LookupModFile(self.patchName.temp.s)
+        except KeyError, error:
+            print error[0]
+            return
         ObModFile.__init__(self, patchFile._CollectionID, patchFile._ModID)
 
         self.TES4.author = 'BASHED PATCH'
@@ -17207,23 +17327,20 @@ class CBash_PatchFile(ObModFile):
             self.mgef_school.clear()
             self.mgef_name.clear()
             for modName in self.allMods:
-                modFile = self.ObCollection.LookupModFile(modName.s)
                 try:
-                    for record in modFile.MGEF:
-                        full = record.full
-                        eid = record.eid
-                        if (full and eid):
-                            mgefId = cast(eid, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
-                            self.mgef_school[mgefId] = record.school
-                            self.mgef_name[mgefId] = full
-                            mgefId_hostile[mgefId] = record.IsHostile
-                        record.UnloadRecord()
-                except:
-                    print "CBash read error of modfile: %s" % modName.s
-                    print "CBash contains the following modfiles:"
-                    for mod in self.ObCollection:
-                        print mod._ModID, ":", mod.ModName
-                    raise
+                    modFile = self.ObCollection.LookupModFile(modName.s)
+                except KeyError, error:
+                    print error[0]
+                    continue
+                for record in modFile.MGEF:
+                    full = record.full
+                    eid = record.eid
+                    if (full and eid):
+                        mgefId = cast(eid, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
+                        self.mgef_school[mgefId] = record.school
+                        self.mgef_name[mgefId] = full
+                        mgefId_hostile[mgefId] = record.IsHostile
+                    record.UnloadRecord()
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
         type_patchers = self.type_patchers
@@ -17246,7 +17363,11 @@ class CBash_PatchFile(ObModFile):
             doFilter = isMerged and 'Filter' in bashTags
             #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
             iiMode = isMerged and bool(iiModeSet & bashTags)
-            modFile = self.ObCollection.LookupModFile(modInfo.getPath().stail)
+            try:
+                modFile = self.ObCollection.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print error[0]
+                continue
             #--Error checks
             gls = modFile.LookupRecord(0x00025811)
             if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
@@ -20935,16 +21056,11 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         #--Source mod?
         if record.GName in self.srcMods:
-            fid = record.fid
+            masters = record.History()
+            if not masters: return
             masterEntries = []
-            hasMasters = False
-            for master in modFile.TES4.masters:
-                master = self.patchFile.ObCollection.LookupModFile(master)
-                masterEntry = master.LookupRecord(fid)
-                if masterEntry:
-                    hasMasters = True
-                    masterEntries.extend(masterEntry.items_list)
-            if not hasMasters: return
+            for masterEntry in masters:
+                masterEntries.extend(masterEntry.items_list)
             entries = record.items_list
             masterItems = set(item for item,count in masterEntries)
             modItems = set(item for item,count in entries)
@@ -20952,6 +21068,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
             addItems = modItems - masterItems
             addEntries = [(item,count) for item,count in entries if item in addItems]
             id_deltas = self.id_deltas
+            fid = record.fid
             deltas = id_deltas.get(fid)
             if deltas is None: deltas = id_deltas[fid] = []
             deltas.append((removeItems,addEntries))
@@ -25332,6 +25449,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 record = patchFile.create_GMST(eid)
                 if not record:
                     print eid
+                    print patchFile.ObCollection.Debug_DumpModFiles()
                     for conflict in patchFile.ObCollection.LookupRecords(eid, False):
                         print conflict.ModName
                     raise StateError(_("Tweak Settings: Unable to create GMST!"))
@@ -28654,9 +28772,11 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         subProgress.setFull(len(bush.effect_alchem) + len(bush.ingred_alchem))
         pstate = 0
         #--Setup
-        coblMod = patchFile.ObCollection.LookupModFile('Cobl Main.esm')
-        if coblMod is None:
-            raise StateError(_("Cobl Catalogs: Unable to lookup Cobl Main.esm!"))
+        try:
+            coblMod = patchFile.ObCollection.LookupModFile('Cobl Main.esm')
+        except KeyError, error:
+            print error[0]
+            return
             
         mgef_name = patchFile.mgef_name.copy()
         for mgef in mgef_name:
@@ -28669,15 +28789,13 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             #There have been reports of this patcher failing, hence the sanity checks
             if book.recType != 'BOOK':
                 print PrintFormID(fid)
-                for mod in self.patchFile.ObCollection:
-                    print mod.ModName
+                print patchFile.ObCollection.Debug_DumpModFiles()
                 print book
                 raise StateError(_("Cobl Catalogs: Unable to lookup book record in Cobl Main.esm!"))
             book = book.CopyAsOverride(self.patchFile)
             if not book:
                 print PrintFormID(fid)
-                for mod in self.patchFile.ObCollection:
-                    print mod.ModName
+                print patchFile.ObCollection.Debug_DumpModFiles()
                 print book
                 book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
                 print book
@@ -29218,11 +29336,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             if isDelev:
                 deletedItems = set()
                 fid = record.fid
-                for master in modFile.TES4.masters:
-                    master = self.patchFile.ObCollection.LookupModFile(master)
-                    master = master.LookupRecord(fid)
-                    if master:
-                        deletedItems |= set([entry.listId for entry in master.entries])
+                for master in record.History():
+                    deletedItems |= set([entry.listId for entry in master.entries])
                 deletedItems -= curItems
                 delevs |= deletedItems
 
@@ -29531,16 +29646,16 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         subProgress = SubProgress(progress)
         subProgress.setFull(len(mFactable))
         pstate = 0
-        
-        coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)
-        if coblMod is None:
-            raise StateError(_("Cobl Morph Factions: Unable to lookup Cobl Main.esm!"))
+        try:        
+            coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)
+        except KeyError, error:
+            print error[0]
+            return
             
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
             print PrintFormID(mFactLong)
-            for mod in self.patchFile.ObCollection:
-                print mod.ModName
+            print patchFile.ObCollection.Debug_DumpModFiles()
             print record
             raise StateError(_("Cobl Morph Factions: Unable to lookup morphable faction record in Cobl Main.esm!"))
             
@@ -30408,7 +30523,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         mod_npcsFixed = self.mod_npcsFixed
         ObCollection = patchFile.ObCollection
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(ObCollection) * 2)
+        subProgress.setFull(len(ObCollection.LoadOrderMods) * 2)
         reX117 = self.reX117
         defaultEyes = {}
         defaultMaleHair = {}
@@ -30428,9 +30543,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             print _("Skipping the race eye patcher: unable to locate the default blue eye (%s, %06X).") % (self.blueEye[0].s, self.blueEye[1])
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
             print
-            print _("Load order:")
-            for mod in ObCollection:
-                print "   %02X:" % (mod._ModID,), mod.ModName
+            print ObCollection.Debug_DumpModFiles()
             print
             print _("eye_meshes contents")
             for eye, meshes in eye_meshes.iteritems():
@@ -30443,9 +30556,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             print _("Skipping the race eye patcher: unable to locate the default argonian eye (%s, %06X).") % (self.argonian[0].s, self.argonian[1])
             print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
             print
-            print _("Load order:")
-            for mod in ObCollection:
-                print "   %02X:" % (mod._ModID,), mod.ModName
+            print ObCollection.Debug_DumpModFiles()
             print
             print _("eye_meshes contents")
             for eye, meshes in eye_meshes.iteritems():
@@ -30467,7 +30578,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         pstate = 0
         noEyes = 0
         noHair = 0
-        for modFile in ObCollection:
+        for modFile in ObCollection.LoadOrderMods:
             subProgress(pstate, _("Filtering eyes...\n"))
             for race in modFile.RACE:
                 recordId = race.fid
@@ -30548,7 +30659,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                             override.rightEye.modPath, override.leftEye.modPath = currentMeshes
                 race.UnloadRecord()
             pstate += 1
-        for modFile in ObCollection:
+        for modFile in ObCollection.LoadOrderMods:
             #--Npcs with unassigned eyes/hair
             #--Must run after all race records have been processed
             subProgress(pstate, _("Assigning random eyes and hairs to npcs missing them...\n"))
