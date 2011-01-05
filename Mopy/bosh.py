@@ -8325,6 +8325,7 @@ class ModInfos(FileInfos):
                     try:
                         _modFile = Current.LookupModFile(modInfo.getPath().stail)
                     except KeyError, error:
+                        print "rescanMergeable"
                         print error[0]
                         continue
                     canMerge = testMerge(modInfo,verbose=False,modFile=_modFile) == True
@@ -12220,6 +12221,7 @@ class CBash_ActorFactions:
         try:
             importFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ActorFactions:readFromMod"
             print error[0]
             return
 
@@ -12251,6 +12253,7 @@ class CBash_ActorFactions:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ActorFactions:writeToMod"
             print error[0]
             return
 
@@ -12473,6 +12476,7 @@ class CBash_ActorLevels:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ActorLevels:writeToMod"
             print error[0]
             return
 
@@ -12708,6 +12712,7 @@ class CBash_EditorIds:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_EditorIds:readFromMod"
             print error[0]
             return
 
@@ -12728,6 +12733,7 @@ class CBash_EditorIds:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_EditorIds:writeToMod"
             print error[0]
             return
 
@@ -12954,6 +12960,7 @@ class CBash_FactionRelations:
         try:
             importFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_FactionRelations:readFromMod"
             print error[0]
             return
 
@@ -13002,6 +13009,7 @@ class CBash_FactionRelations:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_FactionRelations:writeToMod"
             print error[0]
             return
 
@@ -13163,6 +13171,7 @@ class CBash_FidReplacer:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_FidReplacer:updateMod"
             print error[0]
             return
 
@@ -13294,6 +13303,7 @@ class CBash_FullNames:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_FullNames:readFromMod"
             print error[0]
             return
 
@@ -13317,6 +13327,7 @@ class CBash_FullNames:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_FullNames:writeToMod"
             print error[0]
             return
 
@@ -13424,6 +13435,7 @@ class CBash_MapMarkers:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_MapMarkers:readFromMod"
             print error[0]
             return
         
@@ -13445,6 +13457,7 @@ class CBash_MapMarkers:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_MapMarkers:writeToMod"
             print error[0]
             return
         
@@ -13699,6 +13712,7 @@ class CBash_SigilStoneDetails:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_SigilStoneDetails:readFromMod"
             print error[0]
             return
 
@@ -13716,6 +13730,7 @@ class CBash_SigilStoneDetails:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_SigilStoneDetails:writeToMod"
             print error[0]
             return
         
@@ -14089,6 +14104,7 @@ class CBash_ItemStats:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ItemStats:readFromMod"
             print error[0]
             return
 
@@ -14106,6 +14122,7 @@ class CBash_ItemStats:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ItemStats:writeToMod"
             print error[0]
             return
         
@@ -14326,6 +14343,7 @@ class CBash_ItemPrices:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ItemPrices:readFromMod"
             print error[0]
             return
 
@@ -14344,6 +14362,7 @@ class CBash_ItemPrices:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ItemPrices:writeToMod"
             print error[0]
             return
 
@@ -14455,6 +14474,7 @@ class CompleteItemData:
             try:
                 modFile = Current.LookupModFile(modInfo.getPath().stail)
             except KeyError, error:
+                print "CompleteItemData:readFromMod"
                 print error[0]
                 return
 
@@ -14779,6 +14799,7 @@ class CBash_CompleteItemData:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_CompleteItemData:readFromMod"
             print error[0]
             return
 
@@ -14801,6 +14822,7 @@ class CBash_CompleteItemData:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_CompleteItemData:writeToMod"
             print error[0]
             return
         
@@ -15112,6 +15134,7 @@ class CBash_ScriptText:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ScriptText:readFromMod"
             print error[0]
             return
 
@@ -15140,6 +15163,7 @@ class CBash_ScriptText:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_ScriptText:writeToMod"
             print error[0]
             return
 
@@ -15501,6 +15525,7 @@ class CBash_SpellRecords:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_SpellRecords:readFromMod"
             print error[0]
             return
 
@@ -15517,6 +15542,7 @@ class CBash_SpellRecords:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_SpellRecords:writeToMod"
             print error[0]
             return
 
@@ -15847,6 +15873,7 @@ class CBash_IngredientDetails:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_IngredientDetails:readFromMod"
             print error[0]
             return
 
@@ -15864,6 +15891,7 @@ class CBash_IngredientDetails:
         try:
             modFile = Current.LookupModFile(modInfo.getPath().stail)
         except KeyError, error:
+            print "CBash_IngredientDetails:writeToMod"
             print error[0]
             return
         
@@ -17133,6 +17161,7 @@ class CBash_PatchFile(ObModFile):
             try:
                 modFile = Current.LookupModFile(modInfo.getPath().stail)
             except KeyError, error:
+                print "modIsMergeableLoad"
                 print error[0]
                 return
         missingMasters = []
@@ -17314,6 +17343,7 @@ class CBash_PatchFile(ObModFile):
         try:
             patchFile = self.patchFile = self.ObCollection.LookupModFile(self.patchName.temp.s)
         except KeyError, error:
+            print "buildPatch"
             print error[0]
             return
         ObModFile.__init__(self, patchFile._CollectionID, patchFile._ModID)
@@ -17330,6 +17360,7 @@ class CBash_PatchFile(ObModFile):
                 try:
                     modFile = self.ObCollection.LookupModFile(modName.s)
                 except KeyError, error:
+                    print "indexMGEFs"
                     print error[0]
                     continue
                 for record in modFile.MGEF:
@@ -17366,6 +17397,7 @@ class CBash_PatchFile(ObModFile):
             try:
                 modFile = self.ObCollection.LookupModFile(modInfo.getPath().stail)
             except KeyError, error:
+                print "completeMods"
                 print error[0]
                 continue
             #--Error checks
@@ -24689,13 +24721,20 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                 if override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
                     icons = icons % (random.randint(1,13))
 
-            if isinstance(icons, tuple):
-                if len(icons) == 1:
-                    override.maleIconPath = icons[0]
+            try:    
+                if isinstance(icons, tuple):
+                    if len(icons) == 1:
+                        override.maleIconPath = icons[0]
+                    else:
+                        override.maleIconPath, override.femaleIconPath = icons
                 else:
-                    override.maleIconPath, override.femaleIconPath = icons
-            else:
-                override.iconPath = icons
+                    override.iconPath = icons
+            except ValueError, error:
+                print override._Type
+                print icons
+                print error
+                print self.patchFile.ObCollection.Debug_DumpModFiles()
+				raise
             mod_count = self.mod_count
             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
             record.UnloadRecord()
@@ -28775,6 +28814,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         try:
             coblMod = patchFile.ObCollection.LookupModFile('Cobl Main.esm')
         except KeyError, error:
+            print "CBash_AlchemicalCatalogs:finishPatch"
             print error[0]
             return
             
@@ -29649,6 +29689,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         try:        
             coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)
         except KeyError, error:
+            print "CBash_MFactMarker:finishPatch"
             print error[0]
             return
             
