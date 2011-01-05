@@ -24535,6 +24535,9 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                     elif record.flags.shield != 0:
                         record.maleIcon = r"Armor\Iron\M\Shield.dds"
                         changed = True
+                    else: #Default icon, probably a token or somesuch
+                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        changed = True
                 elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
                     record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
                     changed = True
@@ -24601,6 +24604,8 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                         record.icon = r"Weapons\Staff.dds"
                     elif record.type == 5:
                         record.icon = r"Weapons\IronBow.dds"
+                    else: #Should never reach this point
+                        record.icon = r"Weapons\IronDagger.dds"
                     changed = True
                 keep(record.fid)
                 srcMod = record.fid[0]
@@ -24626,6 +24631,7 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                          (r"Armor\Iron\M\Gauntlets.dds",r"Armor\Iron\F\Gauntlets.dds"),
                          (r"Armor\Iron\M\Boots.dds",),
                          (r"Armor\Iron\M\Shield.dds",),
+                         (r"Armor\Iron\M\Shield.dds",), #Default Armor icon
                          ),
                 'BOOK': r"Clutter\iconbook%d.dds",
                 'BSGN': r"Clutter\iconbook%d.dds",
@@ -24693,6 +24699,8 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                         icons = icons[4]
                     elif override.IsShield:
                         icons = icons[5]
+                    else: #default icon, probably a token or somesuch
+                        icons = icons[6]
                 elif override._Type == 'CLOT':
                     #choose based on body flags:
                     if override.IsUpperBody:
