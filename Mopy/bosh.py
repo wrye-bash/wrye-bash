@@ -28857,9 +28857,11 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     try:
                         effectName = mgef_name[mgef]
                     except KeyError:
+                        print patchFile.ObCollection.Debug_DumpModFiles()
+                        print
                         print mgef_name
                         print
-                        raise
+                        effectName = 'Unknown Effect'
                     if mgef in actorEffects: effectName += actorNames[effect[5]] #actorValue field
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
@@ -28870,7 +28872,14 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
             for index,effect in enumerate(effects_list):
                 mgef, actorValue = effect[0], effect[5]
-                effectName = mgef_name[mgef]
+                try:
+                    effectName = mgef_name[mgef]
+                except KeyError:
+                    print patchFile.ObCollection.Debug_DumpModFiles()
+                    print
+                    print mgef_name
+                    print
+                    effectName = 'Unknown Effect'
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
