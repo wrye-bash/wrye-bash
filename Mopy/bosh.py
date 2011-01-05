@@ -24734,7 +24734,7 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                 print icons
                 print error
                 print self.patchFile.ObCollection.Debug_DumpModFiles()
-				raise
+				raise error
             mod_count = self.mod_count
             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
             record.UnloadRecord()
