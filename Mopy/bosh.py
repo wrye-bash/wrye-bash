@@ -28869,7 +28869,10 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                         print
                         print mgef_name
                         print
-                        effectName = 'Unknown Effect'
+                        if mgef in bush.mgef_name:
+                            effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
+                        else:
+                            effectName = 'Unknown Effect'
                     if mgef in actorEffects: effectName += actorNames[effect[5]] #actorValue field
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
@@ -28887,7 +28890,10 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     print
                     print mgef_name
                     print
-                    effectName = 'Unknown Effect'
+                    if mgef in bush.mgef_name:
+                        effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
+                    else:
+                        effectName = 'Unknown Effect'
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
