@@ -28799,6 +28799,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         self.id_ingred = {}
         self.effect_ingred = {}
         self.SEFFValue = cast('SEFF', POINTER(c_ulong)).contents.value
+        self.DebugPrintOnce = 0
 
     def getTypes(self):
         return ['INGR']
@@ -28865,10 +28866,12 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     try:
                         effectName = mgef_name[mgef]
                     except KeyError:
-                        print patchFile.ObCollection.Debug_DumpModFiles()
-                        print
-                        print mgef_name
-                        print
+                        if not self.DebugPrintOnce:
+                            self.DebugPrintOnce = 1
+                            print patchFile.ObCollection.Debug_DumpModFiles()
+                            print
+                            print mgef_name
+                            print
                         if mgef in bush.mgef_name:
                             effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                         else:
@@ -28886,10 +28889,12 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 try:
                     effectName = mgef_name[mgef]
                 except KeyError:
-                    print patchFile.ObCollection.Debug_DumpModFiles()
-                    print
-                    print mgef_name
-                    print
+                    if not self.DebugPrintOnce:
+                        self.DebugPrintOnce = 1
+                        print patchFile.ObCollection.Debug_DumpModFiles()
+                        print
+                        print mgef_name
+                        print
                     if mgef in bush.mgef_name:
                         effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                     else:
