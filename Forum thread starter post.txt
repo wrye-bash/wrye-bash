@@ -6,7 +6,7 @@
 [*][url=http://www.tesnexus.com/downloads/file.php?id=35230]alt3rn1ty's Wrye Bash Pictorial Guide for Newbies[/url]
 [/list]
 [b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
-[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1150534-relz-wrye-bash-thead-56/][RELZ] Wrye Bash #56[/url]
+[b]Previous Topic[/b]: [url=http://forums.bethsoft.com/index.php?/topic/1150534-relz-wrye-bash-thead-57/][RELZ] Wrye Bash #57[/url]
 [b]Requirements[/b]:
 [list]
 [*]It's easiest to just download the WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] unless you like to customize your install.
