@@ -21910,6 +21910,12 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Roads'
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
+    #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
+    #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
+    #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
+    #This isn't standard behavior for import patchers, but consistency between patchers is more important.
+    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21933,27 +21939,56 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        conflicts = record.Conflicts(True)
+        scanConflicts = []
+        for conflict in conflicts:
+            if conflict._ModID != record._ModID:
+                scanConflicts.append(conflict)
+            else: break
+        for conflict in scanConflicts:
+            mod = ObModFile(conflict._CollectionID, conflict._ModID)
+            tags = modInfos[mod.GName].getBashTags()
+            self.scan(mod,conflict,tags)
         recordId = record.fid
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record.ROAD
         newRoad = self.id_ROAD.get(recordId, None)
-        if(newRoad and curRoad):
+        if newRoad:
             #Roads and pathgrids are complex records...
             #No good way to tell if the roads are equal.
             #A direct comparison can prove equality, but not inequality
-            if curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list:
+            if curRoad and (curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list):
                 return
             #So some records that are actually equal won't pass the above test and end up copied over
             #Bloats the patch a little, but won't hurt anything.
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override = newRoad.CopyAsOverride(self.patchFile)
+            if newRoad.fid[0] in self.patchFile.loadSet:
+                override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
                 if override:
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._ModID = override._ModID
-
+                    override = newRoad.CopyAsOverride(self.patchFile) #Copies the new road over
+                    if override:
+                        mod_count = self.mod_count
+                        mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                        record.UnloadRecord()
+                        record._ModID = override._ModID
+            elif curRoad and curRoad.fid[0] in self.patchFile.loadSet:
+                override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
+                if override:
+                    override = curRoad.CopyAsOverride(self.patchFile) #Copies the current road over (it's formID is acceptable)
+                    if override:
+                        for copyattr in newRoad.copyattrs: #Copy the new road values into the override (so it's the same except for the formID)
+                            setattr(override, copyattr, getattr(newRoad, copyattr))
+                        mod_count = self.mod_count
+                        mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                        record.UnloadRecord()
+                        record._ModID = override._ModID
+            else:
+                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                return
+                
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return

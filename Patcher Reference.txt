@@ -1,11 +1,11 @@
 Patch option reference (added as a spoiler due to length).
 
 [spoiler]
-Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below).
+Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below). Also when I say mods, I mean just that, mods. Don't check any of the csv files unless you know that they're what you want.
 
 Alias Mod Names
 [list][*]Should you check it? Not normally.
-[*]What does it do? If a file has been renamed, it allows patch options that use the original file name to know that it needs to use the new file name instead.
+[*]What does it do? If a mod has been renamed, it allows patch options that use the original mod name to know that it needs to use the new mod name instead.
 [*]When does the user need it? If for instance, you rename Oscuros_Oblivion_Overhaul.esp to OOO.esp (for whatever reason), you'll need this option so that Bash knows that OOO.esp is really Oscuros_Oblivion_Overhaul.esp.[/list]
 Merge Patches
 [list][*]Should you check it? Yes. Unless you need it, it won't help you, but it also doesn't hurt to have it active.
