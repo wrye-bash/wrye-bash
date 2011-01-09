@@ -21947,30 +21947,26 @@ class CBash_RoadImporter(CBash_ImportPatcher):
             #So some records that are actually equal won't pass the above test and end up copied over
             #Bloats the patch a little, but won't hurt anything.
             if newRoad.fid[0] in self.patchFile.loadSet:
-                override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
-                if override:
-                    override = newRoad.CopyAsOverride(self.patchFile) #Copies the new road over
-                    if override:
-                        mod_count = self.mod_count
-                        mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModID = override._ModID
+                copyRoad = newRoad #Copy the new road over
             elif curRoad and curRoad.fid[0] in self.patchFile.loadSet:
-                override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
-                if override:
-                    override = curRoad.CopyAsOverride(self.patchFile) #Copies the current road over (it's formID is acceptable)
-                    if override:
-                        for copyattr in newRoad.copyattrs: #Copy the new road values into the override (so it's the same except for the formID)
-                            setattr(override, copyattr, getattr(newRoad, copyattr))
-                        mod_count = self.mod_count
-                        mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                        record.UnloadRecord()
-                        record._ModID = override._ModID
+                copyRoad = curRoad #Copy the current road over (it's formID is acceptable)
             else:
                 #Ignore the record. Another option would be to just ignore the attr_fidvalue result
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
+
+            override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
+            if override:
+                override = copyRoad.CopyAsOverride(self.patchFile) #Copies the road over
+                if override:
+                    #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
+                    for copyattr in newRoad.copyattrs:
+                        setattr(override, copyattr, getattr(newRoad, copyattr))
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModID = override._ModID
 
     def buildPatchLog(self,log):
         """Will write to log."""
