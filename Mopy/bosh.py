@@ -21918,11 +21918,14 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         road = record.ROAD
-        if road: self.id_ROAD[record.fid] = road
+        if road:
+            print modFile.ModName, ":", PrintFormID(record.fid), "contains a road that was added"
+            self.id_ROAD[record.fid] = road
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
+            print "Scanning applied record", modFile.ModName, PrintFormID(record.fid)
             self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
@@ -21931,6 +21934,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 mod = ObModFile(conflict._CollectionID, conflict._ModID)
                 if mod.GName in self.srcs:
                     tags = modInfos[mod.GName].getBashTags()
+                    print "Scanning non-active record", mod.ModName, PrintFormID(record.fid)
                     self.scan(mod,conflict,tags)
             else: break
 
@@ -21938,35 +21942,48 @@ class CBash_RoadImporter(CBash_ImportPatcher):
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record.ROAD
         newRoad = self.id_ROAD.get(recordId, None)
+        print "newRoad:", newRoad
         if newRoad:
             #Roads and pathgrids are complex records...
             #No good way to tell if the roads are equal.
             #A direct comparison can prove equality, but not inequality
+            print "Testing equality:", curRoad
             if curRoad and (curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list):
                 return
+            print "Not equal (probably)"
             #So some records that are actually equal won't pass the above test and end up copied over
             #Bloats the patch a little, but won't hurt anything.
+            print "copy record, newRoad"
             if newRoad.fid[0] in self.patchFile.loadSet:
                 copyRoad = newRoad #Copy the new road over
             elif curRoad and curRoad.fid[0] in self.patchFile.loadSet:
+                print "copy record, curRoad"
                 copyRoad = curRoad #Copy the current road over (it's formID is acceptable)
             else:
                 #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                print "Ignoring record"
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
+            print "copyRoad", copyRoad
 
             override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
+            print "world override", override
             if override:
                 override = copyRoad.CopyAsOverride(self.patchFile) #Copies the road over
+                print "road override", override
                 if override:
+                    print "copy road attributes"
                     #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
                     for copyattr in newRoad.copyattrs:
                         setattr(override, copyattr, getattr(newRoad, copyattr))
+                    print "copied road attributes"
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModID = override._ModID
+                    print "road imported"
+                    print
 
     def buildPatchLog(self,log):
         """Will write to log."""
