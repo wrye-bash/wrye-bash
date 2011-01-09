@@ -724,7 +724,7 @@ class List(wx.Panel):
         text = self.mouseTexts.get(item) or ''
         if text != self.mouseTextPrev:
             statusBar.SetStatusText(text,1)
-            self.mouseTextPrev = text                
+            self.mouseTextPrev = text
 
     #--Column Menu
     def DoColumnMenu(self,event,column = None):
@@ -1172,7 +1172,7 @@ class INIList(List):
         self.sortValid = settings['bash.ini.sortValid']
         if self.sortValid:
             self.items.sort(key=lambda a: self.data[a].status < 0)
-        
+
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
@@ -1184,7 +1184,7 @@ class INIList(List):
                 wx.BeginBusyCursor()
                 self.DeleteSelected()
             finally:
-                wx.EndBusyCursor()           
+                wx.EndBusyCursor()
         event.Skip()
 #------------------------------------------------------------------------------
 class ModList(List):
@@ -1258,7 +1258,7 @@ class ModList(List):
             info = bosh.modInfos[self.items[i]]
             times.append(info.mtime)
             i += inc
-        # Rearrange them for the new load order            
+        # Rearrange them for the new load order
         times.reverse()
         newThisTimes = times[:howMany+1]
         newSwapTimes = times[howMany+1:]
@@ -1488,7 +1488,7 @@ class ModList(List):
                         self.RefreshUI(refreshSaves=False)
                     self.RefreshUI([],refreshSaves=True)
         event.Skip()
-        
+
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         ##Space
@@ -2004,7 +2004,7 @@ class INIPanel(NotebookPanel):
             self.choice = event.GetInt()
         self.SetBaseIni(path)
         iniList.RefreshUI()
-        
+
     def OnSize(self,event):
         wx.Window.Layout(self)
         iniList.Layout()
@@ -2435,7 +2435,7 @@ class InstallersList(balt.Tank):
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
             self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-            
+
     def OnChar(self,event):
         """Char event: Reorder."""
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
@@ -2466,13 +2466,13 @@ class InstallersList(balt.Tank):
         if hitItem < 0: return
         path = self.data.dir.join(self.GetItem(hitItem))
         if path.exists(): path.start()
-        
+
     def OnLeftDown(self,event):
         """Left click, do stuff; currently only rename."""
         (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         hitTime = time.time()*100
-        if self.hitItem != hitItem: 
+        if self.hitItem != hitItem:
             self.hitItem = hitItem
             self.hitTime = hitTime
             event.Skip()
@@ -2548,7 +2548,7 @@ class InstallersList(balt.Tank):
         iniList.RefreshUI()
         self.RefreshUI()
         wx.EndBusyCursor()
-        
+
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         ##Ctrl+A - select all
@@ -2955,10 +2955,10 @@ class InstallersPanel(SashTankPanel):
 
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         subIndex = self.gSubList.GetSelection()
-        
+
 ##        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
 ##        espmIndex = self.gEspmList.GetSelection()
-        
+
         self.gList.RefreshUI(self.detailsItem)
         self.gSubList.ScrollLines(subScrollPos)
         self.gSubList.SetSelection(subIndex)
@@ -2975,7 +2975,7 @@ class InstallersPanel(SashTankPanel):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
         if not wx.GetKeyState(wx.WXK_SHIFT):
             self.refreshCurrent(installer)
-        
+
     def SelectionMenu(self,event):
         """Handle right click in espm list."""
         #--Build Menu
@@ -4322,7 +4322,7 @@ class BashFrame(wx.Frame):
         self.CleanSettings()
         self.SaveSettings()
         self.Destroy()
-        
+
     def SaveSettings(self):
         """Save application data."""
         self.CleanSettings()
@@ -4745,7 +4745,7 @@ class ModChecker(wx.Frame):
             )
         logPath = bosh.dirs['saveBase'].join('ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(''))
-        ins = stringBuffer(self.text+'\n{{CSS:wtxt_sand_small.css}}')        
+        ins = stringBuffer(self.text+'\n{{CSS:wtxt_sand_small.css}}')
         out = logPath.open('w')
         bolt.WryeText.genHtml(ins,out,cssDir)
         out.close()
@@ -4877,12 +4877,12 @@ class BashApp(wx.App):
             settings['bash.readme'] = GetBashVersion()
             # rescan mergeability
             if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
-                nullProgress = bolt.Progress()  
+                nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
         elif settings['bash.CBashEnabled'] != bool(CBash) and not CBash:
-            nullProgress = bolt.Progress()        
+            nullProgress = bolt.Progress()
             bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-        settings['bash.CBashEnabled'] = bool(CBash)    
+        settings['bash.CBashEnabled'] = bool(CBash)
 
 # Misc Dialogs ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5086,7 +5086,7 @@ class PatchDialog(wx.Dialog):
     def SetOkEnable(self):
         """Sets enable state for Ok button."""
         for patcher in self.patchers:
-            if patcher.isEnabled:                
+            if patcher.isEnabled:
                 return self.gExecute.Enable(True)
         self.gExecute.Enable(False)
 
@@ -5262,7 +5262,7 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
         bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
-        
+
     def ExportConfig(self,event=None):
         """Export the configuration to a user selected dat file."""
         patchName = self.patchInfo.name + _('_Configuration.dat')
@@ -5278,7 +5278,7 @@ class PatchDialog(wx.Dialog):
             patcher.saveConfig(patchConfigs)
         table.setItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',patchConfigs)
         table.save()
-        
+
     def ImportConfig(self,event=None):
         """Import the configuration to a user selected dat file."""
         patchName = self.patchInfo.name + _('_Configuration.dat')
@@ -5303,10 +5303,10 @@ class PatchDialog(wx.Dialog):
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled) 
+                        patcher.gList.Check(index,item.isEnabled)
                     except: deprint(_('item %s not in saved configs') % (item))
         self.SetOkEnable()
-    
+
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
@@ -5321,7 +5321,7 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.tweaks):
                     patcher.gList.Check(index,item.isEnabled)
         self.SetOkEnable()
-            
+
     def SelectAll(self,event=None):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
@@ -5337,7 +5337,7 @@ class PatchDialog(wx.Dialog):
                     patcher.gList.Check(index,True)
                     item.isEnabled = True
             self.gExecute.Enable(True)
-                
+
     def DeselectAll(self,event=None):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
@@ -5348,7 +5348,7 @@ class PatchDialog(wx.Dialog):
             patcher.gList.SetChecked([])
             patcher.OnListCheck()
         self.gExecute.Enable(False)
-        
+
     #--GUI --------------------------------
     def OnSize(self,event):
         balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
@@ -6886,7 +6886,7 @@ class Installers_ExportDllInfo(Link):
                         out.write('version %02d: %s\n' % (index, version))
             else: out.write("None")
         finally: out.close
-        
+
 class Installers_ImportDllInfo(Link):
     """Sort by type."""
     def AppendToMenu(self,menu,window,data):
@@ -6925,7 +6925,7 @@ class Installers_ImportDllInfo(Link):
             settings['bash.installers.badDlls'].update(Dlls['badDlls'])
         else:
             settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
-        
+
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerLink(Link):
@@ -7002,7 +7002,7 @@ class Installer_EditWizard(InstallerLink):
         dir = self.data.dir
         dir.join(path.s, self.data[path].hasWizard).start()
 
-     
+
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
@@ -7191,7 +7191,7 @@ class Installer_Rename(InstallerLink):
             self.InstallerType = bosh.InstallerArchive
         elif(isinstance(firstItem,bosh.InstallerProject)):
             self.InstallerType = bosh.InstallerProject
-             
+
         if(self.InstallerType):
             for item in window.GetSelected():
                 if not isinstance(window.data[item],self.InstallerType):
@@ -7365,7 +7365,7 @@ class Installer_ListPackages(InstallerLink):
         message = _('Only show Installed Packages?\n(Else shows all packages)')
         if balt.askYes(self.gTank,message,_('Only Show Installed?')):
             text = self.data.getPackageList(False)
-        else: text = self.data.getPackageList() 
+        else: text = self.data.getPackageList()
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
@@ -7382,17 +7382,17 @@ class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
             menuItem.Enable(False)
         else:
             menuItem.Enable(True)
-            
+
     def Execute(self,event):
         archive = self.selected[0]
         installer = self.data[archive]
         text = installer.listSource(archive)
-        
+
         #--Get masters list
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
-        balt.showLog(self.gTank,text,_("Package Structure"),asDialog=False,fixedFont=False,icons=bashBlue)    
+        balt.showLog(self.gTank,text,_("Package Structure"),asDialog=False,fixedFont=False,icons=bashBlue)
 #------------------------------------------------------------------------------
 class Installer_Move(InstallerLink):
     """Moves selected installers to desired spot."""
@@ -7448,7 +7448,7 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
             else:
                 for link in self.links:
                     link.AppendToMenu(subMenu,window,data)
-                
+
 class Installer_OpenTesNexus(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
@@ -7495,7 +7495,7 @@ class Installer_OpenTESA(InstallerLink):
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_('Open at TES Alliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
             os.startfile('http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
-            
+
 class Installer_OpenPES(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
@@ -7590,7 +7590,7 @@ class Installer_CopyConflicts(InstallerLink):
         menuItem = wx.MenuItem(menu,self.id,self.title)
         menu.AppendItem(menuItem)
         menuItem.Enable(self.isSingleInstallable())
-        
+
     def Execute(self,event):
         """Handle selection."""
         dir = self.data.dir
@@ -7697,8 +7697,8 @@ class Installer_Espm_DeselectAll(InstallerLink):
         espmNots = set(self.data.espms)
         print self.data.gEspmList.IsChecked(0)
         self.data.gEspmList.SetChecked([])
-        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])    
-        print self.data.gEspmList.IsChecked(0)        
+        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])
+        print self.data.gEspmList.IsChecked(0)
 
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -7707,7 +7707,7 @@ class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        if self.isSelectedArchives(): 
+        if self.isSelectedArchives():
             self.title = _('Unpack to Project(s)...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -7748,7 +7748,7 @@ class InstallerArchive_Unpack(InstallerLink):
                 self.data.refresh(what='NS')
                 self.gTank.RefreshUI()
                 #pProject.start()
-            else: 
+            else:
                 for archive in self.selected:
                     project = archive.root
                     installer = self.data[archive]
@@ -7765,7 +7765,7 @@ class InstallerArchive_Unpack(InstallerLink):
                     if iProject.order == -1:
                         self.data.moveArchives([project],installer.order+1)
                 self.data.refresh(what='NS')
-                self.gTank.RefreshUI()   
+                self.gTank.RefreshUI()
         finally:
             progress.Destroy()
 
@@ -7916,7 +7916,7 @@ class InstallerProject_Pack(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         #--Pack is appended whenever Unpack isn't, and vice-versa
-        if self.isSingleProject(): 
+        if self.isSingleProject():
             self.title = _('Pack to Archive...')
             menuItem = wx.MenuItem(menu,self.id,self.title)
             menu.AppendItem(menuItem)
@@ -9135,7 +9135,7 @@ class Mod_AllowNoGhosting(Link):
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
         self.window.RefreshUI(files)
-     
+
 #------------------------------------------------------------------------------
 class Mod_AllowInvertGhosting(Link):
     def AppendToMenu(self,menu,window,data):
@@ -9154,7 +9154,7 @@ class Mod_AllowInvertGhosting(Link):
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
         self.window.RefreshUI(files)
-     
+
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(Link):
     """Toggles Ghostability."""
@@ -10151,9 +10151,9 @@ class Mod_Patch_Update(Link):
             return
         if not CBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
-        else:      
+        else:
             bosh.CBash_PatchFile.patchTime = fileInfo.mtime
-            nullProgress = bolt.Progress()        
+            nullProgress = bolt.Progress()
             bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
             modList.RefreshUI()
         message = ""
@@ -10170,7 +10170,7 @@ class Mod_Patch_Update(Link):
         if message:
             message += 'Automatically deactivate those mods now?'
             if balt.showLog(self.window,message,_('Deactivate Suggested Mods?'),icons=bashBlue,question=True):
-                wx.BeginBusyCursor()              
+                wx.BeginBusyCursor()
                 if deactivate:
                     for mod in deactivate:
                         bosh.modInfos.unselect(mod,False)
@@ -10186,7 +10186,7 @@ class Mod_Patch_Update(Link):
                 bosh.modInfos.refreshInfoLists()
                 bosh.modInfos.plugins.save()
                 self.window.RefreshUI(detail=fileName)
-                wx.EndBusyCursor() 
+                wx.EndBusyCursor()
         previousMods = set()
         text = ''
         for mod in bosh.modInfos.ordered:
@@ -10666,7 +10666,7 @@ class Mod_Prices_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Prices...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data)==1)
-        
+
     def Execute(self,event):
         message = (_("Import item prices from a text file. This will replace existing prices and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.prices.import.continue',
@@ -10758,7 +10758,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Map Markers...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1 and bool(CBash))
-        
+
     def Execute(self,event):
         message = (_("Import Map Markers data from a text file. This will replace existing the data on map markers with the same editor ids and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.MapMarkers.import.continue',
@@ -10845,7 +10845,7 @@ class Mod_SigilStoneDetails_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Sigil Stones...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
-        
+
     def Execute(self,event):
         message = (_("Import Sigil Stone details from a text file. This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.SigilStone.import.continue',
@@ -10936,7 +10936,7 @@ class Mod_SpellRecords_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Spells...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
-        
+
     def Execute(self,event):
         message = (_("Import Spell details from a text file. This will replace existing the data on spells with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.SpellRecords.import.continue',
@@ -11027,7 +11027,7 @@ class Mod_IngredientDetails_Import(Link):
         menuItem = wx.MenuItem(menu,self.id,_('Ingredients...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
-        
+
     def Execute(self,event):
         message = (_("Import Ingredient details from a text file. This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,'bash.Ingredient.import.continue',
@@ -11376,7 +11376,7 @@ class Save_RenamePlayer(Link):
         if not newName: return
         for save in self.data:
             savedPlayer = bosh.Save_NPCEdits(self.window.data[GPath(save)])
-            savedPlayer.renamePlayer(newName) 
+            savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
@@ -11436,7 +11436,7 @@ class Save_Rename(Link):
         newFileName = newName
         for index, name in enumerate(self.data):
             if index:
-                newFileName = newName.replace('.ess','%d.ess' % index)        
+                newFileName = newName.replace('.ess','%d.ess' % index)
             if newFileName != name.s:
                 oldPath = bosh.saveInfos.dir.join(name.s)
                 newPath = bosh.saveInfos.dir.join(newFileName)
@@ -11676,7 +11676,7 @@ class Save_EditPCSpells(Link):
         dialog = balt.ListEditor(self.window,-1,_('Player Spells'),data)
         dialog.ShowModal()
         dialog.Destroy()
-        
+
 #------------------------------------------------------------------------------
 class Save_EditCreatedEnchantmentCosts(Link):
     """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
@@ -11695,7 +11695,7 @@ class Save_EditCreatedEnchantmentCosts(Link):
         Enchantments = bosh.SaveEnchantments(fileInfo)
         Enchantments.load()
         Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
-        
+
 #------------------------------------------------------------------------------
 class Save_Move:
     """Moves or copies selected files to alternate profile."""
@@ -12048,7 +12048,7 @@ class Save_StatObse(Link):
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
         finally:
             progress.Destroy()
- 
+
 #------------------------------------------------------------------------------
 class Save_Unbloat(Link):
     """Unbloats savegame."""
@@ -12634,7 +12634,7 @@ class App_BOSS(App_Button):
                     exeArgs += ('-r 1',) # Revert level 1 - BOSS version 1.6+
                 if wx.GetKeyState(83):
                     exeArgs += ('-s',) # Silent Mode - BOSS version 1.6+
-            if version in [1, 393217]:        
+            if version in [1, 393217]:
                 if wx.GetKeyState(86):
                     exeArgs += ('-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
             elif version >= 393218:
@@ -12752,7 +12752,7 @@ class App_DocBrowser(Link):
     """Show doc browser."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        
+
         gButton = bitmapButton(window,Image(r'images/DocBrowser'+bosh.inisettings['IconSize']+'.png').GetBitmap(),style=style,
             onClick=self.Execute,tip=_("Doc Browser"))
         return gButton
@@ -12840,9 +12840,9 @@ def InitImages():
     images['checkbox.red.x.32'] = Image(r'images/checkbox_red_x_32.png',wx.BITMAP_TYPE_PNG)
     images['checkbox.red.off.16'] = (Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.red.off.32'] = (Image(r'images/checkbox_red_off_32.png',wx.BITMAP_TYPE_PNG))
-    
+
     images['checkbox.green.on.16'] = (Image(r'images/checkbox_green_on.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))    
+    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.off.32'] = (Image(r'images/checkbox_green_off_32.png',wx.BITMAP_TYPE_PNG))
     #--Bash
@@ -12937,7 +12937,7 @@ def InitStatusBar():
         App_Button(
             bosh.tooldirs['BSACMD'],
             Image(r'images/BSACommander'+bosh.inisettings['IconSize']+'.png'),
-            _("Launch BSA Commander")))  
+            _("Launch BSA Commander")))
     BashStatusBar.buttons.append( #Tabula
         App_Button(
             bosh.tooldirs['Tabula'],
@@ -13525,7 +13525,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(balt.Tanks_Open())
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
-    InstallersPanel.mainMenu.append(Installers_AddMarker())    
+    InstallersPanel.mainMenu.append(Installers_AddMarker())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())

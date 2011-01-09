@@ -6089,7 +6089,7 @@ class ObCollection:
 
     def __del__(self):
         _CDeleteCollection(self._CollectionID)
-    
+
     def Debug_DumpModFiles(self):
         value = "Collection (%d) contains the following modfiles:\n" % (self._CollectionID,)
         for mod in self.AllMods:

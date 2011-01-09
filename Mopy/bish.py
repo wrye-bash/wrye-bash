@@ -717,7 +717,7 @@ def gmstIds(fileName=None):
     maxId = max(maxId,0xf12345)
     maxOld = maxId
     print 'maxId',hex(maxId)
-    #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing 
+    #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
     # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
     for eid in ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal','iAllowAlchemyDuringCombat','iNumberActorsAllowedToFollowPlayer',
                 'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
@@ -941,7 +941,7 @@ def parseRecords(fileName='Oblivion.esm'):
     print modFile.fileInfo.name.s,'saved.'
     modFile.fileInfo.getHeader()
     modFile.fileInfo.setType('esp')
-    
+
 # Temp ------------------------------------------------------------------------
 """Very temporary functions."""
 #--Temp
@@ -1156,7 +1156,7 @@ def create_sample_project(read_file=None,dest_path=None):
         dest_path = GPath(os.getcwd()).join("Test BAIN Project")
     try:
         ins = GPath(read_file).open("r")
-    except: 
+    except:
         read_file = GPath(os.getcwd()).join(read_file)
         ins = GPath(read_file).open("r")
     for path in ins:

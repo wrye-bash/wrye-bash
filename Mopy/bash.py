@@ -209,7 +209,7 @@ def oneInstanceChecker():
     if '--restarting' in opts: # wait up to 10 seconds for previous instance to close
         t = time()
         while (time()-t < 10) and pidpath.exists(): sleep(1)
-            
+
     try:
         # if a stale pidfile exists, remove it (this will fail if the file is currently locked)
         if pidpath.exists(): os.remove(pidpath.s)
@@ -257,7 +257,7 @@ def main():
     personal = opts.get('-p')
     localAppData = opts.get('-l')
     oblivionPath = opts.get('-o')
-    
+
     bosh.initBosh(personal,localAppData,oblivionPath)
 
     if not oneInstanceChecker(): return

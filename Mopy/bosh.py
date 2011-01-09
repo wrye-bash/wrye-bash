@@ -5229,7 +5229,7 @@ class ModFile:
                 if isinstance(record,MreMgef):
                     mgef_school[record.eid] = record.school
         return mgef_school
-        
+
     def getMgefHostiles(self,refresh=False):
         """Return a set of hostile magic effect codes.
         This is intended for use with the patch file when it records for all magic effects.
@@ -8298,7 +8298,7 @@ class ModInfos(FileInfos):
             else:
                 newMods.append(name)
         return newMods
-        
+
     def rescanMergeable(self,names,progress):
         """Will rescan specified mods."""
         name_mergeInfo = self.table.getColumn('mergeInfo')
@@ -8709,9 +8709,9 @@ class ModInfos(FileInfos):
         mtime = self[modName].mtime
         mods = self.mtime_selected.get(mtime,tuple())
         return len(mods) > 1
-        
+
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
-        """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""        
+        """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
         haskey = self.mtime_mods.has_key
         if reverse:
             endTime = startTime - 1000
@@ -10557,7 +10557,7 @@ class InstallerConverter(object):
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s)
-        else:                                                                                                
+        else:
             command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         ins = stringBuffer(ins)
@@ -10904,7 +10904,7 @@ class InstallerArchive(Installer):
             command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, archive.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = stringBuffer(ins)
-            
+
         cumCRC = 0
         if inisettings['EnableUnicode']:
             for line in ins.splitlines(True):
@@ -10975,7 +10975,7 @@ class InstallerArchive(Installer):
             command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         else:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
-            
+
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         if bUseUnicode:
             reExtracting = re.compile(u'Extracting\s+(.+)')
@@ -11097,7 +11097,7 @@ class InstallerArchive(Installer):
             command = '"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, apath.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = stringBuffer(ins)
-            
+
         text = []
         if bUseUnicode:
             for line in ins.splitlines(True):
@@ -11134,7 +11134,7 @@ class InstallerArchive(Installer):
             result = ins.close()
             if result:
                 raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
-            
+
         text.sort()
         for line in text:
             dir = line[0]
@@ -11936,7 +11936,7 @@ class InstallersData(bolt.TankData, DataDict):
         emptyDirs = set()
         modsDir = dirs['mods']
         cmd = r'attrib -R "%s\*" /S /D' % (modsDir)
-        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()     
+        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
@@ -12201,7 +12201,7 @@ class ActorFactions:
                     factionEid = id_eid.get(faction,'Unknown')
                     out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
-        
+
 class CBash_ActorFactions:
     """Factions for npcs and creatures with functions for importing/exporting from/to mod/text file."""
     def __init__(self,aliases=None):
@@ -12438,7 +12438,7 @@ class ActorLevels:
                         oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = oldLevels
                         out.write(extendedRowFormat % (wasOffset, oldOffset, oldCalcMin, oldCalcMax))
                     else:
-                        out.write(blankExtendedRow)                        
+                        out.write(blankExtendedRow)
         out.close()
 
 class CBash_ActorLevels:
@@ -12554,7 +12554,7 @@ class CBash_ActorLevels:
                         oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = oldLevels
                         out.write(extendedRowFormat % (wasOffset, oldOffset, oldCalcMin, oldCalcMax))
                     else:
-                        out.write(blankExtendedRow)                        
+                        out.write(blankExtendedRow)
         out.close()
 
 #------------------------------------------------------------------------------
@@ -13438,19 +13438,19 @@ class CBash_MapMarkers:
             print "CBash_MapMarkers:readFromMod"
             print error[0]
             return
-        
+
         for record in modFile.REFRS:
             if record.base == markerFid:
                 fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
             record.UnloadRecord()
-            
+
         del Current
 
     def writeToMod(self,modInfo):
         """Imports type_id_name to specified mod."""
         fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
         changed = []
-        
+
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
@@ -13460,7 +13460,7 @@ class CBash_MapMarkers:
             print "CBash_MapMarkers:writeToMod"
             print error[0]
             return
-        
+
         for record in modFile.REFRS:
             fid = record.fid
             if not fid in fid_markerdata: continue
@@ -13471,7 +13471,7 @@ class CBash_MapMarkers:
                     changed.append(oldValues[0]) #eid
                     for attr, value in zip(attrs, newValues):
                         setattr(record, attr, value)
-                    
+
         if changed: modFile.save()
         del Current
         return changed
@@ -13541,7 +13541,7 @@ class SigilStoneDetails:
         loadFactory= LoadFactory(False,MreSgst)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids(['SGST'])     
+        modFile.convertToLongFids(['SGST'])
         for record in modFile.SGST.getActiveRecords():
             effects = []
             for effect in record.effects:
@@ -13552,7 +13552,7 @@ class SigilStoneDetails:
                 else: effectlist.append([])
                 effects.append(effectlist)
             fid_stats[record.fid] = [record.eid, record.full, record.model.modPath, round(record.model.modb,6), record.iconPath, record.script, record.uses, record.value, round(record.weight,6), effects]
-        
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
@@ -13718,12 +13718,12 @@ class CBash_SigilStoneDetails:
 
         for record in modFile.SGST:
             fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, record.effects_list]
-        
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
-        
+
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
@@ -13733,7 +13733,7 @@ class CBash_SigilStoneDetails:
             print "CBash_SigilStoneDetails:writeToMod"
             print error[0]
             return
-        
+
         for record in modFile.SGST:
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
@@ -13870,13 +13870,13 @@ class ItemStats:
     @staticmethod
     def sint(value):
         return _coerce(value, int, AllowNone=True)
-    
+
     @staticmethod
     def snoneint(value):
         x = _coerce(value, int, AllowNone=True)
         if x == 0: return None
         return x
-    
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.class_fid_attr_value = {}
@@ -14038,7 +14038,7 @@ class ItemStats:
                 attr_value = fid_attr_value[longid]
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
-        
+
 class CBash_ItemStats:
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
     class_attrs = {
@@ -14068,13 +14068,13 @@ class CBash_ItemStats:
     @staticmethod
     def sint(value):
         return _coerce(value, int, AllowNone=True)
-    
+
     @staticmethod
     def snoneint(value):
         x = _coerce(value, int, AllowNone=True)
         if x == 0: return None
         return x
-    
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.class_fid_attr_value = {}
@@ -14125,7 +14125,7 @@ class CBash_ItemStats:
             print "CBash_ItemStats:writeToMod"
             print error[0]
             return
-        
+
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
@@ -14765,17 +14765,17 @@ class CBash_CompleteItemData:
     @staticmethod
     def sint(value):
         return _coerce(value, int, AllowNone=True)
-    
+
     @staticmethod
     def snoneint(value):
         x = _coerce(value, int, AllowNone=True)
         if x == 0: return None
         return x
-    
+
     @staticmethod
     def sbool(value):
         return _coerce(value, bool)
-    
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.class_fid_values = {}
@@ -14825,7 +14825,7 @@ class CBash_CompleteItemData:
             print "CBash_CompleteItemData:writeToMod"
             print error[0]
             return
-        
+
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
@@ -14872,7 +14872,7 @@ class CBash_CompleteItemData:
                 effect.extend([sefid, seschool, sevisual,seflags, sename])
             effects.append(tuple(effect))
         return effects
-        
+
     def readSGSTFromText(self, fields):
         aliases = self.aliases
         eid,full,weight,value,uses,iconPath,modPath,modb,smod,sobj = fields[:10]
@@ -14890,7 +14890,7 @@ class CBash_CompleteItemData:
         weight = _coerce(weight, float)
         effects = readEffectsFromText(fields)
         return [eid, full, weight, value, uses, iconPath, modPath, modb, sid, effects]
-    
+
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_attr_value, aliases = self.class_fid_attr_value, self.aliases
@@ -15017,7 +15017,7 @@ class ScriptText:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        
+
         progress = balt.Progress(_("Export Scripts"))
         try:
             records = modFile.SCPT.getActiveRecords()
@@ -15117,7 +15117,7 @@ class ScriptText:
         finally: #just to ensure the progress bar gets destroyed
             progress = progress.Destroy()
         return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
-    
+
 class CBash_ScriptText:
     """import & export functions for script text."""
     def __init__(self,types=None,aliases=None):
@@ -15252,10 +15252,10 @@ class SpellRecords:
         self.fid_stats = {}
         self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
         self.detailed = detailed
-        if detailed:            
+        if detailed:
             self.attrs = self.attrs + ('flags.noAutoCalc', 'flags.startSpell', 'flags.immuneToSilence',
                                        'flags.ignoreLOS', 'flags.scriptEffectAlwaysApplies',
-                                       'flags.disallowAbsorbReflect', 
+                                       'flags.disallowAbsorbReflect',
                                        'flags.touchExplodesWOTarget') #, 'effects_list' is special cased
         self.spellTypeNumber_Name = {None : 'NONE',
                                      0 : 'Spell',
@@ -15284,7 +15284,7 @@ class SpellRecords:
         self.actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
         self.actorValueNumber_Name[None] = 'NONE'
         self.actorValueName_Number = dict([(y.lower(),x) for x,y in self.actorValueNumber_Name.iteritems() if x is not None])
-        
+
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -15294,7 +15294,7 @@ class SpellRecords:
         loadFactory= LoadFactory(False,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids(['SPEL'])     
+        modFile.convertToLongFids(['SPEL'])
         for record in modFile.SPEL.getActiveRecords():
             fid_stats[record.fid] = [getattr_deep(record, attr) for attr in attrs]
             if detailed:
@@ -15317,7 +15317,7 @@ class SpellRecords:
         modFile.load(True)
         mapper = modFile.getLongMapper()
         shortMapper = modFile.getShortMapper()
-        
+
         changed = [] #eids
         for record in modFile.SPEL.getActiveRecords():
             newStats = fid_stats.get(mapper(record.fid), None)
@@ -15386,7 +15386,7 @@ class SpellRecords:
                 saa = _coerce(saa, bool)
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
-                    
+
                 effects = []
                 _effects = fields
                 while len(_effects) >= 13:
@@ -15432,7 +15432,7 @@ class SpellRecords:
         rowFormat = '"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
         if detailed:
             header = header + (_('Manual Cost'),_('Start Spell'),_('Immune To Silence'),_('Area Effect Ignores LOS'),
-                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),                      
+                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),
                                _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                _('Additional Effects (Same format)'))
@@ -15442,7 +15442,7 @@ class SpellRecords:
             noscriptEffectFiller = ',"None","None","None","None","None","None"'
         headFormat = '"%s",' * len(header)
         headFormat = headFormat[:-1] + '\n' #chop trailing comma
-            
+
         out = textPath.open('w')
         out.write(headFormat % header)
         for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
@@ -15482,9 +15482,9 @@ class CBash_SpellRecords:
         self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
         self.detailed = detailed
         if detailed:
-            self.attrs = self.attrs + ('IsManualCost', 'IsStartSpell', 'IsSilenceImmune', 
+            self.attrs = self.attrs + ('IsManualCost', 'IsStartSpell', 'IsSilenceImmune',
                                        'IsAreaEffectIgnoresLOS', 'IsScriptAlwaysApplies',
-                                       'IsDisallowAbsorbReflect', 
+                                       'IsDisallowAbsorbReflect',
                                        'IsTouchExplodesWOTarget', 'effects_list')
         self.spellTypeNumber_Name = {None : 'NONE',
                                      0 : 'Spell',
@@ -15513,7 +15513,7 @@ class CBash_SpellRecords:
         self.actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
         self.actorValueNumber_Name[None] = 'NONE'
         self.actorValueName_Number = dict([(y.lower(),x) for x,y in self.actorValueNumber_Name.iteritems() if x is not None])
-        
+
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -15592,7 +15592,7 @@ class CBash_SpellRecords:
                 saa = _coerce(saa, bool)
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
-                    
+
                 effects = []
                 _effects = fields
                 while len(_effects) >= 13:
@@ -15639,7 +15639,7 @@ class CBash_SpellRecords:
         rowFormat = '"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
         if detailed:
             header = header + (_('Manual Cost'),_('Start Spell'),_('Immune To Silence'),_('Area Effect Ignores LOS'),
-                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),                      
+                               _('Script Always Applies'),_('Disallow Absorb and Reflect'),_('Touch Explodes Without Target'),
                                _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                _('Additional Effects (Same format)'))
@@ -15649,7 +15649,7 @@ class CBash_SpellRecords:
             noscriptEffectFiller = ',"None","None","None","None","None","None"'
         headFormat = '"%s",' * len(header)
         headFormat = headFormat[:-1] + '\n' #chop trailing comma
-            
+
         out = textPath.open('w')
         out.write(headFormat % header)
         for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
@@ -15703,7 +15703,7 @@ class IngredientDetails:
         loadFactory= LoadFactory(False,MreIngr)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        modFile.convertToLongFids(['INGR'])     
+        modFile.convertToLongFids(['INGR'])
         for record in modFile.INGR.getActiveRecords():
             effects = []
             for effect in record.effects:
@@ -15714,7 +15714,7 @@ class IngredientDetails:
                 else: effectlist.append([])
                 effects.append(effectlist)
             fid_stats[record.fid] = [record.eid, record.full, record.model.modPath, round(record.model.modb,6), record.iconPath, record.script, record.value, round(record.weight,6), effects]
-        
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
@@ -15879,12 +15879,12 @@ class CBash_IngredientDetails:
 
         for record in modFile.INGR:
             fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
-        
+
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
-        
+
         Current = ObCollection(ModsPath=dirs['mods'].s)
         Current.addMod(modInfo.getPath().stail, Flags=0x000000038)
         Current.load()
@@ -15894,7 +15894,7 @@ class CBash_IngredientDetails:
             print "CBash_IngredientDetails:writeToMod"
             print error[0]
             return
-        
+
         for record in modFile.INGR:
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
@@ -16830,7 +16830,7 @@ class PatchFile(ModFile):
         MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreScpt, MreSgst,
         MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr,
         MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil)
-    
+
     @staticmethod
     def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
@@ -17199,7 +17199,7 @@ class CBash_PatchFile(ObModFile):
             reasons += (_("\n.    Is a master of non-mergeable mod(s): ") + ', '.join(sorted(dependent))+'.')
         if reasons: return reasons
         return True
-        
+
     @staticmethod
     def modIsMergeable(modInfo,progress=None,verbose=True,modFile=None):
         """Returns True or error message indicating whether specified mod is mergeable."""
@@ -17400,6 +17400,7 @@ class CBash_PatchFile(ObModFile):
                 print "completeMods"
                 print error[0]
                 continue
+            modGName = modFile.GName
             #--Error checks
             gls = modFile.LookupRecord(0x00025811)
             if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
@@ -17411,14 +17412,15 @@ class CBash_PatchFile(ObModFile):
                 iiFilter = IIMSet and not (iiMode or type in levelLists)
                 #Filter the used patchers as needed
                 if iiMode:
-                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode]
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode]
+                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
                 elif isScanned:
                     applyPatchers = [] #Scanned mods should never be copied directly into the bashed patch.
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded]
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
                 else:
-                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply')]
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan')]
+                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
+                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
+
                 #See if all the patchers were filtered out
                 if not (applyPatchers or scanPatchers): continue
                 subProgress(pstate,_("Patching...\n%s::%s") % (modFile.ModName,type))
@@ -17492,7 +17494,7 @@ class CBash_PatchFile(ObModFile):
                 log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
                 for mod, skipcount in mod_skipcount.iteritems():
                     log ('  * The imported mod, %s, skipped %d records.' % (str(mod),skipcount))
-            
+
         if self.unFilteredMods:
             log.setHeader(_("=== Unfiltered Mods"))
             log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
@@ -17615,6 +17617,8 @@ class CBash_Patcher:
     iiMode = False
     selectCommands = True
     allowUnloaded = False
+    scanRequiresChecked = False
+    applyRequiresChecked = False
 
     def getName(self):
         """Returns patcher name."""
@@ -17661,13 +17665,7 @@ class CBash_Patcher:
         for type in self.getTypes():
             type_patchers.setdefault(type,[]).append(self)
         if self.allowUnloaded:
-            if hasattr(self, 'srcMods'):
-                srcMods = self.srcMods
-            elif hasattr(self, 'srcFiles'):
-                srcMods = self.srcFiles
-            else:
-                return
-            loadMods = set([mod for mod in srcMods if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
+            loadMods = set([mod for mod in self.srcs if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
 
     def buildPatchLog(self,log):
@@ -17841,6 +17839,12 @@ class CBash_ListPatcher(CBash_Patcher):
         CBash_Patcher.saveConfig(self,configs)
 
     #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcs = self.getConfigChecked()
+        self.isActive = bool(self.srcs)
+
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         if self.allowUnloaded:
@@ -17896,6 +17900,9 @@ class MultiTweakItem:
 class CBash_MultiTweakItem:
     """A tweak item, optionally with configuration choices."""
     iiMode = False
+    scanRequiresChecked = False
+    applyRequiresChecked = False
+
     def __init__(self,float,label,tip,key,*choices):
         """Initialize."""
         self.label = label
@@ -18079,7 +18086,7 @@ class CBash_PatchMerger(CBash_ListPatcher):
     name = _('Merge Patches')
     text = _("Merge patch mods into Bashed Patch.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Merge'
+    autoKey = set(('Merge',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 ##    allowUnloaded = True
@@ -18095,14 +18102,12 @@ class CBash_PatchMerger(CBash_ListPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         #--WARNING: Since other patchers may rely on the following update during
         #  their initPatchFile section, it's important that PatchMerger runs first or near first.
         if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,self.srcMods)
+            patchFile.setMods(None,self.srcs)
 #------------------------------------------------------------------------------
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -18327,16 +18332,15 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     group = _('General')
     name = _('Replace Form IDs')
     text = _("Imports FormId replacers from csv files into the Bashed Patch.")
-    autoKey = 'Formids'
+    autoKey = set(('Formids',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     unloadedText = _("\n\nAny non-active, non-merged mods referenced by files selected in the following list will be IGNORED.")
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -18346,9 +18350,9 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             if not reModExt.search(srcFile.s):
                 if srcFile not in patchesDir: continue
                 fidReplacer.readFromText(dirs['patches'].join(srcFile))
@@ -18406,10 +18410,10 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         mod_old_count = self.mod_old_count
 
         log(_("=== Source Mods"))
-        if not self.srcFiles:
+        if not self.srcs:
             log(_(". ~~None~~"))
         else:
-            for srcFile in self.srcFiles:
+            for srcFile in self.srcs:
                 log("* " +srcFile.s)
         log('\n')
         for mod in modInfos.getOrdered(mod_old_count.keys()):
@@ -18455,6 +18459,8 @@ class CBash_ImportPatcher(CBash_ListPatcher):
     scanOrder = 20
     editOrder = 20
     masters = {}
+    scanRequiresChecked = True
+    applyRequiresChecked = False
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -18888,15 +18894,14 @@ class CBash_CellImporter(CBash_ImportPatcher):
     text = _("Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')#,'C.Maps')
+    autoKey = set(('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music'))#,'C.Maps'
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_attr_value = {}
         self.mod_count = {}
         self.tag_attrs = {
@@ -18920,14 +18925,13 @@ class CBash_CellImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            for bashKey, attrs in self.tag_attrs.iteritems():
-                if bashKey in bashTags:
-                    self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(attrs))
+        for bashKey in bashTags & self.autoKey:
+            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.tag_attrs[bashKey]))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -19040,7 +19044,7 @@ class GraphicsPatcher(ImportPatcher):
                         else:
                             temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
                             temp_id_data[fid].update(attr_fidvalue)
-                    else:                    
+                    else:
                         temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
@@ -19142,16 +19146,15 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     text = _("Import graphics (models, icons, etc.) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Graphics'
+    autoKey = set(('Graphics',))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_attr_value = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
         class_attrs = self.class_attrs = {}
         class_fidattrs = self.class_fidattrs = {}
@@ -19215,34 +19218,32 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            _Type = record._Type
-            if _Type in self.class_fidattrs:
-                attr_fidvalue = record.ConflictDetails(self.class_fidattrs[_Type], False)
-                for fidvalue in attr_fidvalue.values():
-                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                        return
-                self.fid_attr_value.setdefault(record.fid,{}).update(attr_fidvalue)
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[_Type], False))
+        _Type = record._Type
+        if _Type in self.class_fidattrs:
+            attr_fidvalue = record.ConflictDetails(self.class_fidattrs[_Type], False)
+            for fidvalue in attr_fidvalue.values():
+                if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                    #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    return
+            self.fid_attr_value.setdefault(record.fid,{}).update(attr_fidvalue)
+        self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[_Type], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         prev_attr_value = self.fid_attr_value.get(record.fid,None)
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
@@ -19263,7 +19264,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
@@ -19432,15 +19433,14 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     text = _("Import Actor components from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton')
+    autoKey = set(('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_attr_value = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
@@ -19480,14 +19480,15 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            for bashKey in self.class_tag_attrs[record._Type]:
-                if bashKey in bashTags:
-                    self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_tag_attrs[record._Type][bashKey]))
+        for bashKey in bashTags & self.autoKey:
+            attrs = self.class_tag_attrs[record._Type].get(bashKey, None)
+            if attrs:
+                self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(attrs))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -19509,7 +19510,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
@@ -19656,16 +19657,15 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     text = _("Import Actor animations from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.Anims'
+    autoKey = set(('Actors.Anims',))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_animations = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.mod_count = {}
 
     def getTypes(self):
@@ -19674,25 +19674,23 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            animations = self.id_animations.setdefault(record.fid,[])
-            animations.extend([anim for anim in record.animations if anim not in animations])
+        animations = self.id_animations.setdefault(record.fid,[])
+        animations.extend([anim for anim in record.animations if anim not in animations])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -19908,14 +19906,14 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     text = _("Import Actor AIPackage links from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIPackages','Actors.AIPackagesForceAdd')
+    autoKey = set(('Actors.AIPackages','Actors.AIPackagesForceAdd'))
+    scanRequiresChecked = False
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_Added = {}
         self.id_Deleted = {}
         self.id_Moved = {}
@@ -19928,7 +19926,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
+        if modFile.GName in self.srcs:
             recordId = record.fid
             newPackages = record.aiPackages
             oldPackages = self.previousPackages.get(recordId, [])
@@ -19965,7 +19963,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         recordId = record.fid
         if (recordId in self.id_Added or recordId in self.id_Deleted or recordId in self.id_Moved):
-            if (modFile.GName in self.srcMods):
+            if (modFile.GName in self.srcs):
                 return
             merged = record.aiPackages
             merged += [package for package in self.id_Added.get(recordId, {}).keys() if package not in merged]
@@ -20131,15 +20129,14 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     text = _("Import Actor death items from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.DeathItem'
+    autoKey = set(('Actors.DeathItem',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_deathItem = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.mod_count = {}
 
     def getTypes(self):
@@ -20148,14 +20145,14 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            deathitem = record.ConflictDetails(('deathItem',), False)
-            if deathitem:
-                self.id_deathItem[record.fid] = deathitem['deathItem']
+        deathitem = record.ConflictDetails(('deathItem',), False)
+        if deathitem:
+            self.id_deathItem[record.fid] = deathitem['deathItem']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -20173,7 +20170,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         mod_count = self.mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_('* Imported Death Items: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -20299,16 +20296,15 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     name = _('Import Factions')
     text = _("Import factions from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-    autoKey = 'Factions'
+    autoKey = set(('Factions',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_factions = {}
         self.csvId_factions = {}
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
 
     def initData(self,type_patchers,progress):
@@ -20316,9 +20312,9 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
                 if srcPath not in patchesDir: continue
@@ -20339,14 +20335,14 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcFiles:
-            factions = record.ConflictDetails(('factions_list',))
-            if factions:
-                self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list']))
+        factions = record.ConflictDetails(('factions_list',))
+        if factions:
+            self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list']))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvId_factions):
             newFactions = set(self.csvId_factions[fid])
@@ -20497,17 +20493,16 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     name = _('Import Relations')
     text = _("Import relations from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-    autoKey = 'Relations'
+    autoKey = set(('Relations',))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_faction_mod = {}
         self.csvFid_faction_mod = {}
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
         self.mod_count = {}
 
     def initData(self,type_patchers,progress):
@@ -20515,9 +20510,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         factionRelations = CBash_FactionRelations(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
                 if srcPath not in patchesDir: continue
@@ -20532,26 +20527,24 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcFiles:
-            relations = record.ConflictDetails(('relations_list',),False)
-            if relations:
-                self.fid_faction_mod.setdefault(record.fid,{}).update(relations['relations_list'])
+        relations = record.ConflictDetails(('relations_list',),False)
+        if relations:
+            self.fid_faction_mod.setdefault(record.fid,{}).update(relations['relations_list'])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         fid = record.fid
         if(fid in self.csvFid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction and (faction[0] is not None and faction[0] in self.patchFile.loadSet))
@@ -20728,15 +20721,14 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     text = _("Import Scripts on containers, plants, misc, weapons etc from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Scripts'
+    autoKey = set(('Scripts',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_script = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
 
     def getTypes(self):
@@ -20747,14 +20739,14 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            script = record.ConflictDetails(('script',), False)
-            if script:
-                self.id_script[record.fid] = script['script']
+        script = record.ConflictDetails(('script',), False)
+        if script:
+            self.id_script[record.fid] = script['script']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_script and record.script != self.id_script[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -20772,7 +20764,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
@@ -21065,19 +21057,20 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
     name = _('Import Inventory')
     text = _("Merges changes to NPC, creature and container inventories.")
-    autoKey = ('Invent','InventOnly')
+    autoKey = set(('Invent','InventOnly'))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_deltas = {}
-        self.srcMods = [x for x in self.getConfigChecked() if (x in modInfos and x in patchFile.allMods)]
-        self.inventOnlyMods = set(x for x in self.srcMods if
+        #should be redundant since this patcher doesn't allow unloaded
+        #self.srcs = [x for x in self.srcs if (x in modInfos and x in patchFile.allMods)]
+        self.inventOnlyMods = set(x for x in self.srcs if
             (x in patchFile.mergeSet and set(('InventOnly','IIM')) & modInfos[x].getBashTags()))
-        self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
 
     def getTypes(self):
@@ -21087,32 +21080,32 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         #--Source mod?
-        if record.GName in self.srcMods:
-            masters = record.History()
-            if not masters: return
-            masterEntries = []
-            for masterEntry in masters:
-                masterEntries.extend(masterEntry.items_list)
-            entries = record.items_list
-            masterItems = set(item for item,count in masterEntries)
-            modItems = set(item for item,count in entries)
-            removeItems = masterItems - modItems
-            addItems = modItems - masterItems
-            addEntries = [(item,count) for item,count in entries if item in addItems]
-            id_deltas = self.id_deltas
-            fid = record.fid
-            deltas = id_deltas.get(fid)
-            if deltas is None: deltas = id_deltas[fid] = []
-            deltas.append((removeItems,addEntries))
+        masters = record.History()
+        if not masters: return
+        masterEntries = []
+        for masterEntry in masters:
+            masterEntries.extend(masterEntry.items_list)
+        entries = record.items_list
+        masterItems = set(item for item,count in masterEntries)
+        modItems = set(item for item,count in entries)
+        removeItems = masterItems - modItems
+        addItems = modItems - masterItems
+        addEntries = [(item,count) for item,count in entries if item in addItems]
+        id_deltas = self.id_deltas
+        fid = record.fid
+        deltas = id_deltas.get(fid)
+        if deltas is None: deltas = id_deltas[fid] = []
+        deltas.append((removeItems,addEntries))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         deltas = self.id_deltas.get(record.fid)
         if not deltas: return
         #If only the inventory is imported, the deltas have to be applied to
         #whatever record would otherwise be winning
-        if record.GName in self.inventOnlyMods:
+        if modFile.GName in self.inventOnlyMods:
             conflicts = record.Conflicts()
             if conflicts:
                 #If this isn't actually the winning record, use it.
@@ -21344,15 +21337,14 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     text = _("Merges changes to NPC and creature spell lists.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.Spells','Actors.SpellsForceAdd')
+    autoKey = set(('Actors.Spells','Actors.SpellsForceAdd'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_spells = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.mod_count = {}
 
     def getTypes(self):
@@ -21361,33 +21353,33 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            curData = {'deleted':[],'merged':[]}
-            curspells = record.spells
+        curData = {'deleted':[],'merged':[]}
+        curspells = record.spells
 ##            print curspells
-            parentRecords = record.History()
-            if parentRecords:
-                if parentRecords[-1].spells != curspells or 'Actors.SpellsForceAdd' in bashTags:
-                    for spell in parentRecords[-1].spells:
-                        if spell not in curspells:
-                            curData['deleted'].append(spell)
-                curData['merged'] = curspells
-                if not record.fid in self.id_spells:
-                    self.id_spells[record.fid] = curData
-                else:
-                    id_spells = self.id_spells[record.fid]
-                    for spell in curData['deleted']:
-                        if spell in id_spells['merged']:
-                            id_spells['merged'].remove(spell)
-                        id_spells['deleted'].append(spell)
-                    for spell in curData['merged']:
-                        if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
-                        if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
-                            id_spells['merged'].append(spell)
+        parentRecords = record.History()
+        if parentRecords:
+            if parentRecords[-1].spells != curspells or 'Actors.SpellsForceAdd' in bashTags:
+                for spell in parentRecords[-1].spells:
+                    if spell not in curspells:
+                        curData['deleted'].append(spell)
+            curData['merged'] = curspells
+            if not record.fid in self.id_spells:
+                self.id_spells[record.fid] = curData
+            else:
+                id_spells = self.id_spells[record.fid]
+                for spell in curData['deleted']:
+                    if spell in id_spells['merged']:
+                        id_spells['merged'].remove(spell)
+                    id_spells['deleted'].append(spell)
+                for spell in curData['merged']:
+                    if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
+                    if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
+                        id_spells['merged'].append(spell)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         mergedSpells = self.id_spells.get(recordId,None)
         if mergedSpells:
@@ -21407,7 +21399,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         mod_count = self.mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_('* Imported Spell Lists: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21521,17 +21513,16 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     text = _("Import names from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^Oblivion.esm$",re.I)
-    autoKey = 'Names'
+    autoKey = set(('Names',))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_full = {}
         self.csvId_full = {}
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
 
     def initData(self,type_patchers,progress):
@@ -21539,9 +21530,9 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
                 if srcPath not in patchesDir: continue
@@ -21566,26 +21557,24 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcFiles:
-            full = record.ConflictDetails(('full',),False)
-            if full:
-                self.id_full[record.fid] = full['full']
+        full = record.ConflictDetails(('full',),False)
+        if full:
+            self.id_full[record.fid] = full['full']
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         full = self.id_full.get(recordId, None)
         full = self.csvId_full.get(recordId, full)
@@ -21605,7 +21594,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods/Files"))
-        for file in self.srcFiles:
+        for file in self.srcs:
             log("* " +file.s)
         log(_("\n=== Renamed Items"))
         for type in class_mod_count.keys():
@@ -21731,16 +21720,15 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     name = _('Import NPC Faces')
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = ('NpcFaces','NpcFacesForceFullImport')
+    autoKey = set(('NpcFaces','NpcFacesForceFullImport'))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_face = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
         ##self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
         self.faceData = ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','fnam')
@@ -21753,47 +21741,45 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            if 'NpcFacesForceFullImport' in bashTags:
-                face = {}
-                for attr in self.faceFidData:
-                    face[attr] = getattr(record,attr)
-                for fidvalue in face.values():
-                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                        return
-                for attr in self.faceData:
-                    face[attr] = getattr(record,attr)
-                self.id_face[record.fid] = face
-            else:
-                attr_fidvalue = record.ConflictDetails(self.faceFidData, False)
-                for fidvalue in attr_fidvalue.values():
-                    if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                        #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                        return
-                fid = record.fid
-                self.id_face.setdefault(fid,{}).update(attr_fidvalue)
-                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
+        if 'NpcFacesForceFullImport' in bashTags:
+            face = {}
+            for attr in self.faceFidData:
+                face[attr] = getattr(record,attr)
+            for fidvalue in face.values():
+                if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                    #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    return
+            for attr in self.faceData:
+                face[attr] = getattr(record,attr)
+            self.id_face[record.fid] = face
+        else:
+            attr_fidvalue = record.ConflictDetails(self.faceFidData, False)
+            for fidvalue in attr_fidvalue.values():
+                if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                    #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    return
+            fid = record.fid
+            self.id_face.setdefault(fid,{}).update(attr_fidvalue)
+            self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         prev_face_value = self.id_face.get(recordId,None)
         if prev_face_value:
@@ -21815,7 +21801,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         mod_count = self.mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_('* Faces Patched: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21908,7 +21894,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _("Import roads from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Roads'
+    autoKey = set(('Roads',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
@@ -21920,10 +21906,9 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_ROAD = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.mod_count = {}
 
     def getTypes(self):
@@ -21932,25 +21917,23 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            road = record.ROAD
-            if road: self.id_ROAD[record.fid] = road
+        road = record.ROAD
+        if road: self.id_ROAD[record.fid] = road
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record.ROAD
@@ -21988,7 +21971,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
-                
+
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
@@ -22150,16 +22133,15 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     text = _("Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Sound'
+    autoKey = set(('Sound',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_attr_value = {}
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
         self.class_mod_count = {}
         class_attrs = self.class_attrs = {}
         class_attrs['ACTI'] = ('sound',)
@@ -22177,14 +22159,13 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
+        self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
-        
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
@@ -22205,7 +22186,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods"))
-        for mod in self.srcMods:
+        for mod in self.srcs:
             log("* " +mod.s)
         log(_("\n=== Modified Records"))
         for type in class_mod_count.keys():
@@ -22282,11 +22263,11 @@ class StatsPatcher(ImportPatcher):
             if group not in modFile.tops: continue
             attrs = self.class_attrs[group]
             patchBlock = getattr(self.patchFile,group)
-            id_records = patchBlock.id_records                
+            id_records = patchBlock.id_records
             for record in getattr(modFile,group).getActiveRecords():
                 longid = record.fid
-                if not record.longFids: longid = mapper(longid)    
-                if longid in id_records: continue 
+                if not record.longFids: longid = mapper(longid)
+                if longid in id_records: continue
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
                 oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
@@ -22297,7 +22278,7 @@ class StatsPatcher(ImportPatcher):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile
-        keep = self.patchFile.getKeeper()        
+        keep = self.patchFile.getKeeper()
         fid_attr_value = self.fid_attr_value
         allCounts = []
         for group in self.activeTypes:
@@ -22336,18 +22317,17 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     text = _("Import stats from any pickupable items from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Stats'
+    autoKey = set(('Stats',))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.fid_attr_value = {}
         self.csvFid_attr_value = {}
         self.class_attrs = CBash_ItemStats.class_attrs
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
         self.class_mod_count = {}
 
     def initData(self,type_patchers,progress):
@@ -22355,9 +22335,9 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             if not reModExt.search(srcFile.s):
                 if srcFile not in patchesDir: continue
                 itemStats.readFromText(dirs['patches'].join(srcFile))
@@ -22377,24 +22357,22 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcFiles:
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
+        self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type], False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId, None)
         prev_attr_value = self.csvFid_attr_value.get(recordId, prev_attr_value)
@@ -22417,7 +22395,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader('= ' +self.__class__.name)
         log(_("=== Source Mods/Files"))
-        for file in self.srcFiles:
+        for file in self.srcs:
             log("* " +file.s)
         log(_("\n=== Imported Stats"))
         for type in class_mod_count.keys():
@@ -22540,15 +22518,14 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     text = _("Import stats from any spells from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Spells','SpellStats')
+    autoKey = set(('Spells','SpellStats'))
     allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.id_stats = {}
         self.csvId_stats = {}
         self.mod_count = {}
@@ -22577,24 +22554,22 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcFiles:
-            self.id_stats.setdefault(record.fid,{}).update(record.ConflictDetails(self.attrs))
+        self.id_stats.setdefault(record.fid,{}).update(record.ConflictDetails(self.attrs))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
-        conflicts = record.Conflicts(True)
-        scanConflicts = []
-        for conflict in conflicts:
+        for conflict in record.Conflicts(True):
             if conflict._ModID != record._ModID:
-                scanConflicts.append(conflict)
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
             else: break
-        for conflict in scanConflicts:
-            mod = ObModFile(conflict._CollectionID, conflict._ModID)
-            tags = modInfos[mod.GName].getBashTags()
-            self.scan(mod,conflict,tags)
+
         recordId = record.fid
         prev_values = self.id_stats.get(recordId, None)
         prev_values = self.csvId_stats.get(recordId, prev_values)
@@ -22679,7 +22654,6 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         CBash_MultiTweakItem.__init__(self,float,label,tip,key)
         self.hideFlag = {'armorShowsRings':'IsHideRings','armorShowsAmulets':'IsHideAmulets'}[key]
         self.mod_count = {}
-
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -24130,7 +24104,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
                       'enchantEffect','castingSound','boltSound','hitSound','areaSound',
                       'IsNoHitEffect']
         self.newValues = [None,None,None,9999,None,None,None,None,None,None,None,True]
-        
+
     def getTypes(self):
         return ['MGEF']
 
@@ -24649,7 +24623,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         log(_('* %s: %d') % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-            
+
 class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
     scanOrder = 32
@@ -24764,7 +24738,7 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                 if override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
                     icons = icons % (random.randint(1,13))
 
-            try:    
+            try:
                 if isinstance(icons, tuple):
                     if len(icons) == 1:
                         override.maleIconPath = icons[0]
@@ -25230,7 +25204,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-        
+
         maxWeight = self.choiceValues[self.chosen][0]
 
         if (record.weight > maxWeight) and self.isMyType(record):
@@ -25300,7 +25274,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-        
+
         if self.isMyType(record):
             for flag in self.hideFlags:
                 if(getattr(record, flag)):
@@ -28828,9 +28802,9 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('Cobl Main.esm') in loadMods)
-        if self.isActive:
-            patchFile.indexMGEFs = True
+        self.isActive = GPath('Cobl Main.esm') in loadMods
+        if not self.isActive: return
+        patchFile.indexMGEFs = True
         self.id_ingred = {}
         self.effect_ingred = {}
         self.SEFFValue = cast('SEFF', POINTER(c_ulong)).contents.value
@@ -28861,7 +28835,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             print "CBash_AlchemicalCatalogs:finishPatch"
             print error[0]
             return
-            
+
         mgef_name = patchFile.mgef_name.copy()
         for mgef in mgef_name:
             mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
@@ -29070,27 +29044,28 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
     name = _('Cobl Exhaustion')
     text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
-    autoKey = 'Exhaust'
+    autoKey = set(('Exhaust',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.cobl = GPath('Cobl Main.esm')
-        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
+        self.isActive = (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
         self.id_exhaustion = {}
         self.mod_count = {}
+        self.SEFFValue = cast('SEFF', POINTER(c_ulong)).contents.value
 
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
              type_patchers.setdefault(type,[]).append(self)
-        progress.setFull(len(self.srcFiles))
-        for srcFile in self.srcFiles:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesDir = dirs['patches'].list()
             if srcPath not in patchesDir: continue
@@ -29123,7 +29098,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             duration = self.id_exhaustion.get(record.fid,0)
             if not duration: return
             for effect in record.effects:
-                if effect.name == 'SEFF' and effect.script == (self.cobl,0x05139B):
+                if effect.name == self.SEFFValue and effect.script == (self.cobl,0x05139B):
                     return
             #--Okay, do it
             override = record.CopyAsOverride(self.patchFile)
@@ -29348,11 +29323,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
     tip = _("Merges changes to leveled lists from all active mods.")
     choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = ('Delev','Relev')
+    autoKey = set(('Delev','Relev'))
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
     selectCommands = False
+    scanRequiresChecked = False
+    applyRequiresChecked = False
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -29393,7 +29370,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
 
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        self.isActive = True
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
@@ -29413,8 +29391,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         else:
             mergedList = self.id_list[recordId]
             configChoice = self.configChoices.get(modFile.GName,tuple())
-            isRelev = ('Relev' in configChoice)
-            isDelev = ('Delev' in configChoice)
+            isRelev = 'Relev' in configChoice
+            isDelev = 'Delev' in configChoice
             delevs = self.id_delevs.setdefault(recordId, set())
             curItems = set([entry.listId for entry in record.entries])
             if isRelev:
@@ -29437,11 +29415,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 self.id_attrs[recordId] = [record.chanceNone or mergedAttrs[0], record.script or mergedAttrs[1], record.template or mergedAttrs[2], (record.flags or 0) | mergedAttrs[3]]
             #--Delevs: all items in masters minus current items
             if isDelev:
-                deletedItems = set()
-                fid = record.fid
-                for master in record.History():
-                    deletedItems |= set([entry.listId for entry in master.entries])
-                deletedItems -= curItems
+                deletedItems = set([entry.listId for master in record.History() for entry in master.entries]) - curItems
                 delevs |= deletedItems
 
             #Remove any items that were deleveled
@@ -29661,16 +29635,16 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
     name = _('Morph Factions')
     text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'MFact'
+    autoKey = set(('MFact',))
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
         self.cobl = GPath('Cobl Main.esm')
-        self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.27)
+        self.isActive = self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.27
         self.id_info = {} #--Morphable factions keyed by fid
         self.mFactLong = (self.cobl,0x33FB)
         self.mod_count = {}
@@ -29681,8 +29655,8 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         if not self.isActive: return
         for type in self.getTypes():
              type_patchers.setdefault(type,[]).append(self)
-        progress.setFull(len(self.srcFiles))
-        for srcFile in self.srcFiles:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesDir = dirs['patches'].list()
             if srcPath not in patchesDir: continue
@@ -29749,20 +29723,20 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         subProgress = SubProgress(progress)
         subProgress.setFull(len(mFactable))
         pstate = 0
-        try:        
+        try:
             coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)
         except KeyError, error:
             print "CBash_MFactMarker:finishPatch"
             print error[0]
             return
-            
+
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
             print PrintFormID(mFactLong)
             print patchFile.ObCollection.Debug_DumpModFiles()
             print record
             raise StateError(_("Cobl Morph Factions: Unable to lookup morphable faction record in Cobl Main.esm!"))
-            
+
         override = record.CopyAsOverride(patchFile)
         if override:
             override.relations = None
@@ -29782,7 +29756,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         mod_count = self.mod_count
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods/Files"))
-        for file in self.srcFiles:
+        for file in self.srcs:
             log("* " +file.s)
         log(_("\n=== Morphable Factions"))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -29879,6 +29853,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
+        if not self.isActive: return
         self.id_exhaustion = bush.id_exhaustion
         self.mod_count = {}
         self.exhaustId = (GPath('Power Exhaustion.esp'),0xCE7)
@@ -29925,6 +29900,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
 
     def buildPatchLog(self,log):
         """Will write to log."""
+        if not self.isActive: return
         #--Log
         mod_count = self.mod_count
         log.setHeader('= ' +self.__class__.name)
@@ -30341,16 +30317,19 @@ class RacePatcher(SpecialPatcher,ListPatcher):
 
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
-    autoKey = set(('R.Relations'))
+    autoKey = set(('R.Relations',))
     iiMode = False
     allowUnloaded = False
+    scanRequiresChecked = True
+    applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcMods,patchFile,loadMods):
+    def initPatchFile(self,srcs,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
-        self.srcMods = srcMods
-        self.isActive = bool(srcMods)
+        self.srcs = srcs
+        self.isActive = bool(srcs)
+        if not self.isActive: return
         self.racesPatched = set()
         self.fid_faction_mod = {}
 
@@ -30365,14 +30344,15 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods and bashTags & self.autoKey:
+        if bashTags & self.autoKey:
             relations = record.relations_list
             if relations:
                 self.fid_faction_mod.setdefault(record.fid,{}).update(relations)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.fid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[recordId].iteritems())
@@ -30417,13 +30397,16 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         }
     iiMode = False
     allowUnloaded = False
+    scanRequiresChecked = True
+    applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcMods,patchFile,loadMods):
+    def initPatchFile(self,srcs,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
-        self.srcMods = srcMods
-        self.isActive = bool(srcMods)
+        self.srcs = srcs
+        self.isActive = bool(srcs)
+        if not self.isActive: return
         self.racesPatched = set()
         self.id_tag_values = {}
 
@@ -30438,22 +30421,21 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods:
-            recordId = record.fid
-            for bashKey in self.autoKey:
-                if bashKey in bashTags:
-                    if bashKey == 'Hair':
-                        #Using sets would make this clearer, and probably faster (though speed isn't a concern)
-                        #So this is a bit convulated, but makes the apply section work without special casing this tag
-                        #Hairs should perhaps have it's own patcher, but...
-                        allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
-                        allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0])
-                    else:
-                        self.id_tag_values.setdefault(recordId,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
+        recordId = record.fid
+        for bashKey in bashTags & self.autoKey:
+            if bashKey == 'Hair':
+                #Using sets would make this clearer, and probably faster (though speed isn't a concern)
+                #So this is a bit convulated, but makes the apply section work without special casing this tag
+                #Hairs should perhaps have it's own patcher, but...
+                allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
+                allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0])
+            else:
+                self.id_tag_values.setdefault(recordId,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_tag_values):
             allAttrs = []
@@ -30478,13 +30460,16 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     autoKey = set(('R.AddSpells', 'R.ChangeSpells'))
     iiMode = False
     allowUnloaded = False
+    scanRequiresChecked = True
+    applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcMods,patchFile,loadMods):
+    def initPatchFile(self,srcs,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
-        self.srcMods = srcMods
-        self.isActive = bool(srcMods)
+        self.srcs = srcs
+        self.isActive = bool(srcs)
+        if not self.isActive: return
         self.racesPatched = set()
         self.id_spells = {}
 
@@ -30500,20 +30485,22 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.srcMods and bashTags & self.autoKey:
-            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags:
-                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
+        tags = bashTags & self.autoKey
+        if tags:
+            if 'R.ChangeSpells' in tags and 'R.AddSpells' in tags:
+                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (modFile.ModName))
             curSpells = set(record.spells)
             if curSpells:
                 spells = self.id_spells.setdefault(record.fid,set())
-                if 'R.ChangeSpells' in bashTags:
+                if 'R.ChangeSpells' in tags:
                     spells = curSpells
-                elif 'R.AddSpells' in bashTags:
+                elif 'R.AddSpells' in tags:
                     spells |= curSpells
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_spells):
             newSpells = self.id_spells[recordId]
@@ -30536,12 +30523,14 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     reX117 = re.compile('^117[a-z]',re.I)
     iiMode = False
     allowUnloaded = False
+    scanRequiresChecked = False
+    applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcMods,patchFile,loadMods):
+    def initPatchFile(self,srcs,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
-        self.srcMods = srcMods
+        self.srcs = srcs
         self.isActive = True #--Always partially enabled to support eye filtering
         self.racesPatched = set()
         self.racesSorted = set()
@@ -30585,7 +30574,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         for eye in curEyes:
             if eye not in eye_meshes:
                 eye_meshes[eye] = eyePaths
-        if record.GName in self.srcMods and self.autoKey & bashTags:
+        if modFile.GName in self.srcs and self.autoKey & bashTags:
             allEyes = self.id_eyes.setdefault(recordId,set())
             allEyes |= set(curEyes)
             self.id_meshes[recordId] = eyePaths
@@ -30593,9 +30582,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
-        if record._Type == 'HAIR':
-            return
-        elif record._Type == 'EYES':
+        if record._Type in ('HAIR','EYES'):
             return
 
         recordId = record.fid
@@ -30803,10 +30790,10 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
     text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.\n\nEven if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
+    autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
         'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells')
+        'R.AddSpells', 'R.ChangeSpells'))
     forceAuto = True
     tweaks = [
         CBash_RacePatcher_Relations(),
@@ -30818,13 +30805,11 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
-        self.isActive = bool(self.srcMods)
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         #This single tweak is broken into several parts to make it easier to manage
         #Each part is a group of tags that are processed similarly
         for tweak in self.tweaks:
-            tweak.initPatchFile(self.srcMods,patchFile,loadMods)
+            tweak.initPatchFile(self.srcs,patchFile,loadMods)
 
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -30850,10 +30835,10 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         #--Done
         log.setHeader('= '+self.__class__.name)
         log(_("=== Source Mods"))
-        if not self.srcMods:
+        if not self.srcs:
             log(_(". ~~None~~"))
         else:
-            for mod in self.srcMods:
+            for mod in self.srcs:
                 log("* " +mod.s)
         log(_("\n=== Merged"))
 
@@ -30961,14 +30946,16 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     name = _('SEWorld Tests')
     text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    scanRequiresChecked = True
+    applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.cyrodiilQuests = set()
-        self.srcMod = GPath('Oblivion.esm')
-        self.isActive = self.srcMod in loadMods
+        self.srcs = [GPath('Oblivion.esm')]
+        self.isActive = self.srcs[0] in loadMods
         self.mod_eids = {}
 
     def getTypes(self):
@@ -30977,15 +30964,14 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName == self.srcMod:
-            for condition in record.conditions:
-                if condition.ifunc == 365 and condition.compValue == 0:
-                    self.cyrodiilQuests.add(record.fid)
-                    return
+        for condition in record.conditions:
+            if condition.ifunc == 365 and condition.compValue == 0:
+                self.cyrodiilQuests.add(record.fid)
+                return
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if record.GName == self.srcMod: return
+        if modFile.GName in self.srcs: return
 
         recordId = record.fid
         if(recordId in self.cyrodiilQuests):
@@ -30999,7 +30985,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
                     condition.ifunc = 365
                     conditions.insert(0,condition)
                     override.conditions = conditions
-                    self.mod_eids.setdefault(record.GName,[]).append(override.eid)
+                    self.mod_eids.setdefault(modFile.GName,[]).append(override.eid)
                     record.UnloadRecord()
                     record._ModID = override._ModID
 
@@ -31171,7 +31157,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 if not entryRecords:
                     badAdd((_('NONE'),entryId,None,_('NONE')))
                 else:
-                    entryRecord = entryRecords[0]                    
+                    entryRecord = entryRecords[0]
                     if entryRecord.recType in validEntries:
                         knownGoodAdd(entryId)
                         goodAppend(entry)

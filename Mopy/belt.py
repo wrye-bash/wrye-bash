@@ -28,16 +28,16 @@ def replaceShader(sdpFileName, shaderName, shaderFileName):
     if sBak.exists() and sBak.isfile():
         sBak.remove()
 
-    sdp.moveTo(temp.s)        
-    
+    sdp.moveTo(temp.s)
+
     shaderFile = sNew.open('rb')
     newData = shaderFile.read()
     shaderFile.close()
-    
+
     backupFile = sBak.open('wb')
 
     editShader(sdp, temp, shaderName, newData, backupFile)
-    
+
 def restoreShader(sdpFileName, shaderName):
     temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
     sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
@@ -58,7 +58,7 @@ def restoreShader(sdpFileName, shaderName):
     for path, dirs, files in dbackup.walk():
         if len(dirs) == 0 and len(files) == 0:
             path.removedirs()
-        
+
 def editShader(sdp, temp, shaderName, newData, backupFile):
     mtime = temp.getmtime()
     newSDP = sdp.open('wb')
@@ -96,7 +96,7 @@ def editShader(sdp, temp, shaderName, newData, backupFile):
                 newSDP.write(newData)
                 bFound = True
 
-                if backupFile:            
+                if backupFile:
                     backupFile.write(data)
                     backupFile.close()
                 continue
@@ -109,11 +109,11 @@ def editShader(sdp, temp, shaderName, newData, backupFile):
 
     newSDP.close()
     oldSDP.close()
-    temp.remove()    
+    temp.remove()
 
     # Finally update the time stamps
     sdp.setmtime(mtime)
-    
+
 class WizardReturn(object):
     __slots__ = ('Canceled', 'SelectEspms', 'SelectSubPackages', 'Install')
 
@@ -156,7 +156,7 @@ class InstallerWizard(wiz.Wizard):
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
         self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
 
-        #Intercept the changing event so we can implement 'blockChange'        
+        #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
         self.ret = WizardReturn()
 
@@ -216,7 +216,7 @@ class PageError(PageInstaller):
     def __init__(self, parent, title, errorMsg):
         PageInstaller.__init__(self, parent)
 
-        #Disable the "Finish"/"Next" button        
+        #Disable the "Finish"/"Next" button
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
 
         #Layout stuff
@@ -229,7 +229,7 @@ class PageError(PageInstaller):
         self.SetSizer(sizerMain)
         self.Layout()
 
-    def GetNext(self): return None        
+    def GetNext(self): return None
 # End PageError ----------------------------------------------
 
 # PageSelect -------------------------------------------------
@@ -258,7 +258,7 @@ class PageSelect(PageInstaller):
         sizerBoxes = wx.FlexGridSizer(2, 2, 5, 5)
         sizerBoxes.Add(wx.StaticText(self, -1, _('Options:')))
         sizerBoxes.AddStretchSpacer()
-        self.textItem = wx.TextCtrl(self, -1, '', style=wx.TE_READONLY|wx.TE_MULTILINE)        
+        self.textItem = wx.TextCtrl(self, -1, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
         self.bmpItem = wx.StaticBitmap(self, -1, wx.NullBitmap, size=(200, 200))
         if bMany:
             self.listOptions = wx.CheckListBox(self, 643, choices=listItems)
@@ -304,7 +304,7 @@ class PageSelect(PageInstaller):
                 file.start()
         except:
             pass
-        
+
 
     def Selection(self, index):
         self.index = index
@@ -418,7 +418,7 @@ class PageFinish(PageInstaller):
     def OnSelectEspms(self, event):
         index = event.GetSelection()
         self.listEspms.Check(index, not self.listEspms.IsChecked(index))
-    
+
 # End PageFinish -------------------------------------
 
 
@@ -433,7 +433,7 @@ class PageVersions(PageInstaller):
 
         bmp = [wx.Bitmap(bosh.dirs['mopy'].join('images', 'x.png').s),
                wx.Bitmap(bosh.dirs['mopy'].join('images', 'check.png').s)
-               ] 
+               ]
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
@@ -487,9 +487,9 @@ class PageVersions(PageInstaller):
         sizerVersions.AddGrowableCol(2)
         sizerVersions.AddGrowableCol(3)
         sizerMain.Add(sizerVersionsTop, 2, wx.ALL|wx.EXPAND, 5)
-        
+
         sizerMain.AddStretchSpacer()
-        
+
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
         self.checkOk = wx.CheckBox(self, 123, _('Install anyway.'))
         wx.EVT_CHECKBOX(self, 123, self.OnCheck)
@@ -513,11 +513,11 @@ class PageVersions(PageInstaller):
 # WryeParser -----------------------------------------------------
 #  a derived class of Parser, for handling BAIN install
 #  wizards
-#-----------------------------------------------------------------                        
+#-----------------------------------------------------------------
 class WryeParser(ScriptParser.Parser):
     def __init__(self, parent, installer, subs, bArchive, path, bAuto):
         ScriptParser.Parser.__init__(self)
-        
+
         self.parent = parent
         self.installer = installer
         self.bArchive = bArchive
@@ -1040,7 +1040,7 @@ class WryeParser(ScriptParser.Parser):
         self.notes.append('- %s\n' % ' '.join(temp))
     def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant=0):
         if self.bAuto: return
-        
+
         obWant = self._TestVersion_Want(ob)
         if obWant == 'None': ob = 'None'
         obseWant = self._TestVersion_Want(obse)

@@ -206,7 +206,7 @@ def setCheckListItems(gList,names,values):
             if index >= gList.GetCount():
                 gList.Append(name)
             else:
-                if index == -1: 
+                if index == -1:
                     deprint(_("index = -1, name = %s, value = %s") % (name, value))
                     continue
                 gList.SetString(index,name)
@@ -408,7 +408,7 @@ def askText(parent,message,title='',default=''):
         value = dialog.GetValue()
         dialog.Destroy()
         return value
-        
+
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt='',title='',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
@@ -478,7 +478,7 @@ def showLogClose(evt=None):
         _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
-    
+
 def showQuestionLogCloseYes(Event,window):
     """Handle log message closing."""
     if window:
@@ -487,7 +487,7 @@ def showQuestionLogCloseYes(Event,window):
             _settings['balt.LogMessage.size'] = window.GetSizeTuple()
         window.Destroy()
     bosh.question = True
-    
+
 def showQuestionLogCloseNo(Event,window):
     """Handle log message closing."""
     if window:
@@ -576,7 +576,7 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
             logText = logPath
         os.startfile(logText.s)
         return
-        
+
     #--Sizing
     pos = _settings.get('balt.WryeLog.pos',defPos)
     size = _settings.get('balt.WryeLog.size',(400,400))
@@ -989,7 +989,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     dndAllow callback:      fnDndAllow
     """
     class DropFileOrList(wx.PyDropTarget):
-        
+
         def __init__(self, window, dndFiles, dndList):
             wx.PyDropTarget.__init__(self)
             self.window = window
@@ -1028,10 +1028,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.doDnD = True
 
     def SetDnD(self, allow): self.doDnD = allow
-    
+
     def OnBeginDrag(self, event):
         if not self.dndAllow(): return
-        
+
         indexes = []
         start = stop = -1
         for index in range(self.GetItemCount()):
@@ -1070,7 +1070,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         start = indexes[0]
         stop = indexes[-1]
 
-        index, flags = self.HitTest((x, y))        
+        index, flags = self.HitTest((x, y))
         if index == wx.NOT_FOUND:   # Didn't drop it on an item
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
@@ -1115,7 +1115,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.fnDndAllow: return self.fnDndAllow()
             return True
         return False
-#------------------------------------------------------------------------------        
+#------------------------------------------------------------------------------
 class Tank(wx.Panel):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
@@ -1195,7 +1195,7 @@ class Tank(wx.Panel):
         if reverse:
             newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
-        
+
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
         self.data.refresh(what='N')

@@ -286,10 +286,10 @@ class Path(object):
                 try:
                     self.__setstate__(unicode(str(name),'UTF8'))
                 except UnicodeDecodeError:
-                    try: 
+                    try:
                         # A fair number of file names require UTF16 instead...
                         self.__setstate__(unicode(str(name),'U16'))
-                    except UnicodeDecodeError: 
+                    except UnicodeDecodeError:
                         # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
                         self.__setstate__(unicode(str(name),'cp500'))
         else:
@@ -299,7 +299,7 @@ class Path(object):
                 self.__setstate__(name)
             else:
                 self.__setstate__(str(name))
-            
+
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
@@ -860,7 +860,7 @@ class PickleDict:
                 ins = None
                 try:
                     ins = path.open('rb')
-                    try: 
+                    try:
                         header = cPickle.load(ins)
                     except ValueError:
                         os.remove(path)
