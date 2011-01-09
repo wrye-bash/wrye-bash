@@ -21913,14 +21913,12 @@ class CBash_RoadImporter(CBash_ImportPatcher):
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return ['WRLD']
+        return ['ROADS']
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        road = record.ROAD
-        if road:
-            print modFile.ModName, ":", PrintFormID(record.fid), "contains a road that was added"
-            self.id_ROAD[record.fid] = road
+        print modFile.ModName, ":", PrintFormID(record.fid), "contains a road that was added"
+        self.id_ROAD[record.fid] = record
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -21940,15 +21938,16 @@ class CBash_RoadImporter(CBash_ImportPatcher):
 
         recordId = record.fid
         #If a previous road was scanned, and it is replaced by a new road
-        curRoad = record.ROAD
+        curRoad = record
         newRoad = self.id_ROAD.get(recordId, None)
         print "newRoad:", newRoad
+        print self.patchFile.scanSet
         if newRoad:
             #Roads and pathgrids are complex records...
             #No good way to tell if the roads are equal.
             #A direct comparison can prove equality, but not inequality
             print "Testing equality:", curRoad
-            if curRoad and (curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list):
+            if curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list:
                 return
             print "Not equal (probably)"
             #So some records that are actually equal won't pass the above test and end up copied over
@@ -21966,8 +21965,8 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
             print "copyRoad", copyRoad
-
-            override = record.CopyAsOverride(self.patchFile) #Copies the parent world over if needed
+            parent = self.patchFile.ObCollection.LookupRecords(copyRoad._ParentID)
+            override = parent[0].CopyAsOverride(self.patchFile) #Copies the parent world over if needed
             print "world override", override
             if override:
                 override = copyRoad.CopyAsOverride(self.patchFile) #Copies the road over
