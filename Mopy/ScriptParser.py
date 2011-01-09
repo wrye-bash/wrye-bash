@@ -81,7 +81,7 @@ class KEY:
     # Constants for keyword args
     NO_MAX = -1     # No maximum arguments
     NA = 0          # Not a variable argument keyword
-    
+
 class OP:
     # Constants for operator precedences
     PAR = 0     # Parenthesis
@@ -182,7 +182,7 @@ class FlowControl:
 #  script
 #--------------------------------------------------
 class ParserError(SyntaxError): pass
-    
+
 class Parser(object):
     class Operator:
         def __init__(self, function, precedence, association=LEFT, passTokens=True):
@@ -271,7 +271,7 @@ class Parser(object):
         def __str__(self): return str(self.data)
 
         def __repr__(self): return '<Token-%s:%s>' % (Types[self.type],self.text)
-        
+
 
     # Now for the Parser class
     def __init__(self,
@@ -517,7 +517,7 @@ class Parser(object):
         self.tokens.append(Parser.Token(word,type,self,self.cLine,(self.wordStart,self.cCol)))
         self.word = None
         self.wordStart = None
-        
+
     def _stateSpace(self, c):
         self._emit()
         if c in whitespace: return self._stateSpace

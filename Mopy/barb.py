@@ -62,10 +62,10 @@ class BaseBackupSettings:
         self.verApp = basher.GetBashVersion()[1]
         self.files = {}
         self.tmp = None
-        
+
     def __del__(self):
         if self.tmp and self.tmp.exists(): self.tmp.rmtree('~tmp')
-        
+
     def maketmp(self):
         # create a ~tmp directory
         self.tmp = self.dir.join('~tmp')
@@ -89,13 +89,13 @@ class BaseBackupSettings:
 
     def CmpDataVersion(self):
         return cmp(self.verDat, basher.settings['bash.version'])
-        
+
     def CmpAppVersion(self):
         return cmp(self.verApp, basher.settings['bash.readme'][1])
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
-        
+
     def SameAppVersion(self):
         return not self.CmpAppVersion()
 
@@ -142,7 +142,7 @@ class BackupSettings(BaseBackupSettings):
             for name in path.list():
                 if path.join(name).isfile():
                     self.files[tmpdir.join(name)] = path.join(name)
-        
+
         #backup save profile settings
         savedir = GPath('My Games\\Oblivion')
         profiles = [''] + [x for x in dirs['saveBase'].join('Saves').list() if dirs['saveBase'].join('Saves',x).isdir() and str(x).lower() != 'bash']
@@ -157,13 +157,13 @@ class BackupSettings(BaseBackupSettings):
                 if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
             #end for
         #end for
-    
+
     def Apply(self):
         if not self.PromptFile(): return
 
         deprint('')
         deprint('BACKUP BASH SETTINGS: ' + self.dir.join(self.archive).s)
-        
+
         # copy all files to ~tmp backup dir
         for tpath,fpath in self.files.iteritems():
             deprint(tpath.s + ' <-- ' + fpath.s)
@@ -305,7 +305,7 @@ class RestoreSettings(BaseBackupSettings):
                     if path.join(name).isfile():
                         deprint(GPath(tpath).join(name).s + ' --> ' + fpath.join(name).s)
                         path.join(name).copyTo(fpath.join(name))
-                    
+
         #restore savegame profile settings
         tpath = GPath('My Games\\Oblivion\\Saves')
         fpath = dirs['saveBase'].join('Saves')
@@ -432,7 +432,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     if bosh.inisettings['EnableUnicode']:
         command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, srcFile.s)
     else:
-        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)        
+        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     ins = stringBuffer(ins)
     for line in ins: length += 1
