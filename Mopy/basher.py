@@ -10542,8 +10542,8 @@ class Mod_Scripts_Import(Link):
             defaultPath = bosh.dirs['patches']
         textDir = balt.askDirectory(self.window,
             _('Choose directory to import scripts from'),defaultPath)
-        if textDir == None:
-            balt.showError(self.window,_('Source folder must be selected.'))
+        if textDir is None:
+            #balt.showError(self.window,_('Source folder must be selected.')) #causes warning to show when canceled
             return
         message = _("Import scripts that don't exist in the esp as new scripts?\n(If not they will just be skipped).")
         makeNew = balt.askYes(self.window,message,_('Import Scripts'),icon=wx.ICON_QUESTION)

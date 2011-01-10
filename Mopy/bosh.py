@@ -15277,7 +15277,19 @@ class CBash_ScriptText:
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
                     with outpath.open('wb') as out:
                         formid = '0x%06X' %(longid[1])
-                        out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                        try:
+                            out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                        except UnicodeDecodeError:
+                            try:
+                                out.write((';'.decode('cp1252')+longid[0].s.decode('cp1252')+'\r\n;'.decode('cp1252')+formid.decode('cp1252')+'\r\n;'.decode('cp1252')+eid.decode('cp1252')+'\r\n'+text.decode('cp1252')).encode('cp1252'))
+                            except UnicodeDecodeError, err:
+                                print err
+                                print outpath
+                                print ';',longid[0].s,'\r\n;',formid,'\r\n;',eid,'\r\n',text
+                            except UnicodeEncodeError, err:
+                                print err
+                                print outpath
+                                print ';',longid[0].s,'\r\n;',formid,'\r\n;',eid,'\r\n',text
                     exportedScripts.append(eid)
         finally: #just to ensure the progress bar gets destroyed
             progress = progress.Destroy()
