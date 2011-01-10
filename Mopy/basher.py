@@ -215,6 +215,7 @@ settingDefaults = {
     'bash.installers.conflictsReport.showInactive':False,
     'bash.installers.goodDlls':{},
     'bash.installers.badDlls':{},
+    'bash.installers.onDropFiles.action':None,
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
@@ -2432,6 +2433,69 @@ class InstallersList(balt.Tank):
         self.hitItem = None
         self.hitTime = 0
 
+    def OnDropFiles(self, x, y, filenames):
+        filenames = [GPath(x) for x in filenames]
+        filenames = [x for x in filenames if x.isdir() or x.cext in ['.7z','.rar','.zip']]
+        if len(filenames) == 0:
+            return
+        action = settings['bash.installers.onDropFiles.action']
+        if action not in ['COPY','MOVE']:
+            message = _('You have dragged the following files into Wrye Bash:\n')
+            for file in filenames:
+                message += ' * ' + file.s + '\n'
+            message += '\n'
+            message += _('What would you like to do with them?')
+                
+            self.dialog = dialog= wx.Dialog(self,-1,_('Move or Copy?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            icon = wx.StaticBitmap(dialog,-1,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+            gCheckBox = checkBox(dialog,_("Don't show this in the future."))
+
+            sizer = vSizer(
+                (hSizer(
+                    (icon,0,wx.ALL,6),
+                    (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                    ),1,wx.EXPAND|wx.ALL,6),
+                (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                (hSizer(
+                    spacer,
+                    button(dialog,id=606,label='Move',onClick=self.OnClickMove),
+                    (button(dialog,id=607,label='Copy',onClick=self.OnClickCopy),0,wx.LEFT,4),
+                    (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                )
+            dialog.SetSizer(sizer)
+            result = dialog.ShowModal()
+            if result == 1:
+                action = 'MOVE'
+            elif result == 2:
+                action = 'COPY'
+            else:
+                return
+            if gCheckBox.GetValue():
+                settings['bash.installers.onDropFiles.action'] = action
+        if action == 'COPY':
+            #--Copy the dropped files
+            wx.BeginBusyCursor()
+            for file in filenames:
+                file.copyTo(bosh.dirs['installers'].join(file.tail))
+        elif action == 'MOVE':
+            wx.BeginBusyCursor()
+            for file in filenames:
+                file.moveTo(bosh.dirs['installers'].join(file.tail))
+        else:
+            return
+        modList.RefreshUI()
+        iniList.RefreshUI()
+        self.data.refresh()
+        self.RefreshUI()
+        wx.EndBusyCursor()
+
+    def OnClickMove(self,event):
+        self.dialog.EndModal(1)
+
+    def OnClickCopy(self,event):
+        self.dialog.EndModal(2)
+
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
             self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
@@ -2563,6 +2627,7 @@ class InstallersList(balt.Tank):
                 wx.EndBusyCursor()
         ##Enter - Open selected Installer/
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+            if len(self.GetSelected()):
             path = self.data.dir.join(self.GetSelected()[0])
             if path.exists(): path.start()
         ##F2 - Rename selected.

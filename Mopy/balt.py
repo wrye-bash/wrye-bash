@@ -1147,7 +1147,7 @@ class Tank(wx.Panel):
         #--ListCtrl
         self.gList = gList = ListCtrl(self, -1, style=style,
                                       dndFiles=dndFiles, dndList=dndList,
-                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes)
+                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes, fnDropFiles=self.OnDropFiles)
         if self.icons:
             gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
         #--State info
@@ -1200,6 +1200,9 @@ class Tank(wx.Panel):
         self.data.moveArchives(self.GetSelected(), newPos)
         self.data.refresh(what='N')
         self.RefreshUI()
+
+    def OnDropFiles(self, x, y, filenames):
+        raise AbstractError
 
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
