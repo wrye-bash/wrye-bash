@@ -235,6 +235,29 @@ Cause all esps and esms to be de-selected from installation.  This is equivilant
 * __Usage:__
   * __DeSelectAllEspms__
 
+== RenameEspm
+Change the installed name of an esp or esm.
+
+* __Usage:__
+  * __RenameEspm **original_name** **new_name**__
+* __Arguments:__
+  * **original_name:** the name of the esp or esm, as it appears in the BAIN package.
+  * **new_name:** the new name you want to have the esp or esm installed as.
+
+== ResetEspmName
+Resets the name of an esp or esm back to its default name.
+
+* __Usage:__
+  * __ResetEspmName **original_name**__
+* __Arguments:__
+  * **original_name:** the name of the esp or esm, as it appears in the BAIN package.
+
+== ResetAllEspmNames
+Resets the names of all the esps and esms back to their default names.
+
+* __Usage:__
+  * __ResetAllEspmNames__
+
 == Note
 Add a note to the user to be displayed at the end of the wizard, on the [[images/finish.jpg|finish page]].  The '- ' will be added automatically.
 
