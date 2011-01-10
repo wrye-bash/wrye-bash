@@ -9874,7 +9874,7 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips')
+        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap',)
     __slots__ = persistent+volatile
@@ -10058,6 +10058,7 @@ class Installer(object):
         self.order = -1 #--Set by user/interface.
         self.isActive = False
         self.espmNots = set() #--Lowercase esp/m file names that user has decided not to install.
+        self.remaps = {}
         #--Volatiles (unpickled values)
         #--Volatiles: directory specific
         self.refreshed = False
@@ -10076,6 +10077,38 @@ class Installer(object):
         self.missingFiles = set()
         self.mismatchedFiles = set()
         self.mismatchedEspms = set()
+
+    def resetEspmName(self,currentName):
+        oldName = self.getEspmName(currentName)
+        del self.remaps[oldName]
+        path = GPath(currentName)
+        if path in self.espmNots:
+            self.espmNots.discard(path)
+            self.espmNots.add(GPath(oldName))
+
+    def resetAllEspmNames(self):
+        keys = self.remaps.keys()
+        for espm in keys:
+            self.resetEspmName(self.remaps[espm])
+
+    def getEspmName(self,currentName):
+        for old in self.remaps:
+            if self.remaps[old] == currentName:
+                return old
+        return currentName
+
+    def setEspmName(self,currentName,newName):
+        oldName = self.getEspmName(currentName)
+        self.remaps[oldName] = newName
+        path = GPath(currentName)
+        if path in self.espmNots:
+            self.espmNots.discard(path)
+            self.espmNots.add(GPath(newName))
+        else:
+            self.espmNots.discard(GPath(newName))
+
+    def isEspmRenamed(self,currentName):
+        return self.getEspmName(currentName) != currentName
 
     def __init__(self,archive):
         """Initialize."""
@@ -10169,7 +10202,7 @@ class Installer(object):
         bUseUnicode = inisettings['EnableUnicode']
         if not bUseUnicode:
             splitter = bolt.Path.mbSplit
-        espmMap = self.espmMap
+        espmMap = self.espmMap = {}
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
         reReadMeMatch = reReadMe.match
@@ -10277,6 +10310,9 @@ class Installer(object):
                 continue
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
+                #--Remap espms as defined by the user
+                if file in self.remaps:
+                    file = self.remaps[file]
                 if file not in subList:
                     subList.append(file)
                 if bSkip: continue
@@ -12058,6 +12094,10 @@ class InstallersData(bolt.TankData, DataDict):
                 buff.write('= %s %s\n' % ((_('Lower'),_('Higher'))[isHigher],'='*40))
             buff.write('==%d== %s\n'% (order,package))
             for file in files:
+                oldName = self.getEspmName(file)
+                buff.write(oldName)
+                if oldName != file:
+                    buff.write(' -> ')
                 buff.write(file)
                 buff.write('\n')
             buff.write('\n')
