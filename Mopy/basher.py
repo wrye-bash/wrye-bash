@@ -2712,6 +2712,7 @@ class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
     mainMenu = Links()
     itemMenu = Links()
+    espmMenu = Links()
 
     def __init__(self,parent):
         """Initialize."""
@@ -2759,7 +2760,7 @@ class InstallersPanel(SashTankPanel):
         self.espms = []
         self.gEspmList = wx.CheckListBox(right,-1)
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-       ## self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu) #since can't get this to work, commenting it out for now.
+        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
         self.gComments = wx.TextCtrl(right,-1,style=wx.TE_MULTILINE)
         #--Events
@@ -2889,7 +2890,7 @@ class InstallersPanel(SashTankPanel):
             else:
                 names = self.espms = sorted(installer.espms)
                 names.sort(key=lambda x: x.cext != '.esm')
-                balt.setCheckListItems(self.gEspmList, [x.s for x in names],
+                balt.setCheckListItems(self.gEspmList, [['','*'][installer.isEspmRenamed(x.s)]+x.s for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
             self.gComments.SetValue(installer.comments)
@@ -2913,7 +2914,7 @@ class InstallersPanel(SashTankPanel):
             dirFile = file.lower().rsplit('\\',1)
             if len(dirFile) == 1: dirFile.insert(0,'')
             return dirFile
-        def dumpFiles(files,default='',header='',isPath=False):
+        def dumpFiles(installer,files,default='',header='',isPath=False):
             if files:
                 buff = stringBuffer()
                 if isPath: files = [x.s for x in files]
@@ -2922,6 +2923,10 @@ class InstallersPanel(SashTankPanel):
                 files.sort(key=lambda x: sortKeys[x])
                 if header: buff.write(header+'\n')
                 for file in files:
+                    oldName = installer.getEspmName(file)
+                    buff.write(oldName)
+                    if oldName != file:
+                        buff.write(' -> ')
                     buff.write(file)
                     buff.write('\n')
                 return buff.getvalue()
@@ -2991,25 +2996,25 @@ class InstallersPanel(SashTankPanel):
                 "  Conflicts: N/A\n"),)[isinstance(installer,bosh.InstallerMarker)]
             info += '\n'
             #--Infoboxes
-            gPage.SetValue(info+dumpFiles(installer.data_sizeCrc,sNone,
+            gPage.SetValue(info+dumpFiles(installer,installer.data_sizeCrc,sNone,
                 _("== Configured Files"),isPath=True))
         elif pageName == 'gMatched':
-            gPage.SetValue(dumpFiles(set(installer.data_sizeCrc)
+            gPage.SetValue(dumpFiles(installer,set(installer.data_sizeCrc)
                 - installer.missingFiles - installer.mismatchedFiles,isPath=True))
         elif pageName == 'gMissing':
-            gPage.SetValue(dumpFiles(installer.missingFiles,isPath=True))
+            gPage.SetValue(dumpFiles(installer,installer.missingFiles,isPath=True))
         elif pageName == 'gMismatched':
-            gPage.SetValue(dumpFiles(installer.mismatchedFiles,sNone,isPath=True))
+            gPage.SetValue(dumpFiles(installer,installer.mismatchedFiles,sNone,isPath=True))
         elif pageName == 'gConflicts':
             gPage.SetValue(self.data.getConflictReport(installer,'OVER'))
         elif pageName == 'gUnderrides':
             gPage.SetValue(self.data.getConflictReport(installer,'UNDER'))
         elif pageName == 'gDirty':
-            gPage.SetValue(dumpFiles(installer.dirty_sizeCrc,isPath=True))
+            gPage.SetValue(dumpFiles(installer,installer.dirty_sizeCrc,isPath=True))
         elif pageName == 'gSkipped':
             gPage.SetValue('\n'.join((
-                dumpFiles(installer.skipExtFiles,sNone,_('== Skipped (Extension)')),
-                dumpFiles(installer.skipDirFiles,sNone,_('== Skipped (Dir)')),
+                dumpFiles(installer,installer.skipExtFiles,sNone,_('== Skipped (Extension)')),
+                dumpFiles(installer,installer.skipDirFiles,sNone,_('== Skipped (Dir)')),
                 )) or sNone)
 
     #--Config
@@ -3043,14 +3048,14 @@ class InstallersPanel(SashTankPanel):
 
     def SelectionMenu(self,event):
         """Handle right click in espm list."""
+        x = event.GetX()
+        y = event.GetY()
+        selected = self.gEspmList.HitTest((x,y))
+        self.gEspmList.SetSelection(selected)
         #--Build Menu
-        self.espmlinks = Links()
-        self.espmlinks.append(Installer_Espm_DeselectAll())
-        self.espmlinks.append(Installer_Espm_SelectAll())
         menu = wx.Menu()
-        for link in self.espmlinks:
-            link.AppendToMenu(menu,self,self)
-        #--Show/Destroy Menu
+        for link in InstallersPanel.espmMenu:
+            link.AppendToMenu(menu,self,selected)
         self.gEspmList.PopupMenu(menu)
         menu.Destroy()
 
@@ -7093,11 +7098,17 @@ class Installer_Wizard(InstallerLink):
     def Execute(self, event):
         installer = self.data[self.selected[0]]
         subs = []
+        oldRemaps = installer.remaps
+        installer.resetAllEspmNames()
+        gInstallers.refreshCurrent(installer)
         for index in range(gInstallers.gSubList.GetCount()):
             subs.append(gInstallers.gSubList.GetString(index))
         wizard = belt.InstallerWizard(self, subs)
         ret = wizard.Run()
-        if ret.Canceled: return
+        if ret.Canceled:
+            installer.remaps = oldRemaps
+            gInstallers.refreshCurrent(installer)
+            return
         #Check the sub-packages that were selected by the wizard
         for index in range(gInstallers.gSubList.GetCount()):
             select = installer.subNames[index + 1] in ret.SelectSubPackages
@@ -7106,13 +7117,17 @@ class Installer_Wizard(InstallerLink):
         gInstallers.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
         espms = gInstallers.gEspmList.GetStrings()
+        installer.espmNots = set()
         for index, espm in enumerate(gInstallers.espms):
             if espms[index] in ret.SelectEspms:
                 gInstallers.gEspmList.Check(index, True)
-                installer.espmNots.discard(espm)
             else:
                 gInstallers.gEspmList.Check(index, False)
                 installer.espmNots.add(espm)
+        gInstallers.refreshCurrent(installer)
+        #Rename the espms that need renaming
+        for oldName in ret.RenameEspms:
+            installer.setEspmName(oldName, ret.RenameEspms[oldName])
         gInstallers.refreshCurrent(installer)
         #Install if necessary
         if settings['bash.installers.autoWizard']:
@@ -7735,35 +7750,95 @@ class Installer_Espm_SelectAll(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Select All'))
         menu.AppendItem(menuItem)
+        if len(gInstallers.espms) == 0:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle selection."""
-        espmNots = self.data.data[self.data.detailsItem].espmNots
-        espmNots = set()
-        newchecked = []
-        for i in range(len(self.data.espms)):
-            newchecked.append(i)
-        print newchecked
-        self.data.gEspmList.SetChecked(newchecked)
-        print str(self.data.gEspmList.IsChecked(0))+'6856'
-        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])
-        print str(self.data.gEspmList.IsChecked(0))+'6859'
+        installer = gInstallers.data[gInstallers.detailsItem]
+        installer.espmNots = set()
+        for i in range(len(gInstallers.espms)):
+            gInstallers.gEspmList.Check(i, True)
+        gInstallers.refreshCurrent(installer)
 
 class Installer_Espm_DeselectAll(InstallerLink):
-    """Select All Esp/ms in instalelr for installation."""
+    """Select All Esp/ms in installer for installation."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Deselect All'))
         menu.AppendItem(menuItem)
+        if len(gInstallers.espms) == 0:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle selection."""
-        self.data.data[self.data.detailsItem].espmNots
-        espmNots = set(self.data.espms)
-        print self.data.gEspmList.IsChecked(0)
-        self.data.gEspmList.SetChecked([])
-        #self.data.refreshCurrent(self.data.data[self.data.detailsItem])
-        print self.data.gEspmList.IsChecked(0)
+        installer = gInstallers.data[gInstallers.detailsItem]
+        espmNots = installer.espmNots = set()
+        for i in range(len(gInstallers.espms)):
+            gInstallers.gEspmList.Check(i, False)
+            espm = GPath(gInstallers.gEspmList.GetString(i))
+            espmNots.add(espm)
+        gInstallers.refreshCurrent(installer)
+
+class Installer_Espm_Rename(InstallerLink):
+    """Changes the installed name for an Esp/m."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Rename...'))
+        menu.AppendItem(menuItem)
+        if data == -1:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        curName = gInstallers.gEspmList.GetString(self.data)
+        file = GPath(curName)
+        newName = balt.askText(self.window,_("Enter new name (without the extension):"),
+                               _("Rename Esp/m"), file.sbody)
+        if not newName: return
+        if newName in gInstallers.espms: return
+        installer.setEspmName(curName,newName+file.cext)
+        gInstallers.refreshCurrent(installer)
+
+class Installer_Espm_Reset(InstallerLink):
+    """Resets the installed name for an Esp/m."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Reset Name'))
+        menu.AppendItem(menuItem)
+        if data == -1:
+            menuItem.Enable(False)
+            return
+        installer = gInstallers.data[gInstallers.detailsItem]
+        curName = gInstallers.gEspmList.GetString(self.data)
+        if curName[0] == '*':
+            curName = curName[1:]
+        menuItem.Enable(installer.isEspmRenamed(curName))
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        curName = gInstallers.gEspmList.GetString(self.data)
+        if curName[0] == '*':
+            curName = curName[1:]
+        installer.resetEspmName(curName)
+        gInstallers.refreshCurrent(installer)
+
+class Installer_Espm_ResetAll(InstallerLink):
+    """Resets all renamed Esp/ms."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Reset All Names'))
+        menu.AppendItem(menuItem)
+        if len(gInstallers.espms) == 0:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        installer.resetAllEspmNames()
+        gInstallers.refreshCurrent(installer)            
 
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -13673,6 +13748,16 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_CopyConflicts())
     InstallersPanel.itemMenu.append(InstallerProject_OmodConfig())
     InstallersPanel.itemMenu.append(Installer_ListStructure())
+
+    #--espms Main Menu
+    InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
+    InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())
+    InstallersPanel.espmMenu.append(SeparatorLink())
+    #--espms Item Menu
+    InstallersPanel.espmMenu.append(Installer_Espm_Rename())
+    InstallersPanel.espmMenu.append(Installer_Espm_Reset())
+    InstallersPanel.espmMenu.append(SeparatorLink())
+    InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
 
 def InitReplacerLinks():
     """Initialize replacer tab menus."""

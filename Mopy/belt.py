@@ -115,11 +115,12 @@ def editShader(sdp, temp, shaderName, newData, backupFile):
     sdp.setmtime(mtime)
 
 class WizardReturn(object):
-    __slots__ = ('Canceled', 'SelectEspms', 'SelectSubPackages', 'Install')
+    __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install')
 
     def __init__(self):
         self.Canceled = False
         self.SelectEspms = []
+        self.RenameEspms = {}
         self.SelectSubPackages = []
         self.Install = False
 
@@ -342,13 +343,21 @@ class PageSelect(PageInstaller):
 #  selected.  Also displays some notes for the user
 #---------------------------------------------------------
 class PageFinish(PageInstaller):
-    def __init__(self, parent, subsList, espmsList, bAuto, notes):
+    def __init__(self, parent, subsList, espmsList, espmRenames, bAuto, notes):
         PageInstaller.__init__(self, parent)
 
         subs = subsList.keys()
         subs.sort(lambda l,r: cmp(l, r))
         espms = espmsList.keys()
         espms.sort(lambda l,r: cmp(l, r))
+
+        #--make the list that will be displayed
+        espmShow = []
+        for x in espms:
+            if x in espmRenames:
+                espmShow.append(x + ' -> ' + espmRenames[x])
+            else:
+                espmShow.append(x)
 
         sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
 
@@ -367,12 +376,13 @@ class PageFinish(PageInstaller):
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
-        self.listEspms = wx.CheckListBox(self, 667, choices=espms)
+        self.listEspms = wx.CheckListBox(self, 667, choices=espmShow)
         wx.EVT_CHECKLISTBOX(self, 667, self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
                 self.parent.ret.SelectEspms.append(key)
+        self.parent.ret.RenameEspms = espmRenames
         sizerLists.Add(self.listSubs, 0, wx.ALL|wx.EXPAND)
         sizerLists.Add(self.listEspms, 0, wx.ALL|wx.EXPAND)
         sizerLists.AddGrowableRow(1)
@@ -528,6 +538,7 @@ class WryeParser(ScriptParser.Parser):
 
         self.sublist = {}
         self.espmlist = {}
+        self.espmrenames = {}
         for i in installer.espmMap.keys():
             for j in installer.espmMap[i]:
                 if j not in self.espmlist:
@@ -590,6 +601,9 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('DeSelectAll', self.kwdDeSelectAll)
         self.SetKeyword('SelectAllEspms', self.kwdSelectAllEspms)
         self.SetKeyword('DeSelectAllEspms', self.kwdDeSelectAllEspms)
+        self.SetKeyword('RenameEspm', self.kwdRenameEspm, 2)
+        self.SetKeyword('ResetEspmName', self.kwdResetEspmName, 1)
+        self.SetKeyword('ResetAllEspmNames', self.kwdResetAllEspmNames)
         self.SetKeyword('Note', self.kwdNote, 1, ScriptParser.KEY.NO_MAX, True, True)
         self.SetKeyword('If', self.kwdIf, 1, ScriptParser.KEY.NO_MAX, True, True)
         self.SetKeyword('Elif', self.kwdElif, 1, ScriptParser.KEY.NO_MAX, True, True)
@@ -639,7 +653,7 @@ class WryeParser(ScriptParser.Parser):
                 return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line(%s):\t%s\n Error:\t%s') % (self.cLine,newline.strip('\n'), e))
             if self.page:
                 return self.page
-        return PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
+        return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes)
 
     def EspmIsInPackage(self, espm, package):
         package = package.lower()
@@ -1025,6 +1039,17 @@ class WryeParser(ScriptParser.Parser):
         for i in self.espmlist.keys():
             self.espmlist[i] = bSelect
 
+    def kwdRenameEspm(self, espm, newName):
+        espm = self.GetEspm(espm)
+        if espm:
+            self.espmrenames[espm] = newName
+    def kwdResetEspmName(self, espm):
+        espm = self.GetEspm(espm)
+        if espm:
+            del self.espmrenames[espm]
+    def kwdResetAllEspmNames(self):
+        self.espmrenames = dict()
+
     def kwdNote(self, *args):
         temp = []
         for i in args:
@@ -1104,7 +1129,7 @@ class WryeParser(ScriptParser.Parser):
             return [0, 'None']
         return [-1, 'None']
     def kwdReturn(self):
-        self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.bAuto, self.notes)
+        self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes)
     def kwdCancel(self, *args):
         if len(args) < 1:
             msg = _("No reason given")
