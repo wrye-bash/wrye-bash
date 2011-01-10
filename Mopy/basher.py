@@ -2628,7 +2628,7 @@ class InstallersList(balt.Tank):
         ##Enter - Open selected Installer/
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             if len(self.GetSelected()):
-            path = self.data.dir.join(self.GetSelected()[0])
+                path = self.data.dir.join(self.GetSelected()[0])
             if path.exists(): path.start()
         ##F2 - Rename selected.
         elif event.GetKeyCode() == wx.WXK_F2:
