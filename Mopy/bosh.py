@@ -10213,7 +10213,7 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full
             fileLower = file.lower()
-            if fileLower.startswith(('--','omod conversion data')):
+            if fileLower.startswith(('--','omod conversion data','wizard images')):
                 continue
             sub = ''
             bSkip = False
@@ -31469,6 +31469,11 @@ def initDefaultTools():
     tooldirs['WinSnap'] = GPath(r'C:\Program Files\WinSnap\WinSnap.exe')
     tooldirs['PhotoSEAM'] = GPath(r'C:\Program Files\PhotoSEAM\PhotoSEAM.exe')
     tooldirs['TextureMaker'] = GPath(r'C:\Program Files\Texture Maker\texturemaker.exe')
+    tooldirs['MaPZone'] = GPath(r'C:\Program Files\Allegorithmic\MaPZone 2.6\MaPZone2.exe')
+    tooldirs['NVIDIAMelody'] = GPath(r'C:\Program Files\NVIDIA Corporation\Melody\Melody.exe')
+    tooldirs['WTV'] = GPath(r'C:\Program Files\WindowsTextureViewer\WTV.exe')
+    tooldirs['Switch'] = GPath(r'C:\Program Files\NCH Swift Sound\Switch\switch.exe')
+    tooldirs['Freeplane'] = GPath(r'C:\Program Files\Freeplane\freeplane.exe')
     tooldirs['Custom1'] = undefinedPath
     tooldirs['Custom2'] = undefinedPath
     tooldirs['Custom3'] = undefinedPath
