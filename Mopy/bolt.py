@@ -290,8 +290,11 @@ class Path(object):
                         # A fair number of file names require UTF16 instead...
                         self.__setstate__(unicode(str(name),'U16'))
                     except UnicodeDecodeError:
-                        # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
-                        self.__setstate__(unicode(str(name),'cp500'))
+                        try:
+                            self.__setstate__(unicode(str(name),'cp1252'))
+                        except UnicodeDecodeError:
+                            # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                            self.__setstate__(unicode(str(name),'cp500'))
         else:
             if isinstance(name,Path):
                 self.__setstate__(name._s)
