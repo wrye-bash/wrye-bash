@@ -2927,7 +2927,7 @@ class InstallersPanel(SashTankPanel):
                     buff.write(oldName)
                     if oldName != file:
                         buff.write(' -> ')
-                    buff.write(file)
+                        buff.write(file)
                     buff.write('\n')
                 return buff.getvalue()
             elif header:

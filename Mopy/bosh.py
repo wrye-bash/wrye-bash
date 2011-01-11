@@ -12084,21 +12084,22 @@ class InstallersData(bolt.TankData, DataDict):
             if not showLower and installer.order < srcOrder: continue
             curConflicts = Installer.sortFiles([x.s for x,y in installer.data_sizeCrc.iteritems()
                 if x in mismatched and y != src_sizeCrc[x]])
-            if curConflicts: packConflicts.append((installer.order,package.s,curConflicts))
+            if curConflicts: packConflicts.append((installer,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
         buff = stringBuffer()
-        for order,package,files in packConflicts:
+        for installer,package,files in packConflicts:
+            order = installer.order
             if showLower and (order > srcOrder) != isHigher:
                 isHigher = (order > srcOrder)
                 buff.write('= %s %s\n' % ((_('Lower'),_('Higher'))[isHigher],'='*40))
             buff.write('==%d== %s\n'% (order,package))
             for file in files:
-                oldName = self.getEspmName(file)
+                oldName = installer.getEspmName(file)
                 buff.write(oldName)
                 if oldName != file:
                     buff.write(' -> ')
-                buff.write(file)
+                    buff.write(file)
                 buff.write('\n')
             buff.write('\n')
         report = buff.getvalue()
