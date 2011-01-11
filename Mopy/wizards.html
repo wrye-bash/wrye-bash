@@ -112,6 +112,14 @@
 <p class=list-3>&bull;&nbsp; <a href="#True">True</a></p>
 <p class=list-3>&bull;&nbsp; <a href="#False">False</a></p>
 <p class=list-1>&bull;&nbsp; <a href="#EscapeSequences">Escape Sequences</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#CommonScriptingProblems">Common Scripting Problems</a></p>
+<p class=list-1>&bull;&nbsp; <a href="#ExamplesforBeginners">Examples for Beginners</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#BAINwizardScriptHighlighterforNotePad">BAIN wizard Script Highlighter for NotePad++</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#BAINWizardSyntaxforEmEditor">BAIN Wizard Syntax for EmEditor</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CreateaPackageOverviewReadme">Create a Package Overview Readme</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#YesNoQuestion">Yes/No Question?</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#CheckforaPlugin">Check for a Plugin</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#ModswithWizards">Mods with Wizards</a></p>
 </td><td style="border: 1px solid #000000; padding: 5px; background: f6f68c;">
 <h1><a name='Introduction'>Introduction</a></h1>
 <p class=empty>&nbsp;</p>
@@ -654,5 +662,72 @@
 <p class=list-1>&bull;&nbsp; <B>'\t':</B> Insert a Tab
 <p class=list-1>&bull;&nbsp; <B>'\n':</B> Insert a newline character.
 <p class=empty>&nbsp;</p>
+<h1><a name='CommonScriptingProblems'>Common Scripting Problems</a></h1>
+<p>Have a problem with your wizard script? Here are some common mistakes that cause errors or other strange behavior.
+<p class=list-1>&bull;&nbsp; Make sure the Case is right. Ex1: SelectSubPackage NOT SeLEctsUBPaCkaGe Ex2: Break NOT break
+<p class=list-1>&bull;&nbsp; Mismatched quotes. Ex: 'Plugin.esp" SHOULD BE 'Plugin.esp' or "Plugin.esp"
+<p class=list-1>&bull;&nbsp; Might be missing a , \ at the end of the line or one \ might need removed. This usually throws an error or not all options will be displayed.
+<p class=list-1>&bull;&nbsp; Extra spaces or tabs at the end of a line can cause problems with options showing up. Ex: "","",""\&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<p class=list-1>&bull;&nbsp; Missing called Image File.
+<p class=empty>&nbsp;</p>
+<h1><a name='ExamplesforBeginners'>Examples for Beginners</a></h1>
+<p class=empty>&nbsp;</p>
+<h2><a name='BAINwizardScriptHighlighterforNotePad'>BAIN wizard Script Highlighter for NotePad++</a></h2>
+<p class=empty>&nbsp;</p>
+<img src="images/WizardScriptHighlighter.jpg" width="740" height="328" border="0">
+<p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; It is recommended that you install utumno's <a href="http://www.tesnexus.com/downloads/file.php?id=32654">BAIN wizard Script Highlighter for Notepad plus plus</a> if you use Notepad++ to write your install scripts.
+<p class=list-1>&bull;&nbsp; It makes for spotting errors in your script a lot easier.
+<p class=empty>&nbsp;</p>
+<h2><a name='BAINWizardSyntaxforEmEditor'>BAIN Wizard Syntax for EmEditor</a></h2>
+<p class=list-1>&bull;&nbsp; broken85 created a similar Wizard highlighter for EmEditor. It can be found here: <a href="http://www.tesnexus.com/downloads/file.php?id=34240">BAIN Wizard Syntax for EmEditor</a>
+<p class=empty>&nbsp;</p>
+<h2><a name='CreateaPackageOverviewReadme'>Create a Package Overview Readme</a></h2>
+<p class=list-1>&bull;&nbsp; Every Wizard should have some sort of nice little overview for the user to read before proceeding with the actual installation questions.
+<p class=list-1>&bull;&nbsp; Notice the following example has no Case's(This is intended) and the Default character is before the 'Start Here_Readme'.
+<pre>
+SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
+	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.",""\
+	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla",""\
+	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release",""\
+	"Guidelines for a Example install","",""\
+	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg"\
+	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.",""\
+	"Language","Language or Nationality this BAIN wizard was written in. \n\n English (USA)","Wizard Images\\EnglishUSA.jpg"
+EndSelect
+</pre>
+<p class=empty>&nbsp;</p>
+<h2><a name='YesNoQuestion'>Yes/No Question?</a></h2>
+<p class=list-1>&bull;&nbsp; Lets say that you want to ask the user a Yes or No question whether to install a feature of your mod.
+<p class=list-1>&bull;&nbsp; 'SelectOne' in the following example could be replaced by many other <a href="#Keywords">Keywords</a>.
+<p class=list-1>&bull;&nbsp; 'SelectSubPackage' in the following example could be replaced by many other <a href="#Keywords">Keywords</a> or even another Yes/No Question Block.
+<pre>
+SelectOne "Example: Yes/No Question?",\
+		"Yes","Description.","Wizard Images\\Yes.jpg"\
+		"No","Description.","Wizard Images\\No.jpg"
+	Case "Yes"
+		SelectSubPackage "00 Example Subpackage" ;;;Action/No Action
+	Break
+	Case "No"
+		;No Plugin ;;;Action/No Action
+	Break
+EndSelect
+</pre>
+<p class=empty>&nbsp;</p>
+<h2><a name='CheckforaPlugin'>Check for a Plugin</a></h2>
+<p class=list-1>&bull;&nbsp; Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.
+<pre>
+If DataFileExists "ExamplePlugin.esp"
+	Note "ExamplePlugin Detected." ;;;Action/No Action
+	SelectEspm "PatchPlugin.esp" ;;;Action/No Action
+Else ;ExamplePlugin.esp wasn't detected
+	;No Plugin ;;;Action/No Action
+EndIf
+</pre>
+<p class=empty>&nbsp;</p>
+<h2><a name='ModswithWizards'>Mods with Wizards</a></h2>
+<p class=list-1>&bull;&nbsp; This is a list of some mods that have wizards included with them if you would like to look at them for reference.
+  <p class=list-2>&bull;&nbsp; <a href="http://www.tesnexus.com/downloads/file.php?id=19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=31062">Bain Conversion Files</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=16513">Bananasplit Better Cities</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=35856">Metallicow Cursor Mod</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=19370">Unique Landscapes Compilation</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=18305">Weather - All Natural</a>
+  <p class=empty>&nbsp;</p>
 </td></tr></table></body>
 </html>

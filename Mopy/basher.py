@@ -13265,11 +13265,21 @@ def InitStatusBar():
                 bosh.tooldirs['IrfanView'],
                 Image(r'images/IrfanView'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch IrfanView")))
+        BashStatusBar.buttons.append( #MaPZone
+            App_Button(
+                bosh.tooldirs['MaPZone'],
+                Image(r'images/MaPZone'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch MaPZone")))
         BashStatusBar.buttons.append( #MyPaint
             App_Button(
                 bosh.tooldirs['MyPaint'],
                 Image(r'images/MyPaint'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch MyPaint")))
+        BashStatusBar.buttons.append( #NVIDIAMelody
+            App_Button(
+                bosh.tooldirs['NVIDIAMelody'],
+                Image(r'images/NVIDIAMelody'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Nvidia Melody")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.tooldirs['PaintNET'],
@@ -13325,6 +13335,11 @@ def InitStatusBar():
                 bosh.tooldirs['TwistedBrush'],
                 Image(r'images/TwistedBrush'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch TwistedBrush")))
+        BashStatusBar.buttons.append( #Windows Texture Viewer
+            App_Button(
+                bosh.tooldirs['WTV'],
+                Image(r'images/WTV'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Windows Texture Viewer")))
         BashStatusBar.buttons.append( #xNormal
             App_Button(
                 bosh.tooldirs['xNormal'],
@@ -13346,6 +13361,11 @@ def InitStatusBar():
                 bosh.tooldirs['ABCAmberAudioConverter'],
                 Image(r'images/ABCAmberAudioConverter'+bosh.inisettings['IconSize']+'.png'),
                 _("Launch ABC Amber Audio Converter")))
+        BashStatusBar.buttons.append( #Switch
+            App_Button(
+                bosh.tooldirs['Switch'],
+                Image(r'images/Switch'+bosh.inisettings['IconSize']+'.png'),
+                _("Launch Switch")))
     BashStatusBar.buttons.append( #Fraps
         App_Button(
             bosh.tooldirs['Fraps'],
@@ -13391,6 +13411,11 @@ def InitStatusBar():
             bosh.tooldirs['FreeMind'],
             Image(r'images/FreeMind'+bosh.inisettings['IconSize']+'.png'),
             _("Launch FreeMind")))
+    BashStatusBar.buttons.append( #Freeplane
+        App_Button(
+            bosh.tooldirs['Freeplane'],
+            Image(r'images/Freeplane'+bosh.inisettings['IconSize']+'.png'),
+            _("Launch Freeplane")))
     BashStatusBar.buttons.append( #FileZilla
         App_Button(
             bosh.tooldirs['FileZilla'],

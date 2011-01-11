@@ -913,7 +913,7 @@ class WryeParser(ScriptParser.Parser):
     def _KeywordSelect(self, bMany, name, *args):
         args = list(args)
         if self.LenFlow() > 0 and self.PeekFlow().type == 'Select' and not self.PeekFlow().active:
-            #We're inside an invalid Case for a Select alread, so just add a blank FlowControl for
+            #We're inside an invalid Case for a Select already, so just add a blank FlowControl for
             #this select
             self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'EndSelect'])
             return
@@ -957,10 +957,16 @@ class WryeParser(ScriptParser.Parser):
             if len(temp):
                 self.installer.unpackToTemp(self.path, temp)
             for i in images:
-                image_paths.append(self.installer.tempDir.join(i))
+                path = self.installer.tempDir.join(i)
+                if not path.exists() and bosh.dirs['mopy'].join(i).exists():
+                    path = bosh.dirs['mopy'].join(i)
+                image_paths.append(path)
         else:
             for i in images:
-                image_paths.append(bosh.dirs['installers'].join(self.path.s, i))
+                path = bosh.dirs['installers'].join(self.path.s, i)
+                if not path.exists() and bosh.dirs['mopy'].join(i).exists():
+                    path = bosh.dirs['mopy'].join(i)
+                image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def kwdCase(self, *args):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
