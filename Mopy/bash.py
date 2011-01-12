@@ -234,7 +234,8 @@ def exit():
         sys.argv = [exePath.stail] + sys.argv + ['--restarting']
         sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
         try:
-            os.spawnv(os.P_NOWAIT, exePath.s, sys.argv)
+            import subprocess
+            subprocess.Popen(sys.argv, executable=exePath.s, close_fds=True) #close_fds is needed for the one instance checker
         except Exception, error:
             print error
             print _("Error Attempting to Restart Wrye Bash!")
@@ -261,6 +262,16 @@ def main():
     bosh.initBosh(personal,localAppData,oblivionPath)
 
     if not oneInstanceChecker(): return
+# Alternative one instance scheme
+##    try:
+##        import socket
+##        s = socket.socket()
+##        host = socket.gethostname()
+##        port = 35636    #make sure this port is not used on this system
+##        s.bind((host, port))
+##    except:
+##        print 'already started'
+##        return
     atexit.register(exit)
     basher.InitSettings()
     basher.InitLinks()
@@ -279,7 +290,17 @@ def main():
     if quit: return
 
     app.Init()
+# Testing code to see if a spawned process is blocking the one instance checker from working
+##    try:
     app.MainLoop()
+##    finally:
+##        s.close()
+##        b = socket.socket()
+##        try:
+##            b.bind((host, port))
+##        except:
+##            print "Unable to rebind supposedly closed port!"
+##        print "Really exitted"
 
 if __name__ == '__main__':
     try:
