@@ -7793,6 +7793,8 @@ class Installer_Espm_Rename(InstallerLink):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
         curName = gInstallers.gEspmList.GetString(self.data)
+        if curName[0] == '*':
+            curName = curName[1:]
         file = GPath(curName)
         newName = balt.askText(self.window,_("Enter new name (without the extension):"),
                                _("Rename Esp/m"), file.sbody)
