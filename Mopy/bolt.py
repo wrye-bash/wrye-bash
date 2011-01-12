@@ -527,9 +527,15 @@ class Path(object):
             shutil.rmtree(self._s)
 
     #--start, move, copy, touch, untemp
-    def start(self):
+    def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
-        os.startfile(self._s)
+        if self._cext == '.exe':
+            if not exeArgs:
+                subprocess.Popen([self.s], close_fds=True)
+            else:
+                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
+        else:
+            os.startfile(self._s)
     def copyTo(self,destName):
         destName = GPath(destName)
         if self.isdir():
