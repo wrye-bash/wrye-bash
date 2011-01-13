@@ -2440,6 +2440,18 @@ class InstallersList(balt.Tank):
         # Can't rename the 'Last' marker
         if event.GetLabel() == '==Last==':
             event.Veto()
+        item = self.GetItem(event.GetIndex())
+        itemType = self.data.data[item]
+        # For markers, change the selection to not include the '=='
+        if isinstance(itemType, bosh.InstallerMarker):
+            editbox = self.gList.GetEditControl()
+            to = len(event.GetLabel()) - 2
+            editbox.SetSelection(2,to)
+        # For archives, change the selection to not include the extension
+        elif isinstance(itemType, bosh.InstallerArchive):
+            editbox = self.gList.GetEditControl()
+            to = len(GPath(event.GetLabel()).sbody)
+            editbox.SetSelection(0,to)
 
     def OnEditLabel(self, event):
         """Renamed an installer"""
