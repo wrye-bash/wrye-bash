@@ -2427,11 +2427,76 @@ class InstallersList(balt.Tank):
     def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
             details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
-            details,id,style,dndList=True,dndFiles=True,dndColumns=['Order'])
+            details,id,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+        self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
         self.hitTime = 0
+
+    def OnBeginEditLabel(self,event):
+        """Start renaming an installer"""
+        # Can't rename the 'Last' marker
+        if event.GetLabel() == '==Last==':
+            event.Veto()
+
+    def OnEditLabel(self, event):
+        """Renamed an installer"""
+        if event.IsEditCancelled(): return
+
+        oldPath = GPath(self.gList.GetItemText(event.GetIndex()))
+        newPath = GPath(event.GetLabel())
+
+        item = self.GetItem(event.GetIndex())
+        itemType = self.data.data[item]
+
+        #-- Archives
+        if isinstance(itemType, bosh.InstallerArchive):
+            # Make sure extension matches
+            if oldPath.cext != newPath.cext:
+                newPath = GPath(newPath.s + oldPath.ext)
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
+        #-- Markers, Projects
+        else:
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
+
+        maPattern = rePattern.match(newPath.s)
+        if not maPattern:
+            event.Veto()
+            return
+
+        #-- Markers, add the '==' before and after
+        if isinstance(itemType, bosh.InstallerMarker):
+            name = '==' + newPath.s.strip('=') + '=='
+            newPath = GPath(name)                
+
+        installersDir = bosh.dirs['installers']
+        oldPath = installersDir.join(oldPath)
+        newPath = installersDir.join(newPath)
+
+        if oldPath == newPath:
+            event.Veto()
+            return
+
+        if not newPath.exists():
+            if not isinstance(itemType, bosh.InstallerMarker):
+                oldPath.moveTo(newPath)
+            self.data.data.pop(item)
+            itemType.archive = newPath.s
+            self.data.data[newPath.tail] = itemType
+            #--Update the iniInfos and modInfos for 'installer'
+            if not isinstance(itemType, bosh.InstallerMarker):
+                mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                for i in mfiles:
+                    bosh.modInfos.table[i]['installer'] = newPath.stail
+                for i in ifiles:
+                    bosh.iniInfos.table[i]['installer'] = newPath.stail
+        modList.RefreshUI()
+        iniList.RefreshUI()
+        self.RefreshUI()
+        event.Veto()
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
@@ -2502,6 +2567,7 @@ class InstallersList(balt.Tank):
 
     def OnChar(self,event):
         """Char event: Reorder."""
+        ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
         if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
             if len(self.GetSelected()) < 1: return
             orderKey = lambda x: self.data.data[x].order
@@ -2521,6 +2587,11 @@ class InstallersList(balt.Tank):
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
             self.gList.EnsureVisible(visibleIndex)
+        elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+        ##Enter - Open selected Installer/
+            if len(self.GetSelected()):
+                path = self.data.dir.join(self.GetSelected()[0])
+            if path.exists(): path.start()
         else:
             event.Skip()
 
@@ -2532,86 +2603,9 @@ class InstallersList(balt.Tank):
         if path.exists(): path.start()
 
     def OnLeftDown(self,event):
-        """Left click, do stuff; currently only rename."""
-        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
-        if hitItem < 0: return
-        hitTime = time.time()*100
-        if self.hitItem != hitItem:
-            self.hitItem = hitItem
-            self.hitTime = hitTime
-            event.Skip()
-            return
-        if not dclicktime < (hitTime - self.hitTime) <= renametime:
-            self.hitTime = hitTime
-            event.Skip()
-            return
-        item = self.GetItem(hitItem)
-        itemType = self.data.data[item]
-        if isinstance(itemType, bosh.InstallerArchive):
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
-            pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
-                _("Rename Files"),item.s)
-        else:
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
-            if isinstance(itemType, bosh.InstallerProject):
-                name = item.s
-                msg = _("Enter new name. E.g. VASE")
-            else:
-                name = item.s[2:-2]
-                msg = _("Enter new name, '==' will be added for you.  E.g.  WEATHER")
-            pattern = balt.askText(self, msg, _("Rename Files"), name)
-        if not pattern: return
-
-        maPattern = rePattern.match(pattern)
-        if not maPattern:
-            balt.showError(self,_("Bad extension or file root: ")+pattern)
-            return
-        wx.BeginBusyCursor()
-        if isinstance(itemType, bosh.InstallerArchive):
-            root,numStr,ext = maPattern.groups()[:3]
-        else:
-            ext = ''
-            root,numStr = maPattern.groups()[:2]
-        if isinstance(itemType, bosh.InstallerMarker):
-            # Add leading '==' for markers
-            root = '==' + root
-        numLen = len(numStr)
-        num = int(numStr or 0)
-        installersDir = bosh.dirs['installers']
-        newName = GPath(root)+numStr
-        if isinstance(itemType, bosh.InstallerMarker):
-            # Add trailing '==' for markers
-            newName += '=='
-        if isinstance(itemType, bosh.InstallerArchive):
-            newName += ext
-        if newName != item:
-            oldPath = installersDir.join(item)
-            newPath = installersDir.join(newName)
-            if not newPath.exists():
-                if not isinstance(itemType, bosh.InstallerMarker):
-                    oldPath.moveTo(newPath)
-                self.data.data.pop(item)
-                itemType.archive = newName.s
-                #--Add the new archive to Bash
-                self.data.data[newName] = itemType
-                #--Update the iniInfos & modInfos for 'installer'
-                if not isinstance(itemType, bosh.InstallerMarker):
-                    mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                    ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                    for i in mfiles:
-                        bosh.modInfos.table[i]['installer'] = newPath.stail
-                    for i in ifiles:
-                        bosh.iniInfos.table[i]['installer'] = newPath.stail
-        if isinstance(itemType, bosh.InstallerMarker):
-            # For markers, we're actually making a new one, and deleting the old ones
-            items = self.GetSelected()
-            for item in items:
-                del self.data.data[item]
-        #--Refresh UI
-        modList.RefreshUI()
-        iniList.RefreshUI()
-        self.RefreshUI()
-        wx.EndBusyCursor()
+        """Left click, do stuff; currently nothing."""
+        event.Skip()
+        return
 
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
@@ -2625,11 +2619,6 @@ class InstallersList(balt.Tank):
                 self.DeleteSelected()
             finally:
                 wx.EndBusyCursor()
-        ##Enter - Open selected Installer/
-        elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
-            if len(self.GetSelected()):
-                path = self.data.dir.join(self.GetSelected()[0])
-            if path.exists(): path.start()
         ##F2 - Rename selected.
         elif event.GetKeyCode() == wx.WXK_F2:
             item = self.GetSelected()[0]
