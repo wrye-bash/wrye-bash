@@ -2436,79 +2436,104 @@ class InstallersList(balt.Tank):
         self.hitTime = 0
 
     def OnBeginEditLabel(self,event):
-        """Start renaming an installer"""
-        # Can't rename the 'Last' marker
-        if event.GetLabel() == '==Last==':
+        """Start renaming installers"""
+        #--Only rename multiple items of the same type
+        firstItem = self.data[self.GetSelected()[0]]
+        InstallerType = None
+        if(isinstance(firstItem,bosh.InstallerMarker)):
+            InstallerType = bosh.InstallerMarker
+        elif(isinstance(firstItem,bosh.InstallerArchive)):
+            InstallerType = bosh.InstallerArchive
+        elif(isinstance(firstItem,bosh.InstallerProject)):
+            InstallerType = bosh.InstallerProject
+        else:
             event.Veto()
-        item = self.GetItem(event.GetIndex())
-        itemType = self.data.data[item]
-        # For markers, change the selection to not include the '=='
-        if isinstance(itemType, bosh.InstallerMarker):
+            return
+        for item in self.GetSelected():
+            if not isinstance(self.data[item],InstallerType):
+                event.Veto()
+                return
+            #--Also, don't allow renaming the 'Last' marker
+            elif item.s == '==Last==':
+                event.Veto()
+                return
+        #--Markers, change the selection to not include the '=='
+        if InstallerType is bosh.InstallerMarker:
             editbox = self.gList.GetEditControl()
             to = len(event.GetLabel()) - 2
             editbox.SetSelection(2,to)
-        # For archives, change the selection to not include the extension
-        elif isinstance(itemType, bosh.InstallerArchive):
+        #--Archives, change the selection to not include the extension
+        elif InstallerType is bosh.InstallerArchive:
             editbox = self.gList.GetEditControl()
             to = len(GPath(event.GetLabel()).sbody)
             editbox.SetSelection(0,to)
 
     def OnEditLabel(self, event):
-        """Renamed an installer"""
+        """Renamed some installers"""
         if event.IsEditCancelled(): return
 
-        oldPath = GPath(self.gList.GetItemText(event.GetIndex()))
-        newPath = GPath(event.GetLabel())
+        newName = event.GetLabel()
 
-        item = self.GetItem(event.GetIndex())
-        itemType = self.data.data[item]
-
-        #-- Archives
-        if isinstance(itemType, bosh.InstallerArchive):
-            # Make sure extension matches
-            if oldPath.cext != newPath.cext:
-                newPath = GPath(newPath.s + oldPath.ext)
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
-        #-- Markers, Projects
-        else:
+        selected = self.GetSelected()
+        if isinstance(self.data[selected[0]], bosh.InstallerArchive):
+            InstallerType = bosh.InstallerArchive
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)((\.(7z|rar|zip|001))+)$',re.I)
+        elif isinstance(self.data[selected[0]], bosh.InstallerMarker):
+            InstallerType = bosh.InstallerMarker
             rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
-
-        maPattern = rePattern.match(newPath.s)
+        elif isinstance(self.data[selected[0]], bosh.InstallerProject):
+            InstallerType = bosh.InstallerProject
+            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
+        maPattern = rePattern.match(newName)
         if not maPattern:
+            balt.showError(self,_('Bad extension or file root: ')+newName)
             event.Veto()
             return
-
-        #-- Markers, add the '==' before and after
-        if isinstance(itemType, bosh.InstallerMarker):
-            name = '==' + newPath.s.strip('=') + '=='
-            newPath = GPath(name)                
-
+        root,numStr = maPattern.groups()[:2]
+        if InstallerType is bosh.InstallerMarker:
+            root = root.strip('=')
+        #--Rename each installer, keeping the old extension (for archives)
+        numLen = len(numStr)
+        num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
-        oldPath = installersDir.join(oldPath)
-        newPath = installersDir.join(newPath)
-
-        if oldPath == newPath:
-            event.Veto()
-            return
-
-        if not newPath.exists():
-            if not isinstance(itemType, bosh.InstallerMarker):
-                oldPath.moveTo(newPath)
-            self.data.data.pop(item)
-            itemType.archive = newPath.s
-            self.data.data[newPath.tail] = itemType
-            #--Update the iniInfos and modInfos for 'installer'
-            if not isinstance(itemType, bosh.InstallerMarker):
-                mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                for i in mfiles:
-                    bosh.modInfos.table[i]['installer'] = newPath.stail
-                for i in ifiles:
-                    bosh.iniInfos.table[i]['installer'] = newPath.stail
+        wx.BeginBusyCursor()
+        for archive in selected:
+            installer = self.data[archive]
+            newName = GPath(root+numStr+archive.ext)
+            if InstallerType is bosh.InstallerMarker:
+                newName = GPath('==' + newName.s + '==')
+            if newName != archive:
+                oldPath = installersDir.join(archive)
+                newPath = installersDir.join(newName)
+                if not newPath.exists():
+                    if InstallerType is not bosh.InstallerMarker:
+                        oldPath.moveTo(newPath)
+                    self.data.pop(installer)
+                    installer.archive = newName.s
+                    #--Add the new archive to Bash
+                    self.data[newName] = installer
+                    #--Update the iniInfos & modInfos for 'installer'
+                    if InstallerType is not bosh.InstallerMarker:
+                        mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                        ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                        for i in mfiles:
+                            bosh.modInfos.table[i]['installer'] = newPath.stail
+                        for i in ifiles:
+                            bosh.iniInfos.table[i]['installer'] = newPath.stail
+            num += 1
+            numStr = `num`
+            numStr = '0'*(numLen-len(numStr))+numStr
+        if InstallerType is bosh.InstallerMarker:
+            #--For markers, we're actually making a new one, and deleting the old ones
+            for item in selected:
+                del self.data[item]
+        #--Refresh UI
+        self.data.refresh(what='I')
         modList.RefreshUI()
         iniList.RefreshUI()
         self.RefreshUI()
         event.Veto()
+        wx.EndBusyCursor()
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
@@ -2633,83 +2658,10 @@ class InstallersList(balt.Tank):
                 wx.EndBusyCursor()
         ##F2 - Rename selected.
         elif event.GetKeyCode() == wx.WXK_F2:
-            if len(self.GetSelected()) == 1:
-                self.gList.EditLabel(self.GetIndex(self.GetSelected()[0]))
-            else:
-                item = self.GetSelected()[0]
-                itemType = self.data.data[item]
-                if isinstance(itemType, bosh.InstallerArchive):
-                    rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
-                    pattern = balt.askText(self,_("Enter new name. E.g. VASE.7z"),
-                        _("Rename Files"),item.s)
-                else:
-                    rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
-                    if isinstance(itemType, bosh.InstallerProject):
-                        name = item.s
-                        msg = _("Enter new name. E.g. VASE")
-                    else:
-                        name = item.s[2:-2]
-                        msg = _("Enter new name, '==' will be added for you.  E.g.  WEATHER")
-                    pattern = balt.askText(self, msg, _("Rename Files"), name)
-                if not pattern: return
-
-                maPattern = rePattern.match(pattern)
-                if not maPattern:
-                    balt.showError(self,_("Bad extension or file root: ")+pattern)
-                    return
-                wx.BeginBusyCursor()
-                if isinstance(itemType, bosh.InstallerArchive):
-                    root,numStr,ext = maPattern.groups()[:3]
-                else:
-                    ext = ''
-                    root,numStr = maPattern.groups()[:2]
-                if isinstance(itemType, bosh.InstallerMarker):
-                    # Add leading '==' for markers
-                    root = '==' + root
-                numLen = len(numStr)
-                num = int(numStr or 0)
-                installersDir = bosh.dirs['installers']
-                for archive in self.GetSelected():
-                    installer = self.data.data[archive]
-                    newName = GPath(root)+numStr
-                    if isinstance(itemType, bosh.InstallerMarker):
-                        # Add trailing '==' for markers
-                        newName += '=='
-                    if isinstance(itemType, bosh.InstallerArchive):
-                        newName += ext
-                    if newName != archive:
-                        oldPath = installersDir.join(archive)
-                        newPath = installersDir.join(newName)
-                        if not newPath.exists():
-                            if not isinstance(itemType, bosh.InstallerMarker):
-                                oldPath.moveTo(newPath)
-                            self.data.data.pop(archive)
-                            installer.archive = newName.s
-                            #--Add the new archive to Bash
-                            self.data.data[newName] = installer
-                            #--Update the iniInfos & modInfos for 'installer'
-                            if not isinstance(itemType, bosh.InstallerMarker):
-                                mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                                ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                                for i in mfiles:
-                                    bosh.modInfos.table[i]['installer'] = newPath.stail
-                                for i in ifiles:
-                                    bosh.iniInfos.table[i]['installer'] = newPath.stail
-                    num += 1
-                    numStr = `num`
-                    numStr = '0'*(numLen-len(numStr))+numStr
-                if isinstance(itemType, bosh.InstallerMarker):
-                    # For markers, we're actually making a new one, and deleting the old ones
-                    items = self.GetSelected()
-                    for item in items:
-                        del self.data.data[item]
-                    #self.data.setChanged()
-                #--Refresh UI
-                #self.data.data.refresh(what='I')
-                modList.RefreshUI()
-                iniList.RefreshUI()
-                self.RefreshUI()
-                wx.EndBusyCursor()
+            if len(self.GetSelected()) > 0:
+                index = self.GetIndex(self.GetSelected()[0])
+                if index != -1:
+                    self.gList.EditLabel(index)
         event.Skip()
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -3299,10 +3251,61 @@ class ScreensList(List):
         self.mainMenu = ScreensList.mainMenu
         self.itemMenu = ScreensList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
+        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
+        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
+
+    def OnDoubleClick(self,event):
+        """Double click a screeshot"""
+        (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
+        if hitItem < 0: return
+        item = self.items[hitItem]
+        bosh.screensData.dir.join(item).start()
+
+    def OnBeginEditLabel(self,event):
+        """Start renaming screenshots"""
+        item = self.items[event.GetIndex()]
+        # Change the selection to not include the extension
+        editbox = self.list.GetEditControl()
+        to = len(GPath(event.GetLabel()).sbody)
+        editbox.SetSelection(0,to)
+
+    def OnEditLabel(self, event):
+        """Renamed a screenshot"""
+        if event.IsEditCancelled(): return
+
+        newName = event.GetLabel()
+        
+        selected = self.GetSelected()
+        rePattern = re.compile(r'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I)
+        maPattern = rePattern.match(newName)
+        if not maPattern:
+            balt.showError(self,_('Bad extension or file root: ')+newName)
+            event.Veto()
+            return
+        root,numStr = maPattern.groups()[:2]
+        #--Rename each screenshot, keeping the old extension
+        numLen = len(numStr)
+        num = int(numStr or 0)
+        screensDir = bosh.screensData.dir
+        wx.BeginBusyCursor()
+        for file in selected:
+            newName = GPath(root+numStr+file.ext)
+            newPath = screensDir.join(newName)
+            oldPath = screensDir.join(file)
+            if not newPath.exists():
+                oldPath.moveTo(newPath)
+            num += 1
+            numStr = `num`
+            numStr = '0'*(numLen-len(numStr))+numStr
+        bosh.screensData.refresh()
+        self.RefreshUI()
+        event.Veto()
+        wx.EndBusyCursor()
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3370,7 +3373,14 @@ class ScreensList(List):
         ##Ctrl-A
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
-        event.Skip()
+        ##F2
+        elif event.GetKeyCode() == wx.WXK_F2:
+            selected = self.GetSelected()
+            if len(selected) > 0:
+                index = self.list.FindItem(0,selected[0].s)
+                if index != -1:
+                    self.list.EditLabel(index)
+
     #--Column Resize
     def OnColumnResize(self,event):
         colDex = event.GetColumn()
@@ -7285,79 +7295,10 @@ class Installer_Rename(InstallerLink):
         menuItem.Enable(True)
 
     def Execute(self,event):
-        #--File Info
-        fileName = self.selected[0]
-        if(self.InstallerType == bosh.InstallerArchive):
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(7z|rar|zip|001))$',re.I)
-            pattern = balt.askText(self.gTank,_("Enter new name. E.g. VASE.7z"),
-                _("Rename Files"),fileName.s)
-        else:
-            rePattern = re.compile(r'^([^\\/]+?)(\d*)$',re.I)
-            if (self.InstallerType == bosh.InstallerProject):
-                name = fileName.s
-                msg = _("Enter new name. E.g. VASE")
-            else:
-                name = fileName.s[2:-2]
-                msg = _("Enter new name, '==' will be added for you.  E.g.  WEATHER")
-            pattern = balt.askText(self.gTank, msg, _("Rename Files"), name)
-        if not pattern: return
-
-        maPattern = rePattern.match(pattern)
-        if not maPattern:
-            balt.showError(self.window,_("Bad extension or file root: ")+pattern)
-            return
-
-        if(self.InstallerType == bosh.InstallerArchive):
-            root,numStr,ext = maPattern.groups()[:3]
-        else:
-            ext = ''
-            root,numStr = maPattern.groups()[:2]
-        if (self.InstallerType == bosh.InstallerMarker):
-            # Add leading '==' for markers
-            root = '==' + root
-        numLen = len(numStr)
-        num = int(numStr or 0)
-        installersDir = bosh.dirs['installers']
-        for archive in self.selected:
-            installer = self.data[archive]
-            newName = GPath(root)+numStr
-            if (self.InstallerType == bosh.InstallerMarker):
-                # Add trailing '==' for markers
-                newName += '=='
-            if(self.InstallerType == bosh.InstallerArchive):
-                newName += ext
-            if newName != archive:
-                oldPath = installersDir.join(archive)
-                newPath = installersDir.join(newName)
-                if not newPath.exists():
-                    if (self.InstallerType != bosh.InstallerMarker):
-                        oldPath.moveTo(newPath)
-                    self.data.pop(installer)
-                    installer.archive = newName.s
-                    #--Add the new archive to Bash
-                    self.data[newName] = installer
-                    #--Update the iniInfos & modInfos for 'installer'
-                    if (self.InstallerType != bosh.InstallerMarker):
-                        mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                        ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                        for i in mfiles:
-                            bosh.modInfos.table[i]['installer'] = newPath.stail
-                        for i in ifiles:
-                            bosh.iniInfos.table[i]['installer'] = newPath.stail
-            num += 1
-            numStr = `num`
-            numStr = '0'*(numLen-len(numStr))+numStr
-        if (self.InstallerType == bosh.InstallerMarker):
-            # For markers, we're actually making a new one, and deleting the old ones
-            items = self.gTank.GetSelected()
-            for item in items:
-                del self.data[item]
-            #self.data.setChanged()
-        #--Refresh UI
-        self.data.refresh(what='I')
-        modList.RefreshUI()
-        iniList.RefreshUI()
-        self.gTank.RefreshUI()
+        if len(self.selected) > 0:
+            index = self.gTank.GetIndex(self.selected[0])
+            if index != -1:
+                self.gTank.gList.EditLabel(index)
 #------------------------------------------------------------------------------
 class Installer_HasExtraData(InstallerLink):
     """Toggle hasExtraData flag on installer."""
@@ -12406,32 +12347,10 @@ class Screen_Rename(Link):
         menuItem.Enable(len(data) > 0)
 
     def Execute(self,event):
-        #--File Info
-        rePattern = re.compile(r'^([^\\/]+?)(\d*)(\.(jpg|jpeg|png|tif|bmp))$',re.I)
-        fileName0 = self.data[0]
-        pattern = balt.askText(self.window,_("Enter new name. E.g. Screenshot 123.bmp"),
-            _("Rename Files"),fileName0.s)
-        if not pattern: return
-        maPattern = rePattern.match(pattern)
-        if not maPattern:
-            balt.showError(self.window,_("Bad extension or file root: ")+pattern)
-            return
-        root,numStr,ext = maPattern.groups()[:3]
-        numLen = len(numStr)
-        num = int(numStr or 0)
-        screensDir = bosh.screensData.dir
-        for oldName in map(GPath,self.data):
-            newName = GPath(root)+numStr+oldName.ext
-            if newName != oldName:
-                oldPath = screensDir.join(oldName)
-                newPath = screensDir.join(newName)
-                if not newPath.exists():
-                    oldPath.moveTo(newPath)
-            num += 1
-            numStr = `num`
-            numStr = '0'*(numLen-len(numStr))+numStr
-        bosh.screensData.refresh()
-        self.window.RefreshUI()
+        if len(self.data) > 0:
+            index = self.window.list.FindItem(0,self.data[0].s)
+            if index != -1:
+                self.window.list.EditLabel(index)
 # Messages Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Messages_Archive_Import(Link):
