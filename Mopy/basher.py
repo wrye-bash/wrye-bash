@@ -1180,7 +1180,7 @@ class INIList(List):
         ##Ctrl+A
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
-        elif event.GetKeyCode() == wx.WXK_DELETE:
+        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             try:
                 wx.BeginBusyCursor()
                 self.DeleteSelected()
@@ -2650,7 +2650,7 @@ class InstallersList(balt.Tank):
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
         ##Delete - delete
-        elif event.GetKeyCode() == wx.WXK_DELETE:
+        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             try:
                 wx.BeginBusyCursor()
                 self.DeleteSelected()
@@ -3257,6 +3257,7 @@ class ScreensList(List):
         List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
+        self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
@@ -3296,8 +3297,10 @@ class ScreensList(List):
         num = int(numStr or 0)
         screensDir = bosh.screensData.dir
         wx.BeginBusyCursor()
+        newselected = []
         for file in selected:
             newName = GPath(root+numStr+file.ext)
+            newselected.append(newName)
             newPath = screensDir.join(newName)
             oldPath = screensDir.join(file)
             if not newPath.exists():
@@ -3307,6 +3310,11 @@ class ScreensList(List):
             numStr = '0'*(numLen-len(numStr))+numStr
         bosh.screensData.refresh()
         self.RefreshUI()
+        #--Reselected the renamed items
+        for file in newselected:
+            index = self.list.FindItem(0,file.s)
+            if index != -1:
+                self.list.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
         event.Veto()
         wx.EndBusyCursor()
 
@@ -3371,18 +3379,38 @@ class ScreensList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
-    def OnKeyUp(self,event):
+    def OnChar(self,event):
         """Char event: Activate selected items, select all items"""
-        ##Ctrl-A
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
-            self.SelectAll()
         ##F2
-        elif event.GetKeyCode() == wx.WXK_F2:
+        if event.GetKeyCode() == wx.WXK_F2:
             selected = self.GetSelected()
             if len(selected) > 0:
                 index = self.list.FindItem(0,selected[0].s)
                 if index != -1:
                     self.list.EditLabel(index)
+        ##Delete
+        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
+            try:
+                wx.BeginBusyCursor()
+                self.DeleteSelected()
+            finally:
+                wx.EndBusyCursor()
+                self.RefreshUI()
+        ##Enter
+        elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+            screensDir = bosh.screensData.dir
+            for file in self.GetSelected():
+                file = screensDir.join(file)
+                if file.exists():
+                    file.start()
+        event.Skip()
+
+    def OnKeyUp(self,event):
+        """Char event: Activate selected items, select all items"""
+        ##Ctrl-A
+        if event.ControlDown() and event.GetKeyCode() in (65,97):
+            self.SelectAll()
+        event.Skip()
 
     #--Column Resize
     def OnColumnResize(self,event):
