@@ -1048,6 +1048,9 @@ class WryeParser(ScriptParser.Parser):
     def kwdRenameEspm(self, espm, newName):
         espm = self.GetEspm(espm)
         if espm:
+            # Keep same extension
+            if espm.lower()[-4:] != newName.lower()[-4:]:
+                raise ScriptParser.ParserError(_('Cannot rename %s to %s: the extensions must match.') % (espm, newName))
             self.espmrenames[espm] = newName
     def kwdResetEspmName(self, espm):
         espm = self.GetEspm(espm)
