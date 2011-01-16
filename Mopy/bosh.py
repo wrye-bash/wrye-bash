@@ -27187,7 +27187,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
             newFull = self.reOldLabel.sub('',newFull) #--Remove existing label
             if not self.removeTags:
                 if self.showLevel:
-                    newFull = self.format % ('ACDIMRU'[school],record.level) + newFull
+                    newFull = self.format % ('ACDIMRU'[school],record.levelType) + newFull
                 else:
                     newFull = self.format % 'ACDIMRU'[school] + newFull
 
