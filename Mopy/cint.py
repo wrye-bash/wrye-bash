@@ -2528,9 +2528,9 @@ class ObCELLRecord(ObBaseRecord):
 
     @property
     def _ParentID(self):
-        _CGetField.restype = POINTER(c_ulong)
+        _CGetField.restype = c_ulong
         retValue = _CGetField(self._CollectionID, self._ModID, self._RecordID, 40, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue.contents.value
+        if(retValue): return retValue
         return 0
 
     full = CBashSTRING(5)
