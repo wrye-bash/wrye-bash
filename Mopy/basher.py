@@ -3020,7 +3020,10 @@ class InstallersPanel(SashTankPanel):
         installer = self.data[self.detailsItem]
         espmNots = installer.espmNots
         index = event.GetSelection()
-        espm = GPath(self.gEspmList.GetString(index))
+        name = self.gEspmList.GetString(index)
+        if name[0] == '*':
+            name = name[1:]
+        espm = GPath(name)
         if self.gEspmList.IsChecked(index):
             espmNots.discard(espm)
         else:
