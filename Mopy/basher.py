@@ -12632,15 +12632,14 @@ class App_Button(Link):
                     cwd.setcwd()
             elif self.isExe:
                 exeObse = bosh.dirs['app'].join('obse_loader.exe')
-                exeArgs = self.exeArgs
+                exeArgs = ' '.join(self.exeArgs)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     exePath = exeObse
                     if self.obseArg != '': exeArgs += (self.obseArg,)
                 else:
                     exePath = self.exePath
-                exeArgs = (exePath.stail,)+exeArgs
-                if extraArgs: exeArgs += extraArgs
-                statusBar.SetStatusText(' '.join(exeArgs),1)
+                if extraArgs: exeArgs += ' '+' '.join(extraArgs)
+                statusBar.SetStatusText(exeArgs,1)
                 cwd = bolt.Path.getcwd()
                 exePath.head.setcwd()
                 try:
@@ -12681,10 +12680,53 @@ class App_OblivionBookCreator(App_Button):
 class App_Tes4View(App_Button):
     """Allow some extra args for Tes4View."""
 
+# arguments
+# -fixup (wbAllowInternalEdit true default)
+# -nofixup (wbAllowInternalEdit false)
+# -showfixup (wbShowInternalEdit true default)
+# -hidefixup (wbShowInternalEdit false)
+# -skipbsa (wbLoadBSAs false)
+# -forcebsa (wbLoadBSAs true default)
+# -fixuppgrd
+# -IKnowWhatImDoing
+# -FNV
+#  or name begins with FNV
+# -FO3
+#  or name begins with FO3
+# -TES4
+#  or name begins with TES4
+# -lodgen
+#  or name ends with LODGen.exe
+#  (requires TES4 mode)
+# -masterupdate
+#  or name ends with MasterUpdate.exe
+#  (requires FO3 or FNV)
+#  -filteronam
+#  -FixPersistence
+#  -NoFixPersistence
+# -masterrestore
+#  or name ends with MasterRestore.exe
+#  (requires FO3 or FNV)
+# -edit
+#  or name ends with Edit.exe
+# -translate
+#  or name ends with Trans.exe
+
+    def IsPresent(self):
+        if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
+            testPath = bosh.tooldirs['Tes4ViewPath']
+            if testPath not in bosh.undefinedPaths and testPath.exists():
+                self.exePath = testPath
+                return True
+            return False
+        return True
+
     def Execute(self,event):
         extraArgs = []
         if wx.GetKeyState(wx.WXK_CONTROL):
             extraArgs.append('-FixupPGRD')
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            extraArgs.append('-skipbsa')
         if settings['tes4View.iKnowWhatImDoing']:
             extraArgs.append('-IKnowWhatImDoing')
         App_Button.Execute(self,event,tuple(extraArgs))
@@ -13051,22 +13093,22 @@ def InitStatusBar():
             _("Launch Tes4Gecko")))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
-            bosh.tooldirs['Tes4ViewPath'],
+            (bosh.tooldirs['Tes4ViewPath'],'-TES4'), #no cmd argument to force view mode
             Image(r'images/tes4view'+bosh.inisettings['IconSize']+'.png'),
             _("Launch TES4View")))
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View(
-            bosh.tooldirs['Tes4EditPath'],
+            (bosh.tooldirs['Tes4EditPath'],'-TES4 -edit'),
             Image(r'images/TES4Edit'+bosh.inisettings['IconSize']+'.png'),
             _("Launch TES4Edit")))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
-            bosh.tooldirs['Tes4TransPath'],
+            (bosh.tooldirs['Tes4TransPath'],'-TES4 -translate'),
             Image(r'images/TES4Trans'+bosh.inisettings['IconSize']+'.png'),
             _("Launch TES4Trans")))
     BashStatusBar.buttons.append( #Tes4LODGen
-        App_Button(
-            bosh.tooldirs['Tes4LodGenPath'],
+        App_Tes4View(
+            (bosh.tooldirs['Tes4LodGenPath'],'-TES4 -lodgen'),
             Image(r'images/Tes4LODGen'+bosh.inisettings['IconSize']+'.png'),
             _("Launch Tes4LODGen")))
     configHelpers = bosh.ConfigHelpers()
