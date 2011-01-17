@@ -8306,17 +8306,18 @@ class ModInfos(FileInfos):
         mergeableDiscard = self.mergeable.discard
         if CBash:
             testMerge = CBash_PatchFile.modIsMergeableNoLoad
-            Current = ObCollection(ModsPath=dirs['mods'].s)
             _modInfos = []
             for name in names:
                 modInfo = self[name]
                 if testMerge(modInfo) == True:
-                    Current.addMod(modInfo.getPath().stail, Flags=0x00000120)
                     _modInfos.append(modInfo)
                 else:
                     mergeableDiscard(name)
                     name_mergeInfo[name] = (modInfo.size,False)
             if _modInfos:
+                Current = ObCollection(ModsPath=dirs['mods'].s)
+                for modInfo in _modInfos:
+                    Current.addMod(modInfo.getPath().stail, Flags=0x00000120)
                 Current.load()
                 testMerge = CBash_PatchFile.modIsMergeableLoad
                 for index,modInfo in enumerate(_modInfos):
