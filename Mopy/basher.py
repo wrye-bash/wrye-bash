@@ -65,6 +65,7 @@ from operator import attrgetter,itemgetter
 
 #--wxPython
 import wx
+import wx.gizmos
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 #--Balt
@@ -2677,6 +2678,10 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
+        splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
+        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
+        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
         self.refreshed = False
         self.refreshing = False
@@ -2691,7 +2696,8 @@ class InstallersPanel(SashTankPanel):
         self.gPackage = wx.TextCtrl(right,-1,style=wx.TE_READONLY|wx.NO_BORDER)
         self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
         #--Info Tabs
-        self.gNotebook = wx.Notebook(right,style=wx.NB_MULTILINE)
+        self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+        self.gNotebook.SetSizeHints(100,100)
         self.infoPages = []
         infoTitles = (
             ('gGeneral',_("General")),
@@ -2710,35 +2716,51 @@ class InstallersPanel(SashTankPanel):
         self.gNotebook.SetSelection(settings['bash.installers.page'])
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
         #--Sub-Installers
-        self.gSubList = wx.CheckListBox(right,-1)
+        subPackagesPanel = wx.Panel(checkListSplitter)
+        subPackagesLabel = staticText(subPackagesPanel, _('Sub-Packages'))
+        self.gSubList = wx.CheckListBox(subPackagesPanel,-1)
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         #--Espms
+        espmsPanel = wx.Panel(checkListSplitter)
+        espmsLabel = staticText(espmsPanel, _('Esp/m Filter'))
         self.espms = []
-        self.gEspmList = wx.CheckListBox(right,-1)
+        self.gEspmList = wx.CheckListBox(espmsPanel,-1)
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
-        self.gComments = wx.TextCtrl(right,-1,style=wx.TE_MULTILINE)
+        commentsPanel = wx.Panel(commentsSplitter)
+        commentsLabel = staticText(commentsPanel, _('Comments'))
+        self.gComments = wx.TextCtrl(commentsPanel, -1, style=wx.TE_MULTILINE)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
+        #--Splitter settings
+        checkListSplitter.SetMinimumPaneSize(50)
+        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+        checkListSplitter.SetSashGravity(0.5)
+        subSplitter.SetMinimumPaneSize(50)
+        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+        subSplitter.SetSashGravity(0.5)
+        commentsHeight = self.gPackage.GetSize()[1]
+        commentsSplitter.SetMinimumPaneSize(commentsHeight)
+        commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+        commentsSplitter.SetSashGravity(0.5)
         #--Layout
-        right.SetSizer(vSizer(
-            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,4),
-            (self.gNotebook,2,wx.GROW|wx.TOP,0),
-            (hSizer(
-                (vSizer(
-                    (staticText(right,_('Sub-Packages')),),
-                    (self.gSubList,1,wx.GROW|wx.TOP,4),
-                    ),1,wx.GROW),
-                (vSizer(
-                    (staticText(right,_('Esp/m Filter')),),
-                    (self.gEspmList,1,wx.GROW|wx.TOP,4),
-                    ),1,wx.GROW|wx.LEFT,2),
-                ),1,wx.GROW|wx.TOP,4),
-            (staticText(right,_('Comments')),0,wx.TOP,4),
-            (self.gComments,1,wx.GROW|wx.TOP,4),
-            ))
+        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+        subPackagesSizer.SetSizeHints(subPackagesPanel)
+        subPackagesPanel.SetSizer(subPackagesSizer)
+        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+        espmsSizer.SetSizeHints(espmsPanel)
+        espmsPanel.SetSizer(espmsSizer)
+        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND,2))
+        commentsSizer.SetSizeHints(commentsPanel)
+        commentsPanel.SetSizer(commentsSizer)
+        rightSizer = vSizer(
+            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+            (commentsSplitter,1,wx.EXPAND,2))
+        rightSizer.SetSizeHints(right)
+        right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
+        commentsSplitter.SetSashPosition(-commentsHeight)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
