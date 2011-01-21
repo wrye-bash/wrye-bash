@@ -645,6 +645,14 @@
 <p class=list-1>&nbsp;&nbsp; This will be blank unless the package has sub-packages. You can determine which of these to install simply by checking the ones you want. Note that sub-packages are installed in the order they appear. So if different subinstallers have different versions of the same file, then the subinstaller that is later in the list (and active) will win.
 <p class=list-1>&bull;&nbsp; <B>Esp/m Filtering</B>
 <p class=list-1>&nbsp;&nbsp; This tab can be used to filter out specific esps and esms from a packages. This is intended for use with packages that provide alternate and optional mods. Note that Esp/m filtering is applied <I>after</I> sub-package filtering. E.g. it may be easier to turn off a sub-package entirely rather than disable individual espms from it.
+  *The second function of the Esp/m Filter is to rename files to be installed; Right click on the Esp/m filter will now give a popup menu with these options:
+    *Select All
+    *Deselect All
+    *Rename...
+    *Reset Name -> restores a renamed Esp/m to its original name
+    *Reset All Names -> restores all Esp/ms to their original names
+  *Once an Esp/m is renamed, it will show up with a '*' before its name in the Esp/m filter, and in the tabs will be shown as "original name -> new name"
+<p class=empty>&nbsp;</p>
 <p class=list-1>&bull;&nbsp; <B>Comments</B>
 <p class=list-1>&nbsp;&nbsp; This is a field where you can enter comments about the package. Useful for keeping track of what the package is supposed to do, etc.
 <p class=empty>&nbsp;</p>
@@ -2432,7 +2440,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
-<h3><a name='291112011GaticusGratis_monstamyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [1/1/2011] [Gaticus,Gratis_monsta,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
+<h3><a name='291112011GaticusGratis_monstaLojackmyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [1/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch:
   <p class=list-2>&bull;&nbsp; typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   <p class=list-2>&bull;&nbsp; Tweak Actors:
@@ -2470,14 +2478,24 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; new 'Open at Google' menu item
   <p class=list-2>&bull;&nbsp; all Open at * menu items moved into 'Open At' submenu.
   <p class=list-2>&bull;&nbsp; added .001 as a valid read extension - as in BAIN now supports multipart archives.
-  <p class=list-2>&bull;&nbsp; slow double click renames file (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts).
-  <p class=list-2>&bull;&nbsp; fix for an at exit crash bug.
+  <p class=list-2>&bull;&nbsp; slow double click renames packages (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts).
+  <p class=list-2>&bull;&nbsp; fix for an couple at exit crash bug.
+  <p class=list-2>&bull;&nbsp; Installers panel now allows dropping files onto it, giving the option of copying or moving the files.
+  <p class=list-2>&bull;&nbsp; Esp/ms can now be renamed via the Esp/m Filter box (just right click them).
+  <p class=list-2>&bull;&nbsp; Changed the rename installer dialog for in place renaming.
+  <p class=list-2>&bull;&nbsp; Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
+  <p class=list-2>&bull;&nbsp; Widgets on installers tab made resizable (contributed by myk002).
+  <p class=empty>&nbsp;</p>
 <p class=list-1>&bull;&nbsp; BAIN Wizards:
   <p class=list-2>&bull;&nbsp; packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
   <p class=list-2>&bull;&nbsp; added ability to use default images located in the 'Mopy\Wizard Images' directory
     <p class=list-3>&bull;&nbsp; Example: If you use 'Wizard Images\Yes.jpg'
       <p class=list-4>&bull;&nbsp; BAIN Wizards first checks if it exists in your package. If it does, it uses that and stops looking.
       <p class=list-4>&bull;&nbsp; Then BAIN Wizards then checks to see if it exists in 'Mopy\Wizard Images'. If it does, it uses that and stops looking.
+  <p class=list-2>&bull;&nbsp; 3 new Wizard functions
+    <p class=list-3>&bull;&nbsp; RenameEspm "original name" "new name".
+    <p class=list-3>&bull;&nbsp; ResetEspmName "original name".
+    <p class=list-3>&bull;&nbsp; ResetAllEspmNames.
 <p class=list-1>&bull;&nbsp; Saves Tab:
   <p class=list-2>&bull;&nbsp; Rename Save(s) command added (in the saves menu->file).
   <p class=list-2>&bull;&nbsp; Re-number Save(s) command added (in the saves menu->file).
@@ -2494,7 +2512,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class=list-3>&nbsp;&nbsp; Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap, WTV, MaPZone, NVIDIA Melody, Switch, Freeplane.
     <p class=list-3>&bull;&nbsp; Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
   <p class=list-2>&bull;&nbsp; Bash.ini typo fixes (contributed by Metallicow).
-  <p class=list-2>&bull;&nbsp; Exception handling fixes to maintain Python 2.5 compatibility
+  <p class=list-2>&bull;&nbsp; Exception handling fixes to maintain Python 2.5 compatibility.
   <p class=list-2>&bull;&nbsp; Bash Installer automatically handling requirements created... still a bit fuzzy but *should* work in most cases.
   <p class=list-2>&bull;&nbsp; File read error warning printout fixed
   <p class=list-2>&bull;&nbsp; Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
@@ -2513,7 +2531,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class=list-3>&bull;&nbsp; Allows Bash and BAIN to work with extended character sets.
     <p class=list-3>&bull;&nbsp; Requires the unicode version of wxPython to be installed.
     <p class=list-3>&bull;&nbsp; Set bEnableUnicode in bash.ini to True to test it.
-    <p class=empty>&nbsp;</p>
+  <p class=list-2>&bull;&nbsp; Applications started by Bash no longer prevent Bash from being run if Bash is closed and then attempted to be reopened while the application is still running.
+  <p class=list-2>&bull;&nbsp; INI Tweaks renamed to be more consistent
+  <p class=list-2>&bull;&nbsp; Added default grass fade INI Tweak (provided by Metallicow)
+  <p class=empty>&nbsp;</p>
 <h3><a name='29015102010PacificMorrowind'>290 [15/10/2010] [PacificMorrowind]</a></h3>
 <p class=list-1>&bull;&nbsp; fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
 <p class=list-1>&bull;&nbsp; added Disable/Enable ini tweaks for Screenshots.
