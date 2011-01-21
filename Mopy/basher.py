@@ -12657,7 +12657,7 @@ class App_Button(Link):
                 exeArgs = ' '.join(self.exeArgs)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     exePath = exeObse
-                    if self.obseArg != '': exeArgs += (self.obseArg,)
+                    if self.obseArg != '': exeArgs += " %s" % self.obseArg
                 else:
                     exePath = self.exePath
                 if extraArgs: exeArgs += ' '+' '.join(extraArgs)
