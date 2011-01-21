@@ -2071,7 +2071,7 @@ class SaveList(List):
         self.mainMenu = SaveList.mainMenu
         self.itemMenu = SaveList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
+        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
         #--Image List
         checkboxesIL = self.checkboxes.GetImageList()
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
@@ -2079,9 +2079,43 @@ class SaveList(List):
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.saves.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+
+    def OnBeginEditLabel(self,event):
+        """Start renaming saves"""
+        item = self.items[event.GetIndex()]
+        # Change the selection to not include the extension
+        editbox = self.list.GetEditControl()
+        to = len(GPath(event.GetLabel()).sbody)
+        editbox.SetSelection(0,to)
+
+    def OnEditLabel(self, event):
+        """Savegame renamed."""
+        if event.IsEditCancelled(): return
+        #--File Info
+        newName = event.GetLabel()
+        if not newName.lower().endswith('.ess'):
+            newName += '.ess'
+        newFileName = newName
+        selected = self.GetSelected()
+        for index, path in enumerate(selected):
+            if index:
+                newFileName = newName.replace('.ess','%d.ess' % index)
+            if newFileName != path.s:
+                oldPath = bosh.saveInfos.dir.join(path.s)
+                newPath = bosh.saveInfos.dir.join(newFileName)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+                    if GPath(oldPath.s[:-3]+'obse').exists():
+                        GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
+                    if GPath(oldPath.s[:-3]+'pluggy').exists():
+                        GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
+        bosh.saveInfos.refresh()
+        self.RefreshUI()
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -2169,8 +2203,16 @@ class SaveList(List):
     #--Events ---------------------------------------------
     def OnChar(self,event):
         """Char event: Reordering."""
-        if (event.GetKeyCode() == 127):
+        ## Delete
+        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
             self.DeleteSelected()
+        ## F2 - Rename
+        if event.GetKeyCode() == wx.WXK_F2:
+            selected = self.GetSelected()
+            if len(selected) > 0:
+                index = self.list.FindItem(0,selected[0].s)
+                if index != -1:
+                    self.list.EditLabel(index)
         event.Skip()
 
     #--Column Resize
@@ -7163,6 +7205,7 @@ class Installer_Wizard(InstallerLink):
             menuItem.Enable(False)
 
     def Execute(self, event):
+        wx.BeginBusyCursor()
         installer = self.data[self.selected[0]]
         subs = []
         oldRemaps = installer.remaps
@@ -7171,6 +7214,7 @@ class Installer_Wizard(InstallerLink):
         for index in range(gInstallers.gSubList.GetCount()):
             subs.append(gInstallers.gSubList.GetString(index))
         wizard = belt.InstallerWizard(self, subs)
+        wx.EndBusyCursor()
         ret = wizard.Run()
         if ret.Canceled:
             installer.remaps = oldRemaps
@@ -11568,26 +11612,10 @@ class Save_Rename(Link):
         menuItem.Enable(len(data) != 0)
 
     def Execute(self,event):
-        #--File Info
-        newName = balt.askText(self.window,_("Enter new name. E.g. AwesomeSave.ess.\nIf there are multiple saves selected the first will be named the name you select and then the rest will have a number appended (eg AwesomeSave1.ess... AwesomeSave2.ess etc.)."),
-            _("Rename Save"),self.data[0].s)
-        if not newName: return
-        if not newName.endswith('.ess'): newName = newName + '.ess'
-        newFileName = newName
-        for index, name in enumerate(self.data):
-            if index:
-                newFileName = newName.replace('.ess','%d.ess' % index)
-            if newFileName != name.s:
-                oldPath = bosh.saveInfos.dir.join(name.s)
-                newPath = bosh.saveInfos.dir.join(newFileName)
-                if not newPath.exists():
-                    oldPath.moveTo(newPath)
-                    if GPath(oldPath.s[:-3]+'obse').exists():
-                        GPath(oldPath.s[:-3]+'obse').moveTo(GPath(newPath.s[:-3]+'obse'))
-                    if GPath(oldPath.s[:-3]+'pluggy').exists():
-                        GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
-        bosh.saveInfos.refresh()
-        self.window.RefreshUI()
+        if len(self.data) > 0:
+            index = self.window.list.FindItem(0,self.data[0].s)
+            if index != -1:
+                self.window.list.EditLabel(index)
 #--------------------------------------------------------------------------
 class Save_Renumber(Link):
     """Renamumbers a whole lot of save files."""
