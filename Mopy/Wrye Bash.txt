@@ -2242,7 +2242,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 291 [1/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
+=== 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
   * Tweak Actors:
