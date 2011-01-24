@@ -2715,6 +2715,8 @@ class InstallersPanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
+        cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         global gInstallers
         gInstallers = self
         data = bosh.InstallersData()

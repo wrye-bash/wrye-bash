@@ -11972,8 +11972,6 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
-        cmd = r'attrib -R "%s\*" /S /D' % (modsDir)
-        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         InstallersData.updateTable(removes, '')
         for file in removes:
             path = modsDir.join(file)
@@ -30141,7 +30139,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_('No right and/or no left eye recorded in race %s') % record.full)
+                deprint(_('No right and/or no left eye recorded in race %s, from mod %s') % (record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
