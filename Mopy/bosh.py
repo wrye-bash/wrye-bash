@@ -30289,7 +30289,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     raceChanged = True
                 #--Else use most popular eye mesh
                 else:
-                    setRaceEyeMesh(race,*maxEyesMeshes)
+                    setRaceEyeMesh(race,*maxEyesMesh)
                     race.eyes = mesh_eye[maxEyesMesh]
                     raceChanged = True
             if raceChanged:
