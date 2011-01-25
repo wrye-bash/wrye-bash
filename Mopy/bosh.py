@@ -8587,7 +8587,7 @@ class ModInfos(FileInfos):
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
         sDelinquent = (_('----> Delinquent MASTER: '),_('  * __Delinquent Master:__ '))[wtxt]
         sImported = ('**','&bull; &bull;')[wtxt]
-        if not wtxt: log.out.write('[spoiler][code]')
+        if not wtxt: log.out.write('[spoiler]')
         if fileInfo:
             masters = set(fileInfo.header.masters)
             missing = sorted([x for x in masters if x not in self])
@@ -8635,7 +8635,7 @@ class ModInfos(FileInfos):
                         log(sMissing+master2.s)
                     elif self.getOrdered((name,master2))[1] == master2:
                         log(sDelinquent+master2.s)
-        if not wtxt: log('[/code][/spoiler]')
+        if not wtxt: log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 
     #--Mod Specific ----------------------------------------------------------
@@ -10797,7 +10797,9 @@ class InstallerConverter(object):
         else:
             solid = '-ms=off'
         if inisettings['7zExtraCompressionArguments']:
-            solid += ' %s' % inisettings['7zExtraCompressionArguments']
+            if '-ms=on' in inisettings['7zExtraCompressionArguments']:
+                solid = ' %s' % inisettings['7zExtraCompressionArguments']
+            else: solid += ' %s' % inisettings['7zExtraCompressionArguments']
 
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
@@ -11117,12 +11119,12 @@ class InstallerArchive(Installer):
         bUseUnicode = inisettings['EnableUnicode']
         log = bolt.LogFile(stringBuffer())
         if bUseUnicode:
-            log.out.write(u'[spoiler][code]')
+            log.out.write(u'[spoiler]')
             log.setHeader(_(u'Package Structure:'))
             reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
             file = u''
         else:
-            log.out.write('[spoiler][code]')
+            log.out.write('[spoiler]')
             log.setHeader(_('Package Structure:'))
             reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
             file = ''
@@ -11186,7 +11188,7 @@ class InstallerArchive(Installer):
                     log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
                 else:
                     log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
-        log('[/code][/spoiler]')
+        log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -11296,7 +11298,9 @@ class InstallerProject(Installer):
             else:
                 solid = '-ms=off'
         if inisettings['7zExtraCompressionArguments']:
-            solid += ' %s' % inisettings['7zExtraCompressionArguments']
+            if '-ms=' in inisettings['7zExtraCompressionArguments']:
+                solid = ' %s' % inisettings['7zExtraCompressionArguments']
+            else: solid += ' %s' % inisettings['7zExtraCompressionArguments']
         #--Dump file list
         out = self.tempList.open('w')
         if release:
@@ -11394,12 +11398,12 @@ class InstallerProject(Installer):
                  log(' ' * depth + file)
         #--Setup
         log = bolt.LogFile(stringBuffer())
-        log.out.write('[spoiler][code]')
+        log.out.write('[spoiler]')
         log.setHeader(_('Package Structure:'))
         apath = dirs['installers'].join(archive)
 
         walkPath(apath.s, 0)
-        log('[/code][/spoiler]')
+        log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
@@ -12110,7 +12114,7 @@ class InstallersData(bolt.TankData, DataDict):
         """Returns package list as text."""
         #--Setup
         log = bolt.LogFile(stringBuffer())
-        log.out.write('[spoiler][code]')
+        log.out.write('[spoiler]')
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
         allPackages = sorted(self.data,key=orderKey)
@@ -12124,7 +12128,7 @@ class InstallersData(bolt.TankData, DataDict):
                 log('++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
             elif showInactive:
                 log('-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
-        log('[/code][/spoiler]')
+        log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
