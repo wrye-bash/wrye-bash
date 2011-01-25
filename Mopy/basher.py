@@ -4893,7 +4893,7 @@ class ModChecker(wx.Frame):
 
     def OnCopyText(self,event=None):
         """Copies text of report to clipboard."""
-        text = '[spoiler][code]'+self.text+'[/code][/spoiler]'
+        text = '[spoiler]'+self.text+'[/spoiler]'
         text = re.sub(r'\[\[.+?\|\s*(.+?)\]\]',r'\1',text)
         text = re.sub('(__|\*\*|~~)','',text)
         text = re.sub('&bull; &bull;','**',text)
@@ -8140,6 +8140,7 @@ class InstallerProject_Pack(InstallerLink):
                 isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
+            else: isSolid = True
         progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
         try:
             #--Pack
@@ -8198,9 +8199,11 @@ class InstallerProject_ReleasePack(InstallerLink):
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
-            isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
-            if isSolid:
-                blockSize = balt.askNumber(self.gTank,'mb',_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),self.title,0,0,102400)
+            if not '-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = balt.askYes(self.gTank,_("Use solid compression for %s?") % archive.s,self.title,False)
+                if isSolid:
+                    blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
+            else: isSolid = True
         progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
         try:
             #--Pack
