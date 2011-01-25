@@ -45,6 +45,7 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
 from bolt import _, LString,GPath, SubProgress, deprint, delist
 from cint import *
+startupinfo = bolt.startupinfo
 
 #--Python
 import ConfigParser
@@ -2715,8 +2716,6 @@ class InstallersPanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-        ins,err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         global gInstallers
         gInstallers = self
         data = bosh.InstallersData()
@@ -2829,6 +2828,8 @@ class InstallersPanel(SashTankPanel):
                 self.frameActivated = False
                 self.refreshing = False
                 self.refreshed = True
+                cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+                ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
             finally:
                 if progress != None: progress.Destroy()
         elif self.frameActivated and data.refreshConvertersNeeded():
