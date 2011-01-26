@@ -168,10 +168,10 @@
         ${AndIf} $Python_pywin32 == "214"
         ${AndIf} $Python_wx == "2.8.11.0-ansi"
             StrCpy $Requirements "Met"
-           ${NSD_CreateLabel} 0 0 100% 16u "Congratulations the installer detects that you have a full install of all the prerequisites already! Please click 'Next' to continue."
+           ${NSD_CreateLabel} 0 0 100% 16u "Congratulations the installer detects that you have a full install of all the prerequisites already!$\nPlease click 'Next' to continue."
             Pop $Label
         ${Else}
-            ${NSD_CreateLabel} 0 0 100% 8u "The installer cannot find the following requirement(s) installed on your computer. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or best that you let this installer download them for you and execute them so that you have to do the minimum work. Please check the component(s) that you are fine with this installer downloading and installing:"
+            ${NSD_CreateLabel} 0 0 100% 8u "The installer cannot find the following requirement(s) installed on your computer.$\nIt is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them$\nor best that you let this installer download them for you and execute them so that you have to do the minimum work.$\nPlease check the component(s) that you are fine with this installer downloading and installing:"
                 Pop $Label
             IntOp $0 0 + 9
             ${If} $Python_Path == $Empty
