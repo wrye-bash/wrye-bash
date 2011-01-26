@@ -22592,7 +22592,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initData(self,type_patchers,progress)
         spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
         self.attrs = spellStats.attrs
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
