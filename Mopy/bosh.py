@@ -22594,7 +22594,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.attrs = spellStats.attrs
         progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
                 if srcPath not in patchesDir: continue
