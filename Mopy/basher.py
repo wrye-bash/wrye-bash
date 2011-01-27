@@ -218,6 +218,7 @@ settingDefaults = {
     'bash.installers.goodDlls':{},
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
+    'bash.installers.commentsSplitterSashPos':0,
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
@@ -2774,8 +2775,6 @@ class InstallersPanel(SashTankPanel):
         commentsPanel = wx.Panel(commentsSplitter)
         commentsLabel = staticText(commentsPanel, _('Comments'))
         self.gComments = wx.TextCtrl(commentsPanel, -1, style=wx.TE_MULTILINE)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Splitter settings
         checkListSplitter.SetMinimumPaneSize(50)
         checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
@@ -2786,7 +2785,7 @@ class InstallersPanel(SashTankPanel):
         commentsHeight = self.gPackage.GetSize()[1]
         commentsSplitter.SetMinimumPaneSize(commentsHeight)
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-        commentsSplitter.SetSashGravity(0.5)
+        commentsSplitter.SetSashGravity(1.0)
         #--Layout
         subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
         subPackagesSizer.SetSizeHints(subPackagesPanel)
@@ -2803,7 +2802,15 @@ class InstallersPanel(SashTankPanel):
         rightSizer.SetSizeHints(right)
         right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-        commentsSplitter.SetSashPosition(-commentsHeight)
+        commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+        # restore saved comments text box size
+        if 0 == commentsSplitterSavedSashPos:
+            commentsSplitter.SetSashPosition(-commentsHeight)
+        else:
+            commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+        #--Events
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -2860,6 +2867,14 @@ class InstallersPanel(SashTankPanel):
         active = len([x for x in self.data.itervalues() if x.isActive])
         text = _('Packages: %d/%d') % (active,len(self.data.data))
         statusBar.SetStatusText(text,2)
+
+    def _OnCommentsSplitterSashPosChanged(self, event):
+        # ignore spurious events caused by invisible layout adjustments during initialization
+        if not self.refreshed: return
+        # save new comments text box size
+        splitter = event.GetEventObject()
+        sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
+        settings['bash.installers.commentsSplitterSashPos'] = sashPos
 
     #--Details view (if it exists)
     def SaveDetails(self):
