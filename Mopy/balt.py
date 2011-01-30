@@ -221,9 +221,22 @@ def bell(arg=None):
     return arg
 
 def tooltip(text,wrap=50):
-    """Returns tolltip with wrapped copy of text."""
+    """Returns tooltip with wrapped copy of text."""
     text = textwrap.fill(text,wrap)
     return wx.ToolTip(text)
+
+class textCtrl(wx.TextCtrl):
+    """wx.TextCtrl with automatic tooltip if text goes past the width of the control."""
+    def __init__(self, parent, id=defId, name='', size=defSize, style=0, autotooltip=True):
+        wx.TextCtrl.__init__(self,parent,id,name,size=size,style=style)
+        if autotooltip:
+            self.Bind(wx.EVT_TEXT, self.OnTextChange)
+
+    def OnTextChange(self,event):
+        if self.GetClientSize()[0] < self.GetTextExtent(event.GetString())[0]:
+            self.SetToolTip(tooltip(event.GetString()))
+        else:
+            self.SetToolTip(tooltip(''))
 
 def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
         name='button',id=defId,onClick=None,tip=None,onRClick=None):
