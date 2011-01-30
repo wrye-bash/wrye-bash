@@ -72,7 +72,7 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 #--Balt
 import balt
 from balt import tooltip, fill, bell
-from balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl
+from balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from balt import leftSash, topSash
 from balt import spacer, hSizer, vSizer, hsbSizer, vsbSizer
 from balt import colors, images, Image
@@ -1064,7 +1064,6 @@ class INIList(List):
         #--Image List
         checkboxesIL = colorChecks.GetImageList()
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--Events
         #--ScrollPos
 
     def CountTweakStatus(self):
@@ -1551,19 +1550,19 @@ class ModDetails(wx.Window):
         self.version = staticText(self,'v0.0')
         id = self.fileId = wx.NewId()
         #--File Name
-        self.file = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.file = textCtrl(self,id,size=(textWidth,-1))
         self.file.SetMaxLength(200)
         self.file.Bind(wx.EVT_KILL_FOCUS, self.OnEditFile)
         self.file.Bind(wx.EVT_TEXT, self.OnTextEdit)
         #--Author
         id = self.authorId = wx.NewId()
-        self.author = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.author = textCtrl(self,id,size=(textWidth,-1))
         self.author.SetMaxLength(512)
         wx.EVT_KILL_FOCUS(self.author,self.OnEditAuthor)
         wx.EVT_TEXT(self.author,id,self.OnTextEdit)
         #--Modified
         id = self.modifiedId = wx.NewId()
-        self.modified = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.modified = textCtrl(self,id,size=(textWidth,-1))
         self.modified.SetMaxLength(32)
         wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
         wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
@@ -2673,7 +2672,7 @@ class InstallersList(balt.Tank):
         ##Enter - Open selected Installer/
             if len(self.GetSelected()):
                 path = self.data.dir.join(self.GetSelected()[0])
-            if path.exists(): path.start()
+                if path.exists(): path.start()
         else:
             event.Skip()
 
@@ -2707,6 +2706,18 @@ class InstallersList(balt.Tank):
                 index = self.GetIndex(self.GetSelected()[0])
                 if index != -1:
                     self.gList.EditLabel(index)
+        ##Ctrl+Shift+N - Add a marker
+        elif (event.ControlDown() and event.ShiftDown()) and event.GetKeyCode() in (ord('n'),ord('N')):
+            index = self.GetIndex(GPath('===='))
+            if index == -1:
+                self.data.addMarker('====')
+                self.data.refresh(what='OS')
+                gInstallers.RefreshUIMods()
+                index = self.GetIndex(GPath('===='))
+            if index != -1:
+                self.ClearSelected()
+                self.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+                self.gList.EditLabel(index)
         event.Skip()
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -6677,12 +6688,16 @@ class Installers_AddMarker(Link):
 
     def Execute(self,event):
         """Handle selection."""
-        name = balt.askText(self.gTank,_('Enter a title:'),_('Add Marker'))
-        if not name: return
-        name = '=='+name+'=='
-        self.data.addMarker(name)
-        self.data.refresh(what='OS')
-        gInstallers.RefreshUIMods()
+        index = self.gTank.GetIndex(GPath('===='))
+        if index == -1:
+            self.data.addMarker('====')
+            self.data.refresh(what='OS')
+            gInstallers.RefreshUIMods()
+            index = self.gTank.GetIndex(GPath('===='))
+        if index != -1:
+            self.gTank.ClearSelected()
+            self.gTank.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            self.gTank.gList.EditLabel(index)
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AnnealAll(Link):
