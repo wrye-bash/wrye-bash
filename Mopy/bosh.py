@@ -15123,10 +15123,15 @@ class ScriptText:
                         progress(((1/y)*z),_("Skipping file %s.") % (name))
                         continue
                     progress(((1/y)*z),_("Reading file %s.") % (name))
-                    with open(os.path.join(root, name),"r") as text:
+                    ## Python 2.6+ syntax disabled for Python 2.5 compatibility
+                    ## with open(os.path.join(root, name),"r") as text:
+                    try:
+                        text = open(os.path.join(root, name),"r")
                         lines = text.readlines()
+                    finally: 
+                        text.close()
                     modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
-                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
+                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
                     eid_data[eid] = (scriptText, FormID)
         finally: #just to ensure the progress bar gets destroyed
             progress = progress.Destroy()
