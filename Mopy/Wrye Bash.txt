@@ -2242,16 +2242,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-== 292 [31/12/2011] [PacificMorrowind]
+== 292 [31/12/2011] [myk002,PacificMorrowind]
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
-  * Fix for typo in CBash SpellStats Patcher
+  * Fix for typos in CBash SpellStats Patcher
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
+  * Size of comments section saved between launches (contributed by myk002)
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
+  * Import Scripts fixed to maintain Python 2.5 compatibility.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
