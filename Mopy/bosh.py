@@ -26068,6 +26068,11 @@ class GmstTweaker(MultiTweaker):
             (_('Unlimited'),999999.0),
             (_('Custom'),0.0),
             ),
+        GmstTweak(False,_('No NPC Blood'),
+            _("Disables NPC Blood Splatters."),
+            ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
+            (_('No Blood'),'','','','','',''),
+            ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
     def getWriteClasses(self):
@@ -26564,6 +26569,11 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('20',20.0),
             (_('Unlimited'),999999.0),
             (_('Custom'),0.0),
+            ),
+        CBash_GmstTweak(False,_('No NPC Blood'),
+            _("Disables NPC Blood Splatters."),
+            ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
+            (_('No Blood'),'','','','','',''),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -27889,7 +27899,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons. Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'), 0),
             (_('Only Female NPCs'), 1),
@@ -27934,7 +27944,7 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.'),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons. Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'),  0),
             (_('Only Female NPCs'),  1),

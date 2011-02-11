@@ -1522,7 +1522,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __As Intended: Imps__
   * Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.
 * __Mayu's Animation Overhaul Skeleton Tweaker__
-  * Sets NPC skeletons paths to match that required for MAO to work.
+  * Sets NPC skeletons paths to match that required for MAO to work. REQUIRES Mayu's Animation Overhaul or it will almost certainly cause CTDs
 * __No Bloody Creatures__
   * Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
 * __Redguard FGTS Nuller__
@@ -2247,6 +2247,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
   * Fix for typos in CBash SpellStats Patcher
+  * Added note to MAO patcher that it requires MAO.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
