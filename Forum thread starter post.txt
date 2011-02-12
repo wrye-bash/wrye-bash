@@ -78,28 +78,100 @@ For mod-makers:
 [list][*]TheLORDofDOOM has taken on making a FO3 version, Wrye4Fallout3... and here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [url="http://forums.bethsoft.com/index.php?/topic/1079607-relz-garybash/"]garybash[/url].[/list]
 [b]Other news[/b]:
 [list][*]There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.[/list]
-[b]Latest Versions[/b]:
-=== 290 [15/10/2010] [PacificMorrowind]
-=== 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
+[b]Latest Version(s)[/b]:
+=== 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 [spoiler]
-[list]=== 290 [15/10/2010] [PacificMorrowind]
-[*] fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
-[*] added Disable/Enable ini tweaks for Screenshots.
-[/list]
-[list]=== 289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]
-[*] Bashed Patch:[list]
-  [*] Fixed Reweigh Staff logger
-  [*] Fixed some missing gmstIds for non-CBash build of the tweak settings (gmst tweaker)
-  [*] Added CBash version of Import Actors: Spells
-  [*] optimizations/fixes applied to Import Actors: Spells (both CBash & non-CBash versions)
-  [*] Actors.Skeleton importer added
-  [*] skeleton removed from graphics import for creatures.
-  [*] NpcFacesForceFullImport tag added.[/list]
-[*] Improved Nehrim Support (contributed by roxahris) 
-[*] A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine. 
-[*] 7z reverted to version 9.15 and then updated to version 9.17
-[*] Unicode/ansi fatal installer errors fixed. (it still may copy slightly er funkified file names of some non-ASCII char files).
-[*] DnD ordering in Installers fixed for Non-English installs (contributed by valda68k)
-[*] Escaping of quotations in names export (contributed by valda68k)
-[*] fix/improvement for oneInstanceChecker (contributed by myk002)
+=== 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
+[list][*] Bashed Patch:[list]
+  [*] typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
+  [*] Tweak Actors:[list]
+    [*] Quiet Feet patcher added.
+    [*] Irresponsible Creatures tweaker added (thanks to Joben for the idea).[/list]
+  [*] Tweak Assorted:[list]
+    [*] another skip added to All Clothes Playable patcher
+    [*] Script Effect Silencer added.
+    [*] Default Icons tweaker added.[/list]
+  [*] Import Names[list]
+    [*] Crowded Roads Revisited NPC names csv file added (contributed by Smooth)
+    [*] Crowded Roads Revamped NPC names csv file added (contributed by Spotty42)
+    [*] Crowded Roads Revisited NPC names alternate csv file added (contributed by Gratis_monsta)
+    [*] Crowded Cities 30/15 NPC names csv file added (contributed by Gratis_monsta)
+    [*] Crowded Cities 30/15 NPC names alternate csv file added (contributed by Gratis_monsta)
+    [*] PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)
+    [*] TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)[/list]
+  [*] Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).[/list]
+[*] BAIN:[list]
+  [*] fix so that the end of the display of the number of packages does not get cut off.
+  [*] Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
+  [*] Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+  [*] Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
+  [*] Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
+  [*] New keyboard shortcuts added:[list]
+    [*] Enter: Open archive/project.
+    [*] F2: Rename archive/project.[/list]
+  [*] New ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
+  [*] 3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
+  [*] 7z dll/exe updated to version 9.20
+  [*] New Option to enable installation of OBSE Plugin dlls with large warning.
+    . Also main menu options for import/export of the dll installation permissions.
+  [*] hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
+  [*] new 'Open at Planet Elderscrolls' menu item.
+  [*] new 'Open at Google' menu item
+  [*] all Open at [*] menu items moved into 'Open At' submenu.
+  [*] added .001 as a valid read extension - as in BAIN now supports multipart archives.
+  [*] slow double click renames packages (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts).
+  [*] fix for an couple at exit crash bug.
+  [*] Installers panel now allows dropping files onto it, giving the option of copying or moving the files.
+  [*] Esp/ms can now be renamed via the Esp/m Filter box (just right click them).
+  [*] Changed the rename installer dialog for in place renaming.
+  [*] Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
+  [*] Widgets on installers tab made resizable (contributed by myk002).[/list]
+[*] BAIN Wizards:[list]
+  [*] packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
+  [*] added ability to use default images located in the 'Mopy\Wizard Images' directory[list]
+    [*] Example: If you use 'Wizard Images\Yes.jpg'[list]
+      [*] BAIN Wizards first checks if it exists in your package. If it does, it uses that and stops looking.
+      [*] Then BAIN Wizards then checks to see if it exists in 'Mopy\Wizard Images'. If it does, it uses that and stops looking.[/list][/list]
+  [*] 3 new Wizard functions[list]
+    [*] RenameEspm "original name" "new name".
+    [*] ResetEspmName "original name".
+    [*] ResetAllEspmNames.[/list][/list]
+[*] Saves Tab:[list]
+  [*] Rename Save(s) command added (in the saves menu->file).
+  [*] Re-number Save(s) command added (in the saves menu->file).
+  [*] Rename Player command added.[/list]
+[*] General:[list]
+  [*] fix for launcher code which prevented launching in some cases (contributed by myk002)
+  [*] fix for move/copy saves so that Default is not selectable if already in Default profile.
+  [*] fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)
+  [*] Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
+  [*] Backup/Restore settings options added (contributed by Gaticus)
+  [*] Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
+  [*] Ini Tweaking fixed to work fine with Nehrim.
+  [*] [[#|Launch Buttons]] for more applications are now supported via Bash.ini (contributed by Metallicow).
+    . Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap, WTV, MaPZone, NVIDIA Melody, Switch, Freeplane.
+    [*] Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
+  [*] Bash.ini typo fixes (contributed by Metallicow).
+  [*] Exception handling fixes to maintain Python 2.5 compatibility.
+  [*] Bash Installer automatically handling requirements created... still a bit fuzzy but [*]should[*] work in most cases.
+  [*] File read error warning printout fixed
+  [*] Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+  [*] The csv file must now end in "[*]_NPC_Levels.csv".
+  [*] [[#|Export/Import Factions]] may now be used directly on a mod.
+  [*] [[#|Export/Import Relations]] may now be used directly on a mod.
+  [*] Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names.
+  [*] Minor improvements to Export/Import Map Markers .
+  [*] [[#|Export/Import Sigil Stones]] added.
+  [*] [[#|Export/Import Spell Stats]] re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
+  [*] [[#|Export/Import Ingredients]] added.
+  [*] Status bar text when mousing over improved to display all applicable messages instead of only one.
+  [*] Fixes/clarifications in wizards.txt/html.
+  [*] Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dieing warns ands continues to launch.
+  [*] Experimental unicode support re-added as an option that is disabled by default.[list]
+    [*] Allows Bash and BAIN to work with extended character sets.
+    [*] Requires the unicode version of wxPython to be installed.
+    [*] Set bEnableUnicode in bash.ini to True to test it.[/list]
+  [*] Applications started by Bash no longer prevent Bash from being run if Bash is closed and then attempted to be reopened while the application is still running.
+  [*] INI Tweaks renamed to be more consistent
+  [*] Added default grass fade INI Tweak (provided by Metallicow)
 [/list][/spoiler]
