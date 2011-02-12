@@ -7466,6 +7466,7 @@ class ModInfo(FileInfo):
         tags = modInfos.table.getItem(self.name,'bashTags',None)
         if tags is None:
             tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
+            tags -= (configHelpers.getBashRemoveTags(self.name) or set())
         # Filter and remove old tags
         tags = tags & allTagsSet
         if tags & oldTagsSet:
@@ -9267,22 +9268,23 @@ class ConfigHelpers:
         self.bossMasterTime = 0
         self.bossUserTime = 0
         self.bossMasterTags = {}
+        self.bossRemoveTags = {}
         #--Mod Rules
         self.name_ruleSet = {}
 
     def refresh(self):
         """Reloads tag info if file dates have changed."""
         #--Boss Master List or Taglist
-        path,userpath,mtime,utime,tags = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime, self.bossMasterTags,)
+        path,userpath,mtime,utime,tags,removeTags = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime, self.bossMasterTags,self.bossRemoveTags)
         reFcomSwitch = re.compile('^[<>]')
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
+        reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
         if path.exists():
             if path.mtime != mtime:
                 tags.clear()
                 ins = path.open('r')
                 mod = None
-                reBashTags = re.compile(r'%\s+{{BASH:([^}]+)}')
                 for line in ins:
                     line = reFcomSwitch.sub('',line)
                     line = reComment.sub('',line)
@@ -9291,8 +9293,12 @@ class ConfigHelpers:
                     if maMod:
                         mod = maMod.group(1)
                     elif maBashTags and mod:
-                        modTags = maBashTags.group(1).split(',')
+                        modTags = maBashTags.group(2).split(',')
                         modTags = map(string.strip,modTags)
+                        if maBashTags.group(5) and maBashTags.group(6):
+                            modRemoveTags = maBashTags.group(6).split(',')
+                            modRemoveTags = map(string.strip,modRemoveTags)
+                            removeTags[GPath(mod)] = tuple(modRemoveTags)
                         tags[GPath(mod)] = tuple(modTags)
                 ins.close()
                 self.bossMasterTime = path.mtime
@@ -9300,7 +9306,6 @@ class ConfigHelpers:
             if userpath.mtime != utime:
                 ins = userpath.open('r')
                 mod = None
-                reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)(%\s+{{BASH:)([^}]+)(}})')
                 reRule = re.compile(r'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)')
                 for line in ins:
                     maMod = reRule.match(line)
@@ -9312,15 +9317,29 @@ class ConfigHelpers:
                         modTags = map(string.strip,modTags)
                         if GPath(mod) in tags and maBashTags.group(1) != 'REPLACE: ':
                             tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
+                            if maBashTags.group(5) and maBashTags.group(6):
+                                modRemoveTags = maBashTags.group(6).split(',')
+                                modRemoveTags = map(string.strip,modRemoveTags)
+                                removeTags[GPath(mod)] = tuple(list(removeTags[GPath(mod)]) + list(modRemoveTags))
                             continue
                         tags[GPath(mod)] = tuple(modTags)
+                        if maBashTags.group(6) and maBashTags.group(7):
+                            modRemoveTags = maBashTags.group(7).split(',')
+                            modRemoveTags = map(string.strip,modTags)
+                            removeTags[GPath(mod)] = tuple(modRemoveTags)
                 ins.close()
                 self.bossUserTime = userpath.mtime
-
+        
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName in self.bossMasterTags:
             return set(self.bossMasterTags[modName])
+        else: return None
+        
+    def getBashRemoveTags(self,modName):
+        """Retrieves bash tags for given file."""
+        if modName in self.bossRemoveTags:
+            return set(self.bossRemoveTags[modName])
         else: return None
 
     #--Mod Checker ------------------------------------------------------------

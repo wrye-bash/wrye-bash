@@ -2255,6 +2255,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
   * Import Scripts fixed to maintain Python 2.5 compatibility.
+  * Now automatically removes bad tags from mods as per BOSS tagging suggestions.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
