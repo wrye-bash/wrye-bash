@@ -9293,7 +9293,7 @@ class ConfigHelpers:
                     if maMod:
                         mod = maMod.group(1)
                     elif maBashTags and mod:
-                        modTags = maBashTags.group(2).split(',')
+                        modTags = maBashTags.group(3).split(',')
                         modTags = map(string.strip,modTags)
                         if maBashTags.group(5) and maBashTags.group(6):
                             modRemoveTags = maBashTags.group(6).split(',')
