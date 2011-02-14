@@ -2242,12 +2242,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-== 292 [31/12/2011] [myk002,PacificMorrowind]
+== 292 [31/12/2011] [Leandro Conde,myk002,PacificMorrowind]
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
   * Fix for typos in CBash SpellStats Patcher
   * Added note to MAO patcher that it requires MAO.
+  * Tweak Settings (GMST) patcher now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
@@ -2255,7 +2256,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
   * Import Scripts fixed to maintain Python 2.5 compatibility.
-  * Now automatically removes bad tags from mods as per BOSS tagging suggestions.
+  * Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
@@ -2302,7 +2303,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Changed the rename installer dialog for in place renaming.
   * Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
   * Widgets on installers tab made resizable (contributed by myk002).
-
 * BAIN Wizards:
   * packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
   * added ability to use default images located in the 'Mopy\Wizard Images' directory

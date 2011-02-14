@@ -9329,13 +9329,13 @@ class ConfigHelpers:
                             removeTags[GPath(mod)] = tuple(modRemoveTags)
                 ins.close()
                 self.bossUserTime = userpath.mtime
-        
+
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName in self.bossMasterTags:
             return set(self.bossMasterTags[modName])
         else: return None
-        
+
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName in self.bossRemoveTags:
@@ -15147,7 +15147,7 @@ class ScriptText:
                     try:
                         text = open(os.path.join(root, name),"r")
                         lines = text.readlines()
-                    finally: 
+                    finally:
                         text.close()
                     modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
@@ -25091,6 +25091,7 @@ class GlobalsTweaker(MultiTweaker):
         patchRecords = self.patchFile.GLOB
         id_records = patchRecords.id_records
         for record in modFile.GLOB.getActiveRecords():
+            if record.flags1.deleted: continue
             if mapper(record.fid) in id_records: continue
             for tweak in self.enabledTweaks:
                 if record.eid.lower() == tweak.key:
