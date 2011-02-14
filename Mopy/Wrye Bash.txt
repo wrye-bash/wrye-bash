@@ -1431,9 +1431,11 @@ __Importers__ are components that import specific information from selected mods
 * __Guard Names__
   * A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
 ;  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123| Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
-* __%ModName% Names__
-  * A names patcher file that names/renames NPCs etc. in specified mod.
-  * Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth
+* ___OOO Potion Names__
+  * A names patcher file that renames the alcholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
+* __Random NPC Names/Random NPC Alternate Names__
+  * A names patcher file that names/renames NPCs etc. in specified mods.
+  * Supports/Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth, Tamriel Travellers ~ Gratis_monsta, Crowded Cities 15/30 ~ Gratis_monsta, PT_RoamingNPCs ~ Gratis_monsta. (Will work for any combination of one or more of those - does not require them all).
 * __Rational Names__
   * A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   * Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -2242,13 +2244,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-== 292 [31/12/2011] [Leandro Conde,myk002,PacificMorrowind]
+== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind]
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
   * Fix for typos in CBash SpellStats Patcher
   * Added note to MAO patcher that it requires MAO.
   * Tweak Settings (GMST) patcher now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
+  * Import Names:
+    * Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
+    * Added OOO Potion Names.csv - reverts OOO's alchoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
+    * Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
