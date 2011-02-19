@@ -1,0 +1,19 @@
+
+
+
+Title: Wrye Bash Installer Tab Presenter Functional Specification
+Author: Myk Taylor (myk002)
+Creation Date: 2011 Jan 10
+
+
+
+Presenter
+  Keeps data display state
+  Performs filtering and searches
+  Sends user-initiated commands to model
+  Streams small, efficient diffs to update view state
+
+
+Show names of group members in group name when collapsed.
+
+actions on mod groups filter down to group members.  visually indicate this by auto-selecting group members when a group head is selected

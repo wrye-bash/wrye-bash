@@ -1,0 +1,19 @@
+
+
+Title: Wrye Bash Installer Tab Presenter Design Document
+Author: Myk Taylor (myk002)
+Creation Date: 2011 Jan 10
+
+
+
+Presenter Internals
+-------------------
+-- Presenter Thread Model --
+The presenter will be completely CPU bound, so there is no reason to have more than one thread manipulating data (assuming the entire presenter module runs in a single process/GIL).  This will conveniently remove any need for internal synchronization, and simplifies the design of this complex component significantly.  There will be one other thread, though, that transfers requests from the cross-process queue to the internal request queue, which will contain both updates from the model and requests from the view, and from which the single presenter thread will dequeue and process commands.  The re-queueing thread will also handle cancellation requests by adding them to a separate list that the data processing thread can check periodically.
+
+-- Presenter Data Structures --
+tree of currently visible nodes with their cached attributes
+search-related metadata
+currentRequestId
+cancelledRequestIds list
+ViewCommand output queue

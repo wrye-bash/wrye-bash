@@ -1,0 +1,3 @@
+#!/bin/bash
+
+WINEPREFIX="$HOME/games/windows/Oblivion" wine 'c:\Python26\python.exe' 'baittest.py'

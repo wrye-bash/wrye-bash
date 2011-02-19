@@ -1,0 +1,93 @@
+
+
+Title: Wrye Bash Installer Tab Presenter API Specification
+Author: Myk Taylor (myk002)
+Creation Date: 2011 Jan 10
+
+
+Constants:
+  FILTER_ID_INSTALLERS_HIDDEN
+  FILTER_ID_INSTALLERS_INSTALLED
+  FILTER_ID_INSTALLERS_NOT_INSTALLED
+  FILTER_ID_INSTALLERS_FILES
+  FILTER_ID_DATA_ACTIVE
+  FILTER_ID_DATA_INACTIVE
+  FILTER_ID_DATA_ORIGIN_KNOWN
+  FILTER_ID_DATA_ORIGIN_UNKNOWN
+  FILTER_ID_DATA_FILES
+
+
+class Presenter:
+  __init__(model, viewCommandQueue, presenterStateRootPath=None)
+  start(self)
+  shutdown(self)
+
+  pause(self, value)
+  force_save_state(self)
+
+  toggle_filter_state(filterId) returns requestId
+  set_search_filter(searchExpression) returns requestId
+  set_selected(list of nodeIds) returns requestId
+  set_expanded(nodeId, value) returns requestId
+  get_action_list() returns requestId
+  do_action(actionId)
+
+  viewCommandQueue enqueues ViewCommand objects, tagged with associated requestIds, if applicable
+
+
+class ViewCommand:
+  requestId (int)
+  isLastCommand (boolean)
+
+class SetSearchString(ViewCommand):
+  oldStr (str)
+  newStr (str)
+  selStartPos (int)
+  selLen (int)
+  suggestions (list of str)
+
+class SetToggleFilter(ViewCommand):
+  filterId (int)
+  state (boolean)
+
+class RemoveNode(ViewCommand):
+  nodeId (int)
+
+class MoveNode(ViewCommand):
+  nodeId (int)
+  newParentNodeId (int)
+  newPredecessorNodeId (int)
+
+class UpdateNode(ViewCommand):
+  nodeId (int)
+  style
+  label (str)
+  checkState (tristate)
+
+class AddNode(UpdateNode):
+  nodeId (int)
+  parentNodeId (int)
+  predecessorNodeId (int)
+
+class ShowStatus(ViewCommand):
+  msgMarkup (str)
+
+class ShowError(ViewCommand):
+  msg (str)
+
+class ShowDetails(ViewCommand):
+  msgMarkup (str)
+
+class ExpandNode(ViewCommand):
+  nodeId (int)
+
+class CollapseNode(ViewCommand):
+  nodeId (int)
+
+class SetSelected(ViewCommand):
+  nodeIds (list of int)
+  state (boolean)
+
+class ShowActionList(ViewCommand):
+  actionIds (list of int)
+  labels (list of str)

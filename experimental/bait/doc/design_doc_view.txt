@@ -1,0 +1,52 @@
+
+
+Title: Wrye Bash Installer Tab View Design Document
+Author: Myk Taylor (myk002)
+Creation Date: 2011 Jan 10
+
+
+  checkboxes for possible actions: inherit settings, merge ini files, delete old version, install
+
+1st choice for simplicity: CallLater and PubSub
+Performance improvement with PostEvent, 1 event per action?
+Performance improvement with separate action queue, batch processing per PostEvent?
+
+instead of SearchCtrl, might use something based on: http://wiki.wxpython.org/TextCtrlAutoComplete
+
+View Internals
+--------------
+-- View Thread Model and Flow --
+The view will consist of 2 threads of execution.  The first will be the wxPython event loop thread, and will be the only thread that interacts with GUI elements (since the GUI elements are not thread safe).  It handles all widget events and may call presenter methods as a result.  If it receives a VIEW_COMMAND_READY_EVT event, it processes GUI update commands from an internal queue.  To maintain UI responsiveness, it will re-enqueue the VIEW_COMMAND_READY_EVT event and return control to wxPython if processing all the enqueued commands takes too long.
+
+The second thread will dequeue ViewCommand objects from the presenter output queue, convert them into internal view terms (e.g. convert model/presenter nodeIds into treeView itemIds), and enqueue the preprocessed objects into the internal queue.  Then the dequeuer thread will send an event to the main thread, which will apply the commands to the GUI widgets.
+
+If the event loop thread calls any of the presenter's methods, it will receive a requestId as a return value.  The presenter may enqueue several commands on its output queue, each tagged with the requestId, before it completely fulfills the request.  The last command required to fulfill the request will be tagged as the final command for that requestId.  Thus the view can choose to block until a request is competely fulfilled, for example when a node is expanded or a filter toggle is changed, so the user doesn't see the confusing intermediate states.
+
+The view should not change presenter-related GUI state directly as a result of user action.  For example, when a user checks a checkbox, the view should not automatically check the item and its children.  The view should notify the presenter of the requested change in check state.  The presenter will, after notifying and confirming with the model, enqueue ViewCommand objects that will direct the view to check the appropriate items.  This allows the presenter to customize the effects of user actions.
+
+-- View Data Structures --
+The view will maintain forward and reverse mappings between nodeId (presenter terminology) to itemId (tree view terminology).  Lookups will be done in both threads, but additions and deletions will only be done by the event loop thread.  No synchronization is required since additions are always safe, and if a node is deleted, it will not be referenced in any later commands.
+
+View State
+---------------
+guid selectedNode
+Queue<guid> changedNodes
+HashMap<guid, (lock, snapshotVersion, treeItem> treeItems
+
+View Algorithms
+---------------
+callback adds guids to the refreshQueue
+thread pops the queue:
+  if node is visible:
+  lock viewState for the target guid
+  update visible state
+
+// main algorithm
+model.start(callback);
+nodeChildren = model.getNodeChildren(0);
+numProjects = nodeChildren.directories.length + nodeChildren.files.length;
+projectsList.allocate(numProjects);
+HashMap<projectName, projectIndex> projectOrder();
+for project in saved load order:
+  projectOrder.add(project, index);
+  projectsList.add(project)

@@ -1,0 +1,293 @@
+# -*- coding: utf-8 -*-
+#
+# bait/view/bait_view.py
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash.  If not, see <http://www.gnu.org/licenses/>.
+#
+#  Wrye Bash Copyright (C) 2011 Myk Taylor
+#
+# =============================================================================
+
+import logging
+import wx
+import wx.gizmos
+
+from .. import presenter
+from .impl import data_panel, filtered_tree, command_thread
+
+
+_logger = logging.getLogger(__name__)
+
+
+class BaitView(wx.Panel):
+    def __init__(self, parent, presenter_, viewStateRootPath=None):
+        '''Creates and configures bait widget hierarchies'''
+        _logger.debug("initializing bait view")
+        wx.Panel.__init__(self, parent)
+
+        # assemble widget hierarchy
+        # top-level splitter between left and right panels
+        splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
+        topSplitter = wx.gizmos.ThinSplitterWindow(self, style=splitterStyle)
+
+        # main section
+        mainPanel = wx.Panel(topSplitter)
+        stateButton = wx.BitmapButton(mainPanel, bitmap=wx.ArtProvider.GetBitmap(wx.ART_REMOVABLE, client=wx.ART_BUTTON), style=wx.NO_BORDER)
+        search = wx.SearchCtrl(mainPanel)
+        dataPanel = data_panel.DataPanel(mainPanel, presenter_)
+        statusSplitter = wx.gizmos.ThinSplitterWindow(mainPanel, style=splitterStyle)
+        self._packageTree = filtered_tree.PackagesTree(statusSplitter,
+                (presenter.FILTER_ID_PACKAGES_HIDDEN, presenter.FILTER_ID_PACKAGES_INSTALLED, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED),
+                ("Hidden (%d/%d)", "Installed (%d/%d)", "Not Installed (%d/%d)"), presenter_)
+        infoStyle = wx.TE_READONLY|wx.TE_MULTILINE
+        oneLineHeight = search.GetSize()[1]
+        statusWindow = wx.TextCtrl(statusSplitter, size=(-1, oneLineHeight), style=infoStyle, value="initializing...")
+
+        # details section
+        commentsSplitter = wx.gizmos.ThinSplitterWindow(topSplitter, style=splitterStyle)
+        detailsSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
+        projectInfoPanel = wx.Panel(detailsSplitter)
+        projectInfoLabel = wx.StaticText(projectInfoPanel)
+        projectInfoTabs = wx.Notebook(projectInfoPanel)
+        generalTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        selectedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        dirtyTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        conflictsTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        matchedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        missingTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        mismatchedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        skippedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        fileTreeSplitter = wx.gizmos.ThinSplitterWindow(detailsSplitter, style=splitterStyle)
+        fileTreePanel = wx.Panel(fileTreeSplitter)
+        fileTreeLabel = wx.StaticText(fileTreePanel, label="Package contents")
+        self._fileTree = filtered_tree.FilesTree(fileTreePanel,
+                (presenter.FILTER_ID_FILES_PLUGINS, presenter.FILTER_ID_FILES_RESOURCES, presenter.FILTER_ID_FILES_OTHER),
+                ("Plugins (%d)", "Resources (%d)", "Other (%d)"), presenter_)
+        fileInfoPanel = wx.Panel(fileTreeSplitter)
+        fileInfoLabel = wx.StaticText(fileInfoPanel, label="File details")
+        fileInfo = wx.TextCtrl(fileInfoPanel, style=infoStyle)
+        commentsPanel = wx.Panel(commentsSplitter)
+        commentsLabel = wx.StaticText(commentsPanel, label="Comments")
+        commentsText = wx.SearchCtrl(commentsPanel, size=(-1, oneLineHeight), style=wx.TE_MULTILINE)
+
+        # customize widgets
+        stateButton.SetToolTipString("Settings")
+
+        # read-only text controls should have same background color as parent
+        bgColor = mainPanel.GetBackgroundColour()
+        statusWindow.SetBackgroundColour(bgColor)
+        generalTab.SetBackgroundColour(bgColor)
+        selectedTab.SetBackgroundColour(bgColor)
+        dirtyTab.SetBackgroundColour(bgColor)
+        conflictsTab.SetBackgroundColour(bgColor)
+        matchedTab.SetBackgroundColour(bgColor)
+        missingTab.SetBackgroundColour(bgColor)
+        mismatchedTab.SetBackgroundColour(bgColor)
+        skippedTab.SetBackgroundColour(bgColor)
+        fileInfo.SetBackgroundColour(bgColor)
+
+        # customize search controls
+        # see http://groups.google.com/group/wxpython-users/browse_thread/thread/6e999b3013e383f6
+        # for how to fix text color bug
+        search.SetDescriptiveText("Search...")
+        search.ShowCancelButton(True)
+        commentsText.SetDescriptiveText("Enter comments for this project here")
+        commentsText.ShowSearchButton(False)
+
+        # add tabs to details notebook
+        projectInfoTabs.AddPage(generalTab, "General")
+        projectInfoTabs.AddPage(selectedTab, "Selected")
+        projectInfoTabs.AddPage(dirtyTab, "Dirty")
+        projectInfoTabs.AddPage(conflictsTab, "Conflicts")
+        projectInfoTabs.AddPage(matchedTab, "Matched")
+        projectInfoTabs.AddPage(missingTab, "Missing")
+        projectInfoTabs.AddPage(mismatchedTab, "Mismatched")
+        projectInfoTabs.AddPage(skippedTab, "Skipped")
+
+        # set up splitters
+        statusSplitter.SetMinimumPaneSize(oneLineHeight)
+        statusSplitter.SplitHorizontally(self._packageTree, statusWindow)
+        statusSplitter.SetSashGravity(1.0) # only resize installerTree
+        fileTreeSplitter.SetMinimumPaneSize(50)
+        fileTreeSplitter.SplitVertically(fileTreePanel, fileInfoPanel)
+        fileTreeSplitter.SetSashGravity(0.5) # resize both panels equally
+        detailsSplitter.SetMinimumPaneSize(100)
+        detailsSplitter.SplitHorizontally(projectInfoPanel, fileTreeSplitter)
+        detailsSplitter.SetSashGravity(0.5) # resize both panels equally
+        commentsSplitter.SetMinimumPaneSize(oneLineHeight)
+        commentsSplitter.SplitHorizontally(detailsSplitter, commentsPanel)
+        commentsSplitter.SetSashGravity(1.0) # only resize details
+        topSplitter.SetMinimumPaneSize(200)
+        topSplitter.SplitVertically(mainPanel, commentsSplitter)
+        topSplitter.SetSashGravity(1.0) # only resize mainPanel
+
+        # configure layout
+        searchSizer = wx.BoxSizer(wx.HORIZONTAL)
+        searchSizer.Add(stateButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
+        searchSizer.Add(search, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(searchSizer, 0, wx.EXPAND)
+        mainSizer.Add(dataPanel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        mainSizer.Add(statusSplitter, 1, wx.EXPAND)
+        mainPanel.SetMinSize(mainSizer.GetMinSize())
+        mainPanel.SetSizer(mainSizer)
+
+        projectInfoSizer = wx.BoxSizer(wx.VERTICAL)
+        projectInfoSizer.Add(projectInfoLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        projectInfoSizer.Add(projectInfoTabs, 1, wx.EXPAND)
+        projectInfoPanel.SetMinSize(projectInfoSizer.GetMinSize())
+        projectInfoPanel.SetSizer(projectInfoSizer)
+
+        fileTreeSizer = wx.BoxSizer(wx.VERTICAL)
+        fileTreeSizer.Add(fileTreeLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        fileTreeSizer.Add(self._fileTree, 1, wx.EXPAND)
+        fileTreePanel.SetMinSize(fileTreeSizer.GetMinSize())
+        fileTreePanel.SetSizer(fileTreeSizer)
+
+        fileInfoSizer = wx.BoxSizer(wx.VERTICAL)
+        fileInfoSizer.Add(fileInfoLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        fileInfoSizer.Add(fileInfo, 1, wx.EXPAND)
+        fileInfoPanel.SetMinSize(fileInfoSizer.GetMinSize())
+        fileInfoPanel.SetSizer(fileInfoSizer)
+
+        commentsSizer = wx.BoxSizer(wx.VERTICAL)
+        commentsSizer.Add(commentsLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        commentsSizer.Add(commentsText, 1, wx.EXPAND)
+        commentsPanel.SetMinSize(commentsSizer.GetMinSize())
+        commentsPanel.SetSizer(commentsSizer)
+
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer.Add(topSplitter, 1, wx.EXPAND)
+        self.SetMinSize(topSizer.GetMinSize())
+        self.SetSizer(topSizer)
+        
+        # set up state
+        self._splitters = {"status":statusSplitter, "fileTree":fileTreeSplitter,
+                           "details":detailsSplitter, "comments":commentsSplitter, "top":topSplitter}
+        self._detailsTabIndexToTabId = {0:presenter.DETAILS_TAB_ID_GENERAL, 1:presenter.DETAILS_TAB_ID_SELECTED, 2:presenter.DETAILS_TAB_ID_DIRTY, 3:presenter.DETAILS_TAB_ID_CONFLICTS, 4:presenter.DETAILS_TAB_ID_MATCHED, 5:presenter.DETAILS_TAB_ID_MISSING, 6:presenter.DETAILS_TAB_ID_MISMATCHED, 7:presenter.DETAILS_TAB_ID_SKIPPED}
+        self._detailsTabIdToWidget = {presenter.DETAILS_TAB_ID_GENERAL:generalTab, presenter.DETAILS_TAB_ID_SELECTED:selectedTab, presenter.DETAILS_TAB_ID_DIRTY:dirtyTab, presenter.DETAILS_TAB_ID_CONFLICTS:conflictsTab, presenter.DETAILS_TAB_ID_MATCHED:matchedTab, presenter.DETAILS_TAB_ID_MISSING:missingTab, presenter.DETAILS_TAB_ID_MISMATCHED:mismatchedTab, presenter.DETAILS_TAB_ID_SKIPPED:skippedTab}
+        self._presenter = presenter_
+        self._stateRootPath = viewStateRootPath
+        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, detailsTabMap=self._detailsTabIdToWidget, dataPanel=dataPanel, packageTree=self._packageTree, fileTree=self._fileTree, statusBox=statusWindow, projectInfoLabel=projectInfoLabel, projectInfoTabs=projectInfoTabs, fileInfo=fileInfo)
+        self._shuttingDown = False
+
+        # event bindings
+        stateButton.Bind(wx.EVT_BUTTON, self._on_settings_menu)
+        projectInfoTabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._on_details_tab_changing)
+        search.Bind(wx.EVT_TEXT, self._on_search_text)
+
+
+    def start(self):
+        '''Loads saved state, starts threads and subcomponents (including presenter)'''
+        # TODO: load and apply saved gui state
+        # if no saved state, use defaults
+        paneWidth = self.GetSize()[0]
+        statusSplitter = self._splitters["status"] 
+        statusSplitter.SetSashPosition(-1) # use minimum size (one line)
+        self._splitters["comments"].SetSashPosition(statusSplitter.GetSashPosition()) # approx 3 lines
+        self._splitters["top"].SetSashPosition(paneWidth*0.38)
+        self._splitters["details"].SetSashPosition(paneWidth*0.22)
+        self._splitters["fileTree"].SetSashPosition(paneWidth*0.32)
+        packageFilterStateMap = {presenter.FILTER_ID_PACKAGES_HIDDEN:False,presenter.FILTER_ID_PACKAGES_INSTALLED:True, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED:True}
+        fileFilterStateMap = {presenter.FILTER_ID_FILES_PLUGINS:True, presenter.FILTER_ID_FILES_RESOURCES:False, presenter.FILTER_ID_FILES_OTHER:False}
+        self._packageTree.start(packageFilterStateMap)
+        self._fileTree.start(fileFilterStateMap)
+        _logger.debug("starting command processing thread")
+        self._commandThread.start()
+        _logger.debug("starting presenter")
+        filterStateMap = {}
+        filterStateMap.update(packageFilterStateMap)
+        filterStateMap.update(fileFilterStateMap)
+        self._presenter.start(presenter.DETAILS_TAB_ID_GENERAL, filterStateMap)
+        _logger.debug("view successfully started")
+
+    def shutdown(self):
+        '''Saves any dirty state, shuts down threads and subcomponents'''
+        self._shuttingDown = True
+        _logger.debug("discarding further output from presenter")
+        self._commandThread.set_ignore_updates(True)
+        self._save_state()
+        _logger.debug("shutting down presenter")
+        self._presenter.shutdown()
+        _logger.debug("joining command preprocessing thread")
+        self._commandThread.join()
+        _logger.debug("view successfully shut down")
+
+    def pause(self):
+        '''Suggests that bait suspend operations; may not take effect immediately'''
+        _logger.debug("pause requested")
+        self._presenter.pause()
+
+    def resume(self):
+        '''Resumes from a pause'''
+        _logger.debug("resume requested")
+        self._presenter.resume()
+        
+    def _save_state(self):
+        if self._stateRootPath is None:
+            return
+        # TODO: save gui state
+        for splitterName, splitterCtrl in self._splitters.iteritems():
+            sashPos = splitterCtrl.GetSashPosition()
+            if splitterName is "status" or splitterName is "comments":
+                # save these as distances from the bottom so they will still be meaningful if the pane gets resized
+                sashPos -= splitterCtrl.GetSize()[1]
+            _logger.debug("saving splitter %s sash position: %d", splitterName, sashPos)
+
+    def _on_settings_menu(self, event):
+        if self._shuttingDown: return
+        _logger.debug("showing state menu")
+        # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling the GUI event loop thread
+        menu = wx.Menu()
+        menu.Append(-1, "Anneal all")
+        menu.Append(-1, "Refresh installed data")
+        menu.Append(-1, "Refresh packages")
+        filterMenu = wx.Menu()
+        filterMenu.Append(-1, "Allow OBSE plugins", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip DistantLOD", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip LOD meshes", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip LOD textures", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip LOD normals", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip all voices", kind=wx.ITEM_CHECK)
+        filterMenu.Append(-1, "Skip silent voices", kind=wx.ITEM_CHECK)
+        menu.AppendMenu(-1, "Install filters", filterMenu)
+        stateMenu = wx.Menu()
+        stateMenu.Append(-1, "Force state save")
+        stateMenu.Append(-1, "Reset state...")
+        stateMenu.Append(-1, "Export state...")
+        stateMenu.Append(-1, "Import state...")
+        stateMenu.Append(-1, "Derive state from contents of Data directory")
+        menu.AppendMenu(-1, "Manage state", stateMenu)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def _on_details_tab_changing(self, event):
+        if self._shuttingDown: return
+        oldTabId = self._detailsTabIndexToTabId[event.GetOldSelection()]
+        newTabId = self._detailsTabIndexToTabId[event.GetSelection()]
+        _logger.debug("details tab changing from %d to %d", oldTabId, newTabId)
+        self._detailsTabIdToWidget[oldTabId].SetValue("")
+        self._presenter.set_details_tab_selection(newTabId)
+        # TODO: gray out "Loading" text
+        self._detailsTabIdToWidget[newTabId].SetValue("Loading...")
+        event.Skip()
+        
+    def _on_search_text(self, event):
+        text = event.GetEventObject().GetValue()
+        _logger.debug("search string changing to: '%s'", text)
+        self._presenter.set_search_string(text)
