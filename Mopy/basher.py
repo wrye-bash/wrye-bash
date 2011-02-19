@@ -2773,13 +2773,13 @@ class InstallersPanel(SashTankPanel):
         #--Sub-Installers
         subPackagesPanel = wx.Panel(checkListSplitter)
         subPackagesLabel = staticText(subPackagesPanel, _('Sub-Packages'))
-        self.gSubList = wx.CheckListBox(subPackagesPanel,-1)
+        self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         #--Espms
         espmsPanel = wx.Panel(checkListSplitter)
         espmsLabel = staticText(espmsPanel, _('Esp/m Filter'))
         self.espms = []
-        self.gEspmList = wx.CheckListBox(espmsPanel,-1)
+        self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
@@ -3073,14 +3073,15 @@ class InstallersPanel(SashTankPanel):
         installer.refreshStatus(self.data)
 
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-        subIndex = self.gSubList.GetSelection()
+        subIndices = self.gSubList.GetSelections()
 
 ##        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
 ##        espmIndex = self.gEspmList.GetSelection()
 
         self.gList.RefreshUI(self.detailsItem)
         self.gSubList.ScrollLines(subScrollPos)
-        self.gSubList.SetSelection(subIndex)
+        for subIndex in subIndices:
+            self.gSubList.SetSelection(subIndex)
 ##        if espmIndex != -1:
 ##            self.gEspmList.ScrollLines(espmScrollPos)
 ##            self.gEspmList.SetSelection(espmIndex)
