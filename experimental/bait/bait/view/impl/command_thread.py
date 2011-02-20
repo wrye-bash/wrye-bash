@@ -97,8 +97,10 @@ class CommandThread(threading.Thread):
             style = addNodeCommand.style
             checkboxState = style.checkboxState
             if not style.textColor is None:
-                # TODO: handle other colors
-                foregroundColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+                if style.textColor is view_commands.COLOR_GRAY:
+                    foregroundColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+                else:
+                    _logger.warn("unhandled view_command color: %s" % style.textColor)
         targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, foregroundColor, checkboxState)
 
     def _add_package(self, addPackageCommand):
@@ -157,24 +159,25 @@ class CommandThread(threading.Thread):
         _logger.debug("setting package details")
         if not setPackageDetailsCommand.label is None:
             self._projectInfoLabel.SetLabel(setPackageDetailsCommand.label)
+        textCtrl = self._projectInfoTabs.GetCurrentPage()
         if setPackageDetailsCommand.text is None:
-            # TODO: set gray text
-            self._projectInfoTabs.GetCurrentPage().SetValue("No package selected")
+            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            textCtrl.SetValue("No package selected")
         elif len(setPackageDetailsCommand.text) is 0:
-            # TODO: set gray text
-            self._projectInfoTabs.GetCurrentPage().SetValue("None")
+            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            textCtrl.SetValue("None")
         else:
-            # TODO: set normal text
-            self._projectInfoTabs.GetCurrentPage().SetValue(setPackageDetailsCommand.text)
+            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+            textCtrl.SetValue(setPackageDetailsCommand.text)
 
     def _update_file_details(self, setFileDetailsCommand):
         _logger.debug("setting file details")
         if setFileDetailsCommand.text is None:
-            # TODO: set gray text
+            self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
             self._fileInfo.SetValue("No file selected")
         elif len(setFileDetailsCommand.text) is 0:
-            # TODO: set gray text
+            self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
             self._fileInfo.SetValue("None")
         else:
-            # TODO: set normal text
+            self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
             self._fileInfo.SetValue(setFileDetailsCommand.text)
