@@ -105,6 +105,9 @@ Creation Date: 2011 Jan 10
   - Highlight packages/files that currently selected item(s) depend on
   - Attribute filter for search box: "depends on targetnamesubstring"
   - BAIN wizard configuring the ini file for a mod (from andalaybay)
+  - A back button on the BAIN wizard (from Psymon)
+  - Resizable BAIN wizard elements and window (from Metallicow, Vargr, utumno)
+  - Scale images correctly in wizard window (from Metallicow)
 
 
 ==================

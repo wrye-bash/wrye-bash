@@ -171,7 +171,7 @@ class CommandThread(threading.Thread):
         _logger.debug("setting file details")
         if setFileDetailsCommand.text is None:
             # TODO: set gray text
-            self._fileInfo.SetValue("No package selected")
+            self._fileInfo.SetValue("No file selected")
         elif len(setFileDetailsCommand.text) is 0:
             # TODO: set gray text
             self._fileInfo.SetValue("None")

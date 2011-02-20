@@ -109,7 +109,7 @@ class MockPresenter:
             # update file details
             self.viewCommandQueue.put(view_commands.SetFileDetails(pkgNodes[self._selectedPackages[0]][FILE_NODES_IDX][nodeIds[0]][FILE_DETAILS_IDX]))
         else:
-            self.viewCommandQueue.put(view_commands.SetFileDetails(""))
+            self.viewCommandQueue.put(view_commands.SetFileDetails(None))
 
     def set_details_tab_selection(self, detailsTabId):
         _logger.debug("setting details tab selection to %d", detailsTabId)
@@ -175,7 +175,7 @@ class MockPresenter:
             addClass = view_commands.AddPackage
             expand = False
             _logger.debug("adding package node %d", nodeId)
-        self.viewCommandQueue.put(addClass(node[LABEL_IDX], nodeId, parentNodeId, predNodeId, node[STYLE_IDX]))
+        self.viewCommandQueue.put(addClass(("%.2d "%(nodeId+1))+node[LABEL_IDX], nodeId, parentNodeId, predNodeId, node[STYLE_IDX]))
         if expand:
             self.viewCommandQueue.put(view_commands.ExpandGroup(nodeId))
 
@@ -263,7 +263,8 @@ class MockPresenter:
                 filter = node[FILTER_IDX]
                 if not filter & self._filterMask is 0:
                     self._add_node(nodes, nodeId, addedSet, self._add_files_tree_node)
-                totals[filter] += 1
+                if not node[NODE_TYPE_IDX] is presenter.NODE_TYPE_DIRECTORY:
+                    totals[filter] += 1
         
         # update filter labels        
         for filterId in filterIds:

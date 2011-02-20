@@ -30,31 +30,36 @@ from wx.lib.agw import customtreectrl as CT
 _logger = logging.getLogger(__name__)
 
 
-class _FilteredTree(CT.CustomTreeCtrl):
+class _FilteredTree(wx.Panel):
+    '''Provides a tree with a filer panel at the top'''
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter_):
-        CT.CustomTreeCtrl.__init__(self, parent,
-                style=wx.SUNKEN_BORDER,
+        wx.Panel.__init__(self, parent, style=wx.SUNKEN_BORDER)
+
+        self._filterPanel = wx.Panel(self)
+        self._tree = CT.CustomTreeCtrl(self, style=wx.NO_BORDER,
                 agwStyle=CT.TR_HAS_VARIABLE_ROW_HEIGHT|CT.TR_HAS_BUTTONS|CT.TR_HIDE_ROOT|CT.TR_MULTIPLE|CT.TR_NO_LINES)
+        treeBackgroundColor = self._tree.GetBackgroundColour()
+        self.SetBackgroundColour(treeBackgroundColor)
+        self._filterPanel.SetBackgroundColour(treeBackgroundColor)
 
         # reduce size of toggle filter labels by 2, but no smaller than 6
+        # TODO: is there a better way to do this?
         parentFont = parent.GetFont()
         panelFont = wx.Font(
             max((6, parentFont.GetPointSize()-2)),
             parentFont.GetFamily(), parentFont.GetStyle(),
             wx.FONTWEIGHT_NORMAL, False, parentFont.GetFaceName())
-        filterPanel = wx.Panel(self)
-        filterPanel.SetBackgroundColour(self.GetBackgroundColour())
-        filterPanel.SetFont(panelFont)
+        self._filterPanel.SetFont(panelFont)
         filterPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
         dc = wx.WindowDC(self)
         dc.SetFont(panelFont)
-        panelLabel = wx.StaticText(filterPanel, label="Show:")
+        panelLabel = wx.StaticText(self._filterPanel, label=" Show:")
         filterPanelSizer.Add(panelLabel, 0, wx.ALIGN_CENTER_VERTICAL)
         self._filters = {}
         self._wxIdToFilterId = {}
         for filterId, filterLabelFormatPattern in zip(filterIds, filterLabelFormatPatterns):
             # calculate reduced button size dimensions and create buttons
-            filterButton = wx.ToggleButton(filterPanel)
+            filterButton = wx.ToggleButton(self._filterPanel)
             self._set_filter_button_label(filterButton, filterLabelFormatPattern, 0, 0)
             curWidth, curHeight = filterButton.GetBestSize()
             filterButton.SetMinSize((curWidth, curHeight-6))
@@ -63,19 +68,24 @@ class _FilteredTree(CT.CustomTreeCtrl):
             self._wxIdToFilterId[filterButton.GetId()] = filterId
             self.Bind(wx.EVT_TOGGLEBUTTON, self._on_toggle_filter)
         # no need to set size hints -- this panel doesn't determine any sizer limits
-        filterPanel.SetSizer(filterPanelSizer)
-        filterPanel.Fit()
+        self._filterPanel.SetSizer(filterPanelSizer)
+        self._filterPanel.Fit()
+        
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer.Add(self._filterPanel, 0, wx.EXPAND)
+        topSizer.Add(self._tree, 1, wx.EXPAND)
+        self.SetSizer(topSizer)
         
         # create tree base
-        self._topItem = self.AppendItem(self.AddRoot("root"), "", wnd=filterPanel)
+        self._tree.AddRoot("root")
         self._presenter = presenter_
         self._nodeIdToItem = {}
         
         # bind to events
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
-        self.Bind(wx.EVT_TREE_SEL_CHANGING, self._on_sel_changing)
-        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
-        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
+        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
+        self._tree.Bind(wx.EVT_TREE_SEL_CHANGING, self._on_sel_changing)
+        self._tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
+        self._tree.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
         
         
     def start(self, filterStateMap):
@@ -85,13 +95,7 @@ class _FilteredTree(CT.CustomTreeCtrl):
 
     def clear(self):
         _logger.debug("clearing tree")
-        # make a copy of the item list to avoid modifying the list we're iterating through
-        # avoid removing/re-adding top filter item to prevent flickering
-        children = self.GetRootItem().GetChildren()[1:]
-        for item in children:
-            #if item is self._topItem: continue
-            _logger.debug("clearing node: %d", item.GetData())
-            self.Delete(item)
+        self._tree.DeleteChildren(self._tree.GetRootItem())
         self._nodeIdToItem = {} # reset mappings
 
     def set_filter_stats(self, filterId, current, total):
@@ -101,21 +105,17 @@ class _FilteredTree(CT.CustomTreeCtrl):
         # resize button width to fit the new label
         curHeight = filterButton.GetSize()[1]
         filterButton.SetMinSize((filterButton.GetBestSize()[0], curHeight))
-        filterPanel = self._topItem.GetWindow()
-        filterPanel.Layout()
-        filterPanel.Fit()
+        self._filterPanel.Layout()
+        self._filterPanel.Fit()
 
     def add_item(self, nodeId, label, parentNodeId, predNodeId, foregroundColor=None, checkboxState=None):
         _logger.debug("adding node %d: %s", nodeId, label)
         if parentNodeId is None:
-            parent = self.GetRootItem()
+            parent = self._tree.GetRootItem()
         else:
             parent = self._nodeIdToItem[parentNodeId]
         predecessor = None
-        if predNodeId is None:
-            if parent is self.GetRootItem():
-                predecessor = self._topItem
-        else:
+        if not predNodeId is None:
             predecessor = self._nodeIdToItem[predNodeId]
 
         if checkboxState is None:
@@ -125,7 +125,7 @@ class _FilteredTree(CT.CustomTreeCtrl):
             ct_type = 1
             checked = checkboxState
 
-        item = self.InsertItem(parent, predecessor, label, ct_type)
+        item = self._tree.InsertItem(parent, predecessor, label, ct_type)
         item.SetData(nodeId)
         if not foregroundColor is None:
             _logger.debug("altering color of text for node %d", nodeId)
@@ -133,7 +133,7 @@ class _FilteredTree(CT.CustomTreeCtrl):
             attr.SetTextColour(foregroundColor)
             item.AssignAttributes(attr)
         if checked:
-            self.CheckItem(item)
+            self._tree.CheckItem(item)
         self._nodeIdToItem[nodeId] = item
 
 
@@ -163,7 +163,7 @@ class _FilteredTree(CT.CustomTreeCtrl):
         '''notifies the presenter that a details pane should be refreshed'''
         _logger.debug("handling tree selection changed event")
         nodeIds = []
-        for item in self.GetSelections():
+        for item in self._tree.GetSelections():
             nodeIds.append(item.GetData())                
         self._notify_presenter_of_tree_selections(nodeIds)
         event.Skip()
