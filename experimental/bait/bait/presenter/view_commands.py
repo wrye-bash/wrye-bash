@@ -37,17 +37,35 @@ SET_FILE_DETAILS = 11
 SELECT_PACKAGES = 12
 EXPAND_DIR = 13
 SELECT_FILES = 14
+SET_STYLE_MAPS = 15
 
-# style constants
-COLOR_GRAY = 1
-COLOR_GREEN = 2
+# style values
+FONT_STYLE_BOLD_FLAG = 1
+FONT_STYLE_ITALICS_FLAG = 2
+TEXT_DISABLED = 1
+TEXT_HAS_INACTIVE_OVERRIDDE = 2
+HIGHLIGHT_ERROR = 1
+HIGHLIGHT_MISSING_DEPENDENCY = 2
+HIGHLIGHT_DIRTY = 3
+ICON_PROJECT_MATCHES = 1
+ICON_PROJECT_OVERRIDDEN = 2
+ICON_PROJECT_MISSING = 3
+ICON_PROJECT_EMPTY = 4
+ICON_PROJECT_UNINSTALLABLE = 5
+ICON_INSTALLER_MATCHES = 6
+ICON_INSTALLER_OVERRIDDEN = 7
+ICON_INSTALLER_MISSING = 8
+ICON_INSTALLER_EMPTY = 9
+ICON_INSTALLER_UNINSTALLABLE = 10
 
 
 class ViewCommandStyle:
-    def __init__(self, textColor=None, backgroundColor=None, checkboxState=None):
-        self.textColor = textColor
-        self.backgroundColor = backgroundColor
+    def __init__(self, fontStyleMask=None, textColorId=None, hilightColorId=None, checkboxState=None, iconId=None):
+        self.fontStyleMask = fontStyleMask
+        self.textColorId = textColorId
+        self.hilightColorId = hilightColorId
         self.checkboxState = checkboxState
+        self.iconId = iconId
 
 
 # command classes
@@ -151,3 +169,11 @@ class ClearFiles(ViewCommand):
 class SetFileDetails(_SetText):
     def __init__(self, text, requestId=None):
         _SetText.__init__(self, SET_FILE_DETAILS, text, requestId)
+
+class SetStyleMaps(ViewCommand):
+    '''Contains the map from style IDs to RGB tuples (for colors) and file resources (for images)'''
+    def __init__(self, colorMap, checkedIconMap, uncheckedIconMap, requestId=None):
+        ViewCommand.__init__(self, SET_STYLE_MAPS, requestId)
+        self.colorMap = colorMap
+        self.checkedIconMap = checkedIconMap
+        self.uncheckedIconMap = uncheckedIconMap

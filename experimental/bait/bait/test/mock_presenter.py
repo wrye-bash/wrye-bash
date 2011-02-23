@@ -32,6 +32,37 @@ from mock_presenter_data import *
 
 
 _logger = logging.getLogger(__name__)
+_colorMap = {
+        view_commands.TEXT_DISABLED:(142,139,138),
+        view_commands.TEXT_HAS_INACTIVE_OVERRIDDE:(255,165,0),
+        view_commands.HIGHLIGHT_ERROR:(193,205,205),
+        view_commands.HIGHLIGHT_MISSING_DEPENDENCY:(255,0,0),
+        view_commands.HIGHLIGHT_DIRTY:(255,215,0)
+    }
+_checkedIconMap = {
+        view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_inc.png",
+        view_commands.ICON_PROJECT_OVERRIDDEN:"images/diamond_orange_inc.png",
+        view_commands.ICON_PROJECT_MISSING:"images/diamond_red_inc.png",
+        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_inc.png",
+        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_inc.png",
+        view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_inc.png",
+        view_commands.ICON_INSTALLER_OVERRIDDEN:"images/checkbox_orange_inc.png",
+        view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_inc.png",
+        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_inc.png",
+        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_inc.png"
+    }
+_uncheckedIconMap = {
+        view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_off.png",
+        view_commands.ICON_PROJECT_OVERRIDDEN:"images/diamond_orange_off.png",
+        view_commands.ICON_PROJECT_MISSING:"images/diamond_red_off.png",
+        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
+        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
+        view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_off.png",
+        view_commands.ICON_INSTALLER_OVERRIDDEN:"images/checkbox_orange_off.png",
+        view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_off.png",
+        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
+    }
 
 
 class MockPresenter:
@@ -54,6 +85,7 @@ class MockPresenter:
                 self._filterMask |= filterId
             else:
                 self._filterMask &= ~filterId
+        self.viewCommandQueue.put(view_commands.SetStyleMaps(_colorMap, _checkedIconMap, _uncheckedIconMap))
         self.viewCommandQueue.put(view_commands.SetDataStats(127, 209, 2097, 41728))
         self.set_packages_tree_selections([])
         self.set_files_tree_selections([])

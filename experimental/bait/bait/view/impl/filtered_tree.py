@@ -80,14 +80,15 @@ class _FilteredTree(wx.Panel):
         self._tree.AddRoot("root")
         self._presenter = presenter_
         self._nodeIdToItem = {}
+        self._checkedIconMap = {}
+        self._uncheckedIconMap = {}
         
         # bind to events
         self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
-        self._tree.Bind(wx.EVT_TREE_SEL_CHANGING, self._on_sel_changing)
         self._tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
         self._tree.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
-        
-        
+
+
     def start(self, filterStateMap):
         # set initial filter states (presenter is notified in bait_view.start(), so no need to do it here)
         for (filterId, filterState) in filterStateMap.items():
@@ -108,7 +109,24 @@ class _FilteredTree(wx.Panel):
         self._filterPanel.Layout()
         self._filterPanel.Fit()
 
-    def add_item(self, nodeId, label, parentNodeId, predNodeId, foregroundColor=None, checkboxState=None):
+    def set_checkbox_images(self, checkedIconMap, uncheckedIconMap):
+        self._checkedIconMap = {}
+        self._uncheckedIconMap = {}
+        imageList = None
+        idx = 0
+        for iconMap, _iconMap in ((checkedIconMap, self._checkedIconMap), (uncheckedIconMap, self._uncheckedIconMap)):
+            for iconId in iconMap:
+                _iconMap[iconId] = idx;
+                idx = idx + 1
+                bitmap = wx.Bitmap(iconMap[iconId])
+                if imageList is None:
+                    width, height = bitmap.GetSize()
+                    imageList = wx.ImageList(width, height, False, 0)
+                imageList.Add(bitmap)
+        if not imageList is None:
+            self._tree.SetImageListCheck(width, height, imageList)
+
+    def add_item(self, nodeId, label, parentNodeId, predNodeId, fontStyleMask, textColor, hilightColor, checkboxState, iconId):
         _logger.debug("adding node %d: %s", nodeId, label)
         if parentNodeId is None:
             parent = self._tree.GetRootItem()
@@ -127,13 +145,21 @@ class _FilteredTree(wx.Panel):
 
         item = self._tree.InsertItem(parent, predecessor, label, ct_type)
         item.SetData(nodeId)
-        if not foregroundColor is None:
+        if not iconId is None:
+            # item has no SetCheckedImage method, so fake it
+            item._checkedimages[CT.TreeItemIcon_Checked] = self._checkedIconMap[iconId]
+            item._checkedimages[CT.TreeItemIcon_NotChecked] = self._uncheckedIconMap[iconId]
+
+        attr = item.Attr()
+        if not textColor is None:
             _logger.debug("altering color of text for node %d", nodeId)
-            attr = item.Attr()
-            attr.SetTextColour(foregroundColor)
-            item.AssignAttributes(attr)
+            attr.SetTextColour(textColor)
+        if not hilightColor is None:
+            _logger.debug("altering color of highlight for node %d", nodeId)
+            attr.SetBackgroundColour(hilightColor)
         if checked:
             self._tree.CheckItem(item)
+        item.AssignAttributes(attr)
         self._nodeIdToItem[nodeId] = item
 
 
@@ -168,14 +194,6 @@ class _FilteredTree(wx.Panel):
         self._notify_presenter_of_tree_selections(nodeIds)
         event.Skip()
 
-    def _on_sel_changing(self, event):
-        '''prevents the filter panel row from being selected'''
-        _logger.debug("handling tree selection changing event")
-        if event.GetItem().GetData() is None:
-            event.Veto()
-        else:
-            event.Skip()
-            
     def _on_item_expanded(self, event):
         '''tracks item expansion'''
         _logger.debug("handling tree item expansion event")

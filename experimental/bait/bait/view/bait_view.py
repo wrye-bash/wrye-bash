@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 
 
 class BaitView(wx.Panel):
-    def __init__(self, parent, presenter_, viewStateRootPath=None):
+    def __init__(self, parent, presenter_, stateManager=None):
         '''Creates and configures bait widget hierarchies'''
         _logger.debug("initializing bait view")
         wx.Panel.__init__(self, parent)
@@ -46,7 +46,8 @@ class BaitView(wx.Panel):
 
         # main section
         mainPanel = wx.Panel(topSplitter)
-        stateButton = wx.BitmapButton(mainPanel, bitmap=wx.ArtProvider.GetBitmap(wx.ART_REMOVABLE, client=wx.ART_BUTTON), style=wx.NO_BORDER)
+        settingsIcon = wx.ArtProvider.GetBitmap(wx.ART_REMOVABLE, client=wx.ART_BUTTON)
+        globalSettingsButton = wx.BitmapButton(mainPanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         search = wx.SearchCtrl(mainPanel)
         dataPanel = data_panel.DataPanel(mainPanel, presenter_)
         statusSplitter = wx.gizmos.ThinSplitterWindow(mainPanel, style=splitterStyle)
@@ -73,6 +74,7 @@ class BaitView(wx.Panel):
         skippedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
         fileTreeSplitter = wx.gizmos.ThinSplitterWindow(detailsSplitter, style=splitterStyle)
         fileTreePanel = wx.Panel(fileTreeSplitter)
+        projectSettingsButton = wx.BitmapButton(fileTreePanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         fileTreeLabel = wx.StaticText(fileTreePanel, label="Package contents")
         self._fileTree = filtered_tree.FilesTree(fileTreePanel,
                 (presenter.FILTER_ID_FILES_PLUGINS, presenter.FILTER_ID_FILES_RESOURCES, presenter.FILTER_ID_FILES_OTHER),
@@ -85,7 +87,7 @@ class BaitView(wx.Panel):
         commentsText = wx.SearchCtrl(commentsPanel, size=(-1, oneLineHeight), style=wx.TE_MULTILINE)
 
         # customize widgets
-        stateButton.SetToolTipString("Settings")
+        globalSettingsButton.SetToolTipString("Settings")
 
         # read-only text controls should have same background color as parent
         bgColor = mainPanel.GetBackgroundColour()
@@ -137,7 +139,7 @@ class BaitView(wx.Panel):
 
         # configure layout
         searchSizer = wx.BoxSizer(wx.HORIZONTAL)
-        searchSizer.Add(stateButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
+        searchSizer.Add(globalSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
         searchSizer.Add(search, 1, wx.ALIGN_CENTER_VERTICAL)
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -153,8 +155,11 @@ class BaitView(wx.Panel):
         projectInfoPanel.SetMinSize(projectInfoSizer.GetMinSize())
         projectInfoPanel.SetSizer(projectInfoSizer)
 
+        fileTreeHeaderSizer = wx.BoxSizer(wx.HORIZONTAL)
+        fileTreeHeaderSizer.Add(projectSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
+        fileTreeHeaderSizer.Add(fileTreeLabel, 1, wx.ALIGN_CENTER_VERTICAL)
         fileTreeSizer = wx.BoxSizer(wx.VERTICAL)
-        fileTreeSizer.Add(fileTreeLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        fileTreeSizer.Add(fileTreeHeaderSizer, 0, wx.EXPAND)
         fileTreeSizer.Add(self._fileTree, 1, wx.EXPAND)
         fileTreePanel.SetMinSize(fileTreeSizer.GetMinSize())
         fileTreePanel.SetSizer(fileTreeSizer)
@@ -182,12 +187,13 @@ class BaitView(wx.Panel):
         self._detailsTabIndexToTabId = {0:presenter.DETAILS_TAB_ID_GENERAL, 1:presenter.DETAILS_TAB_ID_SELECTED, 2:presenter.DETAILS_TAB_ID_DIRTY, 3:presenter.DETAILS_TAB_ID_CONFLICTS, 4:presenter.DETAILS_TAB_ID_MATCHED, 5:presenter.DETAILS_TAB_ID_MISSING, 6:presenter.DETAILS_TAB_ID_MISMATCHED, 7:presenter.DETAILS_TAB_ID_SKIPPED}
         self._detailsTabIdToWidget = {presenter.DETAILS_TAB_ID_GENERAL:generalTab, presenter.DETAILS_TAB_ID_SELECTED:selectedTab, presenter.DETAILS_TAB_ID_DIRTY:dirtyTab, presenter.DETAILS_TAB_ID_CONFLICTS:conflictsTab, presenter.DETAILS_TAB_ID_MATCHED:matchedTab, presenter.DETAILS_TAB_ID_MISSING:missingTab, presenter.DETAILS_TAB_ID_MISMATCHED:mismatchedTab, presenter.DETAILS_TAB_ID_SKIPPED:skippedTab}
         self._presenter = presenter_
-        self._stateRootPath = viewStateRootPath
+        self._stateManager = stateManager
         self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, detailsTabMap=self._detailsTabIdToWidget, dataPanel=dataPanel, packageTree=self._packageTree, fileTree=self._fileTree, statusBox=statusWindow, projectInfoLabel=projectInfoLabel, projectInfoTabs=projectInfoTabs, fileInfo=fileInfo)
         self._shuttingDown = False
 
         # event bindings
-        stateButton.Bind(wx.EVT_BUTTON, self._on_settings_menu)
+        globalSettingsButton.Bind(wx.EVT_BUTTON, self._on_global_settings_menu)
+        projectSettingsButton.Bind(wx.EVT_BUTTON, self._on_project_settings_menu)
         projectInfoTabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._on_details_tab_changing)
         search.Bind(wx.EVT_TEXT, self._on_search_text)
 
@@ -239,7 +245,7 @@ class BaitView(wx.Panel):
         self._presenter.resume()
         
     def _save_state(self):
-        if self._stateRootPath is None:
+        if self._stateManager is None:
             return
         # TODO: save gui state
         for splitterName, splitterCtrl in self._splitters.iteritems():
@@ -249,9 +255,9 @@ class BaitView(wx.Panel):
                 sashPos -= splitterCtrl.GetSize()[1]
             _logger.debug("saving splitter %s sash position: %d", splitterName, sashPos)
 
-    def _on_settings_menu(self, event):
+    def _on_global_settings_menu(self, event):
         if self._shuttingDown: return
-        _logger.debug("showing state menu")
+        _logger.debug("showing global settings menu")
         # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling the GUI event loop thread
         menu = wx.Menu()
         menu.Append(-1, "Anneal all")
@@ -273,6 +279,22 @@ class BaitView(wx.Panel):
         stateMenu.Append(-1, "Import state...")
         stateMenu.Append(-1, "Derive state from contents of Data directory")
         menu.AppendMenu(-1, "Manage state", stateMenu)
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def _on_project_settings_menu(self, event):
+        if self._shuttingDown: return
+        _logger.debug("showing project settings menu")
+        # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling the GUI event loop thread
+        # TODO: make these tristates, falls through to global settings
+        menu = wx.Menu()
+        menu.Append(-1, "Allow OBSE plugins", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip DistantLOD", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip LOD meshes", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip LOD textures", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip LOD normals", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip all voices", kind=wx.ITEM_CHECK)
+        menu.Append(-1, "Skip silent voices", kind=wx.ITEM_CHECK)
         self.PopupMenu(menu)
         menu.Destroy()
 

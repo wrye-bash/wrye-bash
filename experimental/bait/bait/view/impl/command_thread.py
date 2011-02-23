@@ -34,6 +34,7 @@ _logger = logging.getLogger(__name__)
 _packageFilterIds = frozenset((presenter.FILTER_ID_PACKAGES_HIDDEN, presenter.FILTER_ID_PACKAGES_INSTALLED, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED))
 _fileFilterIds = frozenset((presenter.FILTER_ID_FILES_PLUGINS, presenter.FILTER_ID_FILES_RESOURCES, presenter.FILTER_ID_FILES_OTHER))
 
+
 class CommandThread(threading.Thread):
     def __init__(self, inCommandQueue, detailsTabMap, dataPanel, packageTree, fileTree, statusBox, projectInfoLabel, projectInfoTabs, fileInfo):
         threading.Thread.__init__(self, name="ViewCommand")
@@ -47,6 +48,7 @@ class CommandThread(threading.Thread):
         self._projectInfoTabs = projectInfoTabs
         self._fileInfo = fileInfo
         self._ignoreUpdates = False
+        self._colorMap = None
         self._handlers = {}
         self._handlers[view_commands.ADD_GROUP] = self._add_package        
         self._handlers[view_commands.ADD_PACKAGE] = self._add_package
@@ -62,6 +64,7 @@ class CommandThread(threading.Thread):
         self._handlers[view_commands.SET_FILE_DETAILS] = self._update_file_details
         self._handlers[view_commands.SELECT_PACKAGES] = self._select_packages
         self._handlers[view_commands.SELECT_FILES] = self._select_files
+        self._handlers[view_commands.SET_STYLE_MAPS] = self._set_style_maps
 
     def set_ignore_updates(self, value):
         self._ignoreUpdates = value;
@@ -90,18 +93,30 @@ class CommandThread(threading.Thread):
             # set a callback from the GUI thread so we can safely modify widget state
             wx.CallAfter(handler, viewCommand)
 
+    def _set_style_maps(self, setStyleMapsCommand):
+        _logger.debug("setting color map: %s; unchecked icon map: %s; checked icon map: %s", setStyleMapsCommand.colorMap, setStyleMapsCommand.uncheckedIconMap, setStyleMapsCommand.checkedIconMap)
+        colorMap = setStyleMapsCommand.colorMap
+        self._colorMap = dict((key, wx.Color(*colorMap[key])) for key in colorMap)
+        self._packageTree.set_checkbox_images(setStyleMapsCommand.checkedIconMap, setStyleMapsCommand.uncheckedIconMap)
+
     def _add_tree_node(self, targetTree, addNodeCommand):
-        foregroundColor = None
+        fontStyleMask = None
+        textColor = None
+        hilightColor = None
         checkboxState = None
-        if not addNodeCommand.style is None:
-            style = addNodeCommand.style
+        iconId = None
+        style = addNodeCommand.style
+        if not style is None:
+            fontStyleMask = style.fontStyleMask
             checkboxState = style.checkboxState
-            if not style.textColor is None:
-                if style.textColor is view_commands.COLOR_GRAY:
-                    foregroundColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-                else:
-                    _logger.warn("unhandled view_command color: %s" % style.textColor)
-        targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, foregroundColor, checkboxState)
+            iconId = style.iconId
+            if not style.textColorId is None:
+                textColor = self._colorMap[style.textColorId]
+                if textColor is None: _logger.warn("unhandled color id: %s" % style.textColorId)
+            if not style.hilightColorId is None:
+                hilightColor = self._colorMap[style.hilightColorId]
+                if hilightColor is None: _logger.warn("unhandled color id: %s" % style.hilightColorId)
+        targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, fontStyleMask, textColor, hilightColor, checkboxState, iconId)
 
     def _add_package(self, addPackageCommand):
         _logger.debug("adding package %d: %s", addPackageCommand.nodeId, addPackageCommand.label)
@@ -161,10 +176,10 @@ class CommandThread(threading.Thread):
             self._projectInfoLabel.SetLabel(setPackageDetailsCommand.label)
         textCtrl = self._projectInfoTabs.GetCurrentPage()
         if setPackageDetailsCommand.text is None:
-            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            textCtrl.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
             textCtrl.SetValue("No package selected")
         elif len(setPackageDetailsCommand.text) is 0:
-            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            textCtrl.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
             textCtrl.SetValue("None")
         else:
             textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
@@ -173,10 +188,10 @@ class CommandThread(threading.Thread):
     def _update_file_details(self, setFileDetailsCommand):
         _logger.debug("setting file details")
         if setFileDetailsCommand.text is None:
-            self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            self._fileInfo.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
             self._fileInfo.SetValue("No file selected")
         elif len(setFileDetailsCommand.text) is 0:
-            self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            self._fileInfo.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
             self._fileInfo.SetValue("None")
         else:
             self._fileInfo.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
