@@ -2,7 +2,7 @@
 
 Title: Wrye Bash Installer Tab Model Design Document
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: unorganized notes
 
 
   Versioned cache files so upgrades can be handled seamlessly

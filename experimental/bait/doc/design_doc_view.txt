@@ -2,7 +2,7 @@
 
 Title: Wrye Bash Installer Tab View Design Document
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: unorganized notes
 
 
   checkboxes for possible actions: inherit settings, merge ini files, delete old version, install

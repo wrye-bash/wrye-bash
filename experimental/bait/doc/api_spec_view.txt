@@ -2,11 +2,11 @@
 
 Title: Wrye Bash Installer Tab View API Specification
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: working draft
 
 
 class View:
-  __init__(self, wxParent, presenter, viewStateRootPath=None)
+  __init__(self, wxParent, presenter, stateManager=None)
     Creates and configures bait widget hierarchies
 
   start(self)

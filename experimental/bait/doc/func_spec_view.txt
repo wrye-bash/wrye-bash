@@ -2,7 +2,7 @@
 
 Title: Wrye Bash Installer Tab View Functional Specification
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: unorganized notes
 
 
 ===============
@@ -10,15 +10,16 @@ Creation Date: 2011 Jan 10
 ===============
 The BAIT UI consists of the following main elements:
 
-1) Settings menu
+1) Gloabal settings menu
 2) Search bar
 3) Installed data panel
 4) Packages tree
-5) Package details tabs
-6) Package contents tree
-7) File details panel
-8) Notification log
-9) Comments box
+5) Notification log
+6) Package details tabs
+7) Package settings menu
+8) Package contents tree
+9) File details panel
+10) Comments box
 
 Settings menu
   The state operations popup menu allows access to operations that save, revert, import, and export BAIT state, such as the metadata for the current set of installers.  The menu is accessed by clicking the button visible to the left of the search bar.  It also grants access to the "derive state from currently installed files" functionality, whereby the probable 'markedForInstall' state of each package is deduced from analyzing the installed files.
@@ -120,6 +121,39 @@ I was certainly considering clicking on one tree highlighting related data in th
 the two trees act as a single "selectability namespace". that is, if a user clicks on a file in the data tree with something already selected in the installers tree, the installers tree will have its selection removed, the data tree will gain focus and the selection, and the details pane will show metadata related to the selected file in the data tree (e.g. thumbnail image, file size, list of projects that compete to own that file, etc.). A user can ctrl-click and select items in both trees, in which case details for both will be shown.
 I haven't quite worked out how the details will be presented (layout). I'm thinking collapsible panels to allow comparisons of arbitrary numbers of items without a lot of clutter and hyperlinks to references in conflict lists. We'll see, though. The details pane is intended to be freeform so it can evolve over time; the first offering will probably be quite simple.
 
+
+
+Visual styles
+
+text style
+default (normal) - regular package/file
+bold - package is new in this run
+italics - item has a problem (I/O error, invalid/unknown format, missing dependency, etc.)
+
+text color
+default (black) - installed or installable and if file, has no active or inactive overrides
+grey - hidden, ignored (e.g. documentation, screenshots, other cruft), overridden file
+orange - file has inactive overridde
+
+text highlight (directories/packages inherit the most important highlight from their children)
+orange - dirty
+red - missing dependency
+default (white) - no special alerts on package/file
+grey - I/O error, invalid/unknown format
+
+package icons
+plus overlay - package is installed
+diamond shape - project
+square shape - installer
+green - all selected files match
+orange - at least one selected file is overridden
+red - at least one selected file is missing
+white - no files selected
+grey - uninstallable
+
+package groups have no icons, but inherit highlights from their children.
+files have checkboxes if they are installable, but the checkboxes are disabled
+if the files are ignored by a global option (e.g. skip LOD)
 
 
 ================

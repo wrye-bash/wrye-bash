@@ -2,7 +2,7 @@
 
 Title: Wrye Bash Installer Tab Project Plan
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: working draft
 
 
 ================

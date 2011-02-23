@@ -3,7 +3,7 @@
 
 Title: Wrye Bash Installer Tab Presenter Functional Specification
 Author: Myk Taylor (myk002)
-Creation Date: 2011 Jan 10
+Status: unorganized notes
 
 
 
