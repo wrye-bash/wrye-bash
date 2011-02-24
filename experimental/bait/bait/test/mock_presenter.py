@@ -239,7 +239,7 @@ class MockPresenter:
         addedSet = set()
 
         # scan nodes
-        for nodeId in xrange(0, 10):
+        for nodeId in xrange(0, len(pkgNodes)):
             _logger.debug("filtering node %d", nodeId)
             node = pkgNodes[nodeId]
             node[IS_VISIBLE_IDX] = False

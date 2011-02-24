@@ -126,7 +126,7 @@ class _FilteredTree(wx.Panel):
         if not imageList is None:
             self._tree.SetImageListCheck(width, height, imageList)
 
-    def add_item(self, nodeId, label, parentNodeId, predNodeId, fontStyleMask, textColor, hilightColor, checkboxState, iconId):
+    def add_item(self, nodeId, label, parentNodeId, predNodeId, isBold, isItalics, textColor, hilightColor, checkboxState, iconId):
         _logger.debug("adding node %d: %s", nodeId, label)
         if parentNodeId is None:
             parent = self._tree.GetRootItem()
@@ -145,6 +145,7 @@ class _FilteredTree(wx.Panel):
 
         item = self._tree.InsertItem(parent, predecessor, label, ct_type)
         item.SetData(nodeId)
+        
         if not iconId is None:
             # item has no SetCheckedImage method, so fake it
             item._checkedimages[CT.TreeItemIcon_Checked] = self._checkedIconMap[iconId]
@@ -157,6 +158,12 @@ class _FilteredTree(wx.Panel):
         if not hilightColor is None:
             _logger.debug("altering color of highlight for node %d", nodeId)
             attr.SetBackgroundColour(hilightColor)
+        if isBold:
+            _logger.debug("setting node %d text to bold", nodeId)
+            item.SetBold(True)
+        if isItalics:
+            _logger.debug("setting node %d text to italics", nodeId)
+            item.SetItalic(True)
         if checked:
             self._tree.CheckItem(item)
         item.AssignAttributes(attr)

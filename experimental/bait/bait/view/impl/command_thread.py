@@ -100,14 +100,14 @@ class CommandThread(threading.Thread):
         self._packageTree.set_checkbox_images(setStyleMapsCommand.checkedIconMap, setStyleMapsCommand.uncheckedIconMap)
 
     def _add_tree_node(self, targetTree, addNodeCommand):
-        fontStyleMask = None
+        isBold = False
+        isItalics = False
         textColor = None
         hilightColor = None
         checkboxState = None
         iconId = None
         style = addNodeCommand.style
         if not style is None:
-            fontStyleMask = style.fontStyleMask
             checkboxState = style.checkboxState
             iconId = style.iconId
             if not style.textColorId is None:
@@ -116,7 +116,10 @@ class CommandThread(threading.Thread):
             if not style.hilightColorId is None:
                 hilightColor = self._colorMap[style.hilightColorId]
                 if hilightColor is None: _logger.warn("unhandled color id: %s" % style.hilightColorId)
-        targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, fontStyleMask, textColor, hilightColor, checkboxState, iconId)
+            if not style.fontStyleMask is None:
+                isBold = not style.fontStyleMask & view_commands.FONT_STYLE_BOLD_FLAG is 0
+                isItalics = not style.fontStyleMask & view_commands.FONT_STYLE_ITALICS_FLAG is 0
+        targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, isBold, isItalics, textColor, hilightColor, checkboxState, iconId)
 
     def _add_package(self, addPackageCommand):
         _logger.debug("adding package %d: %s", addPackageCommand.nodeId, addPackageCommand.label)
