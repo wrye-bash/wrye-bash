@@ -122,11 +122,11 @@ class CommandThread(threading.Thread):
         targetTree.add_item(addNodeCommand.nodeId, addNodeCommand.label, addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId, isBold, isItalics, textColor, hilightColor, checkboxState, iconId)
 
     def _add_package(self, addPackageCommand):
-        _logger.debug("adding package %d: %s", addPackageCommand.nodeId, addPackageCommand.label)
+        _logger.debug("adding package %d: '%s'", addPackageCommand.nodeId, addPackageCommand.label)
         self._add_tree_node(self._packageTree, addPackageCommand)
 
     def _add_file(self, addFileCommand):
-        _logger.debug("adding file %d: %s", addFileCommand.nodeId, addFileCommand.label)
+        _logger.debug("adding file %d: '%s'", addFileCommand.nodeId, addFileCommand.label)
         self._add_tree_node(self._fileTree, addFileCommand)
 
     def _clear_packages(self, clearPackagesCommand):

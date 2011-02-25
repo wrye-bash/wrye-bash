@@ -41,24 +41,24 @@ _colorMap = {
     }
 _checkedIconMap = {
         view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_inc.png",
-        view_commands.ICON_PROJECT_OVERRIDDEN:"images/diamond_orange_inc.png",
+        view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
         view_commands.ICON_PROJECT_MISSING:"images/diamond_red_inc.png",
         view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_inc.png",
         view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_inc.png",
         view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_inc.png",
-        view_commands.ICON_INSTALLER_OVERRIDDEN:"images/checkbox_orange_inc.png",
+        view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
         view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_inc.png",
         view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_inc.png",
         view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_inc.png"
     }
 _uncheckedIconMap = {
         view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_off.png",
-        view_commands.ICON_PROJECT_OVERRIDDEN:"images/diamond_orange_off.png",
+        view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_off.png",
         view_commands.ICON_PROJECT_MISSING:"images/diamond_red_off.png",
         view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
         view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
         view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_off.png",
-        view_commands.ICON_INSTALLER_OVERRIDDEN:"images/checkbox_orange_off.png",
+        view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
         view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_off.png",
         view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
         view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"

@@ -157,7 +157,7 @@ class BaitView(wx.Panel):
 
         fileTreeHeaderSizer = wx.BoxSizer(wx.HORIZONTAL)
         fileTreeHeaderSizer.Add(projectSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
-        fileTreeHeaderSizer.Add(fileTreeLabel, 1, wx.ALIGN_CENTER_VERTICAL)
+        fileTreeHeaderSizer.Add(fileTreeLabel, 1, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 3)
         fileTreeSizer = wx.BoxSizer(wx.VERTICAL)
         fileTreeSizer.Add(fileTreeHeaderSizer, 0, wx.EXPAND)
         fileTreeSizer.Add(self._fileTree, 1, wx.EXPAND)

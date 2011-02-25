@@ -127,7 +127,7 @@ class _FilteredTree(wx.Panel):
             self._tree.SetImageListCheck(width, height, imageList)
 
     def add_item(self, nodeId, label, parentNodeId, predNodeId, isBold, isItalics, textColor, hilightColor, checkboxState, iconId):
-        _logger.debug("adding node %d: %s", nodeId, label)
+        _logger.debug("adding node %d: '%s'", nodeId, label)
         if parentNodeId is None:
             parent = self._tree.GetRootItem()
         else:

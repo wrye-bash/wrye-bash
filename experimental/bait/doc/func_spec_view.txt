@@ -39,7 +39,31 @@ Installers tree
   
 
 Details pane
-  
+
+Package details tabs:
+General: general package information, including statistics that are detailed
+on the other tabs.  info here explains why the project has a particular icon
+or has text in a particular style/highlight.
+  package type (archive/project)
+  whether the package is installed
+  package size
+  space required for full install
+  modification date
+  number of files
+  number of dirty files
+  number of overridden files (selected, active, higher conflicts)
+  number of skipped files
+  chart of selected and unselected stats:
+            matched mismatched overridden missing total
+  selected
+  unselected
+  total
+Dirty: shows actions that will take place on anneal (copy new (green), overwrite (blue), delete (pink))
+Conflicts: filters: selected, unselected, active, inactive, higher, lower
+Selected: filters: matched, mismatched, overridden, missing
+Unselected: filters: matched, mismatched, overridden, missing
+Skipped: filters: non-game, skipped by option
+
 
 Notification log
   The notification log is a scrollable read-only text window at the bottom of the screen.  Notifications and errors from the backend components are shown here, such as the successful installation of a package, summary of what was saved when a "force state save" operation is selected, or the achievement of quiescence.  Most recent notifications are shown at the bottom, but the user can expand the window and/or scroll up if they wish to view previous notifications.  The window auto-scrolls to the bottom if it is already at the bottom and a new message is added.  Otherwise it stays where it is to avoid jumping from where the user is currently viewing.  Depending on results from testing, it may drop old messages if it proves too burdensome to keep them indefinitely.  Error messages may also result in a popup window to ensure they are communicated properly to the user.  In the future, messages may be given verbosity levels and the user may be allowed to dynamically filter them.
@@ -128,7 +152,7 @@ Visual styles
 text style
 default (normal) - regular package/file
 bold - package is new in this run
-italics - item has a problem (I/O error, invalid/unknown format, missing dependency, etc.)
+italics - item needs attention (I/O error, invalid/unknown format, missing dependency, dirty, etc.)
 
 text color
 default (black) - installed or installable and if file, has no active or inactive overrides
