@@ -21,7 +21,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [*][url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url]
 [*][url="http://sourceforge.net/project/platformdownload.php?group_id=78018"]PyWin32 for Python 2.6[/url][/list]
 Older/Newer versions _may_ work but those are probably the most widely used and tested[/spoiler]
-[/list][b]Development[/b]: Get involved!  Patches are welcome at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url]!
+[/list][b]Development[/b]: The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Want to get involved?  Patches are welcome [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207903"]here[/url]!
 
 [b]Installation[/b]:
 [list]
