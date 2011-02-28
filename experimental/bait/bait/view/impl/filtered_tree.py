@@ -26,73 +26,42 @@ import logging
 import wx
 from wx.lib.agw import customtreectrl as CT
 
+from . import filter_panel
+
 
 _logger = logging.getLogger(__name__)
 
 
 class _FilteredTree(wx.Panel):
-    '''Provides a tree with a filer panel at the top'''
-    def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter_):
+    '''Provides a tree with a filter panel at the top'''
+    def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter_, setFilterButtonLabelFn=None):
         wx.Panel.__init__(self, parent, style=wx.SUNKEN_BORDER)
 
-        self._filterPanel = wx.Panel(self)
-        self._tree = CT.CustomTreeCtrl(self, style=wx.NO_BORDER,
+        tree = self._tree = CT.CustomTreeCtrl(self, style=wx.NO_BORDER,
                 agwStyle=CT.TR_HAS_VARIABLE_ROW_HEIGHT|CT.TR_HAS_BUTTONS|CT.TR_HIDE_ROOT|CT.TR_MULTIPLE|CT.TR_NO_LINES)
-        treeBackgroundColor = self._tree.GetBackgroundColour()
-        self.SetBackgroundColour(treeBackgroundColor)
-        self._filterPanel.SetBackgroundColour(treeBackgroundColor)
+        self.SetBackgroundColour(tree.GetBackgroundColour())
+        filterPanel = self._filterPanel = filter_panel.FilterPanel(self, filterIds, filterLabelFormatPatterns, presenter_, setFilterButtonLabelFn=setFilterButtonLabelFn)
 
-        # reduce size of toggle filter labels by 2, but no smaller than 6
-        # TODO: is there a better way to do this?
-        parentFont = parent.GetFont()
-        panelFont = wx.Font(
-            max((6, parentFont.GetPointSize()-2)),
-            parentFont.GetFamily(), parentFont.GetStyle(),
-            wx.FONTWEIGHT_NORMAL, False, parentFont.GetFaceName())
-        self._filterPanel.SetFont(panelFont)
-        filterPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dc = wx.WindowDC(self)
-        dc.SetFont(panelFont)
-        panelLabel = wx.StaticText(self._filterPanel, label=" Show:")
-        filterPanelSizer.Add(panelLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        self._filters = {}
-        self._wxIdToFilterId = {}
-        for filterId, filterLabelFormatPattern in zip(filterIds, filterLabelFormatPatterns):
-            # calculate reduced button size dimensions and create buttons
-            filterButton = wx.ToggleButton(self._filterPanel)
-            self._set_filter_button_label(filterButton, filterLabelFormatPattern, 0, 0)
-            curWidth, curHeight = filterButton.GetBestSize()
-            filterButton.SetMinSize((curWidth, curHeight-6))
-            filterPanelSizer.Add(filterButton, 0, wx.ALIGN_CENTER_VERTICAL)
-            self._filters[filterId] = (filterButton, filterLabelFormatPattern)
-            self._wxIdToFilterId[filterButton.GetId()] = filterId
-            self.Bind(wx.EVT_TOGGLEBUTTON, self._on_toggle_filter)
-        # no need to set size hints -- this panel doesn't determine any sizer limits
-        self._filterPanel.SetSizer(filterPanelSizer)
-        self._filterPanel.Fit()
-        
         topSizer = wx.BoxSizer(wx.VERTICAL)
-        topSizer.Add(self._filterPanel, 0, wx.EXPAND)
-        topSizer.Add(self._tree, 1, wx.EXPAND)
+        topSizer.Add(filterPanel, 0, wx.EXPAND)
+        topSizer.Add(tree, 1, wx.EXPAND)
         self.SetSizer(topSizer)
         
         # create tree base
-        self._tree.AddRoot("root")
+        tree.AddRoot("root")
         self._presenter = presenter_
         self._nodeIdToItem = {}
         self._checkedIconMap = {}
         self._uncheckedIconMap = {}
         
         # bind to events
-        self._tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
-        self._tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
-        self._tree.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
+        tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
+        tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
+        tree.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
 
 
     def start(self, filterStateMap):
-        # set initial filter states (presenter is notified in bait_view.start(), so no need to do it here)
-        for (filterId, filterState) in filterStateMap.items():
-            self._filters[filterId][0].SetValue(filterState)
+        self._filterPanel.start(filterStateMap)
 
     def clear(self):
         _logger.debug("clearing tree")
@@ -100,14 +69,7 @@ class _FilteredTree(wx.Panel):
         self._nodeIdToItem = {} # reset mappings
 
     def set_filter_stats(self, filterId, current, total):
-        filterButton, filterLabelFormatPattern = self._filters[filterId]
-        _logger.debug("updating filter %d label with stats: current=%d; total=%d", filterId, current, total)
-        self._set_filter_button_label(filterButton, filterLabelFormatPattern, current, total)
-        # resize button width to fit the new label
-        curHeight = filterButton.GetSize()[1]
-        filterButton.SetMinSize((filterButton.GetBestSize()[0], curHeight))
-        self._filterPanel.Layout()
-        self._filterPanel.Fit()
+        self._filterPanel.set_filter_stats(filterId, current, total)
 
     def set_checkbox_images(self, checkedIconMap, uncheckedIconMap):
         self._checkedIconMap = {}
@@ -180,17 +142,8 @@ class _FilteredTree(wx.Panel):
         _logger.debug("expanding node %d", nodeId)
         self._nodeIdToItem[nodeId].Expand()
 
-    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
-        raise Exception("subclass must override this method")
-
     def _notify_presenter_of_tree_selections(self, nodeIds):
         raise Exception("subclass must override this method")
-
-    def _on_toggle_filter(self, event):
-        _logger.debug("handling toggle filter event")
-        filterId = self._wxIdToFilterId[event.GetId()]
-        self._presenter.set_filter_state(filterId, event.IsChecked())
-        event.Skip()
 
     def _on_sel_changed(self, event):
         '''notifies the presenter that a details pane should be refreshed'''
@@ -214,7 +167,7 @@ class _FilteredTree(wx.Panel):
 
 class PackagesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
-        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter)
+        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter, setFilterButtonLabelFn=self._set_filter_button_label)
 
     def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
         label = filterLabelFormatPattern % (current, total)
@@ -236,9 +189,6 @@ class PackagesTree(_FilteredTree):
 class FilesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
         _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter)
-
-    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
-        filterButton.SetLabel(filterLabelFormatPattern % total)
 
     def _notify_presenter_of_tree_selections(self, nodeIds):
         self._presenter.set_files_tree_selections(nodeIds)

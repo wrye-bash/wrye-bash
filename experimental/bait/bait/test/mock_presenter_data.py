@@ -45,11 +45,10 @@ FILE_NODES_IDX = 9
 pkgNodes = {}
 
 # internal data
-#        fileInfo = wx.TextCtrl(fileInfoPanel, style=infoStyle, value="File info goes here, such as file size, conflict lists, esp master lists, resource previews, etc.")
 _uopFiles = {}
 
-def _make_text_map(generalText, selectedText="", dirtyText="", conflictsText="", matchedText="", missingText="", mismatchedText="", skippedText=""):
-    return {presenter.DETAILS_TAB_ID_GENERAL:generalText, presenter.DETAILS_TAB_ID_SELECTED:selectedText, presenter.DETAILS_TAB_ID_DIRTY:dirtyText, presenter.DETAILS_TAB_ID_CONFLICTS:conflictsText, presenter.DETAILS_TAB_ID_MATCHED:matchedText, presenter.DETAILS_TAB_ID_MISSING:missingText, presenter.DETAILS_TAB_ID_MISMATCHED:mismatchedText, presenter.DETAILS_TAB_ID_SKIPPED:skippedText}
+def _make_text_map(generalText):
+    return {presenter.DETAILS_TAB_ID_GENERAL:None, presenter.DETAILS_TAB_ID_DIRTY:[(presenter.FILTER_ID_DIRTY_ADD, "added file"), (presenter.FILTER_ID_DIRTY_UPDATE, "updated file"), (presenter.FILTER_ID_DIRTY_DELETE, "deleted file")], presenter.DETAILS_TAB_ID_CONFLICTS:"", presenter.DETAILS_TAB_ID_SELECTED:"", presenter.DETAILS_TAB_ID_UNSELECTED:"", presenter.DETAILS_TAB_ID_SKIPPED:""}
 
 def _write_path(outStr, nodes, node):
     parentId = node[PARENT_NODE_ID_IDX]
@@ -2975,4 +2974,4 @@ _uopFiles[2777] = ["UOP Vampire Aging & Face Fix.esp", False, None, 2774, _NTFIL
 
 _set_files_text(presenter.DETAILS_TAB_ID_SELECTED, _uopTextMap, _uopFiles, _FIFR|_FIFP)
 _set_files_text(presenter.DETAILS_TAB_ID_SKIPPED, _uopTextMap, _uopFiles, _FIFO)
-_uopTextMap[presenter.DETAILS_TAB_ID_MISSING] = _uopTextMap[presenter.DETAILS_TAB_ID_SELECTED]
+#_uopTextMap[presenter.DETAILS_TAB_ID_MISSING] = _uopTextMap[presenter.DETAILS_TAB_ID_SELECTED]

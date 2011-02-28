@@ -33,19 +33,18 @@ from ...presenter import view_commands
 _logger = logging.getLogger(__name__)
 _packageFilterIds = frozenset((presenter.FILTER_ID_PACKAGES_HIDDEN, presenter.FILTER_ID_PACKAGES_INSTALLED, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED))
 _fileFilterIds = frozenset((presenter.FILTER_ID_FILES_PLUGINS, presenter.FILTER_ID_FILES_RESOURCES, presenter.FILTER_ID_FILES_OTHER))
+_packageInfoFilterIds = frozenset((presenter.FILTER_ID_DIRTY_ADD, presenter.FILTER_ID_DIRTY_UPDATE, presenter.FILTER_ID_DIRTY_DELETE, presenter.FILTER_ID_CONFLICTS_SELECTED, presenter.FILTER_ID_CONFLICTS_UNSELECTED, presenter.FILTER_ID_CONFLICTS_ACTIVE, presenter.FILTER_ID_CONFLICTS_INACTIVE, presenter.FILTER_ID_CONFLICTS_HIGHER, presenter.FILTER_ID_CONFLICTS_LOWER, presenter.FILTER_ID_SELECTED_MATCHED, presenter.FILTER_ID_SELECTED_MISMATCHED, presenter.FILTER_ID_SELECTED_OVERRIDDEN, presenter.FILTER_ID_SELECTED_MISSING, presenter.FILTER_ID_UNSELECTED_MATCHED, presenter.FILTER_ID_UNSELECTED_MISMATCHED, presenter.FILTER_ID_UNSELECTED_OVERRIDDEN, presenter.FILTER_ID_UNSELECTED_MISSING, presenter.FILTER_ID_SKIPPED_NONGAME, presenter.FILTER_ID_SKIPPED_MASKED))
 
 
 class CommandThread(threading.Thread):
-    def __init__(self, inCommandQueue, detailsTabMap, dataPanel, packageTree, fileTree, statusBox, projectInfoLabel, projectInfoTabs, fileInfo):
+    def __init__(self, inCommandQueue, dataPanel, packageTree, fileTree, statusBox, packageInfoPanel, fileInfo):
         threading.Thread.__init__(self, name="ViewCommand")
         self._inCommandQueue = inCommandQueue
-        self._detailsTabMap = detailsTabMap
         self._dataPanel = dataPanel
         self._packageTree = packageTree
         self._fileTree = fileTree
         self._statusBox = statusBox
-        self._projectInfoLabel = projectInfoLabel
-        self._projectInfoTabs = projectInfoTabs
+        self._packageInfoPanel = packageInfoPanel
         self._fileInfo = fileInfo
         self._ignoreUpdates = False
         self._colorMap = None
@@ -57,7 +56,7 @@ class CommandThread(threading.Thread):
         self._handlers[view_commands.CLEAR_PACKAGES] = self._clear_packages
         self._handlers[view_commands.SET_FILTER_STATS] = self._set_filter_stats
         self._handlers[view_commands.STATUS_UPDATE] = self._update_status        
-        self._handlers[view_commands.SET_PACKAGE_DETAILS] = self._update_package_details
+        self._handlers[view_commands.SET_PACKAGE_LABEL] = self._set_package_label
         self._handlers[view_commands.SET_DATA_STATS] = self._set_data_stats
         self._handlers[view_commands.ADD_FILE] = self._add_file
         self._handlers[view_commands.CLEAR_FILES] = self._clear_files
@@ -65,6 +64,7 @@ class CommandThread(threading.Thread):
         self._handlers[view_commands.SELECT_PACKAGES] = self._select_packages
         self._handlers[view_commands.SELECT_FILES] = self._select_files
         self._handlers[view_commands.SET_STYLE_MAPS] = self._set_style_maps
+        self._handlers[view_commands.SET_PACKAGE_INFO] = self._set_package_info
 
     def set_ignore_updates(self, value):
         self._ignoreUpdates = value;
@@ -155,14 +155,15 @@ class CommandThread(threading.Thread):
 
     def _set_filter_stats(self, setFilterStatsCommand):
         _logger.debug("setting filter %d stats to %d/%d", setFilterStatsCommand.filterId, setFilterStatsCommand.current, setFilterStatsCommand.total)
-        if setFilterStatsCommand.filterId in _packageFilterIds:
-            tree = self._packageTree
-        elif setFilterStatsCommand.filterId in _fileFilterIds:
-            tree = self._fileTree
+        filterId = setFilterStatsCommand.filterId
+        # TODO: dict lookup
+        if filterId in _packageFilterIds: target = self._packageTree
+        elif filterId in _fileFilterIds: target = self._fileTree
+        elif filterId in _packageInfoFilterIds: target = self._packageInfoPanel
         else:
-            _logger.warn("filter stats set for unknown filterId: %d", setFilterStatsCommand.filterId)
+            _logger.warn("filter stats set for unknown filterId: %d", filterId)
             return
-        tree.set_filter_stats(setFilterStatsCommand.filterId, setFilterStatsCommand.current, setFilterStatsCommand.total)
+        target.set_filter_stats(setFilterStatsCommand.filterId, setFilterStatsCommand.current, setFilterStatsCommand.total)
 
     def _set_data_stats(self, setDataStatsCommand):
         _logger.debug("setting data stats to %d/%d, %d/%d", setDataStatsCommand.activePlugins, setDataStatsCommand.totalPlugins, setDataStatsCommand.knownFiles, setDataStatsCommand.totalFiles)
@@ -173,20 +174,13 @@ class CommandThread(threading.Thread):
         self._statusBox.AppendText("\n")
         self._statusBox.AppendText(statusUpdateCommand.text)
         
-    def _update_package_details(self, setPackageDetailsCommand):
-        _logger.debug("setting package details")
-        if not setPackageDetailsCommand.label is None:
-            self._projectInfoLabel.SetLabel(setPackageDetailsCommand.label)
-        textCtrl = self._projectInfoTabs.GetCurrentPage()
-        if setPackageDetailsCommand.text is None:
-            textCtrl.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
-            textCtrl.SetValue("No package selected")
-        elif len(setPackageDetailsCommand.text) is 0:
-            textCtrl.SetForegroundColour(self._colorMap[view_commands.TEXT_DISABLED])
-            textCtrl.SetValue("None")
-        else:
-            textCtrl.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
-            textCtrl.SetValue(setPackageDetailsCommand.text)
+    def _set_package_label(self, setPackageLabelCommand):
+        _logger.debug("setting package label")
+        self._packageInfoPanel.set_label(setPackageLabelCommand.text)
+
+    def _set_package_info(self, setPackageInfoCommand):
+        _logger.debug("setting package info for tab %d", setPackageInfoCommand.tabId)
+        self._packageInfoPanel.set_tab_data(setPackageInfoCommand.tabId, setPackageInfoCommand.data)
 
     def _update_file_details(self, setFileDetailsCommand):
         _logger.debug("setting file details")

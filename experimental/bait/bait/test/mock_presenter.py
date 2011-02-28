@@ -90,6 +90,7 @@ class MockPresenter:
         self.set_packages_tree_selections([])
         self.set_files_tree_selections([])
         self._rebuild_packages_tree()
+        self.viewCommandQueue.put(view_commands.SetPackageInfo(presenter.DETAILS_TAB_ID_GENERAL, None))
         self.viewCommandQueue.put(view_commands.StatusUpdate("finished loading"))
 
     def pause(self):
@@ -125,12 +126,13 @@ class MockPresenter:
         if numNodeIds is 1:
             # update package details
             node = pkgNodes[nodeIds[0]]
-            self.viewCommandQueue.put(view_commands.SetPackageDetails(node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab], node[LABEL_IDX]))
+            self.viewCommandQueue.put(view_commands.SetPackageLabel(node[LABEL_IDX]))
+            self.viewCommandQueue.put(view_commands.SetPackageInfo(self._curDetailsTab, node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab]))
             self._rebuild_files_tree(node[FILE_NODES_IDX])
         elif numNodeIds is 0:
-            self.viewCommandQueue.put(view_commands.SetPackageDetails(None, "Package details"))
+            self.viewCommandQueue.put(view_commands.SetPackageLabel(None))
         else:
-            self.viewCommandQueue.put(view_commands.SetPackageDetails("Multiple packages selected", "Package details"))
+            self.viewCommandQueue.put(view_commands.SetPackageLabel(""))
         
     def set_files_tree_selections(self, nodeIds, saveSelections=True):
         _logger.debug("setting files tree selection to node(s) %s", nodeIds)
@@ -148,10 +150,9 @@ class MockPresenter:
         self._curDetailsTab = detailsTabId
         numSelectedPackages = len(self._selectedPackages)
         if numSelectedPackages is 0:
-            self.viewCommandQueue.put(view_commands.SetPackageDetails(None))
+            self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, None))
         elif numSelectedPackages is 1:
-            # update package details
-            self.viewCommandQueue.put(view_commands.SetPackageDetails(pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
+            self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
 
     def set_group_node_expanded(self, nodeId, value):
         _logger.debug("setting group node %d expansion to %s", nodeId, value)

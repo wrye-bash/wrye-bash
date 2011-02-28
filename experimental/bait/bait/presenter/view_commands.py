@@ -29,7 +29,7 @@ EXPAND_GROUP = 3
 CLEAR_PACKAGES = 4
 SET_FILTER_STATS = 5
 STATUS_UPDATE = 6
-SET_PACKAGE_DETAILS = 7
+SET_PACKAGE_LABEL = 7
 ADD_FILE = 8
 SET_DATA_STATS = 9
 CLEAR_FILES = 10
@@ -38,6 +38,7 @@ SELECT_PACKAGES = 12
 EXPAND_DIR = 13
 SELECT_FILES = 14
 SET_STYLE_MAPS = 15
+SET_PACKAGE_INFO = 16
 
 # style values
 FONT_STYLE_BOLD_FLAG = 1
@@ -152,10 +153,10 @@ class StatusUpdate(_SetText):
     def __init__(self, text, requestId=None):
         _SetText.__init__(self, STATUS_UPDATE, text, requestId)
 
-class SetPackageDetails(_SetText):
-    def __init__(self, text, label=None, requestId=None):
-        _SetText.__init__(self, SET_PACKAGE_DETAILS, text, requestId)
-        self.label = label
+class SetPackageLabel(_SetText):
+    """None means no package is selected, a blank label means multiple packages are selected"""
+    def __init__(self, text, requestId=None):
+        _SetText.__init__(self, SET_PACKAGE_LABEL, text, requestId)
 
 class AddFile(_AddNode):
     '''Adds a subpackage/file/directory node to the file tree'''
@@ -177,3 +178,24 @@ class SetStyleMaps(ViewCommand):
         self.colorMap = colorMap
         self.checkedIconMap = checkedIconMap
         self.uncheckedIconMap = uncheckedIconMap
+
+class SetPackageInfo(ViewCommand):
+    """sets the data for one of the package info tabs
+    For the General tab: data is a dictionary that has the following keys:
+      isArchive: boolean indicating whether the package is an archive
+      isInstalled: boolean indicating whether the package is installed
+      packageSize: a string representing the package size in the installers directory
+      contentsSize: a string representing the cumulative size of the package contents
+      lastModifiedTimestamp: a string representing the last modification date
+      The following additional keys are optional, interpreted as 0 if absent
+      numFiles, numDirty, numOverridden, numSkipped, numSelectedMatched, numSelectedMismatched,
+      numSelectedOverridden, numSelectedMissing, numUnselectedMatched, numUnselectedMismatched,
+      numUnselectedOverridden, numUnselectedMissing
+    For the Dirty tab: data is a list of tuples: (actionType, path), where actionType is one of
+      the dirty filter IDs
+    For the Conflicts tab, TODO: define     
+    """
+    def __init__(self, tabId, data, requestId=None):
+        ViewCommand.__init__(self, SET_PACKAGE_INFO, requestId)
+        self.tabId = tabId
+        self.data = data

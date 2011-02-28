@@ -25,7 +25,11 @@ class MainWindow(wx.Frame):
         self.SetSizer(sizer)
         self.CreateStatusBar()
         self.Show(True)
-        self._baitView.start()
+        try:
+            self._baitView.start()
+        except:
+            self._baitView.shutdown()
+            raise
 
     def _on_close(self, event):
         self._baitView.shutdown()

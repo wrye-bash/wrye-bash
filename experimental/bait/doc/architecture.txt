@@ -47,6 +47,7 @@ View
 - Persists widget-specific state (such as splitter sash positions)
 - Captures UI events and informs presenter of pertinent user actions
 - Reads ViewCommand bundles from the Presenter's output queue and uses the contained information to incrementally update the UI
+- Contains all localizable text
 
 Presenter
 - Retrieves data from the Model, filters it according to current settings, and prepares the data for display

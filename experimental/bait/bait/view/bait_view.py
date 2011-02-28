@@ -27,7 +27,7 @@ import wx
 import wx.gizmos
 
 from .. import presenter
-from .impl import data_panel, filtered_tree, command_thread
+from .impl import data_panel, filtered_tree, package_info, command_thread
 
 
 _logger = logging.getLogger(__name__)
@@ -61,17 +61,7 @@ class BaitView(wx.Panel):
         # details section
         commentsSplitter = wx.gizmos.ThinSplitterWindow(topSplitter, style=splitterStyle)
         detailsSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        projectInfoPanel = wx.Panel(detailsSplitter)
-        projectInfoLabel = wx.StaticText(projectInfoPanel)
-        projectInfoTabs = wx.Notebook(projectInfoPanel)
-        generalTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        selectedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        dirtyTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        conflictsTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        matchedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        missingTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        mismatchedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
-        skippedTab = wx.TextCtrl(projectInfoTabs, style=infoStyle)
+        packageInfoPanel = self._packageInfoPanel = package_info.PackageInfoPanel(detailsSplitter, presenter_)
         fileTreeSplitter = wx.gizmos.ThinSplitterWindow(detailsSplitter, style=splitterStyle)
         fileTreePanel = wx.Panel(fileTreeSplitter)
         projectSettingsButton = wx.BitmapButton(fileTreePanel, bitmap=settingsIcon, style=wx.NO_BORDER)
@@ -92,14 +82,6 @@ class BaitView(wx.Panel):
         # read-only text controls should have same background color as parent
         bgColor = mainPanel.GetBackgroundColour()
         statusWindow.SetBackgroundColour(bgColor)
-        generalTab.SetBackgroundColour(bgColor)
-        selectedTab.SetBackgroundColour(bgColor)
-        dirtyTab.SetBackgroundColour(bgColor)
-        conflictsTab.SetBackgroundColour(bgColor)
-        matchedTab.SetBackgroundColour(bgColor)
-        missingTab.SetBackgroundColour(bgColor)
-        mismatchedTab.SetBackgroundColour(bgColor)
-        skippedTab.SetBackgroundColour(bgColor)
         fileInfo.SetBackgroundColour(bgColor)
 
         # customize search controls
@@ -110,16 +92,6 @@ class BaitView(wx.Panel):
         commentsText.SetDescriptiveText("Enter comments for this project here")
         commentsText.ShowSearchButton(False)
 
-        # add tabs to details notebook
-        projectInfoTabs.AddPage(generalTab, "General")
-        projectInfoTabs.AddPage(selectedTab, "Selected")
-        projectInfoTabs.AddPage(dirtyTab, "Dirty")
-        projectInfoTabs.AddPage(conflictsTab, "Conflicts")
-        projectInfoTabs.AddPage(matchedTab, "Matched")
-        projectInfoTabs.AddPage(missingTab, "Missing")
-        projectInfoTabs.AddPage(mismatchedTab, "Mismatched")
-        projectInfoTabs.AddPage(skippedTab, "Skipped")
-
         # set up splitters
         statusSplitter.SetMinimumPaneSize(oneLineHeight)
         statusSplitter.SplitHorizontally(self._packageTree, statusWindow)
@@ -128,7 +100,7 @@ class BaitView(wx.Panel):
         fileTreeSplitter.SplitVertically(fileTreePanel, fileInfoPanel)
         fileTreeSplitter.SetSashGravity(0.5) # resize both panels equally
         detailsSplitter.SetMinimumPaneSize(100)
-        detailsSplitter.SplitHorizontally(projectInfoPanel, fileTreeSplitter)
+        detailsSplitter.SplitHorizontally(packageInfoPanel, fileTreeSplitter)
         detailsSplitter.SetSashGravity(0.5) # resize both panels equally
         commentsSplitter.SetMinimumPaneSize(oneLineHeight)
         commentsSplitter.SplitHorizontally(detailsSplitter, commentsPanel)
@@ -148,12 +120,6 @@ class BaitView(wx.Panel):
         mainSizer.Add(statusSplitter, 1, wx.EXPAND)
         mainPanel.SetMinSize(mainSizer.GetMinSize())
         mainPanel.SetSizer(mainSizer)
-
-        projectInfoSizer = wx.BoxSizer(wx.VERTICAL)
-        projectInfoSizer.Add(projectInfoLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
-        projectInfoSizer.Add(projectInfoTabs, 1, wx.EXPAND)
-        projectInfoPanel.SetMinSize(projectInfoSizer.GetMinSize())
-        projectInfoPanel.SetSizer(projectInfoSizer)
 
         fileTreeHeaderSizer = wx.BoxSizer(wx.HORIZONTAL)
         fileTreeHeaderSizer.Add(projectSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
@@ -184,17 +150,14 @@ class BaitView(wx.Panel):
         # set up state
         self._splitters = {"status":statusSplitter, "fileTree":fileTreeSplitter,
                            "details":detailsSplitter, "comments":commentsSplitter, "top":topSplitter}
-        self._detailsTabIndexToTabId = {0:presenter.DETAILS_TAB_ID_GENERAL, 1:presenter.DETAILS_TAB_ID_SELECTED, 2:presenter.DETAILS_TAB_ID_DIRTY, 3:presenter.DETAILS_TAB_ID_CONFLICTS, 4:presenter.DETAILS_TAB_ID_MATCHED, 5:presenter.DETAILS_TAB_ID_MISSING, 6:presenter.DETAILS_TAB_ID_MISMATCHED, 7:presenter.DETAILS_TAB_ID_SKIPPED}
-        self._detailsTabIdToWidget = {presenter.DETAILS_TAB_ID_GENERAL:generalTab, presenter.DETAILS_TAB_ID_SELECTED:selectedTab, presenter.DETAILS_TAB_ID_DIRTY:dirtyTab, presenter.DETAILS_TAB_ID_CONFLICTS:conflictsTab, presenter.DETAILS_TAB_ID_MATCHED:matchedTab, presenter.DETAILS_TAB_ID_MISSING:missingTab, presenter.DETAILS_TAB_ID_MISMATCHED:mismatchedTab, presenter.DETAILS_TAB_ID_SKIPPED:skippedTab}
         self._presenter = presenter_
         self._stateManager = stateManager
-        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, detailsTabMap=self._detailsTabIdToWidget, dataPanel=dataPanel, packageTree=self._packageTree, fileTree=self._fileTree, statusBox=statusWindow, projectInfoLabel=projectInfoLabel, projectInfoTabs=projectInfoTabs, fileInfo=fileInfo)
+        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, dataPanel=dataPanel, packageTree=self._packageTree, fileTree=self._fileTree, statusBox=statusWindow, packageInfoPanel=packageInfoPanel, fileInfo=fileInfo)
         self._shuttingDown = False
 
         # event bindings
         globalSettingsButton.Bind(wx.EVT_BUTTON, self._on_global_settings_menu)
         projectSettingsButton.Bind(wx.EVT_BUTTON, self._on_project_settings_menu)
-        projectInfoTabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._on_details_tab_changing)
         search.Bind(wx.EVT_TEXT, self._on_search_text)
 
 
@@ -209,16 +172,38 @@ class BaitView(wx.Panel):
         self._splitters["top"].SetSashPosition(paneWidth*0.38)
         self._splitters["details"].SetSashPosition(paneWidth*0.22)
         self._splitters["fileTree"].SetSashPosition(paneWidth*0.32)
-        packageFilterStateMap = {presenter.FILTER_ID_PACKAGES_HIDDEN:False,presenter.FILTER_ID_PACKAGES_INSTALLED:True, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED:True}
-        fileFilterStateMap = {presenter.FILTER_ID_FILES_PLUGINS:True, presenter.FILTER_ID_FILES_RESOURCES:False, presenter.FILTER_ID_FILES_OTHER:False}
-        self._packageTree.start(packageFilterStateMap)
-        self._fileTree.start(fileFilterStateMap)
+        filterStateMap = {
+            presenter.FILTER_ID_PACKAGES_HIDDEN:False,
+            presenter.FILTER_ID_PACKAGES_INSTALLED:True,
+            presenter.FILTER_ID_PACKAGES_NOT_INSTALLED:True,
+            presenter.FILTER_ID_FILES_PLUGINS:True,
+            presenter.FILTER_ID_FILES_RESOURCES:False,
+            presenter.FILTER_ID_FILES_OTHER:False,
+            presenter.FILTER_ID_DIRTY_ADD:True,
+            presenter.FILTER_ID_DIRTY_UPDATE:True,
+            presenter.FILTER_ID_DIRTY_DELETE:True,
+            presenter.FILTER_ID_CONFLICTS_SELECTED:True,
+            presenter.FILTER_ID_CONFLICTS_UNSELECTED:False,
+            presenter.FILTER_ID_CONFLICTS_ACTIVE:True,
+            presenter.FILTER_ID_CONFLICTS_INACTIVE:False,
+            presenter.FILTER_ID_CONFLICTS_HIGHER:True,
+            presenter.FILTER_ID_CONFLICTS_LOWER:False,
+            presenter.FILTER_ID_SELECTED_MATCHED:True,
+            presenter.FILTER_ID_SELECTED_MISMATCHED:True,
+            presenter.FILTER_ID_SELECTED_OVERRIDDEN:True,
+            presenter.FILTER_ID_SELECTED_MISSING:True,
+            presenter.FILTER_ID_UNSELECTED_MATCHED:True,
+            presenter.FILTER_ID_UNSELECTED_MISMATCHED:True,
+            presenter.FILTER_ID_UNSELECTED_OVERRIDDEN:True,
+            presenter.FILTER_ID_UNSELECTED_MISSING:False,
+            presenter.FILTER_ID_SKIPPED_NONGAME:True,
+            presenter.FILTER_ID_SKIPPED_MASKED:False}
+        self._packageTree.start(filterStateMap)
+        self._fileTree.start(filterStateMap)
+        self._packageInfoPanel.start(filterStateMap)
         _logger.debug("starting command processing thread")
         self._commandThread.start()
         _logger.debug("starting presenter")
-        filterStateMap = {}
-        filterStateMap.update(packageFilterStateMap)
-        filterStateMap.update(fileFilterStateMap)
         self._presenter.start(presenter.DETAILS_TAB_ID_GENERAL, filterStateMap)
         _logger.debug("view successfully started")
 
@@ -297,17 +282,6 @@ class BaitView(wx.Panel):
         menu.Append(-1, "Skip silent voices", kind=wx.ITEM_CHECK)
         self.PopupMenu(menu)
         menu.Destroy()
-
-    def _on_details_tab_changing(self, event):
-        if self._shuttingDown: return
-        oldTabId = self._detailsTabIndexToTabId[event.GetOldSelection()]
-        newTabId = self._detailsTabIndexToTabId[event.GetSelection()]
-        _logger.debug("details tab changing from %d to %d", oldTabId, newTabId)
-        self._detailsTabIdToWidget[oldTabId].SetValue("")
-        self._presenter.set_details_tab_selection(newTabId)
-        # TODO: gray out "Loading" text
-        self._detailsTabIdToWidget[newTabId].SetValue("Loading...")
-        event.Skip()
         
     def _on_search_text(self, event):
         text = event.GetEventObject().GetValue()
