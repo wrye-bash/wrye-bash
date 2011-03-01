@@ -190,22 +190,24 @@ class PackageInfoPanel(wx.Panel):
         if generalStats["isArchive"] is True: packageType = "Archive"
         elif generalStats["isArchive"] is False: packageType = "Project"
         
-        if generalStats["isInstalled"] is True: installedPrefix = ""
-        elif generalStats["isInstalled"] is False: installedPrefix = "Not "
+        if generalStats["isHidden"] is True: status = "Hidden"
+        elif generalStats["isInstalled"] is True: status = "Installed"
+        elif generalStats["isInstalled"] is False: status = "Not Installed"
 
-        self._generalTabSummary.SetLabel("""Package type: %s (%sInstalled)
+        self._generalTabSummary.SetLabel("""Package type: %s (%s)
 Package size: %s (%s fully installed)
 Last Modified: %s
 Files: %d
   Dirty: %d
   Overridden: %d
-  Skipped: %d""" % (packageType, installedPrefix, generalStats["packageSize"], generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
-                    generalStats.get(numFiles, 0), generalStats.get(numDirty, 0), generalStats.get(numOverridden, 0),
-                    generalStats.get(numSkipped, 0)))
+  Skipped: %d""" % (packageType, status, generalStats["packageSize"], generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
+                    generalStats.get("numFiles", 0), generalStats.get("numDirty", 0), generalStats.get("numOverridden", 0),
+                    generalStats.get("numSkipped", 0)))
   
         generalTabStatsChart = self._generalTabStatsChart
         for key in _statsChartElementKeys:
-            generalTabStatsChart[key].SetLabel(generalStats.get(key, 0))
+            generalTabStatsChart[key].SetLabel(str(generalStats.get(key, 0)))
+        self._generalTabChartPanel.GetParent().Layout()
 
     def _handle_empty_null_data(self, textCtrl, data):
         if data is None or len(data) is 0:

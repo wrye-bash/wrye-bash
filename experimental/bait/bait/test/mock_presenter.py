@@ -127,7 +127,10 @@ class MockPresenter:
             # update package details
             node = pkgNodes[nodeIds[0]]
             self.viewCommandQueue.put(view_commands.SetPackageLabel(node[LABEL_IDX]))
-            self.viewCommandQueue.put(view_commands.SetPackageInfo(self._curDetailsTab, node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab]))
+            if self._curDetailsTab is presenter.DETAILS_TAB_ID_GENERAL:
+                self.viewCommandQueue.put(view_commands.SetPackageInfo(self._curDetailsTab, get_general_map(nodeIds[0])))
+            else:
+                self.viewCommandQueue.put(view_commands.SetPackageInfo(self._curDetailsTab, node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab]))
             self._rebuild_files_tree(node[FILE_NODES_IDX])
         elif numNodeIds is 0:
             self.viewCommandQueue.put(view_commands.SetPackageLabel(None))
@@ -152,7 +155,10 @@ class MockPresenter:
         if numSelectedPackages is 0:
             self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, None))
         elif numSelectedPackages is 1:
-            self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
+            if self._curDetailsTab is presenter.DETAILS_TAB_ID_GENERAL:
+                self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, get_general_map(self._selectedPackages[0])))
+            else:
+                self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
 
     def set_group_node_expanded(self, nodeId, value):
         _logger.debug("setting group node %d expansion to %s", nodeId, value)
@@ -288,8 +294,8 @@ class MockPresenter:
         if nodes is None:
             nodes = pkgNodes[self._selectedPackages[0]][FILE_NODES_IDX]
         if not nodes is None:
-            for nodeId in xrange(0, len(nodes)):
-                _logger.debug("filtering file node %d", nodeId)
+            numNodes = len(nodes)
+            for nodeId in xrange(0, numNodes):
                 node = nodes[nodeId]
                 node[IS_VISIBLE_IDX] = False
                 # apply filters
@@ -298,6 +304,7 @@ class MockPresenter:
                     self._add_node(nodes, nodeId, addedSet, self._add_files_tree_node)
                 if not node[NODE_TYPE_IDX] is presenter.NODE_TYPE_DIRECTORY:
                     totals[filter] += 1
+            _logger.debug("filtered %d file nodes", numNodes)
         
         # update filter labels        
         for filterId in filterIds:

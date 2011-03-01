@@ -22,9 +22,15 @@
 #
 # =============================================================================
 
+import datetime
+import logging
+import os
+
 from .. import presenter
 from ..presenter import view_commands
 
+
+_logger = logging.getLogger(__name__)
 
 LABEL_IDX = 0
 IS_VISIBLE_IDX = 1
@@ -47,42 +53,6 @@ pkgNodes = {}
 # internal data
 _uopFiles = {}
 
-def _make_text_map(generalText):
-    return {presenter.DETAILS_TAB_ID_GENERAL:None, presenter.DETAILS_TAB_ID_DIRTY:[(presenter.FILTER_ID_DIRTY_ADD, "added file"), (presenter.FILTER_ID_DIRTY_UPDATE, "updated file"), (presenter.FILTER_ID_DIRTY_DELETE, "deleted file")], presenter.DETAILS_TAB_ID_CONFLICTS:"", presenter.DETAILS_TAB_ID_SELECTED:"", presenter.DETAILS_TAB_ID_UNSELECTED:"", presenter.DETAILS_TAB_ID_SKIPPED:""}
-
-def _write_path(outStr, nodes, node):
-    parentId = node[PARENT_NODE_ID_IDX]
-    if not parentId is None:
-        _write_path(outStr, nodes, nodes[parentId])
-        outStr.write("/")
-    outStr.write(node[LABEL_IDX])
-
-def _set_files_text(targetField, textMap, nodes, filterMask):
-    # idea for efficient string concatenation from:
-    #   http://skymind.com/~ocrow/python_string/
-    from cStringIO import StringIO
-    outStr = StringIO()
-    for nodeId in xrange(0, len(nodes)):
-        node = nodes[nodeId]
-        if not node[FILTER_IDX] & filterMask is 0 and not node[NODE_TYPE_IDX] is _NTDIR:
-            _write_path(outStr, nodes, node)
-            outStr.write("\n")
-    textMap[targetField] = outStr.getvalue()
-
-_nullTextMap = _make_text_map("Not mocked out")
-_uopTextMap = _make_text_map("""Package type: Archive (Not Installed)
-Package size: 125 MB (324 MB fully installed)
-Last Modified: 10/17/2009 7:37:16 PM
-Files: 2,399
-Dirty: 0
-Overridden: 0
-Skipped: 2 
-            matched mismatched overridden missing total
-selected    0       0          0          2397    2397
-unselected  0       0          0          0       0
-total       0       0          0          2397    2397""")
-
-
 # local abbreviations
 _NTGRP = presenter.NODE_TYPE_GROUP
 _NTARCH = presenter.NODE_TYPE_ARCHIVE
@@ -97,22 +67,78 @@ _FIFP = presenter.FILTER_ID_FILES_PLUGINS
 _FIFR = presenter.FILTER_ID_FILES_RESOURCES
 _FIFO = presenter.FILTER_ID_FILES_OTHER
 
+
+def _write_path(outStr, nodes, node):
+    parentId = node[PARENT_NODE_ID_IDX]
+    if not parentId is None:
+        _write_path(outStr, nodes, nodes[parentId])
+        outStr.write(os.sep)
+    outStr.write(node[LABEL_IDX])
+
+def _get_files_text(nodes, filterMask):
+    if nodes is None: return ""
+    # idea for efficient string concatenation from:
+    #   http://skymind.com/~ocrow/python_string/
+    from cStringIO import StringIO
+    outStr = StringIO()
+    for nodeId in xrange(0, len(nodes)):
+        node = nodes[nodeId]
+        if not node[FILTER_IDX] & filterMask is 0 and not node[NODE_TYPE_IDX] is _NTDIR:
+            _write_path(outStr, nodes, node)
+            outStr.write("\n")
+    return outStr.getvalue()
+
+def get_general_map(nodeId):
+    pkgNode = pkgNodes[nodeId]
+    if pkgNode[NODE_TYPE_IDX] is _NTGRP: return None
+    _logger.debug("getting general map for node %d", nodeId)
+    retMap = {}
+    retMap["isArchive"] = pkgNode[NODE_TYPE_IDX] is _NTARCH
+    retMap["isHidden"] = pkgNode[FILTER_IDX] is _FIPH
+    retMap["isInstalled"] = pkgNode[FILTER_IDX] is _FIPI
+    retMap["packageSize"] = 0
+    retMap["contentsSize"] = 0
+    retMap["lastModifiedTimestamp"] = datetime.datetime.now().strftime("%x %X")
+    fileNodes = pkgNode[FILE_NODES_IDX]
+    if fileNodes is None: return retMap
+    # for the UOP
+    retMap["packageSize"] = "125 MB"
+    retMap["contentsSize"] = "324 MB"
+    retMap["numFiles"] = 2399
+    retMap["numSkipped"] = 2
+    retMap["numSelectedMissing"] = 2397
+    retMap["numTotalSelected"] = 2397
+    retMap["numTotalMissing"] = 2397
+    retMap["numTotalSelectable"] = 2397
+    return retMap
+
+def _populate_package_details_map(detailsMap, nodes=None):
+    detailsMap[presenter.DETAILS_TAB_ID_DIRTY] = [(presenter.FILTER_ID_DIRTY_ADD, "added file"), (presenter.FILTER_ID_DIRTY_UPDATE, "updated file"), (presenter.FILTER_ID_DIRTY_DELETE, "deleted file")]
+    detailsMap[presenter.DETAILS_TAB_ID_CONFLICTS] = ""
+    detailsMap[presenter.DETAILS_TAB_ID_SELECTED] = _get_files_text(nodes, _FIFR|_FIFP)
+    detailsMap[presenter.DETAILS_TAB_ID_UNSELECTED] = ""
+    detailsMap[presenter.DETAILS_TAB_ID_SKIPPED] = _get_files_text(nodes, _FIFO)
+
+
 _hidden = view_commands.ViewCommandStyle(textColorId=view_commands.TEXT_DISABLED)
 _pkgUninst = view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_MISSING)
 _inst = view_commands.ViewCommandStyle(checkboxState=True)
 _pkgInst = view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_MATCHES)
 
+_nullTextMap = {}
+_uopTextMap = {}
+
 # pkgNodeId -> [label                                                       isVis  parId predId nodeType filtr style     srch  detailsMap    fileNodes]
 pkgNodes[0] = ["Unofficial_Oblivion_Patch_v3_2_0_Manual_Version-5296.7z", False, None, None, _NTARCH, _FIPN, _pkgUninst, True, _uopTextMap,  _uopFiles]
-pkgNodes[1] = ["Better Cities",                                           False, None, 0,    _NTGRP,  0,     None,       True, _make_text_map("This shows how to use the new grouping feature to collapse collections of related mods, decluttering the top level"), None]
-pkgNodes[2] = ["old versions",                                            False, 1,    None, _NTGRP,  0,     _hidden,    True, _make_text_map("You can also nest groups like this, for example to keep old versions of mods easily accessible, but out of the way"), None]
+pkgNodes[1] = ["Better Cities",                                           False, None, 0,    _NTGRP,  0,     None,       True, _nullTextMap, None]
+pkgNodes[2] = ["old versions",                                            False, 1,    None, _NTGRP,  0,     _hidden,    True, _nullTextMap, None]
 pkgNodes[3] = ["Better_Cities_4-8-0-16513.7z",                            False, 2,    None, _NTARCH, _FIPH, _hidden,    True, _nullTextMap, None]
 pkgNodes[4] = ["Better_Cities_4-8-4-16513-4-8-4.7z",                      False, 2,    3,    _NTARCH, _FIPH, _hidden,    True, _nullTextMap, None]
 pkgNodes[5] = ["Better_Cities_Resources_4-8-0-16513.7z",                  False, 2,    4,    _NTARCH, _FIPH, _hidden,    True, _nullTextMap, None]
 pkgNodes[6] = ["Better_Cities_4-9-0-16513-v4-9-0.7z",                     False, 1,    2,    _NTARCH, _FIPI, _pkgInst,   True, _nullTextMap, None]
 pkgNodes[7] = ["Better_Cities_Permanent_Resources-16513.7z",              False, 1,    6,    _NTARCH, _FIPI, _pkgInst,   True, _nullTextMap, None]
 pkgNodes[8] = ["Better_Cities_Resources_4-8-1-16513.7z",                  False, 1,    7,    _NTARCH, _FIPI, _pkgInst,   True, _nullTextMap, None]
-pkgNodes[9] = ["MenuQue",                                                 False, None, 1,    _NTPROJ, _FIPH, _hidden,    True, _make_text_map("This shows an exmaple of a hidden project"), None]
+pkgNodes[9] = ["MenuQue",                                                 False, None, 1,    _NTPROJ, _FIPH, _hidden,    True, _nullTextMap, None]
 
 # test various icons
 pkgNodes[10] = ["icon test", False, None, 9, _NTGRP, 0, None, True, _nullTextMap, None]
@@ -139,8 +165,8 @@ pkgNodes[30] = ["uninstalled installer (uninstallable)", False, 10, 29, _NTARCH,
 
 # test text and hilight styles
 pkgNodes[31] = ["corrupt_or_partial_download.7z", False, None, 10, _NTARCH, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_ERROR, checkboxState=False, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[32] = ["installed, but missing dependency", False, None, 31, _NTARCH, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_MISSING_DEPENDENCY, checkboxState=True, iconId=view_commands.ICON_INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[33] = ["installed, but dirty", False, None, 32, _NTARCH, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_DIRTY, checkboxState=True, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[32] = ["installed, but missing dependency", False, None, 31, _NTARCH, _FIPI, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_MISSING_DEPENDENCY, checkboxState=True, iconId=view_commands.ICON_INSTALLER_MATCHES), True, _nullTextMap, None]
+pkgNodes[33] = ["installed, but dirty", False, None, 32, _NTARCH, _FIPI, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_DIRTY, checkboxState=True, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
 pkgNodes[34] = ["newpackage.7z", False, None, 33, _NTARCH, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_BOLD_FLAG, checkboxState=False, iconId=view_commands.ICON_INSTALLER_MISSING), True, _nullTextMap, None]
 
 # test non-ascii
@@ -2972,6 +2998,5 @@ _uopFiles[2775] = ["Readme.html", False, 378, None, _NTFILE, _FIFO, _hidden, "Si
 _uopFiles[2776] = ["Version History.html", False, 378, 2775, _NTFILE, _FIFO, _hidden, "Size: 566746 bytes\nModified: 2008-08-27 07:41:43\n<display file contents here>"]
 _uopFiles[2777] = ["UOP Vampire Aging & Face Fix.esp", False, None, 2774, _NTFILE, _FIFP, _inst, "Size: 682 bytes\nModified: 2001-01-02 12:38:47\n<add BOSS messages here>\n<add masters here>\n<add file conflicts here>"]
 
-_set_files_text(presenter.DETAILS_TAB_ID_SELECTED, _uopTextMap, _uopFiles, _FIFR|_FIFP)
-_set_files_text(presenter.DETAILS_TAB_ID_SKIPPED, _uopTextMap, _uopFiles, _FIFO)
-#_uopTextMap[presenter.DETAILS_TAB_ID_MISSING] = _uopTextMap[presenter.DETAILS_TAB_ID_SELECTED]
+_populate_package_details_map(_nullTextMap)
+_populate_package_details_map(_uopTextMap, _uopFiles)

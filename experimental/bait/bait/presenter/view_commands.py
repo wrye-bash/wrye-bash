@@ -183,14 +183,16 @@ class SetPackageInfo(ViewCommand):
     """sets the data for one of the package info tabs
     For the General tab: data is a dictionary that has the following keys:
       isArchive: boolean indicating whether the package is an archive
+      isHidden: boolean indicating whether the package is hidden
       isInstalled: boolean indicating whether the package is installed
       packageSize: a string representing the package size in the installers directory
       contentsSize: a string representing the cumulative size of the package contents
       lastModifiedTimestamp: a string representing the last modification date
       The following additional keys are optional, interpreted as 0 if absent
-      numFiles, numDirty, numOverridden, numSkipped, numSelectedMatched, numSelectedMismatched,
-      numSelectedOverridden, numSelectedMissing, numUnselectedMatched, numUnselectedMismatched,
-      numUnselectedOverridden, numUnselectedMissing
+      numFiles, numDirty, numOverridden, numSkipped,
+      numSelectedMatched, numSelectedMismatched, numSelectedOverridden, numSelectedMissing, numTotalSelected,
+      numUnselectedMatched, numUnselectedMismatched, numUnselectedOverridden, numUnselectelectedMissing, numTotalUnselected,
+      numTotalMatched, numTotalMismatched, numTotalOverridden, numTotalMissing, numTotalSelectable
     For the Dirty tab: data is a list of tuples: (actionType, path), where actionType is one of
       the dirty filter IDs
     For the Conflicts tab, TODO: define     
