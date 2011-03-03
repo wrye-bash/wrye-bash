@@ -273,6 +273,7 @@ class BaitView(wx.Panel):
         # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling the GUI event loop thread
         # TODO: make these tristates, falls through to global settings
         menu = wx.Menu()
+        menu.Append(-1, "Has non-standard directories", kind=wx.ITEM_CHECK)
         menu.Append(-1, "Allow OBSE plugins", kind=wx.ITEM_CHECK)
         menu.Append(-1, "Skip DistantLOD", kind=wx.ITEM_CHECK)
         menu.Append(-1, "Skip LOD meshes", kind=wx.ITEM_CHECK)

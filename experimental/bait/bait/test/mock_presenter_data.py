@@ -129,6 +129,7 @@ _nullTextMap = {}
 _uopTextMap = {}
 
 # pkgNodeId -> [label                                                       isVis  parId predId nodeType filtr style     srch  detailsMap    fileNodes]
+# TODO: virtual packages: vanilla, installed files of unknown origin
 pkgNodes[0] = ["Unofficial_Oblivion_Patch_v3_2_0_Manual_Version-5296.7z", False, None, None, _NTARCH, _FIPN, _pkgUninst, True, _uopTextMap,  _uopFiles]
 pkgNodes[1] = ["Better Cities",                                           False, None, 0,    _NTGRP,  0,     None,       True, _nullTextMap, None]
 pkgNodes[2] = ["old versions",                                            False, 1,    None, _NTGRP,  0,     _hidden,    True, _nullTextMap, None]
@@ -141,27 +142,28 @@ pkgNodes[8] = ["Better_Cities_Resources_4-8-1-16513.7z",                  False,
 pkgNodes[9] = ["MenuQue",                                                 False, None, 1,    _NTPROJ, _FIPH, _hidden,    True, _nullTextMap, None]
 
 # test various icons
+# TODO: add "unreadable" icons
 pkgNodes[10] = ["icon test", False, None, 9, _NTGRP, 0, None, True, _nullTextMap, None]
 pkgNodes[11] = ["installed project (matches)", False, 10, None, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[12] = ["installed project (mismatched)", False, 10, 11, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[12] = ["installed project (mismatched or dirty)", False, 10, 11, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_MISMATCHED), True, _nullTextMap, None]
 pkgNodes[13] = ["installed project (missing)", False, 10, 12, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_MISSING), True, _nullTextMap, None]
 pkgNodes[14] = ["installed project (empty)", False, 10, 13, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_EMPTY), True, _nullTextMap, None]
-pkgNodes[15] = ["installed project (uninstallable)", False, 10, 14, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[15] = ["installed project (unrecognized structure)", False, 10, 14, _NTPROJ, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
 pkgNodes[16] = ["installed installer (matches)", False, 10, 15, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[17] = ["installed installer (mismatched)", False, 10, 16, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[17] = ["installed installer (mismatched or dirty)", False, 10, 16, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
 pkgNodes[18] = ["installed installer (missing)", False, 10, 17, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_MISSING), True, _nullTextMap, None]
 pkgNodes[19] = ["installed installer (empty)", False, 10, 18, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_EMPTY), True, _nullTextMap, None]
-pkgNodes[20] = ["installed installer (uninstallable)", False, 10, 19, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[20] = ["installed installer (unrecognized structure)", False, 10, 19, _NTARCH, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
 pkgNodes[21] = ["uninstalled project (matches)", False, 10, 20, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[22] = ["uninstalled project (mismatched)", False, 10, 21, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[22] = ["uninstalled project (mismatched or dirty)", False, 10, 21, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_MISMATCHED), True, _nullTextMap, None]
 pkgNodes[23] = ["uninstalled project (missing)", False, 10, 22, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_MISSING), True, _nullTextMap, None]
 pkgNodes[24] = ["uninstalled project (empty)", False, 10, 23, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_EMPTY), True, _nullTextMap, None]
-pkgNodes[25] = ["uninstalled project (uninstallable)", False, 10, 24, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[25] = ["uninstalled project (unrecognized structure)", False, 10, 24, _NTPROJ, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
 pkgNodes[26] = ["uninstalled installer (matches)", False, 10, 25, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[27] = ["uninstalled installer (mismatched)", False, 10, 26, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[27] = ["uninstalled installer (mismatched or dirty)", False, 10, 26, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_MISMATCHED), True, _nullTextMap, None]
 pkgNodes[28] = ["uninstalled installer (missing)", False, 10, 27, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_MISSING), True, _nullTextMap, None]
 pkgNodes[29] = ["uninstalled installer (empty)", False, 10, 28, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_EMPTY), True, _nullTextMap, None]
-pkgNodes[30] = ["uninstalled installer (uninstallable)", False, 10, 29, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[30] = ["uninstalled installer (unrecognized structure)", False, 10, 29, _NTARCH, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
 
 # test text and hilight styles
 pkgNodes[31] = ["corrupt_or_partial_download.7z", False, None, 10, _NTARCH, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FONT_STYLE_ITALICS_FLAG, hilightColorId=view_commands.HIGHLIGHT_ERROR, checkboxState=False, iconId=view_commands.ICON_INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]

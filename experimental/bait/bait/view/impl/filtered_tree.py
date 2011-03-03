@@ -168,6 +168,8 @@ class _FilteredTree(wx.Panel):
 class PackagesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
         _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter, setFilterButtonLabelFn=self._set_filter_button_label)
+        self.Bind(wx.EVT_CONTEXT_MENU, self._on_context_menu)
+        self.Bind(wx.EVT_LEFT_DCLICK, self._on_double_click)
 
     def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
         label = filterLabelFormatPattern % (current, total)
@@ -185,10 +187,73 @@ class PackagesTree(_FilteredTree):
         _logger.debug("handling group collapse event")
         self._presenter.set_group_node_expanded(event.GetItem().GetData(), False)
 
+    def _on_double_click(self, event):
+        _logger.debug("handling double click event")
+        # TODO send "open package" command to the presenter
+
+    def _on_context_menu(self, event):
+        _logger.debug("showing files context menu")
+        menu = wx.Menu()
+
+        fileMenu = wx.Menu()
+        fileMenu.Append(-1, "Open")
+        fileMenu.Append(-1, "Rename...")
+        fileMenu.Append(-1, "Duplicate...")
+        fileMenu.Append(-1, "Delete")
+        menu.AppendMenu(-1, "File", fileMenu)
+
+        packageMenu = wx.Menu()
+        packageMenu.Append(-1, "List structure")
+        packageMenu.Append(-1, "Force refresh")
+        packageMenu.AppendSeparator()
+        # TODO: only enable if archive
+        packageMenu.Append(-1, "Create BCF...")
+        packageMenu.Append(-1, "Apply BCF...")
+        packageMenu.Append(-1, "Extract to project...")
+        packageMenu.AppendSeparator()
+        # TODO: only enable if project
+        packageMenu.Append(-1, "Sync from data")
+        packageMenu.Append(-1, "Pack to archive...")
+        packageMenu.Append(-1, "Pack to release archive...")
+        menu.AppendMenu(-1, "Package", packageMenu)
+
+        webMenu = wx.Menu()
+        webMenu.Append(-1, "Open homepage")
+        webMenu.Append(-1, "Set homepage...")
+        webMenu.AppendSeparator()
+        webMenu.Append(-1, "Search for in Google")
+        menu.AppendMenu(-1, "Web", webMenu)
+
+        moveMenu = wx.Menu()
+        moveMenu.Append(-1, "To top")
+        moveMenu.Append(-1, "To bottom")
+        moveMenu.Append(-1, "To group...")
+        moveMenu.Append(-1, "To position...")
+        menu.AppendMenu(-1, "Move", moveMenu)
+
+        groupMenu = wx.Menu()
+        groupMenu.Append(-1, "Create from selected packages...")
+        groupMenu.Append(-1, "Ignore internal conflicts", kind=wx.ITEM_CHECK)
+        menu.AppendMenu(-1, "Group", groupMenu)
+
+        menu.AppendSeparator()
+        menu.Append(-1, "Manual wizard...")
+        menu.Append(-1, "Auto wizard...")
+        menu.Append(-1, "Edit wizard...")
+        menu.AppendSeparator()
+        menu.Append(-1, "Anneal")
+        menu.Append(-1, "Install")
+        menu.Append(-1, "Uninstall")
+        menu.AppendSeparator()
+        menu.Append(-1, "Hide/unhide")
+        self.PopupMenu(menu)
+        menu.Destroy()
 
 class FilesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
         _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter)
+        self.Bind(wx.EVT_CONTEXT_MENU, self._on_context_menu)
+        self.Bind(wx.EVT_LEFT_DCLICK, self._on_double_click)
 
     def _notify_presenter_of_tree_selections(self, nodeIds):
         self._presenter.set_files_tree_selections(nodeIds)
@@ -200,3 +265,20 @@ class FilesTree(_FilteredTree):
     def _on_item_collapsed(self, event):
         _logger.debug("handling directory collapse event")
         self._presenter.set_dir_node_expanded(event.GetItem().GetData(), False)
+
+    def _on_double_click(self, event):
+        _logger.debug("handling double click event")
+        # TODO send "open file" command to the presenter
+
+    def _on_context_menu(self, event):
+        _logger.debug("showing files context menu")
+        menu = wx.Menu()
+        menu.Append(-1, "Open")
+        menu.Append(-1, "Check")
+        menu.Append(-1, "Uncheck")
+        menu.Append(-1, "Select all")
+        menu.Append(-1, "Copy to project...")
+        # TODO: delete (if project)
+        # TODO: rename on install (if .bsa)
+        self.PopupMenu(menu)
+        menu.Destroy()

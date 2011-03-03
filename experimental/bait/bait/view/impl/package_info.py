@@ -25,7 +25,7 @@
 from cStringIO import StringIO
 import logging
 import wx
-import wx.lib.fancytext
+import wx.lib.scrolledpanel
 
 from . import filter_panel
 from ... import presenter
@@ -60,8 +60,8 @@ class PackageInfoPanel(wx.Panel):
 
         label = self._label = wx.StaticText(self)
         packageInfoTabs = wx.Notebook(self)
-        
-        generalTabPanel = wx.Panel(packageInfoTabs)
+
+        generalTabPanel = wx.lib.scrolledpanel.ScrolledPanel(packageInfoTabs)
         generalTabSummary = self._generalTabSummary = wx.StaticText(generalTabPanel)
         generalTabChartPanel = self._generalTabChartPanel = wx.Panel(generalTabPanel)
         generalTabStatsChart = self._generalTabStatsChart = dict((key, wx.StaticText(generalTabChartPanel)) for key in _statsChartElementKeys)
@@ -87,16 +87,16 @@ class PackageInfoPanel(wx.Panel):
             (presenter.FILTER_ID_SKIPPED_NONGAME, presenter.FILTER_ID_SKIPPED_MASKED),
             ("Non-game (%d)", "Masked (%d)"), presenter_)
 
-        generalTabChartSizer = wx.GridBagSizer(5, 5)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Matched"), (1,1), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Mismatched"), (1,2), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Overridden"), (1,3), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Missing"), (1,4), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (1,5), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Selected"), (2,0), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Unselected"), (3,0), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (4,0), flag=wx.ALIGN_CENTER)
-        row = 2
+        generalTabChartSizer = wx.GridBagSizer(2, 5)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Matched"), (0,1), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Mismatched"), (0,2), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Overridden"), (0,3), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Missing"), (0,4), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (0,5), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Selected"), (1,0), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Unselected"), (2,0), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (3,0), flag=wx.ALIGN_CENTER)
+        row = 1
         col = 1
         for statsChartElement in _statsChartElementKeys:
             generalTabChartSizer.Add(generalTabStatsChart[statsChartElement], (row,col), flag=wx.ALIGN_RIGHT)
@@ -107,9 +107,11 @@ class PackageInfoPanel(wx.Panel):
         generalTabChartPanel.SetSizer(generalTabChartSizer)
 
         generalTabSizer = wx.BoxSizer(wx.VERTICAL)
-        generalTabSizer.Add(generalTabSummary, 1, wx.EXPAND)
-        generalTabSizer.Add(generalTabChartPanel, 1, wx.EXPAND)
+        generalTabSizer.Add(generalTabSummary, 0, wx.EXPAND)
+        generalTabSizer.Add(generalTabChartPanel, 0, wx.EXPAND)
         generalTabPanel.SetSizer(generalTabSizer)
+        generalTabPanel.SetAutoLayout(True)
+        generalTabPanel.SetupScrolling()
         
         packageInfoSizer = wx.BoxSizer(wx.VERTICAL)
         packageInfoSizer.Add(self._label, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
@@ -197,17 +199,20 @@ class PackageInfoPanel(wx.Panel):
         self._generalTabSummary.SetLabel("""Package type: %s (%s)
 Package size: %s (%s fully installed)
 Last Modified: %s
+Data CRC: %s
 Files: %d
   Dirty: %d
   Overridden: %d
   Skipped: %d""" % (packageType, status, generalStats["packageSize"], generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
-                    generalStats.get("numFiles", 0), generalStats.get("numDirty", 0), generalStats.get("numOverridden", 0),
-                    generalStats.get("numSkipped", 0)))
+                    generalStats.get("dataCrc", "00000000"), generalStats.get("numFiles", 0), generalStats.get("numDirty", 0),
+                    generalStats.get("numOverridden", 0), generalStats.get("numSkipped", 0)))
   
         generalTabStatsChart = self._generalTabStatsChart
         for key in _statsChartElementKeys:
             generalTabStatsChart[key].SetLabel(str(generalStats.get(key, 0)))
-        self._generalTabChartPanel.GetParent().Layout()
+        generalTabPanel = self._generalTabChartPanel.GetParent()
+        generalTabPanel.Layout()
+        generalTabPanel.SetupScrolling()
 
     def _handle_empty_null_data(self, textCtrl, data):
         if data is None or len(data) is 0:

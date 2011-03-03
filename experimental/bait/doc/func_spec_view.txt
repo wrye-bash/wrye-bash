@@ -70,6 +70,80 @@ Notification log
 
 
 
+icons: orange and yellow are now just orange, meaning "mismatched or dirty".  dirty packages, however, will have an orange text highlight as well and be printed in italics.
+red x for unreadable
+navy blue text for has subpackages
+yellow background has been removed (the overriding package will already be orange)
+gray background indicates "unknown or unreadable"
+markers are removed.  new packages are printed in bold, so no need for a ==Last== marker
+anneal and sync are now synonymous.  checking a package and annealing is the same as installing.
+what is the use case for allowing renaming of espm files?
+doc files are now directly openable from the files tree.  doc files are no longer installed (unless specifically selected)
+add data CRC to general tab
+use case for copy conflicts to project?
+
+global settings
+auto-anneal ? do we even want this to be an option or just always on?
+allow OBSE plugins
+skips
+
+data menu
+anneal all
+refresh data
+full refresh
+
+package menu
+file
+  open
+  rename
+  duplicate
+  delete
+package
+  list structure
+  force refresh
+  ---
+  create BCF
+  apply BCF
+  extract to project
+  ---
+  sync from data
+  pack to archive
+  pack to release archive
+web
+  open homepage
+  set homepage
+  --
+  search for on google
+move
+  to top
+  to bottom
+  to group...
+  to position...
+group
+  create from selected packages
+  x ignore conflicts
+manual wizard
+auto wizard
+edit wizard
+anneal
+install
+uninstall
+hide/unhide
+
+
+project settings
+has special directories
+allow OBSE plugins
+skips
+
+
+file menu
+*open*
+check
+uncheck
+select all
+delete (if project)
+rename on install (if .bsa)
 
 
 
