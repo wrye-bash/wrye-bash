@@ -27914,12 +27914,12 @@ class BasalCreatureTweaker(MultiTweakItem):
         #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
 #------------------------------------------------------------------------------
 class MAONPCSkeletonPatcher(BasalNPCTweaker):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons. Note: ONLY use if you have MAO installed.'),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'), 0),
             (_('Only Female NPCs'), 1),
@@ -27956,7 +27956,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
     scanOrder = 32
     editOrder = 32
     name = _("MAO Skeleton Setter")
@@ -27964,7 +27964,7 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons. Note: ONLY use if you have MAO installed.'),
+            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'),  0),
             (_('Only Female NPCs'),  1),
@@ -28007,7 +28007,120 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+#------------------------------------------------------------------------------
+class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
+    """Changes all NPCs to use the diverse skeleton for different look."""
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+            _('Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO.'),
+            'VORB',
+            (_('All NPCs'), 0),
+            (_('Only Female NPCs'), 1),
+            (_('Only Male NPCs'), 2),
+            )
 
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired.  Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+
+        #--Some setup
+        SkeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
+        modSkeletonDir = GPath(r'Characters\_male')
+        if SkeletonDir.exists():
+            pattern = 'skel_*.nif'
+            skeletonList = [x for x in SkeletonDir.list() if x.csbody.startswith('skel_') and x.cext == '.nif']
+            if len(skeletonList) > 0:
+                for record in patchFile.NPC_.records:
+                    #Skip records (male only, female only, player)
+                    if self.choiceValues[self.chosen][0] == 1 and not record.flags.female: continue
+                    elif self.choiceValues[self.chosen][0] == 2 and record.flags.female: continue
+                    if record.fid == (GPath('Oblivion.esm'),0x000007): continue
+                    try:
+                        oldModPath = record.model.modPath
+                    except AttributeError:  #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+                        continue
+
+                    random.seed(record.fid)
+                    randomNumber = random.randint(1, len(skeletonList))-1
+                    newModPath = modSkeletonDir.join(skeletonList[randomNumber])
+                    if newModPath != oldModPath:
+                        record.model.modPath = newModPath.s
+                        keep(record.fid)
+                        srcMod = record.fid[0]
+                        count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_("===VadersApp's Oblivion Real Bodies"))
+        log(_('* %d Skeletons Tweaked') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s, count[srcMod]))
+
+class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
+    """Changes all NPCs to use the diverse skeletons for different look."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("VORB Skeleton Setter")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("VaderApp's Oblivion Real Bodies Skeleton Tweaker"),
+            _('Changes all (modded and vanilla) NPCs to use the diverse skeletons for different look.  Not compatible with MAO.'),
+            'VORB',
+            (_('All NPCs'),  0),
+            (_('Only Female NPCs'),  1),
+            (_('Only Male NPCs'),  2),
+            )
+        self.mod_count = {}
+        self.playerFid = (GPath('Oblivion.esm'), 0x000007)
+        self.skeletonList = None
+
+    def initSkeletonList(self):
+        # Since bosh.dirs hasn't been populated when __init__ executes,
+        # we do this here
+        if self.skeletonList is None:
+            self.skeletonList = []
+            SkeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
+            if SkeletonDir.exists():
+                pattern = 'skel_*.nif'
+                self.skeletonList = [x for x in SkeletonDir.list() if x.csbody.startswith('skel_') and x.cext == '.nif']
+
+    def getTypes(self):
+        return ['NPC_']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.fid == self.playerFid: return #skip player record
+        elif self.choiceValues[self.chosen][0] == 1 and record.IsMale: return
+        elif self.choiceValues[self.chosen][0] == 2 and record.IsFemale: return
+        self.initSkeletonList()
+        if len(self.skeletonList) == 0: return
+        
+        oldModPath = record.modPath.lower()
+
+        random.seed(record.fid)
+        randomNumber = random.randint(1, len(self.skeletonList))-1
+        newModPath = GPath(r'Characters\_male').join(self.skeletonList[randomNumber])
+
+        if newModPath.cs != oldModPath:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.modPath = newModPath.s
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(MultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
@@ -28698,6 +28811,7 @@ class TweakActors(MultiTweaker):
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
+        VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
         VanillaNPCSkeletonPatcher(),
         RedguardNPCPatcher(),
@@ -28743,6 +28857,7 @@ class CBash_TweakActors(CBash_MultiTweaker):
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
+        CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
         CBash_VanillaNPCSkeletonPatcher(),
         CBash_RedguardNPCPatcher(),
