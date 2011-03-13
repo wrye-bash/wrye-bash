@@ -102,7 +102,13 @@ setup(
     windows = [default_target],
     options = {
         'py2exe': {
-            'dll_excludes': ['MSVCP90.dll'],
+            'dll_excludes': [
+                'MSVCP90.dll',
+                # For win32api (py2exe included these when built
+                # on Vista/7, when it shouldn't
+                'mswsock.dll',
+                'powrprof.dll',
+                ],
             'excludes': [
                 # From the py2exe tutorial
                 '_ssl',
