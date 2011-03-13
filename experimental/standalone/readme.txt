@@ -18,25 +18,32 @@ but I'm at a point that I think it's ready for testing.
 
 2) Setup a 'clean' copy of Wrye Bash to work on.  For example, using
    the archive version from TESNexus, extract all the files to a
-   location.  For example 'C:\WB'.
+   location.  For example 'C:\WB'.  Or you can just use your svn
+   directory.
 
-3) Copy the files in this folder to on directory up from the 'Mopy'
-   directory.  In the above example, the directory structure would
-   look like:
+3) Do either step 3a or step 3b below (3b is easier)
 
-   + WB
-     - bash.ico
-     - build.bat
-     - readme.txt
-     - ResHacker.exe
-     - setup.py
-     - upx.exe
-     + Data
-       ... WB Data Files ...
-     + Mopy
-       ... WB Python Files ...
+   a) Copy the files in this folder to on directory up from the 'Mopy'
+      directory.  In the above example, the directory structure would
+      look like:
 
-3) Run 'build.bat' to create the executable.  This automates the
+      + WB
+       - bash.ico
+       - build.py
+       - readme.txt
+       - ResHacker.exe
+       - upx.exe
+       + Data
+         ... WB Data Files ...
+       + Mopy
+         ... WB Python Files ...
+
+   -- OR --
+
+   b) If 'build.py' is located in the svn, you can run it straight
+      from there, no copying needed.
+
+3) Run 'build.py' to create the executable.  This automates the
    process of:
 
    a) Running the py2exe script 'setup.py'
@@ -45,10 +52,6 @@ but I'm at a point that I think it's ready for testing.
       with icons for Vista/Win7.
    c) Compress the exe with UPX
    d) Cleanup of the files
+   e) Make a 7z archive of the standalone
 
-   build.bat will also generate a log file, in case some errors occur
-   in the process.
-
-4) Delete the files used to make the standalone, if you're done.
-
-5) Zip up the contents into a package, or make an installer.
+4) If you used step 3a, delete the files used to make the standalone.
