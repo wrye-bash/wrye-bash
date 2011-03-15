@@ -380,7 +380,35 @@ def askContinue(parent,message,continueKey,title=_('Warning')):
     if gCheckBox.GetValue():
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
-
+def askContinueShortTerm(parent,message,title=_('Warning')):
+    """Shows a modal continue query  Returns True to continue.
+    Also provides checkbox "Don't show this in for rest of operation."."""
+    #--Generate/show dialog
+    dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    icon = wx.StaticBitmap(dialog,defId,
+        wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+    gCheckBox = checkBox(dialog,_("Don't show this for rest of operation."))
+    #--Layout
+    sizer = vSizer(
+        (hSizer(
+            (icon,0,wx.ALL,6),
+            (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+            ),1,wx.EXPAND|wx.ALL,6),
+        (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+        (hSizer( #--Save/Cancel
+            spacer,
+            button(dialog,id=wx.ID_OK),
+            (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+            ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+        )
+    dialog.SetSizer(sizer)
+    #--Get continue key setting and return
+    result = dialog.ShowModal()
+    if result in (wx.ID_OK,wx.ID_YES):
+        if gCheckBox.GetValue():
+            return 2
+        return True
+    return False
 #------------------------------------------------------------------------------
 def askOpen(parent,title='',defaultDir='',defaultFile='',wildcard='',style=wx.OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
