@@ -3,7 +3,10 @@
     !include MUI2.nsh
     !include LogicLib.nsh
     !include nsDialogs.nsh
-	!define WB_NAME "Wrye Bash 291"
+
+	!ifndef WB_NAME
+		!define WB_NAME "Wrye Bash 291"
+	!endif
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
     OutFile "${WB_NAME} -- Installer.exe"
@@ -674,7 +677,7 @@
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
-                File /r /x "Forum thread starter post.txt" /x "Patcher Reference.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
             ${EndIf}
@@ -682,7 +685,7 @@
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
-                File /r /x "Forum thread starter post.txt" /x "Patcher Reference.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
             ${EndIf}
@@ -690,7 +693,7 @@
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
-                File /r /x "Forum thread starter post.txt" /x "Patcher Reference.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
             ${EndIf}
@@ -698,7 +701,7 @@
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
-                File /r /x "Forum thread starter post.txt" /x "Patcher Reference.txt" /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*Wrye Bash Installer*" /x "*.bat" "*"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
             ${EndIf}

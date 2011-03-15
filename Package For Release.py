@@ -45,33 +45,14 @@ def BuildStandaloneVersion():
     os.chdir(dir)
 
 def BuildInstallerVersion():
-    # Edit the NSIS script to change the version
+    # Compile the NSIS script
     script = 'Wrye Bash.nsi'
     if not os.path.exists(script): return
-    
-    file = open(script, 'rb')
-    lines = file.readlines()
-    file.close()
 
-    reVersion = re.compile('(\s+\!define\s+WB_NAME\s+)"(.+)"(.+)')
-    for i,line in enumerate(lines):
-        # Make sure we're actually overwriting what we want
-        maVersion = reVersion.match(line)
-        if maVersion:
-            newline = maVersion.group(1) + ('"Wrye Bash %s"' % WB) + maVersion.group(3) + '\n'
-            if line == newline:
-                break
-            lines[i] = newline
-            file = open(script, 'wb')
-            file.writelines(lines)
-            file.close()
-            break
-
-    # Now compile the NSIS script
     try:
         nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS')
         nsis = os.path.join(nsis, 'makensis.exe')
-        subprocess.call([nsis, 'Wrye Bash.nsi'], shell=True)
+        subprocess.call([nsis, '/DWB_NAME=Wrye Bash %s' % WB, 'Wrye Bash.nsi'], shell=True)
     except:
         pass
 
