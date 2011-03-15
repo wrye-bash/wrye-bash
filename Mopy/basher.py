@@ -11950,11 +11950,15 @@ class Save_Move:
         #--bashDir
         destTable = bolt.Table(bosh.PickleDict(destDir.join('Bash','Table.dat')))
         count = 0
+        ask = True
         for fileName in self.data:
-            if not self.window.data.moveIsSafe(fileName,destDir):
+            if ask and not self.window.data.moveIsSafe(fileName,destDir):
                 message = (_('A file named %s already exists in %s. Overwrite it?')
                     % (fileName.s,profile))
-                if not balt.askYes(self.window,message,_('Move File')): continue
+                result = balt.askContinueShortTerm(self.window,message,_('Move File'))
+                #if result is true just do the job but ask next time if applicable as well
+                if not result: continue
+                elif result == 2: ask = False #so don't warn for rest of operation
             if self.copyMode:
                 bosh.saveInfos.copy(fileName,destDir)
             else:
