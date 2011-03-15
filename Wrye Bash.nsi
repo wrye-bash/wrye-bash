@@ -3,16 +3,17 @@
     !include MUI2.nsh
     !include LogicLib.nsh
     !include nsDialogs.nsh
+	!define WB_NAME "Wrye Bash 291"
 ;-------------------------------- Basic Installer Info:
-    Name "Wrye Bash 291"
-    OutFile "Wrye Bash Installer.exe"
+    Name "${WB_NAME}"
+    OutFile "${WB_NAME} -- Installer.exe"
     ; Request application privileges for Windows Vista
     RequestExecutionLevel admin
     VIProductVersion 0.2.9.1
     VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "Wrye Bash"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "Wrye Bash development team"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "© Wrye"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Installer for Wrye Bash 291"
+    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Installer for ${WB_NAME}"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "0.2.9.1"
     SetCompressor /SOLID lzma
 ;-------------------------------- Variables:
@@ -1556,7 +1557,7 @@
   LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
   LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Please rectify the following missing requirements"
   LangString unPAGE_SELECT_GAMES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
-  LangString PAGE_FINISH_TITLE ${LANG_ENGLISH} "Finished installing Wrye Bash 291"
+  LangString PAGE_FINISH_TITLE ${LANG_ENGLISH} "Finished installing ${WB_NAME}"
   LangString PAGE_FINISH_SUBTITLE ${LANG_ENGLISH} "Please select post-install tasks."
 
   ;Assign language strings to sections

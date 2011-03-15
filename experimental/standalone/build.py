@@ -12,6 +12,7 @@
 import os
 import shutil
 import subprocess
+import re
 
 # Some quick reference paths
 root = build = os.getcwd()
@@ -44,6 +45,17 @@ def mv(file,dest):
     if os.path.exists(file):
         shutil.move(file,dest)
 
+def GetWryeBashVersion():
+    readme = os.path.join(mopy,'Wrye Bash.txt')
+    if os.path.exists(readme):
+        file = open(readme, 'r')
+        reVersion = re.compile('^=== ([\.\d]+) \[')
+        for line in file:
+            maVersion = reVersion.match(line)
+            if maVersion:
+                return maVersion.group(1)
+    return 'SVN'
+
 # First execute the py2exe script
 # I'm doing it this was because 'exec' and 'execfile' don't
 # quite work the way I want - the py2exe creation doesn't
@@ -69,7 +81,7 @@ class Target:
     def __init__(self, **kw):
         self.__dict__.update(kw)
         # for the versioninfo resources
-        self.version = "291"
+        self.version = "%(version)s"
         self.name = "Wrye Bash"
         self.author = "Wrye and the Wrye Bash Team"
         self.url= "http://tesnexus.com/downloads/file.php?id=22368"
@@ -164,7 +176,7 @@ setup(
         },
     zipfile = None,
     )
-"""
+""" % dict(version=GetWryeBashVersion())
 # Write the script file
 file = open('Mopy\setup.py', 'w')
 file.write(setup_script)
@@ -192,8 +204,7 @@ for file in os.listdir(mopy):
             continue
         else:
             cmd_7z.append('Mopy\\'+file)
-cmd_7z.extend([r'Mopy\*.exe', r'Mopy\*.dll', r'Mopy\*.ini', r'Mopy\*.html'])
-cmd_7z.append(r'Mopy\gpl.txt')
+cmd_7z.extend([r'Mopy\*.exe', r'Mopy\*.dll', r'Mopy\*.ini', r'Mopy\*.html', r'Mopy\*.txt'])
 cmd_7z.append('Data')
 
 # Fixup the exe with ResHacker (py2exe doesn't set the icon right, so
