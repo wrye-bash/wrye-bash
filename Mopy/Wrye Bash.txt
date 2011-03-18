@@ -574,7 +574,7 @@ You've downloaded a bunch of BCFs.  Now what?
   * Once finished, you are free to delete the original archives if you so desire.
 
 === Bain Wizards
-Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a __wizard.txt__ file in the package.  For more information on the wizard format, see WizardDocs.txt.  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
+Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a __wizard.txt__ file in the package.  For more information on the wizard format, see the [[wizards.html|Wizard Reference]].  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
 * __Wizard Pages__
   * __[[images/Versions.jpg|Version Warning Page]]:__ Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
   * __[[images/SelectOne.jpg|Single Selection Page]] | [[images/SelectMany.jpg|Multi Selection Page]]:__ Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.
