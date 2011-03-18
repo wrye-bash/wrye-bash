@@ -773,7 +773,7 @@
   <p class=list-2>&bull;&nbsp; Once finished, you are free to delete the original archives if you so desire.
   <p class=empty>&nbsp;</p>
 <h3><a name='BainWizards'>Bain Wizards</a></h3>
-<p>Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a <B>wizard.txt</B> file in the package.  For more information on the wizard format, see WizardDocs.txt.  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
+<p>Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a <B>wizard.txt</B> file in the package.  For more information on the wizard format, see the <a href="wizards.html">Wizard Reference</a>.  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
 <p class=list-1>&bull;&nbsp; <B>Wizard Pages</B>
   <p class=list-2>&bull;&nbsp; <B><a href="images/Versions.jpg">Version Warning Page</a>:</B> Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
   <p class=list-2>&bull;&nbsp; <B><a href="images/SelectOne.jpg">Single Selection Page</a> | <a href="images/SelectMany.jpg">Multi Selection Page</a>:</B> Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.
@@ -1630,9 +1630,11 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>Guard Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul. 
 ;  * This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
-<p class=list-1>&bull;&nbsp; <B>%ModName% Names</B>
-  <p class=list-2>&bull;&nbsp; A names patcher file that names/renames NPCs etc. in specified mod.
-  <p class=list-2>&bull;&nbsp; Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth
+<p class=list-1>&bull;&nbsp; <B>_OOO Potion Names</B>
+  <p class=list-2>&bull;&nbsp; A names patcher file that renames the alcholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
+<p class=list-1>&bull;&nbsp; <B>Random NPC Names/Random NPC Alternate Names</B>
+  <p class=list-2>&bull;&nbsp; A names patcher file that names/renames NPCs etc. in specified mods.
+  <p class=list-2>&bull;&nbsp; Supports/Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth, Tamriel Travellers ~ Gratis_monsta, Crowded Cities 15/30 ~ Gratis_monsta, PT_RoamingNPCs ~ Gratis_monsta. (Will work for any combination of one or more of those - does not require them all).
 <p class=list-1>&bull;&nbsp; <B>Rational Names</B>
   <p class=list-2>&bull;&nbsp; A names patcher file for Rational Names is included. This includes all of the name changes of the Rational Names 2 mod (but not the GMST settings for soul gem strings). It also includes additional name changes to cover Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
   <p class=list-2>&bull;&nbsp; Note that it is best not to edit this file directly since it is included in the Bash distribution. Instead, duplicate and edit as desired.
@@ -1721,7 +1723,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class=list-1>&bull;&nbsp; <B>As Intended: Imps</B>
   <p class=list-2>&bull;&nbsp; Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.
 <p class=list-1>&bull;&nbsp; <B>Mayu's Animation Overhaul Skeleton Tweaker</B>
-  <p class=list-2>&bull;&nbsp; Sets NPC skeletons paths to match that required for MAO to work.
+  <p class=list-2>&bull;&nbsp; Sets NPC skeletons paths to match that required for MAO to work. REQUIRES Mayu's Animation Overhaul or it will almost certainly cause CTDs
 <p class=list-1>&bull;&nbsp; <B>No Bloody Creatures</B>
   <p class=list-2>&bull;&nbsp; Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
 <p class=list-1>&bull;&nbsp; <B>Redguard FGTS Nuller</B>
@@ -2440,6 +2442,26 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a name='Versions'>Versions</a></h2>
 <p><B><I>All versions by Wrye unless otherwise noted.</I></B>
   <p class=empty>&nbsp;</p>
+<h2><a name='29231122011Gratis_monstaLeandroCondemyk002PacificMorrowind'>292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind]</a></h2>
+<p class=list-1>&bull;&nbsp; Bashed Patch:
+  <p class=list-2>&bull;&nbsp; Race Patcher
+    <p class=list-3>&bull;&nbsp; Fixed error with setting race eyes for some uncommon races.
+  <p class=list-2>&bull;&nbsp; Fix for typos in CBash SpellStats Patcher
+  <p class=list-2>&bull;&nbsp; Added note to MAO patcher that it requires MAO.
+  <p class=list-2>&bull;&nbsp; Tweak Settings (GMST) patcher now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
+  <p class=list-2>&bull;&nbsp; Import Names:
+    <p class=list-3>&bull;&nbsp; Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; Added OOO Potion Names.csv - reverts OOO's alchoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
+    <p class=list-3>&bull;&nbsp; Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)
+<p class=list-1>&bull;&nbsp; BAIN:
+  <p class=list-2>&bull;&nbsp; Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
+  <p class=list-2>&bull;&nbsp; Size of comments section saved between launches (contributed by myk002)
+<p class=list-1>&bull;&nbsp; General:
+  <p class=list-2>&bull;&nbsp; Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
+  <p class=list-2>&bull;&nbsp; Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
+  <p class=list-2>&bull;&nbsp; Import Scripts fixed to maintain Python 2.5 compatibility.
+  <p class=list-2>&bull;&nbsp; Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
+  <p class=empty>&nbsp;</p>
 <h3><a name='2912212011GaticusGratis_monstaLojackmyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
 <p class=list-1>&bull;&nbsp; Bashed Patch:
   <p class=list-2>&bull;&nbsp; typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
@@ -2485,7 +2507,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class=list-2>&bull;&nbsp; Changed the rename installer dialog for in place renaming.
   <p class=list-2>&bull;&nbsp; Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
   <p class=list-2>&bull;&nbsp; Widgets on installers tab made resizable (contributed by myk002).
-  <p class=empty>&nbsp;</p>
 <p class=list-1>&bull;&nbsp; BAIN Wizards:
   <p class=list-2>&bull;&nbsp; packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
   <p class=list-2>&bull;&nbsp; added ability to use default images located in the 'Mopy\Wizard Images' directory
