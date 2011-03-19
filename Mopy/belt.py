@@ -130,7 +130,7 @@ class WizardReturn(object):
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
     def __init__(self, link, subs):
-        wiz.Wizard.__init__(self, link.gTank, -1, _('Installer Wizard'))
+        wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _('Installer Wizard'),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         #Hide the "Previous" button, we wont use it
         self.FindWindowById(wx.ID_BACKWARD).Hide()
 
@@ -239,6 +239,45 @@ class PageError(PageInstaller):
 #  associated image and description for each option, shown when
 #  that item is selected
 #-------------------------------------------------------------
+class ImagePanel(wx.Panel):
+    def __init__(self, parent, id, bmp=None):
+        wx.Panel.__init__(self, parent, id)
+        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        self.bmp = bmp
+        wx.EVT_PAINT(self, self.OnPaint)
+        wx.EVT_SIZE(self, self.OnSize)
+        self.OnSize(None)
+
+    def SetBitmap(self, bmp=None):
+        self.bmp = bmp
+        self.OnSize(None)
+
+    def OnSize(self, event):
+        x, y = self.GetSize()
+        if x == 0 and y == 0: return
+        self.buffer = wx.EmptyBitmap(x,y)
+        dc = wx.MemoryDC()
+        dc.SelectObject(self.buffer)
+        # Draw
+        dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
+        dc.Clear()
+        if self.bmp:
+            old_x,old_y = self.bmp.GetSize()
+            scale = min(float(x)/old_x, float(y)/old_y)
+            new_x = old_x * scale
+            new_y = old_y * scale
+            pos_x = max(0,x-new_x)/2
+            pos_y = max(0,y-new_y)/2
+            image = self.bmp.ConvertToImage()
+            image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
+            dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
+        del dc
+        self.Refresh()
+        self.Update()
+
+    def OnPaint(self, event):
+        dc = wx.BufferedPaintDC(self, self.buffer)
+
 class PageSelect(PageInstaller):
     def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
         PageInstaller.__init__(self, parent)
@@ -251,16 +290,16 @@ class PageSelect(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
 
-        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
-        self.TitleDesc = wx.StaticText(self, -1, desc)
+        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, ''))
+        self.TitleDesc = wx.StaticText(self, wx.ID_ANY, desc)
         sizerTitle.Add(self.TitleDesc, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
         sizerBoxes = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerBoxes.Add(wx.StaticText(self, -1, _('Options:')))
+        sizerBoxes.Add(wx.StaticText(self, wx.ID_ANY, _('Options:')))
         sizerBoxes.AddStretchSpacer()
-        self.textItem = wx.TextCtrl(self, -1, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
-        self.bmpItem = wx.StaticBitmap(self, -1, wx.NullBitmap, size=(200, 200))
+        self.textItem = wx.TextCtrl(self, wx.ID_ANY, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
+        self.bmpItem = ImagePanel(self, wx.ID_ANY)
         if bMany:
             self.listOptions = wx.CheckListBox(self, 643, choices=listItems)
             for index, default in enumerate(defaultMap):
@@ -281,10 +320,11 @@ class PageSelect(PageInstaller):
         sizerBoxes.AddGrowableCol(1)
         sizerMain.Add(sizerBoxes, -1, wx.EXPAND)
 
-        sizerMain.Add(wx.StaticText(self, -1, _('Description:')))
-        sizerMain.Add(self.textItem, -1, wx.EXPAND|wx.ALL)
+        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _('Description:')))
+        sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
 
         self.SetSizer(sizerMain)
+        sizerMain.AddGrowableRow(1)
         sizerMain.AddGrowableRow(3)
         sizerMain.AddGrowableCol(0)
         self.Layout()
@@ -292,6 +332,8 @@ class PageSelect(PageInstaller):
         wx.EVT_LISTBOX(self, 643, self.OnSelect)
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
+        self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
+        
 
     def OnSelect(self, event):
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
@@ -312,15 +354,10 @@ class PageSelect(PageInstaller):
         self.textItem.SetValue(self.descs[index])
         file = self.images[index]
         if file.exists() and not file.isdir():
-            image = wx.Image( file.s )
-            factor = 400.0 / max(image.GetHeight(), image.GetWidth())
-            newHeight = round(image.GetHeight() * factor)
-            newWidth = round(image.GetWidth() * factor)
-            image.Rescale(newWidth, newHeight)
-            self.bmp = wx.BitmapFromImage(image)
-            self.bmpItem.SetBitmap(self.bmp)
+            image = wx.Bitmap(file.s)
+            self.bmpItem.SetBitmap(image)
         else:
-            self.bmpItem.SetBitmap(wx.NullBitmap)
+            self.bmpItem.SetBitmap(None)
         self.Layout()
 
     def OnNext(self):
