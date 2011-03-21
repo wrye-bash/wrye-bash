@@ -17,103 +17,6 @@ EXTRA_ARGS =   _("Extra arguments to '%s'.")
 MISSING_ARGS = _("Missing arguments to '%s'.")
 UNEXPECTED =   _("Unexpected '%s'.")
 
-def replaceShader(sdpFileName, shaderName, shaderFileName):
-    temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
-    sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
-    sNew = bosh.dirs['mods'].join('Shaders', shaderFileName)
-    sBak = bosh.dirs['mopy'].join('Data', 'Shaders Backup', sdpFileName, shaderName)
-
-    if not sdp.exists() and not sdp.isfile(): return
-    if not sNew.exists() and not sNew.isfile(): return
-    if sBak.exists() and sBak.isfile():
-        sBak.remove()
-
-    sdp.moveTo(temp.s)
-
-    shaderFile = sNew.open('rb')
-    newData = shaderFile.read()
-    shaderFile.close()
-
-    backupFile = sBak.open('wb')
-
-    editShader(sdp, temp, shaderName, newData, backupFile)
-
-def restoreShader(sdpFileName, shaderName):
-    temp = bosh.dirs['mods'].join('Shaders', sdpFileName+'.bak')
-    sdp = bosh.dirs['mods'].join('Shaders', sdpFileName)
-    dBackup = bosh.dirs['mopy'].join('Data', 'Shaders Backup', sdpFileName)
-    sNew = dBackup.join(shaderName)
-
-    if not sdp.exists() and not sdp.isfile(): return
-    if not sNew.exists() and not sNew.isfile(): return
-
-    sdp.moveTo(temp.s)
-    shaderFile = sNew.open('rb')
-    newData = shaderFile.read()
-    shaderFile.close()
-
-    editShader(sdp, temp, shaderName, newData, None)
-    sNew.remove()
-    #Clean up dirs
-    for path, dirs, files in dbackup.walk():
-        if len(dirs) == 0 and len(files) == 0:
-            path.removedirs()
-
-def editShader(sdp, temp, shaderName, newData, backupFile):
-    mtime = temp.getmtime()
-    newSDP = sdp.open('wb')
-    oldSDP = temp.open('rb')
-
-    #Read some bytes
-    newSDP.write(oldSDP.read(4))
-
-    #Read the number of shaders
-    numstr = oldSDP.read(4)
-    (num,) = struct.unpack('l', numstr)
-    newSDP.write(numstr)
-
-    #Save position of the 'size' bytes
-    sizeoffset = oldSDP.tell()
-    newSDP.write(oldSDP.read(4))
-
-    #Go through each shader
-    bFound = False
-    for i in range(num):
-        name = oldSDP.read(0x100)
-        newSDP.write(name)
-        sizestr = oldSDP.read(4)
-        (size,) = struct.unpack('l', sizestr)
-        data = oldSDP.read(size)
-
-        #See if it's the right one
-        if not bFound:
-            #shader names are stored as 256 character null-terminated strings,
-            #python strings aren't null-terminated so...
-            sname = string.lower(name[:string.find(name, '\0')])
-
-            if sname == string.lower(shaderName):
-                newSDP.write(struct.pack('l', len(newData)))
-                newSDP.write(newData)
-                bFound = True
-
-                if backupFile:
-                    backupFile.write(data)
-                    backupFile.close()
-                continue
-        newSDP.write(sizestr)
-        newSDP.write(data)
-    # Now update the size value at the beginning of the file
-    newSDP.seek(sizeoffset)
-    size = sdp.size - 12
-    newSDP.write(struct.pack('l', size))
-
-    newSDP.close()
-    oldSDP.close()
-    temp.remove()
-
-    # Finally update the time stamps
-    sdp.setmtime(mtime)
-
 class WizardReturn(object):
     __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install')
 
@@ -151,7 +54,8 @@ class InstallerWizard(wiz.Wizard):
         installer = link.data[path]
         bArchive = link.isSingleArchive()
         if bArchive:
-            installer.unpackToTemp(path, [installer.hasWizard])
+            # Extract the wizard, and any images as well
+            installer.unpackToTemp(path, [installer.hasWizard, '*.jpg', '*.gif', '*.bmp', '*.png', '*.tif', '*.tiff', '*.jpeg'])
             self.wizard_file = installer.tempDir.join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
@@ -188,6 +92,12 @@ class InstallerWizard(wiz.Wizard):
         page = self.parser.Begin(self.wizard_file)
         if page:
             self.ret.Canceled = not self.RunWizard(page)
+        # Clean up temp files
+        if self.parser.bArchive:
+            try:
+                self.parser.installer.tempDir.rmtree(safety='Temp')
+            except:
+                pass
         return self.ret
 #End of Installer Wizard
 
@@ -987,23 +897,14 @@ class WryeParser(ScriptParser.Parser):
                     return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
-            temp = []
-            for i in images:
-                if i == '': continue
-                temp.append(i)
-            if len(temp):
-                self.installer.unpackToTemp(self.path, temp)
-            for i in images:
-                path = self.installer.tempDir.join(i)
-                if not path.exists() and bosh.dirs['mopy'].join(i).exists():
-                    path = bosh.dirs['mopy'].join(i)
-                image_paths.append(path)
+            imageJoin = self.installer.tempDir.join
         else:
-            for i in images:
-                path = bosh.dirs['installers'].join(self.path.s, i)
-                if not path.exists() and bosh.dirs['mopy'].join(i).exists():
-                    path = bosh.dirs['mopy'].join(i)
-                image_paths.append(path)
+            imageJoin = bosh.dirs['installers'].join(self.path.s).join
+        for i in images:
+            path = imageJoin(i)
+            if not path.exists() and bosh.dirs['mopy'].join(i).exists():
+                path = bosh.dirs['mopy'].join(i)
+            image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def kwdCase(self, *args):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
