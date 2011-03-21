@@ -157,6 +157,12 @@ class UncodedError(BoltError):
     def __init__(self,message=_('Section is not coded yet.')):
         BoltError.__init__(self,message)
 
+#------------------------------------------------------------------------------
+class CancelError(BoltError):
+    """User pressed 'Cancel' on the progress meter."""
+    def __init__(self,message=_('Action aboted by user.')):
+        BoltError.__init__(self, message)
+
 # LowStrings ------------------------------------------------------------------
 class LString(object):
     """Strings that compare as lower case strings."""

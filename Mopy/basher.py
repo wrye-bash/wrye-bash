@@ -42,7 +42,7 @@ import bolt
 import barb
 
 from bosh import formatInteger,formatDate
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
 from bolt import _, LString,GPath, SubProgress, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
@@ -2845,7 +2845,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshed = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
             self.refreshing = True
-            progress = balt.Progress(_("Refreshing Installers..."),'\n'+' '*60)
+            progress = balt.Progress(_("Refreshing Installers..."),'\n'+' '*60, abort=True)
             try:
                 what = ('DISC','IC')[self.refreshed]
                 if data.refresh(progress,what,self.fullRefresh):
@@ -2856,6 +2856,10 @@ class InstallersPanel(SashTankPanel):
                 self.refreshed = True
                 cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
                 ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+            except CancelError:
+                # User canceled the refresh
+                self.refreshing = False
+                self.refreshed = True
             finally:
                 if progress != None: progress.Destroy()
         elif self.frameActivated and data.refreshConvertersNeeded():
@@ -2868,6 +2872,10 @@ class InstallersPanel(SashTankPanel):
                 self.fullRefresh = False
                 self.frameActivated = False
                 self.refreshing = False
+            except CancelError:
+                # User canceled the refresh
+                self.refreshing = False
+                self.refreshed = True
             finally:
                 if progress != None: progress.Destroy()
         self.SetStatusCount()
@@ -7686,7 +7694,7 @@ class Installer_Refresh(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         dir = self.data.dir
-        progress = balt.Progress(_("Refreshing Packages..."),'\n'+' '*60)
+        progress = balt.Progress(_("Refreshing Packages..."),'\n'+' '*60, abort=True)
         progress.setFull(len(self.selected))
         try:
             for index,archive in enumerate(self.selected):
@@ -7695,6 +7703,9 @@ class Installer_Refresh(InstallerLink):
                 apath = bosh.dirs['installers'].join(archive)
                 installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
                 self.data.hasChanged = True
+        except CancelError:
+            # User canceled the refresh
+            pass
         finally:
             if progress != None: progress.Destroy()
         self.data.refresh(what='NSC')
