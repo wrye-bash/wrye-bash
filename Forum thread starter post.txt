@@ -29,6 +29,27 @@ Older/Newer versions _may_ work but those are probably the most widely used and 
 [*]Then just download and run the installer for the most recent release.  You can upgrade this way too.
 [*]For manual installations/upgrades, download the archive version and extract in your Oblivion game folder (so that the Mopy directory appears in the Oblivion directory)
 [/list]
+
+[b]Reporting Bugs[/b]:
+Try to give us enough information to diagnose your problem.  The following is usefull information for us:
+[spoiler][list]
+[*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpfull), what you expected, and what happened.
+[*]If Oblivion isn't installed in the default location, where is it installed?
+[*]What version of the python components are installed?
+ [list]
+ [*]Python
+ [*]wxPython
+ [*]ComTypes
+ [*]psyco
+ [*]PyWin32
+ [/list]
+[*]What version of Windows are you using?  Is UAC enabled?
+[*]Is CBash enabled? If so, what version is displayed?
+[*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
+[*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
+[/list]
+[/spoiler]
+
 [b]Linking[/b]:
 [list]
 [*]If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual Bash zip file, since that changes fairly frequently.
