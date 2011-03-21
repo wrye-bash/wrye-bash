@@ -1189,6 +1189,14 @@ class INIList(List):
             finally:
                 wx.EndBusyCursor()
         event.Skip()
+
+    def OnColumnResize(self,event):
+        """Column resize: Stored modified column widths."""
+        print 'Column resize'
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        settings.setChanged('bash.ini.colWidths')
 #------------------------------------------------------------------------------
 class ModList(List):
     #--Class Data
