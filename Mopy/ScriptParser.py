@@ -198,7 +198,7 @@ class ParserState:
             pre = getattr(previous, attr_prev, {})
         else:
             pre = {}
-        return {x:cur[x] for x in cur if x not in pre or pre[x] != cur[x]}
+        return dict((x, cur[x]) for x in cur if x not in pre or pre[x] != cur[x])
 
     @staticmethod
     def getdeltaList(current, attr_cur, previous=None, attr_prev=None):
