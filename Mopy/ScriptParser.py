@@ -183,7 +183,132 @@ class FlowControl:
 #--------------------------------------------------
 class ParserError(SyntaxError): pass
 
+# ParserState -------------------------------------
+#  Class used with the state-saving feature of the
+#  parser.  To specify what variables to save in
+#  the state, just add on the the __state__ dict
+#  in the Parser subclass.
+#--------------------------------------------------
+class ParserState:
+    @staticmethod
+    def getdeltaDict(current, attr_cur, previous=None, attr_prev=None):
+        attr_prev = attr_prev or attr_cur
+        cur = getattr(current, attr_cur, {})
+        if previous is not None:
+            pre = getattr(previous, attr_prev, {})
+        else:
+            pre = {}
+        return {x:cur[x] for x in cur if x not in pre or pre[x] != cur[x]}
+
+    @staticmethod
+    def getdeltaList(current, attr_cur, previous=None, attr_prev=None):
+        attr_prev = attr_prev or attr_cur
+        cur = getattr(current, attr_cur, [])
+        if previous is not None:
+            pre = getattr(previous, attr_prev, [])
+        else:
+            pre = []
+        return [x for x in cur if x not in pre]
+
+    @staticmethod
+    def rebuildDict(states, attr, indexToStopAt=-1):
+        ret = {}
+        for i, state in enumerate(states):
+            for item in getattr(state, attr, {}):
+                ret[item] = getattr(state, attr)[item]
+            if i == indexToStopAt or i+len(states) == indexToStopAt:
+                break
+        return ret
+
+    @staticmethod
+    def rebuildList(states, attr, indexToStopAt=-1):
+        ret = []
+        for i, state in enumerate(states):
+            ret.extend([x for x in getattr(state, attr, []) if x not in ret])
+            if i == indexToStopAt or i+len(states) == indexToStopAt:
+                break
+        return ret
+
+# Parser ------------------------------------------
+#  This is where the magic happens
+#--------------------------------------------------
 class Parser(object):
+    __state__ = {'variables':'variables',
+                 'constants':'constants',
+                 'cLineStart':'cLine',
+                 'Flow':'Flow',
+                 }
+
+    def SaveState(self):
+        """Saves the parser's current state."""
+        state = ParserState()
+        attrs = self.__class__.__state__
+        for attr in attrs:
+            if len(self.states) > 0:
+                prev = self.states[-1]
+            else:
+                prev = None
+            if isinstance(getattr(self, attr), dict):
+                setattr(state, attrs[attr], ParserState.getdeltaDict(self, attr, prev, attrs[attr]))
+            elif isinstance(getattr(self, attr), list):
+                setattr(state, attrs[attr], getattr(self, attr)[:])
+                #setattr(state, attrs[attr], ParserState.getdeltaList(self, attr, prev, attrs[attr]))
+            else:
+                setattr(state, attrs[attr], getattr(self, attr))
+        self.states.append(state)
+
+    def GotoPrevState(self):
+        """Step the parser back one state."""
+        self.futureStates.append(self.states.pop())
+        state = self.states[-1]
+        attrs = self.__class__.__state__
+        for attr in attrs:
+            out = attrs[attr]
+            if isinstance(getattr(state, out), dict):
+                setattr(self, out, ParserState.rebuildDict(self.states, out))
+            elif isinstance(getattr(state, out), list):
+                setattr(self, out, getattr(state, out)[:])
+            else:
+                setattr(self, out, getattr(state, out))
+
+    def GotoNextState(self):
+        """Step the parser forward one state."""
+        self.states.append(self.futureStates.pop())
+        state = self.states[-1]
+        attrs = self.__class__.__state__
+        for attr in attrs:
+            out = attrs[attr]
+            if isinstance(getattr(state, out), dict):
+                setattr(self, out, ParserState.rebuildDict(self.states, out))
+            elif isinstance(getattr(state, out), list):
+                setattr(self, out, getattr(state, out)[:])
+            else:
+                setattr(self, out, getattr(state, out))
+        self.states.pop()
+
+    def PeekPrevState(self):
+        """Get status of previous state."""
+        if len(self.states) > 0:
+            return self.states[-1]
+        return None
+    def PeekNextState(self):
+        """Get status of the next state."""
+        if len(self.futureStates) > 0:
+            return self.futureStates[-1]
+        return None
+
+    def ClearPrevState(self):
+        """Discard the previous state."""
+        self.states.pop()
+    def ClearFutureStates(self):
+        """Clear out the future states."""
+        self.futureStates = []
+
+    def ClearStates(self):
+        """Clear all saved parser states."""
+        self.states = []
+        self.futureStates = []
+
     class Operator:
         def __init__(self, function, precedence, association=LEFT, passTokens=True):
             self.function = function
@@ -288,7 +413,9 @@ class Parser(object):
         self.cCol = 0
         self.cLine = 0
         self.tokens = []
-        self.flow = []
+        self.Flow = []
+        self.states = []
+        self.futureStates = []
 
         self.opChars = ''
         self.operators = {}
