@@ -33,7 +33,8 @@ class WizardReturn(object):
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
     def __init__(self, link, subs):
-        wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _('Installer Wizard'),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _('Installer Wizard'),
+                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
         #Hide the "Previous" button, we wont use it
         self.FindWindowById(wx.ID_BACKWARD).Hide()
 
@@ -55,7 +56,7 @@ class InstallerWizard(wiz.Wizard):
         bArchive = link.isSingleArchive()
         if bArchive:
             # Extract the wizard, and any images as well
-            installer.unpackToTemp(path, [installer.hasWizard, '*.jpg', '*.gif', '*.bmp', '*.png', '*.tif', '*.tiff', '*.jpeg'])
+            installer.unpackToTemp(path, [installer.hasWizard, '*.jpg', '*.gif', '*.bmp', '*.png', '*.jpeg'], recurse=True)
             self.wizard_file = installer.tempDir.join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
