@@ -9909,7 +9909,7 @@ class Installer(object):
     skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
     skipExts.update(set(readExts))
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
-    imageExts = set(('.gif','.jpg','.png'))
+    imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
@@ -11011,7 +11011,7 @@ class InstallerArchive(Installer):
             if result:
                 raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (archive.s,result))
 
-    def unpackToTemp(self,archive,fileNames,progress=None):
+    def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
         from archive to self.tempDir.
         fileNames: File names (not paths)."""
@@ -11033,6 +11033,8 @@ class InstallerArchive(Installer):
             command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         else:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+        if recurse:
+            command += ' -r'
 
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         if bUseUnicode:

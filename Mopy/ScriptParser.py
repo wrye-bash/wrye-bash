@@ -284,6 +284,7 @@ class Parser(object):
         self.comment = comment
 
         self.runon = False
+        self.cLineStart = 0
         self.cCol = 0
         self.cLine = 0
         self.tokens = []
@@ -339,11 +340,13 @@ class Parser(object):
 
     # Run a line of code: returns True if more lines are needed to make a complete line, False if not
     def RunLine(self, line):
-        self.cLine += 1
-
-        # First parse the line into tokens
+        # First reset tokens if we're starting a new line
         if not self.runon:
+            self.cLineStart = self.cLine
             self.tokens = []
+
+        # Now parse the tokens
+        self.cLine += 1
         self.TokenizeLine(line)
         if self.runon: return True
 
