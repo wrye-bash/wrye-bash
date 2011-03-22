@@ -1192,7 +1192,6 @@ class INIList(List):
 
     def OnColumnResize(self,event):
         """Column resize: Stored modified column widths."""
-        print 'Column resize'
         colDex = event.GetColumn()
         colName = self.cols[colDex]
         self.colWidths[colName] = self.list.GetColumnWidth(colDex)
