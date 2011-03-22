@@ -35,8 +35,6 @@ class InstallerWizard(wiz.Wizard):
     def __init__(self, link, subs):
         wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _('Installer Wizard'),
                             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
-        #Hide the "Previous" button, we wont use it
-        self.FindWindowById(wx.ID_BACKWARD).Hide()
 
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
@@ -69,29 +67,39 @@ class InstallerWizard(wiz.Wizard):
         #Set the size for the wizard to use
         self.SetPageSize(gDialogSize)
 
-    def HasPrevPage(self): return False
-
     def OnChange(self, event):
-        if not self.finishing:
-            if event.GetDirection():
+        if event.GetDirection():
+            if not self.finishing:
+                # Next, continue script execution
                 if self.blockChange:
                     #Tell the current page that next was pressed,
                     #So the parser can continue parsing,
                     #Then show the page that the parser returns,
                     #rather than the dummy page
+                    #ParserState(self.parser)
                     event.GetPage().OnNext()
                     event.Veto()
                     self.next = self.parser.Continue()
                     self.blockChange = False
+                    self.parser.SaveState()
                     self.ShowPage(self.next)
                 else:
                     self.blockChange = True
-            else:
-                event.Veto()
+        else:
+            # Previous, pop back to the last state,
+            # and resume execution
+            self.parser.GotoPrevState()
+            #ParserState.RestoreState(self.parser, -1)
+            self.finishing = False
+            event.Veto()
+            self.next = self.parser.Continue()
+            self.blockChange = False
+            self.ShowPage(self.next)
 
     def Run(self):
         page = self.parser.Begin(self.wizard_file)
         if page:
+            self.parser.SaveState()
             self.ret.Canceled = not self.RunWizard(page)
         # Clean up temp files
         if self.parser.bArchive:
@@ -110,9 +118,13 @@ class PageInstaller(wiz.PyWizardPage):
     def __init__(self, parent):
         wiz.PyWizardPage.__init__(self, parent)
         self.parent = parent
+        parent.FindWindowById(wx.ID_FORWARD).Enable(True)
 
     def GetNext(self): return self.parent.dummy
-    def GetPrev(self): return None
+    def GetPrev(self):
+        if len(self.parent.parser.states) > 1:
+            return self.parent.dummy
+        return None
     def OnNext(self):
         #This is what needs to be implemented by sub-classes,
         #this is where flow control objects etc should be
@@ -142,6 +154,7 @@ class PageError(PageInstaller):
         self.Layout()
 
     def GetNext(self): return None
+    def GetPrev(self): return None
 # End PageError ----------------------------------------------
 
 # PageSelect -------------------------------------------------
@@ -213,17 +226,28 @@ class PageSelect(PageInstaller):
         self.bmpItem = ImagePanel(self, wx.ID_ANY)
         if bMany:
             self.listOptions = wx.CheckListBox(self, 643, choices=listItems)
-            for index, default in enumerate(defaultMap):
-                self.listOptions.Check(index, default)
+            if parent.parser.choices is not None:
+                for index, name in enumerate(listItems):
+                    if name in parent.parser.choices:
+                        self.listOptions.Check(index, True)
+            else:
+                for index, default in enumerate(defaultMap):
+                    self.listOptions.Check(index, default)
         else:
             self.listOptions = wx.ListBox(self, 643, choices=listItems)
             self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
-            for index, default in enumerate(defaultMap):
-                if default:
-                    self.listOptions.Select(index)
-                    self.Selection(index)
-                    self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
-                    break
+            if parent.parser.choices is not None:
+                for index, name in enumerate(listItems):
+                    if name in parent.parser.choices:
+                        self.listOptions.Select(index)
+                        self.Selection(index)
+                        break
+            else:
+                for index, default in enumerate(defaultMap):
+                    if default:
+                        self.listOptions.Select(index)
+                        self.Selection(index)
+                        break
         sizerBoxes.Add(self.listOptions, 0, wx.ALL|wx.EXPAND)
         sizerBoxes.Add(self.bmpItem, 0, wx.ALL|wx.EXPAND)
         sizerBoxes.AddGrowableRow(1)
@@ -247,7 +271,6 @@ class PageSelect(PageInstaller):
         
 
     def OnSelect(self, event):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
         index = event.GetSelection()
         self.Selection(index)
 
@@ -261,6 +284,7 @@ class PageSelect(PageInstaller):
 
 
     def Selection(self, index):
+        self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
         self.index = index
         self.textItem.SetValue(self.descs[index])
         file = self.images[index]
@@ -282,7 +306,16 @@ class PageSelect(PageInstaller):
         else:
             for i in self.listOptions.GetSelections():
                 temp.append(self.items[i])
-        self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+        next = self.parent.parser.PeekNextState()
+        prev = self.parent.parser.PeekPrevState()
+        choices = self.parent.parser.choices
+        if next and choices is not None and choices == temp:
+            self.parent.parser.GotoNextState()
+        else:
+            self.parent.parser.ClearFutureStates()
+            self.parent.parser.PeekPrevState().choices = temp
+            self.parent.parser.choices = None
+            self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
 # End PageSelect -----------------------------------------
 
 # PageFinish ---------------------------------------------
@@ -473,6 +506,17 @@ class PageVersions(PageInstaller):
 #  wizards
 #-----------------------------------------------------------------
 class WryeParser(ScriptParser.Parser):
+    # Used by 'SaveState'/'RestoreState' to track what variables need to be saved
+    # int the form 'in':'out', meaning when Saving the state, the value is taken from
+    # attribute 'in', when restoring the state, the value is written to attribute 'out'
+    __state__ = dict(ScriptParser.Parser.__state__, **{
+                      'notes':'notes',
+                      'espmlist':'espmlist',
+                      'sublist':'sublist',
+                      'espmrenames':'espmrenames',
+                      'choices':'choices',
+                      })
+
     def __init__(self, parent, installer, subs, bArchive, path, bAuto):
         ScriptParser.Parser.__init__(self)
 
@@ -484,6 +528,7 @@ class WryeParser(ScriptParser.Parser):
         self.notes = []
         self.page = None
 
+        self.choices = None
         self.sublist = {}
         self.espmlist = {}
         self.espmrenames = {}
@@ -601,6 +646,8 @@ class WryeParser(ScriptParser.Parser):
                 return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line(%s):\t%s\n Error:\t%s') % (self.cLine,newline.strip('\n'), e))
             if self.page:
                 return self.page
+        self.cLine += 1
+        self.cLineStart = self.cLine
         return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes)
 
     def EspmIsInPackage(self, espm, package):
@@ -1011,7 +1058,7 @@ class WryeParser(ScriptParser.Parser):
             else:
                 temp.append(str(i.text))
         self.notes.append('- %s\n' % ' '.join(temp))
-    def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant=0):
+    def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant='0'):
         if self.bAuto: return
 
         obWant = self._TestVersion_Want(ob)
@@ -1062,7 +1109,7 @@ class WryeParser(ScriptParser.Parser):
             if need == 'None':
                 return [1, ver]
             if len(need) != 4:
-                self.error(_("Version '%s' expected in format 'x.x.x.x'") % want)
+                self.error(_("Version '%s' expected in format 'x.x.x.x'") % need)
                 return [-1, ver]
             if have[0] > need[0]: return [1, ver]
             if have[0] < need[0]: return [-1, ver]
