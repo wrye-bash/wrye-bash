@@ -15278,8 +15278,13 @@ class CBash_ScriptText:
                         progress(((1/y)*z),_("Skipping file %s.") % (name))
                         continue
                     progress(((1/y)*z),_("Reading file %s.") % (name))
-                    with open(os.path.join(root, name),"r") as text:
+                    ## Python 2.6+ syntax disabled for Python 2.5 compatibility
+                    ## with open(os.path.join(root, name),"r") as text:
+                    try:
+                        text = open(os.path.join(root, name),"r")
                         lines = text.readlines()
+                    finally:
+                        text.close()
                     modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
                     eid_data[ISTRING(eid)] = (ISTRING(scriptText), FormID) #script text is case insensitive
@@ -28053,7 +28058,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO.'),
+            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO ,Requires VadersApp's Oblivion Real Bodies."),
             'VORB',
             (_('All NPCs'), 0),
             (_('Only Female NPCs'), 1),
