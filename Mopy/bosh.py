@@ -16966,10 +16966,10 @@ class PatchFile(ModFile):
                     newblocks.append(type)
                     break
         if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" if modInfo.name in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
+        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" if GPath(modInfo.name.s) in curModInfo.header.masters]
         if dependent:
             if not verbose: return False
-            reasons += (_("\n.    Is a master of non-mergeable mod(s): ") + ', '.join(sorted(dependent))+'.')
+            reasons += (_("\n.    Is a master of mod(s): ") + ', '.join(sorted(dependent))+'.')
         if reasons: return reasons
         return True
 
