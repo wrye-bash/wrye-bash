@@ -15151,7 +15151,11 @@ class ScriptText:
                         lines = text.readlines()
                     finally:
                         text.close()
-                    modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                    try:
+                        modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                    except:
+                        deprint("%s has malformed script header lines - was skipped" % name)
+                        continue
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
                     eid_data[eid] = (scriptText, FormID)
         finally: #just to ensure the progress bar gets destroyed
@@ -25909,6 +25913,16 @@ class GmstTweaker(MultiTweaker):
             ('10',10),
             (_('Custom'),0),
             ),
+        GmstTweak(False,_('Combat: Max Ally Hits'),
+            _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
+            'IAllyHitAllowed',
+            ('3',3),
+            ('[5]',5),
+            ('8',8),
+            ('10',10),
+            ('15',15),
+            (_('Custom'),0),
+            ),
         GmstTweak(False,_('Magic: Max NPC Summons'),
             _("Maximum number of creatures that each NPC can summon"),
             'iAICombatMaxAllySummonCount',
@@ -26094,6 +26108,13 @@ class GmstTweaker(MultiTweaker):
             _("Disables NPC Blood Splatters."),
             ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
             (_('No Blood'),'','','','','',''),
+            ),
+        GmstTweak(True,_('AI: Max Smile Distance'),
+            _("Maximum distance for NPCs to start smiling."),
+            ('fAIMaxSmileDistance',),
+            (_('No Smiles'),-30),
+            (_('Default (128)'),128),
+            (_('Custom'),0.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -26411,6 +26432,16 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10),
             (_('Custom'),0),
             ),
+        CBash_GmstTweak(False,_('Combat: Max Ally Hits'),
+            _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
+            ('IAllyHitAllowed',),
+            ('3',3),
+            ('[5]',5),
+            ('8',8),
+            ('10',10),
+            ('15',15),
+            (_('Custom'),0),
+            ),
         CBash_GmstTweak(False,_('Magic: Max NPC Summons'),
             _("Maximum number of creatures that each NPC can summon"),
             ('iAICombatMaxAllySummonCount',),
@@ -26596,6 +26627,13 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _("Disables NPC Blood Splatters."),
             ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
             (_('No Blood'),'','','','','',''),
+            ),
+        CBash_GmstTweak(True,_('AI: Max Smile Distance'),
+            _("Maximum distance for NPCs to start smiling."),
+            ('fAIMaxSmileDistance',),
+            (_('No Smiles'),-30),
+            (_('Default (128)'),128),
+            (_('Custom'),0.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
