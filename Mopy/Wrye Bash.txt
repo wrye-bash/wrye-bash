@@ -2250,7 +2250,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Fixed error with setting race eyes for some uncommon races.
   * Fix for typos in CBash SpellStats Patcher
   * Added note to MAO patcher that it requires MAO.
-  * Tweak Settings (GMST) patcher now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
+  * Tweak Settings (GMST) patcher:
+    * Now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
+    * AI: Max Smile Distance tweak added.
+    * Combat: Max Ally Hits tweak added.
   * Import Names:
     * Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
     * Added OOO Potion Names.csv - reverts OOO's alchoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
@@ -2263,6 +2266,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
   * Import Scripts fixed to maintain Python 2.5 compatibility.
   * Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
+  * Yes to All option for overwrite on Move/Copy Saves
+  * 
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
