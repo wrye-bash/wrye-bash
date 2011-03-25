@@ -723,7 +723,9 @@ def gmstIds(fileName=None):
                 'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
                 'fHostileActorExteriorDistance','fHostileActorInteriorDistance','iVampirismAgeOffset','iRemoveExcessDeadCount',
                 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
-                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket', 'iCrimeGoldTresspass']:
+                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket',
+                'iCrimeGoldTresspass','sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2','sBloodParticleDefault',
+                'sBloodParticleExtra1','sBloodParticleExtra2','IAllyHitAllowed']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
@@ -746,7 +748,7 @@ def gmstIds(fileName=None):
     if maxId > maxOld:
         outData = {'GMST':fids}
         cPickle.dump(outData,GPath(r'Oblivion_ids.pkl').open('w'))
-        print "%d news gmst ids written to Oblivion_ids.pkl" % ((maxId - maxOld),)
+        print "%d new gmst ids written to Oblivion_ids.pkl" % ((maxId - maxOld),)
 
 #------------------------------------------------------------------------------
 @mainfunc
