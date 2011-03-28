@@ -1,0 +1,49 @@
+## Template for the setup.py used to make the WBSA
+from distutils.core import setup
+import py2exe
+
+manifest = %(manifest)s
+RT_MANIFEST = 24
+
+class Target:
+    def __init__(self):
+        self.name = 'Wrye Bash'
+        self.description = 'Wrye Bash'
+        self.version = '%(version)s'
+        self.author = 'Wrye Bash development team'
+        self.url = 'http://tesnexus.com/downloads/file.php?id=22368'
+        self.download_url = self.url
+        self.script = 'Wrye Bash Launcher.pyw'
+        if manifest is not None:
+            self.other_resources = [(RT_MANIFEST, 1, manifest)]
+target = Target()
+
+# Make the executable
+setup(
+    windows = [target],
+    options = {
+        'py2exe': {
+            'dll_excludes': [
+                'MSVCP90.dll',
+                'mswsock.dll',  # Prevent x64 versions (for win32api)
+                'powrprof.dll', # Prevent x64 versions (for win32api)
+                ],
+            'excludes': [
+                '_ssl',     # Suggested in the py2exe tutorial
+                'doctest',  # Suggested in the py2exe tutorial
+                'pdb',      # Suggested in the py2exe tutorial
+                'unittest', # Suggested in the py2exe tutorial
+                'difflib',  # Suggested in the py2exe tutorial
+                'pywin',                # Suggested in the wxPython example
+                'pywin.debugger',       # Suggested in the wxPython example
+                'pywin.debugger.dbgcon',# Suggested in the wxPython example
+                'pywin.dialogs',        # Suggested in the wxPython example
+                'pywin.dialogs.list',   # Suggested in the wxPython example
+                ],
+            'bundle_files': 1,  # 1 = bundle in the exe
+            'optimize': 2,      # 2 = full code optimization
+            'compressed': True, # Compress the data files
+            },
+        },
+    zipfile = None,     # Don't include data files in a zip along side
+    )

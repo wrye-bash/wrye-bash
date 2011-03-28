@@ -4,20 +4,24 @@
     !include LogicLib.nsh
     !include nsDialogs.nsh
 
-	!ifndef WB_NAME
-		!define WB_NAME "Wrye Bash 291"
-	!endif
+    ;--Information passed by the packaging script
+    !ifndef WB_NAME
+        !define WB_NAME "Wrye Bash 291"
+    !endif
+    !ifndef WB_FILEVERSION
+        !define WB_FILEVERSION "0.2.9.1"
+    !endif
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
     OutFile "${WB_NAME} -- Installer.exe"
     ; Request application privileges for Windows Vista
     RequestExecutionLevel admin
-    VIProductVersion 0.2.9.1
+    VIProductVersion ${WB_FILEVERSION}
     VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "Wrye Bash"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "Wrye Bash development team"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "© Wrye"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Installer for ${WB_NAME}"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "0.2.9.1"
+    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WB_FILEVERSION}"
     SetCompressor /SOLID lzma
 ;-------------------------------- Variables:
     Var Dialog
@@ -163,6 +167,8 @@
 
         nsDialogs::Create 1018
             Pop $Dialog
+
+        ${NSD_CreateRadioButton} 0 0 100% 16u "testing"
 
         ${If} $Dialog == error
             Abort
