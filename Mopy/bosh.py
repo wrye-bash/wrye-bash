@@ -28624,13 +28624,13 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
-class RWALKNPCAnimationPatcher(BasalNPCTweaker):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+class SWALKNPCAnimationPatcher(BasalNPCTweaker):
+    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Use Mur Zuk's Sexy Walk on all female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Sexy Walk"),
+        MultiTweakItem.__init__(self,False,_("Sexy Walk for female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
             'Mur Zuk SWalk',
             ('1.0',  '1.0'),
             )
@@ -28641,7 +28641,7 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = '0sexywalk01.kf'
+                record.animations = record.animations + ['0sexywalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -28650,14 +28650,55 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
         log(_('* %d NPCs Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-#------------------------------------------------------------------------------
-class SWALKNPCAnimationPatcher(BasalNPCTweaker):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO ."""
+class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
+    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("Sexy Walk for female NPCs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Use Mur Zuk's Real Walk on all female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Real Walk"),
+        CBash_MultiTweakItem.__init__(self,False,_("Sexy Walk for female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
+            'Mur Zuk SWalk',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+        self.playerFid = (GPath('Oblivion.esm'), 0x000007)
+
+    def getTypes(self):
+        return ['NPC_']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.fid != self.playerFid: #skip player record
+            if record.IsFemale:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.animations = override.animations + ['0sexywalk01.kf']
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* NPCs Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
+class RWALKNPCAnimationPatcher(BasalNPCTweaker):
+    """Changes all female NPCs to use Mur Zuk's Real Walk."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Real walk for female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
             'Mur Zuk RWalk',
             ('1.0',  '1.0'),
             )
@@ -28668,7 +28709,7 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = '0realwalk01.kf'
+                record.animations = record.animations + ['0realwalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -28677,6 +28718,47 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         log(_('* %d NPCs Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
+    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("Real Walk for female NPCs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Real Walk for female NPCs"),
+            _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
+            'Mur Zuk RWalk',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+        self.playerFid = (GPath('Oblivion.esm'), 0x000007)
+
+    def getTypes(self):
+        return ['NPC_']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.fid != self.playerFid: #skip player record
+            if record.IsFemale:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.animations = override.animations + ['0realwalk01.kf']
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* NPCs Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 #------------------------------------------------------------------------------
 class QuietFeetPatcher(BasalCreatureTweaker):
     """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
@@ -28851,6 +28933,120 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class BiggerOrcsandNords(MultiTweakItem):
+    """Adjusts the Orc and Nord race records to be taller/heavier."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Bigger Nords and Orcs"),
+            _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            ('RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreRace,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreRace,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            if not record.full: continue
+            if not 'orc' in record.full.lower() and not 'nord' in record.full.lower(): continue
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if not record.full: continue
+            if 'nord' in record.full.lower():
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
+                    setattr(record,attr,value)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+                continue
+            elif 'orc' in record.full.lower():
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
+                    setattr(record,attr,value)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('===Bigger Nords and Orcs'))
+        log(_('* %d Races tweaked.') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
+    """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
+    scanOrder = 32
+    editOrder = 32
+    name = _("Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Bigger Nords and Orcs"),
+            _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            'BiggerOrcsand Nords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            ('RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if 'nord' in record.full.lower():
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
+                    setattr(override,attr,value)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+                return
+        elif 'orc' in record.full.lower():
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
+                    setattr(override,attr,value)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== '+self.__class__.name)
+        log(_('* Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
@@ -28864,9 +29060,10 @@ class TweakActors(MultiTweaker):
         AsIntendedImpsPatcher(),
         AsIntendedBoarsPatcher(),
         QuietFeetPatcher(),
-        IrresponsibleCreaturesPatcher()
-        #RWALKNPCAnimationPatcher(),
-        #SWALKNPCAnimationPatcher(),
+        IrresponsibleCreaturesPatcher(),
+        BiggerOrcsandNords(),
+        RWALKNPCAnimationPatcher(),
+        SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -28911,8 +29108,9 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_AsIntendedBoarsPatcher(),
         CBash_QuietFeetPatcher(),
         CBash_IrresponsibleCreaturesPatcher(),
-        #RWALKNPCAnimationPatcher(),
-        #SWALKNPCAnimationPatcher(),
+        CBash_BiggerOrcsandNords(),
+        CBash_RWALKNPCAnimationPatcher(),
+        CBash_SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
