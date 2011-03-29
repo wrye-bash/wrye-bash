@@ -278,7 +278,11 @@ def main():
     basher.InitImages()
     #--Start application
     if '-d' in opts or (args and args[0] == '0'):
-        app = basher.BashApp(False)
+        if hasattr(sys, 'frozen'):
+            # Special case for py2exe version
+            app = basher.BashApp()
+        else:
+            app = basher.BashApp(False)
         bolt.deprintOn = True
     else:
         app = basher.BashApp()
