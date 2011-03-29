@@ -21,7 +21,6 @@ try:
 except:
     have_py2exe = False
 
-    
 #--GetVersionInfo: Gets version information about Wrye Bash
 def GetVersionInfo(readme=r'.\Mopy\Wrye Bash.txt', padding=4):
     '''Gets version information from Wrye Bash.txt, returns
@@ -69,18 +68,20 @@ def BuildManualVersion(version, pipe=None):
 
 #--Create the StandAlone version
 def BuildStandaloneVersion(version, file_version, pipe=None):
-    if not have_py2exe:
-        print " Could not find python module 'py2exe', aborting StandAlone creation"
-        return
-
     if CreateStandaloneExe(version, file_version, pipe):
         PackStandaloneVersion(version, pipe)
-        mopy = os.path.join(os.getcwd(), 'Mopy')
-        rm(os.path.join(mopy, 'Wrye Bash.exe'))
-        rm(os.path.join(mopy, 'w9xpopen.exe'))
+        CleanupStandaloneFiles()
+
+def CleanupStandaloneFiles():
+    mopy = os.path.join(os.getcwd(), 'Mopy')
+    rm(os.path.join(mopy, 'Wrye Bash.exe'))
+    rm(os.path.join(mopy, 'w9xpopen.exe'))
 
 #--Creat just the exe(s) for the StandAlone veresion
 def CreateStandaloneExe(version, file_version, pipe=None):
+    if not have_py2exe:
+        print " Could not find python module 'py2exe', aborting StandAlone creation."
+        return False
     root = os.getcwd()
     wbsa = os.path.join(root, 'experimental', 'standalone')
     mopy = os.path.join(root, 'mopy')
@@ -186,6 +187,12 @@ if __name__ == '__main__':
                         dest='wbsa',
                         help='Build and package the standalone version of Wrye Bash'
                         )
+    parser.add_option('-e', '--exe',
+                        action='store_true',
+                        default=False,
+                        dest='exe',
+                        help="Create the WBSA exe, but don't package it into an archive."
+                        )
     parser.add_option('-m', '--manual',
                         action='store_true',
                         default=False,
@@ -213,23 +220,34 @@ if __name__ == '__main__':
     if len(extra) > 0:
         parser.print_help()
     else:
-        if not args.wbsa and not args.manual and not args.installer:
+        if not args.wbsa and not args.manual and not args.installer and not args.exe:
             # No arguments specified, build them all
             args.wbsa = True
             args.manual = True
             args.installer = True
 
         version, file_version = GetVersionInfo()
+
         if args.quiet:
             pipe = open('log.tmp', 'w')
         else:
             pipe = None
+
         if args.manual:
             print 'Creating Manual version...'
             BuildManualVersion(version, pipe)
+
+        exe_made = False
+        if args.exe:
+            print 'Creating StandAlone exe...'
+            exe_made = CreateStandaloneExe(version, file_version, pipe)
         if args.wbsa:
             print 'Creating StandAlone version...'
-            BuildStandaloneVersion(version, file_version, pipe)
+            if not exe_made:
+                BuildStandaloneVersion(version, file_version, pipe)
+            else:
+                PackStandaloneVersion(version, pipe)
+
         if args.installer:
             print 'Creating Installer version...'
             BuildInstallerVersion(version, file_version, args.nsis, pipe)

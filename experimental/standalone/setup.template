@@ -1,4 +1,33 @@
 ## Template for the setup.py used to make the WBSA
+
+# From http://www.py2exe.org/index.cgi/win32com.shell
+# and  http://www.py2exe.org/index.cgi/IncludingTypelibs
+#  making sure py2exe locates the win32com.shell module correctly,
+#  and make sure the win32com.gen_py stuff gets correctly created as
+#  well
+#  ...it's ugly
+try:
+    try:
+        import py2exe.mf as modulefinder
+    except ImportError:
+        import modulefinder
+    import sys
+    import win32com
+    import win32com.client
+    win32com.client.gencache.is_readonly=False
+    win32com.client.gencache.GetGeneratePath()
+    
+    for p in win32com.__path__[1:]:
+        modulefinder.AddPackagePath('win32com', p)
+    for extra in ['win32com.shell']:
+        __import__(extra)
+        m = sys.modules[extra]
+        for p in m.__path__[1:]:
+            modulefinder.AddPackagePath(extra, p)
+except ImportError:
+    pass
+# Done with the win32com.shell uglyness...
+
 from distutils.core import setup
 import py2exe
 
@@ -6,21 +35,21 @@ manifest = %(manifest)s
 RT_MANIFEST = 24
 
 class Target:
-    def __init__(self):
+    def __init__(self, script):
         self.name = 'Wrye Bash'
         self.description = 'Wrye Bash'
         self.version = '%(version)s'
         self.author = 'Wrye Bash development team'
         self.url = 'http://tesnexus.com/downloads/file.php?id=22368'
         self.download_url = self.url
-        self.script = 'Wrye Bash Launcher.pyw'
+        self.script = script
         if manifest is not None:
             self.other_resources = [(RT_MANIFEST, 1, manifest)]
-target = Target()
+windows = Target('Wrye Bash Launcher.pyw')
 
 # Make the executable
 setup(
-    windows = [target],
+    windows = [windows],
     options = {
         'py2exe': {
             'dll_excludes': [
