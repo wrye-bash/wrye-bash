@@ -28058,7 +28058,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO ,Requires VadersApp's Oblivion Real Bodies."),
+            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
             'VORB',
             (_('All NPCs'), 0),
             (_('Only Female NPCs'), 1),
@@ -28109,8 +28109,8 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("VaderApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the diverse skeletons for different look.  Not compatible with MAO.'),
+        CBash_MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
             'VORB',
             (_('All NPCs'),  0),
             (_('Only Female NPCs'),  1),
