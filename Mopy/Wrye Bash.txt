@@ -1523,12 +1523,24 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
   * Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, based off of a mod made by Tejon).
 * __As Intended: Imps__
   * Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.
+* __Bigger Nords and Orcs__
+  * Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly. Three choices availabel - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.
+* __Irresponsible Creatures__
+  * Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.
 * __Mayu's Animation Overhaul Skeleton Tweaker__
-  * Sets NPC skeletons paths to match that required for MAO to work. REQUIRES Mayu's Animation Overhaul or it will almost certainly cause CTDs
+  * Sets NPC skeletons paths to match that required for MAO to work. REQUIRES Mayu's Animation Overhaul or it will almost certainly cause CTDs.
 * __No Bloody Creatures__
   * Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
+* __Quiet Feet__
+  * Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.
+* __Real Walk for female NPCs__
+  * Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file.
 * __Redguard FGTS Nuller__
   * Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
+* __Sexy Walk for female NPCs__
+  * Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file.
+* __VadersApp's Oblivion Real Bodies Skeleton Tweaker__
+  * Changes all (modded and vanilla) NPCs to use diverse skeletons for different look. Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies.
 * __Vanilla Beast Skelton Tweaker__
   * Sets any NPCs using the vanilla non-beast skeleton path (skeleton.nif) to use the beast skeleton patch (skeletonbeast.nif). This avoids bugs when a mod changes the race of an NPC to a beast race without setting the skeleton path to the beast path, in which case the tail will appear to extend forever and weird stuff like that.
 
@@ -1548,7 +1560,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
       * "no wings"
       * "tsaesci tail"
       * "widget"
-    * It has body flags set other than right ring
+    * It has no body flags set other than right ring
 * __Armor/Clothing Shows Amulets/Rings__
   * Modifies playable armor/clothing to prevent hiding of amulets/rings.
 * __Bow Reach Fix__
