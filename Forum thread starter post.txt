@@ -1,37 +1,49 @@
-Continuing from the [topic=1160924]previous thread[/topic]...
+Continuing from the [topic=1171625]previous thread[/topic]...
 
 Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I mean a LOT.  It's like twenty tools rolled into one.  It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has.
 
 [b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url]
+
 [b]Documentation[/b]:
 [list]
 [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html"]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
 [*][url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP Wrye Bash unofficial wiki[/url]
 [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide for Newbies[/url]
 [*]Waruddar's Bashed Patch option reference (see bottom of this post)
-[/list][b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
+[/list]
+[b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
+
 [b]Requirements[/b]:
 [list]
 [*]It's easiest to just download the WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url]
-[*]If you want to do things manually:
-[spoiler][list]
-[*][url="http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi"]Python 2.6.5[/url] or [url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url]
-[*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxpython 2.8.11.0 ansi[/url]
-[*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]ComTypes 0.6.2[/url]
-[*][url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url]
-[*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download"]PyWin32 for Python 2.6[/url][/list]
-Older/Newer versions _may_ work but those are probably the most widely used and tested[/spoiler]
-[/list][b]Development[/b]: The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Want to get involved?  Patches are welcome [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207903"]here[/url]!
+[*]If you want to do things manually: [spoiler][list][*]Python 2.5:[list]
+  [*][url="http://www.python.org/ftp/python/2.6.5/python-2.6.5.msi"]Python 2.6.5[/url]
+  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py25.exe"]wxPython 2.8.11.0 ansi for Python 2.5[/url]
+  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a
+  [*][url="http://sourceforge.net/projects/psyco/files/psyco/1.6/psyco-1.6.win32-py25.exe/download"]psyco 1.6 for Python 2.5[/url] (optional)
+  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.5.exe/download"]PyWin32 for Python 2.5[/url][/list][*]Python 2.6:[list]
+  [*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url] *included in Wrye Python 03a
+  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxPython 2.8.11.0 ansi for Python 2.6[/url] *included in Wrye Python 03a
+  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a
+  [*][url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url] (optional)
+  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download"]PyWin32 for Python 2.6[/url] *included in Wrye Python 03a[/list][*]Python 2.7:[list]
+  [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
+  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py27.exe"]wxPython 2.8.11.0 for Python 2.7[/url]
+  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a
+  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Python 3.x: [b][u]NOT Supported[/b][/u]
+[*]Other setups _may_work, but these are probably the most widely used and tested.[/list][/spoiler][*]If you're trying out the new Beta Standalone versions, you don't need [i]any[/i] of the Python components, however you may need the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url], although this could change in the future (it [i]is[/i] beta afterall).
+[/list]
+[b]Development[/b]: The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Want to get involved?  Patches are welcome [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207903"]here[/url]!
 
 [b]Installation[/b]:
 [list]
 [*]If you are instaling for the first time, make sure you have installed WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
 [*]Then just download and run the installer for the most recent release.  You can upgrade this way too.
 [*]For manual installations/upgrades, download the archive version and extract in your Oblivion game folder (so that the Mopy directory appears in the Oblivion directory)
+[*]For WBSA (Wrye Bash StandAlone) versions, no Python components are required, but remember it is a beta and there are currently issues (see the section under [b]Reporting Bugs[/b].)
 [/list]
-
 [b]Reporting Bugs[/b]:
-Try to give us enough information to diagnose your problem.  The following is usefull information for us:
+[list][*]Try to give us enough information to diagnose your problem.  The following is usefull information for us:
 [spoiler][list]
 [*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpfull), what you expected, and what happened.
 [*]If Oblivion isn't installed in the default location, where is it installed?
@@ -47,10 +59,12 @@ Try to give us enough information to diagnose your problem.  The following is us
 [*]Is CBash enabled? If so, what version is displayed?
 [*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
 [*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
-[/list]
-[/spoiler]
-
-[b]Linking[/b]:
+[/list][*]If you're using the WBSA, things are a bit trickier.  There are currently a few known issues:[list=1]
+[*]Wrye Bash wont work correctly if you launch it from the command line (DOS).  Always launch by double clicking the exe or a shortcut to it.
+[*]Due to issue #1, no debug mode is available.  Some errors that happen will still be printed either to a "Wrye Bash.exe.txt" file, or to the "stdout/stderr" window that shows up with errors sometimes.
+[*]ComTypes currently isn't playing nicely with WBSA.  That means no "PM Archive" tab, and any window that normally displayed an html file (like the Bashed Patch results log) will show up in your internet browser instead of in the WBSA.
+[*]There may be plenty more...just think of them as "undocumented features"[/list][*]If you think you've found an error in the WBSA, be sure to uninstall ALL python components and test it again first, to be sure we get an accurate report.  Having python installed can sometimes trick the WBSA into thinking that it has all of the files it requires, even if it really doesn't.[/list]
+[/spoiler][b]Linking[/b]:
 [list]
 [*]If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual Bash zip file, since that changes fairly frequently.
 [/list]
