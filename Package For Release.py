@@ -107,7 +107,9 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     # Write the setup script
     file = open(script, 'r')
     script = file.read()
-    script = script % dict(version=version, file_version=file_version, manifest=manifest)
+    script = script % dict(version=version, file_version=file_version,
+                           manifest=manifest, upx=upx, upx_compression='-9'
+                           )
     file.close()
     file = open(os.path.join(mopy, 'setup.py'), 'w')
     file.write(script)
@@ -132,12 +134,14 @@ def CreateStandaloneExe(version, file_version, pipe=None):
                      icon+',', 'icon,', '101,', '0'], stdout=pipe, stderr=pipe)
 
     # Compress with UPX
-    subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
+    subprocess.call([upx, '--ultra-brute', exe])
+    subprocess.call([upx, '-9', os.path.join(mopy, 'w9xpopen.exe')])
     
     # Clean up left over files
     rm(os.path.join(wbsa, 'ResHacker.ini'))
     rm(os.path.join(wbsa, 'ResHacker.log'))
     rm(os.path.join(mopy, 'setup.py'))
+    rm(os.path.join(mopy, 'Wrye Bash.upx'))
     return True
 
 #--Package up all the files for the StandAlone version    
