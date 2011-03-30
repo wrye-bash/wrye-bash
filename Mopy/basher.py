@@ -82,14 +82,9 @@ from balt import ListCtrl
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
     import belt
-    import win32gui
-    dclicktime = win32gui.GetDoubleClickTime() / 10
-    renametime = 4 * dclicktime
     bEnableWizard = True
-except:
+except ImportError:
     bEnableWizard = False
-    dclicktime = 50
-    renametime = 4 * dclicktime
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
