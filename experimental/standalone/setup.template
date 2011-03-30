@@ -42,13 +42,14 @@ class UPXpy2exe(py2exe):
         self.upx = False
         self.upx_compression = '-9'
 
-    ## Can't get this to work quite right.  I keep ending up with
-    ## Errors when wxpython tries to load and ANY .dll/.pyd files
-    ## are compressed with UPX
-    def copy_file(self, *args, **kwargs):
+    ## Can't get this to work quite right.  A lot of .pyd files fail
+    ## to load correctly if UPX'd, and some .pyd's fail to load when
+    ## their associated .dll is UPX'd.  Mostly happens with wxPython,
+    ## but it's also happened in pywin32.
+    def copy_file(self, src, dst, *args, **kwargs):
         # Override to UPX copied binaries
-        (fname, copied) = result = py2exe.copy_file(self, *args, **kwargs)
-    
+        (fname, copied) = result = py2exe.copy_file(self, src, dst, *args, **kwargs)
+     
         if copied and self.upx:
             basename = os.path.basename(fname).lower()
             # Compress .dll's, except the python dll, we do that later
@@ -56,11 +57,8 @@ class UPXpy2exe(py2exe):
                 if basename.startswith('python'):
                     if len(basename) == 12: # pythonXX.dll
                         return result
-                elif basename.startswith('wx'): return result
+                else: return result
             else: return result
-    #       elif not basename.endswith('.pyd'):
-    #           return result
-            print 'upx-ing', fname
             subprocess.call([self.upx, self.upx_compression, os.path.normpath(fname)])
         return result
 
@@ -76,7 +74,6 @@ class UPXpy2exe(py2exe):
                 # We UPX this one file here rather than in copy_file so
                 # the version adjustment can be successful
                 py2exe.patch_python_dll_winver(self, dll_name, new_winver)
-                print 'upx-ing', dll_name
                 subprocess.call([self.upx, self.upx_compression, os.path.normpath(dll_name)])
 
 manifest = %(manifest)s
@@ -105,7 +102,10 @@ setup(
     options = {
         'py2exe': {
             'dll_excludes': [
+                # Make sure the MSVC 2008 Redist doesn't get included.
                 'MSVCP90.dll',
+                'MSVCR90.dll',
+                'MSVCM90.dll',
                 'mswsock.dll',  # Prevent x64 versions (for win32api)
                 'powrprof.dll', # Prevent x64 versions (for win32api)
                 ],
