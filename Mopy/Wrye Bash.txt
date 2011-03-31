@@ -2275,6 +2275,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Added OOO Potion Names.csv - reverts OOO's alchoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
     * Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)
   * Mark mergeable detection of other mods requiring current mod fixed.
+  * Tweak Assorted patcher: 
+    * Added Set Sound Attenuation Levels tweaker.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
