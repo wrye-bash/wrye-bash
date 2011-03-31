@@ -108,7 +108,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     file = open(script, 'r')
     script = file.read()
     script = script % dict(version=version, file_version=file_version,
-                           manifest=manifest, upx=upx, upx_compression='-9'
+                           manifest=manifest, upx=None, upx_compression='-9'
                            )
     file.close()
     file = open(os.path.join(mopy, 'setup.py'), 'w')
@@ -134,7 +134,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
                      icon+',', 'icon,', '101,', '0'], stdout=pipe, stderr=pipe)
 
     # Compress with UPX
-    subprocess.call([upx, '--ultra-brute', exe])
+    subprocess.call([upx, '-9', exe])
     subprocess.call([upx, '-9', os.path.join(mopy, 'w9xpopen.exe')])
     
     # Clean up left over files
