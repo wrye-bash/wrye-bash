@@ -24857,6 +24857,107 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
+    """Sets Cast When Used Enchantment number of uses."""
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels"),
+            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
+            'Attenuation%:',
+            (_('0%'), 0),
+            (_('5%'), 5),
+            (_('10%'), 10),
+            (_('20%'), 20),
+            (_('50%'), 50),
+            (_('80%'), 80),
+            (_('Custom'),0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreSoun,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreSoun,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.SOUN
+        id_records = patchBlock.id_records
+        for record in modFile.SOUN.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.staticAtten:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.SOUN.records:
+            if record.staticAtten:
+                record.staticAtten = record.staticAtten*self.choiceValues[self.chosen][0]/100
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Set Sound Attenuation Levels'))
+        log(_('* Sounds Modified: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
+    """Sets Cast When Used Enchantment number of uses."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Set Sound Attenuation Levels')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels"),
+            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
+            'Attenuation%:',
+            (_('0%'), 0),
+            (_('5%'), 5),
+            (_('10%'), 10),
+            (_('20%'), 20),
+            (_('50%'), 50),
+            (_('80%'), 80),
+            (_('Custom'),0),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['SOUN']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+
+        if record.staticAtten:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                    override.staticAtten = override.staticAtten*self.choiceValues[self.chosen][0]/100
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Set Sound Attenuation Levels'))
+        log(_('* Sounds modified: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
+
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -24897,6 +24998,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_ArrowWeight(),
         AssortedTweak_ScriptEffectSilencer(),
         AssortedTweak_DefaultIcons(),
+        AssortedTweak_SetSoundAttenuationLevels(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -24966,6 +25068,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
         CBash_AssortedTweak_DefaultIcons(),
+        CBash_AssortedTweak_SetSoundAttenuationLevels(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
