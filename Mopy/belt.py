@@ -178,7 +178,7 @@ class ImagePanel(wx.Panel):
 
     def OnSize(self, event):
         x, y = self.GetSize()
-        if x == 0 and y == 0: return
+        if x <= 0 or y <= 0: return
         self.buffer = wx.EmptyBitmap(x,y)
         dc = wx.MemoryDC()
         dc.SelectObject(self.buffer)
@@ -212,20 +212,19 @@ class PageSelect(PageInstaller):
         self.bmp = wx.EmptyBitmap(1, 1)
         self.index = None
 
-        sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
+        sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, ''))
         self.TitleDesc = wx.StaticText(self, wx.ID_ANY, desc)
         sizerTitle.Add(self.TitleDesc, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
+        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _('Options:')))
 
-        sizerBoxes = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerBoxes.Add(wx.StaticText(self, wx.ID_ANY, _('Options:')))
-        sizerBoxes.AddStretchSpacer()
+        sizerBoxes = wx.GridSizer(1, 2, 5, 5)
         self.textItem = wx.TextCtrl(self, wx.ID_ANY, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
         self.bmpItem = ImagePanel(self, wx.ID_ANY)
         if bMany:
-            self.listOptions = wx.CheckListBox(self, 643, choices=listItems)
+            self.listOptions = wx.CheckListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
             if parent.parser.choices is not None:
                 for index, name in enumerate(listItems):
                     if name in parent.parser.choices:
@@ -234,7 +233,7 @@ class PageSelect(PageInstaller):
                 for index, default in enumerate(defaultMap):
                     self.listOptions.Check(index, default)
         else:
-            self.listOptions = wx.ListBox(self, 643, choices=listItems)
+            self.listOptions = wx.ListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
             self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
             if parent.parser.choices is not None:
                 for index, name in enumerate(listItems):
@@ -248,19 +247,16 @@ class PageSelect(PageInstaller):
                         self.listOptions.Select(index)
                         self.Selection(index)
                         break
-        sizerBoxes.Add(self.listOptions, 0, wx.ALL|wx.EXPAND)
-        sizerBoxes.Add(self.bmpItem, 0, wx.ALL|wx.EXPAND)
-        sizerBoxes.AddGrowableRow(1)
-        sizerBoxes.AddGrowableCol(0)
-        sizerBoxes.AddGrowableCol(1)
+        sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
+        sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
         sizerMain.Add(sizerBoxes, -1, wx.EXPAND)
 
         sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _('Description:')))
         sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
 
         self.SetSizer(sizerMain)
-        sizerMain.AddGrowableRow(1)
-        sizerMain.AddGrowableRow(3)
+        sizerMain.AddGrowableRow(2)
+        sizerMain.AddGrowableRow(4)
         sizerMain.AddGrowableCol(0)
         self.Layout()
 
