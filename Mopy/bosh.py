@@ -11608,6 +11608,8 @@ class InstallersData(bolt.TankData, DataDict):
             iconKey = 'corrupt'
         elif isinstance(installer,InstallerProject):
             iconKey += '.dir'
+        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+            iconKey += '.wiz'
         return (iconKey,textKey,backKey)
 
     def getName(self,item):
