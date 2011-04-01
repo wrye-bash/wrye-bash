@@ -2277,6 +2277,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Mark mergeable detection of other mods requiring current mod fixed.
   * Tweak Assorted patcher: 
     * Added Set Sound Attenuation Levels tweaker.
+    * Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
