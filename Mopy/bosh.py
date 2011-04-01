@@ -17093,6 +17093,8 @@ class PatchFile(ModFile):
                     progress(pstate,_("%s\n%s") % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
                 self.tes4.version = max(modFile.tes4.version, self.tes4.version)
+            except bolt.CancelError:
+                raise
             except:
                 print _("MERGE/SCAN ERROR:"),modName.s
                 raise

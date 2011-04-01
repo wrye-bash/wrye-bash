@@ -5354,7 +5354,7 @@ class PatchDialog(wx.Dialog):
         """Do the patch."""
         self.EndModal(wx.ID_OK)
         patchName = self.patchInfo.name
-        progress = balt.Progress(patchName.s,(' '*60+'\n'))
+        progress = balt.Progress(patchName.s,(' '*60+'\n'), abort=True)
         ###Remove from Bash after CBash integrated
         if not CBash:
             try:
@@ -5375,6 +5375,7 @@ class PatchDialog(wx.Dialog):
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
+                progress.setCancel(False)
                 progress(0.9,patchName.s+_('\nSaving...'))
                 try:
                     patchFile.safeSave()
@@ -5424,9 +5425,10 @@ class PatchDialog(wx.Dialog):
             except bosh.FileEditError, error:
                 progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
-            except:
+            except CancelError:
+                pass
+            finally:
                 progress.Destroy()
-                raise
         else:
             try:
                 from datetime import timedelta
@@ -5499,9 +5501,10 @@ class PatchDialog(wx.Dialog):
             except bosh.FileEditError, error:
                 progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
-            except:
+            except CancelError:
+                pass
+            finally:
                 progress.Destroy()
-                raise
 
     def SaveConfig(self,event=None):
         """Save the configuration"""

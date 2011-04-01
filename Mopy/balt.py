@@ -999,6 +999,11 @@ class Progress(bolt.Progress):
         self.prevState = -1
         self.prevTime = 0
 
+    def setCancel(self, enabled=True):
+        cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
+        if cancel:
+            cancel.Enable(enabled)
+
     def doProgress(self,state,message):
         if not self.dialog:
             raise StateError(_('Dialog already destroyed.'))
