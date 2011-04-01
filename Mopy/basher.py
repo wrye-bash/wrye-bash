@@ -194,6 +194,7 @@ settingDefaults = {
     'bash.installers.enabled': True,
     'bash.installers.autoAnneal': True,
     'bash.installers.autoWizard':False,
+    'bash.installers.wizardOverlay':True,
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshProjects': True,
     'bash.installers.removeEmptyDirs':True,
@@ -429,6 +430,13 @@ installercons.data.extend({
     'off.white':  Image(r'images/checkbox_white_off.png',wx.BITMAP_TYPE_PNG),
     'off.orange': Image(r'images/checkbox_orange_off.png',wx.BITMAP_TYPE_PNG),
     'off.yellow': Image(r'images/checkbox_yellow_off.png',wx.BITMAP_TYPE_PNG),
+    #--Off/Archive - Wizard
+    'off.green.wiz':    Image(r'images/checkbox_green_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    #grey
+    'off.red.wiz':      Image(r'images/checkbox_red_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.white.wiz':    Image(r'images/checkbox_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.orange.wiz':   Image(r'images/checkbox_orange_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.yellow.wiz':   Image(r'images/checkbox_yellow_off_wiz.png',wx.BITMAP_TYPE_PNG),
     #--On/Archive
     'on.green':  Image(r'images/checkbox_green_inc.png',wx.BITMAP_TYPE_PNG),
     'on.grey':   Image(r'images/checkbox_grey_inc.png',wx.BITMAP_TYPE_PNG),
@@ -436,6 +444,13 @@ installercons.data.extend({
     'on.white':  Image(r'images/checkbox_white_inc.png',wx.BITMAP_TYPE_PNG),
     'on.orange': Image(r'images/checkbox_orange_inc.png',wx.BITMAP_TYPE_PNG),
     'on.yellow': Image(r'images/checkbox_yellow_inc.png',wx.BITMAP_TYPE_PNG),
+    #--On/Archive - Wizard
+    'on.green.wiz':  Image(r'images/checkbox_green_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    #grey
+    'on.red.wiz':    Image(r'images/checkbox_red_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.white.wiz':  Image(r'images/checkbox_white_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.orange.wiz': Image(r'images/checkbox_orange_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.yellow.wiz': Image(r'images/checkbox_yellow_inc_wiz.png',wx.BITMAP_TYPE_PNG),
     #--Off/Directory
     'off.green.dir':  Image(r'images/diamond_green_off.png',wx.BITMAP_TYPE_PNG),
     'off.grey.dir':   Image(r'images/diamond_grey_off.png',wx.BITMAP_TYPE_PNG),
@@ -443,6 +458,13 @@ installercons.data.extend({
     'off.white.dir':  Image(r'images/diamond_white_off.png',wx.BITMAP_TYPE_PNG),
     'off.orange.dir': Image(r'images/diamond_orange_off.png',wx.BITMAP_TYPE_PNG),
     'off.yellow.dir': Image(r'images/diamond_yellow_off.png',wx.BITMAP_TYPE_PNG),
+    #--Off/Directory - Wizard
+    'off.green.dir.wiz':  Image(r'images/diamond_green_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    #grey
+    'off.red.dir.wiz':    Image(r'images/diamond_red_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.white.dir.wiz':  Image(r'images/diamond_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.orange.dir.wiz': Image(r'images/diamond_orange_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.yellow.dir.wiz': Image(r'images/diamond_yellow_off_wiz.png',wx.BITMAP_TYPE_PNG),
     #--On/Directory
     'on.green.dir':  Image(r'images/diamond_green_inc.png',wx.BITMAP_TYPE_PNG),
     'on.grey.dir':   Image(r'images/diamond_grey_inc.png',wx.BITMAP_TYPE_PNG),
@@ -450,6 +472,13 @@ installercons.data.extend({
     'on.white.dir':  Image(r'images/diamond_white_inc.png',wx.BITMAP_TYPE_PNG),
     'on.orange.dir': Image(r'images/diamond_orange_inc.png',wx.BITMAP_TYPE_PNG),
     'on.yellow.dir': Image(r'images/diamond_yellow_inc.png',wx.BITMAP_TYPE_PNG),
+    #--On/Directory - Wizard
+    'on.green.dir.wiz':  Image(r'images/diamond_green_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    #grey
+    'on.red.dir.wiz':    Image(r'images/diamond_red_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.white.dir.wiz':  Image(r'images/diamond_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.orange.dir.wiz': Image(r'images/diamond_orange_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.yellow.dir.wiz': Image(r'images/diamond_yellow_inc_wiz.png',wx.BITMAP_TYPE_PNG),
     #--Broken
     'corrupt':   Image(r'images/red_x.png',wx.BITMAP_TYPE_PNG),
     }.items())
@@ -6754,6 +6783,20 @@ class Installers_AutoWizard(Link):
     def Execute(self, event):
         """Handle selection."""
         settings['bash.installers.autoWizard'] ^= True
+
+#------------------------------------------------------------------------------
+class Installers_WizardOverlay(Link):
+    """Toggle using the wizard overlay icon"""
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        menuItem = wx.MenuItem(menu, self.id, _('Wizard Icon Overlay'), kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.wizardOverlay'])
+
+    def Execute(self, event):
+        """Handle selection."""
+        settings['bash.installers.wizardOverlay'] ^= True
+        gInstallers.gList.UpdateItems()
 
 #------------------------------------------------------------------------------
 class Installers_AutoRefreshProjects(Link):
@@ -13812,6 +13855,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
+    InstallersPanel.mainMenu.append(Installers_WizardOverlay())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_enableInstallationofOBSEdlls())
     InstallersPanel.mainMenu.append(Installers_SkipScreenshots())
