@@ -132,6 +132,20 @@ Tests for the existance of a file in the Data directory.
   * **True:** The file exists
   * **False:** The file does not exist
 
+== GetEspmStatus
+Tests the current status of an esp or espm in the Data directory.  This function takes esp/m ghosting into account when testing the status.
+
+* __Usage:__
+  * __GetEspmStatus(**file_name**)__
+* __Arguments:__
+  * **file_name:** a string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.
+* __Return:__
+  * **-1:** The esp/m does not exist
+  * ** 0:** The esp/m is not active, imported, or merged (<img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Inactive">)
+  * ** 1:** The esp/m is not active, but has portions imported into the Bashed Patch (<img src="images/checkbox_green_imp.png" width="16" height="16" border="0" alt="Imported">)
+  * ** 2:** The esp/m is active (<img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Active">)
+  * ** 3:** The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" border="0" alt="Merged">)
+
 == str
 Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 

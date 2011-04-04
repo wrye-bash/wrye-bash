@@ -45,6 +45,7 @@
 <p class=list-2>&bull;&nbsp; <a href="#CompareOBGEVersion">CompareOBGEVersion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#CompareWBVersion">CompareWBVersion</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
+<p class=list-2>&bull;&nbsp; <a href="#GetEspmStatus">GetEspmStatus</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#str">str</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#int">int</a></p>
 <p class=list-2>&bull;&nbsp; <a href="#float">float</a></p>
@@ -248,6 +249,20 @@
 <p class=list-1>&bull;&nbsp; <B>Return:</B>
   <p class=list-2>&bull;&nbsp; <B><I>True:</I></B> The file exists
   <p class=list-2>&bull;&nbsp; <B><I>False:</I></B> The file does not exist
+  <p class=empty>&nbsp;</p>
+<h2><a name='GetEspmStatus'>GetEspmStatus</a></h2>
+<p>Tests the current status of an esp or espm in the Data directory.  This function takes esp/m ghosting into account when testing the status.
+  <p class=empty>&nbsp;</p>
+<p class=list-1>&bull;&nbsp; <B>Usage:</B>
+  <p class=list-2>&bull;&nbsp; <B>GetEspmStatus(<B><I>file_name</I></B>)</B>
+<p class=list-1>&bull;&nbsp; <B>Arguments:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>file_name:</I></B> a string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.
+<p class=list-1>&bull;&nbsp; <B>Return:</B>
+  <p class=list-2>&bull;&nbsp; <B><I>-1:</I></B> The esp/m does not exist
+  <p class=list-2>&bull;&nbsp; <B><I> 0:</I></B> The esp/m is not active, imported, or merged (<img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Inactive">)
+  <p class=list-2>&bull;&nbsp; <B><I> 1:</I></B> The esp/m is not active, but has portions imported into the Bashed Patch (<img src="images/checkbox_green_imp.png" width="16" height="16" border="0" alt="Imported">)
+  <p class=list-2>&bull;&nbsp; <B><I> 2:</I></B> The esp/m is active (<img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Active">)
+  <p class=list-2>&bull;&nbsp; <B><I> 3:</I></B> The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" border="0" alt="Merged">)
   <p class=empty>&nbsp;</p>
 <h2><a name='str'>str</a></h2>
 <p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
