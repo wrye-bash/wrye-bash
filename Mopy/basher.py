@@ -2534,16 +2534,39 @@ class InstallersList(balt.Tank):
             elif item.s == '==Last==':
                 event.Veto()
                 return
+        editbox = self.gList.GetEditControl()
+        editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if InstallerType is bosh.InstallerMarker:
-            editbox = self.gList.GetEditControl()
             to = len(event.GetLabel()) - 2
             editbox.SetSelection(2,to)
         #--Archives, change the selection to not include the extension
         elif InstallerType is bosh.InstallerArchive:
-            editbox = self.gList.GetEditControl()
             to = len(GPath(event.GetLabel()).sbody)
             editbox.SetSelection(0,to)
+
+    def OnEditLabelChar(self, event):
+        """For pressing F2 on the edit box for renaming"""
+        if event.GetKeyCode() == wx.WXK_F2:
+            editbox = self.gList.GetEditControl()
+            selection = editbox.GetSelection()
+            text = editbox.GetValue()
+            lenWithExt = len(text)
+
+            selected = self.data[self.GetSelected()[0]]
+            if isinstance(selected, bosh.InstallerArchive):
+                lenWithoutExt = len(GPath(text).sbody)
+                if selection == (0, lenWithoutExt):
+                    selection = (0, lenWithExt)
+                else:
+                    selection = (0, lenWithoutExt)
+            elif isinstance(selected, bosh.InstallerMarker):
+                selection = (2, lenWithExt-2)
+            else:
+                selection = (0, lenWithExt)
+            editbox.SetSelection(*selection)
+        else:
+            event.Skip()
 
     def OnEditLabel(self, event):
         """Renamed some installers"""
@@ -3113,19 +3136,21 @@ class InstallersPanel(SashTankPanel):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.data)
 
+        # Save scroll bar positions, because gList.RefreshUI will
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
+        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
 
-##        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
-##        espmIndex = self.gEspmList.GetSelection()
-
         self.gList.RefreshUI(self.detailsItem)
-        self.gSubList.ScrollLines(subScrollPos)
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
-##        if espmIndex != -1:
-##            self.gEspmList.ScrollLines(espmScrollPos)
-##            self.gEspmList.SetSelection(espmIndex)
+
+        # Reset the scroll bars back to their original position
+        subScroll = subScrollPos - self.gSubList.GetScrollPos(wx.VERTICAL)
+        self.gSubList.ScrollLines(subScroll)
+
+        espmScroll = espmScrollPos - self.gEspmList.GetScrollPos(wx.VERTICAL)
+        self.gEspmList.ScrollLines(espmScroll)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
@@ -6802,7 +6827,7 @@ class Installers_WizardOverlay(Link):
     def Execute(self, event):
         """Handle selection."""
         settings['bash.installers.wizardOverlay'] ^= True
-        gInstallers.gList.UpdateItems()
+        gInstallers.gList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installers_AutoRefreshProjects(Link):
