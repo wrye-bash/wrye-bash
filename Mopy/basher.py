@@ -85,6 +85,8 @@ try:
     bEnableWizard = True
 except ImportError:
     bEnableWizard = False
+    if bolt.deprintOn:
+        raise
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):

@@ -20,12 +20,12 @@
 # =============================================================================
 
 """This module starts the Wrye Bash application in console mode with debug enabled."""
-
-import bash
-import bolt
-
 #For Wrye Bash Debug.py, default to debug mode On
+import bolt
 bolt.deprintOn = True
+
+#Import bolt before bash so errors in Wizards show up
+import bash
 
 if __name__ == '__main__':
     bash.main()
