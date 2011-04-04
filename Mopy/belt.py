@@ -4,7 +4,7 @@
 import ScriptParser         # generic parser class
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt
+import bosh, balt, bolt
 from bolt import _
 import struct, string
 import win32api
@@ -577,6 +577,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
+        self.SetFunction('GetEspmState', self.fnGetEspmState, 1)
         self.SetFunction('str', self.fnStr, 1)
         self.SetFunction('int', self.fnInt, 1)
         self.SetFunction('float', self.fnFloat, 1)
@@ -744,6 +745,13 @@ class WryeParser(ScriptParser.Parser):
         return cmp(float(wbHave), float(wbWant))
     def fnDataFileExists(self, filename):
         return bosh.dirs['mods'].join(filename).exists()
+    def fnGetEspmState(self, filename):
+        file = bolt.GPath(filename)
+        if file in bosh.modInfos.merged: return 3   # Merged
+        if file in bosh.modInfos.ordered: return 2  # Active
+        if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
+        if file in bosh.modInfos: return 0          # Inactive
+        return -1                                   # Not found
     def fnStr(self, data): return str(data)
     def fnInt(self, data):
         try:
