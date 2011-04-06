@@ -2287,7 +2287,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Import Scripts Cbash and non-CBash modes fixed to maintain Python 2.5 compatibility.
   * Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
   * Yes to All option for overwrite on Move/Copy Saves
-  * 
+  * updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.
+    * updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
+    
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
