@@ -25141,7 +25141,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels: Nirnroots Only"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            'Attenuation%:',
+            'Nirnroot Attenuation%:',
             (_('0%'), 0),
             (_('5%'), 5),
             (_('10%'), 10),
@@ -25198,7 +25198,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels: Nirnroots Only"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            'Attenuation%:',
+            'Nirnroot Attenuation%:',
             (_('0%'), 0),
             (_('5%'), 5),
             (_('10%'), 10),
