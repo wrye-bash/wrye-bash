@@ -146,6 +146,31 @@ Tests the current status of an esp or espm in the Data directory.  This function
   * ** 2:** The esp/m is active (<img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Active">)
   * ** 3:** The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" border="0" alt="Merged">)
 
+== EditINI
+Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
+
+* __Usage:__
+  * __EditINI(**file_name**, **section**, **setting**, **value**)__
+* __Arguments:__
+  * **file_name:** The name of the ini file you wish to edit, relative to the Data directory.
+  * **section:** The section in the ini where **setting** resides, or 'set' or 'setGS' (see examples below)
+  * **setting:** The setting you wish to change.
+  * **value:** The value to set the setting to.
+  
+* __Examples:__
+  * **Setting an item in Oblivion.ini:**
+  <pre>EditINI('Oblivion.ini', 'General', 'bBorderRegionsEnabled', 0)</pre>
+  <br />
+  <pre>[General]
+bBorderRegionsEnabled=0</pre>
+
+  * **Setting an item in a script-like ini:**  Notice the use of **set** and **setGS** as the sections.
+  <pre>EditINI('TargetINI.ini', 'set', 'ANVars.UseEW', 1)
+EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)</pre>
+
+  <pre>set ANVars.UseEW to 1
+setGS fPCBaseMagickaMult 1</pre>
+
 == str
 Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 

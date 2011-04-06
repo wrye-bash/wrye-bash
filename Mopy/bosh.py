@@ -6826,6 +6826,9 @@ class IniFile:
                     setting = setting._s
                 else:
                     status = -10
+            else:
+                if len(stripped) != 0:
+                    status = -10
             lines.append((line.strip(),section._s,setting,value._s,status,lineNo))
         iniFile.close()
         return lines
@@ -6953,7 +6956,7 @@ class OBSEIniFile(IniFile):
 
     def getTweakFileLines(self,tweakPath):
         """Get a line by line breakdown of the tweak file, in this format:
-        [(fulltext,section,setting,value,ini_line_number)]
+        [(fulltext,section,setting,value,status,ini_line_number)]
         where:
         fulltext = full line of text from the ini
         setting = the setting that is being edited
@@ -6984,7 +6987,10 @@ class OBSEIniFile(IniFile):
                 section = LString(']setgs[')
                 groups = maSetGS.groups()
             else:
-                lines.append((line.strip('\r\n'),'','','',-1))
+                if len(stripped) == 0:
+                    lines.append((line.strip('\r\n'),'','','',0,-1))
+                else:
+                    lines.append((line.strip('\r\n'),'','','',-10,-1))
                 continue
             status = 0
             setting = ''
@@ -6994,14 +7000,16 @@ class OBSEIniFile(IniFile):
                 setting = LString(groups(1).strip())
                 if setting in iniSettings[section]:
                     value = LString(groups(2).strip())
+                    lineNo = iniSettings[section][setting][1]
                     if iniSettings[section][setting][0] == value:
                         status = 20
                         lineNo = iniSettings[section][setting][1]
                     else:
                         status = 10
-                        lineNo = iniSettings[section][setting][1]
                 else:
                     status = -10
+            else:
+                status = -10
             lines.append((line.strip(),section,setting,value,lineNo))
         iniFile.close()
         return lines
