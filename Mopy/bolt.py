@@ -1532,14 +1532,15 @@ class WryeText:
     """
 
     # Data ------------------------------------------------------------------------
-    htmlHead = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-    <HTML>
-    <HEAD>
-    <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
-    <TITLE>%s</TITLE>
-    <STYLE>%s</STYLE>
-    </HEAD>
-    <BODY>
+    htmlHead = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>%s</title>
+    <style type="text/css">%s</style>
+    </head>
+    <body>
     """
     defaultCss = """
     H1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
@@ -1554,7 +1555,7 @@ class WryeText:
     P.list-4 { margin-left: 0.6in; text-indent: -0.15in }
     P.list-5 { margin-left: 0.75in; text-indent: -0.15in }
     P.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    PRE { border: 1px solid; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+    PRE { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
     CODE { background-color: #FDF5E6;}
     BODY { background-color: #ffffcc; }
     """
@@ -1576,7 +1577,7 @@ class WryeText:
         # Setup ---------------------------------------------------------
         #--Headers
         reHead = re.compile(r'(=+) *(.+)')
-        headFormat = "<h%d><a name='%s'>%s</a></h%d>\n"
+        headFormat = "<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = "<h%d>%s</h%d>\n"
         #--List
         reList = re.compile(r'( *)([-x!?\.\+\*o]) (.*)')
@@ -1584,12 +1585,21 @@ class WryeText:
         reHr = re.compile('^------+$')
         reEmpty = re.compile(r'\s+$')
         reMDash = re.compile(r' -- ')
-        rePreBegin = re.compile('<pre>',re.I)
+        rePreBegin = re.compile('<pre',re.I)
         rePreEnd = re.compile('</pre>',re.I)
+        anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
             anchor = reWd.sub('',text)
-            return "<a name='%s'>%s</a>" % (anchor,text)
+            count = 0
+            while anchor in anchorlist and count < 10:
+                count += 1
+                if count == 1:
+                    anchor = anchor + str(count)
+                else:
+                    anchor = anchor[:-1] + str(count)
+            anchorlist.append(anchor)
+            return "<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
         reBold = re.compile(r'__')
         reItalic = re.compile(r'~~')
@@ -1597,13 +1607,13 @@ class WryeText:
         states = {'bold':False,'italic':False,'boldItalic':False}
         def subBold(match):
             state = states['bold'] = not states['bold']
-            return ('</B>','<B>')[state]
+            return ('</b>','<b>')[state]
         def subItalic(match):
             state = states['italic'] = not states['italic']
-            return ('</I>','<I>')[state]
+            return ('</i>','<i>')[state]
         def subBoldItalic(match):
             state = states['boldItalic'] = not states['boldItalic']
-            return ('</I></B>','<B><I>')[state]
+            return ('</b></i>','<i><b>')[state]
         #--Preformatting
         #--Links
         reLink = re.compile(r'\[\[(.*?)\]\]')
@@ -1677,6 +1687,14 @@ class WryeText:
                 anchor = reWd.sub('',text)
                 level = len(lead)
                 if anchorHeaders:
+                    count = 0
+                    while anchor in anchorlist and count < 10:
+                        count += 1
+                        if count == 1:
+                            anchor = anchor + str(count)
+                        else:
+                            anchor = anchor[:-1] + str(count)
+                    anchorlist.append(anchor)
                     line = (headFormatNA,headFormat)[anchorHeaders] % (level,anchor,text,level)
                     if addContents: contents.append((level,anchor,text))
                 else:
@@ -1691,15 +1709,15 @@ class WryeText:
                 if bullet == '.': bullet = '&nbsp;'
                 elif bullet == '*': bullet = '&bull;'
                 level = len(spaces)/2 + 1
-                line = spaces+'<p class=list-'+`level`+'>'+bullet+'&nbsp; '
-                line = line + text + '\n'
+                line = spaces+'<p class="list-'+`level`+'">'+bullet+'&nbsp; '
+                line = line + text + '</p>\n'
             #--Paragraph
             elif maPar:
-                if not wasInParagraph: line = '<p>'+line
+                if not wasInParagraph: line = '<p>'+line+'</p>\n'
                 isInParagraph = True
             #--Empty line
             elif maEmpty:
-                line = spaces+'<p class=empty>&nbsp;</p>\n'
+                line = spaces+'<p class="empty">&nbsp;</p>\n'
             #--Misc. Text changes --------------------
             line = reHr.sub('<hr>',line)
             line = reMDash.sub(' &#150; ',line)
@@ -1740,7 +1758,7 @@ class WryeText:
                     for (level,name,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            out.write('<p class=list-%d>&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            out.write('<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
                     didContents = True
             else:
                 out.write(line)
