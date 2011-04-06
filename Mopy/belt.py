@@ -375,7 +375,7 @@ class PageFinish(PageInstaller):
         #--Ini tweaks
         sizerInis = wx.FlexGridSizer(2, 2, 5, 5)
         sizerInis.Add(wx.StaticText(self, -1, _('Ini Tweaks:')))
-        sizerInis.Add(wx.StaticText(self, -1, _('')))
+        sizerInis.Add(wx.StaticText(self, -1, ''))
         self.listInis = wx.ListBox(self, 668, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
         self.listTweaks = wx.ListBox(self, -1, style=wx.LB_SINGLE)
