@@ -231,10 +231,35 @@ class textCtrl(wx.TextCtrl):
         wx.TextCtrl.__init__(self,parent,id,name,size=size,style=style)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
+            self.Bind(wx.EVT_SIZE, self.OnSizeChange)
+
+    def UpdateToolTip(self, text):
+        if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
+            self.SetToolTip(tooltip(text))
+        else:
+            self.SetToolTip(tooltip(''))
 
     def OnTextChange(self,event):
-        if self.GetClientSize()[0] < self.GetTextExtent(event.GetString())[0]:
-            self.SetToolTip(tooltip(event.GetString()))
+        self.UpdateToolTip(event.GetString())
+        event.Skip()
+    def OnSizeChange(self, event):
+        self.UpdateToolTip(self.GetValue())
+        event.Skip()
+
+class comboBox(wx.ComboBox):
+    """wx.ComboBox with automatic tooltipi if text is wider than width of control."""
+    def __init__(self, *args, **kwdargs):
+        autotooltip = kwdargs.get('autotooltip',True)
+        if 'autotooltip' in kwdargs:
+            del kwdargs['autotooltip']
+        wx.ComboBox.__init__(self, *args, **kwdargs)
+        if autotooltip:
+            self.Bind(wx.EVT_SIZE, self.OnChange)
+            self.Bind(wx.EVT_TEXT, self.OnChange)
+
+    def OnChange(self, event):
+        if self.GetClientSize()[0] < self.GetTextExtent(self.GetValue())[0]+30:
+            self.SetToolTip(tooltip(self.GetValue()))
         else:
             self.SetToolTip(tooltip(''))
 
