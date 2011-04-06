@@ -1,9 +1,9 @@
 = BAIN Wizards ====================================================================#
-<table><tr valign=top><tr valign=top><td width=20% style='border: 1px solid #000000; padding: 5px; background: #e6e64c;'>
+<table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 === Contents
 {{CONTENTS=3}}
 {{CONTENTS=3}}
-</td><td style="border: 1px solid #000000; padding: 5px; background: f6f68c;">
+</td><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c;">
 = Introduction
 
 Starting with Wrye Bash version 278, wizards were added to make it easier to install BAIN packages.  Wizards allow modders to include a simple configuration script with their packages.  All that needs to be done is create a script file name __wizard.txt__ and include it in the package.  When run, the wizard will step through a series of dialogs to determine which sub-packages, esps, and esms should be selected.  Afterwards, you can install the package using those selections.
@@ -141,10 +141,10 @@ Tests the current status of an esp or espm in the Data directory.  This function
   * **file_name:** a string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.
 * __Return:__
   * **-1:** The esp/m does not exist
-  * ** 0:** The esp/m is not active, imported, or merged (<img src="images/checkbox_green_off.png" width="16" height="16" border="0" alt="Inactive">)
-  * ** 1:** The esp/m is not active, but has portions imported into the Bashed Patch (<img src="images/checkbox_green_imp.png" width="16" height="16" border="0" alt="Imported">)
-  * ** 2:** The esp/m is active (<img src="images/checkbox_green_on.png" width="16" height="16" border="0" alt="Active">)
-  * ** 3:** The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" border="0" alt="Merged">)
+  * ** 0:** The esp/m is not active, imported, or merged (<img src="images/checkbox_green_off.png" width="16" height="16" style = 'border : 0' alt="Inactive"></img>)
+  * ** 1:** The esp/m is not active, but has portions imported into the Bashed Patch (<img src="images/checkbox_green_imp.png" width="16" height="16" style = 'border : 0' alt="Imported"></img>)
+  * ** 2:** The esp/m is active (<img src="images/checkbox_green_on.png" width="16" height="16" style = 'border : 0' alt="Active"></img>)
+  * ** 3:** The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" style = 'border : 0' alt="Merged"></img>)
 
 == EditINI
 Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
@@ -494,9 +494,9 @@ Raised one value to the power of another value
 ==  Boolean Operators
 Used to test the Truth of values
 
-=== And (&, and)
+=== And (&amp;, and)
 * __Usage:__
-  * left & right
+  * left &amp; right
   * left and right
 * __Return:__
   * **True** if both **left** and **right** are **True**.
@@ -556,16 +556,16 @@ Used to compare two values, variables, etc together.
   * **True** if left is greater than right.
   * **False** otherwise.
 
-=== Less Than or Equal (<=)
+=== Less Than or Equal (&lt;=)
 * __Usage:__
-  * left <= right
+  * left &lt;= right
 * __Return:__
   * **True** if left is less than or equal to right.
   * **False** otherwise.
 
-=== Less Than (<)
+=== Less Than (&lt;)
 * __Usage:__
-  * left < right
+  * left &lt; right
 * __Return:__
   * **True** if left is less than right.
   * **False** otherwise
@@ -596,7 +596,7 @@ Have a problem with your wizard script? Here are some common mistakes that cause
 
 ==BAIN wizard Script Highlighter for NotePad++
 
-<img src="images/WizardScriptHighlighter.jpg" width="740" height="328" border="0">
+<img src="images/WizardScriptHighlighter.jpg" alt="Notepad++ BAIN wizard Script Hightlighter in action" width="740" height="328" style='border: 0;'></img>
 
 * It is recommended that you install utumno's <a href="http://www.tesnexus.com/downloads/file.php?id=32654">BAIN wizard Script Highlighter for Notepad plus plus</a> if you use Notepad++ to write your install scripts.
 * It makes for spotting errors in your script a lot easier.
