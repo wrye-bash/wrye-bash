@@ -8868,7 +8868,7 @@ class INI_Apply(Link):
     def Execute(self,event):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        if self.window.GetParent().comboBox.GetSelection() == 0:
+        if self.window.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
             message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_("INI Tweaks")):
                 return
@@ -8883,6 +8883,7 @@ class INI_Apply(Link):
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
+            self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
 #------------------------------------------------------------------------------
 class Mods_EsmsFirst(Link):
     """Sort esms to the top."""
