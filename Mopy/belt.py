@@ -412,6 +412,7 @@ class PageFinish(PageInstaller):
         sizerMain.AddGrowableRow(1)
         sizerMain.AddGrowableRow(2)
         sizerMain.AddGrowableRow(3)
+        sizerMain.SetSizeHints(self)
         self.SetSizer(sizerMain)
         self.Layout()
 
