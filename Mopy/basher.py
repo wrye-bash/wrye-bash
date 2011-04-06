@@ -2713,14 +2713,18 @@ class InstallersList(balt.Tank):
             selection = editbox.GetSelection()
             text = editbox.GetValue()
             lenWithExt = len(text)
+            if selection[0] != 0:
+                selection = (0,lenWithExt)
+            selectedText = GPath(text[selection[0]:selection[1]])
+            textNextLower = selectedText.body
+            if textNextLower == selectedText:
+                lenNextLower = lenWithExt
+            else:
+                lenNextLower = len(textNextLower.s)
 
             selected = self.data[self.GetSelected()[0]]
             if isinstance(selected, bosh.InstallerArchive):
-                lenWithoutExt = len(GPath(text).sbody)
-                if selection == (0, lenWithoutExt):
-                    selection = (0, lenWithExt)
-                else:
-                    selection = (0, lenWithoutExt)
+                selection = (0, lenNextLower)
             elif isinstance(selected, bosh.InstallerMarker):
                 selection = (2, lenWithExt-2)
             else:
