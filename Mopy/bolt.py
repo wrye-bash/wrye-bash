@@ -389,6 +389,7 @@ class Path(object):
     def tail(self):
         "For alpha\beta.gamma, returns beta.gamma."
         return GPath(self._stail)
+    @property
     def body(self):
         "For alpha\beta.gamma, returns beta."
         return GPath(self._sbody)
