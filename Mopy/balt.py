@@ -262,6 +262,7 @@ class comboBox(wx.ComboBox):
             self.SetToolTip(tooltip(self.GetValue()))
         else:
             self.SetToolTip(tooltip(''))
+        event.Skip()
 
 def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
         name='button',id=defId,onClick=None,tip=None,onRClick=None):
