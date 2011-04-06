@@ -510,6 +510,40 @@ class NotebookPanel(wx.Panel):
         pass
 
 #------------------------------------------------------------------------------
+class SashPanel(NotebookPanel):
+    """Subclass of Notebook Panel, designed for two pane panel."""
+    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL):
+        """Initialize."""
+        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        self.left = wx.Panel(splitter)
+        self.right = wx.Panel(splitter)
+        if mode == wx.VERTICAL:
+            splitter.SplitVertically(self.left, self.right)
+        else:
+            splitter.SplitHorizontally(self.left, self.right)
+        splitter.SetSashGravity(sashGravity)
+        sashPos = settings.get(sashPosKey, 0) or sashPos
+        splitter.SetSashPosition(sashPos)
+        if sashPosKey is not None:
+            self.sashPosKeyKey = sashPosKey
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, self.OnDClick)
+        splitter.SetMinimumPaneSize(50)
+        sizer = vSizer(
+            (splitter,1,wx.EXPAND),
+            )
+        self.SetSizer(sizer)
+
+    def OnDClick(self, event):
+        """Don't allow unsplitting"""
+        event.Veto()
+
+    def OnWindowClose(self, event):
+        splitter = self.right.GetParent()
+        if hasattr(self, 'sashPosKey'):
+            settings[self.sashPosKey] = splitter.GetSashPosition()
+        event.Skip()
+
 class SashTankPanel(NotebookPanel):
     """Subclass of a notebook panel designed for a two pane tank panel."""
     def __init__(self,data,parent):
@@ -1222,6 +1256,99 @@ class INIList(List):
         colName = self.cols[colDex]
         self.colWidths[colName] = self.list.GetColumnWidth(colDex)
         settings.setChanged('bash.ini.colWidths')
+
+#------------------------------------------------------------------------------
+class INITweakLineCtrl(ListCtrl):
+    def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
+        ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.InsertColumn(0,'')
+        self.tweakLines = []
+        self.iniContents = iniContents
+
+    def OnSelect(self, event):
+        index = event.GetIndex()
+        iniLine = self.tweakLines[index][5]
+        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        if iniLine != -1:
+            self.iniContents.EnsureVisible(iniLine)
+            scroll = iniLine - self.iniContents.GetScrollPos(wx.VERTICAL) - index
+            self.iniContents.ScrollLines(scroll)
+        event.Skip()
+
+    def RefreshUI(self, tweakPath):
+        if tweakPath is None:
+            self.DeleteAllItems()
+            return
+        ini = bosh.iniInfos.ini
+        tweakPath = bosh.iniInfos.dir.join(tweakPath)
+        self.tweakLines = ini.getTweakFileLines(tweakPath)
+        num = self.GetItemCount()
+        updated = []
+        for i,line in enumerate(self.tweakLines):
+            #--Line
+            if i >= num:
+                self.InsertStringItem(i, line[0])
+            else:
+                self.SetStringItem(i, 0, line[0])
+            #--Line color
+            if line[4] == -10: color = colors['bash.ini.invalid']
+            elif line[4] == 10: color = colors['bash.ini.mismatched']
+            elif line[4] == 20: color = colors['bash.ini.matched']
+            else: color = self.GetBackgroundColour()
+            self.SetItemBackgroundColour(i, color)
+            #--Set iniContents color
+            if line[5] != -1:
+                self.iniContents.SetItemBackgroundColour(line[5],color)
+                updated.append(line[5])
+        #--Delete extra lines
+        for i in range(len(self.tweakLines),num):
+            self.DeleteItem(len(self.tweakLines))
+        #--Reset line color for other iniContents lines
+        for i in range(self.iniContents.GetItemCount()):
+            if i in updated: continue
+            if self.iniContents.GetItemBackgroundColour(i) != self.iniContents.GetBackgroundColour():
+                self.iniContents.SetItemBackgroundColour(i, self.iniContents.GetBackgroundColour())
+        #--Refresh column width
+        self.resizeLastColumn(0)
+
+#------------------------------------------------------------------------------
+class INILineCtrl(ListCtrl):
+    def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
+        ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.InsertColumn(0, '')
+
+    def SetTweakLinesCtrl(self, control):
+        self.tweakContents = control
+
+    def OnSelect(self, event):
+        index = event.GetIndex()
+        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        for i,line in enumerate(self.tweakContents.tweakLines):
+            if index == line[5]:
+                self.tweakContents.EnsureVisible(i)
+                scroll = i - self.tweakContents.GetScrollPos(wx.VERTICAL) - index
+                self.tweakContents.ScrollLines(scroll)
+                break
+        event.Skip()
+
+    def RefreshUI(self):
+        ini = bosh.iniInfos.ini.path.open('r')
+        lines = ini.readlines()
+        ini.close()
+
+        num = self.GetItemCount()
+        self.EnsureVisible(0)
+        for i,line in enumerate(lines):
+            if i >= num:
+                self.InsertStringItem(i, line)
+            else:
+                self.SetStringItem(i, 0, line)
+        for i in range(len(lines), num):
+            self.DeleteItem(len(lines))
+        self.resizeLastColumn(0)
+
 #------------------------------------------------------------------------------
 class ModList(List):
     #--Class Data
@@ -1880,39 +2007,61 @@ class ModDetails(wx.Window):
         modList.RefreshUI(self.modInfo.name)
 
 #------------------------------------------------------------------------------
-class INIPanel(NotebookPanel):
+class INIPanel(SashPanel):
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent,-1)
-        global iniList
+        SashPanel.__init__(self, parent,'bash.ini.sashPos')
+        left,right = self.left, self.right
         #--Remove from list button
-        self.button = button(self,_('Remove'),onClick=self.OnRemove)
+        self.button = button(right,_('Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.edit = button(self,_('Edit...'),onClick=self.OnEdit)
+        self.edit = button(right,_('Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
         self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
         self.SortChoices()
+        #--Ini file
+        self.iniContents = INILineCtrl(right)
+        #--Tweak file
+        self.tweakContents = INITweakLineCtrl(right,self.iniContents)
+        self.iniContents.SetTweakLinesCtrl(self.tweakContents)
+        self.tweakName = textCtrl(right, style=wx.TE_READONLY|wx.NO_BORDER)
         self.SetBaseIni(self.GetChoice())
-        iniList = INIList(self)
-        self.comboBox = wx.ComboBox(self,-1,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
+        global iniList
+        iniList = INIList(left)
+        self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
+        iniList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak)
         #--Layout
-        sizer = vSizer(
-            (hSizer(
-                (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
-                ((4,0),0),
-                (self.button,0,wx.ALIGN_TOP,0),
-                (self.edit,0,wx.ALIGN_TOP,0),
-             ),0,wx.TOP|wx.LEFT|wx.BOTTOM|wx.RIGHT|wx.GROW,4),
-            (hSizer(
-                (iniList,1,wx.GROW)
-                ),1,wx.GROW)
+        lSizer = hSizer(
+            (iniList,2,wx.EXPAND),
             )
-        self.SetSizer(sizer)
+        rSizer = hSizer(
+            (vSizer(
+                (self.tweakName,0,wx.EXPAND|wx.TOP,6),
+                (self.tweakContents,1,wx.EXPAND),
+                ),1,wx.EXPAND|wx.RIGHT,4),
+            (vSizer(
+                (hSizer(
+                    (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
+                    ((4,0),0),
+                    (self.button,0,wx.ALIGN_TOP,0),
+                    (self.edit,0,wx.ALIGN_TOP,0),
+                    ),0,wx.EXPAND|wx.BOTTOM,4),
+                (self.iniContents,1,wx.EXPAND),
+                ),1,wx.EXPAND),
+            )
+        right.SetSizer(rSizer)
+        left.SetSizer(lSizer)
+
+    def OnSelectTweak(self, event):
+        tweakFile = iniList.items[event.GetIndex()]
+        self.tweakName.SetValue(tweakFile.sbody)
+        self.tweakContents.RefreshUI(tweakFile)
+        event.Skip()
 
     def GetChoice(self,index=None):
         """ Return path for a given choice, or the
@@ -1956,6 +2105,16 @@ class INIPanel(NotebookPanel):
                 path = self.GetChoice()
             bosh.iniInfos.setBaseIni(bosh.BestIniFile(path))
             self.button.Enable(True)
+        file = bosh.iniInfos.ini.path.open('r')
+        selected = None
+        if iniList is not None:
+            selected = iniList.GetSelected()
+            if len(selected) > 0:
+                selected = selected[0]
+            else:
+                selected = None
+        self.iniContents.RefreshUI()
+        self.tweakContents.RefreshUI(selected)
         if iniList is not None: iniList.RefreshUI()
 
     def OnRemove(self,event):
@@ -13140,6 +13299,10 @@ def InitImages():
     colors['bash.installers.skipped'] = (0xe0,0xe0,0xe0)
     colors['bash.installers.outOfOrder'] = (0xDF,0xDF,0xC5)
     colors['bash.installers.dirty'] = (0xFF,0xBB,0x33)
+    colors['bash.ini.invalid'] = (0xFF,0xD5,0xAA)
+    colors['bash.ini.mismatched'] = (0xFF,0xFF,0xBF)
+    colors['bash.ini.matched'] = (0xC1,0xFF,0xC1)
+
     #--Standard
     images['save.on'] = Image(r'images/save_on.png',wx.BITMAP_TYPE_PNG)
     images['save.off'] = Image(r'images/save_off.png',wx.BITMAP_TYPE_PNG)
