@@ -9,8 +9,8 @@ from bolt import _
 import struct, string
 import win32api
 #---------------------------------------------------
-gDialogSize = (600,440)
-#---------------------------------------------------
+gDialogSize = (600,500)
+#---------------------------------------------------wx
 
 #Translateable strings
 EXTRA_ARGS =   _("Extra arguments to '%s'.")
@@ -18,13 +18,16 @@ MISSING_ARGS = _("Missing arguments to '%s'.")
 UNEXPECTED =   _("Unexpected '%s'.")
 
 class WizardReturn(object):
-    __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install')
+    __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install',
+                 'IniEdits',
+                 )
 
     def __init__(self):
         self.Canceled = False
         self.SelectEspms = []
         self.RenameEspms = {}
         self.SelectSubPackages = []
+        self.IniEdits = {}
         self.Install = False
 
 # InstallerWizard ----------------------------------
@@ -320,7 +323,7 @@ class PageSelect(PageInstaller):
 #  selected.  Also displays some notes for the user
 #---------------------------------------------------------
 class PageFinish(PageInstaller):
-    def __init__(self, parent, subsList, espmsList, espmRenames, bAuto, notes):
+    def __init__(self, parent, subsList, espmsList, espmRenames, bAuto, notes, iniedits):
         PageInstaller.__init__(self, parent)
 
         subs = subsList.keys()
@@ -336,14 +339,16 @@ class PageFinish(PageInstaller):
             else:
                 espmShow.append(x)
 
-        sizerMain = wx.FlexGridSizer(4, 1, 5, 0)
+        sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
+        #--Heading
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
-        textTitle = wx.StaticText(self, -1, _("The installer script has finished, and selected the following sub-packages, esps, and esms to be installed."))
+        textTitle = wx.StaticText(self, -1, _("The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(gDialogSize[0]-10)
         sizerTitle.Add(textTitle, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
+        #--Subpackages and Espms
         sizerLists = wx.FlexGridSizer(2, 2, 5, 5)
         sizerLists.Add(wx.StaticText(self, -1, _('Sub-Packages')))
         sizerLists.Add(wx.StaticText(self, -1, _('Esp/ms')))
@@ -367,6 +372,22 @@ class PageFinish(PageInstaller):
         sizerLists.AddGrowableCol(1)
         sizerMain.Add(sizerLists, 1, wx.EXPAND)
 
+        #--Ini tweaks
+        sizerInis = wx.FlexGridSizer(2, 2, 5, 5)
+        sizerInis.Add(wx.StaticText(self, -1, _('Ini Tweaks:')))
+        sizerInis.Add(wx.StaticText(self, -1, _('')))
+        self.listInis = wx.ListBox(self, 668, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
+        self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
+        self.listTweaks = wx.ListBox(self, -1, style=wx.LB_SINGLE)
+        sizerInis.Add(self.listInis, 0, wx.ALL|wx.EXPAND)
+        sizerInis.Add(self.listTweaks, 0, wx.ALL|wx.EXPAND)
+        sizerInis.AddGrowableRow(1)
+        sizerInis.AddGrowableCol(0)
+        sizerInis.AddGrowableCol(1)
+        sizerMain.Add(sizerInis, 1, wx.EXPAND)
+        self.parent.ret.IniEdits = iniedits
+
+        #--Notes
         sizerNotes = wx.FlexGridSizer(2, 1, 5, 0)
         sizerNotes.Add(wx.StaticText(self, -1, _('Notes:')))
         sizerNotes.Add(wx.TextCtrl(self, -1, ''.join(notes), style=wx.TE_READONLY|wx.TE_MULTILINE), 1, wx.EXPAND)
@@ -390,6 +411,7 @@ class PageFinish(PageInstaller):
         sizerMain.AddGrowableCol(0)
         sizerMain.AddGrowableRow(1)
         sizerMain.AddGrowableRow(2)
+        sizerMain.AddGrowableRow(3)
         self.SetSizer(sizerMain)
         self.Layout()
 
@@ -406,6 +428,21 @@ class PageFinish(PageInstaller):
         index = event.GetSelection()
         self.listEspms.Check(index, not self.listEspms.IsChecked(index))
 
+    def OnSelectIni(self, event):
+        index = event.GetSelection()
+        path = bolt.GPath(self.listInis.GetString(index))
+        lines = []
+        for section in self.parent.ret.IniEdits[path]:
+            if section == ']set[':
+                format = 'set %(setting)s to %(value)s'
+            elif section == ']setgs[':
+                format = 'setGS %(setting)s %(value)s'
+            else:
+                lines.append('[%s]' % str(section))
+                format = '%(setting)s = %(value)s'
+            for setting in self.parent.ret.IniEdits[path][section]:
+                lines.append(format % dict(setting=setting, value=self.parent.ret.IniEdits[path][section][setting]))
+        self.listTweaks.Set(lines)
 # End PageFinish -------------------------------------
 
 
@@ -528,6 +565,7 @@ class WryeParser(ScriptParser.Parser):
         self.sublist = {}
         self.espmlist = {}
         self.espmrenames = {}
+        self.iniedits = {}
         for i in installer.espmMap.keys():
             for j in installer.espmMap[i]:
                 if j not in self.espmlist:
@@ -578,6 +616,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
         self.SetFunction('GetEspmState', self.fnGetEspmState, 1)
+        self.SetFunction('EditINI', self.fnEditINI, 4)
         self.SetFunction('str', self.fnStr, 1)
         self.SetFunction('int', self.fnInt, 1)
         self.SetFunction('float', self.fnFloat, 1)
@@ -645,7 +684,7 @@ class WryeParser(ScriptParser.Parser):
                 return self.page
         self.cLine += 1
         self.cLineStart = self.cLine
-        return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes)
+        return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
 
     def EspmIsInPackage(self, espm, package):
         package = package.lower()
@@ -752,6 +791,16 @@ class WryeParser(ScriptParser.Parser):
         if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
         if file in bosh.modInfos: return 0          # Inactive
         return -1                                   # Not found
+    def fnEditINI(self, iniName, section, setting, value):
+        iniPath = bolt.GPath(iniName)
+        if section.lower() == 'set': section = ']set['
+        elif section.lower() == 'setgs': section = ']setgs['
+        section = bolt.LString(section)
+        setting = bolt.LString(setting)
+        self.iniedits.setdefault(iniPath,{})
+        self.iniedits[iniPath].setdefault(section,{})
+        self.iniedits[iniPath][section][setting] = value
+
     def fnStr(self, data): return str(data)
     def fnInt(self, data):
         try:
@@ -1128,7 +1177,7 @@ class WryeParser(ScriptParser.Parser):
             return [0, 'None']
         return [-1, 'None']
     def kwdReturn(self):
-        self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes)
+        self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
     def kwdCancel(self, *args):
         if len(args) < 1:
             msg = _("No reason given")
