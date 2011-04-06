@@ -6748,7 +6748,7 @@ class IniFile:
         """Gets settings for self."""
         return self.getTweakFileSettings(self.path,True)
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False):
+    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
         """Gets settings in a tweak file."""
         ini_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
@@ -6759,7 +6759,7 @@ class IniFile:
         #--Read ini file
         iniFile = tweakPath.open('r')
         sectionSettings = None
-        for line in iniFile:
+        for i,line in enumerate(iniFile.readlines()):
             stripped = reComment.sub('',line).strip()
             maSection = reSection.match(stripped)
             maSetting = reSetting.match(stripped)
@@ -6769,9 +6769,66 @@ class IniFile:
                 if sectionSettings == None:
                     sectionSettings = ini_settings.setdefault(bolt.LString(self.defaultSection),{})
                     if setCorrupted: self.isCorrupted = True
-                sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
+                if lineNumbers:
+                    sectionSettings[LString(maSetting.group(1))] = (maSetting.group(2).strip(),i)
+                else:
+                    sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
         iniFile.close()
         return ini_settings
+
+    def getTweakFileLines(self,tweakPath):
+        """Get a line by line breakdown of the tweak file, in this format:
+        [(fulltext,section,setting,value,ini_line_number)]
+        where:
+        fulltext = full line of text from the ini
+        setting = the setting that is being edited
+        value = the value the setting is being set to
+        status:
+            -10: doesn't exist in the ini
+              0: does exist, but it's a heading or something else without a value
+             10: does exist, but value isn't the same
+             20: deos exist, and value is the same
+        ini_line_number = line number in the ini that this tweak applies to"""
+        lines = []
+        if not tweakPath.exists() or tweakPath.isdir():
+            return lines
+        iniSettings = self.getTweakFileSettings(self.path,True,True)
+        reComment = re.compile(';.*')
+        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
+        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        #--Read ini file
+        iniFile = tweakPath.open('r')
+        section = LString(self.defaultSection)
+        for i,line in enumerate(iniFile.readlines()):
+            stripped = reComment.sub('',line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            setting = None
+            value = LString('')
+            status = 0
+            lineNo = -1
+            if maSection:
+                section = LString(maSection.group(1))
+                if section not in iniSettings:
+                    status = -10
+            elif maSetting:
+                if section in iniSettings:
+                    setting = LString(maSetting.group(1))
+                    if setting in iniSettings[section]:
+                        value = LString(maSetting.group(2).strip())
+                        lineNo = iniSettings[section][setting][1]
+                        if iniSettings[section][setting][0] == value:
+                            status = 20
+                        else:
+                            status = 10
+                    else:
+                        status = -10
+                    setting = setting._s
+                else:
+                    status = -10
+            lines.append((line.strip(),section._s,setting,value._s,status,lineNo))
+        iniFile.close()
+        return lines
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
@@ -6866,7 +6923,7 @@ class OBSEIniFile(IniFile):
         elif lstr == 'setGS': section = ']setGS['
         return IniFile.getSetting(self,section,key,default)
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False):
+    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
         """Get the settings in the ini script."""
         ini_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
@@ -6875,18 +6932,79 @@ class OBSEIniFile(IniFile):
         reSet =     re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
         reSetGS =   re.compile(r'\s*(?i)setgs\s*(.+?)\s*(.*)')
         iniFile = tweakPath.open('r')
-        for line in iniFile:
+        for i,line in enumerate(iniFile.readlines()):
             stripped = reComment.sub('',line).strip()
             maSet   = reSet.match(stripped)
             maSetGS = reSetGS.match(stripped)
             if maSet:
                 section = ini_settings.setdefault(bolt.LString(']set['),{})
-                section[LString(maSet.group(1))] = maSet.group(2).strip()
+                if lineNumbers:
+                    section[LString(maSet.group(1))] = (maSet.group(2).strip(),i)
+                else:
+                    section[LString(maSet.group(1))] = maSet.group(2).strip()
             elif maSetGS:
                 section = ini_settings.setdefault(bolt.LString(']setGS['),{})
-                section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
+                if lineNumbers:
+                    section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
+                else:
+                    section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
         iniFile.close()
         return ini_settings
+
+    def getTweakFileLines(self,tweakPath):
+        """Get a line by line breakdown of the tweak file, in this format:
+        [(fulltext,section,setting,value,ini_line_number)]
+        where:
+        fulltext = full line of text from the ini
+        setting = the setting that is being edited
+        value = the value the setting is being set to
+        status:
+            -10: doesn't exist in the ini
+              0: does exist, but it's a heading or something else without a value
+             10: does exist, but value isn't the same
+             20: deos exist, and value is the same
+        ini_line_number = line number in the ini that this tweak applies to"""
+        lines = []
+        if not tweakPath.exists() or tweakPath.isdir():
+            return lines
+        iniSettings = self.getTweakFileSettings(self.getPath(),True,True)
+        reComment = re.compile(';.*')
+        reSet =     re.compile(r'\s*set\s*(.+?)\s*to\s*(.*)',re.I)
+        reSetGS =   re.compile(r'\s*setgs\s*(.+?)\s*(.*)',re.I)
+        iniFile = tweakPath.open('r')
+        section = ''
+        for line in iniFile:
+            stripped = reComment.sub('',line).strip()
+            maSet    = reSet.match(stripped)
+            maSetGS  = reSetGS.match(stripped)
+            if maSet:
+                section = LString(']set[')
+                groups = maSet.groups()
+            elif maSetGS:
+                section = LString(']setgs[')
+                groups = maSetGS.groups()
+            else:
+                lines.append((line.strip('\r\n'),'','','',-1))
+                continue
+            status = 0
+            setting = ''
+            value = ''
+            lineNo = -1
+            if section in iniSettings:
+                setting = LString(groups(1).strip())
+                if setting in iniSettings[section]:
+                    value = LString(groups(2).strip())
+                    if iniSettings[section][setting][0] == value:
+                        status = 20
+                        lineNo = iniSettings[section][setting][1]
+                    else:
+                        status = 10
+                        lineNo = iniSettings[section][setting][1]
+                else:
+                    status = -10
+            lines.append((line.strip(),section,setting,value,lineNo))
+        iniFile.close()
+        return lines
 
     def saveSetting(self,section,key,value):
         lstr = LString(section)
@@ -7635,6 +7753,54 @@ class INIInfo(FileInfo):
         elif mismatch == 2:
             self._status = 10
         return self._status
+
+    def getLinesStatus(self):
+        """Return a list of the lines and their statuses, in the form:
+        [setting,value,status]
+        for statuses:
+        -10: highlight orange (not tweak not in ini)
+          0: no highlight (header, in ini)
+         10: highlight yellow (setting, in ini, but different)
+         20: highlight green (setting, in ini, and same)"""
+        ini = self.getFileInfos().ini
+        tweak = self.getPath()
+        ini_settings = ini.getSettings()
+        tweak_settings = ini.getTweakFileSettings(tweak)
+        reComment = re.compile(';.*')
+        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
+        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        section = LString(ini.defaultSection)
+
+        lines = []
+
+        tweakFile = tweak.open('r')
+        for line in tweakFile:
+            stripped = reComment.sub('',line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            if maSection:
+                section = LString(maSection.group(1))
+                if section in ini_settings:
+                    lines.append((line.strip('\n\r'),'',0))
+                else:
+                    lines.append((line.strip('\n\r'),'',-10))
+            elif maSetting:
+                if section in ini_settings:
+                    setting = LString(maSetting.group(1))
+                    if setting in ini_settings[section]:
+                        value = LString(maSetting.group(2).strip())
+                        if value == ini_settings[section][setting]:
+                            lines.append((maSetting.group(1),maSetting.group(2),20))
+                        else:
+                            lines.append((maSetting.group(1),maSetting.group(2),10))
+                    else:
+                        lines.append((maSetting.group(1),maSetting.group(2),-10))
+                else:
+                    lines.append((maSetting.group(1),maSetting.group(2),-10))
+            else:
+                lines.append((line.strip('\r\n'),'',0))
+        tweakFile.close()
+        return lines
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
