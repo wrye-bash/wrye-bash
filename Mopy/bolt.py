@@ -1580,7 +1580,7 @@ class WryeText:
         headFormat = "<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = "<h%d>%s</h%d>\n"
         #--List
-        reList = re.compile(r'( *)([-x!?\.\+\*o]) (.*)')
+        reList = re.compile(r'( *)([-x!?\.\+\*o])(.*)')
         #--Misc. text
         reHr = re.compile('^------+$')
         reEmpty = re.compile(r'\s+$')
@@ -1592,6 +1592,8 @@ class WryeText:
             text = match.group(1)
             anchor = reWd.sub('',text)
             count = 0
+            if re.match(r'\d', anchor):
+                anchor = '_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
                 if count == 1:
@@ -1620,7 +1622,7 @@ class WryeText:
         reHttp = re.compile(r' (http://[_~a-zA-Z0-9\./%-]+)')
         reWww = re.compile(r' (www\.[_~a-zA-Z0-9\./%-]+)')
         reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')
-        rePar = re.compile(r'^([a-zA-Z]|\*\*|~~|__)')
+        rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)')
         reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)')
         def subLink(match):
             address = text = match.group(1).strip()
@@ -1645,11 +1647,9 @@ class WryeText:
         contents = []
         addContents = 0
         inPre = False
-        isInParagraph = False
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            isInParagraph,wasInParagraph = False,isInParagraph
             #--Preformatted? -----------------------------
             maPreBegin = rePreBegin.search(line)
             maPreEnd = rePreEnd.search(line)
@@ -1687,6 +1687,8 @@ class WryeText:
                 anchor = reWd.sub('',text)
                 level = len(lead)
                 if anchorHeaders:
+                    if re.match(r'\d', anchor):
+                        anchor = '_' + anchor
                     count = 0
                     while anchor in anchorlist and count < 10:
                         count += 1
@@ -1701,6 +1703,9 @@ class WryeText:
                     line = headFormatNA % (level,text,level)
                 #--Title?
                 if not title and level <= 2: title = text
+            #--Paragraph
+            elif maPar:
+                line = '<p>'+line+'</p>\n'
             #--List item
             elif maList:
                 spaces = maList.group(1)
@@ -1711,10 +1716,6 @@ class WryeText:
                 level = len(spaces)/2 + 1
                 line = spaces+'<p class="list-'+`level`+'">'+bullet+'&nbsp; '
                 line = line + text + '</p>\n'
-            #--Paragraph
-            elif maPar:
-                if not wasInParagraph: line = '<p>'+line+'</p>\n'
-                isInParagraph = True
             #--Empty line
             elif maEmpty:
                 line = spaces+'<p class="empty">&nbsp;</p>\n'
