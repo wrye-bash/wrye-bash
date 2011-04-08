@@ -250,6 +250,7 @@ settingDefaults = {
         'Load Order':1,
         },
     'bash.mods.renames': {},
+    'bash.mods.scanDirty': False,
     #--Wrye Bash: Saves
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
@@ -515,7 +516,7 @@ class SashPanel(NotebookPanel):
     def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL):
         """Initialize."""
         wx.Panel.__init__(self, parent, wx.ID_ANY)
-        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if mode == wx.VERTICAL:
@@ -1554,6 +1555,13 @@ class ModList(List):
             mouseText += _("File is ghosted. ")
         else:
             item.SetBackgroundColour(colors['bash.doubleTime.not'])
+        if settings['bash.mods.scanDirty']:
+            message = fileInfo.getDirtyMessage()
+            mouseText += message[1]
+            if message[0]:
+                font = item.GetFont()
+                font.SetUnderlined(True)
+                item.SetFont(font)
         self.list.SetItem(item)
         self.mouseTexts[itemDex] = mouseText
         #--Selection State
@@ -8959,6 +8967,18 @@ class Mods_SelectedFirst(Link):
         self.window.PopulateItems()
 
 #------------------------------------------------------------------------------
+class Mods_ScanDirty(Link):
+    """Read mod CRC's to check for dirty mods."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Scan for dirty mods (requires BOSS 1.7+)'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.mods.scanDirty'])
+
+    def Execute(self,event):
+        settings['bash.mods.scanDirty'] ^= True
+        self.window.PopulateItems()
+#------------------------------------------------------------------------------
 class Mods_AutoGhost(Link):
     """Toggle Auto-ghosting."""
     def AppendToMenu(self,menu,window,data):
@@ -14236,6 +14256,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
     ModList.mainMenu.append(Mods_BOSSShowUpdate())
+    ModList.mainMenu.append(Mods_ScanDirty())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(User_BackupSettings())
     ModList.mainMenu.append(User_RestoreSettings())
