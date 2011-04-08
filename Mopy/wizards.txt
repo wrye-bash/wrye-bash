@@ -147,7 +147,7 @@ Tests the current status of an esp or espm in the Data directory.  This function
   * ** 3:** The esp/m is merged into the Bashed Patch (<img src="images/checkbox_green_inc.png" width="16" height="16" style = 'border : 0' alt="Merged"></img>)
 
 == EditINI
-Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
+Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer or Oblivion.ini, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
 
 * __Usage:__
   * __EditINI(**file_name**, **section**, **setting**, **value**)__
