@@ -479,8 +479,7 @@ class Path(object):
         while ins.tell() < size:
             crc = crc32(insRead(512),crc)
         ins.close()
-        if crc < 0: crc = 4294967296L + crc
-        return crc
+        return crc & 0xffffffff
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
