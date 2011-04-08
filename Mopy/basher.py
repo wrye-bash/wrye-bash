@@ -2036,6 +2036,15 @@ class INIPanel(SashPanel):
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         iniList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak)
         #--Layout
+        iniSizer = vSizer(
+                (hSizer(
+                    (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
+                    ((4,0),0),
+                    (self.button,0,wx.ALIGN_TOP,0),
+                    (self.edit,0,wx.ALIGN_TOP,0),
+                    ),0,wx.EXPAND|wx.BOTTOM,4),
+                (self.iniContents,1,wx.EXPAND),
+                )
         lSizer = hSizer(
             (iniList,2,wx.EXPAND),
             )
@@ -2044,16 +2053,9 @@ class INIPanel(SashPanel):
                 (self.tweakName,0,wx.EXPAND|wx.TOP,6),
                 (self.tweakContents,1,wx.EXPAND),
                 ),1,wx.EXPAND|wx.RIGHT,4),
-            (vSizer(
-                (hSizer(
-                    (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
-                    ((4,0),0),
-                    (self.button,0,wx.ALIGN_TOP,0),
-                    (self.edit,0,wx.ALIGN_TOP,0),
-                    ),0,wx.EXPAND|wx.BOTTOM,4),
-                (self.iniContents,1,wx.EXPAND),
-                ),1,wx.EXPAND),
+            (iniSizer,1,wx.EXPAND),
             )
+        iniSizer.SetSizeHints(right)
         right.SetSizer(rSizer)
         left.SetSizer(lSizer)
 
