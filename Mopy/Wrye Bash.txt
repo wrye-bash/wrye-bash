@@ -2250,14 +2250,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind]
+=== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack]
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
   * Fix for typos in CBash SpellStats Patcher
   * Tweak Actors patcher:
     * Added note to MAO patcher that it requires MAO.
-    * Added note to VORB patcher that it requires VORB.
+    * Added a VORB patcher (requires VORB).
     * Added Bigger Nords and Orcs tweaker
     * Sexy Walk and Real Walk tweakers finally fixed to not replace the current animations but add the Swalk/Rwalk animation. (and CBash version of each added)
   * Tweak Settings (GMST) patcher:
@@ -2272,9 +2272,19 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Tweak Assorted patcher: 
     * Added Set Sound Attenuation Levels tweaker.
     * Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
+  * Added a cancel button to the build progress bar.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
+  * Wizards:
+    * New function - GetEspmStatus: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
+    * New function - EditINI: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+    * Bugfix for RequireVersions: The version page will now show correctly if the Wrye Bash version is incorrect.
+    * A new icon will indicate that an installer contains a wizard.
+    * The Wizard window is now resizeable, with automatic scaling images.
+    * Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
+    * Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
+  * Added a cancel button to the Refresh Data progress bar.
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
@@ -2284,6 +2294,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.
     * updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
     * updated html snippets in wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
+  * Improved INI Edits tab UI:
+    * Column width is remembered now.
+    * Shows the contents of an INI tweak, including status of each line in it compared to the master INI.
+    * Shows the contents of the master INI
+    * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
+  * Various small UI improvements
     
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
