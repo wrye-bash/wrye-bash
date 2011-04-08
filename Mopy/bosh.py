@@ -7514,6 +7514,32 @@ class ModInfo(FileInfo):
         self.header.flags1 = flags1
         self.setmtime()
 
+    def updateCrc(self):
+        """Force update of stored crc"""
+        path = self.getPath()
+        size = path.size
+        mtime = path.getmtime()
+        crc = path.crc
+        modInfos.table.setItem(self.name,'crc',crc)
+        modInfos.table.setItem(self.name,'crc_mtime',mtime)
+        modInfos.table.setItem(self.name,'crc_size',size)
+        return crc
+
+    def cachedCrc(self):
+        """Stores a cached crc, for quicker execution."""
+        path = self.getPath()
+        size = path.size
+        mtime = path.getmtime()
+        if (mtime != modInfos.table.getItem(self.name,'crc_mtime') or
+            size != modInfos.table.getItem(self.name,'crc_size')):
+            crc = path.crc
+            modInfos.table.setItem(self.name,'crc',crc)
+            modInfos.table.setItem(self.name,'crc_mtime',mtime)
+            modInfos.table.setItem(self.name,'crc_size',size)
+        else:
+            crc = modInfos.table.getItem(self.name,'crc')
+        return crc
+
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
         return modInfos.hasTimeConflict(self.name)
@@ -7609,6 +7635,11 @@ class ModInfo(FileInfo):
         else:
             bashTags = maBashKeys.group(1).split(',')
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
+
+    def getDirtyMessage(self):
+        """Returns a dirty message from BOSS."""
+        crc = self.cachedCrc()
+        return configHelpers.getDirtyMessage(crc)
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
@@ -9443,6 +9474,7 @@ class ConfigHelpers:
         self.bossUserTime = 0
         self.bossMasterTags = {}
         self.bossRemoveTags = {}
+        self.bossDirtyMods = {}
         #--Mod Rules
         self.name_ruleSet = {}
 
@@ -9454,6 +9486,7 @@ class ConfigHelpers:
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
         reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
+        reDirty = re.compile(r'IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
         if path.exists():
             if path.mtime != mtime:
                 tags.clear()
@@ -9464,6 +9497,7 @@ class ConfigHelpers:
                     line = reComment.sub('',line)
                     maMod = reMod.match(line)
                     maBashTags = reBashTags.match(line)
+                    maDirty = reDirty.match(line)
                     if maMod:
                         mod = maMod.group(1)
                     elif maBashTags and mod:
@@ -9474,6 +9508,16 @@ class ConfigHelpers:
                             modRemoveTags = map(string.strip,modRemoveTags)
                             removeTags[GPath(mod)] = tuple(modRemoveTags)
                         tags[GPath(mod)] = tuple(modTags)
+                    elif maDirty:
+                        # BOSS 1.7+ dirty mod listing
+                        crc = long(maDirty.group(1),16)
+                        ##mod = LString(maDirty.group(2))
+                        action = maDirty.group(3)
+                        if 'tes4edit' in action.lower():
+                            cleanIt = True
+                        else:
+                            cleanIt = False
+                        self.bossDirtyMods[crc] = (cleanIt, action)
                 ins.close()
                 self.bossMasterTime = path.mtime
         if userpath.exists():
@@ -9516,6 +9560,9 @@ class ConfigHelpers:
             return set(self.bossRemoveTags[modName])
         else: return None
 
+    def getDirtyMessage(self, crc):
+        return self.bossDirtyMods.get(long(crc), (False, ''))
+
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
         """Reloads ruleSets if file dates have changed."""
@@ -9548,6 +9595,8 @@ class ConfigHelpers:
         shouldDeactivateA = [x for x in active if 'Deactivate' in modInfos[x].getBashTags()]
         shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags()]
         shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
+        shouldClean = [x for x in active if modInfos[x].getDirtyMessage()[0]]
+        shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != '']
         for mod in tuple(shouldMerge):
             if 'NoMerge' in modInfos[mod].getBashTags():
                 shouldMerge.discard(mod)
@@ -9571,6 +9620,16 @@ class ConfigHelpers:
             log(_("Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported."))
             for mod in sorted(shouldActivateA):
                 log('* __'+mod.s+'__')
+        if shouldClean:
+            log.setHeader(_("=== Mods that need cleaning with TES4Edit"))
+            log(_("Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information."))
+            for mod in sorted(shouldClean):
+                log('* __'+mod.s+'__')
+        if shouldCleanMaybe:
+            log.setHeader(_("=== Mods with special cleaning instructions"))
+            log(_("Following mods have special instructions for cleaning with TES4Edit"))
+            for mod in sorted(shouldCleanMaybe):
+                log('* __'+mod[0].s+':__  '+mod[1])
         #--Missing/Delinquent Masters
         if showModList:
             log('\n'+modInfos.getModList(wtxt=True).strip())
