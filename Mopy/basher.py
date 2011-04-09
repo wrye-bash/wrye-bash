@@ -8971,7 +8971,7 @@ class Mods_ScanDirty(Link):
     """Read mod CRC's to check for dirty mods."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Scan for dirty mods (requires BOSS 1.7+)'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Scan for dirty edits (requires BOSS 1.7+)'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.mods.scanDirty'])
 
@@ -9711,6 +9711,24 @@ class Mod_AllowGhosting(Link):
         oldGhost = fileInfo.isGhost
         if fileInfo.setGhost(toGhost) != oldGhost:
             self.window.RefreshUI(fileName)
+
+#------------------------------------------------------------------------------
+class Mod_SkipDirtyCheck(Link):
+    """Toggles scanning for dirty mods on a per-mod basis."""
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Scan for dirty edits (requires BOSS 1.7+)"),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty')
+        menuItem.Check(not self.ignoreDirty)
+
+    def Execute(self,event):
+        fileName = self.data[0]
+        fileInfo = bosh.modInfos[fileName]
+        self.ignoreDirty ^= True
+        bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
+        self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
 class Mod_CleanMod(Link):
@@ -14298,6 +14316,7 @@ def InitModLinks():
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
+    ModList.itemMenu.append(Mod_SkipDirtyCheck())
     #ModList.itemMenu.append(Mod_MarkLevelers())
     ModList.itemMenu.append(Mod_MarkMergeable())
     ModList.itemMenu.append(Mod_Patch_Update())
