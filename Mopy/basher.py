@@ -9713,15 +9713,56 @@ class Mod_AllowGhosting(Link):
             self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
+class Mod_SkipDirtyCheckAll(Link):
+    def __init__(self, bSkip):
+        Link.__init__(self)
+        self.skip = bSkip
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if self.skip:
+            menuItem = wx.MenuItem(menu,self.id,_("Don't scan for dirty edits"))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_("Scan for dirty edits"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        for fileName in self.data:
+            fileInfo = bosh.modInfos[fileName]
+            bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
+        self.window.RefreshUI(self.data)
+
+#------------------------------------------------------------------------------
+class Mod_SkipDirtyCheckInvert(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Invert dirty edit scanning"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        for fileName in self.data:
+            fileInfo = bosh.modInfos[fileName]
+            ignoreDiry = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
+            bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDiry)
+        self.window.RefreshUI(files)
+
+#------------------------------------------------------------------------------
 class Mod_SkipDirtyCheck(Link):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Scan for dirty edits (requires BOSS 1.7+)"),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty')
-        menuItem.Check(not self.ignoreDirty)
+        if len(data) == 1:
+            menuItem = wx.MenuItem(menu,self.id,_("Don't scan for dirty edits (requires BOSS 1.7+)"),kind=wx.ITEM_CHECK)
+            menu.AppendItem(menuItem)
+            self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
+            menuItem.Check(self.ignoreDirty)
+        else:
+            subMenu = wx.Menu()
+            menu.AppendMenu(-1,_("Dirty edit scanning"),subMenu)
+            Mod_SkipDirtyCheckAll(True).AppendToMenu(subMenu,window,data)
+            Mod_SkipDirtyCheckAll(False).AppendToMenu(subMenu,window,data)
+            Mod_SkipDirtyCheckInvert().AppendToMenu(subMenu,window,data)
 
     def Execute(self,event):
         fileName = self.data[0]
