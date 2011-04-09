@@ -7520,7 +7520,11 @@ class ModInfo(FileInfo):
         size = path.size
         mtime = path.getmtime()
         crc = path.crc
-        modInfos.table.setItem(self.name,'crc',crc)
+        if modInfos.table.getItem(self.name,'ignoreDirty') not in (True,False):
+            modInfos.table.setItem(self.name,'ignoreDirty',False)
+        if crc != modInfos.table.getItem(self.name,'crc'):
+            modInfos.table.setItem(self.name,'crc',crc)
+            modInfos.table.setItem(self.name,'ignoreDirty',False)
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
         modInfos.table.setItem(self.name,'crc_size',size)
         return crc
@@ -7530,10 +7534,14 @@ class ModInfo(FileInfo):
         path = self.getPath()
         size = path.size
         mtime = path.getmtime()
+        if modInfos.table.getItem(self.name,'ignoreDirty') not in (True,False):
+            modInfos.table.setItem(self.name,'ignoreDirty',False)
         if (mtime != modInfos.table.getItem(self.name,'crc_mtime') or
             size != modInfos.table.getItem(self.name,'crc_size')):
             crc = path.crc
-            modInfos.table.setItem(self.name,'crc',crc)
+            if crc != modInfos.table.getItem(self.name,'crc'):
+                modInfos.table.setItem(self.name,'crc',crc)
+                modInfos.table.setItem(self.name,'ignoreDirty',False)
             modInfos.table.setItem(self.name,'crc_mtime',mtime)
             modInfos.table.setItem(self.name,'crc_size',size)
         else:
@@ -7639,6 +7647,8 @@ class ModInfo(FileInfo):
     def getDirtyMessage(self):
         """Returns a dirty message from BOSS."""
         crc = self.cachedCrc()
+        if modInfos.table.getItem(self.name,'ignoreDirty'):
+            return (False,'')
         return configHelpers.getDirtyMessage(crc)
 
     #--Header Editing ---------------------------------------------------------
