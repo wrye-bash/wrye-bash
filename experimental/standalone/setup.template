@@ -1,80 +1,6 @@
 ## Template for the setup.py used to make the WBSA
-
-# From http://www.py2exe.org/index.cgi/win32com.shell
-# and  http://www.py2exe.org/index.cgi/IncludingTypelibs
-#  making sure py2exe locates the win32com.shell module correctly,
-#  and make sure the win32com.gen_py stuff gets correctly created as
-#  well
-#  ...it's ugly
-try:
-    try:
-        import py2exe.mf as modulefinder
-    except ImportError:
-        import modulefinder
-    import sys
-    import win32com
-    import win32com.client
-    win32com.client.gencache.is_readonly=False
-    win32com.client.gencache.GetGeneratePath()
-    
-    for p in win32com.__path__[1:]:
-        modulefinder.AddPackagePath('win32com', p)
-    for extra in ['win32com.shell']:
-        __import__(extra)
-        m = sys.modules[extra]
-        for p in m.__path__[1:]:
-            modulefinder.AddPackagePath(extra, p)
-except ImportError:
-    pass
-# Done with the win32com.shell uglyness...
-
 from distutils.core import setup
 import py2exe, os, subprocess
-
-
-# Setup automatic UPX-ing of .pyd/.dll files before included in the exe.
-# Do this by making a custom py2exe class
-from py2exe.build_exe import py2exe
-class UPXpy2exe(py2exe):
-    def initialize_options(self):
-        # Add new 'upx' option for compression with upx
-        py2exe.initialize_options(self)
-        self.upx = False
-        self.upx_compression = '-9'
-
-    ## Can't get this to work quite right.  A lot of .pyd files fail
-    ## to load correctly if UPX'd, and some .pyd's fail to load when
-    ## their associated .dll is UPX'd.  Mostly happens with wxPython,
-    ## but it's also happened in pywin32.
-    def copy_file(self, src, dst, *args, **kwargs):
-        # Override to UPX copied binaries
-        (fname, copied) = result = py2exe.copy_file(self, src, dst, *args, **kwargs)
-     
-        if copied and self.upx:
-            basename = os.path.basename(fname).lower()
-            # Compress .dll's, except the python dll, we do that later
-            if basename.endswith('.dll'):
-                if basename.startswith('python'):
-                    if len(basename) == 12: # pythonXX.dll
-                        return result
-                else: return result
-            else: return result
-            subprocess.call([self.upx, self.upx_compression, os.path.normpath(fname)])
-        return result
-
-    def patch_python_dll_winver(self, dll_name, new_winver=None):
-        # Override this to first check if the file is upx'd and skip if so
-        if not self.upx:
-            py2exe.patch_python_dll_winver(self, dll_name, new_winver)
-        elif not self.dry_run:
-            if not subprocess.call([self.upx, '-qt', dll_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE):
-                if self.verbose:
-                    print "Skipping setting sys.winver for '"+dll_name+"' (UPX'd)"
-            else:
-                # We UPX this one file here rather than in copy_file so
-                # the version adjustment can be successful
-                py2exe.patch_python_dll_winver(self, dll_name, new_winver)
-                subprocess.call([self.upx, self.upx_compression, os.path.normpath(dll_name)])
 
 manifest = %(manifest)s
 RT_MANIFEST = 24
@@ -91,10 +17,6 @@ class Target:
         if manifest is not None:
             self.other_resources = [(RT_MANIFEST, 1, manifest)]
 windows = Target('Wrye Bash Launcher.pyw')
-
-# Make the executable
-upx = '%(upx)s'
-if upx == 'None': upx = False
 
 setup(
     cmdclass = {'py2exe':UPXpy2exe},
@@ -127,8 +49,6 @@ setup(
             'bundle_files': 1,  # 1 = bundle in the exe
             'optimize': 2,      # 2 = full code optimization
             'compressed': True, # Compress the data files
-            'upx': upx,
-            'upx_compression': '%(upx_compression)s',
             },
         },
     zipfile = None,     # Don't include data files in a zip along side
