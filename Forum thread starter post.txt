@@ -62,7 +62,6 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [/list][*]If you're using the WBSA, things are a bit trickier.  There are currently a few known issues:[list=1]
 [*]Wrye Bash wont work correctly if you launch it from the command line (DOS).  Always launch by double clicking the exe or a shortcut to it.
 [*]Due to issue #1, no debug mode is available.  Some errors that happen will still be printed either to a "Wrye Bash.exe.txt" file, or to the "stdout/stderr" window that shows up with errors sometimes.
-[*]ComTypes currently isn't playing nicely with WBSA.  That means no "PM Archive" tab, and any window that normally displayed an html file (like the Bashed Patch results log) will show up in your internet browser instead of in the WBSA.
 [*]There may be plenty more...just think of them as "undocumented features"[/list][*]If you think you've found an error in the WBSA, be sure to uninstall ALL python components and test it again first, to be sure we get an accurate report.  Having python installed can sometimes trick the WBSA into thinking that it has all of the files it requires, even if it really doesn't.[/list]
 [/spoiler][b]Linking[/b]:
 [list]
