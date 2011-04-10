@@ -6970,7 +6970,7 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings = self.getTweakFileSettings(self.getPath(),True,True)
+        iniSettings = self.getTweakFileSettings(self.path,True,True)
         reComment = re.compile(';.*')
         reSet =     re.compile(r'\s*set\s*(.+?)\s*to\s*(.*)',re.I)
         reSetGS =   re.compile(r'\s*setgs\s*(.+?)\s*(.*)',re.I)
