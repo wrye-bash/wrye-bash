@@ -19,7 +19,6 @@ class Target:
 windows = Target('Wrye Bash Launcher.pyw')
 
 setup(
-    cmdclass = {'py2exe':UPXpy2exe},
     windows = [windows],
     options = {
         'py2exe': {
