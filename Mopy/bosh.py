@@ -6997,9 +6997,9 @@ class OBSEIniFile(IniFile):
             value = ''
             lineNo = -1
             if section in iniSettings:
-                setting = LString(groups(1).strip())
+                setting = LString(groups[0].strip())
                 if setting in iniSettings[section]:
-                    value = LString(groups(2).strip())
+                    value = LString(groups[1].strip())
                     lineNo = iniSettings[section][setting][1]
                     if iniSettings[section][setting][0] == value:
                         status = 20
@@ -7010,7 +7010,7 @@ class OBSEIniFile(IniFile):
                     status = -10
             else:
                 status = -10
-            lines.append((line.strip(),section,setting,value,lineNo))
+            lines.append((line.strip(),section,setting,value,status,lineNo))
         iniFile.close()
         return lines
 
