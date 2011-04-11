@@ -2300,6 +2300,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Shows the contents of the master INI
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
   * Various small UI improvements
+  * regex for TesNexus searching updated to work with a less than common mod achrive name.
     
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
