@@ -709,7 +709,8 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * __Checkbox Types__
   * Regular checkmark: mod is active.
   * Plus sign (+) checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
-  * No checkmark: Mod is neither active nor merged.
+  * Dot (•) checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
+  * No checkmark: Mod is not active, imported or merged.
 * __Checkbox Colors__ 
   <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue"></img>
   <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green"></img>
@@ -2300,7 +2301,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Shows the contents of the master INI
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
   * Various small UI improvements
-  * regex for TesNexus searching updated to work with a less than common mod achrive name.
+  * regex for TesNexus searching updated to work with a few less  common mod archive name formats.
     
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
