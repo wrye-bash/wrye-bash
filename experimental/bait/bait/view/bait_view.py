@@ -27,7 +27,7 @@ import wx
 import wx.gizmos
 
 from .. import presenter
-from .impl import data_panel, filtered_tree, package_info, command_thread
+from .impl import command_thread, filtered_tree, package_info, status_panel
 
 
 _logger = logging.getLogger(__name__)
@@ -49,16 +49,13 @@ class BaitView(wx.Panel):
         settingsIcon = wx.ArtProvider.GetBitmap(wx.ART_REMOVABLE, client=wx.ART_BUTTON)
         globalSettingsButton = wx.BitmapButton(mainPanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         search = wx.SearchCtrl(mainPanel)
-        dataPanel = data_panel.DataPanel(mainPanel, presenter_)
-        statusSplitter = wx.gizmos.ThinSplitterWindow(mainPanel, style=splitterStyle)
-        self._packageTree = filtered_tree.PackagesTree(statusSplitter,
+        statusPanel = status_panel.StatusPanel(mainPanel, presenter_)
+        packageTree = self._packageTree = filtered_tree.PackagesTree(mainPanel,
                 (presenter.FILTER_ID_PACKAGES_HIDDEN, presenter.FILTER_ID_PACKAGES_INSTALLED, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED),
                 ("Hidden (%d/%d)", "Installed (%d/%d)", "Not Installed (%d/%d)"), presenter_)
-        infoStyle = wx.TE_READONLY|wx.TE_MULTILINE
-        oneLineHeight = search.GetSize()[1]
-        statusWindow = wx.TextCtrl(statusSplitter, size=(-1, oneLineHeight), style=infoStyle, value="initializing...")
 
         # details section
+        infoStyle = wx.TE_READONLY|wx.TE_MULTILINE
         commentsSplitter = wx.gizmos.ThinSplitterWindow(topSplitter, style=splitterStyle)
         detailsSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         packageInfoPanel = self._packageInfoPanel = package_info.PackageInfoPanel(detailsSplitter, presenter_)
@@ -74,6 +71,7 @@ class BaitView(wx.Panel):
         fileInfo = wx.TextCtrl(fileInfoPanel, style=infoStyle)
         commentsPanel = wx.Panel(commentsSplitter)
         commentsLabel = wx.StaticText(commentsPanel, label="Comments")
+        oneLineHeight = search.GetSize()[1]
         commentsText = wx.SearchCtrl(commentsPanel, size=(-1, oneLineHeight), style=wx.TE_MULTILINE)
 
         # customize widgets
@@ -81,7 +79,7 @@ class BaitView(wx.Panel):
 
         # read-only text controls should have same background color as parent
         bgColor = mainPanel.GetBackgroundColour()
-        statusWindow.SetBackgroundColour(bgColor)
+        statusPanel.SetBackgroundColour(bgColor)
         fileInfo.SetBackgroundColour(bgColor)
 
         # customize search controls
@@ -93,9 +91,6 @@ class BaitView(wx.Panel):
         commentsText.ShowSearchButton(False)
 
         # set up splitters
-        statusSplitter.SetMinimumPaneSize(oneLineHeight)
-        statusSplitter.SplitHorizontally(self._packageTree, statusWindow)
-        statusSplitter.SetSashGravity(1.0) # only resize installerTree
         fileTreeSplitter.SetMinimumPaneSize(50)
         fileTreeSplitter.SplitVertically(fileTreePanel, fileInfoPanel)
         fileTreeSplitter.SetSashGravity(0.5) # resize both panels equally
@@ -116,8 +111,8 @@ class BaitView(wx.Panel):
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(searchSizer, 0, wx.EXPAND)
-        mainSizer.Add(dataPanel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
-        mainSizer.Add(statusSplitter, 1, wx.EXPAND)
+        mainSizer.Add(statusPanel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
+        mainSizer.Add(packageTree, 1, wx.EXPAND)
         mainPanel.SetMinSize(mainSizer.GetMinSize())
         mainPanel.SetSizer(mainSizer)
 
@@ -148,11 +143,10 @@ class BaitView(wx.Panel):
         self.SetSizer(topSizer)
         
         # set up state
-        self._splitters = {"status":statusSplitter, "fileTree":fileTreeSplitter,
-                           "details":detailsSplitter, "comments":commentsSplitter, "top":topSplitter}
+        self._splitters = {"fileTree":fileTreeSplitter, "details":detailsSplitter, "comments":commentsSplitter, "top":topSplitter}
         self._presenter = presenter_
         self._stateManager = stateManager
-        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, dataPanel=dataPanel, packageTree=self._packageTree, fileTree=self._fileTree, statusBox=statusWindow, packageInfoPanel=packageInfoPanel, fileInfo=fileInfo)
+        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, statusPanel=statusPanel, packageTree=packageTree, fileTree=self._fileTree, packageInfoPanel=packageInfoPanel, fileInfo=fileInfo)
         self._shuttingDown = False
 
         # event bindings
@@ -165,10 +159,8 @@ class BaitView(wx.Panel):
         '''Loads saved state, starts threads and subcomponents (including presenter)'''
         # TODO: load and apply saved gui state
         # if no saved state, use defaults
+        self._splitters["comments"].SetSashPosition(-1) # one line
         paneWidth = self.GetSize()[0]
-        statusSplitter = self._splitters["status"] 
-        statusSplitter.SetSashPosition(-1) # use minimum size (one line)
-        self._splitters["comments"].SetSashPosition(statusSplitter.GetSashPosition()) # approx 3 lines
         self._splitters["top"].SetSashPosition(paneWidth*0.38)
         self._splitters["details"].SetSashPosition(paneWidth*0.22)
         self._splitters["fileTree"].SetSashPosition(paneWidth*0.32)

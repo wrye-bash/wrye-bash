@@ -37,13 +37,12 @@ _packageInfoFilterIds = frozenset((presenter.FILTER_ID_DIRTY_ADD, presenter.FILT
 
 
 class CommandThread(threading.Thread):
-    def __init__(self, inCommandQueue, dataPanel, packageTree, fileTree, statusBox, packageInfoPanel, fileInfo):
+    def __init__(self, inCommandQueue, statusPanel, packageTree, fileTree, packageInfoPanel, fileInfo):
         threading.Thread.__init__(self, name="ViewCommand")
         self._inCommandQueue = inCommandQueue
-        self._dataPanel = dataPanel
+        self._statusPanel = statusPanel
         self._packageTree = packageTree
         self._fileTree = fileTree
-        self._statusBox = statusBox
         self._packageInfoPanel = packageInfoPanel
         self._fileInfo = fileInfo
         self._ignoreUpdates = False
@@ -55,9 +54,8 @@ class CommandThread(threading.Thread):
         self._handlers[view_commands.EXPAND_DIR] = self._expand_dir
         self._handlers[view_commands.CLEAR_PACKAGES] = self._clear_packages
         self._handlers[view_commands.SET_FILTER_STATS] = self._set_filter_stats
-        self._handlers[view_commands.STATUS_UPDATE] = self._update_status        
+        self._handlers[view_commands.SET_STATUS] = self._set_status        
         self._handlers[view_commands.SET_PACKAGE_LABEL] = self._set_package_label
-        self._handlers[view_commands.SET_DATA_STATS] = self._set_data_stats
         self._handlers[view_commands.ADD_FILE] = self._add_file
         self._handlers[view_commands.CLEAR_FILES] = self._clear_files
         self._handlers[view_commands.SET_FILE_DETAILS] = self._update_file_details
@@ -167,15 +165,25 @@ class CommandThread(threading.Thread):
 
     def _set_data_stats(self, setDataStatsCommand):
         _logger.debug("setting data stats to %d/%d, %d/%d", setDataStatsCommand.activePlugins, setDataStatsCommand.totalPlugins, setDataStatsCommand.knownFiles, setDataStatsCommand.totalFiles)
-        self._dataPanel.set_stats(setDataStatsCommand.activePlugins, setDataStatsCommand.totalPlugins, setDataStatsCommand.knownFiles, setDataStatsCommand.totalFiles)
+        self._statusPanel.set_data_stats(setDataStatsCommand.activePlugins, setDataStatsCommand.totalPlugins, setDataStatsCommand.knownFiles, setDataStatsCommand.totalFiles)
 
-    def _update_status(self, statusUpdateCommand):
-        _logger.debug("updating status: '%s'", statusUpdateCommand.text)
-        self._statusBox.AppendText("\n")
-        self._statusBox.AppendText(statusUpdateCommand.text)
+    def _set_status(self, setStatusCommand):
+        status = setStatusCommand.status
+        _logger.debug("setting status to: '%s'", status)
+        hilightColor = self._colorMap[setStatusCommand.hilightColorId]
+        if status is view_commands.STATUS_OK:
+            self._statusPanel.set_ok_status(hilightColor, setStatusCommand.activePlugins, setStatusCommand.totalPlugins, setStatusCommand.knownFiles, setStatusCommand.totalFiles)
+        elif status is view_commands.STATUS_LOADING:
+            self._statusPanel.set_loading_status(hilightColor, setStatusCommand.loadingComplete, setStatusCommand.loadingTotal)
+        elif status is view_commands.STATUS_NEEDS_ANNEALING:
+            self._statusPanel.set_dirty_status(hilightColor)
+        elif status is view_commands.STATUS_DOING_IO:
+            self._statusPanel.set_io_status(hilightColor, setStatusCommand.ioOperations)
+        else:
+            _logger.warn("unknown status: %d", status)
         
     def _set_package_label(self, setPackageLabelCommand):
-        _logger.debug("setting package label")
+        _logger.debug("setting package label to '%s'", setPackageLabelCommand.text)
         self._packageInfoPanel.set_label(setPackageLabelCommand.text)
 
     def _set_package_info(self, setPackageInfoCommand):

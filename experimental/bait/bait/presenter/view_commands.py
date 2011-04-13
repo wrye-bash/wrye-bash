@@ -28,17 +28,16 @@ ADD_PACKAGE = 2
 EXPAND_GROUP = 3
 CLEAR_PACKAGES = 4
 SET_FILTER_STATS = 5
-STATUS_UPDATE = 6
+SET_STATUS = 6
 SET_PACKAGE_LABEL = 7
 ADD_FILE = 8
-SET_DATA_STATS = 9
-CLEAR_FILES = 10
-SET_FILE_DETAILS = 11
-SELECT_PACKAGES = 12
-EXPAND_DIR = 13
-SELECT_FILES = 14
-SET_STYLE_MAPS = 15
-SET_PACKAGE_INFO = 16
+CLEAR_FILES = 9
+SET_FILE_DETAILS = 10
+SELECT_PACKAGES = 11
+EXPAND_DIR = 12
+SELECT_FILES = 13
+SET_STYLE_MAPS = 14
+SET_PACKAGE_INFO = 15
 
 # style values
 FONT_STYLE_BOLD_FLAG = 1
@@ -48,6 +47,8 @@ TEXT_HAS_INACTIVE_OVERRIDDE = 2
 HIGHLIGHT_ERROR = 3
 HIGHLIGHT_MISSING_DEPENDENCY = 4
 HIGHLIGHT_DIRTY = 5
+HIGHLIGHT_LOADING = 6
+HIGHLIGHT_OK = 7
 ICON_PROJECT_MATCHES = 1
 ICON_PROJECT_MISMATCHED = 2
 ICON_PROJECT_MISSING = 3
@@ -59,6 +60,16 @@ ICON_INSTALLER_MISSING = 8
 ICON_INSTALLER_EMPTY = 9
 ICON_INSTALLER_UNINSTALLABLE = 10
 
+# status states
+STATUS_OK = 1
+STATUS_LOADING = 2
+STATUS_NEEDS_ANNEALING = 3
+STATUS_DOING_IO = 4
+
+OP_ANNEAL = 1
+OP_RENAME = 2
+OP_DELETE = 3
+
 
 class ViewCommandStyle:
     def __init__(self, fontStyleMask=None, textColorId=None, hilightColorId=None, checkboxState=None, iconId=None):
@@ -67,6 +78,11 @@ class ViewCommandStyle:
         self.hilightColorId = hilightColorId
         self.checkboxState = checkboxState
         self.iconId = iconId
+
+class IoOperation:
+    def __init__(self, type, target):
+        self.type = type
+        self.target = target
 
 
 # command classes
@@ -134,13 +150,18 @@ class SetFilterStats(ViewCommand):
         self.current = current
         self.total = total
 
-class SetDataStats(ViewCommand):
-    def __init__(self, activePlugins, totalPlugins, knownFiles, totalFiles, requestId=None):
-        ViewCommand.__init__(self, SET_DATA_STATS, requestId)
+class SetStatus(ViewCommand):
+    def __init__(self, status, hilightColorId, activePlugins=None, totalPlugins=None, knownFiles=None, totalFiles=None, loadingComplete=None, loadingTotal=None, ioOperations=None, requestId=None):
+        ViewCommand.__init__(self, SET_STATUS, requestId)
+        self.status = status
+        self.hilightColorId = hilightColorId
         self.activePlugins = activePlugins
         self.totalPlugins = totalPlugins
         self.knownFiles = knownFiles
         self.totalFiles = totalFiles
+        self.loadingComplete = loadingComplete
+        self.loadingTotal = loadingTotal
+        self.ioOperations = ioOperations
 
 class _SetText(ViewCommand):
     '''If text is None, it means nothing is selected.  If text is the
@@ -148,10 +169,6 @@ class _SetText(ViewCommand):
     def __init__(self, commandId, text, requestId=None):
         ViewCommand.__init__(self, commandId, requestId)
         self.text = text
-
-class StatusUpdate(_SetText):
-    def __init__(self, text, requestId=None):
-        _SetText.__init__(self, STATUS_UPDATE, text, requestId)
 
 class SetPackageLabel(_SetText):
     """None means no package is selected, a blank label means multiple packages are selected"""

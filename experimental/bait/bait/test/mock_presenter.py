@@ -37,7 +37,9 @@ _colorMap = {
         view_commands.TEXT_HAS_INACTIVE_OVERRIDDE:(255,165,0),
         view_commands.HIGHLIGHT_ERROR:(193,205,205),
         view_commands.HIGHLIGHT_MISSING_DEPENDENCY:(255,0,0),
-        view_commands.HIGHLIGHT_DIRTY:(255,215,0)
+        view_commands.HIGHLIGHT_DIRTY:(255,215,0),
+        view_commands.HIGHLIGHT_LOADING:(255,255,0),
+        view_commands.HIGHLIGHT_OK:(0,255,0)
     }
 _checkedIconMap = {
         view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_inc.png",
@@ -86,24 +88,21 @@ class MockPresenter:
             else:
                 self._filterMask &= ~filterId
         self.viewCommandQueue.put(view_commands.SetStyleMaps(_colorMap, _checkedIconMap, _uncheckedIconMap))
-        self.viewCommandQueue.put(view_commands.SetDataStats(127, 209, 2097, 41728))
+        self.viewCommandQueue.put(view_commands.SetStatus(view_commands.STATUS_LOADING, view_commands.HIGHLIGHT_LOADING, loadingComplete=0, loadingTotal=100))
         self.set_packages_tree_selections([])
         self.set_files_tree_selections([])
         self._rebuild_packages_tree()
         self.viewCommandQueue.put(view_commands.SetPackageInfo(presenter.DETAILS_TAB_ID_GENERAL, None))
-        self.viewCommandQueue.put(view_commands.StatusUpdate("finished loading"))
+        self.viewCommandQueue.put(view_commands.SetStatus(view_commands.STATUS_OK, view_commands.HIGHLIGHT_OK, 127, 209, 2097, 41728))
 
     def pause(self):
         _logger.debug("mock presenter pausing")
-        self.viewCommandQueue.put(view_commands.StatusUpdate("pausing"))
 
     def resume(self):
         _logger.debug("mock presenter resuming")
-        self.viewCommandQueue.put(view_commands.StatusUpdate("resuming"))
 
     def shutdown(self):
         _logger.debug("mock presenter shutting down")
-        self.viewCommandQueue.put(view_commands.StatusUpdate("shutting down"))
         self.viewCommandQueue.put(None)
 
     def set_filter_state(self, filterId, value):
