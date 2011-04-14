@@ -873,7 +873,15 @@ class List(wx.Panel):
     def OnColumnResize(self,event):
         colDex = event.GetColumn()
         colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        width = self.list.GetColumnWidth(colDex)
+        if width < 5:
+            width = 5
+            self.list.SetColumnWidth(colDex, 5)
+            event.Veto()
+            self.list.resizeLastColumn(0)
+        else:
+            event.Skip()
+        self.colWidths[colName] = width
 
     #--Item Sort
     def DoItemSort(self, event):
@@ -1323,9 +1331,9 @@ class INIList(List):
         settings.setChanged('bash.ini.colWidths')
 
 #------------------------------------------------------------------------------
-class INITweakLineCtrl(ListCtrl):
+class INITweakLineCtrl(wx.ListCtrl):
     def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0,'')
         self.tweakLines = []
@@ -1375,12 +1383,12 @@ class INITweakLineCtrl(ListCtrl):
             if self.iniContents.GetItemBackgroundColour(i) != self.iniContents.GetBackgroundColour():
                 self.iniContents.SetItemBackgroundColour(i, self.iniContents.GetBackgroundColour())
         #--Refresh column width
-        self.resizeLastColumn(0)
+        self.SetColumnWidth(0,wx.LIST_AUTOSIZE)
 
 #------------------------------------------------------------------------------
-class INILineCtrl(ListCtrl):
+class INILineCtrl(wx.ListCtrl):
     def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, '')
 
@@ -1412,7 +1420,7 @@ class INILineCtrl(ListCtrl):
                 self.SetStringItem(i, 0, line)
         for i in range(len(lines), num):
             self.DeleteItem(len(lines))
-        self.resizeLastColumn(0)
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
 #------------------------------------------------------------------------------
 class ModList(List):
