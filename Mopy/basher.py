@@ -13579,7 +13579,7 @@ def InitStatusBar():
     else: version = 0
     BashStatusBar.buttons.append( #BOSS --
         App_BOSS(
-            (bosh.dirs['app'].join('Data\\BOSS.bat'),bosh.dirs['app'].join('Data\\BOSS.exe'))[version],
+            (bosh.dirs['app'].join('Data\\BOSS.bat'),bosh.dirs['app'].join('Data\\BOSS.exe'),bosh.dirs['app'].join('BOSS\\BOSS.exe'))[version],
             Image(r'images/Boss'+bosh.inisettings['IconSize']+'.png'),
             _("Launch BOSS")))
     if bosh.inisettings['ShowModelingToolLaunchers']:
