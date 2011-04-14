@@ -2302,6 +2302,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
   * Various small UI improvements
   * regex for TesNexus searching updated to work with a few less  common mod archive name formats.
+  * Support for BOSS 1.7.
     
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
