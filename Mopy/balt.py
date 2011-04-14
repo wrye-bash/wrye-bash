@@ -77,11 +77,7 @@ defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
-wxListAligns = {
-    'LEFT':   wx.LIST_FORMAT_LEFT,
-    'RIGHT':  wx.LIST_FORMAT_RIGHT,
-    'CENTER': wx.LIST_FORMAT_CENTRE,
-    }
+wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
@@ -1308,27 +1304,49 @@ class Tank(wx.Panel):
             del self.itemId_item[itemId]
 
     #--Updating/Sorting/Refresh -----------------------------------------------
+    def PopulateColumns(self):
+        """Alias for UpdateColumns, for List_Columns"""
+        self.UpdateColumns()
+
     def UpdateColumns(self):
         """Create/name columns in ListCtrl."""
-        data = self.data
-        columns = data.getParam('columns',data.tankColumns[:])
-        col_name = data.getParam('colNames',{})
-        col_width = data.getParam('colWidths',{})
-        col_align = data.getParam('colAligns',{})
-        for index,column in enumerate(columns):
-            name  = col_name.get(column,_(column))
-            width = col_width.get(column,30)
-            align = wxListAligns[col_align.get(column,'LEFT')]
-            self.gList.InsertColumn(index,name,align)
-            self.gList.SetColumnWidth(index, width)
+        cols = self.cols
+        numCols = len(cols)
+        for colDex in range(numCols):
+            colKey = cols[colDex]
+            colName = self.colNames.get(colKey,colKey)
+            colWidth = self.colWidths.get(colKey,30)
+            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
+            if colDex >= self.gList.GetColumnCount():
+                # Make a new column
+                self.gList.InsertColumn(colDex,colName,colAlign)
+                self.gList.SetColumnWidth(colDex,colWidth)
+            else:
+                # Update an existing column
+                column = self.gList.GetColumn(colDex)
+                if column.GetText() == colName:
+                    # Don't change it, just make sure the width is correct
+                    self.gList.SetColumnWidth(colDex,colWidth)
+                elif column.GetText() not in self.cols:
+                    # Column that doesn't exist anymore
+                    self.gList.DeleteColumn(colDex)
+                    colDex -= 1
+                else:
+                    # New column
+                    self.gList.InsertColumn(colDex,colName,colAlign)
+                    self.gList.SetColumnWidth(colDex,colWidth)
+        while self.gList.GetColumnCount() > numCols:
+            self.gList.DeleteColumn(numCols)
+        self.gList.resizeLastColumn(0)
 
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
         if index < 0: return
         data,gList = self.data,self.gList
         item = item or self.GetItem(index)
-        for iColumn,column in enumerate(data.getColumns(item)):
-            gList.SetStringItem(index,iColumn,column)
+        for iColumn,column in enumerate(self.cols):
+            colDex = self.GetColumnDex(column)
+            gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
         gItem = gList.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
@@ -1339,6 +1357,9 @@ class Tank(wx.Panel):
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
         gItem.SetData(self.GetId(item))
         gList.SetItem(gItem)
+
+    def GetColumnDex(self,column):
+        raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
@@ -1383,21 +1404,26 @@ class Tank(wx.Panel):
         if self.sortDirty:
             self.sortDirty = False
             (column, reverse) = (None,'CURRENT')
-        curColumn = data.defaultParam('colSort',data.tankColumns[0])
+        curColumn = self.sort
         column = column or curColumn
-        curReverse = data.defaultParam('colReverse',{}).get(column,False)
+        curReverse = self.colReverse.get(column,False)
         if reverse == 'INVERT' and column == curColumn:
             reverse = not curReverse
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
-        data.updateParam('colReverse')[column] = reverse
-        data.setParam('colSort',column)
+        self.SetColumnReverse(column, reverse)
+        self.SetSort(column)
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
         self.mouseTexts.clear()
+
+    def SetColumnReverse(colummn, reverse):
+        pass
+    def SetSort(self,sort):
+        pass
 
     def RefreshData(self):
         """Refreshes underlying data."""
@@ -1485,9 +1511,10 @@ class Tank(wx.Panel):
 
     def OnColumnResize(self,event):
         """Column resized. Save column size info."""
-        iColumn = event.GetColumn()
-        column = self.data.getParam('columns')[iColumn]
-        self.data.updateParam('colWidths')[column] = self.gList.GetColumnWidth(iColumn)
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        self.colWidths[colName] = self.gList.GetColumnWidth(colDex)
+        event.Skip()
 
     def OnLeftDown(self,event):
         """Left mouse button was pressed."""
@@ -1500,8 +1527,7 @@ class Tank(wx.Panel):
 
     def OnColumnClick(self, event):
         """Column header was left clicked on. Sort on that column."""
-        columns = self.data.getParam('columns')
-        self.SortItems(columns[event.GetColumn()],'INVERT')
+        self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
     def DoColumnMenu(self,event,iColumn=None):
         """Show column menu."""
@@ -1578,6 +1604,7 @@ class Link:
         """Append self to menu as menu item."""
         if isinstance(window,Tank):
             self.gTank = window
+            self.window = window
             self.selected = window.GetSelected()
             self.data = window.data
             self.title = window.data.title

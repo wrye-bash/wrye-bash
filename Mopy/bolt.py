@@ -926,11 +926,13 @@ class Settings(DataDict):
         else:
             self.vdata = {}
             self.data = {}
+        self.defaults = {}
         self.changed = []
         self.deleted = []
 
     def loadDefaults(self,defaults):
         """Add default settings to dictionary. Will not replace values that are already set."""
+        self.defaults = defaults
         for key in defaults.keys():
             if key not in self.data:
                 self.data[key] = defaults[key]
@@ -947,7 +949,10 @@ class Settings(DataDict):
         for key in self.deleted:
             dictFile.data.pop(key,None)
         for key in self.changed:
-            dictFile.data[key] = self.data[key]
+            if self.data[key] == self.defaults.get(key,None):
+                dictFile.data.pop(key,None)
+            else:
+                dictFile.data[key] = self.data[key]
         dictFile.save()
 
     def setChanged(self,key):
