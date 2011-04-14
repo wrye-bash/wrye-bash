@@ -1513,8 +1513,15 @@ class Tank(wx.Panel):
         """Column resized. Save column size info."""
         colDex = event.GetColumn()
         colName = self.cols[colDex]
-        self.colWidths[colName] = self.gList.GetColumnWidth(colDex)
-        event.Skip()
+        width = self.gList.GetColumnWidth(colDex)
+        if width < 5:
+            width = 5
+            self.gList.SetColumnWidth(colDex, 5)
+            event.Veto()
+            self.gList.resizeLastColumn(0)
+        else:
+            event.Skip()
+        self.colWidths[colName] = width
 
     def OnLeftDown(self,event):
         """Left mouse button was pressed."""
