@@ -9457,25 +9457,32 @@ class ConfigHelpers:
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
         #version notes:
+        # 1.7   = 2
         #>1.6.2 = 393218+
         # 1.6.1 = 393217
         # 1.6   = 1
         #<1.6   = 0
-        try:
-            import win32api
-            self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join('BOSS.exe').s, '\\')[u'FileVersionLS']
-        except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
-            self.bossVersion = None
-        self.bossMasterPath = dirs['mods'].join('BOSS//masterlist.txt')
-        if self.bossVersion == None:
-            if not self.bossMasterPath.exists():
-                self.bossMasterPath = dirs['mods'].join('masterlist.txt')
-                self.bossVersion = 0
+        if dirs['app'].join('BOSS//BOSS.exe').exists():
+            self.bossVersion = 2
+            self.bossMasterPath = dirs['app'].join('BOSS//masterlist.txt')
+            self.bossUserPath = dirs['app'].join('BOSS//userlist.txt')
+        else:
+            try:
+                import win32api
+                self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join('BOSS.exe').s, '\\')[u'FileVersionLS']
+            except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
+                self.bossVersion = None
+            self.bossMasterPath = dirs['mods'].join('BOSS//masterlist.txt')
+            if self.bossVersion == None:
                 if not self.bossMasterPath.exists():
-                    self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
-                    self.bossMasterPath = dirs['patches'].join('taglist.txt')
-            else: self.bossVersion = 1
-        self.bossUserPath = dirs['mods'].join('BOSS//userlist.txt')
+                    self.bossMasterPath = dirs['mods'].join('masterlist.txt')
+                    self.bossVersion = 0
+                    if not self.bossMasterPath.exists():
+                        self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
+                        self.bossMasterPath = dirs['patches'].join('taglist.txt')
+                else: self.bossVersion = 1
+            elif self.bossVersion in [393217,393218]: self.bossVersion = 1
+            self.bossUserPath = dirs['mods'].join('BOSS//userlist.txt')
         self.bossMasterTime = 0
         self.bossUserTime = 0
         self.bossMasterTags = {}
@@ -9491,7 +9498,7 @@ class ConfigHelpers:
         reFcomSwitch = re.compile('^[<>]')
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
-        reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
+        reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
         reDirty = re.compile(r'IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
         if path.exists():
             if path.mtime != mtime:
