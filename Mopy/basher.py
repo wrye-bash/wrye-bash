@@ -154,15 +154,21 @@ settingDefaults = {
     'bash.colNames': {
         'Author': _('Author'),
         'Cell': _('Cell'),
+        'Current Order': _('Current LO'),
         'Date': _('Date'),
         'Day': _('Day'),
         'File': _('File'),
+        'Files': _('Files'),
         'Group': _('Group'),
+        'Header': _('Header'),
         'Installer':_('Installer'),
+        'Karma': _('Karma'),
         'Load Order': _('Load Order'),
-        'Current Order': _('Current LO'),
         'Modified': _('Modified'),
+        'Name': _('Name'),
         'Num': _('MI'),
+        'Order': _('Order'),
+        'Package': _('Package'),
         'PlayTime':_('Hours'),
         'Player': _('Player'),
         'Rating': _('Rating'),
@@ -192,6 +198,22 @@ settingDefaults = {
     'bash.modDocs.pos': wx.DefaultPosition,
     'bash.modDocs.dir': None,
     #--Installers
+    'bash.installers.cols': ['Package','Order','Modified','Size','Files'],
+    'bash.installers.colReverse': {},
+    'bash.installers.sort': 'Package',
+    'bash.installers.colWidths': {
+        'Package': 30,
+        'Order': 30,
+        'Modified': 30,
+        'Size': 30,
+        'Files': 30,
+        },
+    'bash.installers.colAligns': {
+        'Order': 1,
+        'Modified': 1,
+        'Size': 1,
+        'Files': 1,
+        },
     'bash.installers.page':0,
     'bash.installers.enabled': True,
     'bash.installers.autoAnneal': True,
@@ -319,6 +341,18 @@ settingDefaults = {
         'Date':150,
         },
     'bash.messages.colAligns': {},
+    #--Wrye Bash: People
+    'bash.people.cols': ['Name','Karma','Header'],
+    'bash.people.sort': 'Name',
+    'bash.people.colReverse': {},
+    'bash.people.colWidths': {
+        'Name': 30,
+        'Karma': 30,
+        'Header': 30,
+        },
+    'bash.people.colAligns': {
+        'Karma': 1,
+        },
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     #--BOSS:
@@ -623,6 +657,19 @@ class List(wx.Panel):
         self.list.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
         self.list.Bind(wx.EVT_SCROLLWIN,self.OnScroll)
 
+    #--New way for self.cols, so PopulateColumns will work with
+    #  the optional columns menu
+    def _getCols(self):
+        if hasattr(self,'colsKey'):
+            return settings[self.colsKey]
+        else:
+            return self._cols
+    def _setCols(self,value):
+        if hasattr(self,'colsKey'):
+            del self.colsKey
+        self._cols = value
+    cols = property(_getCols,_setCols)
+
     #--Drag and Drop---------------------------------------
     def dndAllow(self):
         col = self.sort
@@ -641,8 +688,27 @@ class List(wx.Panel):
             colKey = cols[colDex]
             colName = self.colNames.get(colKey,colKey)
             wxListAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            self.list.InsertColumn(colDex,colName,wxListAlign)
-            self.list.SetColumnWidth(colDex, self.colWidths.get(colKey,30))
+            if colDex >= self.list.GetColumnCount():
+                # Make a new column
+                self.list.InsertColumn(colDex,colName,wxListAlign)
+                self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+            else:
+                # Update an existing column
+                column = self.list.GetColumn(colDex)
+                if column.GetText() == colName:
+                    # Don't change it, just make sure the width is correct
+                    self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+                elif column.GetText() not in self.cols:
+                    # Column that doesn't exist anymore
+                    self.list.DeleteColumn(colDex)
+                    colDex -= 1
+                else:
+                    # New column
+                    self.list.InsertColumn(colDex,colName,wxListAlign)
+                    self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+        while self.list.GetColumnCount() > self.numCols:
+            self.list.DeleteColumn(self.numCols)
+        self.list.resizeLastColumn(0)
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         """Populate ListCtrl for specified item. [ABSTRACT]"""
@@ -805,7 +871,9 @@ class List(wx.Panel):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        pass
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
 
     #--Item Sort
     def DoItemSort(self, event):
@@ -1059,9 +1127,7 @@ class MasterList(List):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(MasterList,self).OnColumnResize(event)
         settings.setChanged('bash.masters.colWidths')
 
     #--Event: Left Down
@@ -1106,7 +1172,7 @@ class INIList(List):
 
     def __init__(self,parent):
         #--Columns
-        self.cols = settings['bash.ini.cols']
+        self.colsKey = 'bash.ini.cols'
         self.colAligns = settings['bash.ini.colAligns']
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.ini.colReverse')
@@ -1253,9 +1319,7 @@ class INIList(List):
 
     def OnColumnResize(self,event):
         """Column resize: Stored modified column widths."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(INIList,self).OnColumnResize(event)
         settings.setChanged('bash.ini.colWidths')
 
 #------------------------------------------------------------------------------
@@ -1358,7 +1422,7 @@ class ModList(List):
 
     def __init__(self,parent):
         #--Columns
-        self.cols = settings['bash.mods.cols']
+        self.colsKey = 'bash.mods.cols'
         self.colAligns = settings['bash.mods.colAligns']
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.mods.colReverse')
@@ -1679,9 +1743,7 @@ class ModList(List):
 
     def OnColumnResize(self,event):
         """Column resize: Stored modified column widths."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(ModList,self).OnColumnResize(event)
         settings.setChanged('bash.mods.colWidths')
 
     def OnLeftDown(self,event):
@@ -2263,7 +2325,7 @@ class SaveList(List):
 
     def __init__(self,parent):
         #--Columns
-        self.cols = settings['bash.saves.cols']
+        self.colsKey = 'bash.saves.cols'
         self.colAligns = settings['bash.saves.colAligns']
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.saves.colReverse')
@@ -2422,9 +2484,7 @@ class SaveList(List):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(SaveList,self).OnColumnResize(event)
         settings.setChanged('bash.saves.colWidths')
 
     def OnKeyUp(self,event):
@@ -2674,6 +2734,11 @@ class SavePanel(NotebookPanel):
 class InstallersList(balt.Tank):
     def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
             details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
+        self.colNames = settings['bash.colNames']
+        self.colAligns = settings['bash.installers.colAligns']
+        self.colReverse = settings['bash.installers.colReverse']
+        self.colWidths = settings['bash.installers.colWidths']
+        self.sort = settings['bash.installers.sort']
         balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
             details,id,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
@@ -2682,6 +2747,24 @@ class InstallersList(balt.Tank):
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
         self.hitTime = 0
+
+    @property
+    def cols(self): return settings['bash.installers.cols']
+
+    def SetSort(self,sort):
+        self.sort = settings['bash.installers.sort'] = sort
+
+    def SetColumnReverse(self,column,reverse):
+        settings['bash.installers.colReverse'][column] = reverse
+        settings.setChanged('bash.installers.colReverse')
+
+    def GetColumnDex(self,column):
+        return settingDefaults['bash.installers.cols'].index(column)
+
+    def OnColumnResize(self,event):
+        """Column has been resized."""
+        super(InstallersList, self).OnColumnResize(event)
+        settings.setChanged('bash.installers.colWidths')
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -3449,9 +3532,7 @@ class ReplacersList(List):
     #--Events ---------------------------------------------
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(ReplacersList,self).OnColumnResize(event)
         settings.setChanged('bash.screens.colWidths')
 
     #--Event: Left Down
@@ -3578,7 +3659,7 @@ class ScreensList(List):
 
     def __init__(self,parent):
         #--Columns
-        self.cols = settings['bash.screens.cols']
+        self.colsKey = 'bash.screens.cols'
         self.colAligns = settings['bash.screens.colAligns']
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.screens.colReverse')
@@ -3750,9 +3831,7 @@ class ScreensList(List):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(ScreensList,self).OnColumnResize(event)
         settings.setChanged('bash.screens.colWidths')
 
     def OnItemSelected(self,event=None):
@@ -3916,9 +3995,7 @@ class BSAList(List):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(BSAList,self).OnColumnResize(event)
         settings.setChanged('bash.BSAs.colWidths')
 
     #--Event: Left Down
@@ -4141,7 +4218,7 @@ class MessageList(List):
 
     def __init__(self,parent):
         #--Columns
-        self.cols = settings['bash.messages.cols']
+        self.colsKey = 'bash.messages.cols'
         self.colAligns = settings['bash.messages.colAligns']
         self.colNames = settings['bash.colNames']
         self.colReverse = settings.getChanged('bash.messages.colReverse')
@@ -4245,9 +4322,7 @@ class MessageList(List):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        self.colWidths[colName] = self.list.GetColumnWidth(colDex)
+        super(MessageList,self).OnColumnResize(event)
         settings.setChanged('bash.messages.colWidths')
 
     def OnItemSelected(self,event=None):
@@ -4347,6 +4422,34 @@ class MessagePanel(NotebookPanel):
         settings['bash.messages.scrollPos'] = gMessageList.vScrollPos
 
 #------------------------------------------------------------------------------
+class PeopleList(balt.Tank):
+    def __init__(self,*args,**kwdargs):
+        self.colNames = settings['bash.colNames']
+        self.colAligns = settings['bash.people.colAligns']
+        self.colWidths = settings['bash.people.colWidths']
+        self.colReverse = settings['bash.people.colReverse']
+        self.sort = settings['bash.people.sort']
+        balt.Tank.__init__(self, *args, **kwdargs)
+
+    @property
+    def cols(self): return settings['bash.people.cols']
+
+    def SetSort(self,sort):
+        self.sort = settings['bash.people.sort'] = sort
+
+    def SetColumnReverse(self,column,reverse):
+        settings['bash.people.colReverse'][column] = reverse
+        settings.setChanged('bash.people.colReverse')
+
+    def OnColumnResize(self,event):
+        """Column resized."""
+        super(PeopleList,self).OnColumnResize(event)
+        settings.setChanged('bash.people.colWidths')
+
+    def GetColumnDex(self,column):
+        return settingDefaults['bash.people.cols'].index(column)
+
+#------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
     mainMenu = Links()
@@ -4358,7 +4461,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = balt.Tank(left,data,
+        self.gList = PeopleList(left,data,
             karmacons, PeoplePanel.mainMenu, PeoplePanel.itemMenu,
             details=self, style=wx.LC_REPORT)
         self.gList.SetSizeHints(100,100)
@@ -6503,7 +6606,10 @@ class Files_SortBy(Link):
         if window.sort == self.sortCol: menuItem.Check()
 
     def Execute(self,event):
-        self.window.PopulateItems(self.sortCol,-1)
+        if hasattr(self, 'gTank'):
+            self.gTank.SortItems(self.sortCol,'INVERT')
+        else:
+            self.window.PopulateItems(self.sortCol,-1)
 
 #------------------------------------------------------------------------------
 class Files_Unhide(Link):
@@ -6925,6 +7031,48 @@ class File_Open(Link):
         dir = self.window.data.dir
         for file in self.data:
             dir.join(file).start()
+#------------------------------------------------------------------------------
+class List_Column(Link):
+    def __init__(self,columnsKey,colName,enable=True):
+        Link.__init__(self)
+        self.colName = colName
+        self.columnsKey = columnsKey
+        self.enable = enable
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,settings['bash.colNames'][self.colName],kind=wx.ITEM_CHECK)
+        menuItem.Enable(self.enable)
+        menu.AppendItem(menuItem)
+        if self.colName in settings[self.columnsKey]:
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        if self.colName in settings[self.columnsKey]:
+            settings[self.columnsKey] = [x for x in settings[self.columnsKey] if x != self.colName]
+        else:
+            #--Ensure the same order each time
+            settings[self.columnsKey] = [x for x in settingDefaults[self.columnsKey] if x in settings[self.columnsKey] or x == self.colName]
+        self.window.PopulateColumns()
+        self.window.RefreshUI()
+
+#------------------------------------------------------------------------------
+            
+class List_Columns(Link):
+    """Customize visible columns."""
+    def __init__(self,columnsKey,persistantColumns=[]):
+        Link.__init__(self)
+        self.columnsKey = columnsKey
+        self.persistant = persistantColumns
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_("Columns"),subMenu)
+        for col in settingDefaults[self.columnsKey]:
+            enable = col not in self.persistant
+            List_Column(self.columnsKey,col,enable).AppendToMenu(subMenu,window,data)
+
 #------------------------------------------------------------------------------
 class Installers_AddMarker(Link):
     """Add an installer marker."""
@@ -14142,9 +14290,21 @@ def InitInstallerLinks():
     """Initialize people tab menus."""
     #--Column links
     #--Sorting
-    InstallersPanel.mainMenu.append(Installers_SortActive())
-    InstallersPanel.mainMenu.append(Installers_SortProjects())
-    #InstallersPanel.mainMenu.append(Installers_SortStructure())
+    if True:
+        sortMenu = MenuLink(_("Sort by"))
+        sortMenu.links.append(Installers_SortActive())
+        sortMenu.links.append(Installers_SortProjects())
+        #InstallersPanel.mainMenu.append(Installers_SortStructure())
+        sortMenu.links.append(SeparatorLink())
+        sortMenu.links.append(Files_SortBy('Package'))
+        sortMenu.links.append(Files_SortBy('Order'))
+        sortMenu.links.append(Files_SortBy('Modified'))
+        sortMenu.links.append(Files_SortBy('Size'))
+        sortMenu.links.append(Files_SortBy('Files'))
+        InstallersPanel.mainMenu.append(sortMenu)
+    #--Columns
+    InstallersPanel.mainMenu.append(SeparatorLink())
+    InstallersPanel.mainMenu.append(List_Columns('bash.installers.cols',['Package']))
     #--Actions
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(balt.Tanks_Open())
@@ -14257,6 +14417,8 @@ def InitINILinks():
     #--Column Links
     INIList.mainMenu.append(INI_SortValid())
     INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
+    INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(User_BackupSettings())
     INIList.mainMenu.append(User_RestoreSettings())
     INIList.mainMenu.append(User_SaveSettings())
@@ -14298,6 +14460,9 @@ def InitModLinks():
         versionsMenu.links.append(Mods_OblivionVersion('1.2'))
         versionsMenu.links.append(Mods_OblivionVersion('SI'))
         ModList.mainMenu.append(versionsMenu)
+    #--Columns ----------------------------------
+    ModList.mainMenu.append(SeparatorLink())
+    ModList.mainMenu.append(List_Columns('bash.mods.cols',['File']))
     #--------------------------------------------
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Files_Open())
@@ -14436,6 +14601,10 @@ def InitSaveLinks():
         subDirMenu = MenuLink(_("Profile"))
         subDirMenu.links.append(Saves_Profiles())
         SaveList.mainMenu.append(subDirMenu)
+    #--Columns --------------------------------
+    SaveList.mainMenu.append(SeparatorLink())
+    SaveList.mainMenu.append(List_Columns('bash.saves.cols',['File']))
+    #------------------------------------------
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
@@ -14547,6 +14716,8 @@ def InitScreenLinks():
     #--SaveList: Column Links
     ScreensList.mainMenu.append(Files_Open())
     ScreensList.mainMenu.append(SeparatorLink())
+    ScreensList.mainMenu.append(List_Columns('bash.screens.cols',['File']))
+    ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(User_BackupSettings())
@@ -14573,6 +14744,8 @@ def InitMessageLinks():
     #--SaveList: Column Links
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
+    MessageList.mainMenu.append(List_Columns('bash.messages.cols',['Subject']))
+    MessageList.mainMenu.append(SeparatorLink())
     MessageList.mainMenu.append(User_BackupSettings())
     MessageList.mainMenu.append(User_RestoreSettings())
     MessageList.mainMenu.append(User_SaveSettings())
@@ -14587,6 +14760,8 @@ def InitPeopleLinks():
     #--Header links
     PeoplePanel.mainMenu.append(People_AddNew())
     PeoplePanel.mainMenu.append(People_Import())
+    PeoplePanel.mainMenu.append(SeparatorLink())
+    PeoplePanel.mainMenu.append(List_Columns('bash.people.cols',['Name']))
     PeoplePanel.mainMenu.append(SeparatorLink())
     PeoplePanel.mainMenu.append(User_BackupSettings())
     PeoplePanel.mainMenu.append(User_RestoreSettings())
