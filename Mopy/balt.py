@@ -1234,7 +1234,7 @@ class Tank(wx.Panel):
         self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Events: Items
         gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        gList.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.DoItemMenu)
+        gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         gList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.OnItemSelected)
         gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         #--Events: Columns
