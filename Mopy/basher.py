@@ -647,7 +647,7 @@ class List(wx.Panel):
         #--Events: Items
         self.hitIcon = 0
         wx.EVT_LEFT_DOWN(self.list,self.OnLeftDown)
-        wx.EVT_COMMAND_RIGHT_CLICK(self.list, listId, self.DoItemMenu)
+        self.list.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         #--Events: Columns
         wx.EVT_LIST_COL_CLICK(self, listId, self.DoItemSort)
         wx.EVT_LIST_COL_RIGHT_CLICK(self, listId, self.DoColumnMenu)
@@ -1383,7 +1383,7 @@ class INITweakLineCtrl(wx.ListCtrl):
             if self.iniContents.GetItemBackgroundColour(i) != self.iniContents.GetBackgroundColour():
                 self.iniContents.SetItemBackgroundColour(i, self.iniContents.GetBackgroundColour())
         #--Refresh column width
-        self.SetColumnWidth(0,wx.LIST_AUTOSIZE)
+        self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
 class INILineCtrl(wx.ListCtrl):
@@ -1420,7 +1420,7 @@ class INILineCtrl(wx.ListCtrl):
                 self.SetStringItem(i, 0, line)
         for i in range(len(lines), num):
             self.DeleteItem(len(lines))
-        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
 class ModList(List):
