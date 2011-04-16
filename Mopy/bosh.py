@@ -32351,7 +32351,8 @@ def initDefaultSettings():
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
-    inisettings['EnableWizard'] = False
+    inisettings['bEnableReplacers'] = False
+    inisettings['bEnableBalo'] = False
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
     inisettings['ShowTextureToolLaunchers'] = True
