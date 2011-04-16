@@ -1346,6 +1346,9 @@ class Tank(wx.Panel):
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
+            if isinstance(self.data[item],bosh.InstallerMarker):
+                if colDex > 1:
+                    continue
             gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
         gItem = gList.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
@@ -1543,7 +1546,7 @@ class Tank(wx.Panel):
         menu = wx.Menu()
         for item in self.mainMenu:
             item.AppendToMenu(menu,self,iColumn)
-        self.PopupMenu(menu)
+        Link.Frame.PopupMenu(menu)
         menu.Destroy()
 
     def DoItemMenu(self,event):
@@ -1556,7 +1559,7 @@ class Tank(wx.Panel):
         menu = wx.Menu()
         for item in self.itemMenu:
             item.AppendToMenu(menu,self,selected)
-        self.PopupMenu(menu)
+        Link.Frame.PopupMenu(menu)
         menu.Destroy()
 
     #--Standard data commands -------------------------------------------------
@@ -1604,6 +1607,9 @@ class Links(list):
 #------------------------------------------------------------------------------
 class Link:
     """Link is a command to be encapsulated in a graphic element (menu item, button, etc.)"""
+    Frame = None    # Frame to update the statusbar of
+    Popup = None    # Current popup menu
+
     def __init__(self):
         self.id = None
 
@@ -1620,11 +1626,29 @@ class Link:
             self.data = data
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId()
-        wx.EVT_MENU(window,self.id,self.Execute)
+        Link.Popup = menu
+        wx.EVT_MENU(Link.Frame,self.id,self.Execute)
+        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
+        wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
 
     def Execute(self, event):
         """Event: link execution."""
         raise AbstractError
+
+    @staticmethod
+    def OnMenuOpen(event):
+        """Hover over a submenu, clear the status bar text"""
+        Link.Frame.GetStatusBar().SetText('')
+
+    @staticmethod
+    def ShowHelp(event):
+        """Hover over an item, set the statusbar text"""
+        if Link.Popup:
+            item = Link.Popup.FindItemById(event.GetId())
+            if item:
+                Link.Frame.GetStatusBar().SetText(item.GetHelp())
+            else:
+                Link.Frame.GetStatusBar().SetText('')
 
 #------------------------------------------------------------------------------
 class SeparatorLink(Link):
@@ -1661,7 +1685,7 @@ class Tanks_Open(Link):
     """Opens data directory in explorer."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Open...'),_("Open '%s'") % self.data.dir.tail)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -1689,7 +1713,11 @@ class Tank_Open(Link):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open...'))
+        if len(data) == 1:
+            help = _("Open '%s'") % data[0]
+        else:
+            help = _("Open selected files.")
+        menuItem = wx.MenuItem(menu,self.id,_('Open...'),help)
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.selected))
 

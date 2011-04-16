@@ -108,6 +108,8 @@ bashFrame = None
 docBrowser = None
 modChecker = None
 
+SettingsMenu = None
+
 # Settings --------------------------------------------------------------------
 settings = None
 
@@ -866,7 +868,7 @@ class List(wx.Panel):
         for link in self.mainMenu:
             link.AppendToMenu(menu,self,column)
         #--Show/Destroy Menu
-        self.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     #--Column Resize
@@ -898,7 +900,7 @@ class List(wx.Panel):
         for link in self.itemMenu:
             link.AppendToMenu(menu,self,selected)
         #--Show/Destroy Menu
-        self.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     #--Size Change
@@ -2059,7 +2061,7 @@ class ModDetails(wx.Window):
         for id,tag in zip(ID_TAGS,self.allTags):
             menu.AppendCheckItem(id,tag)
             menu.Check(id,tag in self.modTags)
-        self.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     def DoAutoBashTags(self,event):
@@ -3439,7 +3441,7 @@ class InstallersPanel(SashTankPanel):
         menu = wx.Menu()
         for link in InstallersPanel.espmMenu:
             link.AppendToMenu(menu,self,selected)
-        self.gEspmList.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     def OnCheckEspmItem(self,event):
@@ -4623,7 +4625,7 @@ class BashNotebook(wx.Notebook):
         #--Pages
         self.AddPage(InstallersPanel(self),_("Installers"))
         iInstallers = self.GetPageCount()-1
-        if settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list():
+        if bosh.inisettings['bEnableReplacers'] and (settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list()):
             self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
@@ -4705,6 +4707,7 @@ class BashFrame(wx.Frame):
         #--Singleton
         global bashFrame
         bashFrame = self
+        balt.Link.Frame = self
         #--Window
         wx.Frame.__init__(self, parent, -1, 'Wrye Bash', pos, size,style)
         minSize = settings['bash.frameSize.min']
@@ -6225,7 +6228,7 @@ class ListPatcher(Patcher):
                 if label in choiceSet: menuItem.Check()
                 wx.EVT_MENU(self.gList,index,self.OnItemChoice)
         #--Show/Destroy Menu
-        self.gList.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     def OnItemChoice(self,event):
@@ -6366,7 +6369,7 @@ class TweakPatcher(Patcher):
                 if index == chosen: menuItem.Check()
                 wx.EVT_MENU(self.gList,index,self.OnTweakChoice)
         #--Show/Destroy Menu
-        self.gList.PopupMenu(menu)
+        bashFrame.PopupMenu(menu)
         menu.Destroy()
 
     def OnTweakChoice(self,event):
@@ -6589,7 +6592,7 @@ class Files_Open(Link):
     """Opens data directory in explorer."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Open...'), _("Open '%s'") % (window.data.dir.tail))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -6609,7 +6612,7 @@ class Files_SortBy(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.prefix+self.sortName,kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,self.prefix+self.sortName,_('Sort by %s') % (self.sortName),kind=wx.ITEM_RADIO)
         menu.AppendItem(menuItem)
         if window.sort == self.sortCol: menuItem.Check()
 
@@ -6628,7 +6631,7 @@ class Files_Unhide(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Unhide..."))
+        menuItem = wx.MenuItem(menu,self.id,_("Unhide..."), _("Unhides hidden %ss.") % self.type)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -6706,7 +6709,7 @@ class File_Duplicate(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = (_('Duplicate'),_('Duplicate...'))[len(data) == 1]
-        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menuItem = wx.MenuItem(menu,self.id,self.title, _("Make a copy of '%s'") % (data[0]))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -7030,7 +7033,11 @@ class File_Open(Link):
     """Open specified file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open...'))
+        if len(data) == 1:
+            help = _("Open '%s' with the system's default program.") % data[0]
+        else:
+            help = _('Open the selected files.')
+        menuItem = wx.MenuItem(menu,self.id,_('Open...'),help)
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data)>0)
 
@@ -7049,11 +7056,13 @@ class List_Column(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,settings['bash.colNames'][self.colName],kind=wx.ITEM_CHECK)
+        colName = settings['bash.colNames'][self.colName]
+        check = self.colName in settings[self.columnsKey]
+        help = _("Show/Hide '%s' column.") % colName
+        menuItem = wx.MenuItem(menu,self.id,colName,help,kind=wx.ITEM_CHECK)
         menuItem.Enable(self.enable)
         menu.AppendItem(menuItem)
-        if self.colName in settings[self.columnsKey]:
-            menuItem.Check(True)
+        menuItem.Check(check)
 
     def Execute(self,event):
         if self.colName in settings[self.columnsKey]:
@@ -7086,7 +7095,7 @@ class Installers_AddMarker(Link):
     """Add an installer marker."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Add Marker...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Add Marker...'),_('Adds a Marker, a special type of package useful for seperating and labeling your packages.'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -7107,7 +7116,7 @@ class Installers_AnnealAll(Link):
     """Anneal all packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Anneal All'))
+        menuItem = wx.MenuItem(menu,self.id,_('Anneal All'),_('This will install any missing files (for active installers) and correct all install order and reconfiguration errors.'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -7126,7 +7135,7 @@ class Installers_AutoAnneal(Link):
     """Toggle autoAnneal setting."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Auto-Anneal'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Auto-Anneal'),_("Enable/Disable automatic annealing of packages."),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.autoAnneal'])
 
@@ -7178,7 +7187,7 @@ class Installers_Enabled(Link):
     """Flips installer state."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Enabled'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Enabled'),_('Enable/disable the Installers tab.'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.enabled'])
 
@@ -7249,7 +7258,7 @@ class Installers_AvoidOnStart(Link):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Avoid at Startup'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Avoid at Startup'),_("Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.fastStart'])
 
@@ -7268,7 +7277,11 @@ class Installers_Refresh(Link):
         if not settings['bash.installers.enabled']: return
         Link.AppendToMenu(self,menu,window,data)
         self.title = (_('Refresh Data'),_('Full Refresh'))[self.fullRefresh]
-        menuItem = wx.MenuItem(menu,self.id,self.title)
+        if self.fullRefresh:
+            help = _("Perform a full refresh of all data files, recalculating all CRCs.  This can take 5-15 minutes.")
+        else:
+            help = _("Rescan the Data directory and all project directories.")
+        menuItem = wx.MenuItem(menu,self.id,self.title,help)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -7299,7 +7312,7 @@ class Installers_ShowReplacers(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _("Show Replacers Tab")
-        menuItem = wx.MenuItem(menu,self.id,self.title,kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,self.title,_("Show/Hide the Replacers tab."),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.replacers.show'])
 
@@ -7427,13 +7440,13 @@ class Installers_skipLandscapeLODNormals(Link):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Installers_enableInstallationofOBSEdlls (Link):
+class Installers_SkipOBSEPlugins(Link):
     """Toggle skipDistantLOD setting and update."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Enable installation of OBSE plugins'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_('Skip OBSE Plugins'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.allowOBSEPlugins'])
+        menuItem.Check(not settings['bash.installers.allowOBSEPlugins'])
         bosh.installersWindow = self.gTank
 
     def Execute(self,event):
@@ -7449,7 +7462,7 @@ class Installers_SortActive(Link):
     """Sort by type."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Sort by Active"),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_("Sort by Active"),_('If selected, active installers will be sorted to the top of the list.'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.sortActive'])
 
@@ -7462,7 +7475,7 @@ class Installers_SortProjects(Link):
     """Sort dirs to the top."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Projects First"),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_("Projects First"),_('If selected, projects will be sorted to the top of the list.'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.sortProjects'])
 
@@ -7961,7 +7974,7 @@ class Installer_ListPackages(InstallerLink):
     """Copies list of Bain files to clipboard."""
     def AppendToMenu(self,menu,window,data):
         InstallerLink.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("List Packages..."))
+        menuItem = wx.MenuItem(menu,self.id,_("List Packages..."),_("Displays a list of all packages.  Also copies that list to the clipboard.  Useful for posting your package order on forums."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8028,7 +8041,7 @@ class Installer_Open(balt.Tank_Open):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Open...'))
+        menuItem = wx.MenuItem(menu,self.id,_('Open...'), _("Open '%s'") % (self.data.dir.tail))
         menu.AppendItem(menuItem)
         self.selected = [x for x in self.selected if not isinstance(self.data.data[x],bosh.InstallerMarker)]
         menuItem.Enable(bool(self.selected))
@@ -9021,7 +9034,7 @@ class INI_SortValid(Link):
     """Sort valid INI Tweaks to the top."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Valid Tweaks First"),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_("Valid Tweaks First"),_('Valid tweak files will be shown first.'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.ini.sortValid'])
 
@@ -9033,7 +9046,7 @@ class INI_ListErrors(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('List Errors...'))
+        menuItem = wx.MenuItem(menu,self.id,_('List Errors...'),_('Lists any errors in the tweak file causing it to be invalid.'))
         menu.AppendItem(menuItem)
 
         bEnable = False
@@ -9058,7 +9071,9 @@ class INI_Apply(Link):
     """Apply an INI Tweak."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Apply'))
+        ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
+        tweak = data[0]
+        menuItem = wx.MenuItem(menu,self.id,_('Apply'),_("Applies '%s' to '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
 
         bEnable = True
@@ -9097,7 +9112,7 @@ class Mods_EsmsFirst(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.prefix+_('Type'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,self.prefix+_('Type'),_('Sort masters by type'),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(window.esmsFirst)
 
@@ -14328,7 +14343,8 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
     InstallersPanel.mainMenu.append(Installers_Enabled())
-    InstallersPanel.mainMenu.append(Installers_ShowReplacers())
+    if bosh.inisettings['bEnableReplacers']:
+        InstallersPanel.mainMenu.append(Installers_ShowReplacers())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AutoAnneal())
     if bEnableWizard:
@@ -14340,7 +14356,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
     InstallersPanel.mainMenu.append(Installers_WizardOverlay())
     InstallersPanel.mainMenu.append(SeparatorLink())
-    InstallersPanel.mainMenu.append(Installers_enableInstallationofOBSEdlls())
+    InstallersPanel.mainMenu.append(Installers_SkipOBSEPlugins())
     InstallersPanel.mainMenu.append(Installers_SkipScreenshots())
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
@@ -14348,12 +14364,9 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
+    #--Settings
     InstallersPanel.mainMenu.append(SeparatorLink())
-    InstallersPanel.mainMenu.append(User_BackupSettings())
-    InstallersPanel.mainMenu.append(User_RestoreSettings())
-    InstallersPanel.mainMenu.append(User_SaveSettings())
-    InstallersPanel.mainMenu.append(Installers_ExportDllInfo())
-    InstallersPanel.mainMenu.append(Installers_ImportDllInfo())
+    InstallersPanel.mainMenu.append(SettingsMenu)
 
     #--Item links
     #--File
@@ -14417,6 +14430,9 @@ def InitReplacerLinks():
     """Initialize replacer tab menus."""
     #--Header links
     ReplacersList.mainMenu.append(Files_Open())
+    #--Settings
+    ReplacersList.mainMenu.append(SettingsMenu)
+
     #--Item links
     ReplacersList.itemMenu.append(File_Open())
 
@@ -14427,12 +14443,9 @@ def InitINILinks():
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
+    #--Settings
     INIList.mainMenu.append(SeparatorLink())
-    INIList.mainMenu.append(User_BackupSettings())
-    INIList.mainMenu.append(User_RestoreSettings())
-    INIList.mainMenu.append(User_SaveSettings())
-    INIList.mainMenu.append(Installers_ExportDllInfo())
-    INIList.mainMenu.append(Installers_ImportDllInfo())
+    INIList.mainMenu.append(SettingsMenu)
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -14480,22 +14493,22 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
-    ModList.mainMenu.append(Mods_AutoGroup())
-    ModList.mainMenu.append(Mods_FullBalo())
+    if bosh.inisettings['bEnableBalo']:
+        ModList.mainMenu.append(Mods_AutoGroup())
+        ModList.mainMenu.append(Mods_FullBalo())
     ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_Deprint())
     ModList.mainMenu.append(Mods_DumpTranslator())
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
+    #--BOSS options
+    ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
     ModList.mainMenu.append(Mods_BOSSShowUpdate())
     ModList.mainMenu.append(Mods_ScanDirty())
+    #--Settings
     ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(User_BackupSettings())
-    ModList.mainMenu.append(User_RestoreSettings())
-    ModList.mainMenu.append(User_SaveSettings())
-    ModList.mainMenu.append(Installers_ExportDllInfo())
-    ModList.mainMenu.append(Installers_ImportDllInfo())
+    ModList.mainMenu.append(SettingsMenu)
 
     #--ModList: Item Links
     if True: #--File
@@ -14514,7 +14527,7 @@ def InitModLinks():
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(File_RevertToSnapshot())
         ModList.itemMenu.append(fileMenu)
-    if True: #--Groups
+    if bosh.inisettings['bEnableBalo']: #--Groups
         groupMenu = MenuLink(_("Group"))
         groupMenu.links.append(Mod_Groups())
         groupMenu.links.append(Mod_BaloGroups())
@@ -14617,12 +14630,9 @@ def InitSaveLinks():
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
+    #--Settings
     SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(User_BackupSettings())
-    SaveList.mainMenu.append(User_RestoreSettings())
-    SaveList.mainMenu.append(User_SaveSettings())
-    SaveList.mainMenu.append(Installers_ExportDllInfo())
-    SaveList.mainMenu.append(Installers_ImportDllInfo())
+    SaveList.mainMenu.append(SettingsMenu)
 
     #--SaveList: Item Links
     if True: #--File
@@ -14728,12 +14738,9 @@ def InitScreenLinks():
     ScreensList.mainMenu.append(List_Columns('bash.screens.cols',['File']))
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
+    #--Settings
     ScreensList.mainMenu.append(SeparatorLink())
-    ScreensList.mainMenu.append(User_BackupSettings())
-    ScreensList.mainMenu.append(User_RestoreSettings())
-    ScreensList.mainMenu.append(User_SaveSettings())
-    ScreensList.mainMenu.append(Installers_ExportDllInfo())
-    ScreensList.mainMenu.append(Installers_ImportDllInfo())
+    ScreensList.mainMenu.append(SettingsMenu)
 
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
@@ -14754,12 +14761,9 @@ def InitMessageLinks():
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
     MessageList.mainMenu.append(List_Columns('bash.messages.cols',['Subject']))
+    #--Settings
     MessageList.mainMenu.append(SeparatorLink())
-    MessageList.mainMenu.append(User_BackupSettings())
-    MessageList.mainMenu.append(User_RestoreSettings())
-    MessageList.mainMenu.append(User_SaveSettings())
-    MessageList.mainMenu.append(Installers_ExportDllInfo())
-    MessageList.mainMenu.append(Installers_ImportDllInfo())
+    MessageList.mainMenu.append(SettingsMenu)
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -14771,12 +14775,9 @@ def InitPeopleLinks():
     PeoplePanel.mainMenu.append(People_Import())
     PeoplePanel.mainMenu.append(SeparatorLink())
     PeoplePanel.mainMenu.append(List_Columns('bash.people.cols',['Name']))
+    #--Settings
     PeoplePanel.mainMenu.append(SeparatorLink())
-    PeoplePanel.mainMenu.append(User_BackupSettings())
-    PeoplePanel.mainMenu.append(User_RestoreSettings())
-    PeoplePanel.mainMenu.append(User_SaveSettings())
-    PeoplePanel.mainMenu.append(Installers_ExportDllInfo())
-    PeoplePanel.mainMenu.append(Installers_ImportDllInfo())
+    PeoplePanel.mainMenu.append(SettingsMenu)
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())
     PeoplePanel.itemMenu.append(SeparatorLink())
@@ -14784,9 +14785,20 @@ def InitPeopleLinks():
     PeoplePanel.itemMenu.append(balt.Tank_Delete())
     PeoplePanel.itemMenu.append(People_Export())
 
+def InitSettingsLinks():
+    """Initialize settings menu."""
+    global SettingsMenu
+    SettingsMenu = MenuLink(_('Settings'))
+    SettingsMenu.links.append(User_BackupSettings())
+    SettingsMenu.links.append(User_BackupSettings())
+    SettingsMenu.links.append(User_SaveSettings())
+    SettingsMenu.links.append(Installers_ExportDllInfo())
+    SettingsMenu.links.append(Installers_ImportDllInfo())
+
 def InitLinks():
     """Call other link initializers."""
     InitStatusBar()
+    InitSettingsLinks()
     InitMasterLinks()
     InitInstallerLinks()
     InitINILinks()
