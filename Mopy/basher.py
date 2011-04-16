@@ -708,7 +708,7 @@ class List(wx.Panel):
                     self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
         while self.list.GetColumnCount() > self.numCols:
             self.list.DeleteColumn(self.numCols)
-        self.list.resizeLastColumn(0)
+        self.list.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         """Populate ListCtrl for specified item. [ABSTRACT]"""
@@ -14424,6 +14424,7 @@ def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     INIList.mainMenu.append(INI_SortValid())
+    INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
     INIList.mainMenu.append(SeparatorLink())
