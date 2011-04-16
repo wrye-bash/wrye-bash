@@ -1337,7 +1337,7 @@ class Tank(wx.Panel):
                     self.gList.SetColumnWidth(colDex,colWidth)
         while self.gList.GetColumnCount() > numCols:
             self.gList.DeleteColumn(numCols)
-        self.gList.resizeLastColumn(0)
+        self.gList.SetColumnWidth(numCols, wx.LIST_AUTOSIZE_USEHEADER)
 
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
