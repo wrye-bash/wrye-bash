@@ -8,6 +8,8 @@ import bosh, balt, bolt
 from bolt import _
 import struct, string
 import win32api
+import cStringIO
+import traceback
 #---------------------------------------------------
 gDialogSize = (600,500)
 #---------------------------------------------------wx
@@ -679,8 +681,13 @@ class WryeParser(ScriptParser.Parser):
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
                 return PageError(self.parent, _('Installer Wizard'), _('An error occured in the wizard script:\n Line:\t%s\n Error:\t%s') % (newline.strip('\n'), e))
-            except Exception, e:
-                return PageError(self.parent, _('Installer Wizard'), _('An unhandled error occured while parsing the wizard:\n Line(%s):\t%s\n Error:\t%s') % (self.cLine,newline.strip('\n'), e))
+            except Exception:
+                o = cStringIO.StringIO()
+                o.write(_('An unhandled error occured while parsing the wizard:\n Line(%s):\t%s\n\n') % (self.cLine, newline.strip('\n')))
+                traceback.print_exc(file=o)
+                msg = o.getvalue()
+                o.close()
+                return PageError(self.parent, _('Installer Wizard'), msg)
             if self.page:
                 return self.page
         self.cLine += 1
