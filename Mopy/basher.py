@@ -6228,7 +6228,7 @@ class ListPatcher(Patcher):
                 if label in choiceSet: menuItem.Check()
                 wx.EVT_MENU(self.gList,index,self.OnItemChoice)
         #--Show/Destroy Menu
-        bashFrame.PopupMenu(menu)
+        self.gList.PopupMenu(menu)
         menu.Destroy()
 
     def OnItemChoice(self,event):
@@ -6369,7 +6369,7 @@ class TweakPatcher(Patcher):
                 if index == chosen: menuItem.Check()
                 wx.EVT_MENU(self.gList,index,self.OnTweakChoice)
         #--Show/Destroy Menu
-        bashFrame.PopupMenu(menu)
+        self.gList.PopupMenu(menu)
         menu.Destroy()
 
     def OnTweakChoice(self,event):
