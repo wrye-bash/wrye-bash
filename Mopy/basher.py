@@ -152,6 +152,8 @@ settingDefaults = {
     'bash.mods.autoGhost':False,
     'bash.mods.groups': [x[0] for x in bush.baloGroups],
     'bash.mods.ratings': ['+','1','2','3','4','5','=','~'],
+    'bash.balo.autoGroup': True,
+    'bash.balo.full': False,
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {
         'Author': _('Author'),
@@ -204,11 +206,11 @@ settingDefaults = {
     'bash.installers.colReverse': {},
     'bash.installers.sort': 'Package',
     'bash.installers.colWidths': {
-        'Package': 30,
-        'Order': 30,
-        'Modified': 30,
-        'Size': 30,
-        'Files': 30,
+        'Package': 100,
+        'Order': 10,
+        'Modified': 60,
+        'Size': 40,
+        'Files': 20,
         },
     'bash.installers.colAligns': {
         'Order': 1,
@@ -6588,6 +6590,25 @@ else:
         ))
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+class BoolLink(Link):
+    """Simple link that just toggles a setting."""
+    def __init__(self, text, key, help=''):
+        Link.__init__(self)
+        self.text = text
+        self.help = help
+        self.key = key
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings[self.key])
+
+    def Execute(self,event):
+        settings[self.key] ^= True
+
+
+#------------------------------------------------------------------------------
 class Files_Open(Link):
     """Opens data directory in explorer."""
     def AppendToMenu(self,menu,window,data):
@@ -7131,73 +7152,62 @@ class Installers_AnnealAll(Link):
             bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
-class Installers_AutoAnneal(Link):
-    """Toggle autoAnneal setting."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Auto-Anneal'),_("Enable/Disable automatic annealing of packages."),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.autoAnneal'])
+class Installers_AutoAnneal(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Auto-Anneal'),
+                          'bash.installers.autoAnneal',
+                          _("Enable/Disable automatic annealing of packages.")
+                          )
+
+#------------------------------------------------------------------------------
+class Installers_AutoWizard(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Auto-Anneal/Install Wizards'),
+                          'bash.installers.autoWizard',
+                          _("Enable/Disable automatic installing or anneal (as applicable) of packages after running its wizard.")
+                          )
+
+#------------------------------------------------------------------------------
+class Installers_WizardOverlay(BoolLink):
+    """Toggle using the wizard overlay icon"""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Wizard Icon Overlay'),
+                          'bash.installers.wizardOverlay',
+                          _("Enable/Disable the magic wand icon overlay for packages with Wizards.")
+                          )
 
     def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.autoAnneal'] ^= True
-
-#------------------------------------------------------------------------------
-class Installers_AutoWizard(Link):
-    """Toggle auto-anneal/auto-install wizards"""
-    def AppendToMenu(self, menu, window, data):
-        Link.AppendToMenu(self, menu, window, data)
-        menuItem = wx.MenuItem(menu, self.id, _('Auto-Anneal/Install Wizards'), kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.autoWizard'])
-
-    def Execute(self, event):
-        """Handle selection."""
-        settings['bash.installers.autoWizard'] ^= True
-
-#------------------------------------------------------------------------------
-class Installers_WizardOverlay(Link):
-    """Toggle using the wizard overlay icon"""
-    def AppendToMenu(self, menu, window, data):
-        Link.AppendToMenu(self, menu, window, data)
-        menuItem = wx.MenuItem(menu, self.id, _('Wizard Icon Overlay'), kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.wizardOverlay'])
-
-    def Execute(self, event):
-        """Handle selection."""
-        settings['bash.installers.wizardOverlay'] ^= True
+        BoolLink.Execute(self,event)
         gInstallers.gList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Installers_AutoRefreshProjects(Link):
+class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Auto-Refresh Projects'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.autoRefreshProjects'])
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Auto-Refresh Projects'),
+                          'bash.installers.autoRefreshProjects',
+                          )
 
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.autoRefreshProjects'] ^= True
-
-class Installers_Enabled(Link):
+#------------------------------------------------------------------------------
+class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Enabled'),_('Enable/disable the Installers tab.'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.enabled'])
+    def __init__(self): BoolLink.__init__(self,
+                                         _('Enabled'),
+                                         'bash.installers.enabled',
+                                         _('Enable/Disable the Installers tab.')
+                                         )
 
     def Execute(self,event):
         """Handle selection."""
-        enabled = settings['bash.installers.enabled']
+        enabled = settings[self.key]
         message = _("Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes.")
         if not enabled and not balt.askYes(self.gTank,fill(message,80),self.title):
             return
-        enabled = settings['bash.installers.enabled'] = not enabled
+        enabled = settings[self.key] = not enabled
         if enabled:
             gInstallers.refreshed = False
             gInstallers.OnShow()
@@ -7205,66 +7215,61 @@ class Installers_Enabled(Link):
         else:
             gInstallers.gList.gList.DeleteAllItems()
             gInstallers.RefreshDetails(None)
+
 #------------------------------------------------------------------------------
-class Installers_BsaRedirection(Link):
+class Installers_BsaRedirection(BoolLink):
     """Toggle BSA Redirection."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('BSA Redirection'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.bsaRedirection'])
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('BSA Redirection'),
+                          'bash.bsaRedirection',
+                          )
 
     def Execute(self,event):
         """Handle selection."""
-        settings['bash.bsaRedirection'] ^= True
-        if settings['bash.bsaRedirection']:
+        BoolLink.Execute(self,event)
+        if settings[self.key]:
             bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
             #balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
-        bosh.oblivionIni.setBsaRedirection(settings['bash.bsaRedirection'])
+        bosh.oblivionIni.setBsaRedirection(settings[self.key])
 
 #------------------------------------------------------------------------------
-class Installers_ConflictsReportShowsInactive(Link):
+class Installers_ConflictsReportShowsInactive(BoolLink):
     """Toggles option to show lower on conflicts report."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Show Inactive Conflicts'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.conflictsReport.showInactive'])
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Show Inactive Conflicts'),
+                          'bash.installers.conflictsReport.showInactive',
+                          )
 
     def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.conflictsReport.showInactive'] ^= True
+        BoolLink.Execute(self,event)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Installers_ConflictsReportShowsLower(Link):
+class Installers_ConflictsReportShowsLower(BoolLink):
     """Toggles option to show lower on conflicts report."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Show Lower Conflicts'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.conflictsReport.showLower'])
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _('Show Lower Conflicts'),
+                          'bash.installers.conflictsReport.showLower',
+                          )
 
     def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.conflictsReport.showLower'] ^= True
+        BoolLink.Execute(self,event)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Installers_AvoidOnStart(Link):
+class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Avoid at Startup'),_("Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning."),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.fastStart'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.fastStart'] ^= True
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Avoid at Startup'),
+                                          'bash.installers.fastStart',
+                                          _("Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning.")
+                                          )
 
 #------------------------------------------------------------------------------
 class Installers_Refresh(Link):
@@ -7294,206 +7299,144 @@ class Installers_Refresh(Link):
         gInstallers.OnShow()
 
 #------------------------------------------------------------------------------
-class Installers_RemoveEmptyDirs(Link):
+class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Clean Data Directory'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.removeEmptyDirs'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.removeEmptyDirs'] ^= True
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Clean Data Directory'),
+                                          'bash.installers.removeEmptyDirs',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_ShowReplacers(Link):
+class Installers_ShowReplacers(BoolLink):
     """Toggles option to show replacers menu."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        self.title = _("Show Replacers Tab")
-        menuItem = wx.MenuItem(menu,self.id,self.title,_("Show/Hide the Replacers tab."),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.replacers.show'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Show Replacers Tab'),
+                                          'bash.replacers.show',
+                                          _("Show/Hide the Replacers tab.")
+                                          )
 
     def Execute(self,event):
-        """Handle selection."""
-        settings['bash.replacers.show'] ^= True
+        BoolLink.Execute(self,event)
         message = _("This option will take effect when Bash is restarted. Note that if any files are present in Data\\Replacers, then the Replacers tab will be shown regardless of this setting.")
-        balt.showOk(self.gTank,message,self.title)
+        balt.showOk(self.gTank,message,self.text)
 
 #------------------------------------------------------------------------------
-class Installers_SkipScreenshots(Link):
+class Installers_Skip(BoolLink):
+    """Toggle various skip settings and update."""
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        for installer in self.data.itervalues():
+            installer.refreshDataSizeCrc()
+        self.data.refresh(what='NS')
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installers_SkipScreenshots(Installers_Skip):
     """Toggle skipScreenshots setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip Screenshots'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipScreenshots'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipScreenshots'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip Screenshots'),
+                                          'bash.installers.skipScreenshots',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_SkipImages(Link):
+class Installers_SkipImages(Installers_Skip):
     """Toggle skipImages setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip Images'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipImages'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipImages'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip Images'),
+                                          'bash.installers.skipImages',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_SkipDocs(Link):
+class Installers_SkipDocs(Installers_Skip):
     """Toggle skipDocs setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip Docs'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipDocs'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipDocs'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip Docs'),
+                                          'bash.installers.skipDocs',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_SkipDistantLOD(Link):
+class Installers_SkipDistantLOD(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip DistantLOD'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipDistantLOD'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip DistantLOD'),
+                                          'bash.installers.skipDistantLOD',
+                                          )
 
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipDistantLOD'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
 #------------------------------------------------------------------------------
-class Installers_skipLandscapeLODMeshes(Link):
+class Installers_skipLandscapeLODMeshes(Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Meshes'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipLandscapeLODMeshes'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipLandscapeLODMeshes'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
-#------------------------------------------------------------------------------
-class Installers_skipLandscapeLODTextures(Link):
-    """Toggle skipDistantLOD setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Textures'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipLandscapeLODTextures'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipLandscapeLODTextures'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip LOD Meshes'),
+                                          'bash.installers.skipLandscapeLODMeshes',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_skipLandscapeLODNormals(Link):
+class Installers_skipLandscapeLODTextures(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip LOD Normals'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.skipLandscapeLODNormals'])
-
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.skipLandscapeLODNormals'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip LOD Textures'),
+                                          'bash.installers.skipLandscapeLODTextures',
+                                          )
 
 #------------------------------------------------------------------------------
-class Installers_SkipOBSEPlugins(Link):
+class Installers_skipLandscapeLODNormals(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip LOD Normals'),
+                                          'bash.installers.skipLandscapeLODNormals',
+                                          )
+
+#------------------------------------------------------------------------------
+class Installers_SkipOBSEPlugins(Installers_Skip):
+    """Toggle skipDistantLOD setting and update."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Skip OBSE Plugins'),
+                                          'bash.installers.allowOBSEPlugins',
+                                          )
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Skip OBSE Plugins'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Check(not settings['bash.installers.allowOBSEPlugins'])
+        menuItem.Check(not settings[self.key])
         bosh.installersWindow = self.gTank
 
-    def Execute(self,event):
-        """Handle selection."""
-        settings['bash.installers.allowOBSEPlugins'] ^= True
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
-
 #------------------------------------------------------------------------------
-class Installers_SortActive(Link):
+class Installers_SortActive(BoolLink):
     """Sort by type."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Sort by Active"),_('If selected, active installers will be sorted to the top of the list.'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.sortActive'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Sort by Active'),
+                                          'bash.installers.sortActive',
+                                          _('If selected, active installers will be sorted to the top of the list.')
+                                          )
 
     def Execute(self,event):
-        settings['bash.installers.sortActive'] ^= True
+        BoolLink.Execute(self,event)
         self.gTank.SortItems()
 
 #------------------------------------------------------------------------------
-class Installers_SortProjects(Link):
+class Installers_SortProjects(BoolLink):
     """Sort dirs to the top."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Projects First"),_('If selected, projects will be sorted to the top of the list.'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.sortProjects'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Projects First'),
+                                          'bash.installers.sortProjects',
+                                          _('If selected, projects will be sorted to the top of the list.')
+                                          )
 
     def Execute(self,event):
-        settings['bash.installers.sortProjects'] ^= True
+        BoolLink.Execute(self,event)
         self.gTank.SortItems()
 
 #------------------------------------------------------------------------------
-class Installers_SortStructure(Link):
+class Installers_SortStructure(BoolLink):
     """Sort by type."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Sort by Structure"),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.sortStructure'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Sort by Structure'),
+                                          'bash.installers.sortStructure',
+                                          )
 
     def Execute(self,event):
-        settings['bash.installers.sortStructure'] ^= True
+        BoolLink.Execute(self,event)
         self.gTank.SortItems()
 
 #------------------------------------------------------------------------------
@@ -9030,17 +8973,18 @@ class Mods_LoadList:
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class INI_SortValid(Link):
+class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Valid Tweaks First"),_('Valid tweak files will be shown first.'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.ini.sortValid'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Valid Tweaks First'),
+                                          'bash.ini.sortValid',
+                                          _('Valid tweak files will be shown first.')
+                                          )
 
     def Execute(self,event):
-        settings['bash.ini.sortValid'] ^= True
+        BoolLink.Execute(self,event)
         iniList.RefreshUI()
+
 #-------------------------------------------------------------------------------
 class INI_ListErrors(Link):
     """List errors that make an INI Tweak invalid."""
@@ -9138,42 +9082,40 @@ class Mods_SelectedFirst(Link):
         self.window.PopulateItems()
 
 #------------------------------------------------------------------------------
-class Mods_ScanDirty(Link):
+class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Scan for dirty edits (requires BOSS 1.7+)'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.mods.scanDirty'])
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Scan for dirty edits (requires BOSS 1.7+)'),
+                                          'bash.mods.scanDirty',
+                                          )
 
     def Execute(self,event):
-        settings['bash.mods.scanDirty'] ^= True
+        BoolLink.Execute(self,event)
         self.window.PopulateItems()
+
 #------------------------------------------------------------------------------
-class Mods_AutoGhost(Link):
+class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Auto-Ghost'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings.get('bash.mods.autoGhost',True))
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Auto-Ghost'),
+                                          'bash.mods.autoGhost',
+                                          )
 
     def Execute(self,event):
-        settings['bash.mods.autoGhost'] ^= True
+        BoolLink.Execute(self,event)
         files = bosh.modInfos.autoGhost(True)
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mods_AutoGroup(Link):
+class Mods_AutoGroup(BoolLink):
     """Turn on autogrouping."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Auto Group'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings.get('bash.balo.autoGroup',True))
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Auto Group'),
+                                          'bash.balo.autoGroup',
+                                          )
 
     def Execute(self,event):
-        settings['bash.balo.autoGroup'] = not settings.get('bash.balo.autoGroup',True)
+        BoolLink.Execute(self,event)
         bosh.modInfos.updateAutoGroups()
 
 #------------------------------------------------------------------------------
@@ -9191,16 +9133,15 @@ class Mods_Deprint(Link):
         deprint(_('Debug Printing: On'))
 
 #------------------------------------------------------------------------------
-class Mods_FullBalo(Link):
+class Mods_FullBalo(BoolLink):
     """Turn Full Balo off/on."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Full Balo'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings.get('bash.balo.full',False))
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Full Balo'),
+                                          'bash.balo.full',
+                                          )
 
     def Execute(self,event):
-        if not settings.get('bash.balo.full',False):
+        if not settings[self.key]:
             message = _("Activate Full Balo?\n\nFull Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order. Full Balo is still in development and may have some rough edges.")
             if balt.askContinue(self.window,message,'bash.balo.full.continue',_('Balo Groups')):
                 dialog = Mod_BaloGroups_Edit(self.window)
@@ -9208,7 +9149,7 @@ class Mods_FullBalo(Link):
                 dialog.Destroy()
             return
         else:
-            settings['bash.balo.full'] = False
+            settings[self.key] = False
             bosh.modInfos.fullBalo = False
             bosh.modInfos.refresh(doInfos=False)
 
@@ -9312,40 +9253,30 @@ class Mods_OblivionVersion(Link):
         bashFrame.SetTitle()
 
 #------------------------------------------------------------------------------
-class Mods_Tes4ViewExpert(Link):
+class Mods_Tes4ViewExpert(BoolLink):
     """Toggle Tes4Edit expert mode (when launched via Bash)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Tes4Edit Expert'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['tes4View.iKnowWhatImDoing'])
-
-    def Execute(self,event):
-        settings['tes4View.iKnowWhatImDoing'] ^= True
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Tes4Edit Expert'),
+                                          'tes4View.iKnowWhatImDoing',
+                                          )
 
 #------------------------------------------------------------------------------
-class Mods_BOSSDisableLockTimes(Link):
+class Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Times disabling when launching BOSS through Bash."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('BOSS Disable Lock Times'),help="If selected will temporarilly disable Bash's Lock Times when running BOSS through Bash.",kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['BOSS.ClearLockTimes'])
-
-    def Execute(self,event):
-        settings['BOSS.ClearLockTimes'] ^= True
+    def __init__(self): BoolLink.__init__(self,
+                                          _('BOSS Disable Lock Times'),
+                                          'BOSS.ClearLockTimes',
+                                          _("If selected, will temporarilly disable Bash's Lock Times when running BOSS through Bash.")
+                                          )
 
 #------------------------------------------------------------------------------
-class Mods_BOSSShowUpdate(Link):
+class Mods_BOSSShowUpdate(BoolLink):
     """Toggle Lock Times disabling when launching BOSS through Bash."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Always Update BOSS Masterlist prior to running BOSS.'),help="If selected will update tell BOSS to update the masterlist before sorting the mods.",kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['BOSS.AlwaysUpdate'])
-
-    def Execute(self,event):
-        settings['BOSS.AlwaysUpdate'] ^= True
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Always Update BOSS Masterlist prior to running BOSS.'),
+                                          'BOSS.AlwaysUpdate',
+                                          _("If selected, will tell BOSS to update the masterlist before sorting the mods.")
+                                          )
 
 #------------------------------------------------------------------------------
 class User_BackupSettings(Link):
@@ -9394,6 +9325,7 @@ class User_SaveSettings(Link):
 
     def Execute(self,event):
         BashFrame.SaveSettings(bashFrame)
+
 #------------------------------------------------------------------------------
 class Mods_UpdateInvalidator(Link):
     """Mod Replacers dialog."""
@@ -13382,16 +13314,8 @@ class App_BOSS(App_Button):
             version = bosh.configHelpers.bossVersion
             if settings.get('bash.mods.autoGhost') and not version:
                 progress(0.05,_("Processing... deghosting mods"))
-                ghosted = []
-                for root, dirs, files in os.walk(bosh.dirs['mods'].s):
-                    for name in files:
-                        fileLower = name.lower()
-                        if fileLower[-10:] == '.esp.ghost' or fileLower[-10:] == '.esm.ghost':
-                            if not name[:-6] in files:
-                                file = bosh.dirs['mods'].join(name)
-                                ghosted.append(fileLower)
-                                newName = bosh.dirs['mods'].join(name[:-6])
-                                file.moveTo(newName)
+                for fileName in bosh.modInfos:
+                    if bosh.modInfos[fileName].setGhost(False)
             if version >= 1:
                 if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
                     exeArgs += ('-u',) # Update - BOSS version 1.6+
@@ -13589,7 +13513,7 @@ def InitImages():
     colors['bash.mods.groupHeader'] = (0xD8,0xD8,0xD8)
     colors['bash.mods.isGhost'] = (0xe8,0xe8,0xe8)
     colors['bash.installers.skipped'] = (0xe0,0xe0,0xe0)
-    colors['bash.installers.outOfOrder'] = (0xDF,0xDF,0xC5)
+    colors['bash.installers.outOfOrder'] = (0xFF,0xFF,0x00) #(0xDF,0xDF,0xC5)
     colors['bash.installers.dirty'] = (0xFF,0xBB,0x33)
     colors['bash.ini.invalid'] = (0xFF,0xD5,0xAA)
     colors['bash.ini.mismatched'] = (0xFF,0xFF,0xBF)

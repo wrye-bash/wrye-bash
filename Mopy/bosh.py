@@ -11811,17 +11811,21 @@ class InstallersData(bolt.TankData, DataDict):
         columns = self.getParam('columns')
         if item == None: return columns[:]
         labels,installer = [],self.data[item]
+        marker = isinstance(installer, InstallerMarker)
         for column in columns:
             if column == 'Package':
-                labels.append(item.s)
+                value = item.s
             elif column == 'Files':
-                labels.append(formatInteger(len(installer.fileSizeCrcs)))
+                if not marker:
+                    value = formatInteger(len(installer.fileSizeCrcs))
             else:
                 value = object.__getattribute__(installer,column.lower())
-                if column in ('Package','Group'):
-                    pass
-                elif column == 'Order':
+                if column == 'Order':
                     value = `value`
+                elif marker:
+                    value = ''
+                elif column in ('Package','Group'):
+                    pass
                 elif column == 'Modified':
                     value = formatDate(value)
                 elif column == 'Size':
@@ -11831,7 +11835,7 @@ class InstallersData(bolt.TankData, DataDict):
                         value = max(formatInteger(value/1024),formatInteger(1))+' KB'
                 else:
                     raise ArgumentError(column)
-                labels.append(value)
+            labels.append(value)
         return labels
 
     def getGuiKeys(self,item):

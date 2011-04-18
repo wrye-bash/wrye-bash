@@ -1346,9 +1346,6 @@ class Tank(wx.Panel):
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
-            if isinstance(self.data[item],bosh.InstallerMarker):
-                if colDex > 1:
-                    continue
             gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
         gItem = gList.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
