@@ -107,7 +107,7 @@ gMessageList = None
 bashFrame = None
 docBrowser = None
 modChecker = None
-
+settingsWindow = None
 SettingsMenu = None
 
 # Settings --------------------------------------------------------------------
@@ -4926,6 +4926,61 @@ class BashFrame(wx.Frame):
                 path = backupDir.join(name)
                 if name.root not in goodRoots and path.isfile():
                     path.remove()
+
+#------------------------------------------------------------------------------
+from wx.lib.scrolledpanel import ScrolledPanel
+
+class SettingsPane(ScrolledPanel):
+    """Settings frame."""
+    def __init__(self, parent):
+        ScrolledPanel.__init__(self, parent, wx.ID_ANY)
+
+        #Settings
+        iniCollapsible = wx.CollapsiblePane(self,wx.ID_ANY,_('INI Settings'))
+        iniPane = iniCollapsible.GetPane()
+        settingsCollapsible = wx.CollapsiblePane(self,wx.ID_ANY,_('Program Settings'))
+        settingsPane = settingsCollapsible.GetPane()
+
+        self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.OnPaneChanged)
+
+        iniSizer = hSizer(
+            (button(iniPane,'Test')),
+            (button(iniPane,'Test2')),
+            )
+        iniPane.SetSizer(iniSizer)
+
+        settingsSizer = hSizer(
+            (button(settingsPane,'Test3')),
+            (button(settingsPane,'Test4')),
+            )
+        settingsPane.SetSizer(settingsSizer)
+
+        sizer = vSizer(
+            (iniCollapsible,0,wx.EXPAND),
+            (settingsCollapsible,0,wx.EXPAND),
+            )
+        self.SetSizer(sizer)
+        self.SetupScrolling()
+
+    def OnPaneChanged(self, evt=None):
+        self.Freeze()
+        self.SetupScrolling(scrollToTop=False)
+        self.GetParent().Layout()
+        self.Thaw()
+
+class SettingsWindow(wx.Frame):
+    def __init__(self):
+        global settingsWindow
+        settingsWindow = self
+        wx.Frame.__init__(self, bashFrame, wx.ID_ANY, _('Settings'),size=(300,300))
+
+        scrolled = SettingsPane(self)
+        sizer = hSizer(
+            (scrolled,1,wx.EXPAND),
+            )
+        sizer.SetSizeHints(scrolled)
+        sizer.SetMinSize((300,300))
+        self.SetSizer(sizer)
 
 #------------------------------------------------------------------------------
 class DocBrowser(wx.Frame):
@@ -13459,6 +13514,23 @@ class App_Help(Link):
         bosh.dirs['mopy'].join('Wrye Bash.html').start()
 
 #------------------------------------------------------------------------------
+class App_Settings(Link):
+    """Show settings menu."""
+    mainMenu = Links()
+
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        gButton = bitmapButton(window,Image(r'images/settings'+bosh.inisettings['IconSize']+'.png').GetBitmap(),style=style,
+                               onClick=self.Execute,tip=_("Settings"))
+        return gButton
+
+    def Execute(self,event):
+        """Show popup menu for settings."""
+        if not settingsWindow:
+            SettingsWindow().Show()
+        settingsWindow.Raise()
+
+#------------------------------------------------------------------------------
 class App_DocBrowser(Link):
     """Show doc browser."""
     def GetBitmapButton(self,window,style=0):
@@ -13533,7 +13605,7 @@ def InitImages():
     colors['bash.mods.groupHeader'] = (0xD8,0xD8,0xD8)
     colors['bash.mods.isGhost'] = (0xe8,0xe8,0xe8)
     colors['bash.installers.skipped'] = (0xe0,0xe0,0xe0)
-    colors['bash.installers.outOfOrder'] = (0xFF,0xFF,0x00) #(0xDF,0xDF,0xC5)
+    colors['bash.installers.outOfOrder'] = (0xDF,0xDF,0xC5)
     colors['bash.installers.dirty'] = (0xFF,0xBB,0x33)
     colors['bash.ini.invalid'] = (0xFF,0xD5,0xAA)
     colors['bash.ini.mismatched'] = (0xFF,0xFF,0xBF)
@@ -13571,6 +13643,9 @@ def InitImages():
     #--DocBrowser
     images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)
+    #--Settings
+    images['settings.16'] = Image(r'images/settings16.png',wx.BITMAP_TYPE_PNG)
+    images['settings.32'] = Image(r'images/settings32.png',wx.BITMAP_TYPE_PNG)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -14230,6 +14305,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
+    BashStatusBar.buttons.append(App_Settings())
     BashStatusBar.buttons.append(App_Help())
 
 def InitMasterLinks():
