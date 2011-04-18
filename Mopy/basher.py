@@ -224,6 +224,7 @@ settingDefaults = {
     'bash.installers.autoWizard':False,
     'bash.installers.wizardOverlay':True,
     'bash.installers.fastStart': True,
+    'bash.installers.autoRefreshBethsoft': False,
     'bash.installers.autoRefreshProjects': True,
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
@@ -4729,6 +4730,7 @@ class BashFrame(wx.Frame):
         self.knownCorrupted = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
+        bosh.bsaInfos = bosh.BSAInfos()
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
@@ -4799,6 +4801,10 @@ class BashFrame(wx.Frame):
         #--Check INI Tweaks...
         if bosh.iniInfos.refresh():
             popInis = 'ALL'
+        #--Ensure BSA timestamps are good
+        if bosh.inisettings['bResetBSATimestamps']:
+            if bosh.bsaInfos.refresh():
+                bosh.bsaInfos.resetMTimes()
         #--Repopulate
         if popMods:
             modList.RefreshUI(popMods) #--Will repop saves too.
@@ -7191,6 +7197,20 @@ class Installers_AutoRefreshProjects(BoolLink):
                           _('Auto-Refresh Projects'),
                           'bash.installers.autoRefreshProjects',
                           )
+
+#------------------------------------------------------------------------------
+class Installers_AutoRefreshBethsoft(BoolLink):
+    """Toggle refreshVanilla setting and update."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _('Auto-Refresh Bethsoft Content'),
+                                         'bash.installers.autoRefreshBethsoft',
+                                         )
+
+    def Execute(self,event):
+        if not settings[self.key]:
+            message = balt.fill(_("Enable refreshing Bethsoft Content?  This will cause data refreshing to take much longer if the timestamps on Bethsoft BSA's, ESP's, or ESM's change."))
+            if not balt.askWarning(self.gTank,fill(message,80),self.title): return
+        BoolLink.Execute(self,event)
 
 #------------------------------------------------------------------------------
 class Installers_Enabled(BoolLink):
@@ -14274,6 +14294,7 @@ def InitInstallerLinks():
     if bEnableWizard:
         InstallersPanel.mainMenu.append(Installers_AutoWizard())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshProjects())
+    InstallersPanel.mainMenu.append(Installers_AutoRefreshBethsoft())
     InstallersPanel.mainMenu.append(Installers_BsaRedirection())
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
