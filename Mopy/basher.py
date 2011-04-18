@@ -13335,7 +13335,7 @@ class App_BOSS(App_Button):
             if settings.get('bash.mods.autoGhost') and not version:
                 progress(0.05,_("Processing... deghosting mods"))
                 for fileName in bosh.modInfos:
-                    if bosh.modInfos[fileName].setGhost(False)
+                    bosh.modInfos[fileName].setGhost(False)
             if version >= 1:
                 if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
                     exeArgs += ('-u',) # Update - BOSS version 1.6+
