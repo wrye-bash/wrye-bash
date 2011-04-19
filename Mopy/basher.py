@@ -13643,9 +13643,6 @@ def InitImages():
     #--DocBrowser
     images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)
-    #--Settings
-    images['settings.16'] = Image(r'images/settings16.png',wx.BITMAP_TYPE_PNG)
-    images['settings.32'] = Image(r'images/settings32.png',wx.BITMAP_TYPE_PNG)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
