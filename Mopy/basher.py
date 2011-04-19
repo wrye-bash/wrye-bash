@@ -107,7 +107,6 @@ gMessageList = None
 bashFrame = None
 docBrowser = None
 modChecker = None
-settingsWindow = None
 SettingsMenu = None
 
 # Settings --------------------------------------------------------------------
@@ -4926,61 +4925,6 @@ class BashFrame(wx.Frame):
                 path = backupDir.join(name)
                 if name.root not in goodRoots and path.isfile():
                     path.remove()
-
-#------------------------------------------------------------------------------
-from wx.lib.scrolledpanel import ScrolledPanel
-
-class SettingsPane(ScrolledPanel):
-    """Settings frame."""
-    def __init__(self, parent):
-        ScrolledPanel.__init__(self, parent, wx.ID_ANY)
-
-        #Settings
-        iniCollapsible = wx.CollapsiblePane(self,wx.ID_ANY,_('INI Settings'))
-        iniPane = iniCollapsible.GetPane()
-        settingsCollapsible = wx.CollapsiblePane(self,wx.ID_ANY,_('Program Settings'))
-        settingsPane = settingsCollapsible.GetPane()
-
-        self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.OnPaneChanged)
-
-        iniSizer = hSizer(
-            (button(iniPane,'Test')),
-            (button(iniPane,'Test2')),
-            )
-        iniPane.SetSizer(iniSizer)
-
-        settingsSizer = hSizer(
-            (button(settingsPane,'Test3')),
-            (button(settingsPane,'Test4')),
-            )
-        settingsPane.SetSizer(settingsSizer)
-
-        sizer = vSizer(
-            (iniCollapsible,0,wx.EXPAND),
-            (settingsCollapsible,0,wx.EXPAND),
-            )
-        self.SetSizer(sizer)
-        self.SetupScrolling()
-
-    def OnPaneChanged(self, evt=None):
-        self.Freeze()
-        self.SetupScrolling(scrollToTop=False)
-        self.GetParent().Layout()
-        self.Thaw()
-
-class SettingsWindow(wx.Frame):
-    def __init__(self):
-        global settingsWindow
-        settingsWindow = self
-        wx.Frame.__init__(self, bashFrame, wx.ID_ANY, _('Settings'),size=(300,300))
-
-        scrolled = SettingsPane(self)
-        sizer = hSizer(
-            (scrolled,1,wx.EXPAND),
-            )
-        sizer.SetSizeHints(scrolled)
-        sizer.SetMinSize((300,300))
-        self.SetSizer(sizer)
 
 #------------------------------------------------------------------------------
 class DocBrowser(wx.Frame):
@@ -13514,23 +13458,6 @@ class App_Help(Link):
         bosh.dirs['mopy'].join('Wrye Bash.html').start()
 
 #------------------------------------------------------------------------------
-class App_Settings(Link):
-    """Show settings menu."""
-    mainMenu = Links()
-
-    def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
-        gButton = bitmapButton(window,Image(r'images/settings'+bosh.inisettings['IconSize']+'.png').GetBitmap(),style=style,
-                               onClick=self.Execute,tip=_("Settings"))
-        return gButton
-
-    def Execute(self,event):
-        """Show popup menu for settings."""
-        if not settingsWindow:
-            SettingsWindow().Show()
-        settingsWindow.Raise()
-
-#------------------------------------------------------------------------------
 class App_DocBrowser(Link):
     """Show doc browser."""
     def GetBitmapButton(self,window,style=0):
@@ -14302,7 +14229,6 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_BashMon())
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
-    BashStatusBar.buttons.append(App_Settings())
     BashStatusBar.buttons.append(App_Help())
 
 def InitMasterLinks():
