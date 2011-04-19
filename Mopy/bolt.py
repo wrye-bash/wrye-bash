@@ -1547,21 +1547,21 @@ class WryeText:
     <body>
     """
     defaultCss = """
-    H1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
-    H2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    H3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
-    H4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
-    P { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    P.empty {}
-    P.list-1 { margin-left: 0.15in; text-indent: -0.15in }
-    P.list-2 { margin-left: 0.3in; text-indent: -0.15in }
-    P.list-3 { margin-left: 0.45in; text-indent: -0.15in }
-    P.list-4 { margin-left: 0.6in; text-indent: -0.15in }
-    P.list-5 { margin-left: 0.75in; text-indent: -0.15in }
-    P.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    PRE { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
-    CODE { background-color: #FDF5E6;}
-    BODY { background-color: #ffffcc; }
+    h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+    h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+    h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+    p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    p.empty {}
+    p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+    p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+    p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+    p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+    p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+    p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+    pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+    code { background-color: #FDF5E6;}
+    body { background-color: #ffffcc; }
     """
 
     # Conversion ------------------------------------------------------------------
@@ -1628,6 +1628,12 @@ class WryeText:
         reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')
         rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)')
         reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)')
+        reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I)
+        reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]',re.I)
+        def subColor(match):
+            return '<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
+        def subBGColor(match):
+            return '<span style="background-color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subLink(match):
             address = text = match.group(1).strip()
             if '|' in text:
@@ -1661,6 +1667,9 @@ class WryeText:
                 inPre = maPreBegin or (inPre and not maPreEnd)
                 outLines.append(line)
                 continue
+            #--Font/Background Color
+            line = reColor.sub(subColor,line)
+            line = reBGColor.sub(subBGColor,line)
             #--Re Matches -------------------------------
             maContents = reContentsTag.match(line)
             maAnchorHeaders = reAnchorHeadersTag.match(line)

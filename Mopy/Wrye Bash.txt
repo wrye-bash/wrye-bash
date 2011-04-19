@@ -1,9 +1,10 @@
 = Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
+<a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1092258-relz-wrye-bash-thread-no-42/|RELZ Topic]]
+* [[http://forums.bethsoft.com/index.php?/topic/1180469-relz-wrye-bash-thread-63/|RELZ Topic]]
 * Download: 
   * [[http://www.wryemusings.com/|Wrye Musings]]
   * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]] 
@@ -126,7 +127,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
     * Remember when upgrading to install the "Data" folder to "\Oblivion\" and the "Mopy" folder to wherever you have it now
   
-=== Windows Vista
+=== Windows Vista/7
 * On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against write by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
 * **Alternate Solutions:** Alternatively, you might always run as admin, or turn off UAC -- but both of those approaches are ill-advised. For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
@@ -143,7 +144,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * __Type:__ <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code>
     * Note that Python treats the back-slash <code>\</code> as an escape character... even from the command prompt.
 
-=== <font color="red">If Bash Won't Start</font>
+=== [color=red]If Bash Won't Start[/color]
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
   * Most likely there is a problem with your setup. Alternatively there may be a bug with Bash. 
   * You can usually figure out the problem by getting the **bug dump** and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.
@@ -165,7 +166,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * Make sure that you chdir to the Mopy directory first.
 * __Can't Find User Directory__
   * The problem here is that python is not very good at getting the user directories. There are two options here.
-  * This used to be semi-common problem but should be an issue for users who have pywin32 installed. (PyWin32 is included in the Wrye Python installer.)
+  * This used to be semi-common problem but should not be an issue for users who have pywin32 installed. (PyWin32 is included in the Wrye Python installer.)
 * __Can't Find wxversion__
   * I don't understand the source of the problem, but it has something to do with the way python is installed. The solution seems to be to reinstall python and wxpython in that order. (You may have to first uninstall both of them.) 
 * __no module named wx__
@@ -187,26 +188,26 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 * If uninstalling old Python and Python addon versions (recommended) make sure to uninstall all of them starting with the addons via the control panel->Add/Remove Programs or Programs &amp; Features.
 * __Components:__
-  * __Python 2.6__ 
-    * This is the main install for python. It provides the base interpreter/compiler and the basic libraries. Python 2.6 is the preferred version for Wrye Bash.
-    * Download link: [[http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi|Python 2.6.6]]
+  * __Python 2.6__ or __Python 2.7__
+    * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries. Python 2.7 is the preferred version for Wrye Bash.
+    * Download link: __Python [ [[http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi|2.6.6]] | [[http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi|2.7.1]] ]__
   * __wxPython 2.8.11.0 ANSI__  
-    * Python supports several different GUI libraries. Wrye Bash uses wxPython.
-    * Download link: [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe|wxPython 2.8.11.0 ANSI for Python 2.6]]. 
+    * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
+    * Download link: __wxPython 2.8.11.0 ANSI [ [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe|Python 2.6]] | [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py27.exe|Python 2.7]] ].__
   * __PyWin32__
-    * Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.
-    * Download link: [[http://sourceforge.net/project/platformdownload.php?group_id=78018|PyWin32]].
+    * Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards, so it is required for Wizards to function.
+    * Download link: __PyWin32 216 [ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download|Python 2.6]] | [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|Python 2.7]] ]__
   * __ComTypes 0.6.2__ 
-    * Optional component (for the PM Archives Tab).  If not installed, the PM Archives tab will not be visible.
-    * Download link:  [[http://pypi.python.org/pypi/comtypes/0.6.2|ComTypes]]
+    * Optional component (for the PM Archives Tab).  If [[http://starship.python.net/crew/theller/comtypes/|ComTypes]] is not installed, the PM Archives tab will not be visible.
+    * Download link:  __ComTypes 0.6.2 [ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download|Python (all versions)]] ]__
   * __Psyco 1.6__ 
     * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a performance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
-    * Download link: [[http://downloads.sourceforge.net/psyco/psyco-1.6.win32-py25.exe?modtime=1199710841&amp;big_mirror=0|Psyco 1.6-py25.exe]].
-* Wrye Python Debris
+    * Download link: __Psyco 1.6 [ [[http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip|Python 2.6]] ]__
+* __Wrye Python Debris__
   * Wrye Python does **not** have an uninstall feature. Instead, run uninstall for separate components. If you're uninstalling everything, then uninstall python ~~last~~.
   * After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
-* Alternate Python Installations
-  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), python 2.6, wxPython 2.8.11.0, etc. are the preferred versions.
+* __Alternate Python Installations__
+  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.11.0, etc. are the preferred versions.
   * Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.
 
 == Help! ======================================================================
@@ -420,12 +421,12 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * <img src="images/diamond_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Diamond: A project, i.e. a subdirectory in the Installers directory.
   * <img src="images/checkbox_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 * __Text Colors__
-  * Navy Blue: Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
-  * Grey: This indicates that the package has a structure that Bain does not recognize, and so, cannot install. 
+  * [color=#000080]Navy Blue:[/color] Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
+  * [bg=white][color=#BEBEBE]Grey:[/color][/bg] This indicates that the package has a structure that Bain does not recognize, and so, cannot install. 
 * __Text Background__
-  * Orange: Indicates that the install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running Anneal or Anneal All.
-  * Yellow: Indicates that the package has "underrides" i.e. some of its installed files ~~should~~ be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running Anneal or Anneal All.
-  * Grey: Indicates that some files present in the package will **not** be installed. This is usually due to a complex structure that is only partially handled by Bain, but can also be due to having files that Bain refuses to install (exe's, dlls, sub-archives, etc.)
+  * [bg=#FFBB33]Orange:[/bg] Indicates that the install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running Anneal or Anneal All.
+  * [bg=yellow]Yellow:[/bg] Indicates that the package has "underrides" i.e. some of its installed files ~~should~~ be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running Anneal or Anneal All.
+  * [bg=#E0E0E0]Grey:[/bg] Indicates that some files present in the package will **not** be installed. This is usually due to a complex structure that is only partially handled by Bain, but can also be due to having files that Bain refuses to install (exe's, dlls, sub-archives, etc.)
 * __Markers__
   * "Dummy" packages that begin and end with "==".  These are useful for organizing packages into groups.  ==Last== is an example of these.
 
@@ -573,14 +574,14 @@ You've downloaded a bunch of BCFs.  Now what?
   * Once finished, you are free to delete the original archives if you so desire.
 
 === Bain Wizards
-Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a __wizard.txt__ file in the package.  For more information on the wizard format, see the [[wizards.html|Wizard Reference]].  When run, the wizard will run through a series of windows to allow you to select option, then show a summary page at the end telling you which sub-packages and esps/esms will be selected.
+Bain Wizards allow modders to include a simple configuration script with their packages.  Wizards run on a simple scripting language similar to OBMM script, contained in a __wizard.txt__ file in the package.  For more information on the wizard format, see the [[wizards.html|Wizard Reference]].  When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and esps/esms will be selected, and any INI tweaks that will be applied.
 * __Wizard Pages__
-  * __[[images/Versions.jpg|Version Warning Page]]:__ Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
+  * __[[images/Versions.png|Version Warning Page]]:__ Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.
   * __[[images/SelectOne.jpg|Single Selection Page]] | [[images/SelectMany.jpg|Multi Selection Page]]:__ Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.
-  * __[[images/Cancel.jpg|Cancel Page]]:__ Shown if the wizard canceled installation.
-  * __[[images/Finish.jpg|Finish Page]]:__ Shown at the end of the wizard.  This will give a list of the sub-packages and esps/esms that will be selected once the wizard is completed.
+  * __[[images/Cancel.png|Cancel Page]]:__ Shown if the wizard canceled installation.
+  * __[[images/Finish.png|Finish Page]]:__ Shown at the end of the wizard.  This will give a list of the sub-packages and esps/esms that will be selected, and INI tweaks that will be applied once the wizard is completed.
 * __Wizard Options__
-  * __Auto-Anneal/Install:__ If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.
+  * __Auto-Anneal/Install Wizard:__ If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.
   * __Auto Wizard:__ When this is selected, any dialogs that are provided with default answers will automatically use these.
 * For more information on BAIN Wizards, see the wizards [[wizards.html|documentation]].
 
@@ -591,29 +592,29 @@ The following commands are available from context menu of packages.
   * __Duplicate:__ Duplicate package.
   * __Delete:__ Delete the package(s).
   * __Open at submenu:__
+    * __Google:__ Attempts to extract a useable name from the package name and launch a google search for that name.
     * __TesNexus:__ Attempts to open the TesNexus page for the selected package.
     * __TesAlliance:__ Attempts to open the TesAlliance page for the selected package.
     * __Planet Elderscrolls:__ Attempts to open the Planet Elderscrolls page for the selected package.
       * **These 3 commands may fail!** The function works by assuming that the trailing 1-5 digits in the archives name are a package id at selected Site. 
       * If the assumption is wrong, then some random TesNexus/TesAlliance/Planet Elderscrolls page will be selected or an error page.
-    * __Google:__ Attempts to extract a useable name from the package name and launch a google search for that name.
   * __Hide:__ Hide the package by moving it to Oblivion Mods/Bash Mod Data/Hidden.
   * __Rename:__ Renames the package or marker to the entered text.
 * __Archive Info__
   * __Refresh:__ Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.
   * __Move To...__ Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.
 * __Configuration__
-  * __Has Special Directories:__ Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory -- and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
+  * __Has Extra Directories:__ Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory -- and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
   * __Skip Voices:__ If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension ([[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4269|PES]], [[http://www.tesnexus.com/downloads/file.php?id=16622|TesNexus]]) to prevent dialog subtitles from fading too rapidly.
-* __Wizard Install Options:__ Only Available if Wizard Install system is active (see WizardDocs.txt in the mopy folder for more info on the wizard install system)
+* __Wizard Install Options:__ Only Available if Wizard Install system is active (see the wizards [[wizards.html|documentation]] for more info on the wizard install system)
   * __Wizard:__ Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).
   * __Auto Wizard:__ Runs the wizard but selects the default options (only available if wizard.txt exists in the archive).
   * __Edit Wizard:__ Opens the wizard.txt for editing (only available for projects and if wizard.txt exists in the project).
 * __Install__
   * __Anneal:__ Will "anneal" the selected file(s). This will install any missing files and correct any install order errors (aka "underrides").
   * __Install:__ Will do an "in-order" install. I.e. it will fully install the package except for files that are masked by higher order packages.
-  * __Install Missing:__ The same as Install, except that it only installs missing files -- i.e. it will not override any currently existing files.
   * __Install Last:__ Moves the package to the end of the order list and installs it.
+  * __Install Missing:__ The same as Install, except that it only installs missing files -- i.e. it will not override any currently existing files.
   * __Uninstall:__ Uninstalls the package. If Auto-Anneal is active, then files from lower order packages will automatically be restored as necessary.
 * __Project__
   * __Conversions__ (Archives only.)
@@ -629,9 +630,10 @@ The following commands are available from context menu of packages.
 
 === Package Header Commands
 The following commands are available by right clicking on the column header of the Installers tab:
-* __Sorting__
+* __Sort by submenu:__
   * __Sort by Active:__ Active installers will be sorted to the top.
   * __Projects First:__ If this is checked, then project packages will be sorted to the top of the table.
+  * You can also select which field to sort installers by.
 * __Actions:__
   * __Open:__ Opens the Installers directory in Windows Explorer. 
   * __Refresh Data:__ Rescans the Data directory and all project directories. Since this operation takes a little while, this scan is ordinarily done only once per Bash session. So, if you have manually edited the directories after that one-time scan, you should run this command to update Bain to the changes.
@@ -646,23 +648,30 @@ The following commands are available by right clicking on the column header of t
 * __Availability__
   * __Avoid at Startup:__ Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you'll should Enable this.
   * __Enabled:__ This enables/disables Bain itself. Preferred setting: Enabled (checked).
-  * __Show Replacers Tab:__ If checked, will cause the Replacers tab to appear.
+  * __Show Replacers Tab:__ (Only if the Replacers Tab is enabled in bash.ini) If checked, will cause the Replacers tab to appear.
   * __Auto-Anneal:__ Toggles the auto-anneal process on/off. Preferred setting: enabled.
   * __Auto-Anneal/Install Wizard:__ Toggles whether or not to automatically install/anneal a package when finished with its wizard. (Available only if Wizard Install system is active)
-  * __Enable Wizard Install:__ Toggles whether the Wizard Install system is active; requires PyWin so if you don't have that and try to activate this Bash will crash. (Also settable in the bash.ini)
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
+  * __Auto-Refresh Bethsoft Content:__ Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs.  Enabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  Preferred setting: disabled.
 * __Behavior__
   * __BSA Redirection:__ Uses Quarn's [[http://devnull.sweetdanger.net/archiveinvalidation/|BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
   * __Clean Data Directory:__ If this is checked, then any empty subfolders of the Oblivion\Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves Oblivion.exe performance. 
-  * __Show Inactive Conflicts:__ If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it’s useful to review all conflicting packages.
+  * __Show Inactive Conflicts:__ If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
   * __Show Lower Conflicts:__ If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
+  * __Wizard Icon Overlay:__ If checked, installers with a Wizard will have a magic wand image displayed over their icons.
+* __Skips__
+  * __Skip OBSE Plugins:__ If checked, then files in teh Data\OBSE directory will be skipped.
   * __Skip Screenshots:__ If checked, then files from a Data\Screenshots directory will be skipped.
   * __Skip Images:__ If checked, image files will be skipped.
   * __Skip Docs:__ If checked, document files will be skipped vice being swept to the Docs\ directory.
   * __Skip DistantLOD:__ If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
+  * __Skip LOD Meshes:__ If checked, landscape LOD meshes will be skipped.
+  * __Skip LOD Textures:__ If checked, landscape LOD textures will be skipped.
+  * __Skip LOD Normals:__ If checked, landscape LOD normals will be skipped.
 
 == Replacers Tab ==============================================================
 **The Replacers Tab has now largely been replaced by the new [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
+__As of version 292:__ The Replacers tab is now only available if you enable it through bash.ini.  In future versions, the Replacers Tab may be removed entirely.
 
 __Note:__ By default, the Replacers tab will not appear if there are there are no files in the Replacers directory. You can get it to appear by using the "Show Replacers" option (see [[#|Package Header Commands]]).
 
@@ -673,7 +682,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * Go to the Installers tab and activate "BSA Redirection" from the main context menu (right click on the main column header).
 
 == Mods Tab ===================================================================
-<img src="images/WryeBash_01.png" width="686" height="502" style="border: 0;" alt="Mods Tab"></img>
+<img src="images/WryeBash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
 
 === Mods List
 * __Sorting__ 
@@ -691,31 +700,27 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * Note: When a mod is activated, it's master mods will also be activated. 
   * Conversely, when a mod is deactivated, any mods that depend on it (its "children") will also be deactivated.
 * __Text Colors__
-  * **Blue:** An esm file.
-  * **Green:** A mod marked as mergeable (see [[#|Merge Patches]]).
-  * **Black:** A normal esp.
-  * **Purple:** A mod tagged with NoMerge.
+  * **[color=blue]Blue:[/color]** An esm file.
+  * **[color=green]Green:[/color]** A mod marked as mergeable (see [[#|Merge Patches]]).
+  * **[color=black]Black:[/color]** A normal esp.
+  * **[color=purple]Purple:[/color]** A mod tagged with NoMerge.
 * __Line Colors__ 
-  * **Pink:** A file that shares a modification date/time with another file.
-    Not a problem unless they're both activated, in which case, the lines turn...
-  * **Orange:** Exclusion group violation. See [[#|Exclusion Groups]] below. 
-  * **Red:**
+  * **[bg=#FFDCDC]Pink:[/bg]** A file that shares a modification date/time with another file.  Not a problem unless they're both activated, in which case, the lines turn...
+  * **[bg=#FF6464]Red:[/bg]**
     * A file that shares a modification date/time with another file -- with both files being activated. This should definitely be corrected! Use details view to change the modification date of one of the files by a second or more.
     * An active file that has the 'Deactivate' tag.  The file should be deactivated to function properly.
-  * **Grey:** A file that is ghosted (see [[#|Auto-Ghost]])
+  * **[bg=#FF9900]Orange:[/bg]** Exclusion group violation. See [[#|Exclusion Groups]] below. 
+  * **[bg=#E8E8E8]Grey:[/bg]** A file that is ghosted (see [[#|Auto-Ghost]])
 * __Text Styles__
     * **__Slant__:** A file that is recommended to be imported and deactivated (i.e. has the 'Deactivate' tag).
     * __Normal:__ Any other file.
 * __Checkbox Types__
-  * Regular checkmark: mod is active.
-  * Plus sign (+) checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
-  * Dot (•) checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
-  * No checkmark: Mod is not active, imported or merged.
-* __Checkbox Colors__ 
-  <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue"></img>
-  <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green"></img>
-  <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange"></img>
-  <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red"></img>
+  * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.
+  * <img src="images/checkbox_green_inc.png" width="16" height="16" style="border: 0;" alt="Merged" /> Plus sign checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
+  * <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Imported" /> Dot checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
+  * <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: Mod is not active, imported or merged.
+* __Checkbox Colors__
+  * <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
   * Checkbox colors indicate the "health" of the mod file's master files. 
   * Blue or Green: Good.
   * Orange: Some mods have changed order. Oblivion and TESCS will adjust for this when you load. However, if some of the mods that you depend made conflicting changes to the same item, a different mod may now dominate because of the reordering.
@@ -733,7 +738,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 === Mod Details
 * Make changes to the file in the details view. 
 * __File Name__ Change the file name.
-  * Note that changes to the file name are **not** automatically reflected inany mods that have the current mod as their master. 
+  * Note that changes to the file name are **not** automatically reflected in any mods that have the current mod as their master. 
 * __Modification Time__ Change the file modification time. 
   * Note that this affects file order. 
 * __Author__ Change the author name.
@@ -800,6 +805,7 @@ These are the commands found on context menu for mods...
 
 === File Commands
 * __File Operations__ 
+  * **New Mod:**
   * **{{A:Backup}}** Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.
     * If multiple files are selected, this is done without any user input.
   * **{{A:Duplicate}}** Creates a duplicate of the file in the mods directory.
@@ -877,7 +883,7 @@ These are the commands found on context menu for mods...
 * __Generate Mapper File__
   * First, create a formid mapper file. This is a csv spreadsheet. You'll find an example at Oblivion\Data\Bash Patches\TI to Cobl_Formids.csv. 
     * The columns are: 
-      * Record type: (ACTI, INGR, etc.). Actually, Bash ignores this column, but it’s a good idea to have it set the type of the old formid.
+      * Record type: (ACTI, INGR, etc.). Actually, Bash ignores this column, but it's a good idea to have it set the type of the old formid.
       * Old Mod and Old Object: Together, these constitute the formid (long version) of the original object.
       * Old Eid: The editor id of the old object.
       * New Eid: The editor id of the new object.
@@ -1073,7 +1079,8 @@ These are the commands found on context menu for mods...
 * **Warning:** It's possible that using this command on mods built under newer versions of the CS may result in loss of some data. Use with caution.
 
 == Balo =======================================================================
-Bash Auto Load Ordering (aka Balo) will semi-automatically sort your mods into a few predefined groups. Currently it’s still necessary to specify for each mod which group it belongs to, but future versions of Balo may provide additional automation in this area.
+Bash Auto Load Ordering (aka Balo) will semi-automatically sort your mods into a few predefined groups. Currently it's still necessary to specify for each mod which group it belongs to, but future versions of Balo may provide additional automation in this area.
+__As of version 292:__ Balo and all of its options are disabled by default.  They can be enabled through bash.ini, however, Balo may be removed completely in future versions.
 
 **Warning: If you already have an established load order, using this feature will likely substantially rearrange them! Use at your own discretion!**
 
@@ -1369,7 +1376,7 @@ __Importers__ are components that import specific information from selected mods
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Factions.csv</code>. Note that the [[#ExportImportFactions|Export Factions]] command will export files in this format.
 * __Source CSV Files__
   * To get source csv files, export factions from an existing mod. This can then be edited as desired.
-  * Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
+  * Editor ids are shown for convenience only. Internally, it's the mod/object index pair that determines both the actor and the faction.
   * Faction lists do not need to be complete for each actor. I.e. you only need to list the actor/faction pairs that you wish to add/change. If a mod has an actor assigned to some faction, but the imported data doesn't address that rank, then the actor will retain that rank.
   * To remove an actor from a faction, set their rank to -1. (You can only do this in a spreadsheet.)
 * __Limitation__
@@ -1442,7 +1449,7 @@ __Importers__ are components that import specific information from selected mods
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Relations.csv</code>. Note that the [[#ExportImportRelations|Export Relations]] command will export files in this format.
 * __Source CSV Files__
   * To get source csv files, export relations from an existing mod. This can then be edited as desired.
-  * Editor ids are shown for convenience only. Internally, it’s the mod/object index pair that determines both the actor and the faction.
+  * Editor ids are shown for convenience only. Internally, it's the mod/object index pair that determines both the actor and the faction.
   * Relation lists do not need to be complete for each faction. I.e. you only need to list the main/other pairs that you wish to add/change.
 * __Limitation__
   * It should be kept in mind that changes to faction relationships will **not** have an effect in game for any factions that have had any of their relations changed during game play (through either the modFactionReaction or setFactionReaction command.) However, most factions are not altered in this way.
@@ -1629,7 +1636,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Bounty: Attack:__ The Bounty for attacking a "good" npc when observed.
 * __Bounty: Horse Theft:__ The Bounty for horse stealing.
 * __Bounty: Theft:__ The Bounty for stealing as a fraction of the item's value.
-* __Camera: Chase Distance:__ Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a bird’s eye view -- but also a little bit unbalancing for that reason.
+* __Camera: Chase Distance:__ Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a bird's eye view -- but also a little bit unbalancing for that reason.
 * __Camera: Chase Tightness:__ Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
 * __Camera: PC Death Time:__ This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
 * __Cell Respawn Time:__ Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
@@ -1842,30 +1849,32 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 
 == INI Edits Tab ==================================================================
-<img src="images/ini-oblivion.png" style="border: 1;" alt="INI Edits Tab"></img>
-<img src="images/ini-all natural.png" style="border: 1;" alt="INI Edits Tab"></img>
+<img src="images/ini-oblivion.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
+<img src="images/ini-all natural.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
 * This feature allows you to quickly modify an Ini file (such as Oblivion.ini) by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
 * Tweaks can also be applied to Ini files that contain scripts to configure mods.  These Ini tweak files are just like the script you're trying to tweak, except the contain ~~only~~ the settings that are to be changed.  Wrye Bash can modify any __set__ or __setGS__ commands in these script files.
+* Clicking on a tweak will show its contents, along with the status of each specific tweak in it:
+  * **[bg=#FFD5AA]Orange:[/bg]** The specific heading or tweak is invalid for the target ini.
+  * **[bg=#FFFFBF]Yellow:[/bg]** The specific tweak is different than the current setting in the target ini.
+  * **[bg=#C1FFC1]Green:[/bg]** The specific tweak matches what is in the target ini.
+* Clicking on a line in the tweak file or the target ini will show show scroll the tweak file or target ini (as applicable) to the matching line.
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another. 
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__ 
-  <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check"></img>
-  <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot"></img>
-  <img src="images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot"></img>
-  <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green"></img>
-  <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange"></img>
+  * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" /> <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" /> <img src="images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" /> <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />
   * Checkbox colors indicate the status of the ini tweak
-    * Orange: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
-    * Green: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
-    * Yellow with Dot: Valid, some of the settings in target Ini are the same, but some are not.
-    * Green with Dot: Valid, some of the settings in target Ini are the same, but some are not.  The ones that are not, ARE the same as another tweak file from the same installer.
-    * Green with Check: Valid and Active.
+    * <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
+    * <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" />: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
+    * <img src="images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.
+    * <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.  The ones that are not, ARE the same as another tweak file from the same installer.
+    * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" />: Valid and Active.
 
 === INI Tweaks Options
 * The drop down selection box chooses your target Ini file for applying the tweaks to.
 * __Remove__: Removes the target Ini from the drop down selection box.
 * __Edit__: Opens the target Ini file for editing. 
 * __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
+* __Open:__ Opens the INI Tweaks directory.
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
@@ -1874,21 +1883,17 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Delete:__ Delete the tweak file.
 
 == Saves Tab ==================================================================
-<img src="images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab"></img>
+<img src="images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
 
 === Saves List
-* __Checkbox Colors__ 
-  <img src="images/checkbox_purple_on.png" width="16" height="16" style="border: 0;" alt="Purple"></img>
-  <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue"></img>
-  <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green"></img>
-  <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange"></img>
-  <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red"></img>
-    * Checkbox colors indicate the "health" of the mod file's master files. 
-  * Purple: Good. Exactly synced with currently selected mods.
-  * Blue: Good. Compatible with currently selected mods. However, current mod set includes some mods that are not used by this save game.   
-  * Green: Good, but not in sync with currently selected mods. Use [[#|Load Masters]] to sync load list to this save.
-  * Orange: Some mods have changed order. Oblivion and TESCS will adjust for this when you load. However, if some of the mods that you depend made conflicting changes to the same item, a different mod may now dominate because of the reordering.
-  * Red: A master is missing. You should check to make sure that you have not inadvertently renamed or removed the mod.
+* __Checkbox Colors__
+  * <img src="images/checkbox_purple_on.png" width="16" height="16" style="border: 0;" alt="Purple" /> <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
+  * Checkbox colors indicate the "health" of the mod file's master files. 
+    * Purple: Good. Exactly synced with currently selected mods.
+    * Blue: Good. Compatible with currently selected mods. However, current mod set includes some mods that are not used by this save game.   
+    * Green: Good, but not in sync with currently selected mods. Use [[#|Load Masters]] to sync load list to this save.
+    * Orange: Some mods have changed order. Oblivion and TESCS will adjust for this when you load. However, if some of the mods that you depend made conflicting changes to the same item, a different mod may now dominate because of the reordering.
+    * Red: A master is missing. You should check to make sure that you have not inadvertently renamed or removed the mod.
 
 === Backup Files
 * When you autosave or quicksave, Oblivion backs up the previous version of the savefile (e.g. "autosave.ess" becomes "autosave.bak"). Bash includes these backup files in the Saves file listing. You can easily revert to any of these backup by renaming or duplicating the file to a new filename with extension "ess".
@@ -2286,6 +2291,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
     * Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
   * Added a cancel button to the Refresh Data progress bar.
+  * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
@@ -2303,7 +2309,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Various small UI improvements
   * regex for TesNexus searching updated to work with a few less  common mod archive name formats.
   * Support for BOSS 1.7.
-    
+  * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
+    * These features may be removed in future versions.
+  * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini  
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
