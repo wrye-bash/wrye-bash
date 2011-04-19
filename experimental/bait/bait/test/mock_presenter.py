@@ -43,26 +43,42 @@ _colorMap = {
     }
 _checkedIconMap = {
         view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_inc.png",
+        view_commands.ICON_PROJECT_MATCHES_WIZ:"images/diamond_green_inc_wiz.png",
         view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
+        view_commands.ICON_PROJECT_MISMATCHED_WIZ:"images/diamond_orange_inc_wiz.png",
         view_commands.ICON_PROJECT_MISSING:"images/diamond_red_inc.png",
-        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_inc.png",
-        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_inc.png",
+        view_commands.ICON_PROJECT_MISSING_WIZ:"images/diamond_red_inc_wiz.png",
+        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
+        view_commands.ICON_PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
+        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
         view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_inc.png",
+        view_commands.ICON_INSTALLER_MATCHES_WIZ:"images/checkbox_green_inc_wiz.png",
         view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
+        view_commands.ICON_INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_inc_wiz.png",
         view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_inc.png",
-        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_inc.png",
-        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_inc.png"
+        view_commands.ICON_INSTALLER_MISSING_WIZ:"images/checkbox_red_inc_wiz.png",
+        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        view_commands.ICON_INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
+        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 _uncheckedIconMap = {
         view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_off.png",
+        view_commands.ICON_PROJECT_MATCHES_WIZ:"images/diamond_green_off_wiz.png",
         view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_off.png",
+        view_commands.ICON_PROJECT_MISMATCHED_WIZ:"images/diamond_orange_off_wiz.png",
         view_commands.ICON_PROJECT_MISSING:"images/diamond_red_off.png",
+        view_commands.ICON_PROJECT_MISSING_WIZ:"images/diamond_red_off_wiz.png",
         view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
+        view_commands.ICON_PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
         view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
         view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_off.png",
+        view_commands.ICON_INSTALLER_MATCHES_WIZ:"images/checkbox_green_off_wiz.png",
         view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
+        view_commands.ICON_INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_off_wiz.png",
         view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_off.png",
+        view_commands.ICON_INSTALLER_MISSING_WIZ:"images/checkbox_red_off_wiz.png",
         view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        view_commands.ICON_INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
         view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 

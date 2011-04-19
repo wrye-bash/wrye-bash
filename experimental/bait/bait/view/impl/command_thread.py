@@ -92,7 +92,7 @@ class CommandThread(threading.Thread):
             wx.CallAfter(handler, viewCommand)
 
     def _set_style_maps(self, setStyleMapsCommand):
-        _logger.debug("setting color map: %s; unchecked icon map: %s; checked icon map: %s", setStyleMapsCommand.colorMap, setStyleMapsCommand.uncheckedIconMap, setStyleMapsCommand.checkedIconMap)
+        _logger.debug("setting color map: %s; checked icon map: %s; unchecked icon map: %s", setStyleMapsCommand.colorMap, setStyleMapsCommand.checkedIconMap, setStyleMapsCommand.uncheckedIconMap)
         colorMap = setStyleMapsCommand.colorMap
         self._colorMap = dict((key, wx.Color(*colorMap[key])) for key in colorMap)
         self._packageTree.set_checkbox_images(setStyleMapsCommand.checkedIconMap, setStyleMapsCommand.uncheckedIconMap)
