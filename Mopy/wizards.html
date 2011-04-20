@@ -963,7 +963,7 @@ EndIf
 </td></tr></table>
 <h1><a id='WizardtoOBMMScriptComparison'>Wizard to OBMM Script Comparison</a></h1>
 <table style="width:100%;"><tr valign="top"><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c; width:100%;">
-<p>This is a comparison ob OBMM's OMOD scripting language to BAIN's Wizards.
+<p>This is a comparison of OBMM's OMOD scripting language to BAIN's Wizards.
 </p>
 <h2><a id='FunctionalitywithdirectcorrelationtoOBMMScript'>Functionality with direct correlation to OBMM Script</a></h2>
 <table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
@@ -1027,7 +1027,7 @@ EndIf
 </p>
 <p><b>SelectWithDescriptionsAndPreviews <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:orange;">&lt;Description1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> <span style="color:orange;">[Description2]</span> [...]</b>
 </p>
-</td><td class="code"><p class="code-0"><a href="#SelectOne"><span style="color:blue;">SelectOne</span></a> <i>title</i>, <i>option1</i>, <i>description1</i>, <i>image1</i>, <i>option2</i>, <i>desciption2</i>, <i>image2</i> [...]</p><p class="code-0"></p></td></tr>
+</td><td class="code"><p class="code-0"><a href="#SelectOne"><span style="color:blue;">SelectOne</span></a> <i>title</i>, <i>option1</i>, <i>description1</i>, <i>image1</i>, <i>option2</i>, <i>description2</i>, <i>image2</i> [...]</p><p class="code-0"></p></td></tr>
 <tr><td class="code">
 <h3><a id='SelectManyspanstylecolorblueltTitlegtspanspanstylecolorgreenltOption1gtspanspanstylecolorpurpleOption2span'>SelectMany <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:purple;">[Option2]</span> [...]</a></h3>
 <p><b>SelectManyWithPreview <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> [...]</b>
@@ -1097,7 +1097,7 @@ EndIf
 <tr><td class="code">
 <h3><a id='ConflictWithspanstylecolorblueltModNamegtspanspanstylecolorpurpleCommentspanspanstylecolororangeLevelspan'>ConflictWith <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
 <h3><a id='DependsOnspanstylecolorblueltModNamegtspanspanstylecolorpurpleCommentspanspanstylecolororangeLevelspan'>DependsOn <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
-</td><td class="code"><p class="code-0">Similar functionality can be reproduces using <a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>modname</i>)</p><p class="code-0"></p></td></tr>
+</td><td class="code"><p class="code-0">Similar functionality can be reproduced using <a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>modname</i>)</p><p class="code-0"></p></td></tr>
 <tr><td class="code">
 <h3><a id='DontInstallDataFilespanstylecolorblueltFileNamegtspan'>DontInstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
 <h3><a id='InstallDataFilespanstylecolorblueltFileNamegtspan'>InstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
@@ -1105,7 +1105,7 @@ EndIf
 <h3><a id='InstallDataFolderspanstylecolorblueltFolderNamegtspanspanstylecolorbrownRecurseSubfoldersspan'>InstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
 <h3><a id='CopyDataFilespanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspan'>CopyDataFile <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></h3>
 <h3><a id='CopyDataFolderspanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspanspanstylecolorbrownRecurseSubfoldersspan'>CopyDataFolder <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
-</td><td class="code"><p class="code-0">Similar functionality can be obtained by packaging the mod differently, and then using <a href="#SelecSubPackage"><span style="color:blue;">SelecSubPackage</span></a> and <a href="#DeSelecSubPackage"><span style="color:blue;">DeSelecSubPackage</span></a></p><p class="code-0"></p></td></tr>
+</td><td class="code"><p class="code-0">Similar functionality can be obtained by packaging the mod differently, and then using <a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> and <a href="#DeSelectSubPackage"><span style="color:blue;">DeSelectSubPackage</span></a></p><p class="code-0"></p></td></tr>
 </table>
   <p class="empty">&nbsp;</p>
 <h2><a id='FunctionsinOBMMthatdonothaveanequivalentinWizards'>Functions in OBMM that do not have an equivalent in Wizards</a></h2>
@@ -1155,7 +1155,7 @@ EndIf
   <p class="empty">&nbsp;</p>
 <h2><a id='FunctionsinWizardsthatdonothaveanequivalentinOBMM'>Functions in Wizards that do not have an equivalent in OBMM</a></h2>
 <table style="width:100%;"><tr valign="top">
-<td class="code"><p class="code-0"><a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<i>version</i>)</p><p class="code-0"><a href="#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>(<i>plugin</i>)</p><p class="code-0"><a href="#str"><span style="color:purple;">str</span></a>(<i>value</i>)</p><p class="code-0"><a href="#int"><span style="color:purple;">int</span></a>(<i>value</i>)</p><p class="code-0"><a href="#float"><span style="color:purple;">float</span></a>(<i>value</i>)</p><p class="code-0"><a href="#SelectAll"><span style="color:blue;">SelectAll</span></a></p><p class="code-0"><a href="#DeSelectAll"><span style="color:blue;">DeSelectAll</span></a></p><p class="code-0"><a href="#SelectAllEspms"><span style="color:blue;">SelectAllEspms</span></a></p><p class="code-0"><a href="#DeSelectAllEspms"><span style="color:blue;">DeSelectAllEspms</span></a></p><p class="code-0"><a href="#While"><span style="color:blue;">While</span></a> <i>expresion</i></p><p class="code-1"><a href="#Continue"><span style="color:blue;">Continue</span></a></p><p class="code-1"><a href="#Break"><span style="color:blue;">Break</span></a></p><p class="code-0"><a href="#EndWhile"><span style="color:blue;">EndWhile</span></a></p><p class="code-1">Similar loops can be made using Label/Goto and If statements in OBMM.</p><p class="code-0"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>oblivion</i>, <i>obse</i>, <i>obge</i>, <i>wrye_bash</i></p><p class="code-0"></p></td></tr>
+<td class="code"><p class="code-0"><a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<i>version</i>)</p><p class="code-0"><a href="#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>(<i>plugin</i>)</p><p class="code-0"><a href="#str"><span style="color:purple;">str</span></a>(<i>value</i>)</p><p class="code-0"><a href="#int"><span style="color:purple;">int</span></a>(<i>value</i>)</p><p class="code-0"><a href="#float"><span style="color:purple;">float</span></a>(<i>value</i>)</p><p class="code-0"><a href="#SelectAll"><span style="color:blue;">SelectAll</span></a></p><p class="code-0"><a href="#DeSelectAll"><span style="color:blue;">DeSelectAll</span></a></p><p class="code-0"><a href="#SelectAllEspms"><span style="color:blue;">SelectAllEspms</span></a></p><p class="code-0"><a href="#DeSelectAllEspms"><span style="color:blue;">DeSelectAllEspms</span></a></p><p class="code-0"><a href="#While"><span style="color:blue;">While</span></a> <i>expression</i></p><p class="code-1"><a href="#Continue"><span style="color:blue;">Continue</span></a></p><p class="code-1"><a href="#Break"><span style="color:blue;">Break</span></a></p><p class="code-0"><a href="#EndWhile"><span style="color:blue;">EndWhile</span></a></p><p class="code-1">Similar loops can be made using Label/Goto and If statements in OBMM.</p><p class="code-0"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>oblivion</i>, <i>obse</i>, <i>obge</i>, <i>wrye_bash</i></p><p class="code-0"></p></td></tr>
 </table>
   <p class="empty">&nbsp;</p>
 <h2><a id='FunctionsthathavenomeaninginWryeBash'>Functions that have no meaning in Wrye Bash</a></h2>
