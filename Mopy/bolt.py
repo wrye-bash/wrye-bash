@@ -1551,6 +1551,8 @@ class WryeText:
     h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
     h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
     h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+    a:link { text-decoration:none; }
+    a:hover { text-decoration:underline; }
     p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
     p.empty {}
     p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
@@ -1559,8 +1561,15 @@ class WryeText:
     p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
     p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
     p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+    .code-0 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+    .code-1 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 1em; }
+    .code-2 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 2em; }
+    .code-3 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 3em; }
+    .code-4 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 4em; }
+    .code-5 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 5em; }
     pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
-    code { background-color: #FDF5E6;}
+    code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+    td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
     body { background-color: #ffffcc; }
     """
 
@@ -1585,6 +1594,39 @@ class WryeText:
         headFormatNA = "<h%d>%s</h%d>\n"
         #--List
         reList = re.compile(r'( *)([-x!?\.\+\*o])(.*)')
+        #--Code
+        reCode = re.compile(r'\[code\](.*?)\[/code\]',re.I)
+        reCodeStart = re.compile(r'\[code\](\s*)(.*?)',re.I)
+        reCodeLine = re.compile(r'(\s*)(.*)')
+        reCodeEnd = re.compile(r'(\s*)(.*?)\[/code\]',re.I)
+        def subCode(match):
+            if len(match.group(1)) > 0:
+                return '<p class="code-0">%s</p>' % match.group(1)
+            else:
+                return ''
+        def subCodeStart(match):
+            states['code'] = True
+            indent = min(len(match.group(1))/2, 5)
+            if len(match.group(2)) > 0:
+                return '<p class="code-%i">%s</p>' % (indent, match.group(2))
+            else:
+                return ''
+        def subCodeLine(match):
+            if states['code']:
+                indent = min(len(match.group(1))/2, 5)
+                if len(match.group(2)) > 0:
+                    return '<p class="code-%i">%s</p>' % (indent,match.group(2))
+                else:
+                    return ''
+            else:
+                return match.group(0)
+        def subCodeEnd(match):
+            if states['code']:
+                states['code'] = False
+                indent = min(len(match.group(1))/2, 5)
+                return '<p class="code-%i">%s</p>' % (indent,match.group(2))
+            else:
+                return '%s%s' % (match.group(1), match.group(2))
         #--Misc. text
         reHr = re.compile('^------+$')
         reEmpty = re.compile(r'\s+$')
@@ -1610,7 +1652,7 @@ class WryeText:
         reBold = re.compile(r'__')
         reItalic = re.compile(r'~~')
         reBoldItalic = re.compile(r'\*\*')
-        states = {'bold':False,'italic':False,'boldItalic':False}
+        states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
         def subBold(match):
             state = states['bold'] = not states['bold']
             return ('</b>','<b>')[state]
@@ -1678,7 +1720,17 @@ class WryeText:
             maList  = reList.match(line)
             maPar   = rePar.match(line)
             maEmpty = reEmpty.match(line)
-            #--Contents ----------------------------------
+            #--Code --------------------------------------
+            line = reCode.sub(subCode,line)
+            maCodeStart = reCodeStart.search(line)
+            maCodeEnd = reCodeEnd.search(line)
+            #--Contents
+            if maCodeStart:
+                line = reCodeStart.sub(subCodeStart, line)
+            elif maCodeEnd:
+                line = reCodeEnd.sub(subCodeEnd, line)
+            else:
+                line = reCodeLine.sub(subCodeLine,line)
             if maContents:
                 if maContents.group(1):
                     addContents = int(maContents.group(1))
@@ -1717,7 +1769,7 @@ class WryeText:
                 #--Title?
                 if not title and level <= 2: title = text
             #--Paragraph
-            elif maPar:
+            elif maPar and not states['code']:
                 line = '<p>'+line+'</p>\n'
             #--List item
             elif maList:
