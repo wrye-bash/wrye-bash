@@ -656,7 +656,7 @@ EndIf
 </td></tr></table>
 = Wizard to OBMM Script Comparison
 <table style="width:100%;"><tr valign="top"><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c; width:100%;">
-This is a comparison ob OBMM's OMOD scripting language to BAIN's Wizards.
+This is a comparison of OBMM's OMOD scripting language to BAIN's Wizards.
 == Functionality with direct correlation to OBMM Script
 <table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
 OBMM
@@ -743,7 +743,7 @@ __SelectWithPreview [color=blue]&lt;Title&gt;[/color] [color=green]&lt;Option1&g
 __SelectWithDescriptions [color=blue]&lt;Title&gt;[/color] [color=green]&lt;Option1&gt;[/color] [color=orange]&lt;Description1&gt;[/color] [color=purple][Option2][/color] [color=orange][Description2][/color] [...]__
 __SelectWithDescriptionsAndPreviews [color=blue]&lt;Title&gt;[/color] [color=green]&lt;Option1&gt;[/color] [color=brown]&lt;ImagePath1&gt;[/color] [color=orange]&lt;Description1&gt;[/color] [color=purple][Option2][/color] [color=blue][ImagePath2][/color] [color=orange][Description2][/color] [...]__
 </td><td class="code">[code]
-[[#|[color=blue]SelectOne[/color]]] ~~title~~, ~~option1~~, ~~description1~~, ~~image1~~, ~~option2~~, ~~desciption2~~, ~~image2~~ [...]
+[[#|[color=blue]SelectOne[/color]]] ~~title~~, ~~option1~~, ~~description1~~, ~~image1~~, ~~option2~~, ~~description2~~, ~~image2~~ [...]
 [/code]</td></tr>
 <tr><td class="code">
 ===SelectMany [color=blue]&lt;Title&gt;[/color] [color=green]&lt;Option1&gt;[/color] [color=purple][Option2][/color] [...]
@@ -836,7 +836,7 @@ Similar functionality can be reproduced using [[#|[color=blue]Note[/color]]] and
 ===ConflictWith [color=blue]&lt;ModName&gt;[/color] [color=purple][Comment][/color] [color=orange][Level][/color]
 ===DependsOn [color=blue]&lt;ModName&gt;[/color] [color=purple][Comment][/color] [color=orange][Level][/color]
 </td><td class="code">[code]
-Similar functionality can be reproduces using [[#|[color=blue]If[/color]]] [[#|[color=purple]DataFileExists[/color]]](~~modname~~)
+Similar functionality can be reproduced using [[#|[color=blue]If[/color]]] [[#|[color=purple]DataFileExists[/color]]](~~modname~~)
 [/code]</td></tr>
 <tr><td class="code">
 ===DontInstallDataFile [color=blue]&lt;FileName&gt;[/color]
@@ -846,7 +846,7 @@ Similar functionality can be reproduces using [[#|[color=blue]If[/color]]] [[#|[
 ===CopyDataFile [color=blue]&lt;CopyFrom&gt;[/color] [color=purple]&lt;CopyTo&gt;[/color]
 ===CopyDataFolder [color=blue]&lt;CopyFrom&gt;[/color] [color=purple]&lt;CopyTo&gt;[/color] [color=brown][RecurseSubfolders][/color]
 </td><td class="code">[code]
-Similar functionality can be obtained by packaging the mod differently, and then using [[#|[color=blue]SelecSubPackage[/color]]] and [[#|[color=blue]DeSelecSubPackage[/color]]]
+Similar functionality can be obtained by packaging the mod differently, and then using [[#|[color=blue]SelectSubPackage[/color]]] and [[#|[color=blue]DeSelectSubPackage[/color]]]
 [/code]</td></tr>
 </table>
 
@@ -909,7 +909,7 @@ Similar functionality can be obtained by packaging the mod differently, and then
 [[#|[color=blue]DeSelectAll[/color]]]
 [[#|[color=blue]SelectAllEspms[/color]]]
 [[#|[color=blue]DeSelectAllEspms[/color]]]
-[[#|[color=blue]While[/color]]] ~~expresion~~
+[[#|[color=blue]While[/color]]] ~~expression~~
   [[#|[color=blue]Continue[/color]]]
   [[#|[color=blue]Break[/color]]]
 [[#|[color=blue]EndWhile[/color]]]
