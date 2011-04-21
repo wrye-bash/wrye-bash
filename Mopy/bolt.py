@@ -163,6 +163,11 @@ class CancelError(BoltError):
     def __init__(self,message=_('Action aboted by user.')):
         BoltError.__init__(self, message)
 
+class SkipError(BoltError):
+    """User pressed 'Skip' on the progress meter."""
+    def __init__(self,message=_('Action skipped by user.')):
+        BoltError.__init__(self,message)
+
 # LowStrings ------------------------------------------------------------------
 class LString(object):
     """Strings that compare as lower case strings."""
@@ -1331,10 +1336,20 @@ deprintOn = False
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
+
     import inspect
     stack = inspect.stack()
     file,line,function = stack[1][1:4]
-    print '%s %4d %s: %s' % (GPath(file).tail.s,line,function,' '.join(map(str,args)))
+    msg = '%s %4d %s: %s' % (GPath(file).tail.s,line,function,' '.join(map(str,args)))
+
+    if keyargs.get('traceback',False):
+        import traceback, cStringIO
+        o = cStringIO.StringIO()
+        o.write(msg+'\n')
+        traceback.print_exc(file=o)
+        msg = o.getvalue()
+        o.close()
+    print msg
 
 def delist(header,items,on=False):
     """Prints list as header plus items."""
