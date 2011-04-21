@@ -2907,7 +2907,35 @@ class InstallersList(balt.Tank):
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
+        omodnames = [x for x in filenames if not x.isdir() and x.cext == '.omod']
         filenames = [x for x in filenames if x.isdir() or x.cext in ['.7z','.rar','.zip']]
+        if len(omodnames) > 0:
+            wx.BeginBusyCursor()
+            progress = balt.Progress(_('Extracting OMODs...'),' '*60)
+            progress.setFull(len(omodnames)+1)
+            failed = []
+            for i,omod in enumerate(omodnames):
+                progress(i+1,omod.stail)
+                outDir = bosh.dirs['installers'].join(omod.body)
+                if outDir.exists():
+                    if balt.askYes(progress.dialog,_("The project '%s' already exitsts.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
+                        outDir.rmtree(omod.sbody)
+                    else:
+                        continue
+                try:
+                    bosh.OmodFile(omod).extractToProject(outDir)
+                except:
+                    # Clean up
+                    failed.append('* ' + omod.stail)
+                    outDir.rmtree(omod.sbody)
+                    bosh.dirs['mopy'].join('temp').rmtree('temp')
+            progress(len(omodnames)+1,'Refreshing...')
+            self.data.refresh(what='I')
+            self.RefreshUI()
+            progress.Destroy()
+            wx.EndBusyCursor()
+            if len(failed) > 0:
+                balt.showWarning(self,_("The following OMODs failed to extract.  This could be a file IO error, or an unsupported OMOD format:\n\n")+'\n'.join(failed))
         if len(filenames) == 0:
             return
         action = settings['bash.installers.onDropFiles.action']
