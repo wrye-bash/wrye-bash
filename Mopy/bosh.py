@@ -7161,13 +7161,13 @@ class OmodFile:
         try:
             with bolt.BinaryFile(path.s) as file:
                 self.version = file.readByte() # OMOD version
-                self.modName = file.readString() # Mod name
+                self.modName = file.readNetString() # Mod name
                 self.major = file.readInt32() # Mod major version
                 self.minor = file.readInt32() # Mod minor version
-                self.author = file.readString() # author
-                self.email = file.readString() # email
-                self.website = file.readString() # website
-                self.desc = file.readString() # description
+                self.author = file.readNetString() # author
+                self.email = file.readNetString() # email
+                self.website = file.readNetString() # website
+                self.desc = file.readNetString() # description
                 if self.version >= 2:
                     self.ftime =file.readInt64() # creation time
                 else:
@@ -7326,7 +7326,7 @@ class OmodFile:
         with bolt.BinaryFile(path.s) as file:
             try:
                 while file.tell() < path.size:
-                    fileNames.append(file.readString())
+                    fileNames.append(file.readNetString())
                     crcs.append(file.readInt32())
                     sizes.append(file.readInt64())
             except:
