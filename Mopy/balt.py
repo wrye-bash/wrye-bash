@@ -25,7 +25,7 @@
 import bolt
 import bosh
 from bolt import _, GPath, deprint, delist
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 
 #--Python
 import cPickle
@@ -1010,8 +1010,9 @@ class Picture(wx.Window):
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_('Progress'),message=' '*60,parent=None,
-        style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False):
+        style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False, skip=False):
         if abort: style |= wx.PD_CAN_ABORT
+        if skip: style |= wx.PD_CAN_SKIP
         if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
         self.dialog = wx.ProgressDialog(title,message,100,parent,style)
         bolt.Progress.__init__(self)
@@ -1020,6 +1021,7 @@ class Progress(bolt.Progress):
         self.prevMessage = ''
         self.prevState = -1
         self.prevTime = 0
+        self.canSkip = skip
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
@@ -1032,11 +1034,17 @@ class Progress(bolt.Progress):
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
             if message != self.prevMessage:
-                if not self.dialog.Update(int(state*100),message)[0]:
+                ret = self.dialog.Update(int(state*100),message)
+                if not ret[0]:
                     raise CancelError
+                if self.canSkip and ret[1]:
+                    raise SkipError
             else:
-                if not self.dialog.Update(int(state*100))[0]:
+                ret = self.dialog.Update(int(state*100))
+                if not ret[0]:
                     raise CancelError
+                if self.canSkip and ret[1]:
+                    raise SkipError
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()
@@ -1132,7 +1140,8 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnDropFiles(self, x, y, filenames):
         if self.fnDropFiles:
-            self.fnDropFiles(x, y, filenames)
+            wx.CallLater(10,self.fnDropFiles,x,y,filenames)
+            #self.fnDropFiles(x, y, filenames)
             return
         # To be implemented by sub-classes
         raise AbstractError
@@ -1179,7 +1188,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.OnDropIndexes(indexes, index)
 
     def OnDropIndexes(self, indexes, newPos):
-        if self.fnDropIndexes: self.fnDropIndexes(indexes, newPos)
+        if self.fnDropIndexes:
+            wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
+            #self.fnDropIndexes(indexes, newPos)
 
     def dndAllow(self):
         if self.doDnD:

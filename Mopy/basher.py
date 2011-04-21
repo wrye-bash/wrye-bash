@@ -2923,12 +2923,20 @@ class InstallersList(balt.Tank):
                     else:
                         continue
                 try:
-                    bosh.OmodFile(omod).extractToProject(outDir)
+                    bosh.OmodFile(omod).extractToProject(outDir,progress)
                 except:
+                    bolt.deprint("Failed to extract 'omod.stail'.", traceback=True)
+
                     # Clean up
                     failed.append('* ' + omod.stail)
-                    outDir.rmtree(omod.sbody)
-                    bosh.dirs['mopy'].join('temp').rmtree('temp')
+                    try:
+                        outDir.rmtree(omod.sbody)
+                    except:
+                        bolt.deprint("Failed to clean up output dir:", traceback=True)
+                    try:
+                        bosh.dirs['mopy'].join('temp').rmtree('temp')
+                    except:
+                        bolt.deprint("Failed to clean up temp dir:", taceback=True)
             progress(len(omodnames)+1,'Refreshing...')
             self.data.refresh(what='I')
             self.RefreshUI()
