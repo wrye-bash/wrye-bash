@@ -1012,7 +1012,9 @@ class Progress(bolt.Progress):
     def __init__(self,title=_('Progress'),message=' '*60,parent=None,
         style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False, skip=False):
         if abort: style |= wx.PD_CAN_ABORT
-        if skip: style |= wx.PD_CAN_SKIP
+        if skip and wx.VERSION[:3] >= (2,8,12):
+            #style |= wx.PD_CAN_SKIP    # apparently this _wasn't_ fixed in 2.8.12 :(
+            pass
         if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
         self.dialog = wx.ProgressDialog(title,message,100,parent,style)
         bolt.Progress.__init__(self)
@@ -1021,7 +1023,6 @@ class Progress(bolt.Progress):
         self.prevMessage = ''
         self.prevState = -1
         self.prevTime = 0
-        self.canSkip = skip
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
@@ -1037,14 +1038,10 @@ class Progress(bolt.Progress):
                 ret = self.dialog.Update(int(state*100),message)
                 if not ret[0]:
                     raise CancelError
-                if self.canSkip and ret[1]:
-                    raise SkipError
             else:
                 ret = self.dialog.Update(int(state*100))
                 if not ret[0]:
                     raise CancelError
-                if self.canSkip and ret[1]:
-                    raise SkipError
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()
