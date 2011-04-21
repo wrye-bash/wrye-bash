@@ -7148,6 +7148,157 @@ class OblivionIni(IniFile):
         self.saveSetting('Archive','sArchiveList',sArchives)
 
 #------------------------------------------------------------------------------
+class OmodFile:
+    """Class for extracting data from omods."""
+    def __init__(self, path):
+        self.path = path
+
+    def readConfig(self,path):
+        """Read info about the omod from the 'config' file"""
+        file = bolt.BinaryFile(path.s)
+        self.version = file.readByte() # OMOD version
+        self.modName = file.readString() # Mod name
+        self.major = file.readInt32() # Mod major version
+        self.minor = file.readInt32() # Mod minor version
+        self.author = file.readString() # author
+        self.email = file.readString() # email
+        self.website = file.readString() # website
+        self.desc = file.readString() # description
+        if self.version >= 2:
+            self.ftime =file.readInt64() # creation time
+        else:
+            self.ftime = time.mktime(time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
+        self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
+        if self.version >= 1:
+            self.build = file.readInt32()
+        else:
+            self.build = -1
+        file.close()
+
+    def writeInfo(self, path, filename, readme, script):
+        file = path.open('w')
+        file.write('%s\n\n' % filename)
+        file.write('[basic info]\n')
+        file.write('Name: %s\n' % self.modName)
+        file.write('Author: %s\n' % self.author)
+        file.write('version:\n') # TODO, fix this
+        file.write('Contact: %s\n' % self.email)
+        file.write('Website: %s\n\n' % self.website)
+        file.write('%s\n\n' % self.desc)
+        #fTime = time.gmtime(self.ftime) #-error
+        #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
+        file.write('Contains readme: %s\n' % (['no','yes'][readme]))
+        file.write('Contains script: %s\n' % (['no','yes'][script]))
+        # Skip the reset that OBMM puts in
+        file.close()
+
+    def extractToProject(self,outDir):
+        """Extract the contents of the omod to a project, with omod conversion data"""
+        # First, extract the files to a temp directory
+        tempDir = dirs['mopy'].join('temp',self.path.body)
+        cmd7z = ['7z.exe','e','-r',self.path.s,'-o%s' % tempDir.s]
+        subprocess.call(cmd7z, startupinfo=startupinfo)
+
+        # Get compression type
+        self.readConfig(tempDir.join('config'))
+
+        # Collect OMOD conversion data
+        ocdDir = outDir.join('omod conversion data')
+        self.writeInfo(ocdDir.join('info.txt'), self.path.stail, tempDir.join('readme').exists(), tempDir.join('script').exists())
+        if tempDir.join('script').exists():
+            tempDir.join('script').moveTo(ocdDir.join('script.txt'))
+        if tempDir.join('readme').exists():
+            tempDir.join('readme').moveTo(outDir.join('readme.rtf'))
+        if tempDir.join('image').exists():
+            tempDir.join('image').moveTo(ocdDir.join('screenshot'))
+        tempDir.join('config').moveTo(ocdDir.join('config'))
+
+        # Extract the files
+        if self.compType == 0:
+            extract = self.extractFiles7z
+        else:
+            extract = self.extractFilesZip
+
+        if tempDir.join('plugins.crc').exists() and tempDir.join('plugins').exists():
+            extract(tempDir.join('plugins.crc'),tempDir.join('plugins'),outDir)
+        if tempDir.join('data.crc').exists() and tempDir.join('data').exists():
+            extract(tempDir.join('data.crc'),tempDir.join('data'),outDir)
+
+        # Clean up temp dir
+        dirs['mopy'].join('temp').rmtree('temp')
+
+    def extractFilesZip(self, crcPath, dataPath, outPath):
+        fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
+        if len(fileNames) == 0: return
+
+        # Extracted data stream is saved as a file named 'a'
+        cmd = ['7z','e','-r',dataPath.s,'-o%s' % outPath.s]
+        subprocess.call(cmd, startupinfo=startupinfo)
+
+        # Split the uncompress stream into files
+        self.splitStream(outPath.join('a'), outPath, fileNames, sizes)
+
+        # Clean up
+        outPath.join('a').remove()
+
+    def splitStream(self, streamPath, outDir, fileNames, sizes):
+        # Split the uncompressed stream into files
+        file = streamPath.open('rb')
+        for i,name in enumerate(fileNames):
+            outFile = outDir.join(name)
+            output = outFile.open('wb')
+            output.write(file.read(sizes[i]))
+            output.close()
+        file.close()
+
+    def extractFiles7z(self, crcPath, dataPath, outPath):
+        fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
+        if len(fileNames) == 0: return
+        totalSize = sum(sizes)
+
+        def lowByte(num): return int(bin(num)[-8:],2)
+
+        # Extract data stream to an uncompressed stream
+        file = dataPath.open('rb')
+        output = bolt.BinaryFile(outPath.join('data.tmp').s,'wb')
+        # Decoder properties
+        output.write(file.read(5))
+        # Next 8 bytes are the size of the data stream
+        for i in range(8):
+            out = totalSize >> (i*8)
+            output.writeByte(lowByte(out))
+        # Now copy the data stream
+        while file.tell() < dataPath.size:
+            output.write(file.read(512))
+        output.close()
+        # Now decompress
+        cmd = ['lzma','d',outPath.join('data.tmp').s, outPath.join('data.uncomp').s]
+        subprocess.call(cmd,startupinfo=startupinfo)
+
+        file.close()
+        output.close()
+
+        # Split the uncompressed stream into files
+        self.splitStream(outPath.join('data.uncomp'), outPath, fileNames, sizes)
+
+        # Clean up temp files
+        outPath.join('data.uncomp').remove()
+        outPath.join('data.tmp').remove()
+
+    def getFile_CrcSizes(self, path):
+        fileNames = list()
+        crcs = list()
+        sizes = list()
+
+        file = bolt.BinaryFile(path.s)
+        while file.tell() < path.size:
+            fileNames.append(file.readString())
+            crcs.append(file.readInt32())
+            sizes.append(file.readInt64())
+        file.close()
+        return fileNames,crcs,sizes
+
+#------------------------------------------------------------------------------
 class PluginsFullError(BoltError):
     """Usage Error: Attempt to add a mod to plugins when plugins is full."""
     def __init__(self,message=_('Load list is full.')):

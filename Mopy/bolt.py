@@ -32,7 +32,7 @@ import sys
 import time
 import subprocess
 from subprocess import Popen, PIPE
-from types import *
+import types
 from binascii import crc32
 import ConfigParser
 #-- To make commands executed with Popen hidden
@@ -585,6 +585,57 @@ class Path(object):
     def __cmp__(self, other):
         if isinstance(other,Path): return cmp(self._cs, other._cs)
         else: return cmp(self._cs, Path.getCase(other))
+
+#------------------------------------------------------------------------------
+class BinaryFile(types.FileType):
+    """file type object, usefull for writing specific bits of data."""
+    def __init__(self,*args,**kwdargs):
+        if len(args) < 2:
+            mode = kwdargs.get('mode',None)
+            if mode =='r': mode = 'rb'
+            elif mode == 'w': mode = 'wb'
+            elif mode == 'rb' or mode == 'wb':
+                pass
+            else: mode = 'rb'
+            kwdargs['mode'] = mode
+        else:
+            new_args = list(args)
+            if args[1] == 'r': new_args[1] == 'rb'
+            elif args[1] == 'w': new_args[1] == 'wb'
+            elif args[1] == 'rb' or args[1] == 'wb':
+                pass
+            else: new_args[1] = 'rb'
+            args = tuple(new_args)
+        types.FileType.__init__(self,*args,**kwdargs)
+
+    def readString(self):
+        total = 0
+        l = self.readByte()
+        while l == 255:
+            total += l
+            l = self.readByte()
+        total += l
+        return self.read(total)
+    def readByte(self): return struct.unpack('B',self.read(1))[0]
+    def readBytes(self, numBytes): return list(struct.unpack('b'*numBytes,self.read(numBytes)))
+    def readInt16(self): return struct.unpack('h',self.read(2))[0]
+    def readInt32(self): return struct.unpack('i',self.read(4))[0]
+    def readInt64(self): return struct.unpack('q',self.read(8))[0]
+
+    def writeString(self, text):
+        l = len(text)
+        bytes = []
+        while l > 255:
+            bytes.append(255)
+            l -= 255
+        bytes.append[l]
+        self.writeBytes(bytes)
+        self.write(text)
+    def writeByte(self, byte): self.write(struct.pack('B',byte))
+    def writeBytes(self, bytes): self.write(struct.pack('b'*len(bytes),*bytes))
+    def writeInt16(self, int16): self.write(struct.pack('h',int16))
+    def writeInt32(self, int32): self.write(struct.pack('i',int32))
+    def writeInt64(self, int64): self.write(struct.pack('q',int64))
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
