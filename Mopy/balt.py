@@ -1010,13 +1010,13 @@ class Picture(wx.Window):
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_('Progress'),message=' '*60,parent=None,
-        style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False, skip=False):
-        if abort: style |= wx.PD_CAN_ABORT
-        if skip and wx.VERSION[:3] >= (2,8,12):
-            #style |= wx.PD_CAN_SKIP    # apparently this _wasn't_ fixed in 2.8.12 :(
-            pass
+        style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False, onAbort=None):
+        if abort:
+            style |= wx.PD_CAN_ABORT
+            self.fnAbort = onAbort
         if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
         self.dialog = wx.ProgressDialog(title,message,100,parent,style)
+        self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
@@ -1029,6 +1029,11 @@ class Progress(bolt.Progress):
         if cancel:
             cancel.Enable(enabled)
 
+    def onAbort(self):
+        if self.fnAbort:
+            return self.fnAbort()
+        return True
+
     def doProgress(self,state,message):
         if not self.dialog:
             raise StateError(_('Dialog already destroyed.'))
@@ -1037,11 +1042,13 @@ class Progress(bolt.Progress):
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state*100),message)
                 if not ret[0]:
-                    raise CancelError
+                    if self.onAbort():
+                        raise CancelError
             else:
                 ret = self.dialog.Update(int(state*100))
                 if not ret[0]:
-                    raise CancelError
+                    if self.onAbort():
+                        raise CancelError
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()

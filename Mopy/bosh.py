@@ -86,10 +86,16 @@ from bolt import _, LString, GPath, Flags, DataDict, SubProgress, cstrip, deprin
 from cint import *
 startupinfo = bolt.startupinfo
 
+#--Unicode
 if bolt.bUseUnicode:
+    exe7z = '7zUnicode'
+    unicodeConvert = lambda text: unicode(text,'UTF-8')
     stringBuffer = StringIO.StringIO
 else:
+    exe7z = '7z'
+    unicodeConvert = lambda text: text
     stringBuffer = cStringIO.StringIO
+
 # Singletons, Constants -------------------------------------------------------
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
@@ -7158,128 +7164,166 @@ class OmodFile:
 
     def readConfig(self,path):
         """Read info about the omod from the 'config' file"""
-        try:
-            with bolt.BinaryFile(path.s) as file:
-                self.version = file.readByte() # OMOD version
-                self.modName = file.readNetString() # Mod name
-                self.major = file.readInt32() # Mod major version
-                self.minor = file.readInt32() # Mod minor version
-                self.author = file.readNetString() # author
-                self.email = file.readNetString() # email
-                self.website = file.readNetString() # website
-                self.desc = file.readNetString() # description
-                if self.version >= 2:
-                    self.ftime =file.readInt64() # creation time
-                else:
-                    self.ftime = time.mktime(time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
-                self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
-                if self.version >= 1:
-                    self.build = file.readInt32()
-                else:
-                    self.build = -1
-        except:
-            bolt.deprint("Failed to read proper OMOD config file format.")
-            raise
+        with bolt.BinaryFile(path.s) as file:
+            self.version = file.readByte() # OMOD version
+            self.modName = file.readNetString() # Mod name
+            self.major = file.readInt32() # Mod major version - getting weird numbers here though
+            self.minor = file.readInt32() # Mod minor version
+            self.author = file.readNetString() # author
+            self.email = file.readNetString() # email
+            self.website = file.readNetString() # website
+            self.desc = file.readNetString() # description
+            if self.version >= 2:
+                self.ftime =file.readInt64() # creation time
+            else:
+                self.ftime = time.mktime(time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
+            self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
+            if self.version >= 1:
+                self.build = file.readInt32()
+            else:
+                self.build = -1
 
     def writeInfo(self, path, filename, readme, script):
-        try:
-            with path.open('w') as file:
-                file.write('%s\n\n' % filename)
-                file.write('[basic info]\n')
-                file.write('Name: %s\n' % self.modName)
-                file.write('Author: %s\n' % self.author)
-                file.write('version:\n') # TODO, fix this
-                file.write('Contact: %s\n' % self.email)
-                file.write('Website: %s\n\n' % self.website)
-                file.write('%s\n\n' % self.desc)
-                #fTime = time.gmtime(self.ftime) #-error
-                #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
-                file.write('Contains readme: %s\n' % (['no','yes'][readme]))
-                file.write('Contains script: %s\n' % (['no','yes'][script]))
-                # Skip the reset that OBMM puts in
-        except:
-            bolt.deprint("Failed to write OMOD data to 'info.txt'.")
-            raise
+        with path.open('w') as file:
+            file.write('%s\n\n' % filename)
+            file.write('[basic info]\n')
+            file.write('Name: %s\n' % self.modName)
+            file.write('Author: %s\n' % self.author)
+            file.write('version:\n') # TODO, fix this?
+            file.write('Contact: %s\n' % self.email)
+            file.write('Website: %s\n\n' % self.website)
+            file.write('%s\n\n' % self.desc)
+            #fTime = time.gmtime(self.ftime) #-error
+            #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
+            file.write('Contains readme: %s\n' % (['no','yes'][readme]))
+            file.write('Contains script: %s\n' % (['no','yes'][script]))
+            # Skip the reset that OBMM puts in
+
+    def getOmodContents(self):
+        """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
+        # Get contents of archive
+        cmd7z = [exe7z, 'l', '-r', self.path.s]
+        filesizes = dict()
+        totalSize = 0
+        reFileSize = re.compile(unicodeConvert(r'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$'))
+        reFinalLine = re.compile(unicodeConvert(r'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*'))
+
+        with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
+            for line in ins:
+                line = unicodeConvert(line)
+                maFinalLine = reFinalLine.match(line)
+                if maFinalLine:
+                    totalSize = int(maFinalLine.group(1))
+                    break
+                maFileSize = reFileSize.match(line)
+                if maFileSize:
+                    size = int(maFileSize.group(1))
+                    name = maFileSize.group(2).strip().strip('\r')
+                    filesizes[name] = size
+        return filesizes,totalSize
 
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
+        if progress is None: progress = bolt.Progress()
         # First, extract the files to a temp directory
-        bolt.deprint("Extracting OMOD files:")
         tempDir = dirs['mopy'].join('temp',self.path.body)
-        cmd7z = ['7z.exe','e','-r',self.path.s,'-o%s' % tempDir.s]
-        subprocess.call(cmd7z, startupinfo=startupinfo)
 
-        bolt.deprint("Reading config file")
+        # Get contents of archive
+        sizes,total = self.getOmodContents()
+
+        # Extract the files
+        cmd7z = [exe7z,'e','-r',self.path.s,'-o%s' % tempDir.s]
+        reExtracting = re.compile(unicodeConvert(r'Extracting\s+(.+)'))
+        reError = re.compile(unicodeConvert(r'Error:'))
+        progress(0, '%s\nExtracting...' % self.path.stail)
+
+        subprogress = bolt.SubProgress(progress, 0, 0.4)
+        current = 0
+        with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
+            for line in ins:
+                line = unicodeConvert(line)
+                maExtracting = reExtracting.match(line)
+                if maExtracting:
+                    name = maExtracting.group(1).strip().strip('\r')
+                    size = sizes[name]
+                    subprogress(float(current)/total,_("%s\nExtracting...\n%s") % (self.path.stail, name))
+                    current += size
+
         # Get compression type
+        progress(0.4,'%s\Reading config' % self.path.stail)
         self.readConfig(tempDir.join('config'))
 
         # Collect OMOD conversion data
         ocdDir = outDir.join('omod conversion data')
-        bolt.deprint("Writing OMOD 'info.txt'")
+        progress(0.46, '%s\nCreating omod conversion data\ninfo.txt' % self.path.stail)
         self.writeInfo(ocdDir.join('info.txt'), self.path.stail, tempDir.join('readme').exists(), tempDir.join('script').exists())
+        progress(0.47, '%s\nCreating omod conversion data\nscript' % self.path.stail)
         if tempDir.join('script').exists():
-            bolt.deprint("Moving 'script'")
-            tempDir.join('script').moveTo(ocdDir.join('script.txt'))
+            with bolt.BinaryFile(tempDir.join('script').s) as input:
+                with ocdDir.join('script.txt').open('w') as output:
+                    output.write(input.readNetString())
+        progress(0.48, '%s\nCreating omod conversion data\nreadme.rtf' % self.path.stail)
         if tempDir.join('readme').exists():
-            bolt.deprint("Moving 'readme'")
-            tempDir.join('readme').moveTo(outDir.join('readme.rtf'))
+            with bolt.BinaryFile(tempDir.join('readme').s) as input:
+                with ocdDir.join('readme.rtf').open('w') as output:
+                    output.write(input.readNetString())
+        progress(0.49, '%s\nCreating omod conversion data\nscreenshot' % self.path.stail)
         if tempDir.join('image').exists():
-            bolt.deprint("Moving 'image'")
             tempDir.join('image').moveTo(ocdDir.join('screenshot'))
-        bolt.deprint("Moving 'config'")
+        progress(0.5,'%s\nCreating omod conversion data\nconfig' % self.path.stail)
         tempDir.join('config').moveTo(ocdDir.join('config'))
 
         # Extract the files
         if self.compType == 0:
             extract = self.extractFiles7z
-            bolt.deprint("OMOD uses 7z compression.")
         else:
             extract = self.extractFilesZip
-            bolt.deprint("OMOD uses Zip compression.")
 
+        pluginSize = sizes.get('plugins',0)
+        dataSize = sizes.get('data',0)
+        subprogress = bolt.SubProgress(progress, 0.5, 1)
         if tempDir.join('plugins.crc').exists() and tempDir.join('plugins').exists():
-            bolt.deprint("Extracting 'plugins'")
-            extract(tempDir.join('plugins.crc'),tempDir.join('plugins'),outDir)
+            pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
+            extract(tempDir.join('plugins.crc'),tempDir.join('plugins'),outDir,pluginProgress)
         if tempDir.join('data.crc').exists() and tempDir.join('data').exists():
-            bolt.deprint("Extracting 'data'")
-            extract(tempDir.join('data.crc'),tempDir.join('data'),outDir)
+            dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
+            extract(tempDir.join('data.crc'),tempDir.join('data'),outDir,dataProgress)
+        progress(1,'%s\nExtracted' % self.path.stail)
 
         # Clean up temp dir
-        bolt.deprint("Cleaning up temp directory")
         dirs['mopy'].join('temp').rmtree('temp')
 
-    def extractFilesZip(self, crcPath, dataPath, outPath):
-        bolt.deprint("Reading filenames, sizes, and crcs.")
+    def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
 
         # Extracted data stream is saved as a file named 'a'
-        bolt.deprint("Extracting '%s'" % dataPath.s)
-        cmd = ['7z','e','-r',dataPath.s,'-o%s' % outPath.s]
+        progress(0,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
+        cmd = [exe7z,'e','-r',dataPath.s,'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
-        bolt.deprint("Splitting 'a' into individual files.")
-        self.splitStream(outPath.join('a'), outPath, fileNames, sizes)
+        progress(0.7,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
+        self.splitStream(outPath.join('a'), outPath, fileNames, sizes,
+                         bolt.SubProgress(progress,0.7,1.0,len(fileNames))
+                         )
+        progress(1)
 
         # Clean up
-        bolt.deprint("Cleaning up temproary files.")
         outPath.join('a').remove()
 
-    def splitStream(self, streamPath, outDir, fileNames, sizes):
+    def splitStream(self, streamPath, outDir, fileNames, sizes, progress):
         # Split the uncompressed stream into files
+        progress(0, '%s\nUnpacking %s' % (self.path.stail,streamPath.stail))
         with streamPath.open('rb') as file:
             for i,name in enumerate(fileNames):
+                progress(i,'%s\nUnpacking %s\n%s' % (self.path.stail, streamPath.stail, name))
                 outFile = outDir.join(name)
-                try:
-                    with outFile.open('wb') as output:
-                        output.write(file.read(sizes[i]))
-                except:
-                    bolt.deprint("Error writing to output file '%s'." % outFile.s)
-                    raise
+                with outFile.open('wb') as output:
+                    output.write(file.read(sizes[i]))
+        progress(len(fileNames))
 
-    def extractFiles7z(self, crcPath, dataPath, outPath):
-        bolt.deprint("Reading filenames, sizes, and crcs.")
+    def extractFiles7z(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         totalSize = sum(sizes)
@@ -7287,36 +7331,44 @@ class OmodFile:
         def lowByte(num): return int(bin(num)[-8:],2)
 
         # Extract data stream to an uncompressed stream
-        bolt.deprint("Rewriting '%s' to a format lzma can read." % dataPath.stail)
+        subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
+        subprogress(0,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
         with dataPath.open('rb') as file:
-            try:
-                with bolt.BinaryFile(outPath.join('data.tmp').s,'wb') as output:
-                    # Decoder properties
-                    output.write(file.read(5))
-                    # Next 8 bytes are the size of the data stream
-                    for i in range(8):
-                        out = totalSize >> (i*8)
-                        output.writeByte(lowByte(out))
-                    # Now copy the data stream
-                    while file.tell() < dataPath.size:
-                        output.write(file.read(512))
-            except:
-                bolt.deprint("Error while writing data to 'data.tmp'")
-                raise
+            done = 0
+            with bolt.BinaryFile(outPath.join(dataPath.sbody+'.tmp').s,'wb') as output:
+                # Decoder properties
+                output.write(file.read(5))
+                done += 5
+                subprogress(5)
+
+                # Next 8 bytes are the size of the data stream
+                for i in range(8):
+                    out = totalSize >> (i*8)
+                    output.writeByte(lowByte(out))
+                    done += 1
+                    subprogress(done)
+
+                # Now copy the data stream
+                while file.tell() < dataPath.size:
+                    output.write(file.read(512))
+                    done += 512
+                    subprogress(done)
 
         # Now decompress
-        bolt.deprint("Decompressing 'data.tmp' to 'data.uncomp'")
-        cmd = ['lzma','d',outPath.join('data.tmp').s, outPath.join('data.uncomp').s]
+        progress(0.3)
+        cmd = ['lzma','d',outPath.join(dataPath.sbody+'.tmp').s, outPath.join(dataPath.sbody+'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
+        progress(0.8)
 
         # Split the uncompressed stream into files
-        bolt.deprint("Splitting 'data.uncomp' into individual files.")
-        self.splitStream(outPath.join('data.uncomp'), outPath, fileNames, sizes)
+        self.splitStream(outPath.join(dataPath.sbody+'.uncomp'), outPath, fileNames, sizes,
+                         bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
+                         )
+        progress(1)
 
         # Clean up temp files
-        bolt.deprint("Cleaning up temp files.")
-        outPath.join('data.uncomp').remove()
-        outPath.join('data.tmp').remove()
+        outPath.join(dataPath.sbody+'.uncomp').remove()
+        outPath.join(dataPath.sbody+'.tmp').remove()
 
     def getFile_CrcSizes(self, path):
         fileNames = list()
@@ -7324,14 +7376,10 @@ class OmodFile:
         sizes = list()
 
         with bolt.BinaryFile(path.s) as file:
-            try:
-                while file.tell() < path.size:
-                    fileNames.append(file.readNetString())
-                    crcs.append(file.readInt32())
-                    sizes.append(file.readInt64())
-            except:
-                bolt.deprint("Error while reading '%s'." % path.stail)
-                raise
+            while file.tell() < path.size:
+                fileNames.append(file.readNetString())
+                crcs.append(file.readInt32())
+                sizes.append(file.readInt64())
         return fileNames,crcs,sizes
 
 #------------------------------------------------------------------------------
@@ -10370,15 +10418,17 @@ class Installer(object):
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
         if pending:
+            totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
+            done = 0
             progress(0,_("%s\nCalculating CRCs...\n") % rootName)
-            progress.setFull(1+len(pending))
+            progress.setFull(totalSize)
             for index,rpFile in enumerate(sorted(pending)):
-                progress(index,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
-                #print rpFile.s
+                progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
                 apFile = apRootJoin(normGet(rpFile,rpFile))
-                crc = apFile.crc
                 size = apFile.size
+                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+apFile.size))
                 date = apFile.mtime
+                done += size
                 new_sizeCrcDate[rpFile] = (size,crc,date)
         old_sizeCrcDate.clear()
         old_sizeCrcDate.update(new_sizeCrcDate)
