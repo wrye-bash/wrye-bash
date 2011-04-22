@@ -6627,7 +6627,7 @@ else:
         CBash_ActorAnimPatcher(),
         CBash_ActorImporter(),
         CBash_DeathItemPatcher(),
-##        CBash_NPCAIPackagePatcher(),
+        CBash_NPCAIPackagePatcher(),
         CBash_CoblExhaustion(),
         CBash_UpdateReferences(),
         CBash_CellImporter(),
@@ -9293,6 +9293,22 @@ class Mods_ListMods(Link):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
         balt.showLog(self.window,text,_("Active Mod Files"),asDialog=False,fixedFont=False,icons=bashBlue)
+
+#------------------------------------------------------------------------------
+class Mods_ListBashTags(Link):
+    """Copies list of bash tags to clipboard."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("List Bash Tags..."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        #--Get masters list
+        text = bosh.modInfos.getTagList()
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_("Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_LockTimes(Link):
@@ -14499,6 +14515,7 @@ def InitModLinks():
     ModList.mainMenu.append(Files_Unhide('mod'))
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
+    ModList.mainMenu.append(Mods_ListBashTags())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
     if bosh.inisettings['bEnableBalo']:
