@@ -398,6 +398,9 @@ Here's a brief getting started guide. You may have to read sections further down
 * __Install Directory__
   * As noted below, Bain looks for packages in the __Oblivion Mods\Bash Installers__ directory. Easiest way to get started with Bain is to just grab all your old mod archives and move them to the Installers directory. Then return to the Installers directory to see Bain's evaluation. 
   * If you're a modder with existing project directories, you can move those to the Installers directory too.
+  * You can also drag and drop your project directories, Zip, RAR, 7zip, and OMOD files directly onto the BAIN window.
+    * For project directories, and archives, you will be asked if you want to move or copy the files
+    * For OMODs, they will be unpacked into projects.
 * __Reviewing Package Status__
   * Some packages may be green, but most (even ones that you have previously installed) will likely be red. (Even if you have installed a package, Bain's [[#|Doc File Sweeping]] means that some files will be in unexpected places. 
   * For each package, you can select it, and then review its details in the Debug text box. In particular, look for Missing and Overridden files.
@@ -2293,6 +2296,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
+  * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
