@@ -2910,40 +2910,68 @@ class InstallersList(balt.Tank):
         omodnames = [x for x in filenames if not x.isdir() and x.cext == '.omod']
         filenames = [x for x in filenames if x.isdir() or x.cext in ['.7z','.rar','.zip']]
         if len(omodnames) > 0:
-            wx.BeginBusyCursor()
-            progress = balt.Progress(_('Extracting OMODs...'),' '*60)
-            progress.setFull(len(omodnames)+1)
             failed = []
-            for i,omod in enumerate(omodnames):
-                progress(i+1,omod.stail)
-                outDir = bosh.dirs['installers'].join(omod.body)
-                if outDir.exists():
-                    if balt.askYes(progress.dialog,_("The project '%s' already exitsts.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
-                        outDir.rmtree(omod.sbody)
-                    else:
-                        continue
-                try:
-                    bosh.OmodFile(omod).extractToProject(outDir,progress)
-                except:
-                    bolt.deprint("Failed to extract '%s'.\n\n" % omod.stail, traceback=True)
+            completed = []
+            progress = balt.Progress(_('Extracting OMODs...'),'\n'+' '*60,abort=True)
+            progress.setFull(len(omodnames))
+            try:
+                for i,omod in enumerate(omodnames):
+                    progress(i,omod.stail)
+                    outDir = bosh.dirs['installers'].join(omod.body)
+                    if outDir.exists():
+                        if balt.askYes(progress.dialog,_("The project '%s' already exitsts.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
+                            outDir.rmtree(omod.sbody)
+                        else:
+                            continue
+                    try:
+                        bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
+                        completed.append(omod)
+                    except CancelError:
+                        # Clean up from current omod that is extracting
+                        try:
+                            outDir.rmtree(omod.sbody)
+                        except:
+                            bolt.deprint("Failed to clean up output dir:\n", traceback=True)
+                        try:
+                            bosh.dirs['mopy'].join('temp').rmtree('temp')
+                        except:
+                            bolt.deprint("Failed to clean up temp dir:\n", traceback=True)
+                        raise
+                    except:
+                        bolt.deprint("Failed to extract '%s'.\n\n" % omod.stail, traceback=True)
 
-                    # Clean up
-                    failed.append('* ' + omod.stail)
-                    try:
-                        outDir.rmtree(omod.sbody)
-                    except:
-                        bolt.deprint("Failed to clean up output dir:\n", traceback=True)
-                    try:
-                        bosh.dirs['mopy'].join('temp').rmtree('temp')
-                    except:
-                        bolt.deprint("Failed to clean up temp dir:\n", taceback=True)
-            progress(len(omodnames)+1,'Refreshing...')
-            self.data.refresh(what='I')
-            self.RefreshUI()
-            progress.Destroy()
-            wx.EndBusyCursor()
-            if len(failed) > 0:
-                balt.showWarning(self,_("The following OMODs failed to extract.  This could be a file IO error, or an unsupported OMOD format:\n\n")+'\n'.join(failed))
+                        # Clean up
+                        failed.append(' * ' + omod.stail)
+                        try:
+                            outDir.rmtree(omod.sbody)
+                        except:
+                            bolt.deprint("Failed to clean up output dir:\n", traceback=True)
+                        try:
+                            bosh.dirs['mopy'].join('temp').rmtree('temp')
+                        except:
+                            bolt.deprint("Failed to clean up temp dir:\n", taceback=True)
+            except CancelError:
+                skipped = set(omodnames) - set(completed)
+                msg = ''
+                if len(completed) > 0:
+                    completed = [' * ' + x.stail for x in completed]
+                    msg += _("The following OMOds were unpacked:\n%s\n\n") % '\n'.join(completed)
+                if len(skipped) > 0:
+                    skipped = [' * ' + x.stail for x in skipped]
+                    msg += _("The following OMODs were skipped:\n%s\n\n") % '\n'.join(skipped)
+                if len(failed) > 0:
+                    msg += _("The following OMODs failed to extract:\n%s") % '\n'.join(failed)
+                balt.showOk(self,msg,_("OMOD Extraction Canceled"))
+            else:
+                if len(failed) > 0:
+                    balt.showWarning(self,
+                                     _("The following OMODs failed to extract.  This could be a file IO error, or an unsupported OMOD format:\n\n")+'\n'.join(failed),
+                                     _("OMOD Extraction Complete"))
+            finally:
+                progress(len(omodnames),'Refreshing...')
+                self.data.refresh(what='I')
+                self.RefreshUI()
+                progress.Destroy()
         if len(filenames) == 0:
             return
         action = settings['bash.installers.onDropFiles.action']
