@@ -1,4 +1,4 @@
-Continuing from the [topic=1171625]previous thread[/topic]...
+Continuing from the [topic=1176905]previous thread[/topic]...
 
 Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I mean a LOT.  It's like twenty tools rolled into one.  It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has.
 
@@ -8,7 +8,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [list]
 [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html"]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
 [*][url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP Wrye Bash unofficial wiki[/url]
-[*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide for Newbies[/url]
+[*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
 [*]Waruddar's Bashed Patch option reference (see bottom of this post)
 [/list]
 [b]Screenshots[/b]: [url="http://wryemusings.com/images/WryeBash_01.png"]Mods Tab + Doc Viewer[/url], [url="http://wryemusings.com/images/WryeBash_02.png"]Saves Tab[/url], [url="http://wryemusings.com/images/WryeBash_03.png"]Face Import[/url], [url="http://wryemusings.com/images/WryeBash_05.png"]Bashed Patch[/url]
@@ -21,14 +21,14 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
   [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py25.exe"]wxPython 2.8.11.0 ansi for Python 2.5[/url]
   [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a
   [*][url="http://sourceforge.net/projects/psyco/files/psyco/1.6/psyco-1.6.win32-py25.exe/download"]psyco 1.6 for Python 2.5[/url] (optional)
-  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.5.exe/download"]PyWin32 for Python 2.5[/url][/list][*]Python 2.6: *included in Wrye Python 03a[list]
+  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.5.exe/download"]PyWin32 for Python 2.5[/url][/list][*]Python 2.6: *included in Wrye Python 03a (With the exception of wxPython 2.8.12.0 ansi - 03a includes 2.8.11.0)[list]
   [*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url]
-  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe"]wxPython 2.8.11.0 ansi for Python 2.6[/url]
+  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe"]wxPython 2.8.12.0 ansi for Python 2.6[/url]
   [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
   [*][url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url] (optional)
   [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download"]PyWin32 for Python 2.6[/url][/list][*]Python 2.7:[list]
   [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
-  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py27.exe"]wxPython 2.8.11.0 for Python 2.7[/url]
+  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe"]wxPython 2.8.12.0 ansi for Python 2.7[/url]
   [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a
   [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Python 3.x: [b][u]NOT Supported[/b][/u]
 [*]Other setups _may_work, but these are probably the most widely used and tested.[/list][/spoiler][*]If you're trying out the new Beta Standalone versions, you don't need [i]any[/i] of the Python components, however you may need the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url], although this could change in the future (it [i]is[/i] beta afterall).

@@ -618,6 +618,9 @@
 <p class="list-1">&bull;&nbsp;  <b>Install Directory</b></p>
   <p class="list-2">&bull;&nbsp;  As noted below, Bain looks for packages in the <b>Oblivion Mods\Bash Installers</b> directory. Easiest way to get started with Bain is to just grab all your old mod archives and move them to the Installers directory. Then return to the Installers directory to see Bain's evaluation. </p>
   <p class="list-2">&bull;&nbsp;  If you're a modder with existing project directories, you can move those to the Installers directory too.</p>
+  <p class="list-2">&bull;&nbsp;  You can also drag and drop your project directories, Zip, RAR, 7zip, and OMOD files directly onto the BAIN window.</p>
+    <p class="list-3">&bull;&nbsp;  For project directories, and archives, you will be asked if you want to move or copy the files</p>
+    <p class="list-3">&bull;&nbsp;  For OMODs, they will be unpacked into projects.</p>
 <p class="list-1">&bull;&nbsp;  <b>Reviewing Package Status</b></p>
   <p class="list-2">&bull;&nbsp;  Some packages may be green, but most (even ones that you have previously installed) will likely be red. (Even if you have installed a package, Bain's <a href="#DocFileSweeping">Doc File Sweeping</a> means that some files will be in unexpected places. </p>
   <p class="list-2">&bull;&nbsp;  For each package, you can select it, and then review its details in the Debug text box. In particular, look for Missing and Overridden files.</p>
@@ -2583,6 +2586,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.</p>
   <p class="list-2">&bull;&nbsp;  Added a cancel button to the Refresh Data progress bar.</p>
   <p class="list-2">&bull;&nbsp;  New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.</p>
+  <p class="list-2">&bull;&nbsp;  Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.</p>
 <p class="list-1">&bull;&nbsp;  General:</p>
   <p class="list-2">&bull;&nbsp;  Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).</p>
   <p class="list-2">&bull;&nbsp;  Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.</p>
