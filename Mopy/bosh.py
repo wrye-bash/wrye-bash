@@ -9058,6 +9058,26 @@ class ModInfos(FileInfos):
         if not wtxt: log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 
+    def getTagList(self,fileInfo=None):
+        """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
+        Either for all mods in the data folder or if specified for one specific mod.
+        """
+        tagList = '=== Current Bash Tags:\n'
+        if fileInfo:
+            print fileInfo.getPath()
+            print fileInfo.getPath().stail
+            tagList += '* ' + fileInfo.getPath()
+        else:
+            for modInfo in sorted(modInfos.data.values()):
+                tagList += '\n* ' + modInfo.name.s + '\n'
+                tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc() or '')) + '\n'
+                tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name) or '')) + '\n'
+                tagList += '  * Removed by  BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name) or '')) + '\n'
+                tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags() or '')) + '\n'
+        #print tagList
+        return tagList
+        
     #--Mod Specific ----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""
@@ -9631,7 +9651,7 @@ class ConfigHelpers:
         reFcomSwitch = re.compile('^[<>]')
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
-        reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
+        reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
         reDirty = re.compile(r'IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
         if path.exists():
             if path.mtime != mtime:
@@ -10000,7 +10020,7 @@ class Messages(DataDict):
         reAuthorNew     = re.compile('<h3><a href=["\']http\://forums\.bethsoft\.com/index\.php\?/user/.*?/["\']>(.*?)</a></h3>')
         reDateNew       = re.compile('Sent (.*?)$')
         reMessageNew    = re.compile('<div class=["\']post entry-content["\']>')
-        reEndMessageNew = re.compile('^		</div>$')
+        reEndMessageNew = re.compile('^        </div>$')
         #Old style re's
         reBody         = re.compile('<body>')
         reWrapper      = re.compile('<div id=["\']ipbwrapper["\']>') #--Will be removed
@@ -10079,12 +10099,12 @@ class Messages(DataDict):
                     if reMessageNew.search(line):
                         buff = stringBuffer()
                         buff.write('<br /><div class="borderwrapm">\n')
-                        buff.write('	<div class="maintitle">PM: %s</div>\n' % subject)
-                        buff.write('	<div class="tablefill"><div class="postcolor">')
+                        buff.write('    <div class="maintitle">PM: %s</div>\n' % subject)
+                        buff.write('    <div class="tablefill"><div class="postcolor">')
                         mode = MESSAGEBODY
                 elif mode == MESSAGEBODY:
                     if reEndMessageNew.search(line):
-                        buff.write('	<div class="formsubtitle">Sent by <b>%s</b> on %s</div>\n' % (author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
+                        buff.write('    <div class="formsubtitle">Sent by <b>%s</b> on %s</div>\n' % (author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
                         messageKey = '::'.join((subject,author,`int(date)`))
                         self.data[messageKey] = (subject,author,date,buff.getvalue())
                         buff.close()
@@ -20400,11 +20420,14 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.id_Added = {}
         self.id_Deleted = {}
-        self.id_Moved = {}
         self.previousPackages = {}
+        self.mergedPackageList = {}
         self.mod_count = {}
+        if "Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs:
+            if "Unofficial Oblivion Patch.esp" in self.srcs:
+                self.OOOandUOP = True
+        else: self.OOOandUOP = False
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20415,52 +20438,80 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if modFile.GName in self.srcs:
             recordId = record.fid
             newPackages = record.aiPackages
-            oldPackages = self.previousPackages.get(recordId, [])
-            if oldPackages == []:
-                oldPackages = newPackages
-                return
-##            merged = [] * len(oldPackages)
-            for oldIndex, oldPackage in enumerate(oldPackages):
-                for newIndex, newPackage in enumerate(newPackages):
-                    if oldPackage == newPackage:
-                        if newIndex == oldIndex:
-                            break
-                        else:
-                            test = self.id_Moved.setdefault(recordId,{})
-                            test[oldPackage] = (oldIndex, newIndex)
-                            break
-                else:
-                    test = self.id_Deleted.setdefault(recordId,{})
-                    test[oldPackage] = (oldIndex, oldIndex)
+            oldPackages = self.previousPackages.get(recordId, None)
+            if not oldPackages:
+                self.previousPackages[recordId] = {}
+                self.previousPackages[recordId][modFile.GName] = newPackages
+                self.mergedPackageList[recordId] = newPackages
+                ##return
+            else: 
+                self.previousPackages[recordId][modFile.GName] = newPackages
+            mergedPackages = self.mergedPackageList[recordId]
+            if newPackages == mergedPackages: return #same as the current list, just skip.
+            if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
+            deletedPackages = self.id_Deleted[recordId]
+            for master in reversed(modFile.TES4.masters):
+                if master in previousPackages:
+                    #do the actual stuff here - only needs to be done for the last master that is in the records.
+                        for oldIndex, oldPackage in enumerate(oldPackages):
+                            if oldPackage not in newPackages: 
+                                deletedPackages.append(oldPackage)
+                            for newIndex, newPackage in enumerate(newPackages):
+                                if newPackage in deletedPackages and not 'Actors.AIPackagesForceAdd' in bashTags: continue
+                                if oldPackage == newPackage:
+                                    if newIndex == oldIndex:
+                                        break
+                                    else:
+                                        if newIndex == 0:
+                                            mergedPackages.insert(0,newPackage)
+                                        elif newIndex == (len(newPackages)-1):
+                                            mergedPackages.append(newPackage)
+                                        else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
+                                            i = newIndex - 1
+                                            while i >= 0:
+                                                if newPackage[i] in mergedPackages:
+                                                    slot = mergedPackages.index(newPackage[i])+1
+                                                    mergedPackagesinsert(slot, pkg)
+                                                    break
+                                                i -= 1
+                                            else:
+                                                i = newIndex + 1
+                                                while i != len(newPackages):
+                                                    if recordData['merged'][i] in data[fid]['merged']:
+                                                        slot = data[fid]['merged'].index(recordData['merged'][i])
+                                                        data[fid]['merged'].insert(slot, pkg)
+                                                        break
+                                                    i += 1
+                                            continue # Done with this package
+                                
 
-            for newIndex, newPackage in enumerate(newPackages):
-                for oldIndex, oldPackage in enumerate(oldPackages):
-                    if newPackage == oldPackage:
-                        break
-                else:
-                    if newPackage not in self.id_Deleted.get(recordId, {}):
-                        test = self.id_Added.setdefault(recordId,{})
-                        test[newPackage] = (newIndex, newIndex)
-            self.previousPackages[recordId] = newPackages
-        else:
-            self.previousPackages[recordId] = record.aiPackages
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        recordId = record.fid
-        if (recordId in self.id_Added or recordId in self.id_Deleted or recordId in self.id_Moved):
-            if (modFile.GName in self.srcs):
-                return
-            merged = record.aiPackages
-            merged += [package for package in self.id_Added.get(recordId, {}).keys() if package not in merged]
-            merged = [package for package in merged if package not in self.id_Deleted.get(recordId, {}).keys()]
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
 
-            if(record.aiPackages != merged):
+        recordId = record.fid
+        if recordId in self.mergedPackageList:
+            mergedPackages = self.mergedPackageList[recordId]
+            if self.OOOandUOP:
+                for pkg in mergedPackages:
+                    if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
+                        if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
+                            mergedPackages.remove(pkg)
+            if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-##                    print override.aiPackages
-##                    print merged
-                    override.aiPackages = merged
+                    override.aiPackages = mergedPackages
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
