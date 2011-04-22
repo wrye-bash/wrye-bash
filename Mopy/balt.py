@@ -1016,6 +1016,7 @@ class Progress(bolt.Progress):
             self.fnAbort = onAbort
         if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
         self.dialog = wx.ProgressDialog(title,message,100,parent,style)
+        self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
@@ -1034,7 +1035,6 @@ class Progress(bolt.Progress):
         return True
 
     def doProgress(self,state,message):
-        if self.dialog: self.dialog.SetFocus()
         if not self.dialog:
             raise StateError(_('Dialog already destroyed.'))
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
