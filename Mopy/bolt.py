@@ -486,6 +486,19 @@ class Path(object):
         ins.close()
         return crc & 0xffffffff
 
+    #--crc with progress bar
+    def crcProgress(self, progress):
+        """Calculates and returns crc value for self, updating progress as it goes."""
+        size = self.size
+        progress.setFull(size)
+        crc = 0L
+        with self.open('rb') as ins:
+            insRead = ins.read
+            while ins.tell() < size:
+                crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
+                progress(ins.tell())
+        return crc & 0xFFFFFFFF
+
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
