@@ -20,6 +20,8 @@
 # =============================================================================
 
 # Imports ----------------------------------------------------------------------
+#-- Use the 'with' statement for Python 2.5
+from __future__ import with_statement
 #--Standard
 import cPickle
 import copy
