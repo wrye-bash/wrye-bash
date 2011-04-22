@@ -10446,7 +10446,7 @@ class Installer(object):
                 progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
                 apFile = apRootJoin(normGet(rpFile,rpFile))
                 size = apFile.size
-                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+apFile.size))
+                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+size))
                 date = apFile.mtime
                 done += size
                 new_sizeCrcDate[rpFile] = (size,crc,date)
@@ -11748,6 +11748,7 @@ class InstallerProject(Installer):
         errorLine = []
         index = 0
         for line in ins:
+            # TODO: figure out why 7z isn't puttin anything out to stdout
             maCompressing = regMatch(line)
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
@@ -12143,20 +12144,24 @@ class InstallersData(bolt.TankData, DataDict):
     def refreshConvertersNeeded(self):
         """Returns true if refreshConverters is necessary. (Point is to skip use
         of progress dialog when possible."""
-        if not len(self.bcfPath_sizeCrcDate):
-            return True
         archives = set([])
+        scanned = set([])
         convertersJoin = dirs['converters'].join
         converterGet = self.bcfPath_sizeCrcDate.get
         bcfPath_sizeCrcDate = self.bcfPath_sizeCrcDate
         archivesAdd = archives.add
+        scannedAdd = scanned.add
         for archive in dirs['converters'].list():
             apath = convertersJoin(archive)
-            if apath.isfile() and archive.cext in (defaultExt):
-                size,crc,modified = converterGet(apath,(None,None,None))
-                if crc is None or (size,modified) != (apath.size,apath.mtime):
-                    return True
-                archivesAdd(apath)
+            if apath.isfile() and archive.cext in (defaultExt) and (archive.csbody[-4:] == '-bcf' or '-bcf-' in archive.csbody):
+                scannedAdd(apath)
+        if len(scanned) != len(self.bcfPath_sizeCrcDate):
+            return True
+        for archive in scanned:
+            size,crc,modified = converterGet(apath,(None,None,None))
+            if crc is None or (size,modified) != (apath.size,apath.mtime):
+                return True
+            archivesAdd(apath)
         #--Added/removed packages?
         return archives != set(self.bcfPath_sizeCrcDate)
 
