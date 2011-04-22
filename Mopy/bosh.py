@@ -7328,8 +7328,6 @@ class OmodFile:
         if len(fileNames) == 0: return
         totalSize = sum(sizes)
 
-        def lowByte(num): return int(bin(num)[-8:],2)
-
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
         subprogress(0,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
@@ -7344,7 +7342,7 @@ class OmodFile:
                 # Next 8 bytes are the size of the data stream
                 for i in range(8):
                     out = totalSize >> (i*8)
-                    output.writeByte(lowByte(out))
+                    output.writeByte(out & 0xFF)
                     done += 1
                     subprogress(done)
 
