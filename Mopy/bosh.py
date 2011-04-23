@@ -20440,6 +20440,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if not self.isActive: return
         self.id_Deleted = {}
         self.previousPackages = {}
+        self.deletedPackages = {}
         self.mergedPackageList = {}
         self.mod_count = {}
         if "Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs:
@@ -20452,6 +20453,45 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        recordId = record.fid
+        newPackages = bolt.MemorySet(record.aiPackages)
+        if recordId not in self.previousPackages:
+            self.previousPackages[recordId] = {}
+        self.previousPackages[recordId][modFile.GName] = newPackages
+
+        if modFile.GName in self.srcs:
+            oldPackages = self.previousPackages[recordId][modFile.GName]
+            if recordId not in self.mergedPackageList:
+                self.mergedPackageList[recordId] = newPackages
+                self.deletedPackages[recordId] = bolt.MemorySet()
+            mergedPackages = self.mergedPackageList[recordId]
+            if newPackages == mergedPackages: return #same as the current list, just skip.
+            #if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
+            #deletedPackages = self.id_Deleted[recordId]
+            for master in reversed(modFile.TES4.masters):
+                masterPath = GPath(master)
+                masterPackages = self.previousPackages[recordId].get(masterPath,None)
+                if masterPackages is None: continue
+
+                # Get differences from master
+                added = newPackages - masterPackages
+                sameButReordered = masterPackages & newPackages
+                prevDeleted = self.deletedPackages[recordId]
+                newDeleted = masterPackages - newPackages
+
+                # Merge those changes into mergedPackages
+                mergedPackages |= newPackages
+                if 'Actors.AIPackagesForceAdd' not in bashTags:
+                    prevDeleted -= newPackages
+                prevDeleted |= newDeleted
+                self.deletedPackages[recordId] = prevDeleted
+                mergedPackages -= prevDeleted
+                self.mergedPackageList[recordId] = mergedPackages
+                break
+
+    # PM's version, not quite working right
+    def scan_old(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if modFile.GName in self.srcs:
             recordId = record.fid
@@ -20501,7 +20541,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                                                         break
                                                     i += 1
                                             continue # Done with this package
-                                
+
 
 
     def apply(self,modFile,record,bashTags):
@@ -20526,10 +20566,10 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                     if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
                         if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
                             mergedPackages.remove(pkg)
-            if(record.aiPackages != mergedPackages):
+            if(record.aiPackages != list(mergedPackages)):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.aiPackages = mergedPackages
+                    override.aiPackages = list(mergedPackages)
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
