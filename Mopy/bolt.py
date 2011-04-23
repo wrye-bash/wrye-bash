@@ -33,6 +33,7 @@ import struct
 import sys
 import time
 import subprocess
+import collections
 from subprocess import Popen, PIPE
 import types
 from binascii import crc32
@@ -793,6 +794,138 @@ class DataDict:
         return self.data.iterkeys()
     def itervalues(self):
         return self.data.itervalues()
+
+#------------------------------------------------------------------------------
+class OrderedSet(collections.OrderedDict, collections.MutableSet):
+    """A set like object, that remembers the order items were added to it.
+       Since it has order, a few list functions were added as well:
+        - index(value)
+        - __getitem__(index)
+        - __call__ -> to enable 'enumerate'
+       If an item is dicarded, then later readded, it will be added
+       to the end of the set.
+    """
+    def update(self, *args, **kwdargs):
+        if kwdargs: raise TypeError("update() takes no keyword arguments")
+        for s in args:
+            for e in s:
+                self.add(e)
+
+    def add(self, elem): self[elem] = None
+    def discard(self, elem): self.pop(elem, None)
+    def __le__(self,other): return all(e in other for e in self)
+    def __lt__(self,other): return self <= other and self != other
+    def __ge__(self,other): return all(e in self for e in other)
+    def __gt__(self,other): return self >= other and self != other
+    def __repr__(self): return 'OrderedSet([%s])' % (','.join(map(repr,self.keys())))
+    def __str__(self): return '{%s}' % (','.join(map(repr,self.keys())))
+
+    difference = property(lambda self: self.__sub__)
+    difference_update = property(lambda self: self._issub__)
+    intersection = property(lambda self: self.__and__)
+    intersection_update = property(lambda self: self.__iand__)
+    issubset = property(lambda self: self.__le__)
+    issuperset = property(lambda self: self.__ge__)
+    symmetric_difference = property(lambda self: self.__xor__)
+    symmetric_difference_update = property(lambda self: self.__ixor__)
+    union = property(lambda self: self.__or__)
+
+    # List type stuff
+    def __getitem__(self,key):
+        if isinstance(key,int):
+            return self.keys()[key]
+        else:
+            return super(OrderedSet,self).__getitem__(key)
+    def index(self,*args,**kwdargs): return self.keys().index(*args,**kwdargs)
+    def __call__(self, *args, **kwdargs):
+        return enumerate(self.keys())
+
+#------------------------------------------------------------------------------
+class MemorySet(object):
+    """Specialization of the OrderedSet, where it remembers the order of items
+       event if they're removed.  Also, combining and comparing to other MemorySet's
+       takes this into account:
+        a|b -> returns union of a and b, but keeps the ordering of b where possible.
+               if and item in a was also in b, but deleted, it will be added to the
+               deleted location.
+        a&b -> same as a|b, but only items 'not-delted' in both a and b are marked
+               as 'not-deleted'
+        a^b -> same as a|b, but only items 'not-deleted' in a but not b, or b but not
+               a are marked as 'not-deleted'
+        a-b -> same as a|b, but any 'not-deleted' items in b are marked as deleted
+    """
+    def __init__(self, *args, **kwdargs):
+        self.items = OrderedSet(*args, **kwdargs)
+        self.mask = [True for i in range(len(self.items))]
+
+    def add(self,elem):
+        if elem in self.items: self.mask[self.items.index(elem)] = True
+        else:
+            self.items.add(elem)
+            self.mask.append(True)
+    def discard(self,elem):
+        if elem in self.items: self.mask[self.items.index(elem)] = False
+    discarded = property(lambda self: OrderedSet([x for i,x in enumerate(self.items) if not self.mask[i]]))
+
+    def __len__(self): return sum(self.mask)
+    def __iter__(self):
+        for i,elem in enumerate(self.items):
+            if self.mask[i]: yield self.items[i]
+    def __str__(self): return '{%s}' % (','.join(map(repr,self._items())))
+    def __repr__(self): return 'MemorySet([%s])' % (','.join(map(repr,self._items())))
+    def forget(self, elem):
+        # Permanently remove an item from the list.  Don't remember its order
+        if elem in self.items:
+            idex = self.items.index(elem)
+            self.items.discard(elem)
+            del self.mask[idex]
+
+    def _items(self): return OrderedSet([x for x in self])
+
+    def __or__(self,other):
+        '''Return items in self or in other'''
+        discards = (self.discarded-other._items())|(other.discarded-self._items())
+        right = list(other.items)
+        left = list(self.items)
+
+        for idex,elem in enumerate(left):
+            # elem is already in the other one, skip
+            if elem in right: continue
+
+            # Figure out best place to put it
+            if idex == 0:
+                # put it in front
+                right.insert(0,elem)
+            elif idex == len(left):
+                # put in in back
+                right.append(elem)
+            else:
+                # Find out what item it comes after
+                afterIdex = idex-1
+                while afterIdex > 0 and left[afterIdex] not in right:
+                    afterIdex -= 1
+                insertIdex = right.index(left[afterIdex])+1
+                right.insert(insertIdex,elem)
+        ret = MemorySet(right)
+        ret.mask = [x not in discards for x in right]
+        return ret
+    def __and__(self,other):
+        items = self.items & other.items
+        discards = self.discarded | other.discarded
+        ret = MemorySet(items)
+        ret.mask = [x not in discards for x in items]
+        return ret
+    def __sub__(self,other):
+        discards = self.discarded | other._items()
+        ret = MemorySet(self.items)
+        ret.mask = [x not in discards for x in self.items]
+        return ret
+    def __xor__(self,other):
+        items = (self|other).items
+        discards = items - (self._items()^other._items())
+        ret = MemorySet(items)
+        ret.mask = [x not in discards for x in items]
+        return ret
 
 #------------------------------------------------------------------------------
 class MainFunctions:
