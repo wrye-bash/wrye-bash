@@ -20452,7 +20452,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    '''
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         recordId = record.fid
@@ -20490,9 +20489,9 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 mergedPackages -= prevDeleted
                 self.mergedPackageList[recordId] = mergedPackages
                 break
-    '''
+
     # PM's version, not quite working right
-    def scan(self,modFile,record,bashTags):
+    def scan_old(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         if modFile.GName in self.srcs:
             recordId = record.fid
