@@ -20409,6 +20409,7 @@ class NPCAIPackagePatcher(ImportPatcher):
         log(_("\n=== AI Package Lists Changed: %d") % (sum(mod_count.values()),))
         for mod in modInfos.getOrdered(mod_count):
             log('* %s: %3d' % (mod.s,mod_count[mod]))
+
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
     name = _('Import Actors: AIPackages')
@@ -20454,7 +20455,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
             deletedPackages = self.id_Deleted[recordId]
             for master in reversed(modFile.TES4.masters):
-                if master in previousPackages:
+                if master in self.previousPackages:
                     #do the actual stuff here - only needs to be done for the last master that is in the records.
                         for oldIndex, oldPackage in enumerate(oldPackages):
                             if oldPackage not in newPackages: 
