@@ -9056,24 +9056,38 @@ class ModInfos(FileInfos):
         if not wtxt: log('[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 
-    def getTagList(self,fileInfo=None):
+    def getTagList(self,modList=None):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
         Either for all mods in the data folder or if specified for one specific mod.
         """
         tagList = '=== Current Bash Tags:\n'
-        if fileInfo:
-            print fileInfo.getPath()
-            print fileInfo.getPath().stail
-            tagList += '* ' + fileInfo.getPath()
-        else:
-            for modInfo in sorted(modInfos.data.values()):
+        if modList:
+            for modInfo in modList:
                 tagList += '\n* ' + modInfo.name.s + '\n'
-                tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
-                tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc() or '')) + '\n'
-                tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name) or '')) + '\n'
-                tagList += '  * Removed by  BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name) or '')) + '\n'
-                tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags() or '')) + '\n'
-        #print tagList
+                if modInfo.getBashTags():
+                    if modInfos.table.getItem(modInfo.name,'bashTags',''):
+                        tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                    if modInfo.getBashTagsDesc():
+                        tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                    if configHelpers.getBashTags(modInfo.name):
+                        tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                    if configHelpers.getBashRemoveTags(modInfo.name):
+                        tagList += '  * Removed by  BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                    tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
+                else: tagList += '    No tags'
+        else: 
+            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.name.s.lower(), y.name.s.lower())):
+                if modInfo.getBashTags():
+                    tagList += '\n* ' + modInfo.name.s + '\n'
+                    if modInfos.table.getItem(modInfo.name,'bashTags',''):
+                        tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                    if modInfo.getBashTagsDesc():
+                        tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                    if configHelpers.getBashTags(modInfo.name):
+                        tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                    if configHelpers.getBashRemoveTags(modInfo.name):
+                        tagList += '  * Removed by BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                    tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
         return tagList
         
     #--Mod Specific ----------------------------------------------------------
@@ -10444,7 +10458,7 @@ class Installer(object):
                 progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
                 apFile = apRootJoin(normGet(rpFile,rpFile))
                 size = apFile.size
-                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+size))
+                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+apFile.size))
                 date = apFile.mtime
                 done += size
                 new_sizeCrcDate[rpFile] = (size,crc,date)

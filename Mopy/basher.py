@@ -9849,6 +9849,25 @@ class Mod_AllowAllGhosting(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
+class Mod_ListBashTags(Link):
+    """Copies list of bash tags to clipboard."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("List Bash Tags..."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        #--Get masters list
+        files = []
+        for fileName in self.data:
+            files.append(bosh.modInfos[fileName])
+        text = bosh.modInfos.getTagList(files)
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_("Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
+
+#------------------------------------------------------------------------------
 class Mod_AllowNoGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
@@ -14566,6 +14585,7 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_Details())
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
+    ModList.itemMenu.append(Mod_ListBashTags())
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
