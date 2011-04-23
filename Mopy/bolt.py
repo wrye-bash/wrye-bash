@@ -796,6 +796,7 @@ class DataDict:
         return self.data.itervalues()
 
 #------------------------------------------------------------------------------
+'''
 class OrderedSet(collections.OrderedDict, collections.MutableSet):
     """A set like object, that remembers the order items were added to it.
        Since it has order, a few list functions were added as well:
@@ -883,7 +884,7 @@ class MemorySet(object):
     def _items(self): return OrderedSet([x for x in self])
 
     def __or__(self,other):
-        '''Return items in self or in other'''
+        """Return items in self or in other"""
         discards = (self.discarded-other._items())|(other.discarded-self._items())
         right = list(other.items)
         left = list(self.items)
@@ -926,7 +927,7 @@ class MemorySet(object):
         ret = MemorySet(items)
         ret.mask = [x not in discards for x in items]
         return ret
-
+'''
 #------------------------------------------------------------------------------
 class MainFunctions:
     """Encapsulates a set of functions and/or object instances so that they can
@@ -1088,7 +1089,7 @@ class Settings(DataDict):
         self.defaults = defaults
         for key in defaults.keys():
             if key not in self.data:
-                self.data[key] = defaults[key]
+                self.data[key] = copy.deepcopy(defaults[key])
 
     def setDefault(self,key,default):
         """Sets a single value to a default value if it has not yet been set."""
