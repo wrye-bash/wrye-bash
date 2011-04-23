@@ -284,13 +284,12 @@ settingDefaults = {
         'Modified':1,
         },
     'bash.saves.colWidths': {
-        'Cell':150,
-        'Day':30,
         'File':150,
         'Modified':150,
+        'Size':75,
         'PlayTime':75,
         'Player':100,
-        'Size':75,
+        'Cell':150,
         },
     'bash.saves.colAligns': {
         'Size':1,
@@ -4955,7 +4954,6 @@ class BashFrame(wx.Frame):
 
     def OnCloseWindow(self, event):
         """Handle Close event. Save application data."""
-        self.CleanSettings()
         self.SaveSettings()
         self.Destroy()
 
@@ -7156,7 +7154,8 @@ class List_Column(Link):
 
     def Execute(self,event):
         if self.colName in settings[self.columnsKey]:
-            settings[self.columnsKey] = [x for x in settings[self.columnsKey] if x != self.colName]
+            settings[self.columnsKey].remove(self.colName)
+            settings.setChanged(self.columnsKey)
         else:
             #--Ensure the same order each time
             settings[self.columnsKey] = [x for x in settingDefaults[self.columnsKey] if x in settings[self.columnsKey] or x == self.colName]
