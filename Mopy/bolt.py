@@ -492,7 +492,7 @@ class Path(object):
     def crcProgress(self, progress):
         """Calculates and returns crc value for self, updating progress as it goes."""
         size = self.size
-        progress.setFull(size)
+        progress.setFull(max(size,1))
         crc = 0L
         with self.open('rb') as ins:
             insRead = ins.read
