@@ -10458,7 +10458,7 @@ class Installer(object):
                 progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
                 apFile = apRootJoin(normGet(rpFile,rpFile))
                 size = apFile.size
-                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+apFile.size))
+                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
                 date = apFile.mtime
                 done += size
                 new_sizeCrcDate[rpFile] = (size,crc,date)
