@@ -2062,7 +2062,7 @@ class ModDetails(wx.Window):
         for id,tag in zip(ID_TAGS,self.allTags):
             menu.AppendCheckItem(id,tag)
             menu.Check(id,tag in self.modTags)
-        bashFrame.PopupMenu(menu)
+        self.gTags.PopupMenu(menu)
         menu.Destroy()
 
     def DoAutoBashTags(self,event):
