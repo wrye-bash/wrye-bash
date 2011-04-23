@@ -796,7 +796,109 @@ class DataDict:
         return self.data.itervalues()
 
 #------------------------------------------------------------------------------
-class OrderedSet(list, collections.MutableSet):
+try:
+    from collections import MutableSet
+except:
+    # Python 2.5 compatability
+    class MutableSet:
+        def __le__(self,other):
+            if not isinstance(other, MutableSet):
+                return NotImplemented
+            if len(self) > len(other):
+                return False
+            for elem in self:
+                if elem not in other:
+                    return False
+            return True
+        def __lt__(self,other):
+            if not isinstance(other, MutableSet):
+                return NotImplemented
+            return len(self) < len(other) and self <= other
+        def __gt__(self,other): return other < self
+        def __ge__(self,other): return other <= self
+
+        def __eq__(self,other):
+            if not isintance(other, MutableSet):
+                return NotImplemented
+            return len(self) == len(other) and self <= other
+        def __ne__(self,other): return not (self == other)
+
+        @classmethod
+        def _from_iterable(cls, it):
+            return cls(it)
+
+        def __and__(self,other):
+            return self._from_iterable(elem for elem in other if elem in self)
+
+        def isdisjoint(self,other):
+            for elem in other:
+                if elem in self:
+                    return False
+            return True
+
+        def __or__(self,other):
+            chain = (e for s in (self,other) for e in s)
+            return self._from_iterable(chain)
+        def __sub__(self,other):
+            return self._from_iterable(elem for elem in self if elem not in other)
+        def __xor__(self,other):
+            return (self - other) | (other - self)
+
+        def add(self, value): raise NotImplementedError
+        def discard(self, value): raise NotImplementedError
+
+        def remove(self, elem):
+            if elem not in self:
+                raise KeyError(elem)
+            self.discard(elem)
+
+        def pop(self):
+            it = iter(self)
+            try:
+                value = next(it)
+            except StopIteration:
+                raise KeyError
+            self.discard(value)
+            return value
+
+        def clear(self):
+            try:
+                while True:
+                    self.pop()
+            except KeyError:
+                pass
+
+        def __ior__(self, it):
+            for value in it:
+                self.add(value)
+            return self
+
+        def __iand__(self, it):
+            for value in (self - it):
+                self.discard(value)
+            return self
+
+        def __ixor(self, it):
+            if it is self:
+                self.clear()
+            else:
+                for value in it:
+                    if value in self:
+                        self.discard(value)
+                    else:
+                        self.add(value)
+            return self
+
+        def __isub__(self, it):
+            if it is self:
+                self.clear()
+            else:
+                for value in it:
+                    self.discard(value)
+            return self
+
+
+class OrderedSet(list, MutableSet):
     """A set like object, that remembers the order items were added to it.
        Since it has order, a few list functions were added as well:
         - index(value)
@@ -878,7 +980,7 @@ class MemorySet(object):
             if idex == 0:
                 # put it in front
                 right.insert(0,elem)
-            elif idex == len(left):
+            elif idex == len(left)-1:
                 # put in in back
                 right.append(elem)
             else:
