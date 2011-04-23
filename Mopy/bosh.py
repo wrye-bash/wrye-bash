@@ -20440,7 +20440,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if not self.isActive: return
         self.id_Deleted = {}
         self.previousPackages = {}
-        self.deletedPackages = {}
         self.mergedPackageList = {}
         self.mod_count = {}
         if "Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs:
@@ -20464,7 +20463,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             oldPackages = self.previousPackages[recordId][modFile.GName]
             if recordId not in self.mergedPackageList:
                 self.mergedPackageList[recordId] = newPackages
-                self.deletedPackages[recordId] = bolt.MemorySet()
             mergedPackages = self.mergedPackageList[recordId]
             if newPackages == mergedPackages: return #same as the current list, just skip.
             #if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
@@ -20477,7 +20475,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 # Get differences from master
                 added = newPackages - masterPackages
                 sameButReordered = masterPackages & newPackages
-                prevDeleted = self.deletedPackages[recordId]
+                prevDeleted = bolt.MemorySet(mergedPackages.discarded)
                 newDeleted = masterPackages - newPackages
 
                 # Merge those changes into mergedPackages
@@ -20485,7 +20483,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 if 'Actors.AIPackagesForceAdd' not in bashTags:
                     prevDeleted -= newPackages
                 prevDeleted |= newDeleted
-                self.deletedPackages[recordId] = prevDeleted
                 mergedPackages -= prevDeleted
                 self.mergedPackageList[recordId] = mergedPackages
                 break
