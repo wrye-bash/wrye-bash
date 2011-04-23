@@ -796,8 +796,7 @@ class DataDict:
         return self.data.itervalues()
 
 #------------------------------------------------------------------------------
-'''
-class OrderedSet(collections.OrderedDict, collections.MutableSet):
+class OrderedSet(list, collections.MutableSet):
     """A set like object, that remembers the order items were added to it.
        Since it has order, a few list functions were added as well:
         - index(value)
@@ -812,34 +811,16 @@ class OrderedSet(collections.OrderedDict, collections.MutableSet):
             for e in s:
                 self.add(e)
 
-    def add(self, elem): self[elem] = None
-    def discard(self, elem): self.pop(elem, None)
-    def __le__(self,other): return all(e in other for e in self)
-    def __lt__(self,other): return self <= other and self != other
-    def __ge__(self,other): return all(e in self for e in other)
-    def __gt__(self,other): return self >= other and self != other
-    def __repr__(self): return 'OrderedSet([%s])' % (','.join(map(repr,self.keys())))
-    def __str__(self): return '{%s}' % (','.join(map(repr,self.keys())))
-
-    difference = property(lambda self: self.__sub__)
-    difference_update = property(lambda self: self._issub__)
-    intersection = property(lambda self: self.__and__)
-    intersection_update = property(lambda self: self.__iand__)
-    issubset = property(lambda self: self.__le__)
-    issuperset = property(lambda self: self.__ge__)
-    symmetric_difference = property(lambda self: self.__xor__)
-    symmetric_difference_update = property(lambda self: self.__ixor__)
-    union = property(lambda self: self.__or__)
-
-    # List type stuff
-    def __getitem__(self,key):
-        if isinstance(key,int):
-            return self.keys()[key]
-        else:
-            return super(OrderedSet,self).__getitem__(key)
-    def index(self,*args,**kwdargs): return self.keys().index(*args,**kwdargs)
-    def __call__(self, *args, **kwdargs):
-        return enumerate(self.keys())
+    def add(self, elem):
+        if elem not in self:
+            self.append(elem)
+    def discard(self, elem): self.pop(self.index(elem),None)
+    def __or__(self,other):
+        left = OrderedSet(self)
+        left.update(other)
+        return left
+    def __repr__(self): return 'OrderedSet%s' % str(list(self))[1:-1]
+    def __str__(self): return '{%s}' % str(list(self))[1:-1]
 
 #------------------------------------------------------------------------------
 class MemorySet(object):
@@ -927,7 +908,7 @@ class MemorySet(object):
         ret = MemorySet(items)
         ret.mask = [x not in discards for x in items]
         return ret
-'''
+
 #------------------------------------------------------------------------------
 class MainFunctions:
     """Encapsulates a set of functions and/or object instances so that they can
