@@ -20557,16 +20557,16 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
         recordId = record.fid
         if recordId in self.mergedPackageList:
-            mergedPackages = self.mergedPackageList[recordId]
+            mergedPackages = list(self.mergedPackageList[recordId])
             if self.OOOandUOP:
                 for pkg in mergedPackages:
                     if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
                         if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
                             mergedPackages.remove(pkg)
-            if(record.aiPackages != list(mergedPackages)):
+            if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.aiPackages = list(mergedPackages)
+                    override.aiPackages = mergedPackages
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
