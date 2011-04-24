@@ -7847,7 +7847,7 @@ class ModInfo(FileInfo):
         if reBashTags.search(description):
             description = reBashTags.sub(strKeys,description)
         else:
-            description = strKeys+description
+            description = description + '\n' + strKeys
         self.writeDescription(description)
 
     def getBashTags(self):
@@ -7942,14 +7942,14 @@ class ModInfo(FileInfo):
 
     def writeDescription(self,description):
         """Sets description to specified text and then writes hedr."""
-        description = description[:min(255,len(description))]
+        description = description[:min(511,len(description))] # 511 + 1 for null = 512
         self.header.description = description
         self.header.setChanged()
         self.writeHeader()
 
     def writeAuthor(self,author):
         """Sets author to specified text and then writes hedr."""
-        author = author[:min(512,len(author))]
+        author = author[:min(511,len(author))] # 511 + 1 for null = 512
         self.header.author = author
         self.header.setChanged()
         self.writeHeader()
@@ -20438,7 +20438,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.id_Deleted = {}
         self.previousPackages = {}
         self.mergedPackageList = {}
         self.mod_count = {}
