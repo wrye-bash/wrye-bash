@@ -752,6 +752,54 @@ def gmstIds(fileName=None):
 
 #------------------------------------------------------------------------------
 @mainfunc
+def createTagList(inPath ='masterlist.txt',outPath='taglist.txt'):
+    tags, bossDirtyMods = {}, {}
+    reFcomSwitch = re.compile('^[<>]')
+    reComment = re.compile(r'^\\.*')
+    reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
+    reBashTags = re.compile(r'(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
+    reDirty = re.compile(r'IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
+    ins = GPath(inPath).open('r')
+    mod = None
+    for line in ins:
+        line = reFcomSwitch.sub('',line)
+        line = reComment.sub('',line)
+        maMod = reMod.match(line)
+        maBashTags = reBashTags.match(line)
+        maDirty = reDirty.match(line)
+        if maMod:
+            mod = maMod.group(1)
+        elif maBashTags and mod:
+            if maBashTags.group(4):
+                modTags = ''.join(maBashTags.groups())
+            else:
+                modTags = ''.join(maBashTags.groups()[0:3])
+            tags[mod] = modTags
+        elif maDirty:
+            dirty = ''.join(maDirty.groups())
+            if mod in tags:
+                tags[mod] += '\n' + dirty
+            else:
+                tags[mod] = dirty
+        elif "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide" in line:
+            if mod in tags:
+                tags[mod] += '\n' + line[:-1]
+            else:
+                tags[mod] = line[:-1]
+        elif line.startswith(r"? Masterlist Information: $Revision: "):
+            revision = int(line[37:42])
+    ins.close()
+    tagList = '\ Taglist for Wrye Bash; derived from BOSS Masterlist revision %i.\n' % (revision) + '\% A Bashed Patch suggestion for the mod above.\n\n'
+    for mod in sorted(tags,key=str.lower):
+        tagList += mod + '\n' 
+        tagList += tags[mod] + '\n'
+        if mod in bossDirtyMods:
+            tagList += bossDirtyMods[mod] + '\n'
+    out = GPath(outPath).open('w')
+    out.write(tagList[:-1])
+    out.close()
+#------------------------------------------------------------------------------
+@mainfunc
 def modCheck(fileName=None):
     """Reports on various problems with mods."""
     reBadVarName = re.compile('^[_0-9]')
