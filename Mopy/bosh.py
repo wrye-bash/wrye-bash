@@ -20408,7 +20408,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                 fid = record.fid
                 if not fid in data: continue
                 changed = False
-                if list(record.aiPackages) != data[fid]['merged']:
+                if record.aiPackages != data[fid]['merged']:
                     record.aiPackages = data[fid]['merged']
                     changed = True
                 if changed:
@@ -32601,6 +32601,7 @@ def initDefaultSettings():
     inisettings['bEnableReplacers'] = False
     inisettings['bEnableBalo'] = False
     inisettings['bResetBSATimestamps'] = True
+    inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
     inisettings['ShowTextureToolLaunchers'] = True

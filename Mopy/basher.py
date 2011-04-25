@@ -3238,8 +3238,9 @@ class InstallersPanel(SashTankPanel):
                 self.frameActivated = False
                 self.refreshing = False
                 self.refreshed = True
-                cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-                ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                if bosh.inisettings['ClearRO']:
+                    cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+                    ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
             except CancelError:
                 # User canceled the refresh
                 self.refreshing = False
