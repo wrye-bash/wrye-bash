@@ -2312,8 +2312,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Shows the contents of the master INI
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
   * Various small UI improvements
-  * regex for TesNexus searching updated to work with a few less  common mod archive name formats.
+  * regex for TesNexus searching updated to work with a few less common mod archive name formats.
   * Support for BOSS 1.7.
+  * New automatic taglist generator to generate the taglist from the masterlist.
+  * New option to see all the tags on all installed/selected mods.
+  * Taglist updated to BOSS rev 2600.
   * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini  
