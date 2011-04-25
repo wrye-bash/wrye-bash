@@ -31765,7 +31765,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         mod_npcsFixed = self.mod_npcsFixed
         ObCollection = patchFile.ObCollection
         subProgress = SubProgress(progress)
-        subProgress.setFull(min(len(ObCollection.LoadOrderMods) * 2,1))
+        subProgress.setFull(min(max(ObCollection.LoadOrderMods) * 2,1))
         reX117 = self.reX117
         defaultEyes = {}
         defaultMaleHair = {}
