@@ -1,6 +1,7 @@
 #===================================================
 # Specific parser for Wrye Bash
 #===================================================
+from __future__ import with_statement # Python 2.5 'with' statement compatability
 import ScriptParser         # generic parser class
 import wx
 import wx.wizard as wiz     # wxPython wizard class
@@ -115,24 +116,21 @@ class InstallerWizard(wiz.Wizard):
                     event.Veto()
                     self.next = self.parser.Continue()
                     self.blockChange = False
-                    self.parser.SaveState()
                     self.ShowPage(self.next)
                 else:
                     self.blockChange = True
         else:
             # Previous, pop back to the last state,
             # and resume execution
-            self.parser.GotoPrevState()
             self.finishing = False
             event.Veto()
-            self.next = self.parser.Continue()
+            self.next = self.parser.Back()
             self.blockChange = False
             self.ShowPage(self.next)
 
     def Run(self):
         page = self.parser.Begin(self.wizard_file)
         if page:
-            self.parser.SaveState()
             self.ret.Canceled = not self.RunWizard(page)
         # Clean up temp files
         if self.parser.bArchive:
@@ -155,7 +153,7 @@ class PageInstaller(wiz.PyWizardPage):
 
     def GetNext(self): return self.parent.dummy
     def GetPrev(self):
-        if len(self.parent.parser.states) > 1:
+        if self.parent.parser.choiceIdex > 0:
             return self.parent.dummy
         return None
     def OnNext(self):
@@ -257,30 +255,21 @@ class PageSelect(PageInstaller):
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
         self.textItem = wx.TextCtrl(self, wx.ID_ANY, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
         self.bmpItem = ImagePanel(self, wx.ID_ANY)
+        if parent.parser.choiceIdex < len(parent.parser.choices):
+            oldChoices = parent.parser.choices[parent.parser.choiceIdex]
+            defaultMap = [choice in oldChoices for choice in listItems]
         if bMany:
             self.listOptions = wx.CheckListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
-            if parent.parser.choices is not None:
-                for index, name in enumerate(listItems):
-                    if name in parent.parser.choices:
-                        self.listOptions.Check(index, True)
-            else:
-                for index, default in enumerate(defaultMap):
-                    self.listOptions.Check(index, default)
+            for index, default in enumerate(defaultMap):
+                self.listOptions.Check(index, default)
         else:
             self.listOptions = wx.ListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
             self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
-            if parent.parser.choices is not None:
-                for index, name in enumerate(listItems):
-                    if name in parent.parser.choices:
-                        self.listOptions.Select(index)
-                        self.Selection(index)
-                        break
-            else:
-                for index, default in enumerate(defaultMap):
-                    if default:
-                        self.listOptions.Select(index)
-                        self.Selection(index)
-                        break
+            for index, default in enumerate(defaultMap):
+                if default:
+                    self.listOptions.Select(index)
+                    self.Selection(index)
+                    break
         sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
         sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
         sizerMain.Add(sizerBoxes, -1, wx.EXPAND)
@@ -335,16 +324,16 @@ class PageSelect(PageInstaller):
         else:
             for i in self.listOptions.GetSelections():
                 temp.append(self.items[i])
-        next = self.parent.parser.PeekNextState()
-        prev = self.parent.parser.PeekPrevState()
-        choices = self.parent.parser.choices
-        if next and choices is not None and choices == temp:
-            self.parent.parser.GotoNextState()
+        if self.parent.parser.choiceIdex < len(self.parent.parser.choices):
+            oldChoices = self.parent.parser.choices[self.parent.parser.choiceIdex]
+            if temp == oldChoices:
+                pass
+            else:
+                self.parent.parser.choices = self.parent.parser.choices[0:self.parent.parser.choiceIdex]
+                self.parent.parser.choices.append(temp)
         else:
-            self.parent.parser.ClearFutureStates()
-            self.parent.parser.PeekPrevState().choices = temp
-            self.parent.parser.choices = None
-            self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+            self.parent.parser.choices.append(temp)
+        self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
 # End PageSelect -----------------------------------------
 
 # PageFinish ---------------------------------------------
@@ -370,6 +359,8 @@ class PageFinish(PageInstaller):
                 espmShow.append(x)
 
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
+
+        parent.parser.choiceIdex += 1
 
         #--Heading
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
@@ -570,17 +561,6 @@ class PageVersions(PageInstaller):
 #  wizards
 #-----------------------------------------------------------------
 class WryeParser(ScriptParser.Parser):
-    # Used by 'SaveState'/'RestoreState' to track what variables need to be saved
-    # int the form 'in':'out', meaning when Saving the state, the value is taken from
-    # attribute 'in', when restoring the state, the value is written to attribute 'out'
-    __state__ = dict(ScriptParser.Parser.__state__, **{
-                      'notes':'notes',
-                      'espmlist':'espmlist',
-                      'sublist':'sublist',
-                      'espmrenames':'espmrenames',
-                      'choices':'choices',
-                      })
-
     def __init__(self, parent, installer, subs, bArchive, path, bAuto):
         ScriptParser.Parser.__init__(self)
 
@@ -589,14 +569,12 @@ class WryeParser(ScriptParser.Parser):
         self.bArchive = bArchive
         self.path = path
         self.bAuto = bAuto
-        self.notes = []
         self.page = None
 
-        self.choices = None
+        self.choices = []
+        self.choiceIdex = -1
         self.sublist = {}
         self.espmlist = {}
-        self.espmrenames = {}
-        self.iniedits = {}
         for i in installer.espmMap.keys():
             for j in installer.espmMap[i]:
                 if j not in self.espmlist:
@@ -648,6 +626,8 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
         self.SetFunction('GetEspmState', self.fnGetEspmState, 1)
         self.SetFunction('EditINI', self.fnEditINI, 4)
+        self.SetFunction('Exec', self.fnExec, 1)
+        self.SetFunction('EndExec', self.fnEndExec, 1)
         self.SetFunction('str', self.fnStr, 1)
         self.SetFunction('int', self.fnInt, 1)
         self.SetFunction('float', self.fnFloat, 1)
@@ -691,12 +671,16 @@ class WryeParser(ScriptParser.Parser):
     def Begin(self, file):
         self.vars = {}
         self.Flow = []
+        self.notes = []
+        self.espmrenames = {}
+        self.iniedits = {}
         self.cLine = 0
+        self.reversing = 0
+        self.ExecCount = 0
 
         if file.exists() and file.isfile():
-            script = file.open()
-            self.lines = script.readlines()
-            script.close()
+            with file.open() as script:
+                self.lines = script.readlines()
             return self.Continue()
         balt.showWarning(self.parent, _('Could not open wizard file'))
         return None
@@ -721,6 +705,23 @@ class WryeParser(ScriptParser.Parser):
         self.cLine += 1
         self.cLineStart = self.cLine
         return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
+
+    def Back(self):
+        if self.choiceIdex == 0:
+            return
+
+        # Rebegin
+        self.vars = {}
+        self.Flow = []
+        self.notes = []
+        self.espmrenames = {}
+        self.iniedits = {}
+        self.ExecCount = 0
+
+        self.cLine = 0
+        self.reversing = self.choiceIdex-1
+        self.choiceIdex = -1
+        return self.Continue()
 
     def EspmIsInPackage(self, espm, package):
         package = package.lower()
@@ -836,6 +837,17 @@ class WryeParser(ScriptParser.Parser):
         self.iniedits.setdefault(iniPath,{})
         self.iniedits[iniPath].setdefault(section,{})
         self.iniedits[iniPath][section][setting] = value
+    def fnExec(self, strLines):
+        lines = strLines.split('\n')
+        lines.append('EndExec(%i)' % (len(lines)+1))
+        self.lines[self.cLine:self.cLine] = lines
+        self.ExecCount += 1
+    def fnEndExec(self, numLines):
+        if self.ExecCount == 0:
+            self.error(UNEXPECTED % 'EndExec')
+        del self.lines[self.cLine-numLines:self.cLine]
+        self.cLine -= numLines
+        self.ExecCount -= 1
 
     def fnStr(self, data): return str(data)
     def fnInt(self, data):
@@ -1032,6 +1044,12 @@ class WryeParser(ScriptParser.Parser):
                                 break
                     self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
                     return
+        self.choiceIdex += 1
+        if self.reversing:
+            # We're using the 'Back' button
+            self.reversing -= 1
+            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
+            return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
             imageJoin = self.installer.tempDir.join
