@@ -9015,10 +9015,10 @@ class Mods_LoadList:
         if not bosh.modInfos.ordered:
             menu.FindItemById(ID_LOADERS.SAVE).Enable(False)
         #--Events
-        wx.EVT_MENU(window,ID_LOADERS.NONE,self.DoNone)
-        wx.EVT_MENU(window,ID_LOADERS.SAVE,self.DoSave)
-        wx.EVT_MENU(window,ID_LOADERS.EDIT,self.DoEdit)
-        wx.EVT_MENU_RANGE(window,ID_LOADERS.BASE,ID_LOADERS.MAX,self.DoList)
+        wx.EVT_MENU(bashFrame,ID_LOADERS.NONE,self.DoNone)
+        wx.EVT_MENU(bashFrame,ID_LOADERS.SAVE,self.DoSave)
+        wx.EVT_MENU(bashFrame,ID_LOADERS.EDIT,self.DoEdit)
+        wx.EVT_MENU_RANGE(bashFrame,ID_LOADERS.BASE,ID_LOADERS.MAX,self.DoList)
 
     def DoNone(self,event):
         """Unselect all mods."""
