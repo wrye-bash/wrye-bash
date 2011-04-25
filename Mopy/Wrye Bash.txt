@@ -2297,6 +2297,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
+  * new ini option to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
@@ -2316,7 +2317,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Support for BOSS 1.7.
   * New automatic taglist generator to generate the taglist from the masterlist.
   * New option to see all the tags on all installed/selected mods.
-  * Taglist updated to BOSS rev 2600.
+  * Taglist updated to BOSS rev 2608.
   * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini  
