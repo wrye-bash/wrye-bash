@@ -11,8 +11,6 @@ import win32api
 import cStringIO
 import traceback
 #---------------------------------------------------
-gDialogSize = (600,500)
-#---------------------------------------------------wx
 
 #Translateable strings
 EXTRA_ARGS =   _("Extra arguments to '%s'.")
@@ -21,7 +19,7 @@ UNEXPECTED =   _("Unexpected '%s'.")
 
 class WizardReturn(object):
     __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install',
-                 'IniEdits',
+                 'IniEdits', 'PageSize', 'Pos',
                  )
 
     def __init__(self):
@@ -31,14 +29,17 @@ class WizardReturn(object):
         self.SelectSubPackages = []
         self.IniEdits = {}
         self.Install = False
+        self.PageSize = ()
+        self.Pos = ()
 
 # InstallerWizard ----------------------------------
 #  Class used by Wrye Bash, creates a wx Wizard that
 #  dynamically creates pages based on a script
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
-    def __init__(self, link, subs):
+    def __init__(self, link, subs, pageSize, pos):
         wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _('Installer Wizard'),
+                            pos=pos,
                             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
 
         #'dummy' page tricks the wizard into always showing the "Next" button,
@@ -68,9 +69,38 @@ class InstallerWizard(wiz.Wizard):
         #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
         self.ret = WizardReturn()
+        self.ret.PageSize = pageSize
 
-        #Set the size for the wizard to use
-        self.SetPageSize(gDialogSize)
+        # So we can save window size
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wiz.EVT_WIZARD_CANCEL, self.OnClose)
+        self.Bind(wiz.EVT_WIZARD_FINISHED, self.OnClose)
+
+        #Set the minimum size for pages, and setup OnSize to resize the
+        #First page to the saved size
+        self.SetPageSize((600,500))
+        self.firstPage = True
+
+    def OnClose(self, event):
+        if not self.IsMaximized():
+            # Only save the current size if the page isn't maximized
+            self.ret.PageSize = self.GetSize()
+            self.ret.Pos = self.GetPosition()
+        event.Skip()
+
+    def OnSize(self, event):
+        if self.firstPage:
+            # On the first page, resize it to the saved size
+            self.firstPage = False
+            self.SetSize(self.ret.PageSize)
+        else:
+            # Otherwise, regular resize, save the size if we're not
+            # maximized
+            if not self.IsMaximized():
+                self.ret.PageSize = self.GetSize()
+                self.Pos = self.GetPosition()
+            event.Skip()
 
     def OnChange(self, event):
         if event.GetDirection():
@@ -81,7 +111,6 @@ class InstallerWizard(wiz.Wizard):
                     #So the parser can continue parsing,
                     #Then show the page that the parser returns,
                     #rather than the dummy page
-                    #ParserState(self.parser)
                     event.GetPage().OnNext()
                     event.Veto()
                     self.next = self.parser.Continue()
@@ -94,7 +123,6 @@ class InstallerWizard(wiz.Wizard):
             # Previous, pop back to the last state,
             # and resume execution
             self.parser.GotoPrevState()
-            #ParserState.RestoreState(self.parser, -1)
             self.finishing = False
             event.Veto()
             self.next = self.parser.Continue()
@@ -221,7 +249,8 @@ class PageSelect(PageInstaller):
 
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, ''))
         self.TitleDesc = wx.StaticText(self, wx.ID_ANY, desc)
-        sizerTitle.Add(self.TitleDesc, 0, wx.ALIGN_CENTER|wx.ALL)
+        self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
+        sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
         sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _('Options:')))
 
@@ -269,7 +298,6 @@ class PageSelect(PageInstaller):
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
         self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
-        
 
     def OnSelect(self, event):
         index = event.GetSelection()
@@ -346,7 +374,7 @@ class PageFinish(PageInstaller):
         #--Heading
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
         textTitle = wx.StaticText(self, -1, _("The installer script has finished, and will apply the following settings:"))
-        textTitle.Wrap(gDialogSize[0]-10)
+        textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
@@ -465,7 +493,7 @@ class PageVersions(PageInstaller):
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
         self.textWarning = wx.StaticText(self, 124, _('WARNING: The following version requirements are not met for using this installer.'))
-        self.textWarning.Wrap(gDialogSize[0]-20)
+        self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
         sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, -1, _('Version Requirements')))
