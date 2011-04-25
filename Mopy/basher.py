@@ -243,6 +243,9 @@ settingDefaults = {
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
+    #--Wrye Bash: Wizards
+    'bash.wizard.size': (600,500),
+    'bash.wizard.pos': wx.DefaultPosition,
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
@@ -4961,7 +4964,7 @@ class BashFrame(wx.Frame):
         """Save application data."""
         self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
-        if not self.IsIconized():
+        if not self.IsIconized() or self.IsMaximized():
             settings['bash.framePos'] = self.GetPositionTuple()
             settings['bash.frameSize'] = self.GetSizeTuple()
         settings['bash.page'] = self.notebook.GetSelection()
@@ -7700,9 +7703,16 @@ class Installer_Wizard(InstallerLink):
         gInstallers.refreshCurrent(installer)
         for index in range(gInstallers.gSubList.GetCount()):
             subs.append(gInstallers.gSubList.GetString(index))
-        wizard = belt.InstallerWizard(self, subs)
+        saved = settings['bash.wizard.size']
+        default = settingDefaults['bash.wizard.size']
+        pos = settings['bash.wizard.pos']
+        pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
+        wizard = belt.InstallerWizard(self, subs, pageSize, pos)
+        balt.ensureDisplayed(wizard)
         wx.EndBusyCursor()
         ret = wizard.Run()
+        settings['bash.wizard.size'] = ret.PageSize
+        settings['bash.wizard.pos'] = ret.Pos
         if ret.Canceled:
             installer.remaps = oldRemaps
             gInstallers.refreshCurrent(installer)
