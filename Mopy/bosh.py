@@ -19419,6 +19419,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music'))#,'C.Maps'
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19441,10 +19442,10 @@ class CBash_CellImporter(CBash_ImportPatcher):
             'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
             }
 
-
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CELLS']
+
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -19456,6 +19457,17 @@ class CBash_CellImporter(CBash_ImportPatcher):
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
         recordId = record.fid
+
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
+
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
