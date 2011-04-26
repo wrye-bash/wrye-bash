@@ -2577,9 +2577,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)</p>
   <p class="list-2">&bull;&nbsp;  Size of comments section saved between launches (contributed by myk002)</p>
   <p class="list-2">&bull;&nbsp;  Wizards:</p>
-    <p class="list-3">&bull;&nbsp;  New function - GetEspmStatus: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
-    <p class="list-3">&bull;&nbsp;  New function - EditINI: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
-    <p class="list-3">&bull;&nbsp;  Bugfix for RequireVersions: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus">GetEspmStatus</a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI">EditINI</a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec">Exec</a>: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.</p>
+    <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions">RequireVersions</a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
     <p class="list-3">&bull;&nbsp;  A new icon will indicate that an installer contains a wizard.</p>
     <p class="list-3">&bull;&nbsp;  The Wizard window is now resizeable, with automatic scaling images.</p>
     <p class="list-3">&bull;&nbsp;  Wizards now have a back button.  Be sure to note if there are any errors with this and report them.</p>
@@ -2587,6 +2588,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Added a cancel button to the Refresh Data progress bar.</p>
   <p class="list-2">&bull;&nbsp;  New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.</p>
   <p class="list-2">&bull;&nbsp;  Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.</p>
+  <p class="list-2">&bull;&nbsp;  new ini option to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations</p>
 <p class="list-1">&bull;&nbsp;  General:</p>
   <p class="list-2">&bull;&nbsp;  Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).</p>
   <p class="list-2">&bull;&nbsp;  Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.</p>
@@ -2602,8 +2604,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  Shows the contents of the master INI</p>
     <p class="list-3">&bull;&nbsp;  Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak</p>
   <p class="list-2">&bull;&nbsp;  Various small UI improvements</p>
-  <p class="list-2">&bull;&nbsp;  regex for TesNexus searching updated to work with a few less  common mod archive name formats.</p>
+  <p class="list-2">&bull;&nbsp;  regex for TesNexus searching updated to work with a few less common mod archive name formats.</p>
   <p class="list-2">&bull;&nbsp;  Support for BOSS 1.7.</p>
+  <p class="list-2">&bull;&nbsp;  New automatic taglist generator to generate the taglist from the masterlist.</p>
+  <p class="list-2">&bull;&nbsp;  New option to see all the tags on all installed/selected mods.</p>
+  <p class="list-2">&bull;&nbsp;  Taglist updated to BOSS rev 2608.</p>
   <p class="list-2">&bull;&nbsp;  Remove Balo and the Replacers Tab from the UI.  To re-enable, set <b>bEnableBalo</b> or <b>bEnableReplacers</b> to <i><b>True</b></i> as applicable in bash.ini</p>
     <p class="list-3">&bull;&nbsp;  These features may be removed in future versions.</p>
   <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini  </p>

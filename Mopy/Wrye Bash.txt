@@ -2287,9 +2287,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
   * Wizards:
-    * New function - GetEspmStatus: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
-    * New function - EditINI: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
-    * Bugfix for RequireVersions: The version page will now show correctly if the Wrye Bash version is incorrect.
+    * New function - [[wizards.html#GetEspmStatus|GetEspmStatus]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
+    * New function - [[wizards.html#EditINI|EditINI]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+    * New function - [[wizards.html#Exec|Exec]]: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.
+    * Bugfix [[wizards.html#RequireVersions|RequireVersions]]: The version page will now show correctly if the Wrye Bash version is incorrect.
     * A new icon will indicate that an installer contains a wizard.
     * The Wizard window is now resizeable, with automatic scaling images.
     * Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
