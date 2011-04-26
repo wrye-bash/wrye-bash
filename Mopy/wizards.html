@@ -164,6 +164,7 @@
 <p class="list-3">&bull;&nbsp; <a href="#SetVarspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltValuegtspan">SetVar <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;Value&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#StringLengthspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspan">StringLength <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#iSetspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltexpressiongtspan">iSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ExecLinesspanstylecolorblueltlinesgtspan">ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards">Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#MessagespanstylecolorblueltMessagegtspanspanstylecolorbrownTitlespan">Message <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#DisplayImagespanstylecolorblueltImageFilePathgtspanspanstylecolorbrownTitlespan">DisplayImage <span style="color:blue;">&lt;Image File Path&gt;</span> <span style="color:brown;">[Title]</span></a></p>
@@ -216,7 +217,6 @@
 <p class="list-3">&bull;&nbsp; <a href="#ReadRenderInfospanstylecolorgreenltVariablegtspanspanstylecolorpurpleltvaluegtspan">ReadRenderInfo <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#EditXMLLinespanstylecolorblueltfilegtspanspanstylecolorpurpleltlinenumbergtspanspanstylecolorgreenltnewlinegtspan">EditXMLLine <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;line number&gt;</span> <span style="color:green;">&lt;new line&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#EditXMLReplacespanstylecolorblueltfilegtspanspanstylecolorpurplelttexttofindgtspanspanstylecolorgreenlttexttoreplacegtspan">EditXMLReplace <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;text to find&gt;</span> <span style="color:green;">&lt;text to replace&gt;</span></a></p>
-<p class="list-3">&bull;&nbsp; <a href="#ExecLinesspanstylecolorblueltlinesgtspan">ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FunctionsinWizardsthatdonothaveanequivalentinOBMM">Functions in Wizards that do not have an equivalent in OBMM</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FunctionsthathavenomeaninginWryeBash">Functions that have no meaning in Wrye Bash</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#IfVersionGreaterThanspanstylecolorblueltversiongtspan">If VersionGreaterThan <span style="color:blue;">&lt;version&gt;</span></a></p>
@@ -1104,6 +1104,10 @@ EndIf
 <p><b>fSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></b>
 </p>
 </td><td class="code"><p class="code-0"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>expression</i></p><p class="code-0"></p></td></tr>
+<tr><td class="code">
+<h3><a id='ExecLinesspanstylecolorblueltlinesgtspan'>ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></h3>
+</td><td class="code"><p class="code-0"><a href="#Exec"><span style="color:purple;">Exec</span></a>(<i>lines</i>)</p><p class="code-0"></p></td></tr>
+  <p class="empty">&nbsp;</p>
 </table>
 <h2><a id='FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards'>Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></h2>
 <table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
@@ -1173,7 +1177,6 @@ EndIf
 <h3><a id='ReadRenderInfospanstylecolorgreenltVariablegtspanspanstylecolorpurpleltvaluegtspan'>ReadRenderInfo <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></h3>
 <h3><a id='EditXMLLinespanstylecolorblueltfilegtspanspanstylecolorpurpleltlinenumbergtspanspanstylecolorgreenltnewlinegtspan'>EditXMLLine <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;line number&gt;</span> <span style="color:green;">&lt;new line&gt;</span></a></h3>
 <h3><a id='EditXMLReplacespanstylecolorblueltfilegtspanspanstylecolorpurplelttexttofindgtspanspanstylecolorgreenlttexttoreplacegtspan'>EditXMLReplace <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;text to find&gt;</span> <span style="color:green;">&lt;text to replace&gt;</span></a></h3>
-<h3><a id='ExecLinesspanstylecolorblueltlinesgtspan'>ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></h3>
 <p class="code-0"></p></td></tr>
 </table>
   <p class="empty">&nbsp;</p>
