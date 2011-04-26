@@ -840,6 +840,12 @@ __fSet [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;expression&gt;[/c
 </td><td class="code">[code]
 ~~variable~~ [[#Assignment|[color=black]=[/color]]] ~~expression~~
 [/code]</td></tr>
+<tr><td class="code">
+===ExecLines [color=blue]&lt;lines&gt;[/color]
+</td><td class="code">[code]
+[[#|[color=purple]Exec[/color]]](~~lines~~)
+[/code]</td></tr>
+
 </table>
 == Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards
 <table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
@@ -915,7 +921,6 @@ Similar functionality can be obtained by packaging the mod differently, and then
 ===ReadRenderInfo [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;value&gt;[/color]
 ===EditXMLLine [color=blue]&lt;file&gt;[/color] [color=purple]&lt;line number&gt;[/color] [color=green]&lt;new line&gt;[/color]
 ===EditXMLReplace [color=blue]&lt;file&gt;[/color] [color=purple]&lt;text to find&gt;[/color] [color=green]&lt;text to replace&gt;[/color]
-===ExecLines [color=blue]&lt;lines&gt;[/color]
 [/code]</td></tr>
 </table>
 
