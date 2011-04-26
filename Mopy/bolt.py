@@ -897,7 +897,7 @@ except:
                     self.discard(value)
             return self
 
-
+#------------------------------------------------------------------------------
 class OrderedSet(list, MutableSet):
     """A set like object, that remembers the order items were added to it.
        Since it has order, a few list functions were added as well:

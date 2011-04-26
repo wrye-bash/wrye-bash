@@ -7174,9 +7174,9 @@ class OmodFile:
             self.website = file.readNetString() # website
             self.desc = file.readNetString() # description
             if self.version >= 2:
-                self.ftime =file.readInt64() # creation time
+                self.ftime = file.readInt64() # creation time
             else:
-                self.ftime = time.mktime(time.strptime('01-01-2006 00:00:00', '%m-%d-%Y %H:%M:%S'))
+                self.ftime = file.readNetString()
             self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = file.readInt32()
