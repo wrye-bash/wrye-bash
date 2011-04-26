@@ -292,8 +292,6 @@ class Parser(object):
         self.cLine = 0
         self.tokens = []
         self.Flow = []
-        self.states = []
-        self.futureStates = []
 
         self.opChars = ''
         self.operators = {}
