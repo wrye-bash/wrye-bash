@@ -181,7 +181,7 @@ The Selected tab shows the list of selected files, that is, the list of files th
 
 The Unselected tab is similar to the Selected tab, but is restricted to showing files that are not checked in the current package.
 
-The final tab is the Skipped tab.  It shows files that are not considered for installation.  It has two filters: non-game, which shows files that have unrecognized file extensions or are in unrecognized directories, and masked, which shows files that are skipped due to global or package settings.  For example, if Skip DistantLOD is selected in the package settings, distantLOD files will show up here.
+The final tab is the Skipped tab.  It shows files that are not considered for installation.  It has two filters: non-game, which shows files that have unrecognized file extensions or are in unrecognized directories, and masked, which shows files that are skipped due to global or package settings.  For example, if Skip DistantLOD is selected in the package settings, distantLOD files will show up here and not in any of the other tabs.
 
 
 Package settings menu
@@ -191,7 +191,7 @@ This button allows package-specific options to be set.  This is the same as the 
 
 Package contents tree
 ---------------------
-The package contents tree shows the file structure of the project or archive, adjusted to indicate where files will go once installed.  For example, for an archive that has all files in a subdirectory, the subdirectory will be elided and all files will be shown at the top level, since that better represents how files will be installed in the data directory.  The package contents tree has three filters: plugins, resources, and other.  Plugins shows .esp and .esm files as well as OBSE plugins.  Resources shows .bsa files and all loose mesh and texture files.  Other shows everything else, usually including documentation and screenshots.  The three filters are additive.  Bsa files may be expandable, but files inside bsas will not be individually installable (though we may choose to allow this in the future).
+The package contents tree shows the file structure of the project or archive, adjusted to indicate where files will go once installed.  For example, for an archive that has all files in a subdirectory, the subdirectory will be elided and all files will be shown at the top level, since that better represents how files will be installed in the data directory.  The package contents tree has three filters: plugins, resources, and other.  Plugins shows .esp and .esm files as well as OBSE plugins.  Resources shows all other recognized files, such as .bsa files, ini files, and all loose mesh and texture files.  Other shows everything else, usually documentation and screenshots.  The three filters are additive.  Bsa files may be expandable to view their contents, but files inside bsas will not be individually installable (though we may choose to allow this in the future).
 
 All subprojects and installable files (that is, all plugin and resource files, not directories, screenshots, or readmes) have a checkbox next to them.  If the check is active, the subproject/file is marked for installation.
 
@@ -208,7 +208,7 @@ If it is a directory, check and uncheck become "check tree" and "uncheck tree", 
 In the future, another action may be "compare conflicts" where the user is shown previews of all the conflicts for the selected file, and is given the ability to choose the winner visually.
 
 The name of each file is displayed in a font style that communicates attributes of the file:
-- if the package is an upgrade of an existing package, new files will be displayed in bold
+- if the package is an upgrade of an existing package, new or changed files will be displayed in bold
 - if the file needs attention, for example it is dirty, corrupt, or missing dependencies, is is displayed in italics
 - if the file will not be installed due do "skip" settings or because it is a member of the "other" group, it is displayed in a gray font color
 - if the file does not match what is installed due to an override, it is displayed in an orange font color
@@ -238,7 +238,7 @@ In the future, there may be a notification icon that displays messages such as "
   Changes from old Installers tab
 ===================================
 
-- Auto-anneal is always on.  That is, when a package is uninstalled, new conflict winners will automatically be installed to take the place of the uninstalled file.  If a file is dirty for any other reason, for example if a user manually cleaned a plugin file, it will not be automatically annealed (as is currently the case in the old installers tab).
+- Auto-anneal is always on.  That is, when a package is uninstalled, new conflict winners will automatically be installed to take the place of the uninstalled file.  If a file is dirty for any other reason, for example if a user manually cleaned a plugin file, it will not be automatically annealed (this behavior is the same as in the old installers tab).
 
 - There is no longer any difference in icon color to distinguish between the cases where a package has a mismatched plugin vs. a mismatched resource file.  If they are due to override, both are unimportant to the user, and if they are dirty, they are equally important, and they will both be highlighted as dirty the same way.
 
@@ -248,15 +248,15 @@ In the future, there may be a notification icon that displays messages such as "
 
 - markers are removed in favor of groups.  new packages are printed in bold, so no need for a ==Last== marker
 
-- there is no longer any way to sort the installers other than by priority order.  sorting has been replaced by searching (the plan is to allow queries in the search box, such as "date > 10/10/2011" or something.  if we can't do this, maybe a "sort by" dropdown)
+- there is no longer any way to sort the installers other than by priority order.  sorting has been replaced by searching (the plan is to allow queries in the search box, such as "date > 10/10/2011" or something.  if we can't do this, maybe a "sort by" dropdown, but it could complicate UI semantics)
 
 - packages can obtain the '+' symbol on their icons just by clicking on the icon.  It does not necessarily mean the package is installed yet, just that it is /marked/ for install.  The package will immediately be highlighted as 'dirty', though, until it is properly installed.
 
-- to maintain transparency, only .bsa files have the 'rename on install' functionality.  other files can be renamed in-place, but the renames wouldn't carry over on package upgrades (though they would show up in the diff).
+- to maintain transparency, only .bsa files have the 'rename on install' functionality.  other files can be renamed in-place, but the renames won't carry over on package upgrades (though they would show up in the diff that is displayed when an automated upgrade is performed).
 
 - doc files are now directly openable from the files tree.  doc files are no longer installed (implications for doc browser?)
 
-- the 'avoid at startup' option is gone.  now we always wait until the installers tab is opened to start processing.
+- the 'avoid at startup' option is gone.  now we always wait until the installers tab is opened to start processing (though we could add an ini option for users who actually want the installers tab to start initializing as soon as WB starts...).
 
 - clean data directory is effectively always on
 
@@ -271,4 +271,4 @@ Warn on installing OBSE plugin
 stuff to look into:
 - auto-anneal/install wizards
 - bsa redirection
-- omod integration?
+- omod functionality
