@@ -13600,19 +13600,6 @@ class App_ModChecker(Link):
         #balt.ensureDisplayed(docBrowser)
         modChecker.Raise()
 
-#------------------------------------------------------------------------------
-class App_BashMon(Link):
-    """Start bashmon."""
-    def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
-        gButton = bitmapButton(window,images['bashmon'].GetBitmap(),style=style,
-            onClick=self.Execute,tip=_("Launch BashMon"))
-        return gButton
-
-    def Execute(self,event):
-        """Handle menu selection."""
-        bosh.dirs['mopy'].join('bashmon.py').start()
-
 # Initialization --------------------------------------------------------------
 def InitSettings():
     """Initializes settings dictionary for bosh and basher."""
@@ -14335,7 +14322,11 @@ def InitStatusBar():
                 bosh.tooldirs['Custom18'],
                 Image(r'images/custom18'+bosh.inisettings['IconSize']+'.png'),
                 (bosh.inisettings['Custom18txt'])))
-    BashStatusBar.buttons.append(App_BashMon())
+    BashStatusBar.buttons.append(
+        App_Button(
+            bosh.dirs['mopy'].join('bashmon.py'),
+            Image(r'images/Bashmon'+bosh.inisettings['IconSize']+'.png'),
+            _("Launch BashMon")))
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
     BashStatusBar.buttons.append(App_Help())
