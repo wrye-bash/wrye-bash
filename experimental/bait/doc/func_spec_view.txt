@@ -5,6 +5,9 @@ Author: Myk Taylor (myk002)
 Status: working draft
 
 
+Please see gui_mockup.png for a screenshot of the UI described below.
+
+
 =============
   Concepts
 =============
@@ -43,27 +46,27 @@ The BAIT UI consists of the following main elements:
 Menu button
 -----------
 The menu button provides a place to initiate top-level actions and to set global settings.  Here are the operations that can be initiated from the menu button:
-- Anneal all (clean up any "dirty" installations -- that is, ensure installed files match what /should/ be installed according to how the packages are configured in the installers tab)
+- Anneal all (clean up any "dirty" installations -- that is, ensure installed files match what /should/ be installed according to how the packages are configured in the installers tab.)
 - Refresh installed data (re-read the contents of the Data directory)
 - Refresh packages (re-read the contents of the Bash Installers directory)
 - Import/export/reset configuration
 - Force a save of the current configuration (this will get done periodically in the background anyway)
-- Derive configuration from current set of files installed in the Data directory
+- Derive configuration from current set of files installed in the Data directory (this makes a "best guess" on how the user had the packages configured if this is the first time using the tab or if configuration has been lost for some reason)
 - Remember tree expansion state (that is, remember which nodes have been expanded when the program is closed and restarted, useful for modders)
 
 The menu button also provides a place to set the following options (the options set here can be overridden per-package):
-- Allow OBSE plugins
-- Skip DistantLOD by default
-- Skip LOD meshes by default
-- Skip LOD textures by default
-- Skip LOD normals by default
-- Skip all voices by default
-- Skip silent voices by default
+- Allow OBSE plugins (users probably want this on, but it is an explicit option due to OBSE plugins being opaque binary blobs, and therefore a real security risk that users should acknoledge)
+- Skip DistantLOD by default (enable this if you have TES4LODGen and want to run it manually to generate correct DistantLOD files for your load order)
+- Skip LOD meshes by default (TODO: why would one want this?)
+- Skip LOD textures by default (TODO: why would one want this?)
+- Skip LOD normals by default (TODO: why would one want this?)
+- Skip all voices by default (enable this if you use Elys Silent voice and don't want the voice acting shipped with mods)
+- Skip silent voices by default (enable this if you use Elys Silent voice to save space taken up by silent mp3 files)
 
 
 Search bar
 ----------
-The search bar allows the user to filter the packages shown in the packages tree.  Initially, this will probably just do a substring search for the package name, but eventually this may understand more complex filter queries, provide "awesome bar"-like autocomplete, or Google-like suggestions based on substrings seen in the installers.  Depending on performance, it may support find-as-you-type.  The search results will be filtered further by the toggle filters selected in the packages tree.
+The search bar allows the user to filter the packages shown in the packages tree.  Initially, this will probably just do a substring search for the package name, but eventually this may understand more complex filter queries (like showing packages more recent than a certain date), provide "awesome bar"-like autocomplete from a search history, or have Google-like suggestions based on substrings seen in the installers.  Depending on performance, it may support find-as-you-type.  The search results will be filtered further by the toggle filters selected in the packages tree.
 
 
 Status panel
@@ -72,7 +75,7 @@ The status panel changes color (or maybe shows an icon) to indicate which of the
 - [Red] An operation is in progress that would cause data inconsistency if it were interrupted.  For example, installing a package would cause the status to become red for the duration of the disk I/O.  The operation that is causing status to be red is displayed on the status panel with a cancel button, allowing the user to cancel pending operations.  We may attempt to undo partially completed operations (e.g. if the operation was an install, we may try to automatically uninstall the files that had been copied so far).  If multiple "reddening" actions were enqueued, they will all be canceled if the user clicks the cancel button, and we show a popup listing all the canceled operations.  A user should not close the program while the panel is red.  We may pop up a warning if the user tries to close the program or leave the tab while we are in this state.
 - [Orange] At least one package is dirty -- that is, a file that should not be installed is, or a file that should be installed isn't.  The panel will show a button to allow easy access to the "anneal all" functionality.  We may list as many dirty packages as we have space for in the panel itself.
 - [Yellow] We are currently loading data from the disk or analyzing metadata such that the information shown in the UI is incomplete.  A progress bar is shown to indicate how much longer the yellow state is expected to last.  The panel starts in the yellow state.  If the panel is yellow when a user initiates an action that causes the panel to turn red, the panel will stay red until enough data is loaded to prove that the action didn't result in any inconsistent side effects.  For example, if a user installs a package before conflict lists have been assembled, every selected file in that package will be installed.  The panel will stay red until conflict lists have been loaded (or, rather, conflicts in higher-precedence packages have been detected) and we know which files we need to "fix" to make the installation comply with package precedence (conflict list) rules.
-- [Green] All data is loaded and no inconsistencies have been detected.  Some statistics about installed data may be shown, such as active/installed plugin files and number of installed files.  It may also show remaining disk space.
+- [Green] All data is loaded and no inconsistencies have been detected.  Some statistics about installed data may be shown, such as active/installed plugin files and number of installed files.  It may also show other interesting statistics like remaining disk space.
 
 
 Packages tree
@@ -83,14 +86,15 @@ A group is created by selecting one or more packages, r-clicking and selecting "
 
 Three filter buttons appear at the top of the packages tree: Hidden, Installed, and Not Installed.  These filter buttons restrict which packages are displayed in the tree.  Any package (or entire group) can be marked as "hidden" and will retain its position in the tree.  However, it will only be shown if the "Hidden" filter button is depressed.  The filter buttons also show how many packages they govern.  If a search string is specified, they will also show how many of the packages they govern match the given search string.
 
-A file/directory can be dragged directly to the desired position in the tree from an external file manager application and the file/directory will be copied to the Bash Installers directory and the package will appear at the indicated position in the tree.
+A file/directory can be dragged directly to the desired position in the tree from an external file manager application.  The file/directory will be copied to the Bash Installers directory and the package will appear at the indicated position in the tree.
 
 When a package is being dragged, packages that are currently not being shown due to a search string or filter setting appear, grayed out, in the vicinity of the cursor, allowing precise positioning. (hopefully this is possible)
 
 Each installable package (i.e. all non-group nodes) has an icon associated with it to indicate its status.  The icons have the following meanings:
 - if the package is an archive (compressed file), the icon is a square
-- if the package is a directory, the icon is a diamond
+- if the package is a directory (a "project"), the icon is a diamond
 - if the package is installed or configured to be installed, the icon contains a '+' symbol
+- if the package has a wizard script associated with it, a small wand is superimposed on the icon
 - if all files configured to be installed in a package match what's in the data directory, the icon is green
 - if any files configured to be installed in a package do not match a file with the same name installed in the data directory, the icon is orange
 - if any files configured to be installed in a package are not found in the data directory, the icon is red
@@ -100,7 +104,7 @@ Each installable package (i.e. all non-group nodes) has an icon associated with 
 
 The text of each package changes in appearance as well to indicate additional state:
 - if the package is new since the last time the installers tab was opened, the package name is displayed in bold
-- if the package needs attention, for example it is dirty, corrupt, or missing dependencies, the package name is displayed in italics
+- if the package needs attention, for example it is dirty, corrupt, missing dependencies, or has an update available online, the package name is displayed in italics
 - if the package is marked as "hidden", the package name is displayed in a gray font color
 - if the package has subpackages, the package name is displayed in a navy blue font color
 
@@ -116,21 +120,49 @@ If the user hovers the mouse cursor over a package that has a name too long to b
 The installation priority number will appear before the name of each package or group.  Groups have priority numbers to assist in positioning a package in the "Move To..." dialog.
 
 R-clicking on a package or group will allow the following actions:
-- File operations (Open in associated application, rename, duplicate, delete)
-- Package operations (List structure, force refresh, create BCF, apply BCF, extract to project, copy mismatched files to project, sync from data, pack to archive, pack to release archive)
-- Package options that can override global defaults (has non-standard directories, allow OBSE plugins, skip distantLOD, skip LOD meshes, skip LOD textures, skip LOD normals, skip all voices, skip silent voices)
-- Web operations (open homepage, set homepage, search for in Google)
-- Move operations (to top, to bottom, to group, to position)
-- Group operations (create group from selected packages, ignore conflicts within group)
-- Run wizard
-- Run wizard auto selecting defaults
-- Edit the wizard script
-- Anneal
-- Install
-- Uninstall
-- Hide/unhide
-
-Package webpages are autodetected if possible, but if it can't be autodetected, it can be set manually.
+- File operations
+  - open in associated application
+  - rename
+  - duplicate
+  - delete
+- Package operations
+  - List structure (display copyable text in a window listing the package contents)
+  - force refresh (refresh the package's calculated metadata, like CRCs)
+  - create BCF (initiate the Bain Conversion File creation process)
+  - apply BCF (convert a package with a BCF)
+  - extract to project (similar to "duplicate" but extracts the archive)
+  - copy mismatched files to project (creates a project and copies mismatched files to it
+  - sync mismatched files from data (copies mismatched files into this project)
+  - pack to archive (creates an archive from all the files in the project)
+  - pack to release archive (creates an archive from the project, filtering out known "modders'" directories)
+- Package options (if not set for a package, will use global defaults)
+  - has non-standard directories (functionally treats all "other" files as "resource" files, allowing all files to be marked for installation)
+  - allow OBSE plugins
+  - skip distantLOD
+  - skip LOD meshes
+  - skip LOD textures
+  - skip LOD normals
+  - skip all voices
+  - skip silent voices
+- Web operations
+  - open homepage (opens the package home page in a browser)
+  - set homepage (if homepage autodetection fails, it can be explicitly set here)
+  - search for in Google (failsafe)
+- Move operations
+  - to top (appears at the top of the tree)
+  - to bottom (appears at the bottom of the tree)
+  - to group (appears at the top of specified group; this is the same as dragging a package to a group node)
+  - to position (specify parent group and predecessor package; this is the same as dragging a pacakge to a specific position between two other packages)
+- Group operations
+  - create group from selected packages (creates a new group with the selected packages as members)
+  - ignore conflicts within group (affects what shows up the the "Conflicts" package info tab
+- Run wizard (defaults will be selected, but you still have to click 'next')
+- Run wizard auto selecting defaults (where applicable, screens with defaults won't even appear)
+- Edit the wizard script (opens the wizard script in a text editor)
+- Anneal (ensures files that are marked for install are actually installed, and ensures files that are not aren't)
+- Install (equivalent to checking a package and selecting Anneal)
+- Uninstall (equivalent to unchecking a package and selecting Anneal)
+- Hide/unhide (toggles the 'hidden' flag.  installed or dirty packages cannot be hidden)
 
 New packages will appear at the bottom of the tree at first, but once we implement automatic upgrades, they will appear adjacent to the package that they are upgrading.
 

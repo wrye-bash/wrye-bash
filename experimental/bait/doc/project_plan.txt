@@ -108,6 +108,7 @@ Status: working draft
   - A back button on the BAIN wizard (from Psymon)
   - Resizable BAIN wizard elements and window (from Metallicow, Vargr, utumno)
   - Scale images correctly in wizard window (from Metallicow)
+  - Create silent voice files for people who don't want voice acting but don't have Elys silent voice
 
 
 ==================

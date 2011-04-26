@@ -20,3 +20,7 @@ class View:
 
   resume(self)
     Resumes from a pause
+
+
+
+The stateManager object is some abstraction of state-saving functionality.  It may need to be a multiprocess-aware entity if state from all three modules are being written to the same location.  It is mostly TBD.
