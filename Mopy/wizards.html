@@ -60,6 +60,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#GetEspmStatus">GetEspmStatus</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#EditINI">EditINI</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Exec">Exec</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#str">str</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#int">int</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#float">float</a></p>
@@ -419,10 +420,33 @@ EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)</pre>
   <pre>set ANVars.UseEW to 1
 setGS fPCBaseMagickaMult 1</pre>
   <p class="empty">&nbsp;</p>
+<h2><a id='Exec'>Exec</a></h2>
+<p>This will cause the Wizard to execute lines that are passed to it.  This is usefull for creating dynamically generated menus.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>Exec(<i><b>lines</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguements:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>lines:</b></i> A string containing lines to execute, seperated by newline characters, or a variable containing such a string.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Example:</b></p>
+  <pre>Exec("SelectOne 'Do you like icecream?', '|Yes', 'Select this if you like icecream!', 'icecream.jpg', 'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'\nCase 'Yes'\nNote 'You like icecream!'\nBreak\nCase 'No'\nNote 'Why don\'t you like icecream?'\nBreak\nEndSelect')</pre>
+  Would be the same as:
+  <pre>SelectOne 'Do you like icecream?', \
+          '|Yes', 'Select this if you like icecream!', 'icecream.jpg', \
+          'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'
+Case 'Yes'
+    Note 'You like icecream!'
+    Break
+Case 'No'
+    Note 'Why don\'t you like icecream?'
+    Break
+EndSelect</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='str'>str</a></h2>
 <p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 </p>
-  <p class="empty">&nbsp;</p>
+<p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  <b>str(<i><b>value</b></i>)</b></p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>

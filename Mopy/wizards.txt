@@ -173,6 +173,28 @@ EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)</pre>
   <pre>set ANVars.UseEW to 1
 setGS fPCBaseMagickaMult 1</pre>
 
+== Exec
+This will cause the Wizard to execute lines that are passed to it.  This is usefull for creating dynamically generated menus.
+
+* __Usage:__
+  * __Exec(**lines**)__
+* __Arguements:__
+  * **lines:** A string containing lines to execute, seperated by newline characters, or a variable containing such a string.
+
+* __Example:__
+  <pre>Exec("SelectOne 'Do you like icecream?', '|Yes', 'Select this if you like icecream!', 'icecream.jpg', 'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'\nCase 'Yes'\nNote 'You like icecream!'\nBreak\nCase 'No'\nNote 'Why don\'t you like icecream?'\nBreak\nEndSelect')</pre>
+  Would be the same as:
+  <pre>SelectOne 'Do you like icecream?', \
+          '|Yes', 'Select this if you like icecream!', 'icecream.jpg', \
+          'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'
+Case 'Yes'
+    Note 'You like icecream!'
+    Break
+Case 'No'
+    Note 'Why don\'t you like icecream?'
+    Break
+EndSelect</pre>
+
 == str
 Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 
