@@ -2260,7 +2260,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack]
+=== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp]
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.

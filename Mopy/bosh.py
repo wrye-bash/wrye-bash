@@ -10526,8 +10526,7 @@ class Installer(object):
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        keys = self.remaps.keys()
-        for espm in keys:
+        for espm in self.remaps:
             self.resetEspmName(self.remaps[espm])
 
     def getEspmName(self,currentName):
@@ -28808,30 +28807,45 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
 
         #--Some setup
-        SkeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
-        modSkeletonDir = GPath(r'Characters\_male')
-        if SkeletonDir.exists():
-            pattern = 'skel_*.nif'
-            skeletonList = [x for x in SkeletonDir.list() if x.csbody.startswith('skel_') and x.cext == '.nif']
+        skeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
+        modSkeletonDir = GPath('Characters').join('_male')
+
+        if skeletonDir.exists():
+            # construct skeleton mesh collections
+            # skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
+            # skeletonSetSpecial gets files that match "skel_special_*.nif"
+            skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
+            skeletonSetSpecial = set((x for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
+
             if len(skeletonList) > 0:
+                femaleOnly = self.choiceValues[self.chosen][0] == 1
+                maleOnly = self.choiceValues[self.chosen][0] == 2
+                playerFid = (GPath('Oblivion.esm'),0x000007)
+
                 for record in patchFile.NPC_.records:
-                    #Skip records (male only, female only, player)
-                    if self.choiceValues[self.chosen][0] == 1 and not record.flags.female: continue
-                    elif self.choiceValues[self.chosen][0] == 2 and record.flags.female: continue
-                    if record.fid == (GPath('Oblivion.esm'),0x000007): continue
+                    # skip records (male only, female only, player)
+                    if femaleOnly and not record.flags.female: continue
+                    elif maleOnly and record.flags.female: continue
+                    if record.fid == playerFid: continue
                     try:
                         oldModPath = record.model.modPath
-                    except AttributeError:  #for freaking weird esps with NPC's with no skeleton assigned to them(!)
+                    except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
                         continue
 
-                    random.seed(record.fid)
-                    randomNumber = random.randint(1, len(skeletonList))-1
-                    newModPath = modSkeletonDir.join(skeletonList[randomNumber])
+                    specialSkelMesh = "skel_special_%X.nif" % record.fid[1]
+                    if specialSkelMesh in skeletonSetSpecial:
+                        newModPath = modSkeletonDir.join(specialSkelMesh)
+                    else:
+                        random.seed(record.fid)
+                        randomNumber = random.randint(1, len(skeletonList))-1
+                        newModPath = modSkeletonDir.join(skeletonList[randomNumber])
+
                     if newModPath != oldModPath:
                         record.model.modPath = newModPath.s
                         keep(record.fid)
                         srcMod = record.fid[0]
                         count[srcMod] = count.get(srcMod,0) + 1
+
         #--Log
         log.setHeader(_("===VadersApp's Oblivion Real Bodies"))
         log(_('* %d Skeletons Tweaked') % sum(count.values()))
@@ -28854,18 +28868,23 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
             (_('Only Male NPCs'),  2),
             )
         self.mod_count = {}
+        self.modSkeletonDir = GPath('Characters').join('_male')
         self.playerFid = (GPath('Oblivion.esm'), 0x000007)
         self.skeletonList = None
+        self.skeletonSetSpecial = None
 
-    def initSkeletonList(self):
-        # Since bosh.dirs hasn't been populated when __init__ executes,
-        # we do this here
-        if self.skeletonList is None:
-            self.skeletonList = []
-            SkeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
-            if SkeletonDir.exists():
-                pattern = 'skel_*.nif'
-                self.skeletonList = [x for x in SkeletonDir.list() if x.csbody.startswith('skel_') and x.cext == '.nif']
+    def initSkeletonCollections(self):
+        """ construct skeleton mesh collections
+            skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
+            skeletonSetSpecial gets files that match "skel_special_*.nif" """
+        # Since bosh.dirs hasn't been populated when __init__ executes, we do this here
+        if not self.skeletonList is None:
+            return
+        self.skeletonList = []
+        skeletonDir = bosh.dirs['mods'].join('Meshes', 'Characters', '_male')
+        if skeletonDir.exists():
+            self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
+            self.skeletonSetSpecial = set((x for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
 
     def getTypes(self):
         return ['NPC_']
@@ -28876,14 +28895,21 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         if record.fid == self.playerFid: return #skip player record
         elif self.choiceValues[self.chosen][0] == 1 and record.IsMale: return
         elif self.choiceValues[self.chosen][0] == 2 and record.IsFemale: return
-        self.initSkeletonList()
+        self.initSkeletonCollections()
         if len(self.skeletonList) == 0: return
 
-        oldModPath = record.modPath.lower()
+        try:
+            oldModPath = record.modPath.lower()
+        except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
+            pass
 
-        random.seed(record.fid)
-        randomNumber = random.randint(1, len(self.skeletonList))-1
-        newModPath = GPath(r'Characters\_male').join(self.skeletonList[randomNumber])
+        specialSkelMesh = "skel_special_%X.nif" % record.fid[1]
+        if specialSkelMesh in self.skeletonSetSpecial:
+            newModPath = self.modSkeletonDir.join(specialSkelMesh)
+        else:
+            random.seed(record.fid)
+            randomNumber = random.randint(1, len(self.skeletonList))-1
+            newModPath = self.modSkeletonDir.join(self.skeletonList[randomNumber])
 
         if newModPath.cs != oldModPath:
             override = record.CopyAsOverride(self.patchFile)
