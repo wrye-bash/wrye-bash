@@ -17810,7 +17810,7 @@ class CBash_PatchFile(ObModFile):
                             parentsToLoad.add(parentFid)
                     recordsToLoad.add(record)
 
-        recordFids = {x.fid for x in recordsToLoad}
+        recordFids = set([x.fid for x in recordsToLoad])
         otherParentsToLoad = parentsToLoad - recordFids # Parents to copy from the winning mod
         parentsToLoad -= otherParentsToLoad             # Parents to copy from this mod
 
