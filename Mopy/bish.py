@@ -752,7 +752,7 @@ def gmstIds(fileName=None):
 
 #------------------------------------------------------------------------------
 @mainfunc
-def createTagList(inPath ='masterlist.txt',outPath='taglist.txt'):
+def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
     tags, bossDirtyMods = {}, {}
     reFcomSwitch = re.compile('^[<>]')
     reComment = re.compile(r'^\\.*')
