@@ -8502,7 +8502,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
         subs = _('[spoiler]\nSub-Packages List for "%s"\n') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gSubList.GetCount()):
             subs += gInstallers.gSubList.GetString(index) + '\n'
-        subs += '[\spoiler]'
+        subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
             wx.TheClipboard.Close()
