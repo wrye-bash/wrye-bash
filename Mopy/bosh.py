@@ -17803,9 +17803,13 @@ class CBash_PatchFile(ObModFile):
                         parentFid = parent.fid
                         if self.HasRecord(parentFid) == False:
                             #Copy the winning version of the parent over if it isn't in the patch
-                            parent = self.ObCollection.LookupRecords(parentFid)
+                            parent = self.ObCollection.LookupRecords(parentFid,True)
                             if parent:
-                                parent[0].CopyAsOverride(self)
+                                # Copy the parent record from ~this~ mod
+                                for p in parent:
+                                    if p.GName == record.GName:
+                                        p.CopyAsOverride(self)
+                                        break
                     override = record.CopyAsOverride(self)
                     if override:
                         mergeIds.add(override.fid)
