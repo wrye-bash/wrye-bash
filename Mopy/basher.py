@@ -400,6 +400,7 @@ ID_LOADERS   = balt.IdList(10000, 90,'SAVE','EDIT','NONE')
 ID_GROUPS    = balt.IdList(10100,290,'EDIT','NONE')
 ID_RATINGS   = balt.IdList(10400, 90,'EDIT','NONE')
 ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
+ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
 ID_TAGS      = balt.IdList(10600, 90,'AUTO','COPY')
 
 # Images ----------------------------------------------------------------------
@@ -12592,7 +12593,10 @@ class Save_Move:
     """Moves or copies selected files to alternate profile."""
     def __init__(self,copyMode=False):
         """Initialize."""
-        self.idList = ID_PROFILES
+        if copyMode:
+            self.idList = ID_PROFILES
+        else:
+            self.idList = ID_PROFILES2
         self.copyMode = copyMode
 
     def GetItems(self):
@@ -13267,7 +13271,7 @@ class People_Karma(Link):
         subMenu = wx.Menu()
         for id,item in zip(idList,labels):
             subMenu.Append(id,item)
-        wx.EVT_MENU_RANGE(window,idList.BASE,idList.MAX,self.DoList)
+        wx.EVT_MENU_RANGE(bashFrame,idList.BASE,idList.MAX,self.DoList)
         menu.AppendMenu(-1,'Karma',subMenu)
 
     def DoList(self,event):

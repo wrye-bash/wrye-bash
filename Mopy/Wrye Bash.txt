@@ -2323,6 +2323,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the bUseMyGameDirectory is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
+  * 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
