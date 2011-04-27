@@ -12139,9 +12139,9 @@ class Saves_Profiles:
             menu.AppendItem(menuItem)
             menuItem.Check(localSave == ('Saves\\'+item+'\\'))
         #--Events
-        wx.EVT_MENU(window,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU(window,self.idList.DEFAULT,self.DoDefault)
-        wx.EVT_MENU_RANGE(window,self.idList.BASE,self.idList.MAX,self.DoList)
+        wx.EVT_MENU(bashFrame,self.idList.EDIT,self.DoEdit)
+        wx.EVT_MENU(bashFrame,self.idList.DEFAULT,self.DoDefault)
+        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoEdit(self,event):
         """Show profiles editing dialog."""
@@ -12612,8 +12612,8 @@ class Save_Move:
             menu.AppendItem(menuItem)
             menuItem.Enable(localSave != ('Saves\\'+item+'\\'))
         #--Events
-        wx.EVT_MENU(window,self.idList.DEFAULT,self.DoDefault)
-        wx.EVT_MENU_RANGE(window,self.idList.BASE,self.idList.MAX,self.DoList)
+        wx.EVT_MENU(bashFrame,self.idList.DEFAULT,self.DoDefault)
+        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoDefault(self,event):
         """Handle selection of Default."""
@@ -14795,9 +14795,9 @@ def InitSaveLinks():
         moveMenu.links.append(Save_Move())
         SaveList.itemMenu.append(moveMenu)
     if True: #--Copy to Profile
-        moveMenu = MenuLink(_("Copy To"))
-        moveMenu.links.append(Save_Move(True))
-        SaveList.itemMenu.append(moveMenu)
+        copyMenu = MenuLink(_("Copy To"))
+        copyMenu.links.append(Save_Move(True))
+        SaveList.itemMenu.append(copyMenu)
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_LoadMasters())
