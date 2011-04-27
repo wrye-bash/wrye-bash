@@ -17806,27 +17806,45 @@ class CBash_PatchFile(ObModFile):
                     if parent:
                         parentFid = parent.fid
                         if self.HasRecord(parentFid) == False:
-                            #Copy the winning version of the parent over if it isn't in the patch
-                            parent = self.ObCollection.LookupRecords(parentFid,True)
-                            if parent:
-                                # Copy the parent record from ~this~ mod
-                                for p in parent:
-                                    if p.GName == record.GName:
-                                        parentsToLoad.add(p)
-                                        break
+                            #Copy the parent over if it isn't in the patch
+                            parentsToLoad.add(parentFid)
                     recordsToLoad.add(record)
-        otherParentsToLoad = parentsToLoad - recordsToLoad # List of parent records to load from the last winning mod
-        parentsToLoad -= otherParentsToLoad                # List of parent records to load from ~this~ mod
-        # Load parent records from winning mods first
-        for parent in otherParentsToLoad:
-            parentFid = parent.fid
-            if self.HasRecord(parentFid) == False:
-                parent = self.ObCollection.LookupRecords(parentFid)
+
+        recordFids = {x.fid for x in recordsToLoad}
+        otherParentsToLoad = parentsToLoad - recordFids # Parents to copy from the winning mod
+        parentsToLoad -= otherParentsToLoad             # Parents to copy from this mod
+
+        def isWorldCELL(record):
+            if record._Type == "CELL":
+                parent = record.Parent
                 if parent:
+                    if parent._Type == "WRLD":
+                        cell = parent.WorldCELL
+                        if cell and cell.fid == record.fid:
+                            return True
+            return False
+
+        # Load parent records from winning mods first
+        for parentFid in otherParentsToLoad:
+            parent = self.ObCollection.LookupRecords(parentFid)
+            if parent:
+                # Deal with WorldCELL's copy flags not being set properly
+                if isWorldCELL(parent[0]):
+                    parent[0].Parent.CopyAsOverride(self)
+                    parent[0].CopyAsOverride(self,4)
+                else:
                     parent[0].CopyAsOverride(self)
-        # Now load parent records from this mod
-        for parent in parentsToLoad:
-            p.CopyAsOverride(self)
+        # Load parent records from this mod
+        for parentFid in parentsToLoad:
+            parent = self.ObCollection.LookupRecords(parentFid,True)
+            if parent:
+                for p in parent:
+                    if p.GName == modFile.GName:
+                        if isWorldCELL(p):
+                            p.CopyAsOverride(self,4)
+                        else:
+                            p.CopyAsOverride(self)
+        # Load records from this mod
         for record in recordsToLoad:
             override = record.CopyAsOverride(self)
             if override:
