@@ -17786,6 +17786,8 @@ class CBash_PatchFile(ObModFile):
         """Copies contents of modFile into self."""
         mergeIds = self.mergeIds
         loadSet = self.loadSet
+        parentsToLoad = set()
+        recordsToLoad = set()
         badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
         for blockType, block in modFile.aggregates.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
@@ -17808,11 +17810,25 @@ class CBash_PatchFile(ObModFile):
                                 # Copy the parent record from ~this~ mod
                                 for p in parent:
                                     if p.GName == record.GName:
-                                        p.CopyAsOverride(self)
+                                        parentsToLoad.add(p)
                                         break
-                    override = record.CopyAsOverride(self)
-                    if override:
-                        mergeIds.add(override.fid)
+                    recordsToLoad.add(record)
+        otherParentsToLoad = parentsToLoad - recordsToLoad # List of parent records to load from the last winning mod
+        parentsToLoad -= otherParentsToLoad                # List of parent records to load from ~this~ mod
+        # Load parent records from winning mods first
+        for parent in otherParentsToLoad:
+            parentFid = parent.fid
+            if self.HasRecord(parentFid) == False:
+                parent = self.ObCollection.LookupRecords(parentFid)
+                if parent:
+                    parent[0].CopyAsOverride(self)
+        # Now load parent records from this mod
+        for parent in parentsToLoad:
+            p.CopyAsOverride(self)
+        for record in recordsToLoad:
+            override = record.CopyAsOverride(self)
+            if override:
+                mergeIds.add(override.fid)
 
 ##    def forceMergeModFile(self,modFile,progress,doFilter,iiMode):
 ##        """Copies contents of modFile into self; as new records in the patch not as overrides including new records so can be dangerous!."""
