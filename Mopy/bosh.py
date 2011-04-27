@@ -7391,7 +7391,10 @@ class Plugins:
     """Plugins.txt file. Owned by modInfos. Almost nothing else should access it directly."""
     def __init__(self):
         """Initialize."""
-        self.dir = dirs['userApp']
+        if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
+            self.dir = dirs['app']
+        else:
+            self.dir = dirs['userApp']
         self.path = self.dir.join('Plugins.txt')
         self.mtime = 0
         self.size = 0
