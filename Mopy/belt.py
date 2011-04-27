@@ -669,7 +669,7 @@ class WryeParser(ScriptParser.Parser):
 
 
     def Begin(self, file):
-        self.vars = {}
+        self.variables.clear()
         self.Flow = []
         self.notes = []
         self.espmrenames = {}
@@ -711,7 +711,7 @@ class WryeParser(ScriptParser.Parser):
             return
 
         # Rebegin
-        self.vars = {}
+        self.variables.clear()
         self.Flow = []
         self.notes = []
         self.espmrenames = {}
