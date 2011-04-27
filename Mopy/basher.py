@@ -3117,6 +3117,7 @@ class InstallersPanel(SashTankPanel):
     mainMenu = Links()
     itemMenu = Links()
     espmMenu = Links()
+    subsMenu = Links()
 
     def __init__(self,parent):
         """Initialize."""
@@ -3167,6 +3168,7 @@ class InstallersPanel(SashTankPanel):
         subPackagesLabel = staticText(subPackagesPanel, _('Sub-Packages'))
         self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+        self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(checkListSplitter)
         espmsLabel = staticText(espmsPanel, _('Esp/m Filter'))
@@ -3509,6 +3511,19 @@ class InstallersPanel(SashTankPanel):
         #--Build Menu
         menu = wx.Menu()
         for link in InstallersPanel.espmMenu:
+            link.AppendToMenu(menu,self,selected)
+        bashFrame.PopupMenu(menu)
+        menu.Destroy()
+        
+    def SubsSelectionMenu(self,event):
+        """Handle right click in espm list."""
+        x = event.GetX()
+        y = event.GetY()
+        selected = self.gSubList.HitTest((x,y))
+        self.gSubList.SetSelection(selected)
+        #--Build Menu
+        menu = wx.Menu()
+        for link in InstallersPanel.subsMenu:
             link.AppendToMenu(menu,self,selected)
         bashFrame.PopupMenu(menu)
         menu.Destroy()
@@ -8317,7 +8332,7 @@ class Installer_CopyConflicts(InstallerLink):
         finally:
             progress.Destroy()
 
-# InstallerDetails Links ------------------------------------------------------
+# InstallerDetails Espm Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installer_Espm_SelectAll(InstallerLink):
@@ -8338,7 +8353,7 @@ class Installer_Espm_SelectAll(InstallerLink):
         gInstallers.refreshCurrent(installer)
 
 class Installer_Espm_DeselectAll(InstallerLink):
-    """Select All Esp/ms in installer for installation."""
+    """Deselect All Esp/ms in installer for installation."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Deselect All'))
@@ -8417,7 +8432,80 @@ class Installer_Espm_ResetAll(InstallerLink):
         installer = gInstallers.data[gInstallers.detailsItem]
         installer.resetAllEspmNames()
         gInstallers.refreshCurrent(installer)            
+# InstallerDetails Subpackage Links ------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class Installer_Subs_SelectAll(InstallerLink):
+    """Select All sub-packages in installer for installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Select All'))
+        menu.AppendItem(menuItem)
+        if gInstallers.gSubList.GetCount() < 2:
+            menuItem.Enable(False)
 
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        for index in range(gInstallers.gSubList.GetCount()):
+            gInstallers.gSubList.Check(index, True)
+            installer.subActives[index + 1] = True
+        gInstallers.refreshCurrent(installer)
+
+class Installer_Subs_DeselectAll(InstallerLink):
+    """Deselect All sub-packages in installer for installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Deselect All'))
+        menu.AppendItem(menuItem)
+        if gInstallers.gSubList.GetCount() < 2:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        for index in range(gInstallers.gSubList.GetCount()):
+            gInstallers.gSubList.Check(index, False)
+            installer.subActives[index + 1] = False
+        gInstallers.refreshCurrent(installer)
+        
+class Installer_Subs_ToggleSelection(InstallerLink):
+    """Toggles selection state of all sub-packages in installer for installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Toggle Selection'))
+        menu.AppendItem(menuItem)
+        if gInstallers.gSubList.GetCount() < 2:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = gInstallers.data[gInstallers.detailsItem]
+        for index in range(gInstallers.gSubList.GetCount()):
+            check = not installer.subActives[index+1]
+            gInstallers.gSubList.Check(index, check)
+            installer.subActives[index + 1] = check
+        gInstallers.refreshCurrent(installer)
+        
+class Installer_Subs_ListSubPackages(InstallerLink):
+    """Lists all sub-packages in installer for user information/w/e."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('List Sub-packages'))
+        menu.AppendItem(menuItem)
+        if gInstallers.gSubList.GetCount() < 2:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""                
+        subs = _('[spoiler]\nSub-Packages List for "%s"\n') % (gInstallers.data[gInstallers.detailsItem].archive)
+        for index in range(gInstallers.gSubList.GetCount()):
+            subs += gInstallers.gSubList.GetString(index) + '\n'
+        subs += '[\spoiler]'
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(subs))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,subs,_("Sub-Package List"),asDialog=False,fixedFont=False,icons=bashBlue)
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -14469,6 +14557,13 @@ def InitInstallerLinks():
     InstallersPanel.espmMenu.append(Installer_Espm_Reset())
     InstallersPanel.espmMenu.append(SeparatorLink())
     InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
+    
+    #--Sub-Package Main Menu
+    InstallersPanel.subsMenu.append(Installer_Subs_SelectAll())
+    InstallersPanel.subsMenu.append(Installer_Subs_DeselectAll())
+    InstallersPanel.subsMenu.append(Installer_Subs_ToggleSelection())
+    InstallersPanel.subsMenu.append(SeparatorLink())
+    InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
 
 def InitReplacerLinks():
     """Initialize replacer tab menus."""

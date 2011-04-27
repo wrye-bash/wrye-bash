@@ -2321,7 +2321,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Taglist updated to BOSS rev 2608.
   * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
     * These features may be removed in future versions.
-  * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini  
+  * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
+  * In cases where the bUseMyGameDirectory is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
@@ -2368,6 +2369,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Changed the rename installer dialog for in place renaming.
   * Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
   * Widgets on installers tab made resizable (contributed by myk002).
+  * Added a sub-packages r-click menu:
+    * added Select All Sub-packages command.
+    * added Deselect All Sub-packages command.
+    * added Toggle Selected Sub-packages command.
+    * added List Sub-packages command.
 * BAIN Wizards:
   * packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
   * added ability to use default images located in the 'Mopy\Wizard Images' directory
