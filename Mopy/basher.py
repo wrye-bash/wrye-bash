@@ -14935,7 +14935,6 @@ def InitSettingsLinks():
     global SettingsMenu
     SettingsMenu = MenuLink(_('Settings'))
     SettingsMenu.links.append(User_BackupSettings())
-    SettingsMenu.links.append(User_BackupSettings())
     SettingsMenu.links.append(User_SaveSettings())
     SettingsMenu.links.append(Installers_ExportDllInfo())
     SettingsMenu.links.append(Installers_ImportDllInfo())
