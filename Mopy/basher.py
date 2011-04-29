@@ -10633,9 +10633,9 @@ class Mod_Labels:
         for id,item in zip(self.idList,self.GetItems()):
             menu.Append(id,item)
         #--Events
-        wx.EVT_MENU(window,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU(window,self.idList.NONE,self.DoNone)
-        wx.EVT_MENU_RANGE(window,self.idList.BASE,self.idList.MAX,self.DoList)
+        wx.EVT_MENU(bashFrame,self.idList.EDIT,self.DoEdit)
+        wx.EVT_MENU(bashFrame,self.idList.NONE,self.DoNone)
+        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoNone(self,event):
         """Handle selection of None."""
