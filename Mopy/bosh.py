@@ -30673,7 +30673,11 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             if merged and (sorted(newList, key=itemgetter(1)) != sorted(mergedList, key=itemgetter(1)) or newAttrs != mergedAttrs):
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                override.chanceNone, override.script, override.template, override.flags = mergedAttrs
+                override.chanceNone, override.script, override.template = mergedAttrs[:3]
+                if override.flags != mergedAttrs[3]:
+                    # Bug in CBash causes this to fail if setting to 0, resulting in None for the flags instead of 0
+                    if mergedAttrs[0] != 0:
+                        override.flags = mergedAttrs[3]
                 override.entries_list = mergedList
 
     def finishPatch(self,patchFile, progress):
