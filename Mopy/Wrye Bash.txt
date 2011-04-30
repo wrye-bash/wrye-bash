@@ -246,6 +246,14 @@ __Overview:__
     * Contains BAIN packages, and other bash settings.
     * Important to backup.
 
+    
+== Global Bash Keyboard Shortcuts =============================================
+These keyboard commands work pretty much everywhere (as in if you want it will almost cetainly work) in Bash. 
+
+*__Listing:__
+  * <code> ctrl-numpad plus (+)</code>: fits column sizes to fit what is displayeable.
+  
+  
 == Launch Buttons =============================================================
 At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications (if they're installed). You'll also find one or two toggle buttons. 
 
