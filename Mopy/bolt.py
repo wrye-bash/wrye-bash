@@ -163,7 +163,7 @@ class UncodedError(BoltError):
 #------------------------------------------------------------------------------
 class CancelError(BoltError):
     """User pressed 'Cancel' on the progress meter."""
-    def __init__(self,message=_('Action aboted by user.')):
+    def __init__(self,message=_('Action aborted by user.')):
         BoltError.__init__(self, message)
 
 class SkipError(BoltError):
@@ -209,6 +209,21 @@ class LString(object):
         if isinstance(other,LString): return cmp(self._cs, other._cs)
         else: return cmp(self._cs, other.lower())
 
+# Unicode Strings -------------------------------------------------------------
+def Unicode(name):
+    if isinstance(name,unicode): return name
+    try:
+        return unicode(name,'UTF8')
+    except UnicodeDecodeError:#, UnicodeEncodeError:
+        try:
+            # A fair number of file names require UTF16 instead...
+            return unicode(name,'U16')
+        except UnicodeDecodeError:#, UnicodeEncodeError:
+            try:
+                return unicode(name,'cp1252')
+            except UnicodeDecodeError, UnicodeEncodeError:
+                # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                return unicode(name,'cp500')
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
@@ -297,18 +312,19 @@ class Path(object):
             elif isinstance(name,unicode):
                 self.__setstate__(name)
             else:
-                try:
-                    self.__setstate__(unicode(str(name),'UTF8'))
-                except UnicodeDecodeError:
-                    try:
-                        # A fair number of file names require UTF16 instead...
-                        self.__setstate__(unicode(str(name),'U16'))
-                    except UnicodeDecodeError:
-                        try:
-                            self.__setstate__(unicode(str(name),'cp1252'))
-                        except UnicodeDecodeError:
-                            # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
-                            self.__setstate__(unicode(str(name),'cp500'))
+                self.__setstate__(Unicode(name))
+                ##try:
+                ##    self.__setstate__(unicode(str(name),'UTF8'))
+                ##except UnicodeDecodeError:
+                ##    try:
+                ##        # A fair number of file names require UTF16 instead...
+                ##        self.__setstate__(unicode(str(name),'U16'))
+                ##    except UnicodeDecodeError:
+                ##        try:
+                ##            self.__setstate__(unicode(str(name),'cp1252'))
+                ##        except UnicodeDecodeError:
+                ##            # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                ##            self.__setstate__(unicode(str(name),'cp500'))
         else:
             if isinstance(name,Path):
                 self.__setstate__(name._s)
