@@ -43,7 +43,7 @@ import barb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import _, LString, Unicode, GPath, SubProgress, deprint, delist
+from bolt import _, LString, Unicode, Encode, GPath, SubProgress, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -1883,7 +1883,7 @@ class ModDetails(wx.Window):
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = modInfo.name.s
-            self.authorStr = Unicode(modInfo.header.author)
+            self.authorStr = modInfo.header.author
             self.modifiedStr = formatDate(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = 'v%0.1f' % (modInfo.header.version,)
@@ -1920,7 +1920,7 @@ class ModDetails(wx.Window):
     def OnTextEdit(self,event):
         if self.modInfo and not self.edited:
             if ((self.fileStr != self.file.GetValue()) or
-                (self.authorStr != Unicode(self.author.GetValue())) or
+                (Unicode(self.authorStr) != Unicode(self.author.GetValue())) or
                 (self.modifiedStr != self.modified.GetValue()) or
                 (self.descriptionStr != self.description.GetValue()) ):
                 self.SetEdited()
@@ -1946,8 +1946,8 @@ class ModDetails(wx.Window):
 
     def OnEditAuthor(self,event):
         if not self.modInfo: return
-        authorStr = self.author.GetValue()
-        if authorStr != self.authorStr:
+        authorStr = Unicode(self.author.GetValue())
+        if authorStr != Unicode(self.authorStr):
             self.authorStr = authorStr
             self.SetEdited()
 
@@ -2021,7 +2021,7 @@ class ModDetails(wx.Window):
             fileName = newName
         #--Change hedr/masters?
         if changeHedr or changeMasters:
-            modInfo.header.author = self.authorStr.strip()
+            modInfo.header.author = Encode(self.authorStr.strip())
             modInfo.header.description = bolt.winNewLines(self.descriptionStr.strip())
             modInfo.header.masters = self.masters.GetNewMasters()
             modInfo.header.changed = True

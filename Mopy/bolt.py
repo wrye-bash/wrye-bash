@@ -221,7 +221,22 @@ def Unicode(name):
         except UnicodeDecodeError:#, UnicodeEncodeError:
             try:
                 return unicode(name,'cp1252')
-            except UnicodeDecodeError, UnicodeEncodeError:
+            except UnicodeDecodeError:#, UnicodeEncodeError:
+                # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
+                return unicode(name,'cp500')
+                
+def Encode(name):
+    if isinstance(name,str): return name
+    try:
+        return name.encode('cp1252')
+    except UnicodeEncodeError:#, UnicodeEncodeError:
+        try:
+            # A fair number of file names require UTF8 instead...
+            return name.encode('U8')
+        except UnicodeEncodeError:#, UnicodeEncodeError:
+            try:
+                return name.encode('U16')
+            except UnicodeEncodeError:#, UnicodeEncodeError:
                 # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
                 return unicode(name,'cp500')
 # Paths -----------------------------------------------------------------------
