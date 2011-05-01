@@ -43,7 +43,7 @@ import barb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import _, LString,GPath, SubProgress, deprint, delist
+from bolt import _, LString, Unicode, GPath, SubProgress, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -1883,7 +1883,7 @@ class ModDetails(wx.Window):
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = modInfo.name.s
-            self.authorStr = modInfo.header.author
+            self.authorStr = Unicode(modInfo.header.author)
             self.modifiedStr = formatDate(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = 'v%0.1f' % (modInfo.header.version,)
@@ -1920,7 +1920,7 @@ class ModDetails(wx.Window):
     def OnTextEdit(self,event):
         if self.modInfo and not self.edited:
             if ((self.fileStr != self.file.GetValue()) or
-                (self.authorStr != self.author.GetValue()) or
+                (self.authorStr != Unicode(self.author.GetValue())) or
                 (self.modifiedStr != self.modified.GetValue()) or
                 (self.descriptionStr != self.description.GetValue()) ):
                 self.SetEdited()
@@ -1984,7 +1984,7 @@ class ModDetails(wx.Window):
         #--Change Tests
         changeName = (self.fileStr != modInfo.name)
         changeDate = (self.modifiedStr != formatDate(modInfo.mtime))
-        changeHedr = ((self.authorStr != modInfo.header.author) or
+        changeHedr = ((self.authorStr != Unicode(modInfo.header.author)) or
             (self.descriptionStr != modInfo.header.description ))
         changeMasters = self.masters.edited
         #--Warn on rename if file has BSA and/or dialog
@@ -5909,7 +5909,7 @@ class PatchDialog(wx.Dialog):
                 progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
-                pass
+                del patchFile
             finally:
                 progress.Destroy()
 
