@@ -4710,7 +4710,7 @@ class BashNotebook(wx.Notebook):
         #--Pages
         self.AddPage(InstallersPanel(self),_("Installers"))
         iInstallers = self.GetPageCount()-1
-        if bosh.inisettings['bEnableReplacers'] and (settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list()):
+        if bosh.inisettings['EnableReplacers'] and (settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list()):
             self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
@@ -14482,7 +14482,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
     InstallersPanel.mainMenu.append(Installers_Enabled())
-    if bosh.inisettings['bEnableReplacers']:
+    if bosh.inisettings['EnableReplacers']:
         InstallersPanel.mainMenu.append(Installers_ShowReplacers())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AutoAnneal())
@@ -14641,7 +14641,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_ListBashTags())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
-    if bosh.inisettings['bEnableBalo']:
+    if bosh.inisettings['EnableBalo']:
         ModList.mainMenu.append(Mods_AutoGroup())
         ModList.mainMenu.append(Mods_FullBalo())
     ModList.mainMenu.append(Mods_LockTimes())
@@ -14675,7 +14675,7 @@ def InitModLinks():
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(File_RevertToSnapshot())
         ModList.itemMenu.append(fileMenu)
-    if bosh.inisettings['bEnableBalo']: #--Groups
+    if bosh.inisettings['EnableBalo']: #--Groups
         groupMenu = MenuLink(_("Group"))
         groupMenu.links.append(Mod_Groups())
         groupMenu.links.append(Mod_BaloGroups())
