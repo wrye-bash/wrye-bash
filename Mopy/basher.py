@@ -9908,8 +9908,8 @@ class Mod_BaloGroups:
                         subMenu.Check(id,offGroup == modGroup)
                     menu.AppendMenu(-1,group,subMenu)
         #--Events
-        wx.EVT_MENU(window,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU_RANGE(window,self.idList.BASE,self.idList.MAX,self.DoList)
+        wx.EVT_MENU(bashFrame,self.idList.EDIT,self.DoEdit)
+        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -13415,7 +13415,10 @@ class App_Button(Link):
                 exeObse = bosh.dirs['app'].join('obse_loader.exe')
                 exeArgs = ' '.join(self.exeArgs)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
-                    exePath = exeObse
+                    if bosh.inisettings['SteamInstall'] and '\\oblivion.exe' in self.exePath.s:
+                        exePath = self.exePath
+                    else:   
+                        exePath = exeObse
                     if self.obseArg != '': exeArgs += " %s" % self.obseArg
                 else:
                     exePath = self.exePath

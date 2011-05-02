@@ -62,7 +62,6 @@ if os.path.exists('bash.ini'):
                 break
 
 reTrans = re.compile(r'^([ :=\.]*)(.+?)([ :=\.]*$)')
-hunky = 0
 def compileTranslator(txtPath,pklPath):
     """Compiles specified txtFile into pklFile."""
     reSource = re.compile(r'^=== ')
