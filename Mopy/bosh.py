@@ -82,7 +82,7 @@ import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
-from bolt import _, LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
+from bolt import _, LString, Unicode, Encode, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -1542,7 +1542,7 @@ class MelSet:
 
     def getReport(self):
         """Returns a report of structure."""
-        buff = cStringIO.StringIO()
+        buff = stringBuffer()
         for element in self.elements:
             element.report(None,buff,'')
         return buff.getvalue()
@@ -1759,7 +1759,7 @@ class MreRecord(object):
         if self.longFids: raise StateError(
             _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(cStringIO.StringIO())
+        out = ModWriter(stringBuffer())
         self.dumpData(out)
         self.data = out.getvalue()
         out.close()
@@ -1791,7 +1791,7 @@ class MreRecord(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,cStringIO.StringIO(self.getDecompressed()))
+        return ModReader(self.inName,stringBuffer(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
@@ -4182,7 +4182,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,cStringIO.StringIO(self.data))
+        return ModReader(self.inName,stringBuffer(self.data))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -32674,6 +32674,10 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['EnableUnicode'] = False
+    if 'steam' in dirs['app'].s:
+        inisettings['SteamInstall'] = True
+    else:
+        inisettings['SteamInstall'] = False
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')

@@ -2332,6 +2332,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the bUseMyGameDirectory is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
   * 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
+  * Unicode improvements:
+    * no more errors on viewing/saving modfiles with tejón and other accented author names.
+  * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
