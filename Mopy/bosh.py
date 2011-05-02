@@ -653,7 +653,7 @@ class ModWriter:
         else:
             outWrite(structPack('=4sHI','XXXX',4,lenData))
             outWrite(structPack('=4sH',type,0))
-        outWrite(data)
+        outWrite(Encode(data))
         outWrite('\x00')
 
     def packRef(self,type,fid):
@@ -1759,7 +1759,7 @@ class MreRecord(object):
         if self.longFids: raise StateError(
             _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(stringBuffer())
+        out = ModWriter(cStringIO.StringIO())
         self.dumpData(out)
         self.data = out.getvalue()
         out.close()
@@ -1787,7 +1787,7 @@ class MreRecord(object):
         if not self.data and not self.flags1.deleted and self.size > 0:
             raise StateError(_('Data undefined: ')+self.recType+' '+hex(self.fid))
         out.write(struct.pack('=4s4I',self.recType,self.size,int(self.flags1),self.fid,self.flags2))
-        if self.size > 0: out.write(self.data)
+        if self.size > 0: out.write(Encode(self.data))
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
