@@ -10526,7 +10526,10 @@ class Installer(object):
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        for espm in self.remaps:
+        for espm in self.remaps.keys():
+            # Need to use .keys(), since 'resetEspmName' will use
+            # del self.remaps[oldName], changing the dictionary
+            # size.
             self.resetEspmName(self.remaps[espm])
 
     def getEspmName(self,currentName):
