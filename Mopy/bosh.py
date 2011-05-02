@@ -32684,8 +32684,8 @@ def initDefaultSettings():
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
-    inisettings['bEnableReplacers'] = False
-    inisettings['bEnableBalo'] = False
+    inisettings['EnableReplacers'] = False
+    inisettings['EnableBalo'] = False
     inisettings['bResetBSATimestamps'] = True
     inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
