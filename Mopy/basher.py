@@ -13877,8 +13877,9 @@ def InitStatusBar():
             _("Launch Tes4LODGen")))
     configHelpers = bosh.ConfigHelpers()
     configHelpers.refresh()
-    if configHelpers.bossVersion > 0: version = 1
-    else: version = 0
+    version = configHelpers.bossVersion
+    if version > 2: version = 2
+    elif version < 0: version = 0
     BashStatusBar.buttons.append( #BOSS --
         App_BOSS(
             (bosh.dirs['app'].join('Data\\BOSS.bat'),bosh.dirs['app'].join('Data\\BOSS.exe'),bosh.dirs['app'].join('BOSS\\BOSS.exe'))[version],
