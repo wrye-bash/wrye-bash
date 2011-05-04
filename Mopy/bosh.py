@@ -9078,7 +9078,7 @@ class ModInfos(FileInfos):
                         tagList += '  * Removed by  BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
                 else: tagList += '    No tags'
-        else: 
+        else:
             for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.name.s.lower(), y.name.s.lower())):
                 if modInfo.getBashTags():
                     tagList += '\n* ' + modInfo.name.s + '\n'
@@ -9092,7 +9092,7 @@ class ModInfos(FileInfos):
                         tagList += '  * Removed by BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
         return tagList
-        
+
     #--Mod Specific ----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""
@@ -20553,7 +20553,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 self.previousPackages[recordId][modFile.GName] = newPackages
                 self.mergedPackageList[recordId] = newPackages
                 ##return
-            else: 
+            else:
                 self.previousPackages[recordId][modFile.GName] = newPackages
             mergedPackages = self.mergedPackageList[recordId]
             if newPackages == mergedPackages: return #same as the current list, just skip.
@@ -20563,7 +20563,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 if master in self.previousPackages:
                     #do the actual stuff here - only needs to be done for the last master that is in the records.
                         for oldIndex, oldPackage in enumerate(oldPackages):
-                            if oldPackage not in newPackages: 
+                            if oldPackage not in newPackages:
                                 deletedPackages.append(oldPackage)
                             for newIndex, newPackage in enumerate(newPackages):
                                 if newPackage in deletedPackages and not 'Actors.AIPackagesForceAdd' in bashTags: continue
@@ -26677,7 +26677,7 @@ class GmstTweaker(MultiTweaker):
             ),
         GmstTweak(False,_('Combat: Max Ally Hits'),
             _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
-            'IAllyHitAllowed',
+            'iAllyHitAllowed',
             ('3',3),
             ('[5]',5),
             ('8',8),
@@ -27196,7 +27196,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ),
         CBash_GmstTweak(False,_('Combat: Max Ally Hits'),
             _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
-            ('IAllyHitAllowed',),
+            ('iAllyHitAllowed',),
             ('3',3),
             ('[5]',5),
             ('8',8),

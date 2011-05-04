@@ -2264,7 +2264,7 @@ class INIPanel(SashPanel):
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
         iniList.RefreshUI()
-        
+
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -2984,7 +2984,7 @@ class InstallersList(balt.Tank):
                 message += ' * ' + file.s + '\n'
             message += '\n'
             message += _('What would you like to do with them?')
-                
+
             self.dialog = dialog= wx.Dialog(self,-1,_('Move or Copy?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             icon = wx.StaticBitmap(dialog,-1,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
             gCheckBox = checkBox(dialog,_("Don't show this in the future."))
@@ -3515,7 +3515,7 @@ class InstallersPanel(SashTankPanel):
             link.AppendToMenu(menu,self,selected)
         bashFrame.PopupMenu(menu)
         menu.Destroy()
-        
+
     def SubsSelectionMenu(self,event):
         """Handle right click in espm list."""
         x = event.GetX()
@@ -3795,7 +3795,7 @@ class ScreensList(List):
         if event.IsEditCancelled(): return
 
         newName = event.GetLabel()
-        
+
         selected = self.GetSelected()
         rePattern = re.compile(r'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I)
         maPattern = rePattern.match(newName)
@@ -7183,7 +7183,7 @@ class List_Column(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-            
+
 class List_Columns(Link):
     """Customize visible columns."""
     def __init__(self,columnsKey,persistantColumns=[]):
@@ -8432,7 +8432,7 @@ class Installer_Espm_ResetAll(InstallerLink):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
         installer.resetAllEspmNames()
-        gInstallers.refreshCurrent(installer)            
+        gInstallers.refreshCurrent(installer)
 # InstallerDetails Subpackage Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -8469,7 +8469,7 @@ class Installer_Subs_DeselectAll(InstallerLink):
             gInstallers.gSubList.Check(index, False)
             installer.subActives[index + 1] = False
         gInstallers.refreshCurrent(installer)
-        
+
 class Installer_Subs_ToggleSelection(InstallerLink):
     """Toggles selection state of all sub-packages in installer for installation."""
     def AppendToMenu(self,menu,window,data):
@@ -8487,7 +8487,7 @@ class Installer_Subs_ToggleSelection(InstallerLink):
             gInstallers.gSubList.Check(index, check)
             installer.subActives[index + 1] = check
         gInstallers.refreshCurrent(installer)
-        
+
 class Installer_Subs_ListSubPackages(InstallerLink):
     """Lists all sub-packages in installer for user information/w/e."""
     def AppendToMenu(self,menu,window,data):
@@ -8498,7 +8498,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
             menuItem.Enable(False)
 
     def Execute(self,event):
-        """Handle selection."""                
+        """Handle selection."""
         subs = _('[spoiler]\nSub-Packages List for "%s"\n') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gSubList.GetCount()):
             subs += gInstallers.gSubList.GetString(index) + '\n'
@@ -13417,7 +13417,7 @@ class App_Button(Link):
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     if bosh.inisettings['SteamInstall'] and '\\oblivion.exe' in self.exePath.s:
                         exePath = self.exePath
-                    else:   
+                    else:
                         exePath = exeObse
                     if self.obseArg != '': exeArgs += " %s" % self.obseArg
                 else:
@@ -14565,7 +14565,7 @@ def InitInstallerLinks():
     InstallersPanel.espmMenu.append(Installer_Espm_Reset())
     InstallersPanel.espmMenu.append(SeparatorLink())
     InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
-    
+
     #--Sub-Package Main Menu
     InstallersPanel.subsMenu.append(Installer_Subs_SelectAll())
     InstallersPanel.subsMenu.append(Installer_Subs_DeselectAll())

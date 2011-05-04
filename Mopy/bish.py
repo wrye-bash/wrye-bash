@@ -725,7 +725,7 @@ def gmstIds(fileName=None):
                 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
                 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket',
                 'iCrimeGoldTresspass','sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2','sBloodParticleDefault',
-                'sBloodParticleExtra1','sBloodParticleExtra2','IAllyHitAllowed']:
+                'sBloodParticleExtra1','sBloodParticleExtra2','iAllyHitAllowed']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
@@ -791,7 +791,7 @@ def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
     ins.close()
     tagList = '\ Taglist for Wrye Bash; derived from BOSS Masterlist revision %i.\n' % (revision) + '\% A Bashed Patch suggestion for the mod above.\n\n'
     for mod in sorted(tags,key=str.lower):
-        tagList += mod + '\n' 
+        tagList += mod + '\n'
         tagList += tags[mod] + '\n'
         if mod in bossDirtyMods:
             tagList += bossDirtyMods[mod] + '\n'
