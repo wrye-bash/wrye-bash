@@ -19518,7 +19518,10 @@ class CBash_CellImporter(CBash_ImportPatcher):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prev_attr_value.iteritems():
-                        setattr(override,attr,value)
+                        try:
+                            setattr(override,attr,value)
+                        except:
+                            deprint(_("%s attribute of %s record referenced an unloaded object (probably %s) - value skipped") % (attr, recordId, value))
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
