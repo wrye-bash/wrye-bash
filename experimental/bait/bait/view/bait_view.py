@@ -34,10 +34,10 @@ _logger = logging.getLogger(__name__)
 
 
 class BaitView(wx.Panel):
-    def __init__(self, parent, presenter_, stateManager=None):
+    def __init__(self, wxParent, presenter_, stateManager=None):
         '''Creates and configures bait widget hierarchies'''
         _logger.debug("initializing bait view")
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, wxParent)
 
         # assemble widget hierarchy
         # top-level splitter between left and right panels
@@ -47,32 +47,44 @@ class BaitView(wx.Panel):
         # main section
         mainPanel = wx.Panel(topSplitter)
         settingsIcon = wx.ArtProvider.GetBitmap(wx.ART_REMOVABLE, client=wx.ART_BUTTON)
-        globalSettingsButton = wx.BitmapButton(mainPanel, bitmap=settingsIcon, style=wx.NO_BORDER)
+        globalSettingsButton = wx.BitmapButton(
+            mainPanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         search = wx.SearchCtrl(mainPanel)
         statusPanel = status_panel.StatusPanel(mainPanel, presenter_)
         packageTree = self._packageTree = filtered_tree.PackagesTree(mainPanel,
-                (presenter.FILTER_ID_PACKAGES_HIDDEN, presenter.FILTER_ID_PACKAGES_INSTALLED, presenter.FILTER_ID_PACKAGES_NOT_INSTALLED),
-                ("Hidden (%d/%d)", "Installed (%d/%d)", "Not Installed (%d/%d)"), presenter_)
+                (presenter.FILTER_ID_PACKAGES_HIDDEN,
+                 presenter.FILTER_ID_PACKAGES_INSTALLED,
+                 presenter.FILTER_ID_PACKAGES_NOT_INSTALLED),
+                ("Hidden (%d/%d)", "Installed (%d/%d)", "Not Installed (%d/%d)"),
+                presenter_)
 
         # details section
         infoStyle = wx.TE_READONLY|wx.TE_MULTILINE
         commentsSplitter = wx.gizmos.ThinSplitterWindow(topSplitter, style=splitterStyle)
-        detailsSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        packageInfoPanel = self._packageInfoPanel = package_info.PackageInfoPanel(detailsSplitter, presenter_)
-        fileTreeSplitter = wx.gizmos.ThinSplitterWindow(detailsSplitter, style=splitterStyle)
+        detailsSplitter = wx.gizmos.ThinSplitterWindow(
+            commentsSplitter, style=splitterStyle)
+        packageInfoPanel = self._packageInfoPanel = package_info.PackageInfoPanel(
+            detailsSplitter, presenter_)
+        fileTreeSplitter = wx.gizmos.ThinSplitterWindow(
+            detailsSplitter, style=splitterStyle)
         fileTreePanel = wx.Panel(fileTreeSplitter)
-        projectSettingsButton = wx.BitmapButton(fileTreePanel, bitmap=settingsIcon, style=wx.NO_BORDER)
+        projectSettingsButton = wx.BitmapButton(
+            fileTreePanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         fileTreeLabel = wx.StaticText(fileTreePanel, label="Package contents")
         self._fileTree = filtered_tree.FilesTree(fileTreePanel,
-                (presenter.FILTER_ID_FILES_PLUGINS, presenter.FILTER_ID_FILES_RESOURCES, presenter.FILTER_ID_FILES_OTHER),
-                ("Plugins (%d)", "Resources (%d)", "Other (%d)"), presenter_)
+                (presenter.FILTER_ID_FILES_PLUGINS,
+                 presenter.FILTER_ID_FILES_RESOURCES,
+                 presenter.FILTER_ID_FILES_OTHER),
+                ("Plugins (%d)", "Resources (%d)", "Other (%d)"),
+                presenter_)
         fileInfoPanel = wx.Panel(fileTreeSplitter)
         fileInfoLabel = wx.StaticText(fileInfoPanel, label="File details")
         fileInfo = wx.TextCtrl(fileInfoPanel, style=infoStyle)
         commentsPanel = wx.Panel(commentsSplitter)
         commentsLabel = wx.StaticText(commentsPanel, label="Comments")
         oneLineHeight = search.GetSize()[1]
-        commentsText = wx.SearchCtrl(commentsPanel, size=(-1, oneLineHeight), style=wx.TE_MULTILINE)
+        commentsText = wx.SearchCtrl(
+            commentsPanel, size=(-1, oneLineHeight), style=wx.TE_MULTILINE)
 
         # customize widgets
         globalSettingsButton.SetToolTipString("Settings")
@@ -106,7 +118,8 @@ class BaitView(wx.Panel):
 
         # configure layout
         searchSizer = wx.BoxSizer(wx.HORIZONTAL)
-        searchSizer.Add(globalSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
+        searchSizer.Add(globalSettingsButton, 0,
+                        wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
         searchSizer.Add(search, 1, wx.ALIGN_CENTER_VERTICAL)
 
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -117,8 +130,10 @@ class BaitView(wx.Panel):
         mainPanel.SetSizer(mainSizer)
 
         fileTreeHeaderSizer = wx.BoxSizer(wx.HORIZONTAL)
-        fileTreeHeaderSizer.Add(projectSettingsButton, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
-        fileTreeHeaderSizer.Add(fileTreeLabel, 1, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 3)
+        fileTreeHeaderSizer.Add(projectSettingsButton, 0,
+                                wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 3)
+        fileTreeHeaderSizer.Add(fileTreeLabel, 1,
+                                wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 3)
         fileTreeSizer = wx.BoxSizer(wx.VERTICAL)
         fileTreeSizer.Add(fileTreeHeaderSizer, 0, wx.EXPAND)
         fileTreeSizer.Add(self._fileTree, 1, wx.EXPAND)
@@ -141,12 +156,21 @@ class BaitView(wx.Panel):
         topSizer.Add(topSplitter, 1, wx.EXPAND)
         self.SetMinSize(topSizer.GetMinSize())
         self.SetSizer(topSizer)
-        
+
         # set up state
-        self._splitters = {"fileTree":fileTreeSplitter, "details":detailsSplitter, "comments":commentsSplitter, "top":topSplitter}
+        self._splitters = {"fileTree":fileTreeSplitter,
+                           "details":detailsSplitter,
+                           "comments":commentsSplitter,
+                           "top":topSplitter}
         self._presenter = presenter_
         self._stateManager = stateManager
-        self._commandThread = command_thread.CommandThread(presenter_.viewCommandQueue, statusPanel=statusPanel, packageTree=packageTree, fileTree=self._fileTree, packageInfoPanel=packageInfoPanel, fileInfo=fileInfo)
+        self._commandThread = command_thread.CommandThread(
+            presenter_.viewCommandQueue,
+            statusPanel=statusPanel,
+            packageTree=packageTree,
+            fileTree=self._fileTree,
+            packageInfoPanel=packageInfoPanel,
+            fileInfo=fileInfo)
         self._shuttingDown = False
 
         # event bindings
@@ -193,10 +217,10 @@ class BaitView(wx.Panel):
         self._packageTree.start(filterStateMap)
         self._fileTree.start(filterStateMap)
         self._packageInfoPanel.start(filterStateMap)
-        _logger.debug("starting command processing thread")
-        self._commandThread.start()
         _logger.debug("starting presenter")
         self._presenter.start(presenter.DETAILS_TAB_ID_GENERAL, filterStateMap)
+        _logger.debug("starting command processing thread")
+        self._commandThread.start()
         _logger.debug("view successfully started")
 
     def shutdown(self):
@@ -220,7 +244,7 @@ class BaitView(wx.Panel):
         '''Resumes from a pause'''
         _logger.debug("resume requested")
         self._presenter.resume()
-        
+
     def _save_state(self):
         if self._stateManager is None:
             return
@@ -275,7 +299,7 @@ class BaitView(wx.Panel):
         menu.Append(-1, "Skip silent voices", kind=wx.ITEM_CHECK)
         self.PopupMenu(menu)
         menu.Destroy()
-        
+
     def _on_search_text(self, event):
         text = event.GetEventObject().GetValue()
         _logger.debug("search string changing to: '%s'", text)

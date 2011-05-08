@@ -12,7 +12,7 @@ import threading
 import wx
 
 from bait import bait_factory
-from bait.test import mock_presenter
+from bait.test import mock_model
 
 
 class MainWindow(wx.Frame):
@@ -21,8 +21,9 @@ class MainWindow(wx.Frame):
         wx.Frame.__init__(self, parent, title=title, size=(1050,600))
         self.Bind(wx.EVT_CLOSE, self._on_close)
         notebook = wx.Notebook(self)
-        # TODO: use real presenter
-        self._baitView = bait_factory.CreateBaitView(notebook, presenter=mock_presenter.MockPresenter())
+        # TODO: use real model
+        model_ = mock_model.MockModel()
+        self._baitView = bait_factory.CreateBaitView(notebook, model=model_)
         #self._baitView = bait_factory.CreateBaitView(notebook,
         #                         os.path.join("testtmp", "installers"),
         #                         os.path.join("testtmp", "gamedata"),

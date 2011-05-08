@@ -22,14 +22,37 @@
 #
 # =============================================================================
 
+import Queue
 import logging
+import multiprocessing
 
 from .view import bait_view
+from .presenter import bait_presenter
+from .model import bait_model
 
 
 _logger = logging.getLogger(__name__)
 
 
-def CreateBaitView(parent, presenter=None):
-    _logger.debug("returning new BaitView object")
+def _create_queue(isMultiprocess):
+    """Creates a communications queue"""
+    if (isMultiprocess is True):
+        return multiprocessing.Queue()
+    else:
+        return Queue.Queue()
+
+def CreateBaitView(parent, presenter=None, model=None, isMultiprocess=False):
+    _logger.debug("creating BAIT components")
+
+    if not model is None:
+        _logger.debug("using custom model (class: %s)", model.__class__)
+    else:
+        _logger.debug("instantiating default model")
+        model = bait_model.BaitModel()
+
+    if not presenter is None:
+        _logger.debug("using custom presenter (class: %s)", presenter.__class__)
+    else:
+        _logger.debug("instantiating default presenter")
+        presenter = bait_presenter.BaitPresenter(model, _create_queue(isMultiprocess))
     return bait_view.BaitView(parent, presenter)
