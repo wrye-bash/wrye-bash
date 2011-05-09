@@ -14961,14 +14961,3 @@ def InitLinks():
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
     print _('Compiled')
-
-def funkychicken():
-        text = raw_input ('input relative path')
-#result = #re.search (r'(?<=\\)[^\\][?=\.]',text,re.I)
-        result = os.path.basename(text)
-        print result
-        print 'compiled'
-        newpathtemp = r'pm\dungeons\bloodyayleid\interior'
-        result = (newpathtemp+result)
-        print result
-#(?=.nif)
