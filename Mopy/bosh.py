@@ -25643,6 +25643,94 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
         self.count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_LightFadeValueFix(MultiTweakItem):
+    """Sets light fade value when not set to 1.0."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("No Light Fade Value Fix"),
+            _("Sets Light's Fade values to default of 1.0 if not set."),
+            'NoLightFadeValueFix',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreLigh,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreLigh,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.LIGH
+        for record in modFile.LIGH.getActiveRecords():
+            if not isinstance(record.fade,float):
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.LIGH.records:
+            if not isinstance(record.fade,float):
+                record.fade = 1.0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== No Light Fade Value Fix'))
+        log(_('* Lights with fade values added: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
+    """Remove light flickering for low end machines."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('No Light Fade Value Fix')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("No Light Fade Value Fix"),
+            _("Sets Light's Fade values to default of 1.0 if not set."),
+            'NoLightFadeValueFix',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['LIGH']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not isinstance(record.fade,float):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.fade = 1.0
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== No Light Fade Value Fix'))
+        log(_('* Lights with fade values added: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -25686,6 +25774,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_SetSoundAttenuationLevels(),
         AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
         AssortedTweak_FactioncrimeGoldMultiplier(),
+        AssortedTweak_LightFadeValueFix(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -25758,6 +25847,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetSoundAttenuationLevels(),
         CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
         CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
+        CBash_AssortedTweak_LightFadeValueFix(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
@@ -32471,7 +32561,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                             try:
                                 modName = longId[0].s
                             except:
-                                log(_('        . Unloaded Object'))
+                                log(_('        . Unloaded Object or Undefined Reference'))
                                 continue
                         log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
         self.mod_type_id_badEntries = {}
