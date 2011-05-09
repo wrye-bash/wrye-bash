@@ -2290,6 +2290,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Tweak Assorted patcher: 
     * Added Set Sound Attenuation Levels tweaker.
     * Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
+    * Added 'Faction crime Gold Multiplier Fix' tweaker.
+    * Added 'No Light Fade Value Fix' tweaker.
   * Added a cancel button to the build progress bar.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
