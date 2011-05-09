@@ -32428,7 +32428,11 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                         if entry[2]:
                             modName = entry[2].s
                         else:
-                            modName = longId[0].s
+                            try:
+                                modName = longId[0].s
+                            except:
+                                log(_('        . Unloaded Object'))
+                                continue
                         log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
         self.mod_type_id_badEntries = {}
 
