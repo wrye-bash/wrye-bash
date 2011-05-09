@@ -12268,15 +12268,16 @@ class InstallersData(bolt.TankData, DataDict):
                 else:
                     newData[crc] = bcfCRC_converter[crc]
                     newData[crc].fullPath = bcfPath
-        changed = bool(pending) or (len(newData) != len(bcfCRC_converter))
         #--New/update crcs?
         self.bcfCRC_converter = newData
+        pendingChanged = False
         if bool(pending):
             progress(0,_("Scanning Converters..."))
             progress.setFull(len(pending))
             for index,archive in enumerate(sorted(pending)):
                 progress(index,_("Scanning Converter...\n")+archive.s)
-                self.addConverter(archive)
+                pendingChanged |= self.addConverter(archive)
+        changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self.pruneConverters()
         return changed
 
@@ -12301,7 +12302,13 @@ class InstallersData(bolt.TankData, DataDict):
             newConverter = converter
         else:
             #--Adding a new file
-            newConverter = InstallerConverter(converter)
+            try:
+                newConverter = InstallerConverter(converter)
+            except:
+                fullPath = dirs['converters'].join(converter)
+                fullPath.moveTo(dirs['corruptBCFs'].join(converter.tail))
+                del self.bcfPath_sizeCrcDate[fullPath]
+                return False
         #--Check if overriding an existing converter
         oldConverter = self.bcfCRC_converter.get(newConverter.crc)
         if oldConverter:
@@ -12312,6 +12319,7 @@ class InstallersData(bolt.TankData, DataDict):
         [srcCRC_converters[srcCRC].append(newConverter) for srcCRC in newConverter.srcCRCs if srcCRC_converters.setdefault(srcCRC,[newConverter]) != [newConverter]]
         self.bcfCRC_converter[newConverter.crc] = newConverter
         self.bcfPath_sizeCrcDate[newConverter.fullPath] = (newConverter.fullPath.size, newConverter.crc, newConverter.fullPath.mtime)
+        return True
 
     def removeConverter(self,converter):
         """Unlinks the old converter from installers and deletes it"""
@@ -32611,9 +32619,10 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     dirs['converters'] = dirs['installers'].join('Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
+    dirs['corruptBCFs'] = dirs['converters'].join('--Corrupt')
 
     # create bash user folders, keep these in order
-    for key in ('modsBash','installers','converters','dupeBCFs'):
+    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs'):
         dirs[key].makedirs()
 
 def initDefaultTools():
