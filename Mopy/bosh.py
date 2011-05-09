@@ -18181,7 +18181,7 @@ class CBash_Patcher:
     defaultConfig = {'isEnabled':False}
     iiMode = False
     selectCommands = True
-    allowUnloaded = False
+    allowUnloaded = True
     scanRequiresChecked = False
     applyRequiresChecked = False
 
@@ -18608,6 +18608,7 @@ class CBash_AliasesPatcher(CBash_Patcher):
         CBash_Patcher.getConfig(self,configs)
         #--Update old configs to use Paths instead of strings.
         self.aliases = dict(map(GPath,item) for item in self.aliases.iteritems())
+        self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -18654,8 +18655,6 @@ class CBash_PatchMerger(CBash_ListPatcher):
     autoKey = set(('Merge',))
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
-##    allowUnloaded = True
-
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
@@ -19245,8 +19244,6 @@ class CBash_ImportPatcher(CBash_ListPatcher):
 ##    autoKey = 'ForceMerge'
 ##    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
 ##    unloadedText = ""
-####    allowUnloaded = True
-##
 ##    #--Patch Phase ------------------------------------------------------------
 ##    def initPatchFile(self,patchFile,loadMods):
 ##        """Prepare to handle specified patch mod. All functions are called after this."""
@@ -19462,7 +19459,6 @@ class CBash_CellImporter(CBash_ImportPatcher):
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music'))#,'C.Maps'
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19518,10 +19514,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prev_attr_value.iteritems():
-                        try:
-                            setattr(override,attr,value)
-                        except:
-                            deprint(_("%s attribute of %s record referenced an unloaded object (probably %s) - value skipped") % (attr, recordId, value))
+                        setattr(override,attr,value)
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -19728,7 +19721,6 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Graphics',))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20239,7 +20231,6 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Actors.Anims',))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20544,60 +20535,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                 self.mergedPackageList[recordId] = mergedPackages
                 break
 
-    # PM's version, not quite working right
-    def scan_old(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        if modFile.GName in self.srcs:
-            recordId = record.fid
-            newPackages = record.aiPackages
-            oldPackages = self.previousPackages.get(recordId, None)
-            if not oldPackages:
-                self.previousPackages[recordId] = {}
-                self.previousPackages[recordId][modFile.GName] = newPackages
-                self.mergedPackageList[recordId] = newPackages
-                ##return
-            else:
-                self.previousPackages[recordId][modFile.GName] = newPackages
-            mergedPackages = self.mergedPackageList[recordId]
-            if newPackages == mergedPackages: return #same as the current list, just skip.
-            if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
-            deletedPackages = self.id_Deleted[recordId]
-            for master in reversed(modFile.TES4.masters):
-                if master in self.previousPackages:
-                    #do the actual stuff here - only needs to be done for the last master that is in the records.
-                        for oldIndex, oldPackage in enumerate(oldPackages):
-                            if oldPackage not in newPackages:
-                                deletedPackages.append(oldPackage)
-                            for newIndex, newPackage in enumerate(newPackages):
-                                if newPackage in deletedPackages and not 'Actors.AIPackagesForceAdd' in bashTags: continue
-                                if oldPackage == newPackage:
-                                    if newIndex == oldIndex:
-                                        break
-                                    else:
-                                        if newIndex == 0:
-                                            mergedPackages.insert(0,newPackage)
-                                        elif newIndex == (len(newPackages)-1):
-                                            mergedPackages.append(newPackage)
-                                        else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
-                                            i = newIndex - 1
-                                            while i >= 0:
-                                                if newPackage[i] in mergedPackages:
-                                                    slot = mergedPackages.index(newPackage[i])+1
-                                                    mergedPackagesinsert(slot, pkg)
-                                                    break
-                                                i -= 1
-                                            else:
-                                                i = newIndex + 1
-                                                while i != len(newPackages):
-                                                    if recordData['merged'][i] in data[fid]['merged']:
-                                                        slot = data[fid]['merged'].index(recordData['merged'][i])
-                                                        data[fid]['merged'].insert(slot, pkg)
-                                                        break
-                                                    i += 1
-                                            continue # Done with this package
-
-
-
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
@@ -20623,7 +20560,13 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.aiPackages = mergedPackages
+                    try:
+                        override.aiPackages = mergedPackages
+                    except:
+                        newMergedPackages = []
+                        for pkg in mergedPackages:
+                            if not pkg[0] == None: newMergedPackages.append(pkg)
+                        override.aiPackages = newMergedPackages
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -20946,7 +20889,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     text = _("Import factions from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoKey = set(('Factions',))
-
+    
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -21143,8 +21086,6 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     text = _("Import relations from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoKey = set(('Relations',))
-    allowUnloaded = True
-
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -22163,7 +22104,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^Oblivion.esm$",re.I)
     autoKey = set(('Names',))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22370,7 +22310,6 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
     autoKey = set(('NpcFaces','NpcFacesForceFullImport'))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22550,7 +22489,6 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
     #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
     #This isn't standard behavior for import patchers, but consistency between patchers is more important.
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22963,7 +22901,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Stats',))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -23164,7 +23101,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Spells','SpellStats'))
-    allowUnloaded = True
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -25612,7 +25548,93 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
+class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
+    """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
 
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,False,_("Faction crime Gold Multiplier Fix"),
+            _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
+            'FactioncrimeGoldMultiplier',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreFact,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreFact,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.FACT
+        for record in modFile.FACT.getActiveRecords():
+            if not isinstance(record.crimeGoldMultiplier,float):
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.FACT.records:
+            if not isinstance(record.crimeGoldMultiplier,float):
+                record.crimeGoldMultiplier = 1.0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Faction crime Gold Multiplier Fix'))
+        log(_('* Factions fixed: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
+    """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Faction crime Gold Multiplier Fix')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,False,_("Faction crime Gold Multiplier Fix"),
+            _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
+            'FactioncrimeGoldMultiplier',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['FACT']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if not isinstance(record.crimeGoldMultiplier,float):
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.crimeGoldMultiplier = 1.0
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Faction crime Gold Multiplier Fix'))
+        log(_('* Factions fixed: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.count = {}
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -25655,6 +25677,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_DefaultIcons(),
         AssortedTweak_SetSoundAttenuationLevels(),
         AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
+        AssortedTweak_FactioncrimeGoldMultiplier(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -25726,6 +25749,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_DefaultIcons(),
         CBash_AssortedTweak_SetSoundAttenuationLevels(),
         CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
+        CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
@@ -30033,6 +30057,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     name = _('Cobl Catalogs')
     text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
     unloadedText = ""
+    srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -30680,7 +30705,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 override.chanceNone, override.script, override.template, override.flags = mergedAttrs
-                override.entries_list = mergedList
+                try:
+                    override.entries_list = mergedList
+                except:
+                    newMergedList = []
+                    for entry in mergedList:
+                        if entry[1][0] != None: newMergedList.append(entry)
+                    override.entries_list = newMergedList
 
     def finishPatch(self,patchFile, progress):
         """Edits the bashed patch file directly."""
@@ -31555,7 +31586,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
     autoKey = set(('R.Relations',))
     iiMode = False
-    allowUnloaded = False
+    allowUnloaded = True
     scanRequiresChecked = True
     applyRequiresChecked = False
 
@@ -31632,7 +31663,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Description': ('text',),
         }
     iiMode = False
-    allowUnloaded = False
+    allowUnloaded = True
     scanRequiresChecked = True
     applyRequiresChecked = False
 
@@ -31695,7 +31726,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     """Merges changes to race spells."""
     autoKey = set(('R.AddSpells', 'R.ChangeSpells'))
     iiMode = False
-    allowUnloaded = False
+    allowUnloaded = True
     scanRequiresChecked = True
     applyRequiresChecked = False
 
@@ -31758,7 +31789,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 ##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
     reX117 = re.compile('^117[a-z]',re.I)
     iiMode = False
-    allowUnloaded = False
+    allowUnloaded = True
     scanRequiresChecked = False
     applyRequiresChecked = False
 
@@ -32346,6 +32377,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     editOrder = 50
     name = _('Contents Checker')
     text = _("Checks contents of leveled lists, inventories and containers for correct types.")
+    srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

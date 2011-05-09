@@ -3,7 +3,7 @@ import struct
 import math
 from os.path import exists
 try:
-    from bolt import GPath
+    from bolt import GPath, deprint, _
     import bush
     import bosh
 except:
@@ -127,6 +127,35 @@ def LoggingCB(logString):
 
 LoggingCallback = CFUNCTYPE(c_long, c_char_p)(LoggingCB)
 
+FORMIDAttrs = {
+                'ACHR':['base','parent','merchantContainer','horse'],
+                'ACRE':['base','owner','globalVariable','parent'],
+                'REFR':['base','destination','lockKey','owner','parent','globalVariable','target'],
+                'ACTI':['script','sound'],
+                'ALCH':['script'],
+                'AMMO':['enchantment'],
+                'APPA':['script'],
+                'ARMO':['script','enchantment'],
+                'BOOK':['script','enchantment'],
+                'CELL':['owner','globalVariable','climate','water'],
+                'CLOT':['script','enchantment'],
+                'CONT':['script','soundOpen','soundClose'],
+                'CREA':['deathItem','script','combatStyle','inheritsSoundsFrom'],
+                'DOOR':['script','soundOpen','soundClose','soundLoop'],
+                'FLOR':['script','ingredient'],
+                'FURN':['script'],
+                'INGR':['script'],
+                'KEYM':['script'],
+                'LIGH':['script','sound'],
+                'MGEF':['associated','effectShader','enchantEffect','castingSound','boltSound','hitSound','areaSound'],
+                'MISC':['script'],
+                'NPC_':['deathItem','script','race','iclass','hair','eye','combatStyle'],
+                'RACE':['maleVoice','femaleVoice','defaultHairMale','defaultHairFemale'],
+                'SGST':['script'],
+                'SLGM':['script'],
+                'WEAP':['script','enchantment']
+                }
+                
 #Helper functions
 class API_FIELDS(object):
     """These fields MUST be defined in the same order as in CBash's Common.h"""
@@ -1625,6 +1654,7 @@ class ObBaseRecord(object):
 
     def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
         conflicting = {}
+        tempconflicting = {}
         if attrs is None:
             attrs = self.copyattrs
         if not attrs:
@@ -1638,9 +1668,21 @@ class ObBaseRecord(object):
         #parentRecords.reverse()
         parentRecords = self.History()
         if parentRecords:
-            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+            tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
         else: #is the first instance of the record
-            conflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for attr in attrs])
+            tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for attr in attrs ])
+        if self._Type in FORMIDAttrs:
+            curformidattrs = FORMIDAttrs[self._Type]
+            for attr in tempconflicting:
+                if attr in curformidattrs:
+                    if isinstance(tempconflicting[attr],tuple) and tempconflicting[attr][0] == None:
+                        try:
+                            deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GName, tempconflicting[attr]))
+                        except: #an record type that doesn't have a full subrecord:
+                            deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GName, tempconflicting[attr]))
+                    continue
+                conflicting[attr]=tempconflicting[attr]
+        else: conflicting = tempconflicting
 ##        if parentRecords:
 ##            for parentRecord in parentRecords:
 ##                for attr in attrs:
