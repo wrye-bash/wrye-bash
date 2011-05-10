@@ -1026,8 +1026,7 @@ class Progress(bolt.Progress):
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
-        if cancel:
-            cancel.Enable(enabled)
+        cancel.Enable(enabled)
 
     def onAbort(self):
         if self.fnAbort:
@@ -1039,7 +1038,7 @@ class Progress(bolt.Progress):
             raise StateError(_('Dialog already destroyed.'))
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
-            self.dialog.SetFocus()
+            #self.dialog.SetFocus()
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state*100),message)
                 if not ret[0]:
