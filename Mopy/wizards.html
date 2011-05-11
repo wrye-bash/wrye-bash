@@ -65,6 +65,11 @@
 <p class="list-2">&bull;&nbsp; <a href="#int">int</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#float">float</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#len">len</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#endswith">endswith</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#startswith">startswith</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#lower">lower</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#find">find</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#rfind">rfind</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#Keywords">Keywords</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#SelectSubPackage">SelectSubPackage</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#DeSelectSubPackage">DeSelectSubPackage</a></p>
@@ -117,13 +122,23 @@
 <p class="list-3">&bull;&nbsp; <a href="#Oror">Or (|, or)</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#Notnot">Not (!, not)</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#Inin">In (in)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveInin">Case Insensitive In (in:)</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#ComparisonOperators">Comparison Operators</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#Equal">Equal (==)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseinsensitiveEqual">Case insensitive Equal (==:)</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#NotEqual">Not Equal (!=)</a></p>
-<p class="list-3">&bull;&nbsp; <a href="#GreaterThanorEqual">Greater Than or Equal (>=)</a></p>
-<p class="list-3">&bull;&nbsp; <a href="#GreaterThan">Greater Than (>)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseinsensitiveNotEqual">Case insensitive Not Equal (!=:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GreaterThanorEqualgt">Greater Than or Equal (&gt;=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveGreaterThanorEqualgt">Case Insensitive Greater Than or Equal (&gt;=:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GreaterThangt">Greater Than (&gt;)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveGreaterThangt">Case Insensitive Greater Than (&gt;:)</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#LessThanorEquallt">Less Than or Equal (&lt;=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveLessThanorEquallt">Case Insensitive Less Than or Equal (&lt;=:)</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#LessThanlt">Less Than (&lt;)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveLessThanlt">Case Insensitive Less Than (&lt;:)</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CaseInsensitiveOperators">Case Insensitive Operators</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DotOperator">Dot Operator</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Indexing">Indexing</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#BuiltinConstants">Built-in Constants</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#True">True</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#False">False</a></p>
@@ -165,6 +180,7 @@
 <p class="list-3">&bull;&nbsp; <a href="#StringLengthspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspan">StringLength <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#iSetspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltexpressiongtspan">iSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ExecLinesspanstylecolorblueltlinesgtspan">ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SubStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan">SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards">Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></p>
 <p class="list-3">&bull;&nbsp; <a href="#MessagespanstylecolorblueltMessagegtspanspanstylecolorbrownTitlespan">Message <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#DisplayImagespanstylecolorblueltImageFilePathgtspanspanstylecolorbrownTitlespan">DisplayImage <span style="color:blue;">&lt;Image File Path&gt;</span> <span style="color:brown;">[Title]</span></a></p>
@@ -210,7 +226,6 @@
 <p class="list-3">&bull;&nbsp; <a href="#GetFileNamespanstylecolorgreenltVariablegtspanspanstylecolorpurpleltpathgtspan">GetFileName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#GetFileNameWithoutExtensionspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltpathgtspan">GetFileNameWithoutExtension <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#CombinePathsspanstylecolorgreeltVariablegtspanspanstylecolorpurpleltpath1gtspanspanstylecolorblueltpath2gtspan">CombinePaths <span style="color:gree;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path1&gt;</span> <span style="color:blue;">&lt;path2&gt;</span></a></p>
-<p class="list-3">&bull;&nbsp; <a href="#SubStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan">SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#RemoveStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan">RemoveString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#InputStringspanstylecolorgreenltVariablegtspanspanstylecolorbrownTitlespanspanstylecolorpurpleInitialspan">InputString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:brown;">[Title]</span> <span style="color:purple;">[Initial]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ReadINIspanstylecolorgreenltVariablegtspanspanstylecolorblueltsectiongtspanspanstylecolorpurpleltvaluegtspan">ReadINI <span style="color:green;">&lt;Variable&gt;</span> <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></p>
@@ -489,6 +504,75 @@ EndSelect</pre>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  Length of the string if possible.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>0</b></i> if length calculation was not possible.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='endswith'>endswith</a></h2>
+<p>Test what a string ends with.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>endswith(<i><b>string</b></i>, <i><b>ending-1</b></i>, ..., <i><b>ending-n</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string, variable or constant.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>ending-1</b></i> through <i><b>ending-n:</b></i> a string, variable or constant.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if the string ends in <i>any</i> of the endings specified.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if the string does not end in <i>any</i> of the endings specified.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='startswith'>startswith</a></h2>
+<p>Test what a string starts with.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>startswith(<i><b>string</b></i>, <i><b>prefix-1</b></i>, ..., <i><b>prefix-n</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string, variable or constant.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>prefix-1</b></i> through <i><b>ending-n:</b></i> a string, variable or constant.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if the string begins with <i>any</i> of the prefixes specified.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if the string does not begin with <i>any</i> of the prefixes specified.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='lower'>lower</a></h2>
+<p>Convert a string to lower case.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>lower(<i><b>string</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string</b></i> converted to lower case, or</p>
+  <p class="list-2">&bull;&nbsp;  The original <i><b>string</b></i> if an error occured.  For example if you tried to call <b>lower</b> on a non-string type.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='find'>find</a></h2>
+<p>Return index of first occurrance of a substring
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>find(<i><b>string</b></i>, <i><b>substring</b></i> [,<i><b>start</b></i>, <i><b>stop</b></i>])</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable to search in.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>substring:</b></i> a string or variable to search for.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> Index to start searching in <i><b>string.</b></i> (Optional.  If not specified, searching will start at the beggining of <i><b>string</b></i>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> Index to start searching. (Optional.  If not specified, searching will stop at the end of <i><b>string</b></i>)</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The index of the first occurance of <i><b>substring</b></i> in <i><b>string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1</b></i> if <i><b>substring</b></i> could not be found</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='rfind'>rfind</a></h2>
+<p>Return index of last occurrance of a substring
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>find(<i><b>string</b></i>, <i><b>substring</b></i> [,<i><b>start</b></i>, <i><b>stop</b></i>])</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable to search in.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>substring:</b></i> a string or variable to search for.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> Index to start searching in <i><b>string.</b></i> (Optional.  If not specified, searching will start at the beggining of <i><b>string</b></i>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> Index to start searching. (Optional.  If not specified, searching will stop at the end of <i><b>string</b></i>)</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The index of the last occurance of <i><b>substring</b></i> in <i><b>string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1</b></i> if <i><b>substring</b></i> could not be found</p>
+  <p class="empty">&nbsp;</p>
   <p class="empty">&nbsp;</p>
 <h1><a id='Keywords'>Keywords</a></h1>
   <p class="empty">&nbsp;</p>
@@ -847,8 +931,10 @@ EndSelect</pre>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if value is <i><b>True</b></i>.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='Inin'>In (in)</a></h3>
+<h3><a id='CaseInsensitiveInin'>Case Insensitive In (in:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  left in right</p>
+  <p class="list-2">&bull;&nbsp;  left in: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is contained in right.  For example <b>'hi' in 'this'</b> would return <i><b>True</b></i>.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
@@ -858,46 +944,102 @@ EndSelect</pre>
 </p>
   <p class="empty">&nbsp;</p>
 <h3><a id='Equal'>Equal (==)</a></h3>
+<h3><a id='CaseinsensitiveEqual'>Case insensitive Equal (==:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  left == right</p>
+  <p class="list-2">&bull;&nbsp;  left ==: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='NotEqual'>Not Equal (!=)</a></h3>
+<h3><a id='CaseinsensitiveNotEqual'>Case insensitive Not Equal (!=:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  left != right</p>
+  <p class="list-2">&bull;&nbsp;  left !=: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left does not equal right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
-<h3><a id='GreaterThanorEqual'>Greater Than or Equal (>=)</a></h3>
+<h3><a id='GreaterThanorEqualgt'>Greater Than or Equal (&gt;=)</a></h3>
+<h3><a id='CaseInsensitiveGreaterThanorEqualgt'>Case Insensitive Greater Than or Equal (&gt;=:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-  <p class="list-2">&bull;&nbsp;  left >= right</p>
+  <p class="list-2">&bull;&nbsp;  left &gt;= right</p>
+  <p class="list-2">&bull;&nbsp;  left &gt;=: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than or equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
-<h3><a id='GreaterThan'>Greater Than (>)</a></h3>
+<h3><a id='GreaterThangt'>Greater Than (&gt;)</a></h3>
+<h3><a id='CaseInsensitiveGreaterThangt'>Case Insensitive Greater Than (&gt;:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-  <p class="list-2">&bull;&nbsp;  left > right</p>
+  <p class="list-2">&bull;&nbsp;  left &gt; right</p>
+  <p class="list-2">&bull;&nbsp;  left &gt;: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='LessThanorEquallt'>Less Than or Equal (&lt;=)</a></h3>
+<h3><a id='CaseInsensitiveLessThanorEquallt'>Case Insensitive Less Than or Equal (&lt;=:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  left &lt;= right</p>
+  <p class="list-2">&bull;&nbsp;  left &lt;=: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than or equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='LessThanlt'>Less Than (&lt;)</a></h3>
+<h3><a id='CaseInsensitiveLessThanlt'>Case Insensitive Less Than (&lt;:)</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  left &lt; right</p>
+  <p class="list-2">&bull;&nbsp;  left &lt;: right</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CaseInsensitiveOperators'>Case Insensitive Operators</a></h2>
+<p>Some of the operators have case insensitive versions, which function the same as their normal versions, but when comparing strings, case is ignored.  The case insensitive versions end with a colon (:).  The following have case insensitive versions:
+</p>
+  <p class="empty">&nbsp;</p>
+<a href="#CaseInsensitiveEqual">==:</a> <br />
+<a href="#CaseInsensitiveNotEqual">!=:</a> <br />
+<a href="#CaseInsensitiveGreaterThanorEqualgt">&gt;=:</a> <br />
+<a href="#CaseInsensitiveGreaterThangt">&gt;:</a> <br />
+<a href="#CaseInsensitiveLessThanorEquallt">&lt;=:</a> <br />
+<a href="#CaseInsensitiveLessThanlt">&lt;:</a> <br />
+<a href="#CaseInsensitiveInin">in:</a> <br />
+  <p class="empty">&nbsp;</p>
+<h2><a id='DotOperator'>Dot Operator</a></h2>
+<p>Some functions can be accesed in an easier way, using the dot operator (.)  When accessed in this method, rather than specifying the first argument, the item to the left of the dot operator will be used.  The following functions can be called in this way:
+</p>
+  <p class="empty">&nbsp;</p>
+<a href="#len">len</a> <br />
+<a href="#endswith">endswith</a> <br />
+<a href="#startswith">startswith</a> <br />
+<a href="#lower">lower</a> <br />
+<a href="#find">find</a> <br />
+<a href="#rfind">rfind</a> <br />
+  <p class="empty">&nbsp;</p>
+<h2><a id='Indexing'>Indexing</a></h2>
+<p>Indexing is used to access specific parts of a sequence like item.  Currently, only strings and string variables can be indexed.  If you are familiar with Python's indexing syntax, then this will be familiar to you.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string</b></i>[<i><b>start</b></i>:<i><b>stop</b></i>:<i><b>step</b></i>]</p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> index to start at.  If not specified, indexing will begin at index 0.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> index to stop at. If not specified, but the colon(:) is supplied, indexing will stop at the end of the string.  Otherwise, only one character will be indexed.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>step:</b></i> how to increment when indexing.  For example, a value of 2 would make the indexing return every second item.  If not specified, a value of 1 will be used.</p>
+  <p class="list-2">&bull;&nbsp;  Negative values for <i><b>start</b></i> and <i><b>stop</b></i> will be relative to the end of the sequence.  For example, -1 would mean the first character from the end of the sequence.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[0]</b></i> returns <i><b>"H"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[0:]</b></i> return <i><b>"Hello"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[:]</b></i> returns <i><b>"Hello"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[0:2]</b></i> returns <i><b>"He"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[-1]</b></i> returns <i><b>"o"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[1:3]</b></i> returns <i><b>"el"</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>"Hello"[-2:]</b></i> returns <i><b>"lo"</b></i>  </p>
   <p class="empty">&nbsp;</p>
 <h1><a id='BuiltinConstants'>Built-in Constants</a></h1>
 <p>There are only a few constants that come defined in BAIN wizards.
@@ -1107,6 +1249,9 @@ EndIf
 <tr><td class="code">
 <h3><a id='ExecLinesspanstylecolorblueltlinesgtspan'>ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></h3>
 </td><td class="code"><p class="code-0"><a href="#Exec"><span style="color:purple;">Exec</span></a>(<i>lines</i>)</p><p class="code-0"></p></td></tr>
+<tr><td class="code">
+<h3><a id='SubStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan'>SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></h3>
+</td><td class="code"><p class="code-0"><i>variable</i>.<a href="#find"><span style="color:purple;">find</span></a>(<i>string</i>, <i>start</i>, <i>stop</i>)</p><p class="code-0"></p></td></tr>
   <p class="empty">&nbsp;</p>
 </table>
 <h2><a id='FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards'>Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></h2>
@@ -1170,7 +1315,6 @@ EndIf
 <h3><a id='GetFileNamespanstylecolorgreenltVariablegtspanspanstylecolorpurpleltpathgtspan'>GetFileName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></h3>
 <h3><a id='GetFileNameWithoutExtensionspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltpathgtspan'>GetFileNameWithoutExtension <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></h3>
 <h3><a id='CombinePathsspanstylecolorgreeltVariablegtspanspanstylecolorpurpleltpath1gtspanspanstylecolorblueltpath2gtspan'>CombinePaths <span style="color:gree;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path1&gt;</span> <span style="color:blue;">&lt;path2&gt;</span></a></h3>
-<h3><a id='SubStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan'>SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></h3>
 <h3><a id='RemoveStringspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltStringgtspanspanstylecolorblueltstartfromgtspanspanstylecolorbrownlengthspan'>RemoveString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></h3>
 <h3><a id='InputStringspanstylecolorgreenltVariablegtspanspanstylecolorbrownTitlespanspanstylecolorpurpleInitialspan'>InputString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:brown;">[Title]</span> <span style="color:purple;">[Initial]</span></a></h3>
 <h3><a id='ReadINIspanstylecolorgreenltVariablegtspanspanstylecolorblueltsectiongtspanspanstylecolorpurpleltvaluegtspan'>ReadINI <span style="color:green;">&lt;Variable&gt;</span> <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></h3>

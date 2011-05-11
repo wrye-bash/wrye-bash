@@ -3,6 +3,7 @@
 #===================================================
 from __future__ import with_statement # Python 2.5 'with' statement compatability
 import ScriptParser         # generic parser class
+from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt
@@ -598,8 +599,15 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('>' , self.opG, ScriptParser.OP.CO1)
         self.SetOperator('<=', self.opLE, ScriptParser.OP.CO1)
         self.SetOperator('<' , self.opL, ScriptParser.OP.CO1)
+        self.SetOperator('==:', self.opEc, ScriptParser.OP.CO2, passTokens=False)  # Case insensitive ==
+        self.SetOperator('!=:', self.opNEc, ScriptParser.OP.CO2, passTokens=False) # Case insensitive !=
+        self.SetOperator('>=:', self.opGEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive >=
+        self.SetOperator('>:', self.opGc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive >
+        self.SetOperator('<=:', self.opLEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive <=
+        self.SetOperator('<:', self.opLc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive <
         #Membership operators
         self.SetOperator('in', self.opIn, ScriptParser.OP.MEM, passTokens=False)
+        self.SetOperator('in:', self.opInc, ScriptParser.OP.MEM, passTokens=False) # Case insensitive in
         #Boolean
         self.SetOperator('&' , self.opAnd, ScriptParser.OP.AND)
         self.SetOperator('and', self.opAnd, ScriptParser.OP.AND)
@@ -631,7 +639,13 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('str', self.fnStr, 1)
         self.SetFunction('int', self.fnInt, 1)
         self.SetFunction('float', self.fnFloat, 1)
-        self.SetFunction('len', self.fnLen, 1)
+        #--String functions
+        self.SetFunction('len', self.fnLen, 1, dotFunction=True)
+        self.SetFunction('endswith', self.fnEndsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
+        self.SetFunction('startswith', self.fnStartsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
+        self.SetFunction('lower', self.fnLower, 1, dotFunction=True)
+        self.SetFunction('find', self.fnFind, 2, 4, dotFunction=True)
+        self.SetFunction('rfind', self.fnRFind, 2, 4, dotFunction=True)
         #--Keywords
         self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
         self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
@@ -652,7 +666,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('While', self.kwdWhile, 1, ScriptParser.KEY.NO_MAX, True, True)
         self.SetKeyword('Continue', self.kwdContinue)
         self.SetKeyword('EndWhile', self.kwdEndWhile)
-        self.SetKeyword('For', self.kwdFor, 4, ScriptParser.KEY.NO_MAX, True, True)
+        self.SetKeyword('For', self.kwdFor, 3, ScriptParser.KEY.NO_MAX, True, True)
         self.SetKeyword('from', self.kwdDummy)
         self.SetKeyword('to', self.kwdDummy)
         self.SetKeyword('by', self.kwdDummy)
@@ -765,7 +779,7 @@ class WryeParser(ScriptParser.Parser):
     # Assignment operators
     def Ass(self, l, r):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            self.error('Cannot assign a value to %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error('Cannot assign a value to %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = r.data
         return r.data
     def AssAdd(self, l, r): return self.Ass(l, l+r)
@@ -776,13 +790,48 @@ class WryeParser(ScriptParser.Parser):
     def AssExp(self, l, r): return self.Ass(l, l**r)
     # Comparison operators
     def opE(self, l, r): return l == r
+    def opEc(self, l, r):
+        try:
+            return l.lower() == r.lower()
+        except:
+            return l == r
     def opNE(self, l, r): return l != r
+    def opNEc(self, l, r):
+        try:
+            return l.lower() != r.lower()
+        except:
+            return l != r
     def opGE(self, l, r): return l >= r
+    def opGEc(self, l, r):
+        try:
+            return l.lower() >= r.lower()
+        except:
+            return l >= r
     def opG(self, l, r): return l > r
+    def opGc(self, l, r):
+        try:
+            return l.lower() > r.lower()
+        except:
+            return l > r
     def opLE(self, l, r): return l <= r
+    def opLEc(self, l, r):
+        try:
+            return l.lower() <= r.lower()
+        except:
+            return l <= r
     def opL(self, l, r): return l < r
+    def opLc(self, l, r):
+        try:
+            return l.lower() < r.lower()
+        except:
+            return l < r
     # Membership tests
     def opIn(self, l, r): return l in r
+    def opInc(self, l, r):
+        try:
+            l.lower() in r.lower()
+        except:
+            return l in r
     # Boolean operators
     def opAnd(self, l, r): return l and r
     def opOr(self, l, r): return l or r
@@ -790,12 +839,12 @@ class WryeParser(ScriptParser.Parser):
     # Postfix inc/dec
     def opInc(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            self.error('Cannot increment %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error('Cannot increment %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = l.data+1
         return l.data
     def opDec(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            self.error('Cannot decrement %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error('Cannot decrement %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = l.data-1
         return l.data
     # Math operators
@@ -844,7 +893,7 @@ class WryeParser(ScriptParser.Parser):
         self.ExecCount += 1
     def fnEndExec(self, numLines):
         if self.ExecCount == 0:
-            self.error(UNEXPECTED % 'EndExec')
+            error(UNEXPECTED % 'EndExec')
         del self.lines[self.cLine-numLines:self.cLine]
         self.cLine -= numLines
         self.ExecCount -= 1
@@ -865,6 +914,37 @@ class WryeParser(ScriptParser.Parser):
             return len(data)
         except:
             return 0
+    def fnEndsWith(self, String, *args):
+        print 'String:', String
+        print 'args:', args
+        print 'type:', type(String)
+        if not isinstance(String, str):
+            error("Function 'endswith' only operates on string types.")
+        try:
+            return String.endswith(args)
+        except:
+            return False
+    def fnStartsWith(self, String, *args):
+        if not isinstance(String, str):
+            error("Function 'startswith' only operates on string types.")
+        try:
+            return String.startswith(args)
+        except:
+            return False
+    def fnLower(self, String):
+        if not isinstance(String, str):
+            error("Function 'lower' only operates on string types.")
+        return String.lower()
+    def fnFind(self, String, sub, start=0, end=-1):
+        if not isinstance(String, str):
+            error("Function 'find' only operators on string types.")
+        if end < 0: end += len(String) + 1
+        return String.find(sub, start, end)
+    def fnRFind(self, String, sub, start=0, end=-1):
+        if not isinstance(String, str):
+            error("Function 'rfind' only operators on string types.")
+        if end < 0: end += len(String) + 1
+        return String.rfind(sub, start, end)
 
     # Dummy keyword, for reserving a keyword, but handled by other keywords (like from, to, and by)
     def kwdDummy(self):
@@ -881,7 +961,7 @@ class WryeParser(ScriptParser.Parser):
         self.PushFlow('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
     def kwdElif(self, *args):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            self.error(UNEXPECTED % 'Elif')
+            error(UNEXPECTED % 'Elif')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
         else:
@@ -889,7 +969,7 @@ class WryeParser(ScriptParser.Parser):
             self.PeekFlow().ifTrue = self.PeekFlow().active or self.PeekFlow().ifTrue
     def kwdElse(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            self.error(UNEXPECTED % 'Else')
+            error(UNEXPECTED % 'Else')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
             self.PeekFlow().hitElse = True
@@ -898,7 +978,7 @@ class WryeParser(ScriptParser.Parser):
             self.PeekFlow().hitElse = True
     def kwdEndIf(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
-            self.error(UNEXPECTED % 'EndIf')
+            error(UNEXPECTED % 'EndIf')
         self.PopFlow()
 
     def kwdWhile(self, *args):
@@ -920,7 +1000,7 @@ class WryeParser(ScriptParser.Parser):
             index -= 1
         if index < 0:
             # No while statement was found
-            self.error(UNEXPECTED % 'Continue')
+            error(UNEXPECTED % 'Continue')
         #Discard any flow control statments that happened after
         #the While/For, since we're resetting either back to the
         #the While/For', or the EndWhile/EndFor
@@ -937,16 +1017,28 @@ class WryeParser(ScriptParser.Parser):
                 self.PeekFlow().active = False
         else:
             # Continue a For loop
-            if self.variables[flow.varname] == flow.end:
-                # For loop is done
-                self.PeekFlow().active = False
-            else:
-                # keep going
-                self.cLine = flow.cLine
-            self.variables[flow.varname] += flow.by
+            if flow.ForType == 0:
+                # Numeric loop
+                if self.variables[flow.varname] == flow.end:
+                    # For loop is done
+                    self.PeekFlow().active = False
+                else:
+                    # keep going
+                    self.cLine = flow.cLine
+                self.variables[flow.varname] += flow.by
+            elif flow.ForType == 1:
+                # Iterator type
+                flow.index += 1
+                if flow.index == len(flow.List):
+                    # Loop is done
+                    self.PeekFlow().active = False
+                else:
+                    # Re-loop
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] = flow.List[flow.index]
     def kwdEndWhile(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
-            self.error(UNEXPECTED % 'EndWhile')
+            error(UNEXPECTED % 'EndWhile')
         #Re-evaluate the while loop's expression, if needed
         if self.PeekFlow().active:
             bActive = self.ExecuteTokens(self.PeekFlow().expr)
@@ -967,11 +1059,11 @@ class WryeParser(ScriptParser.Parser):
             return
         varname = args[0]
         if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            self.error("Invalid syntax for 'For' statement.  Expected variable.")
+            error("Invalid syntax for 'For' statement.  Expected variable.")
         if args[1].text == 'from':
             #For varname from value_start to value_end [by value_increment]
             if (len(args) not in [5,7]) or (args[3].text != 'to') or (len(args)==7 and args[5].text != 'by'):
-                self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
+                error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
             start = self.ExecuteTokens([args[2]])
             end = self.ExecuteTokens([args[4]])
             if len(args) == 7:
@@ -981,28 +1073,50 @@ class WryeParser(ScriptParser.Parser):
             else:
                 by = 1
             self.variables[varname.text] = start
-            self.PushFlow('For', True, ['For', 'EndFor'], cLine=self.cLine, varname=varname.text, end=end, by=by)
-        #elif args[1].text == 'in':
-        #    #For name in subpackages
-        #    if args[2].text == 'subpackages':
-        #        pass
-        #    #For file in subpackage('name')
-        #    if args[2].text == 'subpackage':
-        #        pass
+            self.PushFlow('For', True, ['For', 'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
+        elif args[1].text == 'in':
+            # For name in SubPackages / For name in Espms
+            if args[2].text == 'SubPackages':
+                List = sorted(self.sublist.keys())
+            elif args[2].text == 'Espms':
+                List = sorted(self.espmlist.keys())
+            else:
+                error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name in SubPackages\n For var_name in Espms"))
+            if len(args) > 4:
+                error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name in %s") % args[2].text)
+            if len(List) == 0:
+                self.variables[varname.text] = ''
+                self.PushFlow('For', False, ['For','EndFor'])
+            else:
+                self.variables[varname.text] = List[0]
+                self.PushFlow('For', True, ['For', 'EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
         else:
-            self.error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
+            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment\n For var_name in SubPackages\n For var_name in Espms")
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
-            self.error(UNEXPECTED % 'EndFor')
+            error(UNEXPECTED % 'EndFor')
         #Increment the variable, then test to see if we should end or keep going
         flow = self.PeekFlow()
-        if self.variables[flow.varname] == flow.end:
-            #For loop is done
-            self.PopFlow()
+        if flow.active:
+            if flow.ForType == 0:
+                # Numerical loop
+                if self.variables[flow.varname] == flow.end:
+                    #For loop is done
+                    self.PopFlow()
+                else:
+                    #Need to keep going
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] += flow.by
+            elif flow.ForType == 1:
+                # Iterator type
+                flow.index += 1
+                if flow.index == len(flow.List):
+                    self.PopFlow()
+                else:
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] = flow.List[flow.index]
         else:
-            #Need to keep going
-            self.cLine = flow.cLine
-            self.variables[flow.varname] += flow.by
+            self.PopFlow()
 
     def kwdSelectOne(self, *args): self._KeywordSelect(False, 'SelectOne', *args)
     def kwdSelectMany(self, *args): self._KeywordSelect(True, 'SelectMany', *args)
@@ -1015,7 +1129,7 @@ class WryeParser(ScriptParser.Parser):
             return
         main_desc = args.pop(0)
         if len(args) % 3:
-            self.error(MISSING_ARGS % name)
+            error(MISSING_ARGS % name)
         images = []
         titles = []
         descs = []
@@ -1063,14 +1177,14 @@ class WryeParser(ScriptParser.Parser):
         self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def kwdCase(self, *args):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            self.error(UNEXPECTED % 'Case')
+            error(UNEXPECTED % 'Case')
         case = ' '.join(args)
         if case in self.PeekFlow().values:
             self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
     def kwdDefault(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            self.error(UNEXPECTED % 'Default')
+            error(UNEXPECTED % 'Default')
         if self.PeekFlow().hitCase:
             return
         self.PeekFlow().active = True
@@ -1090,16 +1204,17 @@ class WryeParser(ScriptParser.Parser):
                 index -= 1
             if index < 0:
                 # No while or for statements found
-                self.error(UNEXPECTED % 'Break')
+                error(UNEXPECTED % 'Break')
             self.PeekFlow(index).active = False
 
             #We're going to jump to the EndWhile/EndFor, so discard
             #any flow control structs on top of the While/For one
             while self.LenFlow() > index+1:
                 flow = self.PopFlow()
+            flow.active = False
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            self.error(UNEXPECTED % 'EndSelect')
+            error(UNEXPECTED % 'EndSelect')
         self.PopFlow()
 
     # Package selection functions
@@ -1116,7 +1231,7 @@ class WryeParser(ScriptParser.Parser):
                     if not self.EspmHasActivePackage(i):
                         self._SelectEspm(False, i)
         else:
-            self.error(_("Sub-package '%s' is not a part of the installer.") % subpackage)
+            error(_("Sub-package '%s' is not a part of the installer.") % subpackage)
     def kwdSelectAll(self): self._SelectAll(True)
     def kwdDeSelectAll(self): self._SelectAll(False)
     def _SelectAll(self, bSelect):
@@ -1131,7 +1246,7 @@ class WryeParser(ScriptParser.Parser):
         if espm:
             self.espmlist[espm] = bSelect
         else:
-            self.error(_("Espm '%s' is not a part of the installer.") % name)
+            error(_("Espm '%s' is not a part of the installer.") % name)
     def kwdSelectAllEspms(self): self._SelectAllEspms(True)
     def kwdDeSelectAllEspms(self): self._SelectAllEspms(False)
     def _SelectAllEspms(self, bSelect):
@@ -1153,18 +1268,8 @@ class WryeParser(ScriptParser.Parser):
         self.espmrenames = dict()
 
     def kwdNote(self, *args):
-        temp = []
-        for i in args:
-            if i.type in [ScriptParser.CONSTANT,
-                          ScriptParser.VARIABLE,
-                          ScriptParser.NAME,
-                          ScriptParser.STRING,
-                          ScriptParser.INTEGER,
-                          ScriptParser.DECIMAL]:
-                temp.append(str(i.data))
-            else:
-                temp.append(str(i.text))
-        self.notes.append('- %s\n' % ' '.join(temp))
+        self.notes.append('- %s\n' % self.ExecuteTokens(args))
+
     def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant='0'):
         if self.bAuto: return
 
@@ -1216,7 +1321,7 @@ class WryeParser(ScriptParser.Parser):
             if need == 'None':
                 return [1, ver]
             if len(need) != 4:
-                self.error(_("Version '%s' expected in format 'x.x.x.x'") % need)
+                error(_("Version '%s' expected in format 'x.x.x.x'") % need)
                 return [-1, ver]
             if have[0] > need[0]: return [1, ver]
             if have[0] < need[0]: return [-1, ver]

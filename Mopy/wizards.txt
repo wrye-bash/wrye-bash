@@ -238,6 +238,70 @@ Used to find the length of a string.
   * Length of the string if possible.
   * **0** if length calculation was not possible.
 
+== endswith
+Test what a string ends with.
+
+* __Usage:__
+  * __endswith(**string**, **ending-1**, ..., **ending-n**)__
+* __Arguments:__
+  * **string:** a string, variable or constant.
+  * **ending-1** through **ending-n:** a string, variable or constant.
+* __Return:__
+  * **True** if the string ends in ~~any~~ of the endings specified.
+  * **False** if the string does not end in ~~any~~ of the endings specified.
+
+== startswith
+Test what a string starts with.
+
+* __Usage:__
+  * __startswith(**string**, **prefix-1**, ..., **prefix-n**)__
+* __Arguments:__
+  * **string:** a string, variable or constant.
+  * **prefix-1** through **ending-n:** a string, variable or constant.
+* __Return:__
+  * **True** if the string begins with ~~any~~ of the prefixes specified.
+  * **False** if the string does not begin with ~~any~~ of the prefixes specified.
+
+== lower
+Convert a string to lower case.
+
+* __Usage:__
+  * __lower(**string**)__
+* __Arguments:__
+  * **string:** a string or variable.
+* __Return:__
+  * **string** converted to lower case, or
+  * The original **string** if an error occured.  For example if you tried to call __lower__ on a non-string type.
+
+== find
+Return index of first occurrance of a substring
+
+* __Usage:__
+  * __find(**string**, **substring** [,**start**, **stop**])__
+* __Arguments:__
+  * **string:** a string or variable to search in.
+  * **substring:** a string or variable to search for.
+  * **start:** Index to start searching in **string.** (Optional.  If not specified, searching will start at the beggining of **string**)
+  * **stop:** Index to start searching. (Optional.  If not specified, searching will stop at the end of **string**)
+* __Return:__
+  * The index of the first occurance of **substring** in **string**
+  * **-1** if **substring** could not be found
+
+== rfind
+Return index of last occurrance of a substring
+
+* __Usage:__
+  * __find(**string**, **substring** [,**start**, **stop**])__
+* __Arguments:__
+  * **string:** a string or variable to search in.
+  * **substring:** a string or variable to search for.
+  * **start:** Index to start searching in **string.** (Optional.  If not specified, searching will start at the beggining of **string**)
+  * **stop:** Index to start searching. (Optional.  If not specified, searching will stop at the end of **string**)
+* __Return:__
+  * The index of the last occurance of **substring** in **string**
+  * **-1** if **substring** could not be found
+
+
 = Keywords
 
 Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.
@@ -543,8 +607,10 @@ Used to test the Truth of values
   * **False** if value is **True**.
 
 === In (in)
+=== Case Insensitive In (in:)
 * __Usage:__
   * left in right
+  * left in: right
 * __Return:__
   * **True** if left is contained in right.  For example __'hi' in 'this'__ would return **True**.
   * **False** otherwise.
@@ -553,46 +619,99 @@ Used to test the Truth of values
 Used to compare two values, variables, etc together.
 
 === Equal (==)
+=== Case insensitive Equal (==:)
 * __Usage:__
   * left == right
+  * left ==: right
 * __Return:__
   * **True** if left is equal to right.
   * **False** otherwise.
 
 === Not Equal (!=)
+=== Case insensitive Not Equal (!=:)
 * __Usage:__
   * left != right
+  * left !=: right
 * __Return:__
   * **True** if left does not equal right.
   * **False** otherwise.
 
-=== Greater Than or Equal (>=)
+=== Greater Than or Equal (&gt;=)
+=== Case Insensitive Greater Than or Equal (&gt;=:)
 * __Usage:__
-  * left >= right
+  * left &gt;= right
+  * left &gt;=: right
 * __Return:__
   * **True** if left is greater than or equal to right.
   * **False** otherwise.
 
-=== Greater Than (>)
+=== Greater Than (&gt;)
+=== Case Insensitive Greater Than (&gt;:)
 * __Usage:__
-  * left > right
+  * left &gt; right
+  * left &gt;: right
 * __Return:__
   * **True** if left is greater than right.
   * **False** otherwise.
 
 === Less Than or Equal (&lt;=)
+=== Case Insensitive Less Than or Equal (&lt;=:)
 * __Usage:__
   * left &lt;= right
+  * left &lt;=: right
 * __Return:__
   * **True** if left is less than or equal to right.
   * **False** otherwise.
 
 === Less Than (&lt;)
+=== Case Insensitive Less Than (&lt;:)
 * __Usage:__
   * left &lt; right
+  * left &lt;: right
 * __Return:__
   * **True** if left is less than right.
   * **False** otherwise
+
+== Case Insensitive Operators
+Some of the operators have case insensitive versions, which function the same as their normal versions, but when comparing strings, case is ignored.  The case insensitive versions end with a colon (:).  The following have case insensitive versions:
+
+[[#CaseInsensitiveEqual|==:]] <br />
+[[#CaseInsensitiveNotEqual|!=:]] <br />
+[[#CaseInsensitiveGreaterThanorEqualgt|&gt;=:]] <br />
+[[#CaseInsensitiveGreaterThangt|&gt;:]] <br />
+[[#CaseInsensitiveLessThanorEquallt|&lt;=:]] <br />
+[[#CaseInsensitiveLessThanlt|&lt;:]] <br />
+[[#CaseInsensitiveInin|in:]] <br />
+
+== Dot Operator
+Some functions can be accesed in an easier way, using the dot operator (.)  When accessed in this method, rather than specifying the first argument, the item to the left of the dot operator will be used.  The following functions can be called in this way:
+
+[[#len|len]] <br />
+[[#endswith|endswith]] <br />
+[[#startswith|startswith]] <br />
+[[#lower|lower]] <br />
+[[#find|find]] <br />
+[[#rfind|rfind]] <br />
+
+== Indexing
+Indexing is used to access specific parts of a sequence like item.  Currently, only strings and string variables can be indexed.  If you are familiar with Python's indexing syntax, then this will be familiar to you.
+
+* __Usage:__
+  * **string**[**start**:**stop**:**step**]
+* __Arguments:__
+  * **start:** index to start at.  If not specified, indexing will begin at index 0.
+  * **stop:** index to stop at. If not specified, but the colon(:) is supplied, indexing will stop at the end of the string.  Otherwise, only one character will be indexed.
+  * **step:** how to increment when indexing.  For example, a value of 2 would make the indexing return every second item.  If not specified, a value of 1 will be used.
+  * Negative values for **start** and **stop** will be relative to the end of the sequence.  For example, -1 would mean the first character from the end of the sequence.
+
+* __Examples:__
+  * **"Hello"[0]** returns **"H"**
+  * **"Hello"[0:]** return **"Hello"**
+  * **"Hello"[:]** returns **"Hello"**
+  * **"Hello"[0:2]** returns **"He"**
+  * **"Hello"[-1]** returns **"o"**
+  * **"Hello"[1:3]** returns **"el"**
+  * **"Hello"[-2:]** returns **"lo"**  
 
 = Built-in Constants
 There are only a few constants that come defined in BAIN wizards.
@@ -845,6 +964,11 @@ __fSet [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;expression&gt;[/c
 </td><td class="code">[code]
 [[#|[color=purple]Exec[/color]]](~~lines~~)
 [/code]</td></tr>
+<tr><td class="code">
+===SubString [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;String&gt;[/color] [color=blue]&lt;startfrom&gt;[/color] [color=brown][length][/color]
+</td><td class="code">[code]
+~~variable~~.[[#|[color=purple]find[/color]]](~~string~~, ~~start~~, ~~stop~~)
+[/code]</td></tr>
 
 </table>
 == Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards
@@ -914,7 +1038,6 @@ Similar functionality can be obtained by packaging the mod differently, and then
 ===GetFileName [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;path&gt;[/color]
 ===GetFileNameWithoutExtension [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;path&gt;[/color]
 ===CombinePaths [color=gree]&lt;Variable&gt;[/color] [color=purple]&lt;path1&gt;[/color] [color=blue]&lt;path2&gt;[/color]
-===SubString [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;String&gt;[/color] [color=blue]&lt;startfrom&gt;[/color] [color=brown][length][/color]
 ===RemoveString [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;String&gt;[/color] [color=blue]&lt;startfrom&gt;[/color] [color=brown][length][/color]
 ===InputString [color=green]&lt;Variable&gt;[/color] [color=brown][Title][/color] [color=purple][Initial][/color]
 ===ReadINI [color=green]&lt;Variable&gt;[/color] [color=blue]&lt;section&gt;[/color] [color=purple]&lt;value&gt;[/color]
