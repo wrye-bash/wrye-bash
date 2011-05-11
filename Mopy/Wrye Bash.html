@@ -56,6 +56,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#PythonComponents">Python Components</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#Help">Help!</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#BackingUp">Backing Up</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#GlobalBashKeyboardShortcuts">Global Bash Keyboard Shortcuts</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#LaunchButtons">Launch Buttons</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#ApplicationButtons">Application Buttons</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#BashOptionButtons">Bash Option Buttons</a></p>
@@ -463,10 +464,19 @@
     <p class="list-3">&bull;&nbsp;  Contains BAIN packages, and other bash settings.</p>
     <p class="list-3">&bull;&nbsp;  Important to backup.</p>
     <p class="empty">&nbsp;</p>
+    <p class="empty">&nbsp;</p>
+<h2><a id='GlobalBashKeyboardShortcuts'>Global Bash Keyboard Shortcuts</a></h2>
+<p>These keyboard commands work pretty much everywhere (as in if you want it will almost cetainly work) in Bash. 
+</p>
+    <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp; <b>Listing:</b></p>
+  <p class="list-2">&bull;&nbsp;  <code> ctrl-numpad plus (+)</code>: fits column sizes to fit what is displayeable.</p>
+  <p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 <h2><a id='LaunchButtons'>Launch Buttons</a></h2>
 <p>At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications (if they're installed). You'll also find one or two toggle buttons. 
 </p>
-    <p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 <h3><a id='ApplicationButtons'>Application Buttons</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b></p>
   <p class="list-2">&bull;&nbsp;  Each of the application buttons will be present if the corresponding application is present in the Oblivion install directory or in the directory specified in the bash.ini.</p>
@@ -2572,6 +2582,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Tweak Assorted patcher: </p>
     <p class="list-3">&bull;&nbsp;  Added Set Sound Attenuation Levels tweaker.</p>
     <p class="list-3">&bull;&nbsp;  Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.</p>
+    <p class="list-3">&bull;&nbsp;  Added 'Faction crime Gold Multiplier Fix' tweaker.</p>
+    <p class="list-3">&bull;&nbsp;  Added 'No Light Fade Value Fix' tweaker.</p>
   <p class="list-2">&bull;&nbsp;  Added a cancel button to the build progress bar.</p>
 <p class="list-1">&bull;&nbsp;  BAIN:</p>
   <p class="list-2">&bull;&nbsp;  Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)</p>
@@ -2580,6 +2592,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus">GetEspmStatus</a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI">EditINI</a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec">Exec</a>: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#endswith">endswith</a>: Test what a string ends with.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#startswith">startswith</a>: Test what a string starts with.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#lower">lower</a>: Convert a string to lower case.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find">find</a>: Find the first occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind">rfind</a>: Find the last occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  <a href="wizards.html#CaseInsensitiveOperators">Case Insensitive Operators</a>: Operators that ignore the case of a string when comparing.</p>
+    <p class="list-3">&bull;&nbsp;  The <a href="wizards.html#DotOperator">Dot Operator</a></p>
     <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions">RequireVersions</a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
     <p class="list-3">&bull;&nbsp;  A new icon will indicate that an installer contains a wizard.</p>
     <p class="list-3">&bull;&nbsp;  The Wizard window is now resizeable, with automatic scaling images.</p>
@@ -2611,7 +2630,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Taglist updated to BOSS rev 2608.</p>
   <p class="list-2">&bull;&nbsp;  Remove Balo and the Replacers Tab from the UI.  To re-enable, set <b>bEnableBalo</b> or <b>bEnableReplacers</b> to <i><b>True</b></i> as applicable in bash.ini</p>
     <p class="list-3">&bull;&nbsp;  These features may be removed in future versions.</p>
-  <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini  </p>
+  <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini</p>
+  <p class="list-2">&bull;&nbsp;  In cases where the bUseMyGameDirectory is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.</p>
+  <p class="list-2">&bull;&nbsp;  'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).</p>
+  <p class="list-2">&bull;&nbsp;  Unicode improvements:</p>
+    <p class="list-3">&bull;&nbsp;  no more errors on viewing/saving modfiles with tejón and other accented author names.</p>
+  <p class="list-2">&bull;&nbsp;  Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_2912212011GaticusGratis_monstaLojackmyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  Bashed Patch:</p>
@@ -2658,6 +2682,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Changed the rename installer dialog for in place renaming.</p>
   <p class="list-2">&bull;&nbsp;  Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.</p>
   <p class="list-2">&bull;&nbsp;  Widgets on installers tab made resizable (contributed by myk002).</p>
+  <p class="list-2">&bull;&nbsp;  Added a sub-packages r-click menu:</p>
+    <p class="list-3">&bull;&nbsp;  added Select All Sub-packages command.</p>
+    <p class="list-3">&bull;&nbsp;  added Deselect All Sub-packages command.</p>
+    <p class="list-3">&bull;&nbsp;  added Toggle Selected Sub-packages command.</p>
+    <p class="list-3">&bull;&nbsp;  added List Sub-packages command.</p>
 <p class="list-1">&bull;&nbsp;  BAIN Wizards:</p>
   <p class="list-2">&bull;&nbsp;  packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard</p>
   <p class="list-2">&bull;&nbsp;  added ability to use default images located in the 'Mopy\Wizard Images' directory</p>
