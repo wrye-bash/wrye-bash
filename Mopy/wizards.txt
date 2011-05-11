@@ -969,7 +969,6 @@ __fSet [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;expression&gt;[/c
 </td><td class="code">[code]
 ~~variable~~.[[#|[color=purple]find[/color]]](~~string~~, ~~start~~, ~~stop~~)
 [/code]</td></tr>
-
 </table>
 == Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards
 <table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
