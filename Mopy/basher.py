@@ -2192,7 +2192,6 @@ class INIPanel(SashPanel):
                 path = self.GetChoice()
             bosh.iniInfos.setBaseIni(bosh.BestIniFile(path))
             self.button.Enable(True)
-        file = bosh.iniInfos.ini.path.open('r')
         selected = None
         if iniList is not None:
             selected = iniList.GetSelected()
@@ -3263,7 +3262,6 @@ class InstallersPanel(SashTankPanel):
             except CancelError:
                 # User canceled the refresh
                 self.refreshing = False
-                self.refreshed = True
             finally:
                 if progress != None: progress.Destroy()
         self.SetStatusCount()
@@ -9229,6 +9227,36 @@ class INI_Apply(Link):
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
             self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+
+#------------------------------------------------------------------------------
+class INI_CreateNew(Link):
+    """Create a new INI Tweak using the settings from the tweak file, but values from the target INI."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
+        tweak = data[0]
+        menuItem = wx.MenuItem(menu,self.id,_('Copy to new Tweak...'),_("Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) == 1)
+
+    def Execute(self,event):
+        """Handle creating a new INI tweak."""
+        pathFrom = self.data[0]
+        fileName = pathFrom.sbody + ' - Copy' + pathFrom.ext
+        path = balt.askSave(self.window,_('Copy to new Tweak...'),bosh.dirs['mods'].join('INI Tweaks'),fileName,_('INI Tweak File (*.ini)|*.ini'))
+        if not path: return
+        bosh.dirs['mods'].join('INI Tweaks', pathFrom).copyTo(path)
+        # Now edit it with the values from the target INI
+        iniList.data.refresh()
+        oldTarget = iniList.data.ini
+        # Set new target as the tweak we're creating
+        iniList.data.setBaseIni(bosh.BestIniFile(path))
+        iniList.data.ini.applyTweakFile(oldTarget.path)
+        # Restore the old target and refresh
+        iniList.data.ini = oldTarget
+        iniList.RefreshUI(detail=path)
+        self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
+
 #------------------------------------------------------------------------------
 class Mods_EsmsFirst(Link):
     """Sort esms to the top."""
@@ -14586,16 +14614,24 @@ def InitReplacerLinks():
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
-    INIList.mainMenu.append(INI_SortValid())
-    INIList.mainMenu.append(Files_Open())
+    if True: #--Sort by
+        sortMenu = MenuLink(_("Sort by"))
+        sortMenu.links.append(INI_SortValid())
+        sortMenu.links.append(SeparatorLink())
+        sortMenu.links.append(Files_SortBy('File'))
+        sortMenu.links.append(Files_SortBy('Installer'))
+    INIList.mainMenu.append(sortMenu)
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
+    INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(Files_Open())
     #--Settings
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(SettingsMenu)
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
+    INIList.itemMenu.append(INI_CreateNew())
     INIList.itemMenu.append(INI_ListErrors())
     INIList.itemMenu.append(SeparatorLink())
     INIList.itemMenu.append(File_Open())

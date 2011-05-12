@@ -1883,13 +1883,14 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 
 === INI Tweaks Options
 * The drop down selection box chooses your target Ini file for applying the tweaks to.
-* __Remove__: Removes the target Ini from the drop down selection box.
-* __Edit__: Opens the target Ini file for editing. 
+  * __Remove__: Removes the target Ini from the drop down selection box.
+  * __Edit__: Opens the target Ini file for editing. 
 * __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
 * __Open:__ Opens the INI Tweaks directory.
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
+* __Copy to new Tweak:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the values of the target INI instead of the selected tweak.
 * __List Errors:__ If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
 * __Open:__ Open the tweak file for editing.
 * __Delete:__ Delete the tweak file.
@@ -2330,6 +2331,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Shows the contents of an INI tweak, including status of each line in it compared to the master INI.
     * Shows the contents of the master INI
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
+    * New INI Tweak file command "Copy to new Tweak", for creating a tweak file with the same settings as the target INI.
   * Various small UI improvements
   * regex for TesNexus searching updated to work with a few less common mod archive name formats.
   * Support for BOSS 1.7.

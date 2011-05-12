@@ -12161,10 +12161,7 @@ class InstallersData(bolt.TankData, DataDict):
     def refreshConvertersNeeded(self):
         """Returns true if refreshConverters is necessary. (Point is to skip use
         of progress dialog when possible."""
-        deprint('')
-        deprint('Converters before prune:', self.bcfPath_sizeCrcDate)
         self.pruneConverters()
-        deprint('Converters after prune:', self.bcfPath_sizeCrcDate)
         archives = set([])
         scanned = set([])
         convertersJoin = dirs['converters'].join
@@ -12176,7 +12173,6 @@ class InstallersData(bolt.TankData, DataDict):
             apath = convertersJoin(archive)
             if apath.isfile() and self.validConverterName(archive):
                 scannedAdd(apath)
-        deprint('Scanned files:', scanned)
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
         for archive in scanned:
@@ -12184,8 +12180,6 @@ class InstallersData(bolt.TankData, DataDict):
             if crc is None or (size,modified) != (archive.size,archive.mtime):
                 return True
             archivesAdd(archive)
-        deprint('Archives:', archives)
-        deprint('archives != set(...):', archives != set(self.bcfPath_sizeCrcDate))
         #--Added/removed packages?
         return archives != set(self.bcfPath_sizeCrcDate)
 
@@ -12258,31 +12252,23 @@ class InstallersData(bolt.TankData, DataDict):
         #--Current converters
         newData = dict()
         if fullRefresh:
-            deprint('Full refresh')
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
         for archive in dirs['converters'].list():
             bcfPath = convJoin(archive)
             if bcfPath.isdir(): continue
-            deprint('testing:', bcfPath)
             if self.validConverterName(archive):
-                deprint(' Valid name')
                 size,crc,modified = self.bcfPath_sizeCrcDate.get(bcfPath,(None,None,None))
                 if crc == None or (size,modified) != (bcfPath.size,bcfPath.mtime):
-                    deprint(' needs reading')
                     crc = bcfPath.crc
                     (size,modified) = (bcfPath.size,bcfPath.mtime)
                     if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[crc].fullPath:
-                        deprint(' another one with the same crc exists:', bcfCRC_converter[crc].fullPath)
                         self.bcfPath_sizeCrcDate.pop(bcfPath,None)
                         if bcfCRC_converter[crc].fullPath.exists():
-                            deprint(' moving old one to duplicates directory')
                             bcfPath.moveTo(dirs['dupeBCFs'].join(bcfPath.tail))
                         continue
-                deprint(' adding')
                 self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
                 if fullRefresh or crc not in bcfCRC_converter:
-                    deprint(' pendding add')
                     pending.add(archive)
                 else:
                     newData[crc] = bcfCRC_converter[crc]
@@ -12290,14 +12276,12 @@ class InstallersData(bolt.TankData, DataDict):
         #--New/update crcs?
         self.bcfCRC_converter = newData
         pendingChanged = False
-        deprint(' pending files:', pending)
         if bool(pending):
             progress(0,_("Scanning Converters..."))
             progress.setFull(len(pending))
             for index,archive in enumerate(sorted(pending)):
                 progress(index,_("Scanning Converter...\n")+archive.s)
                 pendingChanged |= self.addConverter(archive)
-        deprint(' pendingChanged:', pendingChanged)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self.pruneConverters()
         return changed
