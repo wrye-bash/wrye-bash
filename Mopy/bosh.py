@@ -12174,16 +12174,16 @@ class InstallersData(bolt.TankData, DataDict):
         scannedAdd = scanned.add
         for archive in dirs['converters'].list():
             apath = convertersJoin(archive)
-            if apath.isfile() and archive.cext in (defaultExt) and (archive.csbody[-4:] == '-bcf' or '-bcf-' in archive.csbody):
+            if apath.isfile() and self.validConverterName(archive):
                 scannedAdd(apath)
         deprint('Scanned files:', scanned)
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
         for archive in scanned:
-            size,crc,modified = converterGet(apath,(None,None,None))
-            if crc is None or (size,modified) != (apath.size,apath.mtime):
+            size,crc,modified = converterGet(archive,(None,None,None))
+            if crc is None or (size,modified) != (archive.size,archive.mtime):
                 return True
-            archivesAdd(apath)
+            archivesAdd(archive)
         deprint('Archives:', archives)
         deprint('archives != set(...):', archives != set(self.bcfPath_sizeCrcDate))
         #--Added/removed packages?
@@ -12245,6 +12245,9 @@ class InstallersData(bolt.TankData, DataDict):
             changed |= installer.refreshStatus(self)
         return changed
 
+    def validConverterName(self,path):
+        return path.cext in (defaultExt) and (path.csbody[-4:] == '-bcf' or '-bcf-' in path.csbody)
+
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
         progress = progress or bolt.Progress()
@@ -12262,7 +12265,7 @@ class InstallersData(bolt.TankData, DataDict):
             bcfPath = convJoin(archive)
             if bcfPath.isdir(): continue
             deprint('testing:', bcfPath)
-            if archive.cext in (defaultExt) and (archive.csbody[-4:] == '-bcf' or '-bcf-' in archive.csbody):
+            if self.validConverterName(archive):
                 deprint(' Valid name')
                 size,crc,modified = self.bcfPath_sizeCrcDate.get(bcfPath,(None,None,None))
                 if crc == None or (size,modified) != (bcfPath.size,bcfPath.mtime):
