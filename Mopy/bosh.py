@@ -12184,8 +12184,8 @@ class InstallersData(bolt.TankData, DataDict):
             if crc is None or (size,modified) != (apath.size,apath.mtime):
                 return True
             archivesAdd(apath)
-        print 'Archives:', archives
-        print 'archives != set(...):', archive != set(self.bcfPath_sizeCrcDate)
+        deprint('Archives:', archives)
+        deprint('archives != set(...):', archives != set(self.bcfPath_sizeCrcDate))
         #--Added/removed packages?
         return archives != set(self.bcfPath_sizeCrcDate)
 
