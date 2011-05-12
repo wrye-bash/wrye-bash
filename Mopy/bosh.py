@@ -12287,14 +12287,14 @@ class InstallersData(bolt.TankData, DataDict):
         #--New/update crcs?
         self.bcfCRC_converter = newData
         pendingChanged = False
-        deprint(' pending files:', pending
+        deprint(' pending files:', pending)
         if bool(pending):
             progress(0,_("Scanning Converters..."))
             progress.setFull(len(pending))
             for index,archive in enumerate(sorted(pending)):
                 progress(index,_("Scanning Converter...\n")+archive.s)
                 pendingChanged |= self.addConverter(archive)
-        deprint(' pendingChanged:', pendingChanged
+        deprint(' pendingChanged:', pendingChanged)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self.pruneConverters()
         return changed
