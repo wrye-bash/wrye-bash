@@ -658,7 +658,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('RenameEspm', self.kwdRenameEspm, 2)
         self.SetKeyword('ResetEspmName', self.kwdResetEspmName, 1)
         self.SetKeyword('ResetAllEspmNames', self.kwdResetAllEspmNames)
-        self.SetKeyword('Note', self.kwdNote, 1, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('Note', self.kwdNote, 1)
         self.SetKeyword('If', self.kwdIf, 1, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
         self.SetKeyword('Elif', self.kwdElif, 1, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
         self.SetKeyword('Else', self.kwdElse)
@@ -1264,8 +1264,8 @@ class WryeParser(ScriptParser.Parser):
     def kwdResetAllEspmNames(self):
         self.espmrenames = dict()
 
-    def kwdNote(self, *args):
-        self.notes.append('- %s\n' % self.ExecuteTokens(args))
+    def kwdNote(self, note):
+        self.notes.append('- %s\n' % note)
 
     def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant='0'):
         if self.bAuto: return
