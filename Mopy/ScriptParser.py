@@ -241,7 +241,7 @@ class Parser(object):
                 min_args = 1
             else:
                 min_args = 2
-            Parser.Callable.__init__(self, function, min_args, passTokens=passTokens)
+            super(Operator,self).__init__(function, min_args, passTokens=passTokens)
 
     class Keyword(Callable): pass
 
@@ -252,7 +252,7 @@ class Parser(object):
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            Parser.Callable.__init__(self, function, min_args, max_args, passTokens, passCommas=False)
+            super(Function,self).__init__(self, function, min_args, max_args, passTokens, passCommas)
             self.dotFunction = dotFunction
 
     class Token:
@@ -605,13 +605,13 @@ class Parser(object):
         stack = []
         for i in rpn:
             if i.type == OPERATOR:
-                if len(stack) < i.numArgs:
+                if len(stack) < i.data.minArgs:
                     error(ERR_TOO_FEW_ARGS % ('operator', i.text, len(stack), i.data.numArgs))
                 args = []
                 while len(args) < i.data.minArgs:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i.data(*args)
+                ret = i(*args)
                 if isinstance(ret, list):
                     stack.extend([Parser.Token(x) for x in ret])
                 else:
@@ -623,7 +623,7 @@ class Parser(object):
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
                 args.reverse()
-                ret = i.data(*args)
+                ret = i(*args)
                 if isinstance(ret, list):
                     stack.extend([Parser.Token(x) for x in ret])
                 else:
@@ -675,13 +675,16 @@ class Parser(object):
                     if type == OPEN_PARENS:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
         self.tokens.append(Parser.Token(word,type,self,self.cLine,(self.wordStart,self.cCol)))
-        if rightWord is None:
-            self.word = None
-            self.wordStart = None
-        else:
-            self.word = rightWord
-            self.wordStart = rightWordStart
-            self._emit()
+        self.word = None
+        self.wordStart = None
+
+        if rightWord is not None:
+            state = self._stateSpace
+            self.cCol = rightWordStart
+            for i in rightWord:
+                state = state(i)
+                if not state: return
+                self.cCol += 1
 
     def _stateSpace(self, c):
         self._emit()
