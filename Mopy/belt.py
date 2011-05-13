@@ -915,9 +915,6 @@ class WryeParser(ScriptParser.Parser):
         except:
             return 0
     def fnEndsWith(self, String, *args):
-        print 'String:', String
-        print 'args:', args
-        print 'type:', type(String)
         if not isinstance(String, str):
             error("Function 'endswith' only operates on string types.")
         try:
