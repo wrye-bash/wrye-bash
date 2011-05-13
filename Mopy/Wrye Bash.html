@@ -2605,6 +2605,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  The Wizard window is now resizeable, with automatic scaling images.</p>
     <p class="list-3">&bull;&nbsp;  Wizards now have a back button.  Be sure to note if there are any errors with this and report them.</p>
     <p class="list-3">&bull;&nbsp;  Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.</p>
+    <p class="list-3">&bull;&nbsp;  To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectOne">SelectOne</a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectMany">SelectMany</a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RenameEspm">RenameEspm</a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RequireVersions">RequireVersions</a></p>
+      <p class="list-4">&bull;&nbsp;  This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:</p>
+        <p class="list-5">&bull;&nbsp;  <b>name</b> = "00 Base "</p>
+        <p class="list-5">&bull;&nbsp;  <a href="wizards.html#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a>(<b>name</b>+"Textures")</p>
   <p class="list-2">&bull;&nbsp;  Added a cancel button to the Refresh Data progress bar.</p>
   <p class="list-2">&bull;&nbsp;  New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.</p>
   <p class="list-2">&bull;&nbsp;  Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.</p>
