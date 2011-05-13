@@ -277,7 +277,7 @@ class Parser(object):
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            super(Parser.Function,self).__init__(self, function, min_args, max_args, passTokens)
+            super(Parser.Function,self).__init__(function, min_args, max_args, passTokens)
             self.dotFunction = dotFunction
 
     class Token:
