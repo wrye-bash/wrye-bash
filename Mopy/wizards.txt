@@ -304,7 +304,7 @@ Return index of last occurrance of a substring
 
 = Keywords
 
-Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.
+Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.  As of version 292: arguments must be separated by commas.
 
 == SelectSubPackage
 Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
@@ -366,7 +366,7 @@ Cause all esps and esms to be de-selected from installation.  This is equivilant
 Change the installed name of an esp or esm.
 
 * __Usage:__
-  * __RenameEspm **original_name** **new_name**__
+  * __RenameEspm **original_name**, **new_name**__
 * __Arguments:__
   * **original_name:** the name of the esp or esm, as it appears in the BAIN package.
   * **new_name:** the new name you want to have the esp or esm installed as.
@@ -477,7 +477,7 @@ __EndFor__
 Shows a [[images/SelectOne.jpg|dialog]] where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a __Select__ control block.
 
 __Usage:__ <br />
-__SelectOne__ **description**, **option 1**, **description 1**, **image 1**, **option 2**, **description 2**, **image 2**, ..., "option n", "description n", "image n" <br />
+__SelectOne__ **description**, **option 1**, **description 1**, **image 1**, **option 2**, **description 2**, **image 2**, ..., **option n**, **description n**, **image n** <br />
 __Case__ **option 1** <br />
 ...lines... <br />
 __Break__ <br />

@@ -215,6 +215,9 @@ class Parser(object):
             # Remove commas if necessary, pass values if necessary
             if not self.passCommas or not self.passTokens:
                 args = [(x.data,x)[self.passTokens] for x in args if x.type != COMMA or self.passCommas]
+            return self.execute(*args)
+
+        def execute(self, *args):
             # Ensure correct number of arguments
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
@@ -241,9 +244,31 @@ class Parser(object):
                 min_args = 1
             else:
                 min_args = 2
-            super(Operator,self).__init__(function, min_args, passTokens=passTokens)
+            super(Parser.Operator,self).__init__(function, min_args, passTokens=passTokens)
 
-    class Keyword(Callable): pass
+    class Keyword(Callable):
+        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, splitCommas=True):
+            self.splitCommas = splitCommas
+            super(Parser.Keyword,self).__init__(function, min_args, max_args, passTokens)
+
+        def __call__(self, *args):
+            gParser.StripOuterParens(args)
+            if not self.splitCommas:
+                return super(Parser.Keyword,self).__call__(*args)
+            args = gParser.SplitAtCommas(args)
+            if not self.passTokens:
+                if len(args) == 1:
+                    if len(args[0]) > 0:
+                        args = [gParser.ExecuteTokens(args[0])]
+                    else:
+                        args = []
+                else:
+                    for i,arg in enumerate(args):
+                        if len(arg) > 0:
+                            args[i] = gParser.ExecuteTokens(arg)
+                        else:
+                            args[i] = None
+            return self.execute(*args)
 
     class Function(Callable):
         def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, dotFunction=False):
@@ -252,7 +277,7 @@ class Parser(object):
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            super(Function,self).__init__(self, function, min_args, max_args, passTokens, passCommas)
+            super(Parser.Function,self).__init__(self, function, min_args, max_args, passTokens)
             self.dotFunction = dotFunction
 
     class Token:
@@ -468,6 +493,38 @@ class Parser(object):
             self.tokens = [x.data for x in self.tokens]
             return self.tokens
         tokens = [x.data for x in tokens]
+        return tokens
+
+    # Split tokens at commas
+    def SplitAtCommas(self, tokens=None):
+        tokens = tokens or self.tokens
+        parenDepth = 0
+        bracketDepth = 0
+        ret = [[]]
+        for tok in tokens:
+            if tok.type == OPEN_PARENS:
+                parenDepth += 1
+            elif tok.type == CLOSE_PARENS:
+                parenDepth -= 1
+                if parenDepth < 0:
+                    error("Missmatched parenthesis.")
+            elif tok.type == OPEN_BRACKET:
+                bracketDepth += 1
+            elif tok.type == CLOSE_BRACKET:
+                bracketDepth -= 1
+                if bracketDepth < 0:
+                    error("Mismatched brackets.")
+            if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
+                    ret.append([])
+            else:
+                ret[-1].append(tok)
+        return ret
+
+    def StripOuterParens(self, tokens=None):
+        tokens = tokens or self.tokens
+        while len(tokens) > 2 and tokens[0].type == OPEN_PARENS and tokens[-1].type == CLOSE_PARENS:
+            tokens.pop()
+            tokens.pop(0)
         return tokens
 
     # Split a string into tokens
