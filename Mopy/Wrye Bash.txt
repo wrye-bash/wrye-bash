@@ -2313,6 +2313,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * The Wizard window is now resizeable, with automatic scaling images.
     * Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
     * Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
+    * To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:
+      * [[wizards.html#SelectOne|SelectOne]]
+      * [[wizards.html#SelectMany|SelectMany]]
+      * [[wizards.html#RenameEspm|RenameEspm]]
+      * [[wizards.html#RequireVersions|RequireVersions]]
+      * This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:
+        * __name__ = "00 Base "
+        * [[wizards.html#SelectSubPackage|[color=blue]SelectSubPackage[/color]]](__name__+"Textures")
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
