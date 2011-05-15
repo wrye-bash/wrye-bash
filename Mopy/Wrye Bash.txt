@@ -2273,6 +2273,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bashed Patch:
   * Race Patcher
     * Fixed error with setting race eyes for some uncommon races.
+    * CBash random eye setting fixed (was choosing only one eye per race). 
   * Fix for typos in CBash SpellStats Patcher
   * Tweak Actors patcher:
     * Added note to MAO patcher that it requires MAO.
@@ -2325,6 +2326,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
   * new ini option to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
+  * new ini option incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
 * General:
   * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
