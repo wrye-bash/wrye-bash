@@ -32057,7 +32057,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     meshes_eyes = {}
                     for eye in currentEyes:
                         if eye not in eye_meshes:
-                            raise StateError(_('Mesh undefined for eye %s in race %s') % (strFid(eye),race.eid,))
+                            deprint(_('Mesh undefined for eye %s in race %s') % (strFid(eye),race.eid))
+                            continue
                         rightEye, leftEye = eye_meshes[eye]
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
 
