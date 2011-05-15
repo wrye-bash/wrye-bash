@@ -7329,7 +7329,7 @@ class Installers_BsaRedirection(BoolLink):
         """Handle selection."""
         BoolLink.Execute(self,event)
         if settings[self.key]:
-            bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
+            bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
@@ -7338,7 +7338,7 @@ class Installers_BsaRedirection(BoolLink):
 
 #------------------------------------------------------------------------------
 class Installers_ConflictsReportShowsInactive(BoolLink):
-    """Toggles option to show lower on conflicts report."""
+    """Toggles option to show inactive on conflicts report."""
     def __init__(self):
         BoolLink.__init__(self,
                           _('Show Inactive Conflicts'),

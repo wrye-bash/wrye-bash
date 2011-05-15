@@ -31795,7 +31795,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                 #So this is a bit convulated, but makes the apply section work without special casing this tag
                 #Hairs should perhaps have it's own patcher, but...
                 allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
-                allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0])
+                allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0] and hair[0])
             else:
                 self.id_tag_values.setdefault(recordId,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
 
@@ -32103,7 +32103,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         if currentEyes != oldEyes:
                             racesSorted.add(race.eid)
                             raceChanged = True
-                        defaultEyes[recordId] = [x for x in bush.defaultEyes.get(recordId,[]) if x in currentEyes] or [currentEyes[0]]
+                        defaultEyes[recordId] = [x for x in bush.defaultEyes.get(recordId,[]) if x in currentEyes] or currentEyes
                         defaultMaleHair[recordId] = [x for x in currentHairs if x in maleHairs]
                         defaultFemaleHair[recordId] = [x for x in currentHairs if x in femaleHairs]
 
@@ -32827,6 +32827,7 @@ def initDefaultSettings():
     inisettings['EnableReplacers'] = False
     inisettings['EnableBalo'] = False
     inisettings['bResetBSATimestamps'] = True
+    inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'
     inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
