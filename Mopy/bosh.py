@@ -31571,7 +31571,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             mesh_eye = {}
             for eye in race.eyes:
                 if eye not in eye_mesh:
-                    raise StateError(_('Mesh undefined for eye %s in race %s') % (strFid(eye),race.eid,))
+                    deprint(_('Mesh undefined for eye %s in race %s, eye removed from race list.') % (strFid(eye),race.eid,))
+                    continue
                 mesh = eye_mesh[eye]
                 if mesh not in mesh_eye:
                     mesh_eye[mesh] = []
