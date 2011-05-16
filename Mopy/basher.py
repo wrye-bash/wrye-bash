@@ -14711,10 +14711,11 @@ def InitModLinks():
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(File_RevertToSnapshot())
         ModList.itemMenu.append(fileMenu)
-    if bosh.inisettings['EnableBalo']: #--Groups
+    if True: #--Groups
         groupMenu = MenuLink(_("Group"))
         groupMenu.links.append(Mod_Groups())
-        groupMenu.links.append(Mod_BaloGroups())
+        if bosh.inisettings['EnableBalo']:
+            groupMenu.links.append(Mod_BaloGroups())
         ModList.itemMenu.append(groupMenu)
     if True: #--Ratings
         ratingMenu = MenuLink(_("Rating"))
