@@ -6653,7 +6653,7 @@ class BsaFile:
             ('Oblivion - Meshes.bsa',1138575220),
             ('Oblivion - Misc.bsa',1139433736),
             ('Oblivion - Sounds.bsa',1138660560),
-            ('Oblivion - Textures - Compressed.bsa',1138162634),
+            (inisettings['OblivionTexturesBSAName'],1138162634),
             ('Oblivion - Voices1.bsa',1138162934),
             ('Oblivion - Voices2.bsa',1138166742),
             )
@@ -8340,7 +8340,7 @@ class ResourceReplacer:
     def validate(self):
         """Does archive invalidation according to settings."""
         if settings.get('bash.replacers.autoEditBSAs',False):
-            bsaPath = dirs['mods'].join('Oblivion - Textures - Compressed.bsa')
+            bsaPath = dirs['mods'].join(inisettings['OblivionTexturesBSAName'])
             bsaFile = BsaFile(bsaPath)
             bsaFile.scan()
             bsaFile.invalidate()
@@ -8461,7 +8461,7 @@ class ResourceReplacer:
             ('Oblivion - Meshes.bsa',1138575220),
             ('Oblivion - Misc.bsa',1139433736),
             ('Oblivion - Sounds.bsa',1138660560),
-            ('Oblivion - Textures - Compressed.bsa',1138162634),
+            (inisettings['OblivionTexturesBSAName'],1138162634),
             ('Oblivion - Voices1.bsa',1138162934),
             ('Oblivion - Voices2.bsa',1138166742),
             )
@@ -19498,8 +19498,12 @@ class CBash_CellImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        for bashKey in bashTags & self.autoKey:
-            self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.tag_attrs[bashKey]))
+        if record.GName in self.patchfile.scanSet: ##Does nothing until I can fix the error in CBash.dll
+            for bashKey in bashTags & self.autoKey:
+                self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.tag_attrs[bashKey],True))
+        else:
+            for bashKey in bashTags & self.autoKey:
+                self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.tag_attrs[bashKey]))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -20072,6 +20076,15 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -20755,6 +20768,15 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+                #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         recordId = record.fid
         if(recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -20939,12 +20961,21 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         factions = record.ConflictDetails(('factions_list',))
         if factions:
-            self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list']))
+            self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         fid = record.fid
         if(fid in self.csvId_factions):
             newFactions = set(self.csvId_factions[fid])
@@ -21701,6 +21732,15 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         deltas = self.id_deltas.get(record.fid)
         if not deltas: return
         #If only the inventory is imported, the deltas have to be applied to
@@ -21980,6 +22020,15 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break        
         recordId = record.fid
         mergedSpells = self.id_spells.get(recordId,None)
         if mergedSpells:
@@ -22758,6 +22807,15 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break        
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -31721,6 +31779,15 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break        
         recordId = record.fid
         if(recordId in self.fid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[recordId].iteritems())
@@ -31804,6 +31871,15 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         recordId = record.fid
         if(recordId in self.id_tag_values):
             allAttrs = []
@@ -31869,6 +31945,15 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
             self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break        
         recordId = record.fid
         if(recordId in self.id_spells):
             newSpells = self.id_spells[recordId]
@@ -31950,6 +32035,15 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = ObModFile(conflict._CollectionID, conflict._ModID)
+                if mod.GName in self.srcs:
+                    tags = modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: break
         if record._Type in ('HAIR','EYES'):
             return
 
