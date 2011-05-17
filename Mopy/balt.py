@@ -1269,8 +1269,7 @@ class Tank(wx.Panel):
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
-        curColumn = self.data.defaultParam('colSort',self.data.tankColumns[0])
-        if curColumn not in self.dndColumns: return False
+        if self.sort not in self.dndColumns: return False
         return True
 
     def OnDropIndexes(self, indexes, newPos):
