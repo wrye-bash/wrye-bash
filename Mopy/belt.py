@@ -627,7 +627,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
 
         #--Functions
-        self.SetFunction('CompareOblivionVersion', self.fnCompareOblivionVersion, 1)
+        self.SetFunction('CompareObVersion', self.fnCompareOblivionVersion, 1)
         self.SetFunction('CompareOBSEVersion', self.fnCompareOBSEVersion, 1)
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
@@ -730,7 +730,15 @@ class WryeParser(ScriptParser.Parser):
         self.notes = []
         self.espmrenames = {}
         self.iniedits = {}
-        self.ExecCount = 0
+
+        # Reset self.lines due to any exec statements
+        while self.ExecCount > 0:
+            for i,line in enumerate(self.lines):
+                if line.startswith('EndExec('):
+                    numLines = int(line[8:-1]) # Line is 'EndExec(%i)'
+                    del self.lines[i-numLines:i]
+                    self.ExecCount -= 1
+                    break
 
         self.cLine = 0
         self.reversing = self.choiceIdex-1
