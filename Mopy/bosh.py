@@ -32922,7 +32922,7 @@ def initDefaultSettings():
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
     inisettings['EnableReplacers'] = False
     inisettings['EnableBalo'] = False
-    inisettings['bResetBSATimestamps'] = True
+    inisettings['ResetBSATimestamps'] = True
     inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'
     inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
