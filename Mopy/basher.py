@@ -4882,7 +4882,7 @@ class BashFrame(wx.Frame):
         if bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good
-        if bosh.inisettings['bResetBSATimestamps']:
+        if bosh.inisettings['ResetBSATimestamps']:
             if bosh.bsaInfos.refresh():
                 bosh.bsaInfos.resetMTimes()
         #--Repopulate
