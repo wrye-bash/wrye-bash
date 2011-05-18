@@ -19498,7 +19498,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        if record.GName in self.patchfile.scanSet: ##Does nothing until I can fix the error in CBash.dll
+        if record.GName in self.patchFile.scanSet: ##Does nothing until I can fix the error in CBash.dll
             for bashKey in bashTags & self.autoKey:
                 self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.tag_attrs[bashKey],True))
         else:
