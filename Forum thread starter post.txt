@@ -1,4 +1,4 @@
-Continuing from the [topic=1176905]previous thread[/topic]...
+Continuing from the [topic=1185023]previous thread[/topic]...
 
 Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I mean a LOT.  It's like twenty tools rolled into one.  It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has.
 
@@ -15,7 +15,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 
 [b]Requirements[/b]:
 [list]
-[*]It's easiest to just download the WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url]
+[*]It's easiest to just download the WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
 [*]If you want to do things manually: [spoiler][list][*]Python 2.5:[list]
   [*][url=http://www.python.org/ftp/python/2.5.4/python-2.5.4.msi]Python 2.5.4[/url]
   [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py25.exe"]wxPython 2.8.11.0 ansi for Python 2.5[/url]
