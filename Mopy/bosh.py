@@ -131,9 +131,9 @@ noSolidExts = set(('.zip',))
 settings = None
 installersWindow = None
 
-allTags = sorted(('Body-F', 'Body-M', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags', 'C.Owner', 'C.Water',
-                  'Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair', 'IIM', 'Invent',
-                  'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
+allTags = sorted(('Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags',
+                  'C.Owner', 'C.Water','Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair',
+                  'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
                   'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
@@ -31342,9 +31342,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
     tip = _("Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
-        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells')
+        'Body-Size-M','Body-Size-F','Voice-M','Voice-F','R.Relations','R.Teeth',
+        'R.Mouth','R.Ears', 'R.Head','R.Attributes-F', 'R.Attributes-M',
+        'R.Skills', 'R.Description','R.AddSpells', 'R.ChangeSpells')
     forceAuto = True
 
     #--Config Phase -----------------------------------------------------------
@@ -31368,7 +31368,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         #--Restrict srcMods to active/merged mods.
         self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
         self.isActive = True #--Always enabled to support eye filtering
-        self.bodyKeys = set(('Height','Weight','TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
+        self.bodyKeys = set(('TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
+        self.sizeKeys = set(('Height','Weight'))
         self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
         self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
         self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
@@ -31417,6 +31418,12 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                         tempRaceData[key] = getattr(race,key)
                 if 'Body-F' in bashTags:
                     for key in ['female'+key for key in self.bodyKeys]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'Body-Size-M' in bashTags:
+                    for key in ['male'+key for key in self.sizeKeys]:
+                        tempRaceData[key] = getattr(race,key)
+                if 'Body-Size-F' in bashTags:
+                    for key in ['female'+key for key in self.sizeKeys]:
                         tempRaceData[key] = getattr(race,key)
                 if 'R.Teeth' in bashTags:
                     for key in ('teethLower','teethUpper'):
@@ -31811,14 +31818,16 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 class CBash_RacePatcher_Imports(SpecialPatcher):
     """Imports various race fields."""
     autoKey = set(('Hair','Body-M','Body-F','Voice-M','Voice-F','R.Teeth',
-               'R.Mouth','R.Ears','R.Head','R.Attributes-F',
-               'R.Attributes-M','R.Skills','R.Description'))
+               'R.Mouth','R.Ears','R.Head','R.Attributes-F','R.Attributes-M',
+               'R.Skills','R.Description', 'Body-Size-F','Body-Size-M'))
     tag_attrs = {
         'Hair'  : ('hairs',),
-        'Body-M': ('maleHeight','maleWeight','maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
+        'Body-M': ('maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
                    'maleHandPath','maleFootPath','maleTailPath'),
-        'Body-F': ('femaleHeight','femaleWeight','femaleTail_list','femaleUpperBodyPath','femaleLowerBodyPath',
+        'Body-F': ('femaleTail_list','femaleUpperBodyPath','femaleLowerBodyPath',
                    'femaleHandPath','femaleFootPath','femaleTailPath'),
+        'Body-Size-M': ('maleHeight','maleWeight'),
+        'Body-Size-F': ('femaleHeight','femaleWeight'),
         'Voice-M': ('maleVoice',),
         'Voice-F': ('femaleVoice',),
         'R.Teeth': ('teethLower_list','teethUpper_list',),
@@ -32256,7 +32265,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
     autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
         'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells'))
+        'R.AddSpells', 'R.ChangeSpells','Body-Size-M','Body-Size-F',))
     forceAuto = True
     tweaks = [
         CBash_RacePatcher_Relations(),
