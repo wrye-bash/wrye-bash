@@ -5701,6 +5701,7 @@ class PatchDialog(wx.Dialog):
         self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
+        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
         self.mouseItem = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
@@ -6048,6 +6049,18 @@ class PatchDialog(wx.Dialog):
         else:
             self.gTipText.SetLabel('')
 
+    def OnChar(self,event):
+        """Keyboard input to the patchers list box"""
+        if event.GetKeyCode() == 1 and event.ControlDown(): # Ctrl+'A'
+            patcher = self.currentPatcher
+            if patcher is not None:
+                if event.ShiftDown():
+                    patcher.DeselectAll()
+                else:
+                    patcher.SelectAll()
+                return
+        event.Skip()
+
 #------------------------------------------------------------------------------
 class Patcher:
     """Basic patcher panel with no options."""
@@ -6070,17 +6083,26 @@ class Patcher:
 
     def SelectAll(self,event=None):
         """'Select All' Button was pressed, update all configChecks states."""
-        try: items = self.items
-        except AttributeError: items = self.tweaks
-        for index, item in enumerate(items):
-            self.gList.Check(index,True)
-        self.OnListCheck()
+        if hasattr(self, 'items'): items = self.items
+        elif hasattr(self, 'tweaks'): items = self.tweaks
+        else: return
+        try:
+            for index, item in enumerate(items):
+                self.gList.Check(index,True)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
     def DeselectAll(self,event=None):
         """'Deselect All' Button was pressed, update all configChecks states."""
-        self.gList.SetChecked([])
-        self.OnListCheck()
-
+        if hasattr(self, 'gList'):
+            try:
+                self.gList.SetChecked([])
+                self.OnListCheck()
+            except AttributeError:
+                pass #ListBox instead of CheckListBox
+            self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher,bosh.AliasesPatcher):
     """Basic patcher panel with no options."""
