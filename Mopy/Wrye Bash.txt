@@ -2295,6 +2295,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Added 'Faction crime Gold Multiplier Fix' tweaker.
     * Added 'No Light Fade Value Fix' tweaker.
   * Added a cancel button to the build progress bar.
+  * New keyboard shortcuts: Ctrl+A and Ctrl+Shift+A in the patcher list box will SelectAll or DeselectAll suboptions, respectively.
 * BAIN:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
