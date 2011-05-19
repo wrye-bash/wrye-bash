@@ -170,6 +170,13 @@ class SkipError(BoltError):
     def __init__(self,message=_('Action skipped by user.')):
         BoltError.__init__(self,message)
 
+#------------------------------------------------------------------------------
+class PermissionError(BoltError):
+    """Wrye Bash doesn't have permission to access the specified file/directory."""
+    def __init__(self,message=None):
+        message = message or _('Access is denied.')
+        BoltError.__init__(self,message)
+
 # LowStrings ------------------------------------------------------------------
 class LString(object):
     """Strings that compare as lower case strings."""

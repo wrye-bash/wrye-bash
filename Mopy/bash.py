@@ -38,6 +38,7 @@ from bolt import _, GPath
 import bosh
 import barb
 import basher
+import balt
 
 # ----------------------------------------------------------------------------------
 def ShowHelp():
@@ -259,7 +260,20 @@ def main():
     localAppData = opts.get('-l')
     oblivionPath = opts.get('-o')
 
-    bosh.initBosh(personal,localAppData,oblivionPath)
+    try:
+        bosh.initBosh(personal,localAppData,oblivionPath)
+    except bolt.PermissionError, e:
+        if '-d' in opts or (args and args[0] == '0'):
+            if hasattr(sys,'frozen'):
+                app = basher.BashApp()
+            else:
+                app = basher.BashApp(False)
+            bolt.deprintOn = True
+        else:
+            app = basher.BashApp()
+        balt.showError(None,str(e))
+        app.MainLoop()
+        raise
 
     if not oneInstanceChecker(): return
 # Alternative one instance scheme
