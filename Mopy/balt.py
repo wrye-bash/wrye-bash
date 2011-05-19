@@ -1554,11 +1554,7 @@ class Tank(wx.Panel):
         """Show column menu."""
         if not self.mainMenu: return
         if iColumn is None: iColumn = event.GetColumn()
-        menu = wx.Menu()
-        for item in self.mainMenu:
-            item.AppendToMenu(menu,self,iColumn)
-        Link.Frame.PopupMenu(menu)
-        menu.Destroy()
+        self.mainMenu.PopupMenu(self,Link.Frame,iColumn)
 
     def DoItemMenu(self,event):
         """Show item menu."""
@@ -1567,11 +1563,7 @@ class Tank(wx.Panel):
             self.DoColumnMenu(event,0)
             return
         if not self.itemMenu: return
-        menu = wx.Menu()
-        for item in self.itemMenu:
-            item.AppendToMenu(menu,self,selected)
-        Link.Frame.PopupMenu(menu)
-        menu.Destroy()
+        self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self):
@@ -1614,6 +1606,15 @@ class Links(list):
                 return Links.LinksPoint(self,index)
         else:
             return None
+
+    #--Popup a menu from the links
+    def PopupMenu(self,parent,eventWindow=None,*args):
+        eventWindow = eventWindow or parent
+        menu = wx.Menu()
+        for link in self:
+            link.AppendToMenu(menu,parent,*args)
+        eventWindow.PopupMenu(menu)
+        menu.Destroy()
 
 #------------------------------------------------------------------------------
 class Link:

@@ -871,12 +871,8 @@ class List(wx.Panel):
         if not self.mainMenu: return
         #--Build Menu
         if column is None: column = event.GetColumn()
-        menu = wx.Menu()
-        for link in self.mainMenu:
-            link.AppendToMenu(menu,self,column)
         #--Show/Destroy Menu
-        bashFrame.PopupMenu(menu)
-        menu.Destroy()
+        self.mainMenu.PopupMenu(self,bashFrame,column)
 
     #--Column Resize
     def OnColumnResize(self,event):
@@ -902,13 +898,8 @@ class List(wx.Panel):
         if not selected:
             self.DoColumnMenu(event,0)
             return
-        #--Build Menu
-        menu = wx.Menu()
-        for link in self.itemMenu:
-            link.AppendToMenu(menu,self,selected)
         #--Show/Destroy Menu
-        bashFrame.PopupMenu(menu)
-        menu.Destroy()
+        self.itemMenu.PopupMenu(self,bashFrame,selected)
 
     #--Size Change
     def OnSize(self, event):
@@ -3509,12 +3500,8 @@ class InstallersPanel(SashTankPanel):
         y = event.GetY()
         selected = self.gEspmList.HitTest((x,y))
         self.gEspmList.SetSelection(selected)
-        #--Build Menu
-        menu = wx.Menu()
-        for link in InstallersPanel.espmMenu:
-            link.AppendToMenu(menu,self,selected)
-        bashFrame.PopupMenu(menu)
-        menu.Destroy()
+        #--Show/Destroy Menu
+        InstallersPanel.espmMenu.PopupMenu(self,bashFrame,selected)
 
     def SubsSelectionMenu(self,event):
         """Handle right click in espm list."""
@@ -3522,12 +3509,8 @@ class InstallersPanel(SashTankPanel):
         y = event.GetY()
         selected = self.gSubList.HitTest((x,y))
         self.gSubList.SetSelection(selected)
-        #--Build Menu
-        menu = wx.Menu()
-        for link in InstallersPanel.subsMenu:
-            link.AppendToMenu(menu,self,selected)
-        bashFrame.PopupMenu(menu)
-        menu.Destroy()
+        #--Show/Destroy Menu
+        InstallersPanel.subsMenu.PopupMenu(self,bashFrame,selected)
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
