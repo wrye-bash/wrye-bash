@@ -196,7 +196,7 @@ class PageError(PageInstaller):
 #  that item is selected
 #-------------------------------------------------------------
 class ImagePanel(wx.Panel):
-    def __init__(self, parent, id, bmp=None):
+    def __init__(self, parent, id=wx.ID_ANY, bmp=None):
         wx.Panel.__init__(self, parent, id)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bmp = bmp
@@ -206,9 +206,10 @@ class ImagePanel(wx.Panel):
 
     def SetBitmap(self, bmp=None):
         self.bmp = bmp
-        self.OnSize(None)
+        self.SetCursor(wx.StockCursor([wx.CURSOR_ARROW,wx.CURSOR_MAGNIFIER][bmp is not None]))
+        self.OnSize()
 
-    def OnSize(self, event):
+    def OnSize(self, event=None):
         x, y = self.GetSize()
         if x <= 0 or y <= 0: return
         self.buffer = wx.EmptyBitmap(x,y)
@@ -287,7 +288,6 @@ class PageSelect(PageInstaller):
         wx.EVT_LISTBOX(self, 643, self.OnSelect)
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
-        self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
 
     def OnSelect(self, event):
         index = event.GetSelection()

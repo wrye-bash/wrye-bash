@@ -336,6 +336,8 @@ settingDefaults = {
         'Size':75,
         },
     'bash.screens.colAligns': {},
+    'bash.screens.jpgQuality': 95,
+    'bash.screens.jpgCustomQuality': 75,
     #--Wrye Bash: Messages
     'bash.messages.cols': ['Subject','Author','Date'],
     'bash.messages.sort': 'Date',
@@ -1857,7 +1859,7 @@ class ModDetails(wx.Window):
             )
         self.SetSizer(sizer)
         #--Events
-        self.gTags.Bind(wx.EVT_RIGHT_UP,self.ShowBashTagsMenu)
+        self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
         wx.EVT_MENU(self,ID_TAGS.AUTO,self.DoAutoBashTags)
         wx.EVT_MENU(self,ID_TAGS.COPY,self.DoCopyBashTags)
         wx.EVT_MENU_RANGE(self, ID_TAGS.BASE, ID_TAGS.MAX, self.ToggleBashTag)
@@ -13168,9 +13170,9 @@ class Screens_NextScreenShot(Link):
 
 #------------------------------------------------------------------------------
 class Screen_ConvertTo(Link):
-    """Converts seleected images to another type."""
-    def __init__(self,ext,imageType,*args,**kwdargs):
-        Link.__init__(self,*args,**kwdargs)
+    """Converts selected images to another type."""
+    def __init__(self,ext,imageType):
+        Link.__init__(self)
         self.ext = ext.lower()
         self.imageType = imageType
 
@@ -13191,7 +13193,9 @@ class Screen_ConvertTo(Link):
                 srcPath = srcDir.join(fileName)
                 destPath = srcPath.root+'.'+self.ext
                 if srcPath == destPath or destPath.exists(): continue
-                bitmap = wx.Bitmap(srcPath.s)
+                bitmap = wx.Image(srcPath.s)
+                # This only has an effect on jpegs, so it's ok to do it on every kind
+                bitmap.SetOptionInt(wx.IMAGE_OPTION_QUALITY,settings['bash.screens.jpgQuality'])
                 result = bitmap.SaveFile(destPath.s,self.imageType)
                 if not result: continue
                 srcPath.remove()
@@ -13199,6 +13203,40 @@ class Screen_ConvertTo(Link):
             if progress: progress.Destroy()
             self.window.data.refresh()
             self.window.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Screen_JpgQuality(Link):
+    """Sets JPEG quality for saving."""
+    def __init__(self,quality):
+        Link.__init__(self)
+        self.quality = quality
+        self.label = '%i' % self.quality
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,self.label,kind=wx.ITEM_RADIO)
+        menu.AppendItem(menuItem)
+        if self.quality == settings['bash.screens.jpgQuality']:
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        settings['bash.screens.jpgQuality'] = self.quality
+
+#------------------------------------------------------------------------------
+class Screen_JpgQualityCustom(Screen_JpgQuality):
+    """Sets a custom JPG quality."""
+    def __init__(self):
+        Screen_JpgQuality.__init__(self,settings['bash.screens.jpgCustomQuality'])
+        self.label = _('Custom [%i]') % self.quality
+
+    def Execute(self,event):
+        quality = balt.askNumber(self.window,_('JPEG Quality'),value=self.quality,min=0,max=100)
+        if quality is None: return
+        self.quality = quality
+        settings['bash.screens.jpgCustomQuality'] = self.quality
+        self.label = _('Custom [%i]') % quality
+        Screen_JpgQuality.Execute(self,event)
+
 #------------------------------------------------------------------------------
 class Screen_Rename(Link):
     """Renames files by pattern."""
@@ -14946,6 +14984,14 @@ def InitScreenLinks():
     ScreensList.mainMenu.append(List_Columns('bash.screens.cols',['File']))
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
+    #--JPEG Quality
+    if True:
+        qualityMenu = MenuLink(_('JPEG Quality'))
+        for i in range(100,80,-5):
+            qualityMenu.links.append(Screen_JpgQuality(i))
+        qualityMenu.links.append(Screen_JpgQualityCustom())
+        ScreensList.mainMenu.append(SeparatorLink())
+        ScreensList.mainMenu.append(qualityMenu)
     #--Settings
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(SettingsMenu)
