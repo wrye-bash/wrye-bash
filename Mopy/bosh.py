@@ -81,7 +81,7 @@ import codecs
 import balt
 import bolt
 import bush
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
 from bolt import _, LString, Unicode, Encode, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
@@ -32706,6 +32706,77 @@ except ImportError:
             path = reEnv.sub(subEnv,path)
             return GPath(path)
 
+def testPermissions(path,permissions='rwcd'):
+    '''Test file permissions for a path:
+        r = read permission
+        w = write permission
+        c = file creation permission
+        d = file deletion permission'''
+    path = GPath(path)
+    permissions = permissions.lower()
+    def getTemp(path):  # Get a temp file name
+        if path.isdir():
+            temp = path.join('temp.tmp')
+        else:
+            temp = path.temp
+        while temp.exists():
+            temp = temp.temp
+        return temp
+    def getSmallest(path):  # Get the smallest file in the directory,
+        if path.isfile(): return path
+        smallsize = -1
+        ret = None
+        for file in path.list():
+            file = path.join(file)
+            if not file.isfile(): continue
+            size = file.size
+            if size < smallsize and smallsize >= 0:
+                smallsize = size
+                ret = file
+        return ret
+    #--Test read permissions
+    try:
+        if 'r' in permissions and path.exists():
+            file = getSmallest(path)
+            if file:
+                with path.open('rb') as file:
+                    pass
+        #--Test write permissions
+        if 'w' in permissions and path.exists():
+            file = getSmallest(path)
+            if file:
+                with file.open('ab') as file:
+                    pass
+        #--Test file creation permission (only for directories)
+        if 'c' in permissions:
+            if path.isdir() or not path.exists():
+                if not path.exists():
+                    path.makedirs()
+                    removeAtEnd = True
+                else:
+                    removeAtEnd = False
+                temp = getTemp(path)
+                with temp.open('wb') as file:
+                    pass
+                temp.remove()
+                if removeAtEnd:
+                    path.removedirs()
+        #--Test file deletion permission
+        if 'd' in permissions and path.exists():
+            file = getSmallest(path)
+            if file:
+                temp = getTemp(file)
+                file.copyTo(temp)
+                file.remove()
+                temp.moveTo(file)
+    except Exception, e:
+        if getattr(e,'errno',0) == 13: # Access denied
+            return False
+        elif getattr(e,'winerror',0) == 183: # Cannot create file if already exists
+            return False
+        else: raise
+    return True
+
 def getOblivionPath(bashIni, path):
     if path: path = GPath(path)
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
@@ -32819,6 +32890,23 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['converters'] = dirs['installers'].join('Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
     dirs['corruptBCFs'] = dirs['converters'].join('--Corrupt')
+
+    #--Test correct permissions for the directories
+    badPermissions = []
+    for dir in dirs:
+        if not testPermissions(dirs[dir]):
+            badPermissions.append(dirs[dir])
+    if not testPermissions(oblivionMods):
+        badPermissions.append(oblivionMods)
+    if len(badPermissions) > 0:
+        # Do not have all the required permissions for all directories
+        # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
+        # bad, just disable BAIN.  If only the saves path is bad, just disable
+        # saves related stuff.
+        msg = balt.fill(_('Wrye Bash does not have the required permissions to access the following paths:'))+'\n\n'
+        msg += '\n'.join([' * '+dir.s for dir in badPermissions])
+        msg += '\n\n'+balt.fill(_('See: Wrye Bash.html, Installation - Windows Vista/7\nfor information on how to solve this problem.'))
+        raise PermissionError(msg)
 
     # create bash user folders, keep these in order
     for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs'):
