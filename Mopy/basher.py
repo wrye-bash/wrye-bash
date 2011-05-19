@@ -13747,7 +13747,10 @@ class App_Help(Link):
 
     def Execute(self,event):
         """Handle menu selection."""
-        bosh.dirs['mopy'].join('Wrye Bash.html').start()
+        html = bosh.dirs['mopy'].join('Wrye Bash.html')
+        if not html.exists():
+            bolt.WryeText.genHtml(bosh.dirs['mopy'].join('Wrye Bash.txt').s)
+        html.start()
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(Link):
