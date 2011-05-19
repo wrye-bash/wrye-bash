@@ -26046,6 +26046,7 @@ class GlobalsTweaker(MultiTweaker):
         for record in modFile.GLOB.getActiveRecords():
             if record.flags1.deleted: continue
             if mapper(record.fid) in id_records: continue
+            if record.eid is None: continue
             for tweak in self.enabledTweaks:
                 if record.eid.lower() == tweak.key:
                     record = record.getTypeCopy(mapper)
@@ -26059,6 +26060,7 @@ class GlobalsTweaker(MultiTweaker):
         log.setHeader('= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
+
 class CBash_GlobalsTweaker(CBash_MultiTweaker):
     """Select values to set various globals to."""
     scanOrder = 29
