@@ -1,4 +1,4 @@
-= Wrye Bash ====================================================================#
+﻿= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -2331,10 +2331,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
-  * new ini option to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
-  * new ini option incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
+  * new ini option __bClearRO__ to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
+  * new ini option __sOblivionTexturesBSAName__ incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
 * General:
-  * Fixed s7zExtraCompressionArguments to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
+  * Fixed __s7zExtraCompressionArguments__ to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
   * Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
   * Import Scripts Cbash and non-CBash modes fixed to maintain Python 2.5 compatibility.
   * Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
@@ -2357,13 +2357,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
-  * In cases where the bUseMyGameDirectory is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
+  * In cases where the __bUseMyGameDirectory__ is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
   * 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
   * Unicode improvements:
     * no more errors on viewing/saving modfiles with tejón and other accented author names.
   * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
   * Selectable jpeg quality in the Screenshots Tab
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
+  * Advanced ini options for compatability with mTES4 Manager: __sInstallersData__ and __sBashModData__ to specify where **Installers.dat**, **Converters.dat**, etc are stored by Wrye Bash.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
