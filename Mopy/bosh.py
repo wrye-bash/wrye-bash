@@ -11857,7 +11857,7 @@ class InstallersData(bolt.TankData, DataDict):
     def __init__(self):
         """Initialize."""
         self.dir = dirs['installers']
-        self.bashDir = self.dir.join('Bash')
+        self.bashDir = dirs['bainData']
         #--Tank Stuff
         bolt.TankData.__init__(self,settings)
         self.tankKey = 'bash.installers'
@@ -32851,6 +32851,22 @@ def getOblivionModsPath(bashIni):
     if not path.isabs(): path = dirs['app'].join(path)
     return path
 
+def getBainDataPath(bashIni):
+    if bashIni and bashIni.has_option('General','sInstallersData'):
+        path = GPath(bashIni.get('General','sInstallersData').strip())
+        if not path.isabs(): path = dirs['app'].join(path)
+    else:
+        path = dirs['installers'].join('Bash')
+    return path
+
+def getBashModDataPath(bashIni):
+    if bashIni and bashIni.has_option('General','sBashModData'):
+        path = GPath(bashIni.get('General','sBashModData').strip())
+        if not path.isabs(): path = dirs['app'].join(path)
+    else:
+        path = getOblivionModsPath(bashIni).join('Bash Mod Data')
+    return path
+
 def getLegacyPath(newPath, oldPath):
     return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
 
@@ -32877,21 +32893,28 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
     oblivionIni = OblivionIni()
-    if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
-        # Set the save game folder to the Oblivion directory
-        dirs['saveBase'] = dirs['app']
-        # Set the data folder to sLocalMasterPath
-        dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
-        # this one is relative to the mods path so it must be updated too
-        dirs['patches'] = dirs['mods'].join('Bash Patches')
+    try:
+        if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
+            # Set the save game folder to the Oblivion directory
+            dirs['saveBase'] = dirs['app']
+            # Set the data folder to sLocalMasterPath
+            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
+            # this one is relative to the mods path so it must be updated too
+            dirs['patches'] = dirs['mods'].join('Bash Patches')
+    except:
+        # Error accessing folders for Oblivion.ini
+        # We'll show an error later
+        pass
 
     #--Mod Data, Installers
     oblivionMods = getOblivionModsPath(bashIni)
-    dirs['modsBash'] = oblivionMods.join('Bash Mod Data')
+    dirs['modsBash'] = getBashModDataPath(bashIni)
     dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join('Data','Bash'))
 
     dirs['installers'] = oblivionMods.join('Bash Installers')
     dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join('Installers'))
+
+    dirs['bainData'] = getBainDataPath(bashIni)
 
     dirs['converters'] = dirs['installers'].join('Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
@@ -32909,13 +32932,13 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
         # bad, just disable BAIN.  If only the saves path is bad, just disable
         # saves related stuff.
-        msg = balt.fill(_('Wrye Bash does not have the required permissions to access the following paths:'))+'\n\n'
-        msg += '\n'.join([' * '+dir.s for dir in badPermissions])
-        msg += '\n\n'+balt.fill(_('See: Wrye Bash.html, Installation - Windows Vista/7\nfor information on how to solve this problem.'))
+        msg = balt.fill(_('Wrye Bash cannot access the following paths:'))
+        msg += '\n\n'+ '\n'.join([' * '+dir.s for dir in badPermissions]) + '\n\n'
+        msg += balt.fill(_('See: "Wrye Bash.html, Installation - Windows Vista/7" for information on how to solve this problem.'))
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs'):
+    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData'):
         dirs[key].makedirs()
 
 def initDefaultTools():
