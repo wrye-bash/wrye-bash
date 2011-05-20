@@ -31646,7 +31646,10 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 mesh_eye[mesh].append(eye)
             currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
             #print race.eid, mesh_eye
-            maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
+            try:
+                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
+            except IndexError:
+                maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?
             if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
                 setRaceEyeMesh(race,*maxEyesMesh)
@@ -32168,7 +32171,10 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
 
                     #print race.eid, mesh_eye
-                    maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
+                    try:
+                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
+                    except IndexError:
+                        maxEyesMeshes = blueEyeMeshes
                     meshesCount = len(meshes_eyes)
                     #--Single eye mesh, but doesn't match current mesh?
                     if meshesCount == 1 and currentMeshes != maxEyesMeshes:
