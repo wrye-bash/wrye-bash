@@ -646,6 +646,9 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('lower', self.fnLower, 1, dotFunction=True)
         self.SetFunction('find', self.fnFind, 2, 4, dotFunction=True)
         self.SetFunction('rfind', self.fnRFind, 2, 4, dotFunction=True)
+        #--String pathname functions
+        self.SetFunction('GetFilename', self.fnGetFilename, 1)
+        self.SetFunction('GetFolder', self.fnGetFolder, 1)
         #--Keywords
         self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
         self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
@@ -950,6 +953,18 @@ class WryeParser(ScriptParser.Parser):
             error("Function 'rfind' only operators on string types.")
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
+    def fnGetFilename(self, String):
+        try:
+            path = bolt.Path(String)
+            return path.stail
+        except:
+            return ''
+    def fnGetFolder(self, String):
+        try:
+            path = bolt.Path(String)
+            return path.shead
+        except:
+            return ''
 
     # Dummy keyword, for reserving a keyword, but handled by other keywords (like from, to, and by)
     def kwdDummy(self):
@@ -1064,7 +1079,7 @@ class WryeParser(ScriptParser.Parser):
             return
         varname = args[0]
         if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error("Invalid syntax for 'For' statement.  Expected variable.")
+            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name")
         if args[1].text == 'from':
             #For varname from value_start to value_end [by value_increment]
             if (len(args) not in [5,7]) or (args[3].text != 'to') or (len(args)==7 and args[5].text != 'by'):
@@ -1080,23 +1095,41 @@ class WryeParser(ScriptParser.Parser):
             self.variables[varname.text] = start
             self.PushFlow('For', True, ['For', 'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
         elif args[1].text == 'in':
-            # For name in SubPackages / For name in Espms
+            # For name in SubPackages / For name in SubPackage
             if args[2].text == 'SubPackages':
+                if len(args) > 4:
+                    error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name in Subpackages\n For var_name in subpackage_name"))
                 List = sorted(self.sublist.keys())
-            elif args[2].text == 'Espms':
-                List = sorted(self.espmlist.keys())
             else:
-                error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name in SubPackages\n For var_name in Espms"))
-            if len(args) > 4:
-                error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name in %s") % args[2].text)
+                name = self.ExecuteTokens(args[2:])
+                try:
+                    subpackage = self.GetPackage(name)
+                except:
+                    error(_("Subpackage '%s' does not exist.") % name)
+                if subpackage is None:
+                    error(_("SubPackage '%s' does not exist.") % name)
+                List = []
+                if isinstance(self.installer,bosh.InstallerProject):
+                    dir = bosh.dirs['installers'].join(self.path,subpackage)
+                    for root,dirs,files in dir.walk():
+                        for file in files:
+                            rel = root.join(file).relpath(dir)
+                            List.append(rel.s)
+                else:
+                    # Archive
+                    for file in self.installer.fileSizeCrcs:
+                        rel = bolt.Path(file[0]).relpath(subpackage)
+                        if not rel.s.startswith('..'):
+                            List.append(rel.s)
+                List.sort()
             if len(List) == 0:
                 self.variables[varname.text] = ''
                 self.PushFlow('For', False, ['For','EndFor'])
             else:
                 self.variables[varname.text] = List[0]
-                self.PushFlow('For', True, ['For', 'EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
+                self.PushFlow('For', True, ['For','EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
         else:
-            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment\n For var_name in SubPackages\n For var_name in Espms")
+            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name")
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
             error(UNEXPECTED % 'EndFor')
@@ -1173,7 +1206,7 @@ class WryeParser(ScriptParser.Parser):
         if self.bArchive:
             imageJoin = self.installer.tempDir.join
         else:
-            imageJoin = bosh.dirs['installers'].join(self.path.s).join
+            imageJoin = bosh.dirs['installers'].join(self.path).join
         for i in images:
             path = imageJoin(i)
             if not path.exists() and bosh.dirs['mopy'].join(i).exists():
