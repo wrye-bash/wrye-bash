@@ -2597,26 +2597,31 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)</p>
   <p class="list-2">&bull;&nbsp;  Size of comments section saved between launches (contributed by myk002)</p>
   <p class="list-2">&bull;&nbsp;  Wizards:</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus">GetEspmStatus</a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI">EditINI</a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec">Exec</a>: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#endswith">endswith</a>: Test what a string ends with.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#startswith">startswith</a>: Test what a string starts with.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#lower">lower</a>: Convert a string to lower case.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find">find</a>: Find the first occurrance of a substring within a string.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind">rfind</a>: Find the last occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec"><span style="color:purple;">Exec</span></a>: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#endswith"><span style="color:purple;">endswith</span></a>: Test what a string ends with.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#startswith"><span style="color:purple;">startswith</span></a>: Test what a string starts with.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#lower"><span style="color:purple;">lower</span></a>: Convert a string to lower case.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find"><span style="color:purple;">find</span></a>: Find the first occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind"><span style="color:purple;">rfind</span></a>: Find the last occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFilename"><span style="color:purple;">GetFilename</span></a>: For getting a filename from a path string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFolder"><span style="color:purple;">GetFolder</span></a>: For getting a folder name from a path string.</p>
+    <p class="list-3">&bull;&nbsp;  Improved <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> loops, for iterating over files in an installer:</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>subpackage</i> in Subpackages</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>file</i> in <i>subpackage</i></p>
     <p class="list-3">&bull;&nbsp;  <a href="wizards.html#CaseInsensitiveOperators">Case Insensitive Operators</a>: Operators that ignore the case of a string when comparing.</p>
     <p class="list-3">&bull;&nbsp;  The <a href="wizards.html#DotOperator">Dot Operator</a></p>
-    <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions">RequireVersions</a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
+    <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions"><span style="color:blue;">RequireVersions</span></a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
     <p class="list-3">&bull;&nbsp;  A new icon will indicate that an installer contains a wizard.</p>
     <p class="list-3">&bull;&nbsp;  The Wizard window is now resizeable, with automatic scaling images.</p>
     <p class="list-3">&bull;&nbsp;  Wizards now have a back button.  Be sure to note if there are any errors with this and report them.</p>
     <p class="list-3">&bull;&nbsp;  Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.</p>
     <p class="list-3">&bull;&nbsp;  To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:</p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectOne">SelectOne</a></p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectMany">SelectMany</a></p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RenameEspm">RenameEspm</a></p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RequireVersions">RequireVersions</a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectOne"><span style="color:blue;">SelectOne</span></a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#SelectMany"><span style="color:blue;">SelectMany</span></a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RenameEspm"><span style="color:blue;">RenameEspm</span></a></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#RequireVersions"><span style="color:blue;">RequireVersions</span></a></p>
       <p class="list-4">&bull;&nbsp;  This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:</p>
         <p class="list-5">&bull;&nbsp;  <b>name</b> = "00 Base "</p>
         <p class="list-5">&bull;&nbsp;  <a href="wizards.html#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a>(<b>name</b>+"Textures")</p>

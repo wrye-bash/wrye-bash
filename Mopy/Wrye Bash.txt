@@ -1,4 +1,4 @@
-﻿= Wrye Bash ====================================================================#
+= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -2305,26 +2305,31 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
   * Wizards:
-    * New function - [[wizards.html#GetEspmStatus|GetEspmStatus]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
-    * New function - [[wizards.html#EditINI|EditINI]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
-    * New function - [[wizards.html#Exec|Exec]]: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.
-    * New function - [[wizards.html#endswith|endswith]]: Test what a string ends with.
-    * New function - [[wizards.html#startswith|startswith]]: Test what a string starts with.
-    * New function - [[wizards.html#lower|lower]]: Convert a string to lower case.
-    * New function - [[wizards.html#find|find]]: Find the first occurrance of a substring within a string.
-    * New function - [[wizards.html#rfind|rfind]]: Find the last occurrance of a substring within a string.
+    * New function - [[wizards.html#GetEspmStatus|[color=purple]GetEspmStatus[/color]]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
+    * New function - [[wizards.html#EditINI|[color=purple]EditINI[/color]]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+    * New function - [[wizards.html#Exec|[color=purple]Exec[/color]]]: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.
+    * New function - [[wizards.html#endswith|[color=purple]endswith[/color]]]: Test what a string ends with.
+    * New function - [[wizards.html#startswith|[color=purple]startswith[/color]]]: Test what a string starts with.
+    * New function - [[wizards.html#lower|[color=purple]lower[/color]]]: Convert a string to lower case.
+    * New function - [[wizards.html#find|[color=purple]find[/color]]]: Find the first occurrance of a substring within a string.
+    * New function - [[wizards.html#rfind|[color=purple]rfind[/color]]]: Find the last occurrance of a substring within a string.
+    * New function - [[wizards.html#GetFilename|[color=purple]GetFilename[/color]]]: For getting a filename from a path string.
+    * New function - [[wizards.html#GetFolder|[color=purple]GetFolder[/color]]]: For getting a folder name from a path string.
+    * Improved [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] loops, for iterating over files in an installer:
+      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~subpackage~~ in Subpackages
+      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~file~~ in ~~subpackage~~
     * [[wizards.html#CaseInsensitiveOperators|Case Insensitive Operators]]: Operators that ignore the case of a string when comparing.
     * The [[wizards.html#DotOperator|Dot Operator]]
-    * Bugfix [[wizards.html#RequireVersions|RequireVersions]]: The version page will now show correctly if the Wrye Bash version is incorrect.
+    * Bugfix [[wizards.html#RequireVersions|[color=blue]RequireVersions[/color]]]: The version page will now show correctly if the Wrye Bash version is incorrect.
     * A new icon will indicate that an installer contains a wizard.
     * The Wizard window is now resizeable, with automatic scaling images.
     * Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
     * Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
     * To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:
-      * [[wizards.html#SelectOne|SelectOne]]
-      * [[wizards.html#SelectMany|SelectMany]]
-      * [[wizards.html#RenameEspm|RenameEspm]]
-      * [[wizards.html#RequireVersions|RequireVersions]]
+      * [[wizards.html#SelectOne|[color=blue]SelectOne[/color]]]
+      * [[wizards.html#SelectMany|[color=blue]SelectMany[/color]]]
+      * [[wizards.html#RenameEspm|[color=blue]RenameEspm[/color]]]
+      * [[wizards.html#RequireVersions|[color=blue]RequireVersions[/color]]]
       * This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:
         * __name__ = "00 Base "
         * [[wizards.html#SelectSubPackage|[color=blue]SelectSubPackage[/color]]](__name__+"Textures")

@@ -301,7 +301,31 @@ Return index of last occurrance of a substring
   * The index of the last occurance of **substring** in **string**
   * **-1** if **substring** could not be found
 
+== GetFilename
+For a string that contains a path, returns the filename in that string.
 
+* __Usage:__
+  * __GetFilename(**path_string**)__
+* __Arguments:__
+  * **path_string:** a string or variable of the path to work with.
+* __Return:__
+  * The filename, or an empty string if there is not a file or if **path_string** is not a path.
+* __Examples:__
+  * __GetFilename("C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe")__ would return __"Oblivion.exe"__
+  * __GetFilename("C:\Program Files\Bethesda Softworks\Oblivion")__ would return an empty string.
+
+== GetFolder
+For a string that contains a path, returns the folder part of the string.
+
+* __Usage:__
+  * __GetFolder(**path_string**)__
+* __Arguments:__
+  * **path_string:** a string or variable of the path to work with.
+* __Return:__
+  * The folder, or an empty string if there is not one, or if **path_string** is not a path.
+* __Examples:__
+  * __GetFolder("Data\mine.esp")__ would return __"Data"__
+  * __GetFolder("mine.esp")__ would return an empty string.
 = Keywords
 
 Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.  As of version 292: arguments must be separated by commas.
@@ -396,16 +420,17 @@ Add a note to the user to be displayed at the end of the wizard, on the [[images
 == If-Elif-Else-EndIf
 A basic __If__ control block.
 
-__Usage:__ <br />
-__If__ **statement** <br />
-...lines... <br />
-__Elif__ **statement** <br />
-...lines... <br />
-__Elif__ **statement** <br />
-...lines... <br />
-__Else__ <br />
-...lines... <br />
-__EndIf__
+__Usage:__
+<table><tr><td class="code">[code]
+[color=blue]If[/color] ~~statement~~
+  ~~lines~~
+[color=blue]Elif[/color] ~~statement~~
+  ~~lines~~
+[color=blue]Elif[/color] ~~statement~~
+  ~~lines~~
+[color=blue]Else[/color]
+  ~~lines~~
+[color=blue]EndIf[/color][/code]</td></tr></table>
 
 === If
 * A begins the control block.
@@ -423,13 +448,15 @@ __EndIf__
 == While-Continue-Break-EndWhile
 A __While__ loop.
 
-__Usage:__<br />
-__While__ **statement** <br />
-...lines...<br />
-...__Continue__<br />
-...lines...<br />
-...__Break__<br />
-__EndWhile__
+__Usage:__
+<table><tr><td class="code">[code]
+[color=blue]While[/color] ~~statement~~
+  ~~lines~~
+    [color=blue]Continue[/color]
+  ~~lines~~
+    [color=blue]Break[/color]
+  ~~lines~~
+[color=blue]EndWhile[/color][/code]</td></tr></table>
 
 === While
 * Begins the while loop.
@@ -445,55 +472,68 @@ __EndWhile__
 * Ends the while loop.  **statement** is re-evaluated, and if **True**, execution begins again at the start of the __While__ block.
 
 == For-Continue-Break-EndFor
-A __For__ loop.
+A __For__ loop.  There are three possible For loops:
+* __For__ **varname** from **start_value** to **end_value** [by **increment_value**]
+  * **varname:** variable that will hold values.
+  * **start_value:** Initial value of **varname**
+  * **end_value:** value of **varname** that will end the for loop.
+  * **increment_value:** Optional (defaults to ~~1~~ or ~~-1~~ as applicable).  This the value that will be added to **varname** at the end of each run of the loop.
+* __For__ **varname** in Subpackages
+  * **varname:** variable that will hold the SubPackage names.
+  * This loop will iterate over the names of the SubPackages in the current installer.
+* __For__ **varname** in **subpackage_name**
+  * **varname:** variable that will hold the file names.
+  * **subpackage_name:** SubPackage to list the files of.
+  * This loop will iterate over each of the files contained in the SubPackage **subpackage_name**.  File names will be relative to the Data directory, before any remapping that would normally be done by BAIN.
 
-__Usage:__<br />
-__For__ **varname** from **start_value** to **end_value** [by **increment_value**]<br />
-...lines...<br />
-...__Continue__<br />
-...lines...<br />
-...__Break__<br />
-__EndFor__
+* __Usage:__
+<table><tr><td class="code">[code]
+[color=blue]For[/color] ~~arguments~~
+  ~~lines~~
+    [color=blue]Continue[/color]
+  ~~lines~~
+    [color=blue]Break[/color]
+  ~~lines~~
+[color=blue]EndFor[/color][/code]</td>
+<td class="code">[code]
+[color=blue]For[/color] sub [color=blue]in[/color] SubPackages
+  [color=blue]For[/color] file [color=blue]in[/color] sub
+    ~~lines~~
+  [color=blue]EndFor[/color]
+[color=blue]EndFor[/color][/code]</td></tr></table>
 
 === For
 * Begins the for loop.
-* **varname** is initialized to **increment_value**, and execution of the __For__ block begins.
-* __by **increment_value**__ is optional.  If not specified, the __For__ loop assumes a value of __1__ or __-1__ as appropriate.
 
 === Continue
 * Signals the for loop to begin another iteration.
-* If **varname** equals **end_value**, the for loop exits and execution begins after the __EndFor__.
-* Otherwise, **varname** is incremented by **increment_value**, and execution begins at the beginning of the __For__ loop again.
 
 === Break
 * Signals the for loop to end execution, skipping to after the __EndFor__.
 
 === EndFor
 * Ends the for loop.
-* If **varname** equals **end_value**, the for loop is done and execution continues after the __EndFor__.
-* Otherwise, **varname** is incremented by **increment_value**, and execution skips back to the beginning of the __For__ loop.
 
 == SelectOne
 Shows a [[images/SelectOne.jpg|dialog]] where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a __Select__ control block.
 
-__Usage:__ <br />
-__SelectOne__ **description**, **option 1**, **description 1**, **image 1**, **option 2**, **description 2**, **image 2**, ..., **option n**, **description n**, **image n** <br />
-__Case__ **option 1** <br />
-...lines... <br />
-__Break__ <br />
-__Case__ **option 2** <br />
-...lines... <br />
-__Break__ <br />
-... <br />
-... <br />
-__Case__ **option n** <br />
-... <br />
-... <br />
-__Break__ <br />
-__Default__ <br />
-...lines... <br />
-__Break__ <br />
-__EndSelect__ <br />
+* __Usage:__
+<table><tr><td class="code">[code]
+[color=blue]SelectOne[/color] **description**, **option 1**, **description 1**, **image 1**, **option 2**, **description 2**, **image 2**, ..., **option n**, **description n**, **image n**
+[color=blue]Case[/color] **option 1**
+    ~~lines~~
+    [color=blue]Break[/color]
+[color=blue]Case[/color] **option 2**
+    ~~lines~~
+    [color=blue]Break[/color]
+
+[color=blue]Case[/color] **option n**
+    ~~lines~~
+    [color=blue]Break[/color]
+[color=blue]Default[/color]
+    ~~lines~~
+    [color=blue]Break[/color]
+[color=blue]EndSelect[/color][/code]</td></tr></table>
 
 * __Arguments:__
   * **description:** The text that will be displayed at the top of the dialog.  
@@ -752,12 +792,12 @@ Have a problem with your wizard script? Here are some common mistakes that cause
 * Notice the following example has no Case's(This is intended) and the Default character is before the 'Start Here_Readme'.
 <pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
 SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
-	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.",""\
-	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla",""\
-	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release",""\
-	"Guidelines for a Example install","",""\
-	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg"\
-	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.",""\
+	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.","", \
+	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla","", \
+	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release","", \
+	"Guidelines for a Example install","","", \
+	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg", \
+	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.","", \
 	"Language","Language or Nationality this BAIN wizard was written in. \n\n English (USA)","Wizard Images\\EnglishUSA.jpg"
 EndSelect
 </pre>
@@ -768,7 +808,7 @@ EndSelect
 * 'SelectSubPackage' in the following example could be replaced by many other [[#|Keywords]] or even another Yes/No Question Block.
 <pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
 SelectOne "Example: Yes/No Question?",\
-		"Yes","Description.","Wizard Images\\Yes.jpg"\
+		"Yes","Description.","Wizard Images\\Yes.jpg", \
 		"No","Description.","Wizard Images\\No.jpg"
 	Case "Yes"
 		SelectSubPackage "00 Example Subpackage" ;;;Action/No Action
@@ -999,6 +1039,21 @@ Similar functionality can be reproduced using [[#|[color=blue]If[/color]]] [[#|[
 </td><td class="code">[code]
 Similar functionality can be obtained by packaging the mod differently, and then using [[#|[color=blue]SelectSubPackage[/color]]] and [[#|[color=blue]DeSelectSubPackage[/color]]]
 [/code]</td></tr>
+<tr><td class="code">
+===For Each DataFolder [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
+===For Each DataFile [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
+===For Each PluginFolder [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
+===For Each Plugin [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
+</td><td class="code">[code]
+Use:
+  [[#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~subpackage~~ in SubPackages
+and/or:
+  [[#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~file~~ in ~~subpackage~~
+to iterate over files and folders in an installer.  Then use:
+  ~~file~~.[[#|[color=purple]lower[/color]]]().[[#|[color=purple]endswith[/color]]]([color=green]".esp"[/color])
+  [[#|[color=purple]GetFilename[/color]]](~~file~~)
+  [[#|[color=purple]GetFolder[/color]]](~~file~~)
+and other string manipulation functions to test file names and folders.[/code]</td></tr>
 </table>
 
 == Functions in OBMM that do not have an equivalent in Wizards
@@ -1006,10 +1061,6 @@ Similar functionality can be obtained by packaging the mod differently, and then
 <td class="code">[code]
 ===SelectVar [color=green]&lt;Variable&gt;[/color]
 ===SelectString [color=green]&lt;Variable&gt;[/color]
-===For Each DataFolder [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
-===For Each DataFile [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
-===For Each PluginFolder [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
-===For Each Plugin [color=green]&lt;Variable&gt;[/color] [color=purple]&lt;FolderPath&gt;[/color] [color=brown][RecurseSubFolders][/color] [color=orange][SearchString][/color]
 ===Goto [color=blue]&lt;label&gt;[/color]
 ===Label [color=blue]&lt;label&gt;[/color]
 ===LoadBefore [color=blue]&lt;Plugin1&gt;[/color] [color=purple]&lt;Plugin2&gt;[/color]
