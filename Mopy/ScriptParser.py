@@ -612,7 +612,7 @@ class Parser(object):
                             break
                     if i.text == '-':
                         # Special unary minus type
-                        if idex == 0 or tokens[idex-1].type in [OPEN_BRACKET,OPEN_PARENS,COMMA,COLON,KEYWORD]:
+                        if idex == 0 or tokens[idex-1].type in [OPEN_BRACKET,OPEN_PARENS,COMMA,COLON,OPERATOR,KEYWORD]:
                             rpnAppend(Parser.Token('0',parser=self))
                     stack.append(i)
             elif i.type == OPEN_PARENS:
@@ -663,7 +663,7 @@ class Parser(object):
         for i in rpn:
             if i.type == OPERATOR:
                 if len(stack) < i.data.minArgs:
-                    error(ERR_TOO_FEW_ARGS % ('operator', i.text, len(stack), i.data.numArgs))
+                    error(ERR_TOO_FEW_ARGS % ('operator', i.text, len(stack), i.data.minArgs))
                 args = []
                 while len(args) < i.data.minArgs:
                     args.append(stack.pop())
