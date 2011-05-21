@@ -70,6 +70,8 @@
 <p class="list-2">&bull;&nbsp; <a href="#lower">lower</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#find">find</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#rfind">rfind</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#GetFilename">GetFilename</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#GetFolder">GetFolder</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#Keywords">Keywords</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#SelectSubPackage">SelectSubPackage</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#DeSelectSubPackage">DeSelectSubPackage</a></p>
@@ -193,13 +195,13 @@
 <p class="list-3">&bull;&nbsp; <a href="#InstallDataFolderspanstylecolorblueltFolderNamegtspanspanstylecolorbrownRecurseSubfoldersspan">InstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#CopyDataFilespanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspan">CopyDataFile <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#CopyDataFolderspanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspanspanstylecolorbrownRecurseSubfoldersspan">CopyDataFolder <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></p>
-<p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveanequivalentinWizards">Functions in OBMM that do not have an equivalent in Wizards</a></p>
-<p class="list-3">&bull;&nbsp; <a href="#SelectVarspanstylecolorgreenltVariablegtspan">SelectVar <span style="color:green;">&lt;Variable&gt;</span></a></p>
-<p class="list-3">&bull;&nbsp; <a href="#SelectStringspanstylecolorgreenltVariablegtspan">SelectString <span style="color:green;">&lt;Variable&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ForEachDataFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan">For Each DataFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ForEachDataFilespanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan">For Each DataFile <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ForEachPluginFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan">For Each PluginFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#ForEachPluginspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan">For Each Plugin <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveanequivalentinWizards">Functions in OBMM that do not have an equivalent in Wizards</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectVarspanstylecolorgreenltVariablegtspan">SelectVar <span style="color:green;">&lt;Variable&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectStringspanstylecolorgreenltVariablegtspan">SelectString <span style="color:green;">&lt;Variable&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#Gotospanstylecolorblueltlabelgtspan">Goto <span style="color:blue;">&lt;label&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#Labelspanstylecolorblueltlabelgtspan">Label <span style="color:blue;">&lt;label&gt;</span></a></p>
 <p class="list-3">&bull;&nbsp; <a href="#LoadBeforespanstylecolorblueltPlugin1gtspanspanstylecolorpurpleltPlugin2gtspan">LoadBefore <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></p>
@@ -573,7 +575,33 @@ EndSelect</pre>
   <p class="list-2">&bull;&nbsp;  The index of the last occurance of <i><b>substring</b></i> in <i><b>string</b></i></p>
   <p class="list-2">&bull;&nbsp;  <i><b>-1</b></i> if <i><b>substring</b></i> could not be found</p>
   <p class="empty">&nbsp;</p>
+<h2><a id='GetFilename'>GetFilename</a></h2>
+<p>For a string that contains a path, returns the filename in that string.
+</p>
   <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFilename(<i><b>path_string</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>path_string:</b></i> a string or variable of the path to work with.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The filename, or an empty string if there is not a file or if <i><b>path_string</b></i> is not a path.</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFilename("C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe")</b> would return <b>"Oblivion.exe"</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFilename("C:\Program Files\Bethesda Softworks\Oblivion")</b> would return an empty string.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='GetFolder'>GetFolder</a></h2>
+<p>For a string that contains a path, returns the folder part of the string.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFolder(<i><b>path_string</b></i>)</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>path_string:</b></i> a string or variable of the path to work with.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The folder, or an empty string if there is not one, or if <i><b>path_string</b></i> is not a path.</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFolder("Data\mine.esp")</b> would return <b>"Data"</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>GetFolder("mine.esp")</b> would return an empty string.</p>
 <h1><a id='Keywords'>Keywords</a></h1>
   <p class="empty">&nbsp;</p>
 <p>Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.  As of version 292: arguments must be separated by commas.
@@ -682,23 +710,10 @@ EndSelect</pre>
 <p>A basic <b>If</b> control block.
 </p>
   <p class="empty">&nbsp;</p>
-<p><b>Usage:</b> <br />
+<p><b>Usage:</b>
 </p>
-<p><b>If</b> <i><b>statement</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Elif</b> <i><b>statement</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Elif</b> <i><b>statement</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Else</b> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>EndIf</b>
-</p>
-<p class="empty">&nbsp;</p>
+<table><tr><td class="code"><p class="code-0"><span style="color:blue;">If</span> <i>statement</i></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">Elif</span> <i>statement</i></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">Elif</span> <i>statement</i></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">Else</span></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">EndIf</span></p></td></tr></table>
+  <p class="empty">&nbsp;</p>
 <h3><a id='If'>If</a></h3>
 <p class="list-1">&bull;&nbsp;  A begins the control block.</p>
 <p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, then the lines following it will be run, until the next <b>Elif</b>, <b>Else</b>, or <b>EndIf</b>.</p>
@@ -716,16 +731,9 @@ EndSelect</pre>
 <p>A <b>While</b> loop.
 </p>
 <p class="empty">&nbsp;</p>
-<p><b>Usage:</b><br />
+<p><b>Usage:</b>
 </p>
-<p><b>While</b> <i><b>statement</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines...<br /></p>
-<p class="list-1">&nbsp;&nbsp; ..<b>Continue</b><br /></p>
-<p class="list-1">&nbsp;&nbsp; ..lines...<br /></p>
-<p class="list-1">&nbsp;&nbsp; ..<b>Break</b><br /></p>
-<p><b>EndWhile</b>
-</p>
+<table><tr><td class="code"><p class="code-0"><span style="color:blue;">While</span> <i>statement</i></p><p class="code-1"><i>lines</i></p><p class="code-2"><span style="color:blue;">Continue</span></p><p class="code-1"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">EndWhile</span></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <h3><a id='While'>While</a></h3>
 <p class="list-1">&bull;&nbsp;  Begins the while loop.</p>
@@ -741,71 +749,44 @@ EndSelect</pre>
 <p class="list-1">&bull;&nbsp;  Ends the while loop.  <i><b>statement</b></i> is re-evaluated, and if <i><b>True</b></i>, execution begins again at the start of the <b>While</b> block.</p>
 <p class="empty">&nbsp;</p>
 <h2><a id='ForContinueBreakEndFor'>For-Continue-Break-EndFor</a></h2>
-<p>A <b>For</b> loop.
+<p>A <b>For</b> loop.  There are three possible For loops:
 </p>
-<p class="empty">&nbsp;</p>
-<p><b>Usage:</b><br />
-</p>
-<p><b>For</b> <i><b>varname</b></i> from <i><b>start_value</b></i> to <i><b>end_value</b></i> [by <i><b>increment_value</b></i>]<br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines...<br /></p>
-<p class="list-1">&nbsp;&nbsp; ..<b>Continue</b><br /></p>
-<p class="list-1">&nbsp;&nbsp; ..lines...<br /></p>
-<p class="list-1">&nbsp;&nbsp; ..<b>Break</b><br /></p>
-<p><b>EndFor</b>
-</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> from <i><b>start_value</b></i> to <i><b>end_value</b></i> [by <i><b>increment_value</b></i>]</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold values.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start_value:</b></i> Initial value of <i><b>varname</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>end_value:</b></i> value of <i><b>varname</b></i> that will end the for loop.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>increment_value:</b></i> Optional (defaults to <i>1</i> or <i>-1</i> as applicable).  This the value that will be added to <i><b>varname</b></i> at the end of each run of the loop.</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> in Subpackages</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold the SubPackage names.</p>
+  <p class="list-2">&bull;&nbsp;  This loop will iterate over the names of the SubPackages in the current installer.</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> in <i><b>subpackage_name</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold the file names.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>subpackage_name:</b></i> SubPackage to list the files of.</p>
+  <p class="list-2">&bull;&nbsp;  This loop will iterate over each of the files contained in the SubPackage <i><b>subpackage_name</b></i>.  File names will be relative to the Data directory, before any remapping that would normally be done by BAIN.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<table><tr><td class="code"><p class="code-0"><span style="color:blue;">For</span> <i>arguments</i></p><p class="code-1"><i>lines</i></p><p class="code-2"><span style="color:blue;">Continue</span></p><p class="code-1"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="code-1"><i>lines</i></p><p class="code-0"><span style="color:blue;">EndFor</span></p></td>
+<td class="code"><p class="code-0"><span style="color:blue;">For</span> sub <span style="color:blue;">in</span> SubPackages</p><p class="code-1"><span style="color:blue;">For</span> file <span style="color:blue;">in</span> sub</p><p class="code-2"><i>lines</i></p><p class="code-1"><span style="color:blue;">EndFor</span></p><p class="code-0"><span style="color:blue;">EndFor</span></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <h3><a id='For'>For</a></h3>
 <p class="list-1">&bull;&nbsp;  Begins the for loop.</p>
-<p class="list-1">&bull;&nbsp;  <i><b>varname</b></i> is initialized to <i><b>increment_value</b></i>, and execution of the <b>For</b> block begins.</p>
-<p class="list-1">&bull;&nbsp;  <b>by <i><b>increment_value</b></i></b> is optional.  If not specified, the <b>For</b> loop assumes a value of <b>1</b> or <b>-1</b> as appropriate.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Continue1'>Continue</a></h3>
 <p class="list-1">&bull;&nbsp;  Signals the for loop to begin another iteration.</p>
-<p class="list-1">&bull;&nbsp;  If <i><b>varname</b></i> equals <i><b>end_value</b></i>, the for loop exits and execution begins after the <b>EndFor</b>.</p>
-<p class="list-1">&bull;&nbsp;  Otherwise, <i><b>varname</b></i> is incremented by <i><b>increment_value</b></i>, and execution begins at the beginning of the <b>For</b> loop again.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Break1'>Break</a></h3>
 <p class="list-1">&bull;&nbsp;  Signals the for loop to end execution, skipping to after the <b>EndFor</b>.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='EndFor'>EndFor</a></h3>
 <p class="list-1">&bull;&nbsp;  Ends the for loop.</p>
-<p class="list-1">&bull;&nbsp;  If <i><b>varname</b></i> equals <i><b>end_value</b></i>, the for loop is done and execution continues after the <b>EndFor</b>.</p>
-<p class="list-1">&bull;&nbsp;  Otherwise, <i><b>varname</b></i> is incremented by <i><b>increment_value</b></i>, and execution skips back to the beginning of the <b>For</b> loop.</p>
 <p class="empty">&nbsp;</p>
 <h2><a id='SelectOne1'>SelectOne</a></h2>
 <p>Shows a <a href="images/SelectOne.jpg">dialog</a> where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a <b>Select</b> control block.
 </p>
 <p class="empty">&nbsp;</p>
-<p><b>Usage:</b> <br />
-</p>
-<p><b>SelectOne</b> <i><b>description</b></i>, <i><b>option 1</b></i>, <i><b>description 1</b></i>, <i><b>image 1</b></i>, <i><b>option 2</b></i>, <i><b>description 2</b></i>, <i><b>image 2</b></i>, ..., <i><b>option n</b></i>, <i><b>description n</b></i>, <i><b>image n</b></i> <br />
-</p>
-<p><b>Case</b> <i><b>option 1</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Break</b> <br />
-</p>
-<p><b>Case</b> <i><b>option 2</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Break</b> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; .. <br /></p>
-<p class="list-1">&nbsp;&nbsp; .. <br /></p>
-<p><b>Case</b> <i><b>option n</b></i> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; .. <br /></p>
-<p class="list-1">&nbsp;&nbsp; .. <br /></p>
-<p><b>Break</b> <br />
-</p>
-<p><b>Default</b> <br />
-</p>
-<p class="list-1">&nbsp;&nbsp; ..lines... <br /></p>
-<p><b>Break</b> <br />
-</p>
-<p><b>EndSelect</b> <br />
-</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<table><tr><td class="code"><p class="code-0"><span style="color:blue;">SelectOne</span> <i><b>description</b></i>, <i><b>option 1</b></i>, <i><b>description 1</b></i>, <i><b>image 1</b></i>, <i><b>option 2</b></i>, <i><b>description 2</b></i>, <i><b>image 2</b></i>, ..., <i><b>option n</b></i>, <i><b>description n</b></i>, <i><b>image n</b></i></p><p class="code-0"><span style="color:blue;">Case</span> <i><b>option 1</b></i></p><p class="code-2"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="code-0"><span style="color:blue;">Case</span> <i><b>option 2</b></i></p><p class="code-2"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="empty">&nbsp;</p>
+<p class="code-0"><span style="color:blue;">Case</span> <i><b>option n</b></i></p><p class="code-2"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="code-0"><span style="color:blue;">Default</span></p><p class="code-2"><i>lines</i></p><p class="code-2"><span style="color:blue;">Break</span></p><p class="code-0"><span style="color:blue;">EndSelect</span></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>description:</b></i> The text that will be displayed at the top of the dialog.  </p>
@@ -1084,12 +1065,12 @@ EndSelect</pre>
 <p class="list-1">&bull;&nbsp;  Notice the following example has no Case's(This is intended) and the Default character is before the 'Start Here_Readme'.</p>
 <pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
 SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
-	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.",""\
-	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla",""\
-	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release",""\
-	"Guidelines for a Example install","",""\
-	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg"\
-	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.",""\
+	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.","", \
+	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla","", \
+	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release","", \
+	"Guidelines for a Example install","","", \
+	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg", \
+	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.","", \
 	"Language","Language or Nationality this BAIN wizard was written in. \n\n English (USA)","Wizard Images\\EnglishUSA.jpg"
 EndSelect
 </pre>
@@ -1100,7 +1081,7 @@ EndSelect
 <p class="list-1">&bull;&nbsp;  'SelectSubPackage' in the following example could be replaced by many other <a href="#Keywords">Keywords</a> or even another Yes/No Question Block.</p>
 <pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
 SelectOne "Example: Yes/No Question?",\
-		"Yes","Description.","Wizard Images\\Yes.jpg"\
+		"Yes","Description.","Wizard Images\\Yes.jpg", \
 		"No","Description.","Wizard Images\\No.jpg"
 	Case "Yes"
 		SelectSubPackage "00 Example Subpackage" ;;;Action/No Action
@@ -1278,16 +1259,19 @@ EndIf
 <h3><a id='CopyDataFilespanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspan'>CopyDataFile <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></h3>
 <h3><a id='CopyDataFolderspanstylecolorblueltCopyFromgtspanspanstylecolorpurpleltCopyTogtspanspanstylecolorbrownRecurseSubfoldersspan'>CopyDataFolder <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
 </td><td class="code"><p class="code-0">Similar functionality can be obtained by packaging the mod differently, and then using <a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> and <a href="#DeSelectSubPackage"><span style="color:blue;">DeSelectSubPackage</span></a></p><p class="code-0"></p></td></tr>
+<tr><td class="code">
+<h3><a id='ForEachDataFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each DataFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachDataFilespanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each DataFile <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachPluginFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each PluginFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachPluginspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each Plugin <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+</td><td class="code"><p class="code-0">Use:</p><p class="code-1"><a href="#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>subpackage</i> in SubPackages</p><p class="code-0">and/or:</p><p class="code-1"><a href="#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>file</i> in <i>subpackage</i></p><p class="code-0">to iterate over files and folders in an installer.  Then use:</p><p class="code-1"><i>file</i>.<a href="#lower"><span style="color:purple;">lower</span></a>().<a href="#endswith"><span style="color:purple;">endswith</span></a>(<span style="color:green;">".esp"</span>)</p><p class="code-1"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<i>file</i>)</p><p class="code-1"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<i>file</i>)</p><p><p class="code-0">and other string manipulation functions to test file names and folders.</p></td></tr>
+</p>
 </table>
   <p class="empty">&nbsp;</p>
 <h2><a id='FunctionsinOBMMthatdonothaveanequivalentinWizards'>Functions in OBMM that do not have an equivalent in Wizards</a></h2>
 <table style="width:100%;"><tr valign="top">
 <td class="code"><h3><a id='SelectVarspanstylecolorgreenltVariablegtspan'>SelectVar <span style="color:green;">&lt;Variable&gt;</span></a></h3>
 <h3><a id='SelectStringspanstylecolorgreenltVariablegtspan'>SelectString <span style="color:green;">&lt;Variable&gt;</span></a></h3>
-<h3><a id='ForEachDataFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each DataFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
-<h3><a id='ForEachDataFilespanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each DataFile <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
-<h3><a id='ForEachPluginFolderspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each PluginFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
-<h3><a id='ForEachPluginspanstylecolorgreenltVariablegtspanspanstylecolorpurpleltFolderPathgtspanspanstylecolorbrownRecurseSubFoldersspanspanstylecolororangeSearchStringspan'>For Each Plugin <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
 <h3><a id='Gotospanstylecolorblueltlabelgtspan'>Goto <span style="color:blue;">&lt;label&gt;</span></a></h3>
 <h3><a id='Labelspanstylecolorblueltlabelgtspan'>Label <span style="color:blue;">&lt;label&gt;</span></a></h3>
 <h3><a id='LoadBeforespanstylecolorblueltPlugin1gtspanspanstylecolorpurpleltPlugin2gtspan'>LoadBefore <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></h3>

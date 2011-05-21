@@ -559,6 +559,39 @@ class Path(object):
         else:
             return ((GPath(x),[GPath(u) for u in y],[GPath(u) for u in z])
                 for x,y,z in os.walk(self._s,topdown,onerror))
+    def split(self):
+        """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
+           would return ['C:','Program Files','Bethesda Softworks']"""
+        dirs = []
+        drive, path = os.path.splitdrive(self.s)
+        path = path.strip(os.path.sep)
+        l,r = os.path.split(path)
+        while l != '':
+            dirs.append(r)
+            l,r = os.path.split(l)
+        dirs.append(r)
+        if drive != '':
+            dirs.append(drive)
+        dirs.reverse()
+        return dirs
+    def relpath(self,path):
+        try:
+            return GPath(os.path.relpath(self._s,Path.getNorm(path)))
+        except:
+            # Python 2.5 doesn't have os.path.relpath, so we'll have to implement our own
+            path = GPath(path)
+            if path.isfile(): path = path.head
+            splitSelf = self.split()
+            splitOther = path.split()
+            relPath = []
+            while len(splitSelf) > 0 and len(splitOther) > 0 and splitSelf[0] == splitOther[0]:
+                splitSelf.pop(0)
+                splitOther.pop(0)
+            while len(splitOther) > 0:
+                splitOther.pop(0)
+                relPath.append('..')
+            relPath.extend(splitSelf)
+            return GPath(os.path.join(*relPath))
 
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
