@@ -60,7 +60,7 @@ def validName(name):
 def validNumber(string):
     try:
         float(string)
-        if '.' in string and i == '.': return False
+        if '.' in string and string == '.': return False
         return True
     except:
         return False

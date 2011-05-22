@@ -7782,6 +7782,7 @@ class Installer_Wizard(InstallerLink):
                     gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
         #Build any ini tweaks
+        manuallyApply = []  # List of tweaks the user needs to  manually apply
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['mods'].join('INI Tweaks','%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             file = outFile.open('w')
@@ -7801,6 +7802,12 @@ class Installer_Wizard(InstallerLink):
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
             iniList.RefreshUI()
             if iniFile in installer.data_sizeCrc or iniFile.cs == 'oblivion.ini':
+                if not settings['bash.installers.autoWizard'] and iniFile.cs != 'oblivion.ini':
+                    # Can only automatically apply ini tweaks if the ini was actually installed.  Since
+                    # BAIN is setup to not auto install after the wizard, we'll show a message telling the
+                    # User what tweaks to apply manually.
+                    manuallyApply.append((outFile,iniFile))
+                    continue
                 # Editing an INI file from this installer is ok, but editing Oblivion.ini
                 # give a warning message
                 if iniFile.cs == 'oblivion.ini':
@@ -7814,6 +7821,15 @@ class Installer_Wizard(InstallerLink):
                 iniList.data.ini.applyTweakFile(outFile)
                 iniList.RefreshUI('VALID')
                 panel.tweakContents.RefreshUI(outFile.tail)
+            else:
+                # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
+                # this installer
+                manuallyApply.append((outFile,iniFile))
+        if len(manuallyApply) > 0:
+            message = balt.fill(_('The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
+            message += '\n\n'
+            message += '\n'.join([' * ' + x[0].stail + '\n   TO: ' + x[1].s for x in manuallyApply])
+            balt.showInfo(self.gTank,message)
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):

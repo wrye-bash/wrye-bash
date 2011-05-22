@@ -631,7 +631,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareOBSEVersion', self.fnCompareOBSEVersion, 1)
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
-        self.SetFunction('DataFileExists', self.fnDataFileExists, 1)
+        self.SetFunction('DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
         self.SetFunction('GetEspmState', self.fnGetEspmState, 1)
         self.SetFunction('EditINI', self.fnEditINI, 4)
         self.SetFunction('Exec', self.fnExec, 1)
@@ -676,12 +676,12 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('EndFor', self.kwdEndFor)
         self.SetKeyword('SelectOne', self.kwdSelectOne, 7, ScriptParser.KEY.NO_MAX)
         self.SetKeyword('SelectMany', self.kwdSelectMany, 4, ScriptParser.KEY.NO_MAX)
-        self.SetKeyword('Case', self.kwdCase, 1, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('Case', self.kwdCase, 1)
         self.SetKeyword('Default', self.kwdDefault)
         self.SetKeyword('Break', self.kwdBreak)
         self.SetKeyword('EndSelect', self.kwdEndSelect)
         self.SetKeyword('Return', self.kwdReturn)
-        self.SetKeyword('Cancel', self.kwdCancel, 0, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword('Cancel', self.kwdCancel, 0, 1)
         self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 4)
 
 
@@ -879,8 +879,11 @@ class WryeParser(ScriptParser.Parser):
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
         return cmp(float(wbHave), float(wbWant))
-    def fnDataFileExists(self, filename):
-        return bosh.dirs['mods'].join(filename).exists()
+    def fnDataFileExists(self, *filenames):
+        for filename in filenames:
+            if not bosh.dirs['mods'].join(filename).exists():
+                return False
+        return True
     def fnGetEspmState(self, filename):
         file = bolt.GPath(filename)
         if file in bosh.modInfos.merged: return 3   # Merged
@@ -1213,11 +1216,10 @@ class WryeParser(ScriptParser.Parser):
                 path = bosh.dirs['mopy'].join(i)
             image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _('Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
-    def kwdCase(self, *args):
+    def kwdCase(self, value):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
             error(UNEXPECTED % 'Case')
-        case = ' '.join(args)
-        if case in self.PeekFlow().values:
+        if value in self.PeekFlow().values or str(value) in self.PeekFlow().values:
             self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
     def kwdDefault(self):
@@ -1375,10 +1377,6 @@ class WryeParser(ScriptParser.Parser):
         return [-1, 'None']
     def kwdReturn(self):
         self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
-    def kwdCancel(self, *args):
-        if len(args) < 1:
-            msg = _("No reason given")
-        else:
-            msg = ' '.join(args)
+    def kwdCancel(self, msg=_("No reason given")):
         self.page = PageError(self.parent, _('The installer wizard was canceled:'), msg)
 # END --------------------------------------------------------------------------------------------------

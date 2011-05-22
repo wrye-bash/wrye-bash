@@ -2333,6 +2333,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:
         * __name__ = "00 Base "
         * [[wizards.html#SelectSubPackage|[color=blue]SelectSubPackage[/color]]](__name__+"Textures")
+    * Function [[wizards.html#DataFileExists|[color=purple]DataFileExists[/color]]] extended to allow testing of multiple files with one function call.  It will return ~~True~~ if all of the files exist, and ~~False~~ if one or more of the files does not exist.
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
