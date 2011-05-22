@@ -127,12 +127,12 @@ Used to test the current version of Wrye Bash agains one you specify.
 Tests for the existance of a file in the Data directory.
 
 * __Usage:__
-  * __DataFileExists(**file_name**)__
+  * __DataFileExists(**file_name** [, **file_name2**, ..., **filename_n**])__
 * __Arguments:__
   * **file_name:** a string or variable holding a string, specifying the path relative to the Data directory to test.  For example using __"testesp.esp"__ would test for __"...path to oblivion...\Data\testesp.esp"__
 * __Return:__
-  * **True:** The file exists
-  * **False:** The file does not exist
+  * **True:** All of the files exist.
+  * **False:** One or more of the files do not exist.
 
 == GetEspmStatus
 Tests the current status of an esp or espm in the Data directory.  This function takes esp/m ghosting into account when testing the status.

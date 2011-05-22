@@ -389,12 +389,12 @@
 </p>
   <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-  <p class="list-2">&bull;&nbsp;  <b>DataFileExists(<i><b>file_name</b></i>)</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>DataFileExists(<i><b>file_name</b></i> [, <i><b>file_name2</b></i>, ..., <i><b>filename_n</b></i>])</b></p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> a string or variable holding a string, specifying the path relative to the Data directory to test.  For example using <b>"testesp.esp"</b> would test for <b>"...path to oblivion...\Data\testesp.esp"</b></p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>True:</b></i> The file exists</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>False:</b></i> The file does not exist</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True:</b></i> All of the files exist.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False:</b></i> One or more of the files do not exist.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='GetEspmStatus'>GetEspmStatus</a></h2>
 <p>Tests the current status of an esp or espm in the Data directory.  This function takes esp/m ghosting into account when testing the status.
