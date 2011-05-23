@@ -1000,9 +1000,9 @@ class MemorySet(object):
        event if they're removed.  Also, combining and comparing to other MemorySet's
        takes this into account:
         a|b -> returns union of a and b, but keeps the ordering of b where possible.
-               if and item in a was also in b, but deleted, it will be added to the
+               if an item in a was also in b, but deleted, it will be added to the
                deleted location.
-        a&b -> same as a|b, but only items 'not-delted' in both a and b are marked
+        a&b -> same as a|b, but only items 'not-deleted' in both a and b are marked
                as 'not-deleted'
         a^b -> same as a|b, but only items 'not-deleted' in a but not b, or b but not
                a are marked as 'not-deleted'
