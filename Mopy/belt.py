@@ -894,6 +894,9 @@ class WryeParser(ScriptParser.Parser):
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
             if not bosh.dirs['mods'].join(filename).exists():
+                # Check for ghosted mods
+                if bolt.GPath(filename) in bosh.modInfos:
+                    return True # It's a ghosted mod
                 return False
         return True
     def fnGetEspmState(self, filename):

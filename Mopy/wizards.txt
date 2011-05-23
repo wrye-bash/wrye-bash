@@ -124,7 +124,7 @@ Used to test the current version of Wrye Bash agains one you specify.
   * **1:** Installed Wrye Bash version is higher than the version specified in **version_number**.
 
 == DataFileExists
-Tests for the existance of a file in the Data directory.
+Tests for the existance of a file in the Data directory.  If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
 
 * __Usage:__
   * __DataFileExists(**file_name** [, **file_name2**, ..., **filename_n**])__
