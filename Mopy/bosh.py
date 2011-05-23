@@ -9806,7 +9806,7 @@ class ConfigHelpers:
                         progress.setFull(len(scan))
                         for i,x in enumerate(scan):
                             info = modInfos[x]
-                            progress(i,_('Scanning for deleted refs...'), info.name.s)
+                            progress(i, info.name.s)
                             num = UndeleteRefs(info).count(SubProgress(progress,i,i+1))
                             if num:
                                 shouldClean[x] = 'UDR(%i)' % num
