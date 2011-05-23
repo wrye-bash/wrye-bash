@@ -3017,9 +3017,9 @@ class InstallersList(balt.Tank):
             return
         modList.RefreshUI()
         iniList.RefreshUI()
-        self.data.refresh()
-        self.RefreshUI()
         wx.EndBusyCursor()
+        gInstallers.frameActivated = True
+        gInstallers.OnShow()
 
     def OnClickMove(self,event):
         self.dialog.EndModal(1)
@@ -5318,6 +5318,7 @@ class ModChecker(wx.Frame):
         self.gShowNotes = toggleButton(self,_("Notes"),onClick=self.CheckMods)
         self.gShowConfig = toggleButton(self,_("Configuration"),onClick=self.CheckMods)
         self.gShowSuggest = toggleButton(self,_("Suggestions"),onClick=self.CheckMods)
+        self.gScanDirty = toggleButton(self,_("Scan for UDR's"),onClick=self.CheckMods)
         self.gCopyText = button(self,_("Copy Text"),onClick=self.OnCopyText)
         self.gShowModList.SetValue(settings.get('bash.modChecker.showModList',False))
         self.gShowNotes.SetValue(settings.get('bash.modChecker.showNotes',True))
@@ -5338,6 +5339,7 @@ class ModChecker(wx.Frame):
                     (self.gShowNotes,0,wx.LEFT,4),
                     (self.gShowConfig,0,wx.LEFT,4),
                     (self.gShowSuggest,0,wx.LEFT,4),
+                    (self.gScanDirty,0,wx.LEFT,4),
                     (self.gCopyText,0,wx.LEFT,4),
                     spacer,
                     gUpdateButton,
@@ -5378,7 +5380,8 @@ class ModChecker(wx.Frame):
             self.gShowRuleSets.GetValue(),
             settings['bash.modChecker.showNotes'],
             settings['bash.modChecker.showConfig'],
-            settings['bash.modChecker.showSuggest']
+            settings['bash.modChecker.showSuggest'],
+            scanDirty=(None,modChecker)[self.gScanDirty.GetValue()]
             )
         logPath = bosh.dirs['saveBase'].join('ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(''))
