@@ -6738,6 +6738,10 @@ class BsaFile:
 #--------------------------------------------------------------------------------
 class IniFile:
     """Any old ini file."""
+    reComment = re.compile(';.*')
+    reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
+    reSetting = re.compile(r'(.+?)\s*=(.*)')
+
     def __init__(self,path,defaultSection='General'):
         """Initialize."""
         self.path = path
@@ -6762,9 +6766,9 @@ class IniFile:
         ini_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        reComment = self.reComment
+        reSection = self.reSection
+        reSetting = self.reSetting
         #--Read ini file
         iniFile = tweakPath.open('r')
         sectionSettings = None
@@ -6802,9 +6806,9 @@ class IniFile:
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
         iniSettings = self.getTweakFileSettings(self.path,True,True)
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        reComment = self.reComment
+        reSection = self.reSection
+        reSetting = self.reSetting
         #--Read ini file
         iniFile = tweakPath.open('r')
         section = LString(self.defaultSection)
@@ -6855,9 +6859,9 @@ class IniFile:
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=')
+        reComment = self.reComment
+        reSection = self.reSection
+        reSetting = self.reSetting
         #--Read init, write temp
         iniFile = self.path.open('r')
         tmpFile = self.path.temp.open('w')
@@ -6889,9 +6893,9 @@ class IniFile:
             return
         if not tweakPath.exists() or not tweakPath.isfile():
             return
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=')
+        reComment = self.reComment
+        reSection = self.reSection
+        reSetting = self.reSetting
         #--Read Tweak file
         tweakFile = tweakPath.open('r')
         ini_settings = {}
@@ -6907,6 +6911,7 @@ class IniFile:
                 sectionSettings[LString(maSetting.group(1))] = line
         tweakFile.close()
         self.saveSettings(ini_settings)
+
 #-----------------------------------------------------------------------------------------------
 def BestIniFile(path):
     if path.csbody == 'oblivion':
@@ -6923,7 +6928,10 @@ def BestIniFile(path):
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
-    handle 'set' statements."""
+    handle 'set' and 'setGS' statements."""
+    reSet     = re.compile(r'\s*set\s+(.+?)\s+to\s+(.*)', re.I)
+    reSetGS   = re.compile(r'\s*setGS\s+(.+?)\s+(.*)', re.I)
+
     def __init__(self,path,defaultSection=''):
         """Change the default section to something that can't
         occur in a normal ini"""
@@ -6940,9 +6948,9 @@ class OBSEIniFile(IniFile):
         ini_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings
-        reComment = re.compile(';.*')
-        reSet =     re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
-        reSetGS =   re.compile(r'\s*(?i)setgs\s*(.+?)\s*(.*)')
+        reComment = self.reComment
+        reSet = self.reSet
+        reSetGS = self.reSetGS
         iniFile = tweakPath.open('r')
         for i,line in enumerate(iniFile.readlines()):
             stripped = reComment.sub('',line).strip()
@@ -6980,9 +6988,9 @@ class OBSEIniFile(IniFile):
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
         iniSettings = self.getTweakFileSettings(self.path,True,True)
-        reComment = re.compile(';.*')
-        reSet =     re.compile(r'\s*set\s*(.+?)\s*to\s*(.*)',re.I)
-        reSetGS =   re.compile(r'\s*setgs\s*(.+?)\s*(.*)',re.I)
+        reComment = self.reComment
+        reSet = self.reSet
+        reSetGS = self.reSetGS
         iniFile = tweakPath.open('r')
         section = ''
         for line in iniFile:
@@ -7034,9 +7042,9 @@ class OBSEIniFile(IniFile):
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
-        reComment = re.compile(';.*')
-        reSet     = re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
-        reSetGS   = re.compile(r'\s*(?i)setGS\s*(.+?)\s*(.*)')
+        reComment = self.reComment
+        reSet = self.reSet
+        reSetGS = self.reSetGS
         iniFile = self.path.open('r')
         tmpFile = self.path.temp.open('w')
         section = {}
@@ -7072,9 +7080,9 @@ class OBSEIniFile(IniFile):
             return
         if not tweakPath.exists() or not tweakPath.isfile():
             return
-        reComent = re.compile(';.*')
-        reSet    = re.compile(r'\s*(?i)set\s*(.+?)\s*(?i)to\s*(.*)')
-        reSetGS  = re.compile(r'\s*(?i)setGS\s*(.+?)\s*(.*)')
+        reComent = self.reComment
+        reSet = self.reSet
+        reSetGS = self.reSetGS
         tweakFile = tweakPath.open('r')
         ini_settings = {}
         for line in tweakFile:
@@ -7091,6 +7099,7 @@ class OBSEIniFile(IniFile):
                 section[LString(maSetGS.group(1))] = line
         tweakFile.close()
         self.saveSettings(ini_settings)
+
 #--------------------------------------------------------------------------------
 class OblivionIni(IniFile):
     """Oblivion.ini file."""

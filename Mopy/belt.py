@@ -465,7 +465,7 @@ class PageFinish(PageInstaller):
                 format = '%(setting)s = %(value)s'
             for setting in self.parent.ret.IniEdits[path][section]:
                 lines.append(format % dict(setting=setting, value=self.parent.ret.IniEdits[path][section][setting]))
-        self.listTweaks.Set(lines)
+        self.listTweaks.Set(sorted(lines))
 # End PageFinish -------------------------------------
 
 
