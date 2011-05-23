@@ -822,7 +822,7 @@ EndSelect
 == Check for a Plugin
 * Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.
 <pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
-If DataFileExists "ExamplePlugin.esp"
+If DataFileExists("ExamplePlugin.esp")
 	Note "ExamplePlugin Detected." ;;;Action/No Action
 	SelectEspm "PatchPlugin.esp" ;;;Action/No Action
 Else ;ExamplePlugin.esp wasn't detected
