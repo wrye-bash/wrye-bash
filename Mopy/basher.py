@@ -7760,7 +7760,7 @@ class Installer_Wizard(InstallerLink):
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
         gInstallers.refreshCurrent(installer)
         #Install if necessary
-        if settings['bash.installers.autoWizard']:
+        if ret.Install:
             #If it's currently installed, anneal
             if self.data[self.selected[0]].isActive:
                 #Anneal
@@ -7802,7 +7802,7 @@ class Installer_Wizard(InstallerLink):
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
             iniList.RefreshUI()
             if iniFile in installer.data_sizeCrc or iniFile.cs == 'oblivion.ini':
-                if not settings['bash.installers.autoWizard'] and iniFile.cs != 'oblivion.ini':
+                if not ret.Install and iniFile.cs != 'oblivion.ini':
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
                     # BAIN is setup to not auto install after the wizard, we'll show a message telling the
                     # User what tweaks to apply manually.

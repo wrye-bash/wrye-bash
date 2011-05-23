@@ -6,7 +6,7 @@ import ScriptParser         # generic parser class
 from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt
+import bosh, balt, bolt, basher
 from bolt import _
 import struct, string
 import win32api
@@ -417,13 +417,22 @@ class PageFinish(PageInstaller):
         sizerNotes.AddGrowableRow(1)
         sizerMain.Add(sizerNotes, 2, wx.TOP|wx.EXPAND)
 
-        sizerChecks = wx.FlexGridSizer(1, 2, 5, 0)
-        self.checkApply = wx.CheckBox(self, 111, _("Apply these selections"))
+        sizerChecks = wx.FlexGridSizer(2, 2, 5, 0)
+        # Apply the selections
+        self.checkApply = wx.CheckBox(self, wx.ID_ANY, _('Apply these selections'))
         self.checkApply.SetValue(bAuto)
-        wx.EVT_CHECKBOX(self, 111, self.OnCheckApply)
+        self.checkApply.Bind(wx.EVT_CHECKBOX, self.OnCheckApply)
         sizerChecks.AddStretchSpacer()
         sizerChecks.Add(self.checkApply)
+        # Also install/anneal the package
+        self.checkInstall = wx.CheckBox(self, wx.ID_ANY, _('Install this package'))
+        self.checkInstall.SetValue(basher.settings['bash.installers.autoWizard'])
+        self.checkInstall.Bind(wx.EVT_CHECKBOX, self.OnCheckInstall)
+        self.parent.ret.Install = basher.settings['bash.installers.autoWizard']
+        sizerChecks.AddStretchSpacer()
+        sizerChecks.Add(self.checkInstall)
         sizerChecks.AddGrowableRow(0)
+        sizerChecks.AddGrowableRow(1)
         sizerChecks.AddGrowableCol(0)
         sizerMain.Add(sizerChecks, 3, wx.EXPAND|wx.TOP)
 
@@ -440,6 +449,9 @@ class PageFinish(PageInstaller):
 
     def OnCheckApply(self, event):
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkApply.IsChecked())
+
+    def OnCheckInstall(self, event):
+        self.parent.ret.Install = self.checkInstall.IsChecked()
 
     def GetNext(self): return None
 
