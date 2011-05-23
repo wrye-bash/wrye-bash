@@ -1,4 +1,4 @@
-﻿= Wrye Bash ====================================================================#
+= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -2334,6 +2334,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
         * __name__ = "00 Base "
         * [[wizards.html#SelectSubPackage|[color=blue]SelectSubPackage[/color]]](__name__+"Textures")
     * Function [[wizards.html#DataFileExists|[color=purple]DataFileExists[/color]]] extended to allow testing of multiple files with one function call.  It will return ~~True~~ if all of the files exist, and ~~False~~ if one or more of the files does not exist.
+    * Changed the default for **Auto-Anneal/Install Wizards** to be checked.  Be sure to check this setting, and set it to your preference.
   * Added a cancel button to the Refresh Data progress bar.
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.

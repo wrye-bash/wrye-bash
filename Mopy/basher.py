@@ -220,7 +220,7 @@ settingDefaults = {
     'bash.installers.page':0,
     'bash.installers.enabled': True,
     'bash.installers.autoAnneal': True,
-    'bash.installers.autoWizard':False,
+    'bash.installers.autoWizard':True,
     'bash.installers.wizardOverlay':True,
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshBethsoft': False,
