@@ -7887,9 +7887,9 @@ class ModInfo(FileInfo):
 
     def getDirtyMessage(self):
         """Returns a dirty message from BOSS."""
-        crc = self.cachedCrc()
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
             return (False,'')
+        crc = self.cachedCrc()
         return configHelpers.getDirtyMessage(crc)
 
     #--Header Editing ---------------------------------------------------------
@@ -9769,8 +9769,9 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
-    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showWarn=True):
-        """Checks currently loaded mods against ruleset."""
+    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showWarn=True,scanDirty=None):
+        """Checks currently loaded mods against ruleset.
+           scanDirty should be the instance of ModChecker, to scan."""
         active = set(modInfos.ordered)
         merged = modInfos.merged
         imported = modInfos.imported
@@ -9785,7 +9786,34 @@ class ConfigHelpers:
         shouldDeactivateA = [x for x in active if 'Deactivate' in modInfos[x].getBashTags()]
         shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags()]
         shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
-        shouldClean = [x for x in active if modInfos[x].getDirtyMessage()[0]]
+        if True:
+            #--Look for dirty edits
+            shouldClean = {}
+            scan = []
+            for x in active:
+                dirtyMessage = modInfos[x].getDirtyMessage()
+                if dirtyMessage[0]:
+                    shouldClean[x] = dirtyMessage[1]
+                elif scanDirty:
+                    scan.append(x)
+            if scanDirty:
+                progress = balt.Progress(_('Scanning for deleted refs...'),'\n'+' '*60,parent=scanDirty,abort=True)
+                try:
+                    if settings['bash.CBashEnabled']:
+                        for mod,num in UndeleteRefs.countMany(scan,progress).iteritems():
+                            shouldClean[mod] = 'UDR(%i)' % num
+                    else:
+                        progress.setFull(len(scan))
+                        for i,x in enumerate(scan):
+                            info = modInfos[x]
+                            progress(i,_('Scanning for deleted refs...'), info.name.s)
+                            num = UndeleteRefs(info).count(SubProgress(progress,i,i+1))
+                            if num:
+                                shouldClean[x] = 'UDR(%i)' % num
+                except bolt.CancelError:
+                    pass
+                finally:
+                    progress.Destroy()
         shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != '']
         for mod in tuple(shouldMerge):
             if 'NoMerge' in modInfos[mod].getBashTags():
@@ -9813,8 +9841,8 @@ class ConfigHelpers:
         if shouldClean:
             log.setHeader(_("=== Mods that need cleaning with TES4Edit"))
             log(_("Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information."))
-            for mod in sorted(shouldClean):
-                log('* __'+mod.s+'__')
+            for mod in sorted(shouldClean.keys()):
+                log('* __'+mod.s+':__  %s' % shouldClean[mod])
         if shouldCleanMaybe:
             log.setHeader(_("=== Mods with special cleaning instructions"))
             log(_("Following mods have special instructions for cleaning with TES4Edit"))
@@ -11521,7 +11549,12 @@ class InstallerArchive(Installer):
         tempDir = self.tempDir
         norm_ghost = Installer.getGhosted()
         mtimes = set()
+        i = 0
+        subprogress = SubProgress(progress,0.9,1.0)
+        subprogress.setFull(max(len(dest_src),1))
         for dest,src in dest_src.iteritems():
+            subprogress(i,archive.s+_("\nMoving files...")+'\n'+dest.s)
+            i += 1
             size,crc = data_sizeCrc[dest]
             srcFull = tempDir.join(src)
             destFull = destDir.join(norm_ghost.get(dest,dest))
@@ -11684,12 +11717,17 @@ class InstallerProject(Installer):
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
+        progress.setFull(len(dest_src))
+        progress(0,name.stail+_("\nMoving files..."))
         #--Copy Files
         count = 0
         norm_ghost = Installer.getGhosted()
         srcDir = dirs['installers'].join(name)
         mtimes = set()
+        i = 0
         for dest,src in dest_src.iteritems():
+            progress(i,name.stail+_("\nMoving files...")+'\n'+dest.s)
+            i += 1
             size,crc = data_sizeCrc[dest]
             srcFull = srcDir.join(src)
             destFull = destDir.join(norm_ghost.get(dest,dest))
@@ -17173,7 +17211,123 @@ class UndeleteRefs:
         self.modInfo = modInfo
         self.fixedRefs = set()
 
+    def count(self,progress=bolt.Progress()):
+        if len(self.modInfo.header.masters) == 0: return 0
+        if settings['bash.CBashEnabled']: return self._count_CBash(progress)
+        else: return self._count_Python(progress)
+
+    @staticmethod
+    def countMany(paths,progress=bolt.Progress()):
+        """CBash only version, because it's quicker to make a collection of
+           all the mods you want to test, rather than make multiple collections."""
+        progress.setFull(max(len(paths),1))
+        progress(0,_("Loading...") + '\n')
+        #--Load
+        collection = ObCollection(ModsPath=dirs['mods'].s)
+        for path in paths:
+            collection.addMod(path.stail)
+        collection.load()
+        #--Scan
+        counts = {}
+        for i,path in enumerate(paths):
+            info = modInfos[path]
+            progress(i,_("Scanning...") + '\n' + info.name.s)
+            if len(info.header.masters) == 0: continue
+            count = 0
+            modFile = collection.LookupModFile(info.getPath().stail)
+            records = modFile.ACHRS + modFile.ACRES + modFile.REFRS
+            subprogress = SubProgress(progress,i,i+1)
+            subprogress.setFull(max(len(records),1))
+            for j,record in enumerate(records):
+                subprogress(j)
+                if record.IsDeleted:
+                    count += 1
+            if count: counts[path] = count
+        #--Close
+        collection.Unload()
+        return counts
+
+    def _count_CBash(self,progress):
+        """Counts the number of deleted references."""
+        progress(0,_("Loading...") + '\n' + self.modInfo.name.s)
+        #--Load
+        modPath = self.modInfo.getPath()
+        collection = ObCollection(ModsPath=dirs['mods'].s)
+        collection.addMod(modPath.stail)
+        collection.load()
+        modFile = collection.LookupModFile(modPath.stail)
+
+        #--Scan
+        count = 0
+        records = modFile.ACHRS + modFile.ACRES + modFile.REFRS
+        progress.setFull(max(len(records),1))
+        for i,record in enumerate(records):
+            progress(i,_("Scanning...") + '\n' + self.modInfo.name.s)
+            if record.IsDeleted:
+                count += 1
+
+        #--Close
+        collection.Unload()
+        return count
+
+    def _count_Python(self,progress):
+        """Counts the number of deleted references."""
+        progress.setFull(self.modInfo.size)
+        count = 0
+        #--File stream
+        path = self.modInfo.getPath()
+        #--Scan
+        ins = ModReader(self.modInfo.name,path.open('rb'))
+        while not ins.atEnd():
+            progress(ins.tell(),_("Scanning...") + '\n' + self.modInfo.name.s)
+            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+            if type == 'GRUP':
+                if fid != 0: #--Ignore sub-groups
+                    pass
+                elif flags not in ('CELL','WRLD'):
+                    ins.read(size-20)
+            #--Handle cells
+            else:
+                if flags & 0x20 and type in ('ACHR','ACRE','REFR'):
+                    count += 1
+                ins.read(size)
+        #--Done
+        ins.close()
+        return count
+
     def undelete(self,progress):
+        if settings['bash.CBashEnabled']: self._undelete_Python(progress)
+        else: self._undelete_CBash(progress)
+
+    def _undelete_CBash(self,progress):
+        """Uses CBash to change deleted refs to disabled refs."""
+        #--Load
+        modPath = self.modInfo.getPath()
+        collection = ObCollection(ModsPath=dirs['mods'].s)
+        collection.addMod(modPath.stail)
+        collection.load()
+        modFile = collection.LookupModFile(modPath.stail)
+        #--Edit
+        for attr in ('ACHRS','ACRES','REFRS'):
+            for record in getattr(modFile,attr):
+                if record.IsDeleted:
+                    record.IsDeleted = False
+                    record.IsIgnored = True
+        #--Save
+        try:
+            modFile.save()
+        except WindowsError, werr:
+            if werr.winerror != 32: raise
+            while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
+                try:
+                    modFile.save()
+                except WindowsError, werr:
+                    continue
+                break
+            else:
+                raise
+
+    def _undelete_Python(self,progress):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.size)
         fixedRefs = self.fixedRefs
