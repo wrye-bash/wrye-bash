@@ -8011,6 +8011,35 @@ class Installer_OverrideSkips(InstallerLink):
         installer.refreshStatus(self.data)
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installer_SkipRefresh(InstallerLink):
+    """Toggle skipRefresh flag on installer."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Don't Refresh"),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        if self.isSingleProject():
+            installer = self.data[self.selected[0]]
+            menuItem.Check(installer.skipRefresh)
+            menuItem.Enable(True)
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        installer = self.data[self.selected[0]]
+        installer.skipRefresh ^= True
+        if not installer.skipRefresh:
+            # Check to see if we need to refresh this Project
+            file = bosh.dirs['installers'].join(installer.archive)
+            if (installer.size,installer.modified) != (file.size,file.getmtime(True)):
+                installer.refreshDataSizeCrc()
+                installer.refreshBasic(file)
+                installer.refreshStatus(self.data)
+                self.data.refresh(what='N')
+                self.gTank.RefreshUI()
+
 #------------------------------------------------------------------------------
 class Installer_Install(InstallerLink):
     """Install selected packages."""
@@ -14620,6 +14649,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_HasExtraData())
     InstallersPanel.itemMenu.append(Installer_OverrideSkips())
     InstallersPanel.itemMenu.append(Installer_SkipVoices())
+    InstallersPanel.itemMenu.append(Installer_SkipRefresh())
     InstallersPanel.itemMenu.append(SeparatorLink())
     if bEnableWizard:
         InstallersPanel.itemMenu.append(Installer_Wizard(False))
