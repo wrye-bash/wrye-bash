@@ -10317,7 +10317,7 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps')
+        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps','skipRefresh')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap',)
     __slots__ = persistent+volatile
@@ -10501,6 +10501,7 @@ class Installer(object):
         self.skipVoices = False
         self.hasExtraData = False
         self.overrideSkips = False
+        self.skipRefresh = False    # Projects only
         self.comments = ''
         self.group = '' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
@@ -12131,6 +12132,7 @@ class InstallersData(bolt.TankData, DataDict):
                 installer = newDataGet(package)
                 if not installer:
                     installer = newDataSetDefault(package,iClass(package))
+                if installer.skipRefresh and isinstance(installer, InstallerProject) and not fullRefresh: continue
                 apath = installersJoin(package)
                 try: installer.refreshBasic(apath,SubProgress(progress,index,index+1))
                 except InstallerArchiveError:
@@ -12152,6 +12154,8 @@ class InstallersData(bolt.TankData, DataDict):
             if settings['bash.installers.autoRefreshProjects']:
                 if (apath.isdir() and item != 'Bash' and item != dirs['converters'].stail) or (apath.isfile() and item.cext in readExts):
                     installer = dataGet(item)
+                    if installer and installer.skipRefresh:
+                        continue
                     if not installer or (installer.size,installer.modified) != (apath.size,apath.getmtime(True)):
                         return True
                     installersAdd(item)
@@ -12163,7 +12167,7 @@ class InstallersData(bolt.TankData, DataDict):
                     installersAdd(item)
         #--Added/removed packages?
         if settings['bash.installers.autoRefreshProjects']:
-            return installers != set(x for x,y in self.data.iteritems() if not isinstance(y,InstallerMarker))
+            return installers != set(x for x,y in self.data.iteritems() if not isinstance(y,InstallerMarker) and not (isinstance(y,InstallerProject) and y.skipRefresh))
         else:
             return installers != set(x for x,y in self.data.iteritems() if isinstance(y,InstallerArchive))
 
