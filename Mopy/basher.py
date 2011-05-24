@@ -1406,13 +1406,14 @@ class INILineCtrl(wx.ListCtrl):
                 break
         event.Skip()
 
-    def RefreshUI(self):
+    def RefreshUI(self,resetScroll=False):
         ini = bosh.iniInfos.ini.path.open('r')
         lines = ini.readlines()
         ini.close()
 
         num = self.GetItemCount()
-        self.EnsureVisible(0)
+        if resetScroll:
+            self.EnsureVisible(0)
         for i,line in enumerate(lines):
             if i >= num:
                 self.InsertStringItem(i, line)
@@ -2177,13 +2178,17 @@ class INIPanel(SashPanel):
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
+        refresh = True
         if self.choice == 0:
+            refresh = bosh.iniInfos.ini != bosh.OblivionIni
             bosh.iniInfos.setBaseIni(bosh.oblivionIni)
             self.button.Enable(False)
         else:
             if not path:
                 path = self.GetChoice()
-            bosh.iniInfos.setBaseIni(bosh.BestIniFile(path))
+            ini = bosh.BestIniFile(path)
+            refresh = bosh.iniInfos.ini != ini
+            bosh.iniInfos.setBaseIni(ini)
             self.button.Enable(True)
         selected = None
         if iniList is not None:
@@ -2192,7 +2197,7 @@ class INIPanel(SashPanel):
                 selected = selected[0]
             else:
                 selected = None
-        self.iniContents.RefreshUI()
+        self.iniContents.RefreshUI(refresh)
         self.tweakContents.RefreshUI(selected)
         if iniList is not None: iniList.RefreshUI()
 
@@ -2252,6 +2257,9 @@ class INIPanel(SashPanel):
             self.choices[path.stail] = path
             self.SortChoices()
             self.comboBox.SetItems(self.sortKeys)
+        else:
+            if self.choice == self.sortKeys.index(path.stail):
+                return
         self.choice = self.sortKeys.index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
@@ -7786,6 +7794,9 @@ class Installer_Wizard(InstallerLink):
             bashFrame.RefreshData()
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
+        lastApplied = None
+        #       iniList-> left    -> splitter ->INIPanel
+        panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['mods'].join('INI Tweaks','%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             file = outFile.open('w')
@@ -7817,17 +7828,19 @@ class Installer_Wizard(InstallerLink):
                     message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_("INI Tweaks")):
                         continue
-                # INIPanel->splitter->left->iniList
-                panel = iniList.GetParent().GetParent().GetParent()
                 panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 iniList.data.ini.applyTweakFile(outFile)
-                iniList.RefreshUI('VALID')
-                panel.tweakContents.RefreshUI(outFile.tail)
+                lastApplied = outFile.tail
             else:
                 # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
                 # this installer
                 manuallyApply.append((outFile,iniFile))
+        #--Refresh after all the tweaks are applied
+        if lastApplied is not None:
+            iniList.RefreshUI('VALID')
+            panel.iniContents.RefreshUI()
+            panel.tweakContents.RefreshUI(lastApplied)
         if len(manuallyApply) > 0:
             message = balt.fill(_('The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += '\n\n'
@@ -9281,6 +9294,7 @@ class INI_Apply(Link):
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
+            self.window.GetParent().GetParent().GetParent().iniContents.RefreshUI()
             self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
 
 #------------------------------------------------------------------------------
