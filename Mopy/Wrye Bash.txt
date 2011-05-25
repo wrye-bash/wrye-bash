@@ -1863,7 +1863,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Notes:__ Toggles inclusion of mod group notes.
 * __Configuration:__ Toggles inclusion of mod group configuration info.
 * __Suggestions:__ Toggles inclusion of mod group suggestions.
-* __Scan for UDR's:__ Toggles scanning mod files for deleted references.  With CBash disabled, this can take quite some time.
+* __Scan for UDR's / Scan for Dirty Edits:__ Toggles scanning mod files for deleted references and Identical to Master records.  With CBash disabled, this can take quite some time.  ITM scanning will only occur if CBash is enabled, UDR scanning works in both CBash and non-CBash mode.
+  * The number of ITM records reported by Wrye Bash will usually be a little less than when cleaned in TES4Edit, due to not checking GRUP records.
 * __Copy Text:__ Copies text of report to clipboard. (Useful for forum postings.)
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 
@@ -2376,7 +2377,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Selectable jpeg quality in the Screenshots Tab
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
   * Advanced ini options for compatability with mTES4 Manager: __sInstallersData__ and __sBashModData__ to specify where **Installers.dat**, **Converters.dat**, etc are stored by Wrye Bash.
-  * Added an option to the [[#|Mod Checker]] to scan for deleted references.
+  * Added an option to the [[#|Mod Checker]] to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
