@@ -1680,7 +1680,7 @@ class ObBaseRecord(object):
                             deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GName, tempconflicting[attr]))
                         except: #an record type that doesn't have a full subrecord:
                             deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GName, tempconflicting[attr]))
-                    continue
+                        continue
                 conflicting[attr]=tempconflicting[attr]
         else: conflicting = tempconflicting
 ##        if parentRecords:
