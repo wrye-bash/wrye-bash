@@ -17356,9 +17356,9 @@ class ModCleaner:
                     subprogress2 = SubProgress(subprogress1,j,j+1)
                     subprogress2.setFull(max(len(block),1))
                     for k,record in enumerate(block):
-                        fid = record.fid
                         subprogress2(k)
-                        if fid[0] == modFile.GName: continue
+                        fid = record.fid
+                        if not fid or fid[0] == modFile.GName: continue
                         master = collection.LookupModFile(fid[0].stail)
                         if not master: continue
                         masterRecord = master.LookupRecord(fid)
@@ -17383,10 +17383,9 @@ class ModCleaner:
                 subprogress = SubProgress(progress,i,i+1)
                 subprogress.setFull(max(len(items),1))
                 for j,record in enumerate(items):
-                    fid = record.fid
                     subprogress(j)
                     if record.IsDeleted:
-                        udr.add(fid)
+                        udr.add(record.fid)
             ret.append(udr)
         return ret
 
