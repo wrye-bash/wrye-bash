@@ -34,6 +34,7 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
+from __future__ import with_statement   # Python 2.5 with statement
 #--Localization
 #..Handled by bosh, so import that.
 import bush
@@ -3636,12 +3637,8 @@ class ReplacersList(List):
                     wx.EndBusyCursor()
             #--Select?
             else:
-                progress = None
-                try:
-                    progress = balt.Progress(item.s)
+                with balt.Progress(item.s) as progress:
                     replacer.apply(progress)
-                finally:
-                    if progress != None: progress.Destroy()
             self.RefreshUI(item)
             bosh.modInfos.refresh()
             modList.RefreshUI()
@@ -4952,12 +4949,9 @@ class BashFrame(wx.Frame):
         scanList = bosh.modInfos.refreshMergeable()
         difMergeable = oldMergeable ^ bosh.modInfos.mergeable
         if scanList:
-            progress = balt.Progress(_("Mark Mergeable")+' '*30)
-            progress.setFull(len(scanList))
-            try:
+            with balt.Progress(_("Mark Mergeable")+' '*30) as progress:
+                progress.setFull(len(scanList))
                 bosh.modInfos.rescanMergeable(scanList,progress)
-            finally:
-                progress.Destroy()
         if scanList or difMergeable:
             modList.RefreshUI(scanList + list(difMergeable))
         #--Done (end recursion blocker)
@@ -5326,7 +5320,10 @@ class ModChecker(wx.Frame):
         self.gShowNotes = toggleButton(self,_("Notes"),onClick=self.CheckMods)
         self.gShowConfig = toggleButton(self,_("Configuration"),onClick=self.CheckMods)
         self.gShowSuggest = toggleButton(self,_("Suggestions"),onClick=self.CheckMods)
-        self.gScanDirty = toggleButton(self,_("Scan for UDR's"),onClick=self.CheckMods)
+        if settings['bash.CBashEnabled']:
+            self.gScanDirty = toggleButton(self,_("Scan for Dirty Edits"),onClick=self.CheckMods)
+        else:
+            self.gScanDirty = toggleButton(self,_("Scan for UDR's"),onClick=self.CheckMods)
         self.gCopyText = button(self,_("Copy Text"),onClick=self.OnCopyText)
         self.gShowModList.SetValue(settings.get('bash.modChecker.showModList',False))
         self.gShowNotes.SetValue(settings.get('bash.modChecker.showNotes',True))
@@ -8335,8 +8332,7 @@ class Installer_CopyConflicts(InstallerLink):
         data = self.data
         srcConflicts = set()
         packConflicts = []
-        progress = balt.Progress(_("Copying Conflicts..."),'\n'+' '*60)
-        try:
+        with balt.Progress(_("Copying Conflicts..."),'\n'+' '*60) as progress:
             srcArchive = self.selected[0]
             srcInstaller = self.data[srcArchive]
             src_sizeCrc = srcInstaller.data_sizeCrc
@@ -8396,8 +8392,6 @@ class Installer_CopyConflicts(InstallerLink):
                         self.data.moveArchives([project],srcInstaller.order+1)
                     self.data.refresh(what='I')
                     self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
 
 # InstallerDetails Espm Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -8606,8 +8600,7 @@ class InstallerArchive_Unpack(InstallerLink):
                 if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % project.s,self.title,False):
                     return
         #--Copy to Build
-        progress = balt.Progress(_("Unpacking to Project..."),'\n'+' '*60)
-        try:
+        with balt.Progress(_("Unpacking to Project..."),'\n'+' '*60) as progress:
             if self.isSingleArchive():
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                 if project not in self.data:
@@ -8639,8 +8632,6 @@ class InstallerArchive_Unpack(InstallerLink):
                         self.data.moveArchives([project],installer.order+1)
                 self.data.refresh(what='NS')
                 self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
 
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -8759,8 +8750,7 @@ class InstallerProject_Sync(InstallerLink):
             project.s,len(missing),len(mismatched))
         if not balt.askWarning(self.gTank,message,self.title): return
         #--Sync it, baby!
-        progress = balt.Progress(self.title,'\n'+' '*60)
-        try:
+        with balt.Progress(self.title,'\n'+' '*60) as progress:
             progress(0.1,_("Updating files."))
             installer.syncToData(project,missing|mismatched)
             pProject = bosh.dirs['installers'].join(project)
@@ -8768,8 +8758,6 @@ class InstallerProject_Sync(InstallerLink):
             installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
             self.data.refresh(what='NS')
             self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
 
 #------------------------------------------------------------------------------
 class InstallerProject_SyncPack(InstallerLink):
@@ -8827,8 +8815,7 @@ class InstallerProject_Pack(InstallerLink):
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
             else: isSolid = True
-        progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
-        try:
+        with balt.Progress(_("Packing to Archive..."),'\n'+' '*60) as progress:
             #--Pack
             installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8))
             #--Add the new archive to Bash
@@ -8845,8 +8832,7 @@ class InstallerProject_Pack(InstallerLink):
             #--Refresh UI
             self.data.refresh(what='I')
             self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
+
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerLink):
     """Pack project to an archive for release. Ignores dev files/folders."""
@@ -8890,8 +8876,7 @@ class InstallerProject_ReleasePack(InstallerLink):
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,_("Use what maximum size for each solid block?\nEnter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
             else: isSolid = True
-        progress = balt.Progress(_("Packing to Archive..."),'\n'+' '*60)
-        try:
+        with balt.Progress(_("Packing to Archive..."),'\n'+' '*60) as progress:
             #--Pack
             installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8),release=True)
             #--Add the new archive to Bash
@@ -8908,8 +8893,6 @@ class InstallerProject_ReleasePack(InstallerLink):
             #--Refresh UI
             self.data.refresh(what='I')
             self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(InstallerLink):
@@ -8946,8 +8929,7 @@ class InstallerConverter_Apply(InstallerLink):
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.data:
             if not balt.askYes(self.gTank,_("%s already exists. Overwrite it?") % destArchive.s,self.title,False): return
-        progress = balt.Progress(_("Converting to Archive..."),'\n'+' '*60)
-        try:
+        with balt.Progress(_("Converting to Archive..."),'\n'+' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
             #--Add the new archive to Bash
@@ -8965,8 +8947,6 @@ class InstallerConverter_Apply(InstallerLink):
                 self.data.moveArchives([destArchive],lastInstaller.order+1)
             self.data.refresh(what='I')
             self.gTank.RefreshUI()
-        finally:
-            progress.Destroy()
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ConvertMenu(balt.MenuLink):
@@ -9661,8 +9641,7 @@ class Mod_ActorLevels_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Factions"))
-        try:
+        with balt.Progress(_("Export Factions")) as progress:
             if CBash:
                 actorLevels = bosh.CBash_ActorLevels()
             else:
@@ -9676,8 +9655,6 @@ class Mod_ActorLevels_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             actorLevels.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_ActorLevels_Import(Link):
@@ -9707,9 +9684,8 @@ class Mod_ActorLevels_Import(Link):
             balt.showError(self.window,_('Source file must be a _NPC_Levels.csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import NPC Levels"))
         changed = None
-        try:
+        with balt.Progress(_("Import NPC Levels")) as progress:
             if CBash:
                 actorLevels = bosh.CBash_ActorLevels()
             else:
@@ -9719,8 +9695,6 @@ class Mod_ActorLevels_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = actorLevels.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant NPC levels to import."),_("Import NPC Levels"))
@@ -10202,9 +10176,8 @@ class Mod_CleanMod(Link):
         if not balt.askContinue(self.window,message,'bash.cleanMod.continue',
             _('Nvidia Fog Fix')):
             return
-        progress = balt.Progress(_("Nvidia Fog Fix"))
-        progress.setFull(len(self.data))
-        try:
+        with balt.Progress(_("Nvidia Fog Fix")) as progress:
+            progress.setFull(len(self.data))
             fixed = []
             for index,fileName in enumerate(map(GPath,self.data)):
                 if fileName == 'Oblivion.esm': continue
@@ -10221,8 +10194,6 @@ class Mod_CleanMod(Link):
             else:
                 message = _("No changes required.")
                 balt.showOk(self.window,message,_('Nvidia Fog Fix'))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_CreateBlank(Link):
@@ -10274,8 +10245,7 @@ class Mod_FactionRelations_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Relations"))
-        try:
+        with balt.Progress(_("Export Relations")) as progress:
             if not CBash:
                 factionRelations = bosh.FactionRelations()
             else:
@@ -10289,8 +10259,6 @@ class Mod_FactionRelations_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             factionRelations.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_FactionRelations_Import(Link):
@@ -10320,9 +10288,8 @@ class Mod_FactionRelations_Import(Link):
             balt.showError(self.window,_('Source file must be a _Relations.csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Relations"))
         changed = None
-        try:
+        with balt.Progress(_("Import Relations")) as progress:
             if not CBash:
                 factionRelations = bosh.FactionRelations()
             else:
@@ -10332,8 +10299,6 @@ class Mod_FactionRelations_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = factionRelations.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant faction relations to import."),_("Import Relations"))
@@ -10361,8 +10326,7 @@ class Mod_Factions_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Factions"))
-        try:
+        with balt.Progress(_("Export Factions")) as progress:
             if CBash:
                 actorFactions = bosh.CBash_ActorFactions()
             else:
@@ -10376,8 +10340,6 @@ class Mod_Factions_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             actorFactions.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_Factions_Import(Link):
@@ -10407,9 +10369,8 @@ class Mod_Factions_Import(Link):
             balt.showError(self.window,_('Source file must be a _Factions.csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Factions"))
         changed = None
-        try:
+        with balt.Progress(_("Import Factions")) as progress:
             if CBash:
                 actorFactions = bosh.CBash_ActorFactions()
             else:
@@ -10419,8 +10380,6 @@ class Mod_Factions_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = actorFactions.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant faction ranks to import."),_("Import Factions"))
@@ -10860,8 +10819,7 @@ class Mod_EditorIds_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Editor Ids"))
-        try:
+        with balt.Progress(_("Export Editor Ids")) as progress:
             if CBash:
                 editorIds = bosh.CBash_EditorIds()
             else:
@@ -10875,8 +10833,6 @@ class Mod_EditorIds_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             editorIds.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_EditorIds_Import(Link):
@@ -10906,9 +10862,8 @@ class Mod_EditorIds_Import(Link):
             balt.showError(self.window,_('Source file must be a csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Editor Ids"))
         changed = None
-        try:
+        with balt.Progress(_("Import Editor Ids")) as progress:
             if CBash:
                 editorIds = bosh.CBash_EditorIds()
             else:
@@ -10918,8 +10873,6 @@ class Mod_EditorIds_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = editorIds.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No changes required."))
@@ -11016,9 +10969,8 @@ class Mod_Fids_Replace(Link):
             balt.showError(self.window,_('Source file must be a csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Form IDs"))
         changed = None
-        try:
+        with balt.Progress(_("Import Form IDs")) as progress:
             if not CBash:
                 replacer = bosh.FidReplacer()
             else:
@@ -11028,8 +10980,6 @@ class Mod_Fids_Replace(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = replacer.updateMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No changes required."))
@@ -11057,8 +11007,7 @@ class Mod_FullNames_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Names"))
-        try:
+        with balt.Progress(_("Export Names")) as progress:
             if not CBash:
                 fullNames = bosh.FullNames()
             else:
@@ -11072,8 +11021,6 @@ class Mod_FullNames_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             fullNames.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_FullNames_Import(Link):
@@ -11104,9 +11051,8 @@ class Mod_FullNames_Import(Link):
             balt.showError(self.window,_('Source file must be mod (.esp or .esm) or csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Names"))
         renamed = None
-        try:
+        with balt.Progress(_("Import Names")) as progress:
             if not CBash:
                 fullNames = bosh.FullNames()
             else:
@@ -11120,8 +11066,6 @@ class Mod_FullNames_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             renamed = fullNames.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not renamed:
             balt.showOk(self.window,_("No changes required."))
@@ -11264,8 +11208,7 @@ class Mod_Details(Link):
     def Execute(self,event):
         modName = GPath(self.data[0])
         modInfo = bosh.modInfos[modName]
-        progress = balt.Progress(_(modName.s))
-        try:
+        with balt.Progress(_(modName.s)) as progress:
             modDetails = bosh.ModDetails()
             modDetails.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = stringBuffer()
@@ -11285,8 +11228,6 @@ class Mod_Details(Link):
                 asDialog=False, fixedFont=True, icons=bashBlue)
             progress.Destroy()
             buff.close()
-        finally:
-            if progress: progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_RemoveWorldOrphans(Link):
@@ -11308,9 +11249,8 @@ class Mod_RemoveWorldOrphans(Link):
                 continue
             fileInfo = bosh.modInfos[fileName]
             #--Export
-            progress = balt.Progress(_("Remove World Orphans"))
             orphans = 0
-            try:
+            with balt.Progress(_("Remove World Orphans")) as progress:
                 loadFactory = bosh.LoadFactory(True,bosh.MreCell,bosh.MreWrld)
                 modFile = bosh.ModFile(fileInfo,loadFactory)
                 progress(0,_("Reading %s.") % (fileName.s,))
@@ -11320,8 +11260,6 @@ class Mod_RemoveWorldOrphans(Link):
                     progress(0.1,_("Saving %s.") % (fileName.s,))
                     modFile.safeSave()
                 progress(1.0,_("Done."))
-            finally:
-                progress = progress.Destroy()
             #--Log
             if orphans:
                 balt.showOk(self.window,_("Orphan cell blocks removed: %d.") % (orphans,),fileName.s)
@@ -11459,8 +11397,7 @@ class Mod_Stats_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Stats"))
-        try:
+        with balt.Progress(_("Export Stats")) as progress:
             if not CBash:
                 itemStats = bosh.ItemStats()
             else:
@@ -11474,8 +11411,6 @@ class Mod_Stats_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             itemStats.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
@@ -11506,9 +11441,8 @@ class Mod_Stats_Import(Link):
             balt.showError(self.window,_('Source file must be a Stats.csv file.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Stats"))
         changed = None
-        try:
+        with balt.Progress(_("Import Stats")) as progress:
             if CBash:
                 itemStats = bosh.CBash_ItemStats()
             else:
@@ -11518,8 +11452,6 @@ class Mod_Stats_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = itemStats.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant stats to import."),_("Import Stats"))
@@ -11553,8 +11485,7 @@ class Mod_ItemData_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Item Data"))
-        try:
+        with balt.Progress(_("Export Item Data")) as progress:
             if CBash:
                 itemStats = bosh.CBash_CompleteItemData()
             else:
@@ -11568,8 +11499,6 @@ class Mod_ItemData_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             itemStats.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_ItemData_Import(Link):
@@ -11600,9 +11529,8 @@ class Mod_ItemData_Import(Link):
             balt.showError(self.window,_('Source file must be a ItemData.csv file.'))
             return
         #--Export
-        progress = balt.Progress(_('Import Item Data'))
         changed = None
-        try:
+        with balt.Progress(_('Import Item Data')) as progress:
             itemStats = bosh.CompleteItemData()
             progress(0.1,_("Reading %s.") % (textName.s,))
             if ext == '.csv':
@@ -11613,8 +11541,6 @@ class Mod_ItemData_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = itemStats.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant data to import."),_("Import Item Data"))
@@ -11645,8 +11571,7 @@ class Mod_Prices_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Prices"))
-        try:
+        with balt.Progress(_("Export Prices")) as progress:
             if CBash:
                 itemPrices = bosh.CBash_ItemPrices()
             else:
@@ -11660,8 +11585,6 @@ class Mod_Prices_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             itemPrices.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Mod_Prices_Import(Link):
@@ -11692,9 +11615,8 @@ class Mod_Prices_Import(Link):
             balt.showError(self.window,_('Source file must be a Prices.csv file or esp/m.'))
             return
         #--Export
-        progress = balt.Progress(_("Import Prices"))
         changed = None
-        try:
+        with balt.Progress(_("Import Prices")) as progress:
             if CBash:
                 itemPrices = bosh.CBash_ItemPrices()
             else:
@@ -11708,8 +11630,6 @@ class Mod_Prices_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = itemPrices.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant prices to import."),_("Import Prices"))
@@ -11740,8 +11660,7 @@ class CBash_Mod_MapMarkers_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Map Markers"))
-        try:
+        with balt.Progress(_("Export Map Markers")) as progress:
             mapMarkers = bosh.CBash_MapMarkers()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
@@ -11752,8 +11671,6 @@ class CBash_Mod_MapMarkers_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             mapMarkers.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 
 #------------------------------------------------------------------------------
 class CBash_Mod_MapMarkers_Import(Link):
@@ -11784,17 +11701,14 @@ class CBash_Mod_MapMarkers_Import(Link):
             balt.showError(self.window,_('Source file must be a MapMarkers.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Map Markers"))
         changed = None
-        try:
+        with balt.Progress(_("Import Map Markers")) as progress:
             MapMarkers = bosh.CBash_MapMarkers()
             progress(0.1,_("Reading %s.") % (textName.s,))
             MapMarkers.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = MapMarkers.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import Map Markers"))
@@ -11825,8 +11739,7 @@ class Mod_SigilStoneDetails_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Sigil Stone details"))
-        try:
+        with balt.Progress(_("Export Sigil Stone details")) as progress:
             if CBash:
                 sigilStones = bosh.CBash_SigilStoneDetails()
             else:
@@ -11840,8 +11753,6 @@ class Mod_SigilStoneDetails_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             sigilStones.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 #------------------------------------------------------------------------------
 class Mod_SigilStoneDetails_Import(Link):
     """Import Sigil Stone details from text file."""
@@ -11871,9 +11782,8 @@ class Mod_SigilStoneDetails_Import(Link):
             balt.showError(self.window,_('Source file must be a _SigilStones.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Sigil Stone details"))
         changed = None
-        try:
+        with balt.Progress(_("Import Sigil Stone details")) as progress:
             if CBash:
                 sigilStones = bosh.CBash_SigilStoneDetails()
             else:
@@ -11883,8 +11793,6 @@ class Mod_SigilStoneDetails_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = sigilStones.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant Sigil Stone details to import."),_("Import Sigil Stone details"))
@@ -11916,8 +11824,7 @@ class Mod_SpellRecords_Export(Link):
         doDetailed = balt.askYes(self.window,message,_('Export Spells'),icon=wx.ICON_QUESTION)
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Spell details"))
-        try:
+        with balt.Progress(_("Export Spell details")) as progress:
             if CBash:
                 spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
             else:
@@ -11931,8 +11838,6 @@ class Mod_SpellRecords_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             spellRecords.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
 #------------------------------------------------------------------------------
 class Mod_SpellRecords_Import(Link):
     """Import Spell details from text file."""
@@ -11964,9 +11869,8 @@ class Mod_SpellRecords_Import(Link):
             balt.showError(self.window,_('Source file must be a _Spells.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Spell details"))
         changed = None
-        try:
+        with balt.Progress(_("Import Spell details")) as progress:
             if CBash:
                 spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
             else:
@@ -11976,8 +11880,6 @@ class Mod_SpellRecords_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = spellRecords.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant Spell details to import."),_("Import Spell details"))
@@ -12008,8 +11910,7 @@ class Mod_IngredientDetails_Export(Link):
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
-        progress = balt.Progress(_("Export Ingredient details"))
-        try:
+        with balt.Progress(_("Export Ingredient details")) as progress:
             if CBash:
                 Ingredients = bosh.CBash_IngredientDetails()
             else:
@@ -12023,8 +11924,7 @@ class Mod_IngredientDetails_Export(Link):
             progress(0.8,_("Exporting to %s.") % (textName.s,))
             Ingredients.writeToText(textPath)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
+
 class Mod_IngredientDetails_Import(Link):
     """Import Ingredient details from text file."""
     def AppendToMenu(self,menu,window,data):
@@ -12053,9 +11953,8 @@ class Mod_IngredientDetails_Import(Link):
             balt.showError(self.window,_('Source file must be a _Ingredients.csv file'))
             return
         #--Export
-        progress = balt.Progress(_("Import Ingredient details"))
         changed = None
-        try:
+        with balt.Progress(_("Import Ingredient details")) as progress:
             if CBash:
                 Ingredients = bosh.CBash_IngredientDetails()
             else:
@@ -12065,8 +11964,6 @@ class Mod_IngredientDetails_Import(Link):
             progress(0.2,_("Applying to %s.") % (fileName.s,))
             changed = Ingredients.writeToMod(fileInfo)
             progress(1.0,_("Done."))
-        finally:
-            progress = progress.Destroy()
         #--Log
         if not changed:
             balt.showOk(self.window,_("No relevant Ingredient details to import."),_("Import Ingredient details"))
@@ -12090,9 +11987,8 @@ class Mod_UndeleteRefs(Link):
         if not balt.askContinue(self.window,message,'bash.undeleteRefs.continue',
             _('Undelete Refs')):
             return
-        progress = balt.Progress(_("Undelete Refs"))
-        progress.setFull(len(self.data))
-        try:
+        with balt.Progress(_("Undelete Refs")) as progress:
+            progress.setFull(len(self.data))
             hasFixed = False
             log = bolt.LogFile(stringBuffer())
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -12115,8 +12011,6 @@ class Mod_UndeleteRefs(Link):
             else:
                 message = _("No changes required.")
                 balt.showOk(self.window,message,_('Undelete Refs'))
-        finally:
-            progress = progress.Destroy()
 
 # Saves Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -12337,8 +12231,7 @@ class Save_ImportFace(Link):
         #--Get face
         srcDir,srcName = GPath(srcPath).headTail
         srcInfo = bosh.SaveInfo(srcDir,srcName)
-        progress = balt.Progress(srcName.s)
-        try:
+        with balt.Progress(srcName.s) as progress:
             saveFile = bosh.SaveFile(srcInfo)
             saveFile.load(progress)
             progress.Destroy()
@@ -12347,8 +12240,6 @@ class Save_ImportFace(Link):
             dialog = ImportFaceDialog(self.window,-1,srcName.s,fileInfo,srcFaces)
             dialog.ShowModal()
             dialog.Destroy()
-        finally:
-            if progress: progress.Destroy()
 
     def FromMod(self,fileInfo,srcPath):
         """Import from a mod."""
@@ -12589,12 +12480,9 @@ class Save_EditCreated(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         #--Get SaveFile
-        progress = balt.Progress(_("Loading..."))
-        try:
+        with balt.Progress(_("Loading...")) as progress:
             saveFile = bosh.SaveFile(fileInfo)
             saveFile.load(progress)
-        finally:
-            if progress: progress.Destroy()
         #--No custom items?
         recordTypes = Save_EditCreated.recordTypes.get(self.type,(self.type,))
         records = [record for record in saveFile.created if record.recType in recordTypes]
@@ -12613,11 +12501,8 @@ class Save_EditPCSpellsData(balt.ListEditorData):
     def __init__(self,parent,saveInfo):
         """Initialize."""
         self.saveSpells = bosh.SaveSpells(saveInfo)
-        progress = balt.Progress(_('Loading Masters'))
-        try:
+        with balt.Progress(_('Loading Masters')) as progress:
             self.saveSpells.load(progress)
-        finally:
-            progress = progress.Destroy()
         self.data = self.saveSpells.getPlayerSpells()
         self.removed = set()
         #--GUI
@@ -12803,11 +12688,10 @@ class Save_RepairFactions(Link):
             return
         question = _("Restore dropped factions too? WARNING: This may involve clicking through a LOT of yes/no dialogs.")
         restoreDropped = balt.askYes(self.window, question, _('Repair Factions'),default=False)
-        progress = balt.Progress(_('Repair Factions'))
         legitNullSpells = bush.repairFactions_legitNullSpells
         legitNullFactions = bush.repairFactions_legitNullFactions
         legitDroppedFactions = bush.repairFactions_legitDroppedFactions
-        try:
+        with balt.Progress(_('Repair Factions')) as progress:
             #--Loop over active mods
             log = bolt.LogFile(stringBuffer())
             offsetFlag = 0x80
@@ -12920,8 +12804,6 @@ class Save_RepairFactions(Link):
             #balt.showOk(self.window,message,_('Repair Factions'))
             message = log.out.getvalue()
             balt.showWryeLog(self.window,message,_('Repair Factions'),icons=bashBlue)
-        finally:
-            if progress: progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Save_RepairHair(Link):
@@ -12965,8 +12847,7 @@ class Save_ReweighPotions(Link):
         #--Do it
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
-        progress = balt.Progress(_("Reweigh Potions"))
-        try:
+        with balt.Progress(_("Reweigh Potions")) as progress:
             saveFile = bosh.SaveFile(fileInfo)
             saveFile.load(SubProgress(progress,0,0.5))
             count = 0
@@ -12985,8 +12866,6 @@ class Save_ReweighPotions(Link):
             else:
                 progress.Destroy()
                 balt.showOk(self.window,_('No potions to reweigh!'),fileName.s)
-        finally:
-            if progress: progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Save_Stats(Link):
@@ -13001,8 +12880,7 @@ class Save_Stats(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         saveFile = bosh.SaveFile(fileInfo)
-        progress = balt.Progress(_("Statistics"))
-        try:
+        with balt.Progress(_("Statistics")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(stringBuffer())
             progress(0.9,_("Calculating statistics."))
@@ -13010,8 +12888,6 @@ class Save_Stats(Link):
             progress.Destroy()
             text = log.out.getvalue()
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
-        finally:
-            progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Save_StatObse(Link):
@@ -13032,8 +12908,7 @@ class Save_StatObse(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         saveFile = bosh.SaveFile(fileInfo)
-        progress = balt.Progress(_(".obse"))
-        try:
+        with balt.Progress(_(".obse")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(stringBuffer())
             progress(0.9,_("Calculating statistics."))
@@ -13042,8 +12917,6 @@ class Save_StatObse(Link):
             text = log.out.getvalue()
             log.out.close()
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
-        finally:
-            progress.Destroy()
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(Link):
@@ -13058,9 +12931,8 @@ class Save_Unbloat(Link):
         #--File Info
         saveName = GPath(self.data[0])
         saveInfo = self.window.data[saveName]
-        progress = balt.Progress(_("Scanning for Bloat"))
         delObjRefs = 0
-        try:
+        with balt.Progress(_("Scanning for Bloat")) as progress:
             #--Scan and report
             saveFile = bosh.SaveFile(saveInfo)
             saveFile.load(SubProgress(progress,0,0.8))
@@ -13090,9 +12962,6 @@ class Save_Unbloat(Link):
                 _("Uncreated Objects: %d\nUncreated Refs: %d\nUnNulled Refs: %d") % nums,
                 saveName.s)
             self.window.RefreshUI(saveName)
-        finally:
-            progress.Destroy()
-
 
 #------------------------------------------------------------------------------
 class Save_UpdateNPCLevels(Link):
@@ -13108,8 +12977,7 @@ class Save_UpdateNPCLevels(Link):
         message = _('This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods. This supercedes the older "Import NPC Levels" command.')
         if not balt.askContinue(self.window,message,'bash.updateNpcLevels.continue',_('Update NPC Levels')):
             return
-        progress = balt.Progress(_('Update NPC Levels'))
-        try:
+        with balt.Progress(_('Update NPC Levels')) as progress:
             #--Loop over active mods
             offsetFlag = 0x80
             npc_info = {}
@@ -13179,8 +13047,6 @@ class Save_UpdateNPCLevels(Link):
                 message += _("\n\nSome mods had load errors and were skipped:\n* ")
                 message += '\n* '.join(modErrors)
             balt.showOk(self.window,message,_('Update NPC Levels'))
-        finally:
-            if progress: progress.Destroy()
 
 # Screen Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -13666,43 +13532,42 @@ class App_BOSS(App_Button):
             statusBar.SetStatusText(' '.join(exeArgs),1)
             cwd = bolt.Path.getcwd()
             exePath.head.setcwd()
-            progress = balt.Progress(_("Executing BOSS"))
-            version = bosh.configHelpers.bossVersion
-            if settings.get('bash.mods.autoGhost') and not version:
-                progress(0.05,_("Processing... deghosting mods"))
-                for fileName in bosh.modInfos:
-                    bosh.modInfos[fileName].setGhost(False)
-            if version >= 1:
-                if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
-                    exeArgs += ('-u',) # Update - BOSS version 1.6+
-                if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                    exeArgs += ('-r 2',) # Revert level 2 - BOSS version 1.6+
-                elif wx.GetKeyState(82):
-                    exeArgs += ('-r 1',) # Revert level 1 - BOSS version 1.6+
-                if wx.GetKeyState(83):
-                    exeArgs += ('-s',) # Silent Mode - BOSS version 1.6+
-            if version in [1, 393217]:
-                if wx.GetKeyState(86):
-                    exeArgs += ('-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
-            elif version >= 393218:
-                if wx.GetKeyState(86) or wx.GetKeyState(78):
-                    exeArgs += ('-n',) # Disable version parsing - syntax BOSS version 1.6.2+
-            progress(0.05,_("Processing... launching BOSS."))
-            try:
-                subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo)
-                # Clear the saved times from before
-                bosh.modInfos.mtimes.clear()
-                # And refresh to get the new times so WB will keep the order that BOSS specifies
-                bosh.modInfos.refresh(doInfos=False)
-            except Exception, error:
-                print error
-                print _("Used Path: %s") % exePath.s
-                print _("Used Arguments: "), exeArgs
-                print
-                raise
-            finally:
-                if progress: progress.Destroy()
-                cwd.setcwd()
+            with balt.Progress(_("Executing BOSS")) as progress:
+                version = bosh.configHelpers.bossVersion
+                if settings.get('bash.mods.autoGhost') and not version:
+                    progress(0.05,_("Processing... deghosting mods"))
+                    for fileName in bosh.modInfos:
+                        bosh.modInfos[fileName].setGhost(False)
+                if version >= 1:
+                    if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
+                        exeArgs += ('-u',) # Update - BOSS version 1.6+
+                    if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+                        exeArgs += ('-r 2',) # Revert level 2 - BOSS version 1.6+
+                    elif wx.GetKeyState(82):
+                        exeArgs += ('-r 1',) # Revert level 1 - BOSS version 1.6+
+                    if wx.GetKeyState(83):
+                        exeArgs += ('-s',) # Silent Mode - BOSS version 1.6+
+                if version in [1, 393217]:
+                    if wx.GetKeyState(86):
+                        exeArgs += ('-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
+                elif version >= 393218:
+                    if wx.GetKeyState(86) or wx.GetKeyState(78):
+                        exeArgs += ('-n',) # Disable version parsing - syntax BOSS version 1.6.2+
+                progress(0.05,_("Processing... launching BOSS."))
+                try:
+                    subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo)
+                    # Clear the saved times from before
+                    bosh.modInfos.mtimes.clear()
+                    # And refresh to get the new times so WB will keep the order that BOSS specifies
+                    bosh.modInfos.refresh(doInfos=False)
+                except Exception, error:
+                    print error
+                    print _("Used Path: %s") % exePath.s
+                    print _("Used Arguments: "), exeArgs
+                    print
+                    raise
+                finally:
+                    cwd.setcwd()
         else:
             raise StateError('Application missing: %s' % self.exePath.s)
 

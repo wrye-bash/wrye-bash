@@ -15576,8 +15576,7 @@ class ScriptText:
         modFile.load(True)
         mapper = modFile.getLongMapper()
 
-        progress = balt.Progress(_("Export Scripts"))
-        try:
+        with balt.Progress(_("Export Scripts")) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
             z = 0
@@ -15585,8 +15584,6 @@ class ScriptText:
                 z += 1
                 progress((0.5/y*z),_("Reading scripts in %s.")%(file))
                 eid_data[record.eid] = (record.scriptText, mapper(record.fid))
-        finally:
-            progress = progress.Destroy()
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
@@ -15625,8 +15622,7 @@ class ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
-        progress = balt.Progress(_("Import Scripts"))
-        try:
+        with balt.Progress(_("Import Scripts")) as progress:
             for root, dirs, files in os.walk(textPath):
                 y = len(files)
                 z = 0
@@ -15651,22 +15647,19 @@ class ScriptText:
                         continue
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
                     eid_data[eid] = (scriptText, FormID)
-        finally: #just to ensure the progress bar gets destroyed
-            progress = progress.Destroy()
         if eid_data: return True
         return False
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
-        progress = balt.Progress(_("Export Scripts"))
         x = len(skip)
         exportedScripts = []
         y = len(eid_data)
         z = 0
         num = 0
         r = len(deprefix)
-        try:
+        with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
                 z += 1
@@ -15681,8 +15674,6 @@ class ScriptText:
                         formid = '0x%06X' %(longid[1])
                         out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
                     exportedScripts.append(eid)
-        finally: #just to ensure the progress bar gets destroyed
-            progress = progress.Destroy()
         return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
 
 class CBash_ScriptText:
@@ -15759,8 +15750,7 @@ class CBash_ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
-        progress = balt.Progress(_("Import Scripts"))
-        try:
+        with balt.Progress(_("Import Scripts")) as progress:
             for root, dirs, files in os.walk(textPath):
                 y = len(files)
                 z = 0
@@ -15781,22 +15771,19 @@ class CBash_ScriptText:
                     modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
                     eid_data[ISTRING(eid)] = (ISTRING(scriptText), FormID) #script text is case insensitive
-        finally: #just to ensure the progress bar gets destroyed
-            progress = progress.Destroy()
         if eid_data: return True
         return False
 
     def writeToText(self,textPath,skip,folder,deprefix,esp):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
-        progress = balt.Progress(_("Export Scripts"))
         x = len(skip)
         exportedScripts = []
         y = len(eid_data)
         z = 0
         num = 0
         r = len(deprefix)
-        try:
+        with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
                 z += 1
@@ -15823,8 +15810,6 @@ class CBash_ScriptText:
                                 print outpath
                                 print ';',longid[0].s,'\r\n;',formid,'\r\n;',eid,'\r\n',text
                     exportedScripts.append(eid)
-        finally: #just to ensure the progress bar gets destroyed
-            progress = progress.Destroy()
         return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
 
 #------------------------------------------------------------------------------
