@@ -10,7 +10,7 @@ except:
     def GPath(obj):
         return obj
 
-_CBashRequiredVersion = (0,5,0)
+_CBashRequiredVersion = (0,5,2)
 
 CBash = None
 if(exists(".\\CBash.dll")):
@@ -67,6 +67,7 @@ if(exists(".\\CBash.dll")):
         _CGetNumRecordConflicts = CBash.GetNumRecordConflicts
         _CGetRecordConflicts = CBash.GetRecordConflicts
         _CGetRecordHistory = CBash.GetRecordHistory
+        _CCompareIdenticalRecords = CBash.CompareIdenticalRecords
         _CUpdateReferences = CBash.UpdateReferences
         _CGetNumReferences = CBash.GetNumReferences
         _CSetField = CBash.SetField
@@ -108,6 +109,7 @@ if(exists(".\\CBash.dll")):
         _CGetNumRecordConflicts.restype = c_long
         _CGetRecordConflicts.restype = c_long
         _CGetRecordHistory.restype = c_long
+        _CCompareIdenticalRecords.restype = c_long
         _CUpdateReferences.restype = c_long
         _CGetNumReferences.restype = c_long
         _CGetFieldAttribute.restype = c_ulong
@@ -1595,6 +1597,47 @@ class ObBaseRecord(object):
     def __eq__(self, other):
         if type(other) is type(self):
             return self._RecordID == other._RecordID
+        return False
+
+    def IsIdenticalTo(self, other):
+        if type(other) is type(self):
+            if self.flags1 != other.flags1:
+                return False
+            # 'touch' the flags2 objects to make sure they're loaded?
+            a = self.flags2
+            a = other.flags2
+            identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
+            if identical:
+                if self._Type == 'CELL':
+                    # CELL records, need to check its sub records
+                    if self.PGRD:
+                        if other.PGRD:
+                            if not self.PGRD.IsIdenticalTo(other.PGRD):
+                                return False
+                        else:
+                            return False
+                    if self.LAND:
+                        if other.LAND:
+                            if not self.LAND.IsIdenticalTo(other.LAND):
+                                return False
+                        else:
+                            return False
+                    for attr in ('ACHR','ACRE','REFR'):
+                        otherItems = set(getattr(other,attr))
+                        selfItems  = set(getattr(self,attr))
+                        newItems = selfItems - otherItems
+                        if len(newItems) > 0:
+                            return False
+                elif self._Type == 'DIAL':
+                    # DIAL records, need to check its sub records
+                    otherItems = other.INFO or []
+                    selfItems  = self.INFO or []
+                    if len(otherItems) != len(selfItems):
+                        return False
+                    for i in range(len(selfItems)):
+                        if not otherItems[i].IsIdenticalTo(selfItems[i]):
+                            return False
+            return identical
         return False
 
     def __ne__(self, other):

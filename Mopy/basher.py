@@ -11997,20 +11997,19 @@ class Mod_UndeleteRefs(Link):
                     continue
                 progress(index,_("Scanning %s.") % (fileName.s,))
                 fileInfo = bosh.modInfos[fileName]
-                undeleteRefs = bosh.UndeleteRefs(fileInfo)
-                undeleteRefs.undelete(SubProgress(progress,index,index+1))
-                if undeleteRefs.fixedRefs:
+                cleaner = bosh.ModCleaner(fileInfo)
+                cleaner.cleanUDRs(SubProgress(progress,index,index+1))
+                if cleaner.udr:
                     hasFixed = True
                     log.setHeader('==%s' % (fileName.s,))
-                    for fid in sorted(undeleteRefs.fixedRefs):
+                    for fid in sorted(cleaner.udr):
                         log('. %08X' % (fid,))
-            progress.Destroy()
-            if hasFixed:
-                message = log.out.getvalue()
-                balt.showWryeLog(self.window,message,_('Undelete Refs'),icons=bashBlue)
-            else:
-                message = _("No changes required.")
-                balt.showOk(self.window,message,_('Undelete Refs'))
+        if hasFixed:
+            message = log.out.getvalue()
+            balt.showWryeLog(self.window,message,_('Undelete Refs'),icons=bashBlue)
+        else:
+            message = _("No changes required.")
+            balt.showOk(self.window,message,_('Undelete Refs'))
 
 # Saves Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
