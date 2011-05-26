@@ -1893,6 +1893,8 @@ class WryeText:
     Links:
      [[file]] produces <a href=file>file</a>
      [[file|text]] produces <a href=file>text</a>
+     [[!file]] produces <a href=file target="_blank">file</a>
+     [[!file|text]] produces <a href=file target="_blank">text</a>
 
     Contents
     {{CONTENTS=NN}} Where NN is the desired depth of contents (1 for single level,
@@ -2045,9 +2047,14 @@ class WryeText:
             if '|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split('|',1)]
                 if address == '#': address += reWd.sub('',text)
+            if address.startswith('!'):
+                newWindow = ' target="_blank"'
+                address = address[1:]
+            else:
+                newWindow = ''
             if not reFullLink.search(address):
                 address = address+'.html'
-            return '<a href="%s">%s</a>' % (address,text)
+            return '<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
         reAnchorTag = re.compile('{{A:(.+?)}}')
         reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$')

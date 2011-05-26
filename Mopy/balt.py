@@ -671,6 +671,8 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoForward())
     gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
     gOkButton.SetDefault()
+    if not asDialog:
+        window.SetBackgroundColour(gOkButton.GetBackgroundColour())
     #--Layout
     window.SetSizer(
         vSizer(
