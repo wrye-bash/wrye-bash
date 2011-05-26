@@ -17394,7 +17394,7 @@ class ModCleaner:
         """Scan multiple mods for dirty edits"""
         progress.setFull(max(len(modInfos),1))
         ret = []
-        for i,modInfo in modInfos:
+        for i,modInfo in enumerate(modInfos):
             progress(i,_('Scanning...') + '\n' + modInfo.name.s)
             udr = set()
             if len(modInfo.masterNames) > 0:
@@ -17456,7 +17456,7 @@ class ModCleaner:
     def _cleanUDR_Python(modInfos,progress):
         """Clean multiple mods of UDRs"""
         progress.setFull(max(len(modInfos),1))
-        for i,modInfo in modInfos:
+        for i,modInfo in enumerate(modInfos):
             progress(i,_('Cleaning...') + '\n' + modInfo.name.s)
             subprogress = SubProgress(progress,i,i+1)
             subprogress.setFull(max(modInfo.size,1))
