@@ -10494,11 +10494,15 @@ class Installer(object):
             progress.setFull(max(totalSize,1))
             for index,rpFile in enumerate(sorted(pending)):
                 progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
-                apFile = apRootJoin(normGet(rpFile,rpFile))
-                size = apFile.size
-                crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
-                date = apFile.mtime
-                done += size
+                try:
+                    apFile = apRootJoin(normGet(rpFile,rpFile))
+                    size = apFile.size
+                    crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
+                    date = apFile.mtime
+                    done += size
+                except WindowsError:
+                    deprint(_('Failed to calculate crc for %s - please report this and or try the unicode build of Wrye Bash.') % (apFile.s))
+                    continue
                 new_sizeCrcDate[rpFile] = (size,crc,date)
         old_sizeCrcDate.clear()
         old_sizeCrcDate.update(new_sizeCrcDate)
