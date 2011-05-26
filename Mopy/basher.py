@@ -9344,7 +9344,7 @@ class Mods_SelectedFirst(Link):
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Scan for dirty edits (requires BOSS 1.7+)'),
+                                          _("Check mods against BOSS's dirty mod list (BOSS 1.7+)"),
                                           'bash.mods.scanDirty',
                                           )
 
@@ -10112,9 +10112,9 @@ class Mod_SkipDirtyCheckAll(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if self.skip:
-            menuItem = wx.MenuItem(menu,self.id,_("Don't scan for dirty edits"))
+            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list"))
         else:
-            menuItem = wx.MenuItem(menu,self.id,_("Scan for dirty edits"))
+            menuItem = wx.MenuItem(menu,self.id,_("Check against BOSS's dirty mod list"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10127,7 +10127,7 @@ class Mod_SkipDirtyCheckAll(Link):
 class Mod_SkipDirtyCheckInvert(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Invert dirty edit scanning"))
+        menuItem = wx.MenuItem(menu,self.id,_("Invert checking against BOSS's dirty mod list"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10144,7 +10144,7 @@ class Mod_SkipDirtyCheck(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_("Don't scan for dirty edits (requires BOSS 1.7+)"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list (BOSS 1.7+)"),kind=wx.ITEM_CHECK)
             menu.AppendItem(menuItem)
             self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
             menuItem.Check(self.ignoreDirty)
@@ -12011,7 +12011,46 @@ class Mod_UndeleteRefs(Link):
             message = _("No changes required.")
             balt.showOk(self.window,message,_('Undelete Refs'))
 
-# Saves Links ------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class Mod_ScanDirty(Link):
+    """Give detailed printout of what Wrye Bash is detecting as UDR and ITM records"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if settings['bash.CBashEnabled']:
+            menuItem = wx.MenuItem(menu,self.id,_('Scan for Dirty Edits'))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_("Scan for UDR's"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle execution"""
+        modInfos = [bosh.modInfos[x] for x in self.data]
+        try:
+            with balt.Progress(_("Dirty Edits"),'\n'+' '*60,abort=True) as progress:
+                ret = bosh.ModCleaner.scan_Many(modInfos,progress)
+        except bolt.CancelError:
+            return
+        log = bolt.LogFile(stringBuffer())
+        log.setHeader(_('= Scan Mods'))
+        log(_('This is a report of records that where detected as either Identical To Master (ITM) or a deleted reference (UDR).\n'))
+        for i,modInfo in enumerate(modInfos):
+            udr,itm = ret[i]
+            log(_('* __'+modInfo.name.s+'__:'))
+            log(_('  * UDR: %i') % len(udr))
+            for fid in sorted(udr, key=itemgetter(0,1)): # Sorted by master, then id
+                hexId = hex(fid[1]).upper()[2:]
+                hexId = '0'*(6-len(hexId)) + hexId
+                log(_('    * %s: %s') % (fid[0].stail, hexId))
+            if not settings['bash.CBashEnabled']: continue
+            log(_('  * ITM: %i') % len(itm))
+            for fid in sorted(itm, key=itemgetter(0,1)):
+                hexId = hex(fid[1]).upper()[2:]
+                hexId = '0'*(6-len(hexId)) + hexId
+                log(_('    * %s: %s') % (fid[0].stail, hexId))
+        #-- Show log
+        balt.showWryeLog(self.window,log.out.getvalue(),_('Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
+
+# Saves Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
@@ -14703,7 +14742,6 @@ def InitModLinks():
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
-    ModList.itemMenu.append(Mod_SkipDirtyCheck())
     #ModList.itemMenu.append(Mod_MarkLevelers())
     ModList.itemMenu.append(Mod_MarkMergeable())
     ModList.itemMenu.append(Mod_Patch_Update())
@@ -14746,15 +14784,21 @@ def InitModLinks():
         importMenu.links.append(Mod_Face_Import())
         importMenu.links.append(Mod_Fids_Replace())
         ModList.itemMenu.append(importMenu)
+    if True: #--Cleaning
+        cleanMenu = MenuLink(_("Mod Cleaning"))
+        cleanMenu.links.append(Mod_SkipDirtyCheck())
+        cleanMenu.links.append(SeparatorLink())
+        cleanMenu.links.append(Mod_ScanDirty())
+        cleanMenu.links.append(Mod_RemoveWorldOrphans())
+        cleanMenu.links.append(Mod_CleanMod())
+        cleanMenu.links.append(Mod_UndeleteRefs())
+        ModList.itemMenu.append(cleanMenu)
     ModList.itemMenu.append(Mod_AddMaster())
     ModList.itemMenu.append(Mod_CopyToEsmp())
     ModList.itemMenu.append(Mod_DecompileAll())
     ModList.itemMenu.append(Mod_FlipSelf())
     ModList.itemMenu.append(Mod_FlipMasters())
-    ModList.itemMenu.append(Mod_RemoveWorldOrphans())
-    ModList.itemMenu.append(Mod_CleanMod())
     ModList.itemMenu.append(Mod_SetVersion())
-    ModList.itemMenu.append(Mod_UndeleteRefs())
 #    if bosh.inisettings['showadvanced'] == 1:
 #        advmenu = MenuLink(_("Advanced Scripts"))
 #        advmenu.links.append(Mod_DiffScripts())

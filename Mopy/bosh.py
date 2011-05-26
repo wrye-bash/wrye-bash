@@ -9838,7 +9838,7 @@ class ConfigHelpers:
                 log('* __'+mod.s+'__')
         if shouldClean:
             log.setHeader(_("=== Mods that need cleaning with TES4Edit"))
-            log(_("Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information."))
+            log(_("Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[!http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information."))
             for mod in sorted(shouldClean.keys()):
                 log('* __'+mod.s+':__  %s' % shouldClean[mod])
         if shouldCleanMaybe:
@@ -17217,21 +17217,22 @@ class ModCleaner:
     def scan_Many(modInfos,progress=bolt.Progress()):
         """Scan multiple mods for dirty edits"""
         if not settings['bash.CBashEnabled']:
-            return (ModCleaner.scanUDR_Many(modInfos,progress),
-                    ModCleaner.scanITM_Many(modInfos,progress))
-        #--CBash
-        #--Load
-        progress(0,_('Loading...'))
-        progress.setFull(2)
-        collection = ModCleaner._loadCollection(modInfos)
-        #--Scan UDR
-        subprogress = SubProgress(progress,0,1)
-        udrs = ModCleaner._scanUDR_CBash(collection,modInfos,subprogress)
-        #--Scan ITM
-        subprogress = SubProgress(progress,1,2)
-        itms = ModCleaner._scanITM(collection,modInfos,subprogress)
-        #--Unload
-        collection.Unload()
+            udrs = ModCleaner.scanUDR_Many(modInfos,progress)
+            itms = ModCleaner.scanITM_Many(modInfos,progress)
+        else:
+            #--CBash
+            #--Load
+            progress(0,_('Loading...'))
+            progress.setFull(2)
+            collection = ModCleaner._loadCollection(modInfos)
+            #--Scan UDR
+            subprogress = SubProgress(progress,0,1)
+            udrs = ModCleaner._scanUDR_CBash(collection,modInfos,subprogress)
+            #--Scan ITM
+            subprogress = SubProgress(progress,1,2)
+            itms = ModCleaner._scanITM(collection,modInfos,subprogress)
+            #--Unload
+            collection.Unload()
         return [(udrs[x],itms[x]) for x in range(len(udrs))]
 
     def scanITM(self,progress=bolt.Progress()):
