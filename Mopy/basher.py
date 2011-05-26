@@ -12043,9 +12043,7 @@ class Mod_ScanDirty(Link):
                 modId = 0xFF000000 & fid
                 modName = modInfo.masterNames[modId]
                 id = 0x00FFFFFF & fid
-            hexId = hex(id).upper()[2:]
-            hexId = '0'*(6-len(hexId))+hexId
-            return '%s: %s' % (modName, hexId)
+            return '%s: %06X' % (modName, id)
         def sortedFidList(fids):
             # Sort list of FIDs fist by mod, then id
             if settings['bash.CBashEnabled']:
