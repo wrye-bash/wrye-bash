@@ -1601,6 +1601,8 @@ class ObBaseRecord(object):
 
     def IsIdenticalTo(self, other):
         if type(other) is type(self):
+            if self.fid != other.fid:
+                return False
             if self.flags1 != other.flags1:
                 return False
             # 'touch' the flags2 objects to make sure they're loaded?
@@ -1618,26 +1620,47 @@ class ObBaseRecord(object):
                             return False
                     if (self.posX,self.posY) != (other.posX,other.posY):
                         return False
-                    #--PGRD
-                    if self.PGRD:
-                        if other.PGRD:
-                            if not self.PGRD.IsIdenticalTo(other.PGRD):
+                    #--PGRD,LAND
+                    for attr in ('PGRD','LAND'):
+                        if getattr(self,attr):
+                            if getattr(other,attr):
+                                if not getattr(self,attr).IsIdenticalTo(getattr(other,attr)):
+                                    return False
+                            else:
                                 return False
-                        else:
-                            return False
-                    #--LAND
-                    if self.LAND:
-                        if other.LAND:
-                            if not self.LAND.IsIdenticalTo(other.LAND):
-                                return False
-                        else:
-                            return False
                     #--ACHR, ACRE, REFR
                     for attr in ('ACHR','ACRE','REFR'):
                         otherItems = set(getattr(other,attr))
                         selfItems  = set(getattr(self,attr))
                         newItems = selfItems - otherItems
                         if len(newItems) > 0:
+                            return False
+                elif self._Type == 'WRLD':
+                    # World records, this one may take quite a bit of processing power.
+                    # We need to check to see if ALL attached subrecords are identical
+                    #--ROAD, WorldCELL
+                    for attr in ('ROAD','WorldCELL'):
+                        if getattr(self,attr):
+                            if getattr(other,attr):
+                                if not getattr(self,attr).IsIdenticalTo(getattr(other,attr)):
+                                    return False
+                            else:
+                                return False
+                    #--CELLs, this could take a while
+                    # First, see if new CELLs are added to the WorldCELL
+                    selfCELLs = dict((x.fid,x) for x in self.CELLS)
+                    otherCELLs = dict((x.fid,x) for x in other.CELLs)
+                    selfCELLfids = set(selfCELLs.keys())
+                    otherCELLfids = set(otherCELLs.keys())
+                    newCELLfids = selfCELLfids - otherCELLfids
+                    if len(newCELLfids) > 0:
+                        return False
+                    # Ok, no added CELLs, so now we have to compare each one
+                    sameCELLfids = selfCELLfids & otherCELLfids
+                    for fid in sameCELLfids:
+                        selfCELL = selfCELLs[fid]
+                        otherCELL = otherCELLs[fid]
+                        if not selfCELL.IsIdenticalTo(otherCELL):
                             return False
                 elif self._Type == 'DIAL':
                     # DIAL records, need to check its sub records
