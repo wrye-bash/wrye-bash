@@ -5877,7 +5877,8 @@ class PatchDialog(wx.Dialog):
                 timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip('0')
                 logValue = re.sub('TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
-                readme.open('w').write(logValue)
+                with readme.open('w') as file:
+                    file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 docsDir = bosh.modInfos.dir.join('Docs')
@@ -12033,20 +12034,37 @@ class Mod_ScanDirty(Link):
         log = bolt.LogFile(stringBuffer())
         log.setHeader(_('= Scan Mods'))
         log(_('This is a report of records that where detected as either Identical To Master (ITM) or a deleted reference (UDR).\n'))
+        def strFid(fid):
+            # Change a FID to something better for displaying
+            if settings['bash.CBashEnabled']:
+                modName = fid[0].stail
+                id = fid[1]
+            else:
+                modId = 0xFF000000 & fid
+                modName = modInfo.masterNames[modId]
+                id = 0x00FFFFFF & fid
+            hexId = hex(id).upper()[2:]
+            hexId = '0'*(6-len(hexId))+hexId
+            return '%s: %s' % (modName, hexId)
+        def sortedFidList(fids):
+            # Sort list of FIDs fist by mod, then id
+            if settings['bash.CBashEnabled']:
+                return sorted(fids, key=itemgetter(0,1))
+            else:
+                return sorted(fids)
         for i,modInfo in enumerate(modInfos):
             udr,itm = ret[i]
-            log(_('* __'+modInfo.name.s+'__:'))
-            log(_('  * UDR: %i') % len(udr))
-            for fid in sorted(udr, key=itemgetter(0,1)): # Sorted by master, then id
-                hexId = hex(fid[1]).upper()[2:]
-                hexId = '0'*(6-len(hexId)) + hexId
-                log(_('    * %s: %s') % (fid[0].stail, hexId))
-            if not settings['bash.CBashEnabled']: continue
-            log(_('  * ITM: %i') % len(itm))
-            for fid in sorted(itm, key=itemgetter(0,1)):
-                hexId = hex(fid[1]).upper()[2:]
-                hexId = '0'*(6-len(hexId)) + hexId
-                log(_('    * %s: %s') % (fid[0].stail, hexId))
+            if udr or itm:
+                log('* __'+modInfo.name.s+'__:')
+                log(_('  * UDR: %i') % len(udr))
+                for fid in sortedFidList(udr): # Sorted by master, then id
+                    log(_('    * %s') % strFid(fid))
+                if not settings['bash.CBashEnabled']: continue
+                log(_('  * ITM: %i') % len(itm))
+                for fid in sortedFidList(itm):
+                    log(_('    * %s') % strFid(fid))
+            else:
+                log('* __'+modInfo.name.s+'__: No dirty edits detected.')
         #-- Show log
         balt.showWryeLog(self.window,log.out.getvalue(),_('Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
 
