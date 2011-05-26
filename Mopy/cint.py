@@ -1609,19 +1609,30 @@ class ObBaseRecord(object):
             identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
             if identical:
                 if self._Type == 'CELL':
-                    # CELL records, need to check its sub records
+                    # Check to make sure the CELLs are attached at the same spot
+                    if self.Parent:
+                        if other.Parent:
+                            if self.Parent.fid != other.Parent.fid:
+                                return False
+                        else:
+                            return False
+                    if (self.posX,self.posY) != (other.posX,other.posY):
+                        return False
+                    #--PGRD
                     if self.PGRD:
                         if other.PGRD:
                             if not self.PGRD.IsIdenticalTo(other.PGRD):
                                 return False
                         else:
                             return False
+                    #--LAND
                     if self.LAND:
                         if other.LAND:
                             if not self.LAND.IsIdenticalTo(other.LAND):
                                 return False
                         else:
                             return False
+                    #--ACHR, ACRE, REFR
                     for attr in ('ACHR','ACRE','REFR'):
                         otherItems = set(getattr(other,attr))
                         selfItems  = set(getattr(self,attr))
@@ -1637,7 +1648,25 @@ class ObBaseRecord(object):
                     for i in range(len(selfItems)):
                         if not otherItems[i].IsIdenticalTo(selfItems[i]):
                             return False
-            return identical
+                elif self._Type in ('ACRE','ACHR','REFR'):
+                    # Check to see that these are attached to the same CELL.
+                    # Additionally, make sure that CELL is attached at the same
+                    # location in the game (it may have moved worldspaces, etc)
+                    if self.Parent:
+                        if other.Parent:
+                            if self.Parent.fid != other.Parent.fid:
+                                return False
+                        else:
+                            return False
+                        if (self.Parent.posX,self.Parent.posY) != (other.Parent.posX,other.Parent.posY):
+                            return False
+                        if self.Parent.Parent:
+                            if other.Parent.Parent:
+                                if self.Parent.Parent.fid != other.Parent.Parent.fid:
+                                    return False
+                            else:
+                                return False
+                return True
         return False
 
     def __ne__(self, other):
