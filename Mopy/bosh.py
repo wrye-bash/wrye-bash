@@ -6163,7 +6163,7 @@ class SaveFile:
         log('  %d\t\t     Lost Refs (Fid == 0)' % (lostRefs))
         for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
             if irefed or changed:
-                log('  %d\t%d\t%-3d   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
+                log('  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
         #--Lost Changes
         if lostChanges:
             log.setHeader(_('LostChanges'))
@@ -25159,7 +25159,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Magic: Script Effect Silencer"),
-            _('Script Effect willl be silenced and have no graphics..'),
+            _('Script Effect willl be silenced and have no graphics.'),
             'SilentScriptEffect',
             (_('0'),    0),
             )
@@ -25220,7 +25220,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,True,_("Magic: Script Effect Silencer"),
-             _('Script Effect will be silenced and have no graphics..'),
+             _('Script Effect will be silenced and have no graphics.'),
             'SilentScriptEffect',
             (_('0'),    0),
             )

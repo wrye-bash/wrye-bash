@@ -425,7 +425,7 @@
   <p class="list-2">&bull;&nbsp;  After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.</p>
 <p class="list-1">&bull;&nbsp;  <b>Alternate Python Installations</b></p>
   <p class="list-2">&bull;&nbsp;  Alternate python installations <i>might</i> work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.11.0, etc. are the preferred versions.</p>
-  <p class="list-2">&bull;&nbsp;  Python 2.5x-2.7x should work fine howevever a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.</p>
+  <p class="list-2">&bull;&nbsp;  Python 2.5x-2.7x should work fine however a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='Help'>Help!</a></h2>
 <p class="list-1">&bull;&nbsp;  <b>Startup Problems:</b> See <a href="#IfBashWontStart">If Bash Won't Start</a>.</p>
@@ -466,11 +466,13 @@
     <p class="empty">&nbsp;</p>
     <p class="empty">&nbsp;</p>
 <h2><a id='GlobalBashKeyboardShortcuts'>Global Bash Keyboard Shortcuts</a></h2>
-<p>These keyboard commands work pretty much everywhere (as in if you want it will almost cetainly work) in Bash.
+<p>These keyboard commands work pretty much everywhere (as in if you want it it will almost certainly work) in Bash.
 </p>
     <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp; <b>Listing:</b></p>
-  <p class="list-2">&bull;&nbsp;  <code> ctrl-numpad plus (+)</code>: fits column sizes to fit what is displayeable.</p>
+  <p class="list-2">&bull;&nbsp;  <code> ctrl-numpad plus (+)</code>: fits column sizes to fit what is displayable.</p>
+  <p class="list-2">&bull;&nbsp;  <code> ctrl-a</code>: selects all.</p>
+  <p class="list-2">&bull;&nbsp;  <code> shift-crtl-a</code>: deselects all.</p>
   <p class="empty">&nbsp;</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='LaunchButtons'>Launch Buttons</a></h2>
@@ -510,9 +512,9 @@
     <p class="list-3">&bull;&nbsp;  <a href="http://www.tesnexus.com/downloads/file.php?id=20516">BOSS</a> 16 <img src="images/Boss16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Boss32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> (Compatible with all released versions up to December 5th 2010) This one has some options!:</p>
       <p class="list-4">&bull;&nbsp;  If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.</p>
       <p class="list-4">&bull;&nbsp;  For BOSS version 1.6+ (released October 2010):</p>
-        <p class="list-5">&bull;&nbsp;  If the option in the main menu is selected/ <b>U</b> is pressed will tell BOSS to update the masterlist firstm</p>
-        <p class="list-5">&bull;&nbsp;  If <b>V</b> is pressed will disable version parsing,</p>
-        <p class="list-5">&bull;&nbsp;  if <b>R</b> is pressed will do a level 1 revert (to the state just prior to the last sort),</p>
+        <p class="list-5">&bull;&nbsp;  If the option in the main menu is selected/ <b>U</b> is pressed will tell BOSS to update the masterlist first.</p>
+        <p class="list-5">&bull;&nbsp;  If <b>V</b> is pressed will disable version parsing.</p>
+        <p class="list-5">&bull;&nbsp;  if <b>R</b> is pressed will do a level 1 revert (to the state just prior to the last sort).</p>
         <p class="list-5">&bull;&nbsp;  if <b>Shift-R</b> is pressed will do a level 2 revert (to the state just prior to the 2nd last sort).</p>
         <p class="empty">&nbsp;</p>
   <p class="list-2">&bull;&nbsp;  <b>Model Tools</b></p>
@@ -697,7 +699,7 @@
 <p>Bain recognizes three package structures:
 </p>
 <p class="list-1">&bull;&nbsp;  <b>Simple</b></p>
-  <p class="list-2">&bull;&nbsp;  If the package has esps, esms or bsa's at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejon, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.</p>
+  <p class="list-2">&bull;&nbsp;  If the package has esps, esms or bsas at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejón, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.</p>
 <p class="list-1">&bull;&nbsp;  <b>Complex</b></p>
   <p class="list-2">&bull;&nbsp;  If a package is not simple, but has subdirectories which appear simple (have esps/esms/bsas and/or have standard sub-directories), then it will be categorized as complex.</p>
   <p class="list-2">&bull;&nbsp;  In this case, each top level subdirectory (that appears simple), will be treated as a sub-package, and you'll be able to activate or deactivate it as desired before installing.</p>
@@ -714,7 +716,7 @@
   <p class="list-2">&bull;&nbsp;  This is for modders who want to keep files related to the project in the project directory, but not have it be considered for syncing with is useful for project directories and files for modders</p>
   <p class="list-2">&bull;&nbsp;  It's also useful for including material in a package archive that is there for background info, but should not be installed. E.g. screenshots, copies of resource readmes, etc.</p>
 <p class="list-1">&bull;&nbsp;  <b>Directory Skipping</b></p>
-<p class="list-1">&nbsp;&nbsp;  Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.</p>
+<p class="list-1">&nbsp;&nbsp;  Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejón' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.</p>
 <p class="list-1">&bull;&nbsp;  <b>Extension Skipping</b></p>
 <p class="list-1">&nbsp;&nbsp;  Bain will skip files with certain extensions - mostly executables (exe, dll/dlx (unless in the OBSE/plugins directory and then only with a large warning)) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Other Skips</b></p>
@@ -809,7 +811,7 @@
   <p class="list-2">&bull;&nbsp;  Simply copy all of the *-BCF.7z and *-BCF-*.7z files that you downloaded into your BCF directory.</p>
 <p class="list-1">&bull;&nbsp;  <b>Applying a BCF</b></p>
   <p class="list-2">&bull;&nbsp;  Bash will only display the BCFs that are currently valid. Valid BCFs are those that end in -BCF.7z or -BCF-*.7z, and have all of their required source archives visible on the Installers Tab.</p>
-  <p class="list-2">&bull;&nbsp;  If a source archive has any associated BCFs, you will see them listed when you right-click an archive package and open the "Conversions" sub menu.  If the "Apply" menu is grayed out, then there are no valid BCFs for that particular archive.</p>
+  <p class="list-2">&bull;&nbsp;  If a source archive has any associated BCFs, you will see them listed when you right-click an archive package and open the "Conversions" sub menu.  If the "Apply" menu is greyed out, then there are no valid BCFs for that particular archive.</p>
   <p class="list-2">&bull;&nbsp;  An asterisk is added to the end of the BCF name for every source archive it requires that you don't have currently selected (but do have installed).</p>
   <p class="list-2">&bull;&nbsp;  Select a BCF from the "Apply" menu.</p>
   <p class="list-2">&bull;&nbsp;  Choose a name for the converted archive, or use the default name suggested.</p>
@@ -822,7 +824,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Wizard Pages</b></p>
   <p class="list-2">&bull;&nbsp;  <b><a href="images/Versions.png">Version Warning Page</a>:</b> Shown when you system doesn't meet the requirements for Oblivion, OBSE, or OBGE for a package.</p>
   <p class="list-2">&bull;&nbsp;  <b><a href="images/SelectOne.jpg">Single Selection Page</a> | <a href="images/SelectMany.jpg">Multi Selection Page</a>:</b> Allows you to select a single or many options given a prompt.  Images and detailed descriptions can be included for each option.</p>
-  <p class="list-2">&bull;&nbsp;  <b><a href="images/Cancel.png">Cancel Page</a>:</b> Shown if the wizard canceled installation.</p>
+  <p class="list-2">&bull;&nbsp;  <b><a href="images/Cancel.png">Cancel Page</a>:</b> Shown if the wizard cancelled installation.</p>
   <p class="list-2">&bull;&nbsp;  <b><a href="images/Finish.png">Finish Page</a>:</b> Shown at the end of the wizard.  This will give a list of the sub-packages and esps/esms that will be selected, and INI tweaks that will be applied once the wizard is completed.</p>
 <p class="list-1">&bull;&nbsp;  <b>Wizard Options</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Auto-Anneal/Install Wizard:</b> If this is selected, then after a wizard is completed, the package will also be installed/annealed as appropriate.</p>
@@ -837,7 +839,7 @@
   <p class="list-2">&bull;&nbsp;  <b>Duplicate:</b> Duplicate package.</p>
   <p class="list-2">&bull;&nbsp;  <b>Delete:</b> Delete the package(s).</p>
   <p class="list-2">&bull;&nbsp;  <b>Open at submenu:</b></p>
-    <p class="list-3">&bull;&nbsp;  <b>Google:</b> Attempts to extract a useable name from the package name and launch a google search for that name.</p>
+    <p class="list-3">&bull;&nbsp;  <b>Google:</b> Attempts to extract a useable name from the package name and launch a Google search for that name.</p>
     <p class="list-3">&bull;&nbsp;  <b>TesNexus:</b> Attempts to open the TesNexus page for the selected package.</p>
     <p class="list-3">&bull;&nbsp;  <b>TesAlliance:</b> Attempts to open the TesAlliance page for the selected package.</p>
     <p class="list-3">&bull;&nbsp;  <b>Planet Elderscrolls:</b> Attempts to open the Planet Elderscrolls page for the selected package.</p>
@@ -851,7 +853,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Configuration</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Has Extra Directories:</b> Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory &#150; and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).</p>
   <p class="list-2">&bull;&nbsp;  <b>Override Skips:</b> If this is checked, Bain will not skip over files that would normally be skipped due to the <b>Skip XX</b> options.</p>
-  <p class="list-2">&bull;&nbsp;  <b>Don't Refresh:</b> When refreshing Projects, this package wont get refreshed.  The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Don't Refresh:</b> When refreshing Projects, this package won't get refreshed.  The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.</p>
   <p class="list-2">&bull;&nbsp;  <b>Skip Voices:</b> If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension (<a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4269">PES</a>, <a href="http://www.tesnexus.com/downloads/file.php?id=16622">TesNexus</a>) to prevent dialog subtitles from fading too rapidly.</p>
 <p class="list-1">&bull;&nbsp;  <b>Wizard Install Options:</b> Only Available if Wizard Install system is active (see the wizards <a href="wizards.html">documentation</a> for more info on the wizard install system)</p>
   <p class="list-2">&bull;&nbsp;  <b>Wizard:</b> Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).</p>
@@ -908,7 +910,7 @@
   <p class="list-2">&bull;&nbsp;  <b>Show Lower Conflicts:</b> If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.</p>
   <p class="list-2">&bull;&nbsp;  <b>Wizard Icon Overlay:</b> If checked, installers with a Wizard will have a magic wand image displayed over their icons.</p>
 <p class="list-1">&bull;&nbsp;  <b>Skips</b></p>
-  <p class="list-2">&bull;&nbsp;  <b>Skip OBSE Plugins:</b> If checked, then files in teh Data\OBSE directory will be skipped.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Skip OBSE Plugins:</b> If checked, then files in the Data\OBSE directory will be skipped.</p>
   <p class="list-2">&bull;&nbsp;  <b>Skip Screenshots:</b> If checked, then files from a Data\Screenshots directory will be skipped.</p>
   <p class="list-2">&bull;&nbsp;  <b>Skip Images:</b> If checked, image files will be skipped.</p>
   <p class="list-2">&bull;&nbsp;  <b>Skip Docs:</b> If checked, document files will be skipped vice being swept to the Docs\ directory.</p>
@@ -983,7 +985,7 @@
   <p class="list-2">&bull;&nbsp;  Defining an exclusion group is easy &#150; just change the name of the mod to include a comma. The part of the name before the comma is the exclusion group.</p>
   <p class="list-2">&bull;&nbsp;  Example:</p>
     <p class="list-3">&bull;&nbsp;  The "Drop Lit Torches in Combat" mod come in several variants with different messages and levels of brightness: plain, B (Brighter), NM (No messages) and BNM (Brighter, No Messages).</p>
-    <p class="list-3">&bull;&nbsp;  Rename these to: "Combat Torch, A.esp" (plain), "Combat Torch B,esp", "Combat Torch, NM.esp" and "Combat Torch, BNM.esp"</p>
+    <p class="list-3">&bull;&nbsp;  Rename these to: "Combat Torch, A.esp" (plain), "Combat Torch, B.esp", "Combat Torch, NM.esp" and "Combat Torch, BNM.esp"</p>
   <p class="list-2">&bull;&nbsp;  Other uses:</p>
     <p class="list-3">&bull;&nbsp;  Different versions of the same mod: "Yadda, v01.esp", "Yadda, v02.esp"</p>
     <p class="list-3">&bull;&nbsp;  Different mods of same type: "Overhaul, Oscuro.esp", "Overhaul, Adventurers.esp".</p>
@@ -1675,7 +1677,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a id='ImportInventory'>Import Inventory</a></h3>
 <p class="list-1">&bull;&nbsp;  This option will merge changes to npc, container and creature inventories from the selected mods. Only mods marked with the <code>Invent</code> or <code>InventOnly</code> <a href="#BashTags">tag</a> will appear in the list.</p>
 <p class="list-1">&bull;&nbsp;  <b>Invent vs. InventOnly</b></p>
-  <p class="list-2">&bull;&nbsp;  "InventOnly" is a hack &#150; i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack &#150; where it would still be hack, but at least a more clearly labeled hack.</p>
+  <p class="list-2">&bull;&nbsp;  "InventOnly" is a hack &#150; i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack &#150; where it would still be hack, but at least a more clearly labelled hack.</p>
   <p class="list-2">&bull;&nbsp;  InventOnly basically does Invent, but also does</p>
   <p class="list-2">&bull;&nbsp;  Invent</p>
   <p class="list-2">&bull;&nbsp;  Sometimes it's desirable to change only the inventory of an actor or container. This is desirable when modifying the inventory of creatures that have been changed by overhauls &#150; especially when you can't rely on the overhauls being present.</p>
@@ -1700,7 +1702,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class="empty">&nbsp;</p>
 <h3><a id='ImportNames'>Import Names</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview</b></p>
-<p class="list-1">&nbsp;&nbsp;  This component is intended to merge changes from a renamer mod (e.g., <a href="http://www.wryemusings.com/Rational%20Names%202.html">Rational Names</a>) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is <a href="http://www.wryemusings.com/Rational%20Names%202.html">Rational Names</a>.</p>
+<p class="list-1">&nbsp;&nbsp;  This component is intended to merge changes from a renamer mod (e.g., <a href="http://www.Wryemusings.com/Rational%20Names%202.html">Rational Names</a>) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is <a href="http://www.Wryemusings.com/Rational%20Names%202.html">Rational Names</a>.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configuration:</b></p>
   <p class="list-2">&bull;&nbsp;  Source mods are automatically recognized if they have a <code>Names</code> <a href="#BashTags">tag</a> in the mod description.</p>
   <p class="list-2">&bull;&nbsp;  Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Names.csv</code>. Note that the <a href="#ExportImportNames">Export/Import Names</a> command will export files in this format.</p>
@@ -1711,7 +1713,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p>;  * This is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123">Flak's Complete Names Project</a>. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
 </p>
 <p class="list-1">&bull;&nbsp;  <b>_OOO Potion Names</b></p>
-  <p class="list-2">&bull;&nbsp;  A names patcher file that renames the alcholic beverages back to vanilla names for those that don't like OOO's method of renaming them.</p>
+  <p class="list-2">&bull;&nbsp;  A names patcher file that renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.</p>
 <p class="list-1">&bull;&nbsp;  <b>Random NPC Names/Random NPC Alternate Names</b></p>
   <p class="list-2">&bull;&nbsp;  A names patcher file that names/renames NPCs etc. in specified mods.</p>
   <p class="list-2">&bull;&nbsp;  Supports/Authors: Crowded Roads Revamped ~ Spotty42, Crowded Roads Revisited ~ Smooth, Tamriel Travellers ~ Gratis_monsta, Crowded Cities 15/30 ~ Gratis_monsta, PT_RoamingNPCs ~ Gratis_monsta. (Will work for any combination of one or more of those - does not require them all).</p>
@@ -1804,7 +1806,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>As Intended: Imps</b></p>
   <p class="list-2">&bull;&nbsp;  Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.</p>
 <p class="list-1">&bull;&nbsp;  <b>Bigger Nords and Orcs</b></p>
-  <p class="list-2">&bull;&nbsp;  Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly. Three choices availabel - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.</p>
+  <p class="list-2">&bull;&nbsp;  Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.</p>
 <p class="list-1">&bull;&nbsp;  <b>Irresponsible Creatures</b></p>
   <p class="list-2">&bull;&nbsp;  Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.</p>
 <p class="list-1">&bull;&nbsp;  <b>Mayu's Animation Overhaul Skeleton Tweaker</b></p>
@@ -1853,6 +1855,10 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class="list-3">&bull;&nbsp;  <code>=== Text</code>: Generates a level 3 header.</p>
     <p class="list-3">&bull;&nbsp;  Double underscores generates emphasized (strong color) text.</p>
     <p class="list-3">&bull;&nbsp;  Double asterisks, double tildes have same effect as double underscores.</p>
+<p class="list-1">&bull;&nbsp;  <b>Default Icons</b></p>
+  <p class="list-2">&bull;&nbsp;  Sets a default icon for any records that don't have any icon assigned"</p>
+<p class="list-1">&bull;&nbsp;  <b>Faction crime Gold Multiplier Fix</b></p>
+  <p class="list-2">&bull;&nbsp;  Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0. (The effect of this is not 100% known but it *might* avoid bugs &#150; at the least it'll make Tes4Edit happy.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Harvest Chance</b></p>
   <p class="list-2">&bull;&nbsp;  Sets the harvest chance of all flora to the desired chance.</p>
 <p class="list-1">&bull;&nbsp;  <b>No Wind</b></p>
@@ -1870,12 +1876,22 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class="list-2">&bull;&nbsp;  Like Reweigh: Potions, but caps the weight of staffs.</p>
 <p class="list-1">&bull;&nbsp;  <b>No Light Flicker</b></p>
   <p class="list-2">&bull;&nbsp;  Turns off flickering effects for lights. May help on machines with low end graphic cards.</p>
+<p class="list-1">&bull;&nbsp;  <b>No Light Fade Value Fix</b></p>
+  <p class="list-2">&bull;&nbsp;  Sets the fade values on all lights to a default of 1.0 if not already set. (The effect of this is not 100% known but it *might* avoid bugs &#150; at the least it'll make Tes4Edit happy.)</p>
+<p class="list-1">&bull;&nbsp;  <b>Number of uses for pre-enchanted weapons and staffs</b></p>
+  <p class="list-2">&bull;&nbsp;  The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'</p>
 <p class="list-1">&bull;&nbsp;  <b>Nvidia Fog Fix</b></p>
   <p class="list-2">&bull;&nbsp;  Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen.</p>
   <p class="list-2">&bull;&nbsp;  This feature is based on Quarn's <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859">Nvidia Black Screen Fix</a>.</p>
 <p class="list-1">&bull;&nbsp;  <b>Right Hand Rings</b></p>
   <p class="list-2">&bull;&nbsp;  Makes rings behave more consistently by making all rings prefer to be on the right hand.</p>
   <p class="list-2">&bull;&nbsp;  With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to <i><b>make one ring permanently equipped</b></i> &#150; just equip it to the left hand and it will stay on until you specifically unequip it.</p>
+<p class="list-1">&bull;&nbsp;  <b>Magic: Script Effect Silencer</b></p>
+  <p class="list-2">&bull;&nbsp;  Script Effect will be silenced and have no graphics.</p>
+<p class="list-1">&bull;&nbsp;  <b>Set Sound Attenuation Levels:</b></p>
+  <p class="list-2">&bull;&nbsp;  The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. (Lower attenuation = higher volume.) This one only affects Nirnroots.'</p>
+<p class="list-1">&bull;&nbsp;  <b>Set Sound Attenuation Levels: Nirnroots Only</b></p>
+  <p class="list-2">&bull;&nbsp;  The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. (Lower attenuation = higher volume.) This one only affects Nirnroots.'</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='TweakClothes'>Tweak Clothes</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150; however your tastes may vary.</p>
@@ -1908,6 +1924,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Actor Strength Encumbrance Multiplier:</b> Actor strength X this multiplier = actor encumbrance capacity.</p>
 <p class="list-1">&bull;&nbsp;  <b>AI: Max Active Actors:</b> The maximum number of actors for AI to be processing at once - must be higher than <b>Combat: Max Actors:</b>.</p>
 <p class="list-1">&bull;&nbsp;  <b>AI: Max Dead Actors:</b> The maximum number of dead actors allowed before Oblivion begins to remove them.</p>
+<p class="list-1">&bull;&nbsp;  <b>AI: Max Smile Distance:</b> Maximum distance for NPCs to start smiling.</p>
 <p class="list-1">&bull;&nbsp;  <b>Arrow: Litter Count/Time:</b> Shot arrows will be automatically removed from the world after a certain period (Arrow Litter Time) or if their number exceeds the Arrow Litter Count.</p>
 <p class="list-1">&bull;&nbsp;  <b>Arrow: Recovery from Actor:</b> Your chance of recovering an arrow shot into an actor (including arrows shot into player).</p>
 <p class="list-1">&bull;&nbsp;  <b>Arrow: Speed:</b> Speed at which a full power arrow travels.</p>
@@ -1919,8 +1936,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Camera: PC Death Time:</b> This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Cell Respawn Time:</b> Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.</p>
 <p class="list-1">&bull;&nbsp;  <b>Combat: Alchemy:</b> By default, you cannot craft alchemy items in combat. Disallowing it encourages you to be ready for battle ahead of time.</p>
-<p class="list-1">&bull;&nbsp;  <b>Combat: Max Actors:</b> the maximum number of actors that the engine will process in combat.</p>
-<p class="list-1">&bull;&nbsp;  <b>Combat: Max Armor Rating:</b> the maximum armor rating that you can get. Default: 85</p>
+<p class="list-1">&bull;&nbsp;  <b>Combat: Max Actors:</b> The maximum number of actors that the engine will process in combat.</p>
+<p class="list-1">&bull;&nbsp;  <b>Combat: Max Ally Hits:</b> The maximum number of hits on an ally allowed in combat before the ally will attack the hitting character.</p>
+<p class="list-1">&bull;&nbsp;  <b>Combat: Max Armor Rating:</b> The maximum armor rating that you can get. Default: 85</p>
 <p class="list-1">&bull;&nbsp;  <b>Combat: Recharge Weapons:</b> By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.</p>
 <p class="list-1">&bull;&nbsp;  <b>Combat: Repair:</b> By default, you cannot repair items in combat. Disallowing it encourages you to be ready for battle ahead of time.</p>
 <p class="list-1">&bull;&nbsp;  <b>Companions: Max Number:</b> Sets the maximum number of companions that will follow the player.</p>
@@ -1932,13 +1950,15 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Recharge:</b> The cost multiplier factor for recharging.</p>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Repair:</b> The cost multiplier factor for repairing.</p>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Spellmaking:</b> The cost multiplier factor for spellmaking.</p>
-<p class="list-1">&bull;&nbsp;  <b>Crime Alarm Distance:</b> the distance from the player that NPCs will be alerted to crimes</p>
-<p class="list-1">&bull;&nbsp;  <b>Crime: X Fine:</b> the fine for X crime.</p>
+<p class="list-1">&bull;&nbsp;  <b>Crime Alarm Distance:</b> The distance from the player that NPCs will be alerted to crimes</p>
+<p class="list-1">&bull;&nbsp;  <b>Crime: X Fine:</b> The fine for X crime.</p>
 <p class="list-1">&bull;&nbsp;  <b>Essential NPC Unconsciousness:</b> Time for which an essential NPC stays unconscious after being knocked out.</p>
 <p class="list-1">&bull;&nbsp;  <b>Fatigue from Running/Encumbrance:</b> Fatigue cost multiplier for running or encumbrance</p>
 <p class="list-1">&bull;&nbsp;  <b>Greeting Distance:</b> Distance at which NPCs will great the player.</p>
 <p class="list-1">&bull;&nbsp;  <b>Horse Turning Speed:</b> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.</p>
+<p class="list-1">&bull;&nbsp;  <b>Inventory Quantity Prompt:</b> Number of items in a stack at which point Oblivion prompts for a quantity.</p>
 <p class="list-1">&bull;&nbsp;  <b>Jump Higher:</b> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)</p>
+<p class="list-1">&bull;&nbsp;  <b>Leveled Item Max level difference:</b> Maximum difference to player level for leveled items.</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Bolt Speed:</b> Speed at which at which magic bolts (projectiles) travel.</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Chameleon Refraction:</b> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Max NPC Summons:</b> Sets the number of summons a NPC may have active at one time.</p>
@@ -1955,14 +1975,14 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="empty">&nbsp;</p>
 <h3><a id='CoblCatalogs'>Cobl Catalogs</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview</b></p>
-<p class="list-1">&nbsp;&nbsp;  This patcher component will update the alchemical catalogs found in the <a href="http://www.wryemusings.com/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless <b>Cobl Main.esm</b> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://www.wryemusings.com/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.</p>
+<p class="list-1">&nbsp;&nbsp;  This patcher component will update the alchemical catalogs found in the <a href="http://www.Wryemusings.com/Cobl.html">Common Oblivion</a>. No configuration is required and the catalogs will not be produced unless <b>Cobl Main.esm</b> is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See <a href="http://www.Wryemusings.com/Cobl.html">COBL docs</a> for more information on how to acquire the catalogs.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='CoblExhaustion'>Cobl Exhaustion</a></h3>
 <p class="list-1">&bull;&nbsp;  Requires Cobl 1.66 or higher.</p>
 <p class="list-1">&bull;&nbsp;  Converts powers into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.</p>
   <p class="list-2">&bull;&nbsp;  Assorted_Exhaust.csv: This patcher extends coverage to the Orrery and Shivering Isles powers.</p>
   <p class="list-2">&bull;&nbsp;  Kmacg94_Exhaust.csv: This patcher (by Kmagc94) extends coverage to several more mods (bgBalancingEVCore, Consequences, Kenhanimal's Awesome Vampire Mod, Oblivion War Cry EV, Oscuro's Oblivion Overhaul, StartX Vanilla Vampires Revised, Vampire Hunter Tools, Vows and Covenants).</p>
-<p class="list-1">&bull;&nbsp;  Cobl's power exhaustion feature is intended as a replacement for Wrye's <a href="http://www.wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod.</p>
+<p class="list-1">&bull;&nbsp;  Cobl's power exhaustion feature is intended as a replacement for Wrye's <a href="http://www.Wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='ContentChecker'>Content Checker</a></h3>
 <p class="list-1">&bull;&nbsp;  When activated, this will check the inventory contents of containers, creatures and NPCs, and the entries of leveled lists to make sure that their entries are of valid types. E.g. it will try to ensure that leveled spell lists only contain spells and other leveled lists.</p>
@@ -1999,7 +2019,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="empty">&nbsp;</p>
 <h3><a id='PowerExhaustion'>Power Exhaustion</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b></p>
-<p class="list-1">&bull;&nbsp;  Wrye's deprecated <a href="http://www.wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.</p>
+<p class="list-1">&bull;&nbsp;  Wrye's deprecated <a href="http://www.Wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.</p>
 <p class="list-1">&bull;&nbsp;  Replaced by Cobl Exhaustion</p>
 <p class="empty">&nbsp;</p>
 <p><a id="ImportRaceInfo"></a>
@@ -2028,7 +2048,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class="list-3">&bull;&nbsp;  Voice-M: If specifying male voice.</p>
     <p class="list-3">&nbsp;&nbsp;  E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.</p>
 <p class="list-1">&bull;&nbsp;  <b>Merge Procedure</b></p>
-  <p class="list-2">&bull;&nbsp;  Body: All body textures/mesh paths that aren't imported by a specific tag (ie R.Mouth)will be fairly inteligently merged by the Body-F/M tag. Does a mainly intelligent merge of the attributes. Note that "body" includes: body textures, <i><b>Changed in Wrye Bash 292:</b></i> height and weight are imported with the Body-Size-F/M tags.</p>
+  <p class="list-2">&bull;&nbsp;  Body: All body textures/mesh paths that aren't imported by a specific tag (ie R.Mouth)will be fairly intelligently merged by the Body-F/M tag. Does a mainly intelligent merge of the attributes. Note that "body" includes: body textures, <i><b>Changed in Wrye Bash 292:</b></i> height and weight are imported with the Body-Size-F/M tags.</p>
   <p class="list-2">&bull;&nbsp;  Hair: All hairs will be merged into final record.</p>
   <p class="list-2">&bull;&nbsp;  Eyes: All eyes will first be merged, then filtered by eye mesh to avoid googly eyes (see below).</p>
   <p class="list-2">&bull;&nbsp;  Relations: All relations will be merged into final record. Procedure is pretty much the same as for <a href="#ImportRelations">importing faction relations</a>.</p>
@@ -2587,7 +2607,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  Combat: Max Ally Hits tweak added.</p>
   <p class="list-2">&bull;&nbsp;  Import Names:</p>
     <p class="list-3">&bull;&nbsp;  Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)</p>
-    <p class="list-3">&bull;&nbsp;  Added OOO Potion Names.csv - reverts OOO's alchoholic beverage naming to vanilla. (Contributed by Gratis_monsta)</p>
+    <p class="list-3">&bull;&nbsp;  Added OOO Potion Names.csv - reverts OOO's alcoholic beverage naming to vanilla. (Contributed by Gratis_monsta)</p>
     <p class="list-3">&bull;&nbsp;  Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)</p>
   <p class="list-2">&bull;&nbsp;  Mark mergeable detection of other mods requiring current mod fixed.</p>
   <p class="list-2">&bull;&nbsp;  Tweak Assorted patcher:</p>
@@ -2603,12 +2623,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Wizards:</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec"><span style="color:purple;">Exec</span></a>: Execute wizard lines stored in a string.  Usefull for dynamically creating menus.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec"><span style="color:purple;">Exec</span></a>: Execute wizard lines stored in a string.  Useful for dynamically creating menus.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#endswith"><span style="color:purple;">endswith</span></a>: Test what a string ends with.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#startswith"><span style="color:purple;">startswith</span></a>: Test what a string starts with.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#lower"><span style="color:purple;">lower</span></a>: Convert a string to lower case.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find"><span style="color:purple;">find</span></a>: Find the first occurrance of a substring within a string.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind"><span style="color:purple;">rfind</span></a>: Find the last occurrance of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find"><span style="color:purple;">find</span></a>: Find the first occurrence of a substring within a string.</p>
+    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind"><span style="color:purple;">rfind</span></a>: Find the last occurrence of a substring within a string.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFilename"><span style="color:purple;">GetFilename</span></a>: For getting a filename from a path string.</p>
     <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFolder"><span style="color:purple;">GetFolder</span></a>: For getting a folder name from a path string.</p>
     <p class="list-3">&bull;&nbsp;  Improved <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> loops, for iterating over files in an installer:</p>
@@ -2618,7 +2638,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  The <a href="wizards.html#DotOperator">Dot Operator</a></p>
     <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions"><span style="color:blue;">RequireVersions</span></a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
     <p class="list-3">&bull;&nbsp;  A new icon will indicate that an installer contains a wizard.</p>
-    <p class="list-3">&bull;&nbsp;  The Wizard window is now resizeable, with automatic scaling images.</p>
+    <p class="list-3">&bull;&nbsp;  The Wizard window is now resizable, with automatic scaling images.</p>
     <p class="list-3">&bull;&nbsp;  Wizards now have a back button.  Be sure to note if there are any errors with this and report them.</p>
     <p class="list-3">&bull;&nbsp;  Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.</p>
     <p class="list-3">&bull;&nbsp;  To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:</p>
@@ -2636,15 +2656,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.</p>
   <p class="list-2">&bull;&nbsp;  new ini option <b>bClearRO</b> to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations</p>
   <p class="list-2">&bull;&nbsp;  new ini option <b>sOblivionTexturesBSAName</b> incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.</p>
+<p class="list-1">&bull;&nbsp;  Saves Tab:</p>
+  <p class="list-2">&bull;&nbsp;  Yes to All option for overwrite on Move/Copy Saves</p>
+  <p class="list-2">&bull;&nbsp;  'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).</p>
+  <p class="list-2">&bull;&nbsp;  Statistics report now properly displays the Hexadecimal Mod Index instead of decimal.</p>
 <p class="list-1">&bull;&nbsp;  General:</p>
   <p class="list-2">&bull;&nbsp;  Fixed <b>s7zExtraCompressionArguments</b> to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).</p>
   <p class="list-2">&bull;&nbsp;  Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.</p>
-  <p class="list-2">&bull;&nbsp;  Import Scripts Cbash and non-CBash modes fixed to maintain Python 2.5 compatibility.</p>
+  <p class="list-2">&bull;&nbsp;  Import Scripts CBash and non-CBash modes fixed to maintain Python 2.5 compatibility.</p>
   <p class="list-2">&bull;&nbsp;  Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.</p>
-  <p class="list-2">&bull;&nbsp;  Yes to All option for overwrite on Move/Copy Saves</p>
   <p class="list-2">&bull;&nbsp;  updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.</p>
     <p class="list-3">&bull;&nbsp;  updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.</p>
-    <p class="list-3">&bull;&nbsp;  updated html snippets in wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.</p>
+    <p class="list-3">&bull;&nbsp;  updated html snippets in Wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.</p>
   <p class="list-2">&bull;&nbsp;  Improved INI Edits tab UI:</p>
     <p class="list-3">&bull;&nbsp;  Column width is remembered now.</p>
     <p class="list-3">&bull;&nbsp;  Shows the contents of an INI tweak, including status of each line in it compared to the master INI.</p>
@@ -2662,14 +2685,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  These features may be removed in future versions.</p>
   <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini</p>
   <p class="list-2">&bull;&nbsp;  In cases where the <b>bUseMyGameDirectory</b> is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.</p>
-  <p class="list-2">&bull;&nbsp;  'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).</p>
   <p class="list-2">&bull;&nbsp;  Unicode improvements:</p>
     <p class="list-3">&bull;&nbsp;  no more errors on viewing/saving modfiles with tejón and other accented author names.</p>
   <p class="list-2">&bull;&nbsp;  Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).</p>
   <p class="list-2">&bull;&nbsp;  Selectable jpeg quality in the Screenshots Tab</p>
   <p class="list-2">&bull;&nbsp;  Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.</p>
-  <p class="list-2">&bull;&nbsp;  Advanced ini options for compatability with mTES4 Manager: <b>sInstallersData</b> and <b>sBashModData</b> to specify where <i><b>Installers.dat</b></i>, <i><b>Converters.dat</b></i>, etc are stored by Wrye Bash.</p>
+  <p class="list-2">&bull;&nbsp;  Advanced ini options for compatibility with mTES4 Manager: <b>sInstallersData</b> and <b>sBashModData</b> to specify where <i><b>Installers.dat</b></i>, <i><b>Converters.dat</b></i>, etc are stored by Wrye Bash.</p>
   <p class="list-2">&bull;&nbsp;  Added an option to the <a href="#ModChecker">Mod Checker</a> to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.</p>
+  <p class="list-2">&bull;&nbsp;  Readme updated and thoroughly spellchecked (in American English).</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_2912212011GaticusGratis_monstaLojackmyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  Bashed Patch:</p>
@@ -2709,7 +2732,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  new 'Open at Google' menu item</p>
   <p class="list-2">&bull;&nbsp;  all Open at * menu items moved into 'Open At' submenu.</p>
   <p class="list-2">&bull;&nbsp;  added .001 as a valid read extension - as in BAIN now supports multipart archives.</p>
-  <p class="list-2">&bull;&nbsp;  slow double click renames packages (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second aparts).</p>
+  <p class="list-2">&bull;&nbsp;  slow double click renames packages (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second apart).</p>
   <p class="list-2">&bull;&nbsp;  fix for an couple at exit crash bug.</p>
   <p class="list-2">&bull;&nbsp;  Installers panel now allows dropping files onto it, giving the option of copying or moving the files.</p>
   <p class="list-2">&bull;&nbsp;  Esp/ms can now be renamed via the Esp/m Filter box (just right click them).</p>
@@ -2738,7 +2761,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class="list-1">&bull;&nbsp;  General:</p>
   <p class="list-2">&bull;&nbsp;  fix for launcher code which prevented launching in some cases (contributed by myk002)</p>
   <p class="list-2">&bull;&nbsp;  fix for move/copy saves so that Default is not selectable if already in Default profile.</p>
-  <p class="list-2">&bull;&nbsp;  fix for launcher code to avoid a rare instance in which is was possible for multiple instances to be launched (contributed by Gaticus)</p>
+  <p class="list-2">&bull;&nbsp;  fix for launcher code to avoid a rare instance in which it was possible for multiple instances to be launched (contributed by Gaticus)</p>
   <p class="list-2">&bull;&nbsp;  Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.</p>
   <p class="list-2">&bull;&nbsp;  Backup/Restore settings options added (contributed by Gaticus)</p>
   <p class="list-2">&bull;&nbsp;  Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.</p>
@@ -2761,7 +2784,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  <a href="#ExportImportIngredients">Export/Import Ingredients</a> added.</p>
   <p class="list-2">&bull;&nbsp;  Status bar text when mousing over improved to display all applicable messages instead of only one.</p>
   <p class="list-2">&bull;&nbsp;  Fixes/clarifications in wizards.txt/html.</p>
-  <p class="list-2">&bull;&nbsp;  Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dieing warns ands continues to launch.</p>
+  <p class="list-2">&bull;&nbsp;  Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dying warns and continues to launch.</p>
   <p class="list-2">&bull;&nbsp;  Experimental unicode support re-added as an option that is disabled by default.</p>
     <p class="list-3">&bull;&nbsp;  Allows Bash and BAIN to work with extended character sets.</p>
     <p class="list-3">&bull;&nbsp;  Requires the unicode version of wxPython to be installed.</p>
@@ -2818,7 +2841,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  A few readme updates</p>
   <p class="list-2">&bull;&nbsp;  Export Script text now adds comment signifiers (;) to the start of the bash added lines.</p>
 <p class="list-1">&bull;&nbsp;  New Export/Import function: Map Markers (CBash active only)</p>
-<p class="list-1">&bull;&nbsp;  Make use of/follow the oblivion.ini option of bUseMyGamesDirectory to have basically totally seperate Bash &amp; Oblivion profiles (contributed by scooby)</p>
+<p class="list-1">&bull;&nbsp;  Make use of/follow the oblivion.ini option of bUseMyGamesDirectory to have basically totally separate Bash &amp; Oblivion profiles (contributed by scooby)</p>
 <p class="list-1">&bull;&nbsp;  Initial Nehrim Support (based on contributions by roxahris)</p>
 <p class="list-1">&bull;&nbsp;  New option to save settings/data at any time from the right click header menu.</p>
 <p class="list-1">&bull;&nbsp;  Taglist updated to BOSS rev 1605</p>
@@ -2911,13 +2934,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&nbsp;&nbsp;  EVGA Precision,FastStone Image Viewer,FreeMind,PaintShop Photo Pro,Photobie Design Studio,PhotoFiltre,PhotoScape,XnView</p>
   <p class="list-2">&bull;&nbsp;  <a href="#MarkMergeable">Mark Mergeable</a> can now change formerly mergeable mods to non-mergeable</p>
   <p class="list-2">&bull;&nbsp;  Mergeable mods that are a master of non-mergeable mods are no longer considered mergeable</p>
-  <p class="list-2">&bull;&nbsp;  Missing resource error on wryemonkey16.jpg has been fixed</p>
+  <p class="list-2">&bull;&nbsp;  Missing resource error on Wryemonkey16.jpg has been fixed</p>
   <p class="list-2">&bull;&nbsp;  Non-lower case file extensions used in Bash.ini no longer cause issues (reported by Vindicator)</p>
   <p class="list-2">&bull;&nbsp;  Several readme images updated (contributed by Metallicow)</p>
   <p class="list-2">&bull;&nbsp;  Various cell and reference flags corrected</p>
   <p class="list-2">&bull;&nbsp;  Various typos fixed, and more strings are translatable (as reported by DJ_Kovrik)</p>
   <p class="list-2">&bull;&nbsp;  Slight fix to recognize mods in the BOSS masterlist/taglist that the modname starts with a '!' or '['.</p>
-  <p class="list-2">&bull;&nbsp;  Version reading code modified to recognize ver/rev/r/v as well as version (and any combination of seperating whitespace and '.' and ':' (except for r/v).</p>
+  <p class="list-2">&bull;&nbsp;  Version reading code modified to recognize ver/rev/r/v as well as version (and any combination of separating whitespace and '.' and ':' (except for r/v).</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_28501062010LojackMetallicowPacificMorrowindWaruddar'>285 [01/06/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  Bashed Patch Changes:</p>
