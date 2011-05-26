@@ -25163,7 +25163,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,False,_("Magic: Script Effect Silencer"),
-            _('Script Effect willl be silenced and have no graphics.'),
+            _('Script Effect will be silenced and have no graphics.'),
             'SilentScriptEffect',
             (_('0'),    0),
             )

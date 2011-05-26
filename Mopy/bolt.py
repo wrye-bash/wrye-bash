@@ -216,35 +216,36 @@ class LString(object):
         else: return cmp(self._cs, other.lower())
 
 # Unicode Strings -------------------------------------------------------------
+# See Python's "aliases.py" for a list of possible encodings
+UnicodeEncodings = (
+    # Encodings we'll try for conversion to unicode
+    'UTF8',     # Standard encoding
+    'U16',      # Some files use UTF-16 though
+    'cp1252',   # Western Europe
+    'cp500',    # Western Europe
+    )
+NumEncodings = len(UnicodeEncodings)
+
 def Unicode(name):
     if isinstance(name,unicode): return name
-    try:
-        return unicode(name,'UTF8')
-    except UnicodeDecodeError:#, UnicodeEncodeError:
+    for i,encoding in enumerate(UnicodeEncodings):
         try:
-            # A fair number of file names require UTF16 instead...
-            return unicode(name,'U16')
-        except UnicodeDecodeError:#, UnicodeEncodeError:
-            try:
-                return unicode(name,'cp1252')
-            except UnicodeDecodeError:#, UnicodeEncodeError:
-                # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
-                return unicode(name,'cp500')
-                
+            return unicode(name,encoding)
+        except UnicodeDecodeError:
+            if i == NumEncodings - 1: # Last one
+                raise
+            pass
+
 def Encode(name):
     if isinstance(name,str): return name
-    try:
-        return name.encode('cp1252')
-    except UnicodeEncodeError:#, UnicodeEncodeError:
+    for i,encoding in enumerate(UnicodeEncodings):
         try:
-            # A fair number of file names require UTF8 instead...
-            return name.encode('U8')
-        except UnicodeEncodeError:#, UnicodeEncodeError:
-            try:
-                return name.encode('U16')
-            except UnicodeEncodeError:#, UnicodeEncodeError:
-                # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
-                return unicode(name,'cp500')
+            return name.encode(encoding)
+        except UnicodeEncodeError:
+            if i == NumEncodings - 1:
+                raise
+            pass
+
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
