@@ -228,6 +228,7 @@ NumEncodings = len(UnicodeEncodings)
 
 def Unicode(name):
     if isinstance(name,unicode): return name
+    if not bUseUnicode: return name #don't change if not unicode mode.
     for i,encoding in enumerate(UnicodeEncodings):
         try:
             return unicode(name,encoding)
@@ -238,6 +239,7 @@ def Unicode(name):
 
 def Encode(name):
     if isinstance(name,str): return name
+    if not bUseUnicode: return name #don't change if not unicode mode.
     for i,encoding in enumerate(UnicodeEncodings):
         try:
             return name.encode(encoding)

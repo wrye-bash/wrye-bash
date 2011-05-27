@@ -4804,6 +4804,11 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
+        if bolt.bUseUnicode: 
+            wxver = wx.version()
+            deprint(wxver)
+            if not 'unicode' in wxver.lower() and not '2.9' in wxver:
+                balt.showWarning(bashFrame,_("Warning you appear to be using a non-unicode version of wxPython (%s) but have set Wrye Bash to unicode mode, this may cause problems, it is reccomended you use a unicode version of wPython instead.") % wxver)
 
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""

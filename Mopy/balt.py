@@ -1017,7 +1017,7 @@ class Progress(bolt.Progress):
             style |= wx.PD_CAN_ABORT
             self.fnAbort = onAbort
         if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
-        self.dialog = wx.ProgressDialog(title,message,100,parent,style)
+        self.dialog = wx.ProgressDialog(title,bolt.Unicode(message),100,parent,style)
         self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message
@@ -1048,7 +1048,7 @@ class Progress(bolt.Progress):
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
             self.dialog.SetFocus()
             if message != self.prevMessage:
-                ret = self.dialog.Update(int(state*100),message)
+                ret = self.dialog.Update(int(state*100),bolt.Unicode(message))
                 if not ret[0]:
                     if self.onAbort():
                         raise CancelError
