@@ -677,8 +677,13 @@ class Path(object):
     def __hash__(self):
         return hash(self._cs)
     def __cmp__(self, other):
-        if isinstance(other,Path): return cmp(self._cs, other._cs)
-        else: return cmp(self._cs, Path.getCase(other))
+        try:
+            if isinstance(other,Path): return cmp(self._cs, other._cs)
+            else: return cmp(self._cs, Path.getCase(other))
+        except UnicodeDecodeError:
+            deprint("Wrye Bash Unicode mode is currently %s" % (['off.','on.'][bUseUnicode]))
+            deprint("Unicode errorr when dealing with %s - presuming non equal." % (self._cs))
+            return False
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
