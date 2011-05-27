@@ -11214,7 +11214,7 @@ class Mod_Details(Link):
     def Execute(self,event):
         modName = GPath(self.data[0])
         modInfo = bosh.modInfos[modName]
-        with balt.Progress(_(modName.s)) as progress:
+        with balt.Progress(modName.s) as progress:
             modDetails = bosh.ModDetails()
             modDetails.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = stringBuffer()
