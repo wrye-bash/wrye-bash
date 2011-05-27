@@ -1079,7 +1079,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     OnDropIndexes callback: fnDropIndexes
     dndAllow callback:      fnDndAllow
     """
-    class DropFileOrList(wx.PyDropTarget):
+    class DropFileOrList(wx.DropTarget):
 
         def __init__(self, window, dndFiles, dndList):
             wx.PyDropTarget.__init__(self)
@@ -1103,6 +1103,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                     data = cPickle.loads(self.dataList.GetData())
                     self.window._OnDropList(x, y, data)
 
+        def OnDragOver(self, x, y, dragResult):
+            self.window.OnDragging(x,y,dragResult)
+            return wx.DropTarget.OnDragOver(self,x,y,dragResult)
+
     def __init__(self, parent, id, pos=defPos, size=defSize, style=0,
                  dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
                  fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
@@ -1117,6 +1121,29 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self.doDnD = True
+
+    def OnDragging(self,x,y,dragResult):
+        # We're dragging, see if we need to scroll the list
+        index, flags = self.HitTest((x, y))
+        if index == wx.NOT_FOUND:   # Didn't drop it on an item
+            if self.GetItemCount() > 0:
+                if y <= self.GetItemRect(0).y:
+                    # Mouse is above the first item
+                    self.ScrollLines(-1)
+                elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
+                    # Mouse is after the last item
+                    self.ScrollLines(1)
+        else:
+            # Screen position if item hovering over
+            pos = index - self.GetScrollPos(wx.VERTICAL)
+            if pos == 0:
+                # Over the first item, see if it's over the top half
+                rect = self.GetItemRect(index)
+                if y < rect.y + rect.height/2:
+                    self.ScrollLines(-1)
+            elif pos == self.GetCountPerPage():
+                # On last item/one that's not fully visible
+                self.ScrollLines(1)
 
     def SetDnD(self, allow): self.doDnD = allow
 

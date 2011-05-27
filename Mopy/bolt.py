@@ -235,7 +235,6 @@ def Unicode(name):
         except UnicodeDecodeError:
             if i == NumEncodings - 1: # Last one
                 raise
-            pass
 
 def Encode(name):
     if isinstance(name,str): return name
@@ -246,7 +245,6 @@ def Encode(name):
         except UnicodeEncodeError:
             if i == NumEncodings - 1:
                 raise
-            pass
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
