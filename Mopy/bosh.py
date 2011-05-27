@@ -11820,7 +11820,7 @@ class InstallerProject(Installer):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,archive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
+                progress(index,bolt.Unicode(archive.s)+bolt.Unicode(_("\nCompressing files...\n%s") % maCompressing.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
