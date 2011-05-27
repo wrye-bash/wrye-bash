@@ -2394,7 +2394,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the __bUseMyGameDirectory__ is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
   * Unicode improvements:
-    * no more errors on viewing/saving modfiles with tejón and other accented author names.
+    * Fixed viewing/saving modfiles with tejón and other accented author names.
+    * Fixed project view/scanning for projects containing unicode filenames.
+    * Fixed project->archive packaging for projects that contain unicode filenames.
+    * Warning if using Unicode Wrye Bash but using non-unicode wxPython.
   * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
   * Selectable jpeg quality in the Screenshots Tab
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
