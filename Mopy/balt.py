@@ -1323,8 +1323,8 @@ class Tank(wx.Panel):
     def OnDropIndexes(self, indexes, newPos):
         # See if the column is reverse sorted first
         data = self.data
-        column = data.defaultParam('colSort',data.tankColumns[0])
-        reverse = data.defaultParam('colReverse',{}).get(column,False)
+        column = self.sort
+        reverse = self.colReverse.get(column,False)
         if reverse:
             newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
