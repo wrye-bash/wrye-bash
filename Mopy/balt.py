@@ -1190,40 +1190,53 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         stop = indexes[-1]
 
         index, flags = self.HitTest((x, y))
+        deprint('index:',index)
+        deprint('flags:',flags)
         if index == wx.NOT_FOUND:   # Didn't drop it on an item
+            deprint('index: wx.NOT_FOUND')
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Dropped it before the first item
+                    deprint('NOT_FOUND: before first item')
                     index = 0
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Dropped it after the last item
+                    deprint('NOT_FOUND: after the last item')
                     index = self.GetItemCount()
                 else:
                     # Dropped it on the edge of the list, but not above or below
+                    deprint('NOT_FOUND: ack!')
                     return
             else:
+                deprint('NOT_FOUND: empty list?')
                 # Empty list
                 index = 0
         else:
             # Dropped on top of an item
             target = index
             if target >= start and target <= stop:
+                deprint('target is on itself')
                 # Trying to drop it back on itself
                 return
             elif target < start:
+                deprint('dragging upward')
                 # Trying to drop it furthur up in the list
                 pass
             elif target > stop:
                 # Trying to drop it further down the list
                 index -= 1 + (stop-start)
+                deprint('dragging downward.  new index:', index)
 
             # If dropping on the top half of the item, insert above it,
             # otherwise insert below it
             rect = self.GetItemRect(target)
             if y > rect.y + rect.height/2:
+                deprint('dragged past the bottom half of the target')
                 index += 1
 
         # Do the moving
+        deprint('sending items:', indexes)
+        deprint('to index:', index)
         self.OnDropIndexes(indexes, index)
 
     def OnDropIndexes(self, indexes, newPos):
