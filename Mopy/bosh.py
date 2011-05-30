@@ -12018,10 +12018,9 @@ class InstallersData(bolt.TankData, DataDict):
             attr = column.lower()
             if column in ('Package','Group'):
                 getter = lambda x: object.__getattribute__(data[x],attr).lower()
-                items.sort(key=getter,reverse=reverse)
             else:
                 getter = lambda x: object.__getattribute__(data[x],attr)
-                items.sort(key=getter,reverse=reverse)
+            items.sort(key=getter,reverse=reverse)
         #--Special sorters
         if settings['bash.installers.sortStructure']:
             items.sort(key=lambda x: data[x].type)
