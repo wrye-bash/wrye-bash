@@ -16612,7 +16612,7 @@ class ModDetails:
                     if type == 'EDID':
                         eid = recs.readString(size)
                         break
-                    ins.seek(size,1)
+                    recs.seek(size,1)
                 records.append((fid,eid))
                 ins.seek(nextRecord)
         ins.close()
