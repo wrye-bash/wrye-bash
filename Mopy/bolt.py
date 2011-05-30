@@ -227,23 +227,23 @@ UnicodeEncodings = (
 NumEncodings = len(UnicodeEncodings)
 
 def Unicode(name):
-    if isinstance(name,unicode): return name
     if not bUseUnicode: return name #don't change if not unicode mode.
-    for i,encoding in enumerate(UnicodeEncodings):
+    if isinstance(name,unicode): return name
+    for i in range(NumEncodings):
         try:
-            return unicode(name,encoding)
+            return unicode(name,UnicodeEncodings[i])
         except UnicodeDecodeError:
-            if i == NumEncodings - 1: # Last one
+            if i == NumEncodings - 1:
                 raise
 
 def Encode(name):
-    if isinstance(name,str): return name
     if not bUseUnicode: return name #don't change if not unicode mode.
-    for i,encoding in enumerate(UnicodeEncodings):
+    if isinstance(name,str): return name
+    for i in range(NumEncodings-1,0,-1):
         try:
-            return name.encode(encoding)
+            return name.encode(UnicodeEncodings[i])
         except UnicodeEncodeError:
-            if i == NumEncodings - 1:
+            if i == 0:
                 raise
 
 # Paths -----------------------------------------------------------------------
