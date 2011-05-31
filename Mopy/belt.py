@@ -746,14 +746,15 @@ class WryeParser(ScriptParser.Parser):
         self.espmrenames = {}
         self.iniedits = {}
 
-        # Reset self.lines due to any exec statements
-        while self.ExecCount > 0:
-            for i,line in enumerate(self.lines):
-                if line.startswith('EndExec('):
-                    numLines = int(line[8:-1]) # Line is 'EndExec(%i)'
-                    del self.lines[i-numLines:i]
-                    self.ExecCount -= 1
-                    break
+        i = 0
+        while self.ExecCount > 0 and i < len(self.lines):
+            line = self.lines[i]
+            i += 1
+            if line.startswith('EndExec('):
+                numLines = int(line[8:-1])
+                del self.lines[i-numLines:i]
+                i -= numLines
+                self.ExecCount -= 1
 
         self.cLine = 0
         self.reversing = self.choiceIdex-1
