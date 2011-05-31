@@ -12033,7 +12033,7 @@ class Mod_ScanDirty(Link):
         modInfos = [bosh.modInfos[x] for x in self.data]
         try:
             with balt.Progress(_("Dirty Edits"),'\n'+' '*60,abort=True) as progress:
-                ret = bosh.ModCleaner.scan_Many(modInfos,progress)
+                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
         except bolt.CancelError:
             return
         log = bolt.LogFile(stringBuffer())
@@ -12056,7 +12056,7 @@ class Mod_ScanDirty(Link):
             else:
                 return sorted(fids)
         for i,modInfo in enumerate(modInfos):
-            udr,itm = ret[i]
+            udr,itm,fog = ret[i]
             if udr or itm:
                 log('* __'+modInfo.name.s+'__:')
                 log(_('  * UDR: %i') % len(udr))
