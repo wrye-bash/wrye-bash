@@ -115,6 +115,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
 def listArchiveContents(fileName):
     command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, fileName)
+    command = command.encode('mbcs')
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
@@ -11032,6 +11033,7 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s)
+            command = command.encode('mbcs')
         else:
             command = '"%s" x "%s" BCF.dat -y -so' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s)
         try:
@@ -11073,7 +11075,8 @@ class InstallerConverter(object):
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         if bosh.inisettings['EnableUnicode']:
-            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s)
+            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s
+            command = command.encode('mbcs')
         else:
             command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
@@ -11283,6 +11286,7 @@ class InstallerConverter(object):
 
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
+            command = command.encode('mbcs')
         else:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (dirs['mopy'].join('7z.exe').s, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
 
@@ -11339,6 +11343,7 @@ class InstallerConverter(object):
             progress.setFull(1+len(fileNames))
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, subTempDir.s, self.tempList.s)
+            command = command.encode('mbcs')
         else:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
@@ -11367,6 +11372,7 @@ class InstallerConverter(object):
         self.tempList.remove()
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (subTempDir.s)
+        cmd = cmd.encode('mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
@@ -11492,6 +11498,7 @@ class InstallerArchive(Installer):
         apath = dirs['installers'].join(archive)
         if bUseUnicode:
             command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (dirs['mopy'].join('7zUnicode.exe').s, apath.s, self.tempDir.s, self.tempList.s)
+            command = command.encode('mbcs')
         else:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, apath.s, self.tempDir.s, self.tempList.s)
         if recurse:
@@ -11524,6 +11531,7 @@ class InstallerArchive(Installer):
         self.tempList.remove()
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        cmd = cmd.encode('mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             if bUseUnicode:
@@ -11590,6 +11598,7 @@ class InstallerArchive(Installer):
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        cmd = cmd.encode('mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         for file in files:
             srcFull = tempDir.join(file)
@@ -11803,6 +11812,7 @@ class InstallerProject(Installer):
         #--Compress
         if bosh.inisettings['EnableUnicode']:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7zUnicode.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
+            command = command.encode('mbcs')
         else:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7z.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
         progress(0,_("%s\nCompressing files...") % archive.s)
