@@ -17194,145 +17194,78 @@ class CleanMod:
 class ModCleaner:
     """Class for cleaning ITM and UDR edits from mods.
        ITM detection requires CBash to work."""
+    UDR     = 0x01  # Deleted references
+    ITM     = 0x02  # Identical to master records
+    FOG     = 0x04  # Nvidia Fog Fix
+    ALL = UDR|ITM|FOG
+    
     def __init__(self,modInfo):
         self.modInfo = modInfo
-        self.itm = set()
-        self.udr = set()
+        self.itm = set()    # Fids for Identical To Master records
+        self.udr = set()    # Fids for Deleted Reference records
+        self.fog = set()    # Fids for Cells needing the Nvidia Fog Fix
 
-    def scan(self,progress=bolt.Progress()):
+    def scan(self,what=ALL,progress=bolt.Progress()):
         """Scan this mod for dirty edits.
-           return (UDR,ITM)"""
-        return (self.scanUDR(progress),self.scanITM(progress))
+           return (UDR,ITM,FogFix)"""
+        udr,itm,fog = ModCleaner.scan_Many([self.modInfo],what,progress)[0]
+        if what & ModCleaner.UDR:
+            self.udr = udr
+        if what & ModCleaner.ITM:
+            self.itm = itm
+        if what & ModCleaner.FOG:
+            self.fog = fog
+        return (udr,itm,fog)
 
-    def clean(self,progress=bolt.Progress(),reScan=False):
+    @staticmethod
+    def scan_Many(modInfos,what=ALL,progress=bolt.Progress()):
+        """Scan multiple mods for dirty edits"""
+        if len(modInfos) == 0: return []
+        if not settings['bash.CBashEnabled']:
+            return ModCleaner._scan_Python(modInfos,what,progress)
+        else:
+            return ModCleaner._scan_CBash(modInfos,what,progress)
+
+    def clean(self,what=UDR&FOG,progress=bolt.Progress(),reScan=False):
         """reScan:
              True: perform scans before cleaning
              False: only perform scans if itm/udr is empty
              """
-        self.cleanUDR(progress,reScan)
+        ModCleaner.clean_Many([self],what,progress,reScan)
 
     @staticmethod
-    def clean_Many(modInfos,progress=bolt.Progress()):
-        # Can't clean ITM yet, so no need to optimize CBash version
-        ModCleaner.cleanUDR_Many(modInfos,progress)
-
-    @staticmethod
-    def scan_Many(modInfos,progress=bolt.Progress()):
-        """Scan multiple mods for dirty edits"""
+    def clean_Many(cleaners,what,progress=bolt.Progress(),reScan=False):
+        """Accepts either a list of ModInfo's or a list of ModCleaner's"""
+        if isinstance(cleaners[0],ModInfos):
+            reScan = True
+            cleaners = [ModCleaner(x) for x in cleaners]
         if not settings['bash.CBashEnabled']:
-            udrs = ModCleaner.scanUDR_Many(modInfos,progress)
-            itms = ModCleaner.scanITM_Many(modInfos,progress)
+            ModCleaner._clean_Python(cleaners,what,progress)
         else:
             #--CBash
-            #--Load
-            progress(0,_('Loading...'))
-            progress.setFull(2)
-            collection = ModCleaner._loadCollection(modInfos)
-            #--Scan UDR
-            subprogress = SubProgress(progress,0,1)
-            udrs = ModCleaner._scanUDR_CBash(collection,modInfos,subprogress)
-            #--Scan ITM
-            subprogress = SubProgress(progress,1,2)
-            itms = ModCleaner._scanITM(collection,modInfos,subprogress)
-            #--Unload
-            collection.Unload()
-        return [(udrs[x],itms[x]) for x in range(len(udrs))]
-
-    def scanITM(self,progress=bolt.Progress()):
-        """Scan this mod for identical to master edits"""
-        if not settings['bash.CBashEnabled']: return self.itm
-        #--Load
-        progress(0,_('Loading...') + '\n' + self.modInfo.name.s)
-        collection = ModCleaner._loadCollection([self.modInfo])
-        #--Scan
-        self.itm = ModCleaner._scanITM(collection,[self.modInfo],progress)[0]
-        #--Unload
-        collection.Unload()
-        return self.itm
-
-    @staticmethod
-    def scanITM_Many(modInfos,progress=bolt.Progress()):
-        if not settings['bash.CBashEnabled']: return [set() for x in modInfos]
-        #--Load
-        progress(0,_('Loading...'))
-        collection = ModCleaner._loadCollection(modInfos)
-        #--Scan
-        ret = ModCleaner._scanITM(collection,modInfos,progress)
-        #--Unload
-        collection.Unload()
-        return ret
-
-    def scanUDR(self,progress=bolt.Progress()):
-        """Scan this mod for deleted references"""
-        if not settings['bash.CBashEnabled']:
-            self.udr = ModCleaner._scanUDR_Python([self.modInfo],progress)[0]
-        else:
-            #--CBash
-            #--Load
-            progress(0,_('Loading...') + '\n' + self.modInfo.name.s)
-            collection = ModCleaner._loadCollection([self.modInfo])
-            #--Scan
-            self.udr = ModCleaner._scanUDR_CBash(collection,[self.modInfo],progress)[0]
-            #--Unload
-            collection.Unload()
-        return self.udr
-
-    @staticmethod
-    def scanUDR_Many(modInfos,progress=bolt.Progress()):
-        if not settings['bash.CBashEnabled']: return ModCleaner._scanUDR_Python(modInfos,progress)
-        #--CBash
-        #--Load
-        collection = ModCleaner._loadCollection(modInfos)
-        #--Scan
-        ret = ModCleaner._scanUDR_CBash(collection,modInfos,progress)
-        #--Unload
-        collection.Unload()
-        return ret
-
-    def cleanUDR(self,progress=bolt.Progress(),reScan=False):
-        """Rescan if necessary, and fix deleted references"""
-        if not settings['bash.CBashEnabled']:
-            ModCleaner._cleanUDR_Python([self.modInfo],progress)
-        else:
-            #--CBash
-            #--Load
-            collection = ModCleaner._loadCollection([self.modInfo])
             #--Scan?
-            if reScan or not self.udr:
-                progress.setFull(1)
-                subprogress = SubProgress(progress,0,0.8)
-                self.udr = ModCleaner._scanUDR_CBash(collection,[self.modInfo],subprogress)[0]
-                subprogress = SubProgress(progress,0.8,1)
-            else:
-                subprogress = progress
+            if reScan:
+                ret = ModCleaner._scan_CBash([x.modInfo for x in cleaners],what,progress)
+                for i,cleaner in enumerate(cleaners):
+                    udr,itm,fog = ret[i]
+                    if what & ModCleaner.UDR:
+                        cleaner.udr = udr
+                    if what & ModCleaner.ITM:
+                        cleaner.itm = itm
+                    if what & ModCleaner.FOG:
+                        cleaner.fog = fog
             #--Clean
-            ModCleaner._cleanUDR_CBash(collection,[self.modInfo],[self.udr],subprogress)
-            #--Unload
-            collection.Unload()
-        return self.udr
+            ModCleaner._clean_CBash(cleaners,what,progress)
 
     @staticmethod
-    def cleanUDR_Many(modInfos,progress=bolt.Progress()):
-        if not settings['bash.CBashEnabled']:
-            ModCleaner._cleanUDR_Python(modInfos,progress,reScan)
-        else:
-            #--CBash
-            #--Load
-            collection = ModCleaner._loadCollection(modInfos)
-            #--Scan
-            progress.setFull(1)
-            subprogress = SubProgress(progress,0,0.8)
-            UDRs = ModCleaner._scanUDR_CBash(modInfos,subprogress)
-            #--Clean
-            subprogress = SubProgress(progress,0.8,1)
-            ModCleaner._cleanUDR_CBash(collection,modInfos,UDRs,subprogress)
-            #--Unload
-            collection.Unload()
-
-    @staticmethod
-    def _loadCollection(modInfos):
+    def _loadCollection(mods):
+        # mods = list(ModInfo's) or list(ModCleaner's)
         collection = ObCollection(ModsPath=dirs['mods'].s)
-        for modInfo in modInfos:
+        for mod in mods:
+            if isinstance(mod,ModCleaner):
+                modInfo = mod.modInfo
+            else:
+                modInfo = mod
             if len(modInfo.masterNames) == 0: continue
             path = modInfo.getPath()
             collection.addMod(path.stail)
@@ -17342,345 +17275,243 @@ class ModCleaner:
         return collection
 
     @staticmethod
-    def _scanITM(collection, modInfos, progress):
-        """Scan multiple mods for dirty edits"""
-        progress.setFull(max(len(modInfos),1))
-        ret = []
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_('Scanning...') + '\n' + modInfo.name.s)
-            itm = set()
-            if len(modInfo.masterNames) > 0:
-                path = modInfo.getPath()
-                modFile = collection.LookupModFile(path.stail)
-                items = modFile.aggregates
-                subprogress1 = SubProgress(progress,i,i+1)
-                subprogress1.setFull(max(len(items),1))
-                for j,block in enumerate(items.values()):
-                    subprogress1(j)
-                    subprogress2 = SubProgress(subprogress1,j,j+1)
-                    subprogress2.setFull(max(len(block),1))
-                    for k,record in enumerate(block):
-                        subprogress2(k)
-                        fid = record.fid
-                        if not fid or fid[0] == modFile.GName: continue
-                        master = collection.LookupModFile(fid[0].stail)
-                        if not master: continue
-                        masterRecord = master.LookupRecord(fid)
-                        if not masterRecord: continue
-                        if record.IsIdenticalTo(masterRecord):
-                            itm.add(fid)
-            ret.append(itm)
-        return ret
+    def _scan_CBash(modInfos,what,progress):
+        """Scan multiple mods for problems"""
+        if what & ModCleaner.ALL:
+            # There are scans to do
+            doUDR = bool(what & ModCleaner.UDR)
+            doITM = bool(what & ModCleaner.ITM)
+            doFog = bool(what & ModCleaner.FOG)
+            if len(modInfos) > 1:
+                progress(0,_('Loading...')+'\n'+modInfos[0].name.s)
+            else:
+                progress(0,_('Loading...'))
+            #--Load
+            collection = ModCleaner._loadCollection(modInfos)
+            #--Scan
+            progress.setFull(max(len(modInfos),1))
+            ret = []
+            for i,modInfo in enumerate(modInfos):
+                progress(i,_('Scanning...') + '\n' + modInfo.name.s)
+                udr = set()
+                itm = set()
+                fog = set()
+                if len(modInfo.masterNames) > 0:
+                    path = modInfo.getPath()
+                    modFile = collection.LookupModFile(path.stail)
+                    blocks = modFile.aggregates
+                    subprogress1 = SubProgress(progress,i,i+1)
+                    subprogress1.setFull(max(len(blocks),1))
+                    for j,block in enumerate(blocks.values()):
+                        subprogress1(j)
+                        subprogress2 = SubProgress(subprogress1,j,j+1)
+                        subprogress2.setFull(max(len(block),1))
+                        for k,record in enumerate(block):
+                            subprogress2(k)
+                            fid = record.fid
+                            #--Scan UDR
+                            if doUDR and record.IsDeleted:
+                                udr.add(fid)
+                            #--Scan ITM
+                            if doITM:
+                                if not fid or fid[0] == modFile.GName: continue
+                                master = collection.LookupModFile(fid[0].stail)
+                                if not master: continue
+                                masterRecord = master.LookupRecord(fid)
+                                if not masterRecord: continue
+                                if record.IsIdenticalTo(masterRecord):
+                                    itm.add(fid)
+                            #--Scan fog
+                            if doFog and record._Type == 'CELL':
+                                if not (record.fogNear or record.fogFar or record.fogClip):
+                                    fog.add(fid)
+                ret.append((udr,itm,fog))
+            #--Unload
+            collection.Unload()
+            return ret
+        else:
+            return [(set(),set(),set()) for x in range(len(modInfos))]
 
     @staticmethod
-    def _scanUDR_CBash(collection, modInfos, progress):
-        """Scan multiple mods for dirty edits"""
-        progress.setFull(max(len(modInfos),1))
-        ret = []
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_('Scanning...') + '\n' + modInfo.name.s)
-            udr = set()
-            if len(modInfo.masterNames) > 0:
-                path = modInfo.getPath()
-                modFile = collection.LookupModFile(path.stail)
-                items = modFile.ACHRS + modFile.ACRES + modFile.REFRS
-                subprogress = SubProgress(progress,i,i+1)
-                subprogress.setFull(max(len(items),1))
-                for j,record in enumerate(items):
-                    subprogress(j)
-                    if record.IsDeleted:
-                        udr.add(record.fid)
-            ret.append(udr)
-        return ret
+    def _scan_Python(modInfos,what,progress):
+        if what & (ModCleaner.UDR|ModCleaner.FOG):
+            # Python can't do ITM scanning
+            doUDR = what & ModCleaner.UDR
+            doFog = what & ModCleaner.FOG
+            progress.setFull(max(len(modInfos),1))
+            ret = []
+            for i,modInfo in enumerate(modInfos):
+                progress(i,_('Scanning...') + '\n' + modInfo.name.s)
+                udr = set()
+                itm = set()
+                fog = set()
+                if len(modInfo.masterNames) > 0:
+                    subprogress = SubProgress(progress,i,i+1)
+                    subprogress.setFull(max(modInfo.size,1))
+                    #--File stream
+                    path = modInfo.getPath()
+                    #--Scan
+                    ins = ModReader(modInfo.name,path.open('rb'))
+                    while not ins.atEnd():
+                        subprogress(ins.tell())
+                        (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                        if type == 'GRUP':
+                            if fid != 0: #--Ignore sub-groups
+                                pass
+                            elif flags not in ('CELL','WRLD'):
+                                ins.read(size-20)
+                        else:
+                            if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                udr.add(fid)
+                            if doFog and type == 'CELL':
+                                nextRecord = ins.tell() + size
+                                while ins.tell() < nextRecord:
+                                    (nextType,nextSize) = ins.unpackSubHeader()
+                                    if type != 'XCLL':
+                                        ins.read(nextSize)
+                                    else:
+                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
+                                        if not (near or far or clip):
+                                            fog.add(fid)
+                            else:
+                                ins.read(size)
+                    #--Done
+                    ins.close()
+                ret.append((udr,itm,fog))
+            return ret
+        else:
+            return [(set(),set(),set()) for x in range(len(modInfos))]
 
     @staticmethod
-    def _scanUDR_Python(modInfos, progress):
-        """Scan multiple mods for dirty edits"""
-        progress.setFull(max(len(modInfos),1))
-        ret = []
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_('Scanning...') + '\n' + modInfo.name.s)
-            udr = set()
-            if len(modInfo.masterNames) > 0:
+    def _clean_CBash(cleaners,what,progress):
+        if what & (ModCleaner.UDR|ModCleaner.FOG):
+            doUDR = what & ModCleaner.UDR
+            doFog = what & ModCleaner.FOG
+            progress.setFull(max(len(cleaners),1))
+            if len(cleaners) > 1:
+                progress(0,_('Loading...')+'\n'+cleaners[0].modInfo.name.s)
+            else:
+                progress(0,_('Loading...'))
+            #--Load
+            collection = ModCleaner._loadCollection(cleaners)
+            #--Clean
+            for i,cleaner in enumerate(cleaners):
+                progress(i,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
+                path = cleaner.modInfo.getPath()
+                modFile = collection.LookupModFile(path.stail)
+                changed = False
+                #Only do UDR and Fog right now
+                total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog])
+                recordNum = 0
                 subprogress = SubProgress(progress,i,i+1)
-                subprogress.setFull(max(modInfo.size,1))
+                subprogress.setFull(max(total,1))
+                if doUDR:
+                    for fid in cleaner.udr:
+                        subprogress(recordNum)
+                        recordNum += 1
+                        record = modFile.LookupRecord(fid)
+                        if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
+                            changed = True
+                            record.IsDeleted = False
+                            record.IsIgnored = True
+                if doFog:
+                    for fid in cleaner.fog:
+                        subprogress(recordNum)
+                        recordNum += 1
+                        record = modFile.LookupRecord(fid)
+                        if record and record._Type == 'CELL':
+                            if not (record.fogNear or record.fogFar or record.fogClip):
+                                record.fogNear = 0.0001
+                                changed = True
+                #--Save
+                if changed:
+                    try:
+                        modFile.save(False)
+                    except WindowsError, werr:
+                        if werr.winerror != 32: raise
+                        while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
+                            try:
+                                modFile.save(False)
+                            except WindowsError, werr:
+                                continue
+                            break
+                        else:
+                            raise
+            collection.Unload()
+
+    @staticmethod
+    def _clean_Python(cleaners,what,progress):
+        if what & (ModCleaner.UDR|ModCleaner.FOG):
+            doUDR = what & ModCleaner.UDR
+            doFog = what & ModCleaner.FOG
+            progress.setFull(max(len(cleaners),1))
+            #--Clean
+            for i,cleaner in enumerate(cleaners):
+                progress(i,_('Cleaning...')+'\n'+cleaner.modInfo.name.s)
+                subprogress = SubProgress(progress,i,i+1)
+                subprogress.setFull(max(cleaner.modInfo.size,1))
                 #--File stream
-                path = modInfo.getPath()
-                #--Scan
-                ins = ModReader(modInfo.name,path.open('rb'))
+                path = cleaner.modInfo.getPath()
+                #--Scan & clean
+                ins = ModReader(cleaner.modInfo.name,path.open('rb'))
+                out = path.temp.open('wb')
+                def copy(size):
+                    out.write(ins.read(size))
+                def copyPrev(size):
+                    ins.seek(-size,1)
+                    out.write(ins.read(size))
+                changed = False
                 while not ins.atEnd():
                     subprogress(ins.tell())
                     (type,size,flags,fid,uint2) = ins.unpackRecHeader()
                     if type == 'GRUP':
-                        if fid != 0: #--Ignore sub-groups
+                        if fid != 0:
                             pass
                         elif flags not in ('CELL','WRLD'):
-                            ins.read(size-20)
-                    #--Handle cells
+                            copy(size-20)
                     else:
-                        if flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                            udr.add(fid)
-                        ins.read(size)
+                        if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
+                            flags = (flags & ~0x20) | 0x1000
+                            out.seek(-20,1)
+                            out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
+                            change = True
+                        if doFog and type == 'CELL':
+                            nextRecord = ins.tell() + size
+                            while ins.tell() < nextRecord:
+                                subprogress(ins.tell())
+                                (nextType,nextSize) = ins.unpackSubHeader()
+                                copyPrev(6)
+                                if nextType != 'XCLL':
+                                    copy(nextSize)
+                                else:
+                                    color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                    if not (near or far or clip):
+                                        near = 0.0001
+                                        changed = True
+                                    out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
+                        else:
+                            copy(size)
                 #--Done
                 ins.close()
-            ret.append(udr)
-        return ret
-
-    @staticmethod
-    def _cleanUDR_CBash(collection,modInfos,UDRs,progress):
-        """Clean multiple mods of UDRs"""
-        progress.setFull(max(len(modInfos),1))
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_('Cleaning...') + '\n' + modInfo.name.s)
-            path = modInfo.getPath()
-            modFile = collection.LookupModFile(path.stail)
-            changed = False
-            for fid in UDRs[i]:
-                record = modFile.LookupRecord(fid)
-                if record and record.IsDeleted:
-                    changed = True
-                    record.IsDeleted = False
-                    record.IsIgnored = True
-            #--Save
-            if changed:
-                try:
-                    modFile.save()
-                except WindowsError, werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
-                        try:
-                            modFile.save()
-                        except WindowsError, werr:
-                            continue
-                        break
-                    else:
-                        raise
-
-    @staticmethod
-    def _cleanUDR_Python(modInfos,progress):
-        """Clean multiple mods of UDRs"""
-        progress.setFull(max(len(modInfos),1))
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_('Cleaning...') + '\n' + modInfo.name.s)
-            subprogress = SubProgress(progress,i,i+1)
-            subprogress.setFull(max(modInfo.size,1))
-            #--File stream
-            path = modInfo.getPath()
-            #--Scan & Clean
-            ins = ModReader(self.modInfo.name,path.open('rb'))
-            out = path.temp.open('wb')
-            def copy(size):
-                buff = ins.read(size)
-                out.write(buff)
-            def copyPrev(size):
-                ins.seek(-size,1)
-                buff = ins.read(size)
-                out.write(buff)
-            changed = False
-            while not ins.atEnd():
-                subprogress(ins.tell())
-                (type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                if type == 'GRUP':
-                    if fid != 0: #--Ignore sub-groups
-                        pass
-                    elif flags not in ('CELL','WRLD'):
-                        copy(size-20)
-                #--Handle cells
+                out.close()
+                #--Save
+                if changed:
+                    modInfo.makeBackup()
+                    try:
+                        path.untemp()
+                    except WindowsError, werr:
+                        if werr.winerror != 32: raise
+                        while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
+                            try:
+                                path.untemp()
+                            except WindowsError,werr:
+                                continue
+                            break
+                        else:
+                            raise
+                    modInfo.setmtime()
                 else:
-                    if flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                        flags = (flags & ~0x20) | 0x1000
-                        out.seek(-20,1)
-                        out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
-                        changed = True
-                    copy(size)
-            #--Done
-            ins.close()
-            out.close()
-            #--Save
-            if changed:
-                modInfo.makeBackup()
-                try:
-                    path.untemp()
-                except WindowsError, werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
-                        try:
-                            path.untemp()
-                        except WindowsError, werr:
-                            continue
-                        break
-                    else:
-                        raise
-                modInfo.setmtime()
-            else:
-                path.temp.remove()
-
-#------------------------------------------------------------------------------
-class UndeleteRefs:
-    """Change refs in cells from deleted to initially disabled.."""
-    def __init__(self,modInfo):
-        self.modInfo = modInfo
-        self.fixedRefs = set()
-
-    def count(self,progress=bolt.Progress()):
-        if len(self.modInfo.header.masters) == 0: return 0
-        if settings['bash.CBashEnabled']: return self._count_CBash(progress)
-        else: return self._count_Python(progress)
-
-    @staticmethod
-    def countMany(paths,progress=bolt.Progress()):
-        """CBash only version, because it's quicker to make a collection of
-           all the mods you want to test, rather than make multiple collections."""
-        progress.setFull(max(len(paths),1))
-        progress(0,_("Loading...") + '\n')
-        #--Load
-        collection = ObCollection(ModsPath=dirs['mods'].s)
-        for path in paths:
-            collection.addMod(path.stail)
-        collection.load()
-        #--Scan
-        counts = {}
-        for i,path in enumerate(paths):
-            info = modInfos[path]
-            progress(i,_("Scanning...") + '\n' + info.name.s)
-            if len(info.header.masters) == 0: continue
-            count = 0
-            modFile = collection.LookupModFile(info.getPath().stail)
-            records = modFile.ACHRS + modFile.ACRES + modFile.REFRS
-            subprogress = SubProgress(progress,i,i+1)
-            subprogress.setFull(max(len(records),1))
-            for j,record in enumerate(records):
-                subprogress(j)
-                if record.IsDeleted:
-                    count += 1
-            if count: counts[path] = count
-        #--Close
-        collection.Unload()
-        return counts
-
-    def _count_CBash(self,progress):
-        """Counts the number of deleted references."""
-        progress(0,_("Loading...") + '\n' + self.modInfo.name.s)
-        #--Load
-        modPath = self.modInfo.getPath()
-        collection = ObCollection(ModsPath=dirs['mods'].s)
-        collection.addMod(modPath.stail)
-        collection.load()
-        modFile = collection.LookupModFile(modPath.stail)
-
-        #--Scan
-        count = 0
-        records = modFile.ACHRS + modFile.ACRES + modFile.REFRS
-        progress.setFull(max(len(records),1))
-        for i,record in enumerate(records):
-            progress(i,_("Scanning...") + '\n' + self.modInfo.name.s)
-            if record.IsDeleted:
-                count += 1
-
-        #--Close
-        collection.Unload()
-        return count
-
-    def _count_Python(self,progress):
-        """Counts the number of deleted references."""
-        progress.setFull(self.modInfo.size)
-        count = 0
-        #--File stream
-        path = self.modInfo.getPath()
-        #--Scan
-        ins = ModReader(self.modInfo.name,path.open('rb'))
-        while not ins.atEnd():
-            progress(ins.tell(),_("Scanning...") + '\n' + self.modInfo.name.s)
-            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
-            if type == 'GRUP':
-                if fid != 0: #--Ignore sub-groups
-                    pass
-                elif flags not in ('CELL','WRLD'):
-                    ins.read(size-20)
-            #--Handle cells
-            else:
-                if flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                    count += 1
-                ins.read(size)
-        #--Done
-        ins.close()
-        return count
-
-    def undelete(self,progress):
-        if settings['bash.CBashEnabled']: self._undelete_Python(progress)
-        else: self._undelete_CBash(progress)
-
-    def _undelete_CBash(self,progress):
-        """Uses CBash to change deleted refs to disabled refs."""
-        #--Load
-        modPath = self.modInfo.getPath()
-        collection = ObCollection(ModsPath=dirs['mods'].s)
-        collection.addMod(modPath.stail)
-        collection.load()
-        modFile = collection.LookupModFile(modPath.stail)
-        #--Edit
-        for attr in ('ACHRS','ACRES','REFRS'):
-            for record in getattr(modFile,attr):
-                if record.IsDeleted:
-                    record.IsDeleted = False
-                    record.IsIgnored = True
-        #--Save
-        try:
-            modFile.save()
-        except WindowsError, werr:
-            if werr.winerror != 32: raise
-            while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
-                try:
-                    modFile.save()
-                except WindowsError, werr:
-                    continue
-                break
-            else:
-                raise
-
-    def _undelete_Python(self,progress):
-        """Duplicates file, then walks through and edits file as necessary."""
-        progress.setFull(self.modInfo.size)
-        fixedRefs = self.fixedRefs
-        fixedRefs.clear()
-        #--File stream
-        path = self.modInfo.getPath()
-        #--Scan/Edit
-        ins = ModReader(self.modInfo.name,path.open('rb'))
-        out = path.temp.open('wb')
-        def copy(size,back=False):
-            buff = ins.read(size)
-            out.write(buff)
-        def copyPrev(size):
-            ins.seek(-size,1)
-            buff = ins.read(size)
-            out.write(buff)
-        while not ins.atEnd():
-            progress(ins.tell())
-            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
-            copyPrev(20)
-            if type == 'GRUP':
-                if fid != 0: #--Ignore sub-groups
-                    pass
-                elif flags not in ('CELL','WRLD'):
-                    copy(size-20)
-            #--Handle cells
-            else:
-                if flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                    flags = (flags & ~0x20) | 0x1000
-                    out.seek(-20,1)
-                    out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
-                    fixedRefs.add(fid)
-                copy(size)
-        #--Done
-        ins.close()
-        out.close()
-        if fixedRefs:
-            self.modInfo.makeBackup()
-            path.untemp()
-            self.modInfo.setmtime()
-        else:
-            path.temp.remove()
+                    path.temp.remove()
 
 #------------------------------------------------------------------------------
 class SaveSpells:
