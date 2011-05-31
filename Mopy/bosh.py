@@ -11075,7 +11075,7 @@ class InstallerConverter(object):
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         if bosh.inisettings['EnableUnicode']:
-            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s
+            command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7zUnicode.exe').s, self.fullPath.s, self.tempDir.s)
             command = command.encode('mbcs')
         else:
             command = '"%s" x "%s" -y -o"%s"' % (dirs['mopy'].join('7z.exe').s, self.fullPath.s, self.tempDir.s)
