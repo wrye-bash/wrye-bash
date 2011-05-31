@@ -11804,7 +11804,7 @@ class InstallerProject(Installer):
             out.write('--*\\')
         out.close()
         #--Compress
-        if bosh.inisettings['EnableUnicode']:
+        if bolt.bUseUnicode:
             command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (dirs['mopy'].join('7zUnicode.exe').s, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
             command = command.encode('mbcs')
         else:
@@ -11824,7 +11824,10 @@ class InstallerProject(Installer):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,bolt.Unicode(archive.s)+bolt.Unicode(_("\nCompressing files...\n%s") % maCompressing.group(1).strip()))
+                if bUseUnicode:
+                    progress(index,archive.s+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1).strip()))
+                else:
+                    progress(index,archive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
         self.tempList.remove()
@@ -11870,11 +11873,17 @@ class InstallerProject(Installer):
         configPath.head.makedirs()
         out = bolt.StructFile(configPath.temp.s,'wb')
         out.pack('B',4)
-        out.writeNetString(config.name)
+        if bolt.bUseUnicode:
+            out.writeNetString(Encode(config.name))
+        else:
+            out.writeNetString(config.name)
         out.pack('i',config.vMajor)
         out.pack('i',config.vMinor)
         for attr in ('author','email','website','abstract'):
-            out.writeNetString(getattr(config,attr))
+            if bolt.bUseUnicode:
+                out.writeNetString(Encode(getattr(config,attr)))
+            else:
+                out.writeNetString(getattr(config,attr))
         out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
         out.pack('b',0) #--zip compression (will be ignored)
         out.write('\xFF\xFF\xFF\xFF')
