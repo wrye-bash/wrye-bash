@@ -123,6 +123,7 @@ if os.path.exists(languagePkl):
         if core and core in _translator:
             text = head+_translator[core]+tail
         if encode: text = text.decode('string_escape')
+        if bUseUnicode: text = unicode(text,'mbcs')
         return text
 else:
     def _(text,encode=True): return text
