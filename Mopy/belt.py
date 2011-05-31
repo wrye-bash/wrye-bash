@@ -884,7 +884,11 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join('oblivion.exe'))
         return ret[0]
     def fnCompareOBSEVersion(self, obseWant):
-        ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join('obse_loader.exe'))
+        if bosh.inisettings['SteamInstall']:
+            obse = 'obse_steam_loader.dll'   # User may not have obse_loader.exe, since it's only required for the CS
+        else:
+            obse = 'obse_loader.exe'
+        ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join(obse))
         return ret[0]
     def fnCompareOBGEVersion(self, obgeWant):
         ret = self._TestVersion_OBGE(self._TestVersion_Want(obgeWant))
@@ -1340,7 +1344,11 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(obWant, bosh.dirs['app'].join('oblivion.exe'))
         bObOk = ret[0] >= 0
         obHave = ret[1]
-        ret = self._TestVersion(obseWant, bosh.dirs['app'].join('obse_loader.exe'))
+        if bosh.inisettings['SteamInstall']:
+            obseName = 'obse_steam_loader.dll'
+        else:
+            obseName = 'obse_loader.exe'
+        ret = self._TestVersion(obseWant, bosh.dirs['app'].join(obseName))
         bOBSEOk = ret[0] >= 0
         obseHave = ret[1]
         ret = self._TestVersion_OBGE(obgeWant)
