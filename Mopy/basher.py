@@ -2614,8 +2614,14 @@ class SaveDetails(wx.Window):
             self.coSaves = '%s\n%s' % saveInfo.coSaves().getTags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
-        self.playerInfo.SetLabel(_("%s\nLevel %d, Day %d, Play %d:%02d\n%s") %
-            (self.playerNameStr,self.playerLevel,int(self.gameDays),self.playMinutes/60,(self.playMinutes % 60),self.curCellStr))
+        if bolt.bUseUnicode:
+            self.playerInfo.SetLabel(_("%s\nLevel %d, Day %d, Play %d:%02d\n%s") %
+                                     (self.playerNameStr.decode('mbcs'),
+                                      self.playerLevel,int(self.gameDays),self.playMinutes/60,(self.playMinutes % 60),
+                                      self.curCellStr.decode('mbcs')))
+        else:
+            self.playerInfo.SetLabel(_("%s\nLevel %d, Day %d, Play %d:%02d\n%s") %
+                                     (self.playerNameStr,self.playerLevel,int(self.gameDays),self.playMinutes/60,(self.playMinutes % 60),self.curCellStr))
         self.gCoSaves.SetLabel(self.coSaves)
         self.masters.SetFileInfo(saveInfo)
         #--Picture
