@@ -11522,10 +11522,7 @@ class InstallerArchive(Installer):
                 errorLine.append(line)
             if maExtracting:
                 extracted.append(maExtracting.group(1).strip())
-                if bUseUnicode:
-                    progress(index,_("%s\nExtracting files...\n%s") % (archive.s.encode('UTF8'), maExtracting.group(1).strip()))
-                else:
-                    progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
+                progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
@@ -11534,10 +11531,7 @@ class InstallerArchive(Installer):
         cmd = cmd.encode('mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
-            if bUseUnicode:
-                raise StateError(_("%s: Extraction failed\n%s") % (archive.s.encode('UTF8'),"\n".join(errorLine)))
-            else:
-                raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
+            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
