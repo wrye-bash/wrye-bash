@@ -676,12 +676,18 @@ class Path(object):
         return hash(self._cs)
     def __cmp__(self, other):
         try:
-            if isinstance(other,Path): return cmp(self._cs, other._cs)
+            if isinstance(other,Path):
+                try:
+                    return cmp(self._cs, other._cs)
+                except UnicodeDecodeError:
+                    try:
+                        return cmp(Encode(self._cs), Encode(other._cs))
+                    except UnicodeError:
+                        deprint("Wrye Bash Unicode mode is currently %s" % (['off.','on.'][bUseUnicode]))
+                        deprint("unrecovered Unicode error when dealing with %s - presuming non equal." % (self._cs))
+                        return False
             else: return cmp(self._cs, Path.getCase(other))
-        except UnicodeDecodeError:
-            deprint("Wrye Bash Unicode mode is currently %s" % (['off.','on.'][bUseUnicode]))
-            deprint("Unicode errorr when dealing with %s - presuming non equal." % (self._cs))
-            return False
+            
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
