@@ -17218,7 +17218,7 @@ class ModCleaner:
         else:
             return ModCleaner._scan_CBash(modInfos,what,progress)
 
-    def clean(self,what=UDR&FOG,progress=bolt.Progress(),reScan=False):
+    def clean(self,what=UDR|FOG,progress=bolt.Progress(),reScan=False):
         """reScan:
              True: perform scans before cleaning
              False: only perform scans if itm/udr is empty
