@@ -1151,10 +1151,8 @@ class Archive:
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = crc = isDir = 0
 
-        if bosh.inisettings['EnableUnicode']:
-            command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7zUnicode.exe').s, self.path.s)
-        else:
-            command = '"%s" l "%s"' % (bosh.dirs['mopy'].join('7z.exe').s, self.path.s)
+        command = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
+        command = Encode(command,'mbcs')
         out = Popen(command, stdout=PIPE).stdout
         for line in out:
             print line,
@@ -1179,10 +1177,8 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        if bosh.inisettings['EnableUnicode']:
-            command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7zUnicode.exe'),self.path.s)
-        else:
-            command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.dirs['mopy'].join('7z.exe'),self.path.s)
+        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (exe7z,self.path.s)
+        command = Encode(command,'mbcs')
         out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         for line in out:

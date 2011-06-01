@@ -2393,11 +2393,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the __bUseMyGameDirectory__ is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
-  * Unicode improvements:
-    * Fixed viewing/saving modfiles with tejón and other accented author names.
-    * Fixed project view/scanning for projects containing unicode filenames.
-    * Fixed project->archive packaging for projects that contain unicode filenames.
-    * Warning if using Unicode Wrye Bash but using non-unicode wxPython.
+  * Unicode improvements: (all only applicable in unicode mode)
+    * Fixed viewing/saving modfiles with tejón and other non-ascii author names.
+    * Fixed project view/scanning for projects containing non-ascii filenames.
+    * Fixed project->archive packaging for projects that contain files with non-ascii names.
+    * Warning added if using Unicode Wrye Bash but using non-unicode wxPython.
+    * Fixed viewing savefile with non-ascii data (contributed by valda).
+    * Fixed omod config viewing/editing wtih non-ascii data.
+    * Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).
+    * Fixed translateable messages to be returned in unicode (contributed by valda).
   * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
   * Selectable jpeg quality in the Screenshots Tab
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
