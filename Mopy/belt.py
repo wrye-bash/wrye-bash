@@ -644,7 +644,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
-        self.SetFunction('GetEspmState', self.fnGetEspmState, 1)
+        self.SetFunction('GetEspmStatus', self.fnGetEspmStatus, 1)
         self.SetFunction('EditINI', self.fnEditINI, 4)
         self.SetFunction('Exec', self.fnExec, 1)
         self.SetFunction('EndExec', self.fnEndExec, 1)
