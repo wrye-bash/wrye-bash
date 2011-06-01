@@ -9800,9 +9800,9 @@ class ConfigHelpers:
             if scanDirty:
                 try:
                     with balt.Progress(_('Scanning for Dirty Edits...'),'\n'+' '*60,parent=scanDirty,abort=True) as progress:
-                        ret = ModCleaner.scan_Many(scan,progress)
+                        ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
                         for i,mod in enumerate(scan):
-                            udrs,itms = ret[i]
+                            udrs,itms,fog = ret[i]
                             if udrs or itms:
                                 cleanMsg = []
                                 if udrs:
