@@ -11824,10 +11824,7 @@ class InstallerProject(Installer):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                if bUseUnicode:
-                    progress(index,archive.s+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1).strip()))
-                else:
-                    progress(index,archive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
+                progress(index,archive.s+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1).strip()))
                 index += 1
         result = ins.close()
         self.tempList.remove()
@@ -11873,17 +11870,11 @@ class InstallerProject(Installer):
         configPath.head.makedirs()
         out = bolt.StructFile(configPath.temp.s,'wb')
         out.pack('B',4)
-        if bolt.bUseUnicode:
-            out.writeNetString(Encode(config.name))
-        else:
-            out.writeNetString(config.name)
+        out.writeNetString(Encode(config.name))
         out.pack('i',config.vMajor)
         out.pack('i',config.vMinor)
         for attr in ('author','email','website','abstract'):
-            if bolt.bUseUnicode:
-                out.writeNetString(Encode(getattr(config,attr)))
-            else:
-                out.writeNetString(getattr(config,attr))
+            out.writeNetString(Encode(getattr(config,attr)))
         out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
         out.pack('b',0) #--zip compression (will be ignored)
         out.write('\xFF\xFF\xFF\xFF')
