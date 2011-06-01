@@ -26849,7 +26849,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         """Edits the bashed patch file directly."""
         subProgress = SubProgress(progress)
         values = self.values = self.choiceValues[self.chosen]
-        subProgress.setFull(len(values))
+        subProgress.setFull(max(len(values),1))
         pstate = 0
         for eid,value in zip(self.key,values):
             subProgress(pstate, _("Finishing GMST Tweaks..."))
@@ -30584,21 +30584,22 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         def getBook(patchFile, objectId):
             book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
             #There have been reports of this patcher failing, hence the sanity checks
-            if book.recType != 'BOOK':
-                print PrintFormID(fid)
-                print patchFile.ObCollection.Debug_DumpModFiles()
-                print book
-                raise StateError(_("Cobl Catalogs: Unable to lookup book record in Cobl Main.esm!"))
-            book = book.CopyAsOverride(self.patchFile)
-            if not book:
-                print PrintFormID(fid)
-                print patchFile.ObCollection.Debug_DumpModFiles()
-                print book
-                book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
-                print book
-                print book.text
-                print
-                raise StateError(_("Cobl Catalogs: Unable to create book!"))
+            if book:
+                if book.recType != 'BOOK':
+                    print PrintFormID(fid)
+                    print patchFile.ObCollection.Debug_DumpModFiles()
+                    print book
+                    raise StateError(_("Cobl Catalogs: Unable to lookup book record in Cobl Main.esm!"))
+                book = book.CopyAsOverride(self.patchFile)
+                if not book:
+                    print PrintFormID(fid)
+                    print patchFile.ObCollection.Debug_DumpModFiles()
+                    print book
+                    book = coblMod.LookupRecord((GPath('Cobl Main.esm'),objectId))
+                    print book
+                    print book.text
+                    print
+                    raise StateError(_("Cobl Catalogs: Unable to create book!"))
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
@@ -31466,7 +31467,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         mFactable = self.mFactable
         if not mFactable: return
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(mFactable))
+        subProgress.setFull(max(len(mFactable),1))
         pstate = 0
         try:
             coblMod = patchFile.ObCollection.LookupModFile(self.cobl.s)

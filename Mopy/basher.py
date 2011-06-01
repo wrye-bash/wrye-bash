@@ -2918,7 +2918,7 @@ class InstallersList(balt.Tank):
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if not x.isdir() and x.cext == '.omod']
-        filenames = [x for x in filenames if x.isdir() or x.cext in ['.7z','.rar','.zip']]
+        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts]
         if len(omodnames) > 0:
             failed = []
             completed = []
@@ -3073,6 +3073,14 @@ class InstallersList(balt.Tank):
             if len(self.GetSelected()):
                 path = self.data.dir.join(self.GetSelected()[0])
                 if path.exists(): path.start()
+        elif event.ControlDown() and event.GetKeyCode() == (ord('v')-ord('a')+1):
+            ##Ctrl+V
+            if wx.TheClipboard.Open():
+                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+                    obj = wx.FileDataObject()
+                    wx.TheClipboard.GetData(obj)
+                    wx.CallLater(10,self.OnDropFiles,0,0,obj.GetFilenames())
+                wx.TheClipboard.Close()
         else:
             event.Skip()
 
