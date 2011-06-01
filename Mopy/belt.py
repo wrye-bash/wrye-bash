@@ -904,7 +904,7 @@ class WryeParser(ScriptParser.Parser):
                     return True # It's a ghosted mod
                 return False
         return True
-    def fnGetEspmState(self, filename):
+    def fnGetEspmStatus(self, filename):
         file = bolt.GPath(filename)
         if file in bosh.modInfos.merged: return 3   # Merged
         if file in bosh.modInfos.ordered: return 2  # Active
