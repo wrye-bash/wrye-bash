@@ -230,22 +230,26 @@ NumEncodings = len(UnicodeEncodings)
 def Unicode(name):
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,unicode): return name
-    for i in range(NumEncodings):
-        try:
-            return unicode(name,UnicodeEncodings[i])
-        except UnicodeDecodeError:
-            if i == NumEncodings - 1:
-                raise
+    if isinstance(name,str):
+        for i in range(NumEncodings):
+            try:
+                return unicode(name,UnicodeEncodings[i])
+            except UnicodeDecodeError:
+                if i == NumEncodings - 1:
+                    raise
+    return name
 
 def Encode(name):
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,str): return name
-    for i in range(NumEncodings-1,0,-1):
-        try:
-            return name.encode(UnicodeEncodings[i])
-        except UnicodeEncodeError:
-            if i == 0:
-                raise
+    if isinstance(name,unicode):
+        for i in range(NumEncodings):
+            try:
+                return name.encode(UnicodeEncodings[i])
+            except UnicodeEncodeError:
+                if i == NuMEncodings - 1:
+                    raise
+    return name
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
