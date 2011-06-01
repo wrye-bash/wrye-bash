@@ -1867,22 +1867,22 @@ class ModDetails(wx.Window):
         #--Empty?
         if not fileName:
             modInfo = self.modInfo = None
-            self.fileStr = ''
-            self.authorStr = ''
-            self.modifiedStr = ''
-            self.descriptionStr = ''
-            self.versionStr = 'v0.0'
-            tagsStr = ''
+            self.fileStr = Unicode('')
+            self.authorStr = Unicode('')
+            self.modifiedStr = Unicode('')
+            self.descriptionStr = Unicode('')
+            self.versionStr = Unicode('v0.0')
+            tagsStr = Unicode('')
         #--Valid fileName?
         else:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = modInfo.name.s
-            self.authorStr = modInfo.header.author
-            self.modifiedStr = formatDate(modInfo.mtime)
-            self.descriptionStr = modInfo.header.description
-            self.versionStr = 'v%0.1f' % (modInfo.header.version,)
-            tagsStr = '\n'.join(sorted(modInfo.getBashTags()))
+            self.fileStr = Unicode(modInfo.name.s)
+            self.authorStr = Unicode(modInfo.header.author)
+            self.modifiedStr = Unicode(formatDate(modInfo.mtime))
+            self.descriptionStr = Unicode(modInfo.header.description)
+            self.versionStr = Unicode('v%0.1f' % (modInfo.header.version,))
+            tagsStr = Unicode('\n').join(sorted(modInfo.getBashTags()))
         #--Editable mtime?
         if fileName in bosh.modInfos.autoSorted:
             self.modified.SetEditable(False)
@@ -1915,7 +1915,7 @@ class ModDetails(wx.Window):
     def OnTextEdit(self,event):
         if self.modInfo and not self.edited:
             if ((self.fileStr != self.file.GetValue()) or
-                (Unicode(self.authorStr) != Unicode(self.author.GetValue())) or
+                (self.authorStr != self.author.GetValue()) or
                 (self.modifiedStr != self.modified.GetValue()) or
                 (self.descriptionStr != self.description.GetValue()) ):
                 self.SetEdited()
