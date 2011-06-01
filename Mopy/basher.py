@@ -3258,7 +3258,7 @@ class InstallersPanel(SashTankPanel):
                 self.refreshed = True
                 if bosh.inisettings['ClearRO']:
                     cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-                    cmd = cmd.encode('mbcs')
+                    cmd = Encode(cmd,'mbcs')
                     ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
             except CancelError:
                 # User canceled the refresh
@@ -9465,6 +9465,7 @@ class Mods_DumpTranslator(Link):
                     outFile.write(key+'\n>>>>\n')
                     value = _(key,False)
                     if value != key:
+                        value = Encode(value,'mbcs')
                         outFile.write(value)
                     outFile.write('\n')
                     dumpedKeys.add(key)
