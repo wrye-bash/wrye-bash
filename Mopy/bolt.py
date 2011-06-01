@@ -118,6 +118,7 @@ if os.path.exists(languagePkl):
     _translator = cPickle.load(pklFile)
     pklFile.close()
     def _(text,encode=True):
+        text = Encode(text,'mbcs')
         if encode: text = reEscQuote.sub("'",text.encode('string_escape'))
         head,core,tail = reTrans.match(text).groups()
         if core and core in _translator:
@@ -224,6 +225,8 @@ UnicodeEncodings = (
     'U16',      # Some files use UTF-16 though
     'cp1252',   # Western Europe
     'cp500',    # Western Europe
+    'cp932',    # Japanese SJIS-win 
+    'mbcs',     # Multi-byte character set (depends on the Windows locale)
     )
 NumEncodings = len(UnicodeEncodings)
 
@@ -239,15 +242,21 @@ def Unicode(name):
                     raise
     return name
 
-def Encode(name):
+def Encode(name,tryFirstEncoding=False):
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,str): return name
     if isinstance(name,unicode):
+        if tryFirstEncoding:
+            try:
+                return name.encode(tryFirstEncoding)
+            except UnicodeEncodeError: 
+                deprint("Unable to encode '%s' in %s" % (name, tryFirstEncoding))
+                pass
         for i in range(NumEncodings):
             try:
                 return name.encode(UnicodeEncodings[i])
             except UnicodeEncodeError:
-                if i == NuMEncodings - 1:
+                if i == NumEncodings - 1:
                     raise
     return name
 
@@ -626,6 +635,7 @@ class Path(object):
         if self.isdir() and safety and safety.lower() in self._cs:
             # Clear ReadOnly flag if set
             cmd = r'attrib -R "%s\*" /S /D' % (self._s)
+            cmd = Encode(cmd,mbcs)
             ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
             shutil.rmtree(self._s)
 

@@ -115,7 +115,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 
 def listArchiveContents(fileName):
     command = r'"%s" l -slt "%s"' % (exe7z, fileName)
-    command = Encode(command)
+    command = Encode(command,'mbcs')
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
@@ -11032,7 +11032,7 @@ class InstallerConverter(object):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
         command = '"%s" x "%s" BCF.dat -y -so' % (exe7z, self.fullPath.s)
-        command = Encode(command)
+        command = Encode(command,'mbcs')
         try:
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
@@ -11072,7 +11072,7 @@ class InstallerConverter(object):
         progress = progress or bolt.Progress()
         progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
         command = '"%s" x "%s" -y -o"%s"' % (exe7z, self.fullPath.s, self.tempDir.s)
-        command = Encode(command)
+        command = Encode(command,'mbcs')
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         ins = stringBuffer(ins)
         #--Error checking
@@ -11279,7 +11279,7 @@ class InstallerConverter(object):
             else: solid += ' %s' % inisettings['7zExtraCompressionArguments']
 
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
-        command = Encode(command)
+        command = Encode(command,'mbcs')
 
         progress(0,_("%s\nCompressing files...") % destArchive.s)
         progress.setFull(1+length)
@@ -11333,7 +11333,7 @@ class InstallerConverter(object):
             progress(0,_("%s\nExtracting files...") % srcInstaller.s)
             progress.setFull(1+len(fileNames))
         command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
-        command = Encode(command)
+        command = Encode(command,'mbcs')
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
@@ -11360,7 +11360,7 @@ class InstallerConverter(object):
         self.tempList.remove()
         # Clear ReadOnly flag if set
         cmd = r'attrib -R "%s\*" /S /D' % (subTempDir.s)
-        cmd = Encode(cmd)
+        cmd = Encode(cmd,'mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
@@ -11486,7 +11486,7 @@ class InstallerArchive(Installer):
         apath = dirs['installers'].join(archive)
         if bUseUnicode:
             command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (exe7z, apath.s, self.tempDir.s, self.tempList.s)
-            command = Encode(command)
+            command = Encode(command,'mbcs')
         else:
             command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, self.tempDir.s, self.tempList.s)
         if recurse:
@@ -11793,7 +11793,7 @@ class InstallerProject(Installer):
         out.close()
         #--Compress
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
-        command = Encode(command)
+        command = Encode(command,'mbcs')
         progress(0,_("%s\nCompressing files...") % archive.s)
         progress.setFull(1+length)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
