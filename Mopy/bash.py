@@ -262,6 +262,7 @@ def main():
 
     try:
         bosh.initBosh(personal,localAppData,oblivionPath)
+        bosh.exe7z = bosh.dirs['mopy'].join(bosh.exe7z).s
     except bolt.PermissionError, e:
         if '-d' in opts or (args and args[0] == '0'):
             if hasattr(sys,'frozen'):

@@ -86,6 +86,16 @@ from bolt import _, LString, Unicode, Encode, GPath, Flags, DataDict, SubProgres
 from cint import *
 startupinfo = bolt.startupinfo
 
+#--Unicode
+if bolt.bUseUnicode:
+    exe7z = '7zUnicode.exe'
+    unicodeConvert = lambda text: unicode(text,'UTF-8')
+    stringBuffer = StringIO.StringIO
+else:
+    exe7z = '7z.exe'
+    unicodeConvert = lambda text: text
+    stringBuffer = cStringIO.StringIO
+
 # Singletons, Constants -------------------------------------------------------
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
@@ -33170,15 +33180,6 @@ def getLegacyPath(newPath, oldPath):
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
-    #--Unicode
-    if bolt.bUseUnicode:
-        exe7z = dirs['mopy'].join('7zUnicode.exe').s
-        unicodeConvert = lambda text: unicode(text,'UTF-8')
-        stringBuffer = StringIO.StringIO
-    else:
-        exe7z = dirs['mopy'].join('7z.exe').s
-        unicodeConvert = lambda text: text
-        stringBuffer = cStringIO.StringIO
     dirs['mopyData'] = dirs['mopy'].join('Data')
     dirs['mopyExtras'] = dirs['mopy'].join('Extras')
     dirs['mopyImages'] = dirs['mopy'].join('Images')
