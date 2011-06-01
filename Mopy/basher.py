@@ -8662,20 +8662,12 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
-        if bolt.bUseUnicode:
-            self.gName = wx.TextCtrl(self,-1,Unicode(config.name))
-            self.gVersion = wx.TextCtrl(self,-1,'%d.%02d' % (config.vMajor,config.vMinor))
-            self.gWebsite = wx.TextCtrl(self,-1,Unicode(config.website))
-            self.gAuthor = wx.TextCtrl(self,-1,Unicode(config.author))
-            self.gEmail = wx.TextCtrl(self,-1,Unicode(config.email))
-            self.gAbstract = wx.TextCtrl(self,-1,Unicode(config.abstract),style=wx.TE_MULTILINE)
-        else:
-            self.gName = wx.TextCtrl(self,-1,config.name)
-            self.gVersion = wx.TextCtrl(self,-1,'%d.%02d' % (config.vMajor,config.vMinor))
-            self.gWebsite = wx.TextCtrl(self,-1,config.website)
-            self.gAuthor = wx.TextCtrl(self,-1,config.author)
-            self.gEmail = wx.TextCtrl(self,-1,config.email)
-            self.gAbstract = wx.TextCtrl(self,-1,config.abstract,style=wx.TE_MULTILINE)
+        self.gName = wx.TextCtrl(self,-1,Unicode(config.name))
+        self.gVersion = wx.TextCtrl(self,-1,'%d.%02d' % (config.vMajor,config.vMinor))
+        self.gWebsite = wx.TextCtrl(self,-1,Unicode(config.website))
+        self.gAuthor = wx.TextCtrl(self,-1,Unicode(config.author))
+        self.gEmail = wx.TextCtrl(self,-1,Unicode(config.email))
+        self.gAbstract = wx.TextCtrl(self,-1,Unicode(config.abstract),style=wx.TE_MULTILINE)
         #--Max Lenght
         self.gName.SetMaxLength(100)
         self.gVersion.SetMaxLength(32)
