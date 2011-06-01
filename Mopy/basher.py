@@ -12019,7 +12019,7 @@ class Mod_UndeleteRefs(Link):
                 progress(index,_("Scanning %s.") % (fileName.s,))
                 fileInfo = bosh.modInfos[fileName]
                 cleaner = bosh.ModCleaner(fileInfo)
-                cleaner.cleanUDRs(SubProgress(progress,index,index+1))
+                cleaner.clean(bosh.ModCleaner.UDR,SubProgress(progress,index,index+1))
                 if cleaner.udr:
                     hasFixed = True
                     log.setHeader('==%s' % (fileName.s,))
