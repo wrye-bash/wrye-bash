@@ -74,7 +74,7 @@ Comments are extra text ignored by the wizard engine, to explain what is going o
 
 Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments must be seperatred by a comma.  For example:
 
-[color=purple]DummyFunction[/color](~~arg1~~, [color=brown]"Hello"[/color])</ br>
+[color=purple]DummyFunction[/color](~~arg1~~, [color=brown]"Hello"[/color])
 
 == CompareObVersion
 Used to test the installed version of Oblivion against one you specify.
@@ -845,7 +845,7 @@ Have a problem with your wizard script? Here are some common mistakes that cause
     [color=green]; Do some 292+ only stuff here, like...[/color]
     [[#EditINI|[color=purple]EditINI[/color]]]([color=brown]'Oblivion.ini'[/color], [color=brown]'Display'[/color], [color=brown]'bAllowScreenShot'[/color], [color=cyan]1[/color])
 [[#|[color=blue]Else[/color]]]
-    [color=green]; User is running < 292, so EditINI is unavailable.[/color]
+    [color=green]; User is running &lt; 292, so EditINI is unavailable.[/color]
     [[#|[color=blue]Note[/color]]] [color=brown]"Don't forget to enable screenshots in Oblivion.ini"[/color]
 [[#|[color=blue]EndIf[/color]]]
 [/code]</td></tr></table>
@@ -1073,8 +1073,8 @@ to iterate over files and folders in an installer.  Then use:
   ~~file~~.[[#|[color=purple]lower[/color]]]().[[#|[color=purple]endswith[/color]]]([color=green]".esp"[/color])
   [[#|[color=purple]GetFilename[/color]]](~~file~~)
   [[#|[color=purple]GetFolder[/color]]](~~file~~)
-and other string manipulation functions to test file names and folders.[/code]</td></tr>
-</table>
+and other string manipulation functions to test file names and folders.
+[/code]</td></tr></table>
 
 == Functions in OBMM that do not have an equivalent in Wizards
 <table style="width:100%;"><tr valign="top">
