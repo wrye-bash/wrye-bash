@@ -152,6 +152,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#CreateaPackageOverviewReadme">Create a Package Overview Readme</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#YesNoQuestion">Yes/No Question?</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CheckforaPlugin">Check for a Plugin</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#UseSVNfeaturessafely">Use SVN features safely</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#ModswithWizards">Mods with Wizards</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#WizardtoOBMMScriptComparison">Wizard to OBMM Script Comparison</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FunctionalitywithdirectcorrelationtoOBMMScript">Functionality with direct correlation to OBMM Script</a></p>
@@ -248,20 +249,23 @@
 </p>
 <p class="empty">&nbsp;</p>
 <h2><a id='Dialogs'>Dialogs</a></h2>
+<p>These are the dialogs that are may be shown while running a wizard.  The different ways you might encounter them are listed below.
+</p>
+<p class="empty">&nbsp;</p>
 <h3><a id='SelectOne'>SelectOne</a></h3>
-<p>This <a href="images/SelectOne.jpg">dialog</a> gives you a list of options, with the option to select one of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+<p>This <a href="images/SelectOne.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='SelectMany'>SelectMany</a></h3>
-<p>This <a href="images/SelectMany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+<p>This <a href="images/SelectMany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1"><span style="color:blue;">SelectMany</span></a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Versions'>Versions</a></h3>
-<p>This <a href="images/Versions.png">dialog</a> will show up if the wizard specified minimum version requirements, and your system doesn't meet those requirements.  If you want to run the wizard anyway, you can override the warning by clicking the "Install Anyway." option.  If you are running the wizard as an Auto-Wizard, this page will still be shown, but the "Install Anyway." option will already be checked for you.
+<p>This <a href="images/Versions.png">dialog</a> will show up if the wizard specified minimum version requirements, and your system doesn't meet those requirements.  It will be shown if a <a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> check fails.  If you want to run the wizard anyway, you can override the warning by clicking the "Install Anyway." option, however this is not recommended.  If you are running the wizard as an Auto-Wizard, this page will still be shown, but the "Install Anyway." option will already be checked for you.
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Cancel'>Cancel</a></h3>
-<p>This <a href="images/Cancel.png">dialog</a> will be show if the wizard cancels execution for some reason.  If a reason is given, it will be displayed
+<p>This <a href="images/Cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1"><span style="color:blue;">Cancel</span></a> keyword.  If a reason is given, it will be displayed
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Error'>Error</a></h3>
@@ -269,7 +273,7 @@
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Finish'>Finish</a></h3>
-<p>This <a href="images/Finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It also show what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
+<p>This <a href="images/Finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return"><span style="color:blue;">Return</span></a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
 </p>
 <p class="empty">&nbsp;</p>
 <h2><a id='Thelanguage'>The language</a></h2>
@@ -324,13 +328,10 @@
   <p class="empty">&nbsp;</p>
 <h1><a id='Functions'>Functions</a></h1>
   <p class="empty">&nbsp;</p>
-<p>Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments can be seperatred either by whitespace or a comma.  For example, both of the following would have the same result:
+<p>Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments must be seperatred by a comma.  For example:
 </p>
   <p class="empty">&nbsp;</p>
-<p><b>DummyFunction(arg1, "Hello")</b><br />
-</p>
-<p><b>DummyFunction(arg1 "Hello")</b>
-</p>
+<span style="color:purple;">DummyFunction</span>(<i>arg1</i>, <span style="color:brown;">"Hello"</span>)</ br>
   <p class="empty">&nbsp;</p>
 <h2><a id='CompareObVersion'>CompareObVersion</a></h2>
 <p>Used to test the installed version of Oblivion against one you specify.
@@ -447,23 +448,15 @@ setGS fPCBaseMagickaMult 1</pre>
   <p class="list-2">&bull;&nbsp;  <i><b>lines:</b></i> A string containing lines to execute, seperated by newline characters, or a variable containing such a string.</p>
   <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Example:</b></p>
-  <pre>Exec("SelectOne 'Do you like icecream?', '|Yes', 'Select this if you like icecream!', 'icecream.jpg', 'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'\nCase 'Yes'\nNote 'You like icecream!'\nBreak\nCase 'No'\nNote 'Why don\'t you like icecream?'\nBreak\nEndSelect')</pre>
-  Would be the same as:
-  <pre>SelectOne 'Do you like icecream?', \
-          '|Yes', 'Select this if you like icecream!', 'icecream.jpg', \
-          'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'
-Case 'Yes'
-    Note 'You like icecream!'
-    Break
-Case 'No'
-    Note 'Why don\'t you like icecream?'
-    Break
-EndSelect</pre>
-<p class="empty">&nbsp;</p>
+<table><tr><td class="code"><p class="code-0"><a href="#Exec"><span style="color:purple;">Exec</span></a>(<span style="color:brown;">"</span><a href="#SelectOne1"><span style="color:brown;">SelectOne</span></a> <span style="color:brown;">'Do you like icecream?', '|Yes', 'Select this if you like icecream!', 'icecream.jpg', 'No', 'Select this if you do not like icecream', 'ihateicecream.jpg'\n</span><a href="#Case"><span style="color:brown;">Case</span></a> <span style="color:brown;">'Yes'\n</span><a href="#Note"><span style="color:brown;">Note</span></a> <span style="color:brown;">'You like icecream!'\n</span><a href="#Break2"><span style="color:brown;">Break</span></a><span style="color:brown;">\n</span><a href="#Case"><span style="color:brown;">Case</span></a> <span style="color:brown;">'No'\n</span><a href="#Note"><span style="color:brown;">Note</span></a> <span style="color:brown;">'Why don\\\'t you like icecream?'\n</span><a href="#Break2"><span style="color:brown;">Break</span></a><span style="color:brown;">\n</span><a href="#EndSelect"><span style="color:brown;">EndSelect</span></a><span style="color:brown;">"</span>)</p><p class="code-0"></p></td></tr></table>
+  <p class="list-2">&nbsp;&nbsp;  Would be the same as:</p>
+<table><tr><td class="code"><p class="code-0"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">'Do you like icecream?'</span>, \</p><p class="code-2"><span style="color:brown;">'|Yes'</span>, <span style="color:brown;">'Select this if you like icecream!'</span>, <span style="color:brown;">'icecream.jpg'</span>, \</p><p class="code-2"><span style="color:brown;">'No'</span>, <span style="color:brown;">'Select this if you do not like icecream'</span>, <span style="color:brown;">'ihateicecream.jpg'</span></p><p class="code-0"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'Yes'</span></p><p class="code-2"><a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">'You like icecream!'</span></p><p class="code-2"><a href="#Break2"><span style="color:blue;">Break</span></a></p><p class="code-0"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'No'</span></p><p class="code-2"><a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">'Why don\'t you like icecream?'</span></p><p class="code-2"><a href="#Break2"><span style="color:blue;">Break</span></a></p><p class="code-0"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></p><p class="code-0"></p></td></tr></table>
+  <p class="list-2">&bull;&nbsp;  Notice how the <b>\\\'</b> was interpreted as <b>\'</b> once the <span style="color:purple;">Exec</span> was converted into lines.  Remember to add two extra backslashes so the final statement has a backslash in it!</p>
+  <p class="empty">&nbsp;</p>
 <h2><a id='str'>str</a></h2>
 <p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 </p>
-<p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  <b>str(<i><b>value</b></i>)</b></p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
@@ -698,13 +691,13 @@ EndSelect</pre>
   <p class="list-2">&bull;&nbsp;  <b>ResetAllEspmNames</b></p>
   <p class="empty">&nbsp;</p>
 <h2><a id='Note'>Note</a></h2>
-<p>Add a note to the user to be displayed at the end of the wizard, on the <a href="images/finish.jpg">finish page</a>.  The '- ' will be added automatically.
+<p>Add a note to the user to be displayed at the end of the wizard, on the <a href="images/finish.png">finish page</a>.  The '- ' will be added automatically.
 </p>
   <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Note <i><b>note</b></i></b></p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>note:</b></i> string or variable holding a string, to be displayed on the <a href="images/finish.jpg">finish page</a>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>note:</b></i> string or variable holding a string, to be displayed on the <a href="images/finish.png">finish page</a>.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='IfElifElseEndIf'>If-Elif-Else-EndIf</a></h2>
 <p>A basic <b>If</b> control block.
@@ -813,11 +806,11 @@ EndSelect</pre>
 <p class="list-1">&bull;&nbsp;  Signals the end of the <b>Select</b> control block.</p>
 <p class="empty">&nbsp;</p>
 <h2><a id='SelectMany1'>SelectMany</a></h2>
-<p>Shows a <a href="images/SelectMany.jpg">dialog</a> where the user can select multiple options from a list.  After the user presses the "Next" button, this begins a <b>Select</b> control block.  See <a href="#SelectOne">SelectOne</a> for usage.
+<p>Shows a <a href="images/SelectMany.jpg">dialog</a> where the user can select multiple options from a list.  After the user presses the "Next" button, this begins a <b>Select</b> control block.  See <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> for usage.
 </p>
 <p class="empty">&nbsp;</p>
 <h2><a id='Return'>Return</a></h2>
-<p>Signals completion of the wizard.  This will jump right to the <a href="images/finish.jpg">finish page</a>.
+<p>Signals completion of the wizard.  This will jump right to the <a href="images/finish.png">finish page</a>.
 </p>
 <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
@@ -1063,45 +1056,22 @@ EndSelect</pre>
 <h2><a id='CreateaPackageOverviewReadme'>Create a Package Overview Readme</a></h2>
 <p class="list-1">&bull;&nbsp;  Every Wizard should have some sort of nice little overview for the user to read before proceeding with the actual installation questions.</p>
 <p class="list-1">&bull;&nbsp;  Notice the following example has no Case's(This is intended) and the Default character is before the 'Start Here_Readme'.</p>
-<pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
-SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
-	"|Start Here_Readme","If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.","", \
-	"ExampleMod Overview","ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla","", \
-	"Changelog","Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release","", \
-	"Guidelines for a Example install","","", \
-	"ExampleMod Screenshots","","Screenshots\\ExampleScreenshot.jpg", \
-	"Credits\Authors","Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.","", \
-	"Language","Language or Nationality this BAIN wizard was written in. \n\n English (USA)","Wizard Images\\EnglishUSA.jpg"
-EndSelect
-</pre>
+<table><tr><td class="code"><p class="code-0"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">"Welcome to the ExampleMod's mod Setup Wizard"</span>, \</p><p class="code-2"><span style="color:brown;">"|Start Here_Readme"</span>, <span style="color:brown;">"If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do."</span>, <span style="color:brown;">""</span>, \</p><p class="code-2"><span style="color:brown;">"ExampleMod Overview"</span>, <span style="color:brown;">"ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla"</span>, <span style="color:brown;">""</span>, \</p><p class="code-2"><span style="color:brown;">"Changelog"</span>, <span style="color:brown;">"Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release"</span>, <span style="color:brown;">""</span>, \</p><p class="code-2"><span style="color:brown;">"Guidelines for a Example install"</span>, <span style="color:brown;">""</span>, <span style="color:brown;">""</span>, \</p><p class="code-2"><span style="color:brown;">"ExampleMod Screenshots"</span>, <span style="color:brown;">""</span>, <span style="color:brown;">"Screenshots\\ExampleScreenshot.jpg"</span>, \</p><p class="code-2"><span style="color:brown;">"Credits\\Authors"</span>, <span style="color:brown;">"Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud."</span>, <span style="color:brown;">""</span>, \</p><p class="code-2"><span style="color:brown;">"Language"</span>, <span style="color:brown;">"Language or Nationality this BAIN wizard was written in. \n\n English (USA)"</span>, <span style="color:brown;">"Wizard Images\\EnglishUSA.jpg"</span></p><p class="code-0"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></p><p class="code-0"></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <h2><a id='YesNoQuestion'>Yes/No Question?</a></h2>
 <p class="list-1">&bull;&nbsp;  Lets say that you want to ask the user a Yes or No question whether to install a feature of your mod.</p>
-<p class="list-1">&bull;&nbsp;  'SelectOne' in the following example could be replaced by many other <a href="#Keywords">Keywords</a>.</p>
-<p class="list-1">&bull;&nbsp;  'SelectSubPackage' in the following example could be replaced by many other <a href="#Keywords">Keywords</a> or even another Yes/No Question Block.</p>
-<pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
-SelectOne "Example: Yes/No Question?",\
-		"Yes","Description.","Wizard Images\\Yes.jpg", \
-		"No","Description.","Wizard Images\\No.jpg"
-	Case "Yes"
-		SelectSubPackage "00 Example Subpackage" ;;;Action/No Action
-	Break
-	Case "No"
-		;No Plugin ;;;Action/No Action
-	Break
-EndSelect
-</pre>
+<p class="list-1">&bull;&nbsp;  <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> in the following example could be replaced by many other <a href="#Keywords">Keywords</a>.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> in the following example could be replaced by many other <a href="#Keywords">Keywords</a> or even another Yes/No Question Block.</p>
+<table><tr><td class="code"><p class="code-0"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">"Example: Yes/No Question?"</span>, \</p><p class="code-3"><span style="color:brown;">"Yes"</span>, <span style="color:brown;">"Description"</span>, <span style="color:brown;">"Wizard Images\\Yes.jpg"</span>, \</p><p class="code-3"><span style="color:brown;">"No"</span>, <span style="color:brown;">"Description"</span>, <span style="color:brown;">"Wizard Images\\No.jpg"</span></p><p class="code-2"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"Yes"</span></p><p class="code-4"><a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> <span style="color:brown;">"00 Example Subpackage"</span> <span style="color:green;">;;;Action/No Action</span></p><p class="code-4"><a href="#Break2"><span style="color:blue;">Break</span></a></p><p class="code-2"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"No"</span></p><p class="code-4"><span style="color:green;">;No Plugin ;;Action/No Action</span></p><p class="code-4"><a href="#Break2"><span style="color:blue;">Break</span></a></p><p class="code-0"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></p><p class="code-0"></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <h2><a id='CheckforaPlugin'>Check for a Plugin</a></h2>
 <p class="list-1">&bull;&nbsp;  Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.</p>
-<pre style="border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in">
-If DataFileExists("ExamplePlugin.esp")
-	Note "ExamplePlugin Detected." ;;;Action/No Action
-	SelectEspm "PatchPlugin.esp" ;;;Action/No Action
-Else ;ExamplePlugin.esp wasn't detected
-	;No Plugin ;;;Action/No Action
-EndIf
-</pre>
+<table><tr><td class="code"><p class="code-0"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<span style="color:brown;">"ExamplePlugin.esp"</span>)</p><p class="code-2"><a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">"ExamplePlugin Detected."</span> <span style="color:green;">;;;Action/No Action</span></p><p class="code-2"><a href="#SelectEspm"><span style="color:blue;">SelectEspm</span></a> <span style="color:brown;">"PatchPlugin.esp"</span> <span style="color:green;">;;;Action/No Action</span></p><p class="code-0"><a href="#Else"><span style="color:blue;">Else</span></a> <span style="color:green;">; ExamplePlugin.esp wasn't detected</span></p><p class="code-2"><span style="color:green;">;No Plugin ;;;Action/No Action</span></p><p class="code-0"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></p><p class="code-0"></p></td></tr></table>
+<p class="empty">&nbsp;</p>
+<h2><a id='UseSVNfeaturessafely'>Use SVN features safely</a></h2>
+<p class="list-1">&bull;&nbsp;  You're spruicing up your wizard with some fancy new features that are only availible in the SVN.  How will you make sure that your wizard still works for people with the official release?</p>
+<p class="list-1">&bull;&nbsp;  Enclose the 'SVN only' code in a version check.</p>
+<table><tr><td class="code"><p class="code-0"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<span style="color:brown;">'292'</span>) >= <span style="color:cyan;">0</span></p><p class="code-2"><span style="color:green;">; User is running 292+</span></p><p class="code-2"><span style="color:green;">; Do some 292+ only stuff here, like...</span></p><p class="code-2"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'Oblivion.ini'</span>, <span style="color:brown;">'Display'</span>, <span style="color:brown;">'bAllowScreenShot'</span>, <span style="color:cyan;">1</span>)</p><p class="code-0"><a href="#Else"><span style="color:blue;">Else</span></a></p><p class="code-2"><span style="color:green;">; User is running < 292, so EditINI is unavailable.</span></p><p class="code-2"><a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">"Don't forget to enable screenshots in Oblivion.ini"</span></p><p class="code-0"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></p><p class="code-0"></p></td></tr></table>
 <p class="empty">&nbsp;</p>
 <h2><a id='ModswithWizards'>Mods with Wizards</a></h2>
 <p class="list-1">&bull;&nbsp;  This is a list of some mods that have wizards included with them if you would like to look at them for reference.</p>
