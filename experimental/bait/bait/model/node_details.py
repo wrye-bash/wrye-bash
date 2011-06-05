@@ -22,4 +22,40 @@
 #
 # =============================================================================
 
-# empty (for now)
+from .. import model
+
+
+# TODO: flesh this file out more
+
+class PackageNodeDetails(model._VersionedData):
+    def __init__(self):
+        model._VersionedData.__init__(self)
+        # TODO: general tab data
+
+class FileNodeDetails(model._VersionedData):
+    def __init__(self):
+        model._VersionedData.__init__(self)
+        self.size = 0
+        self.crc = 0
+        self.modDate = 0
+        self.conflictingNodeIds = []
+        self.conflictWinner = 0
+
+class EspFileNodeDetails(FileNodeDetails):
+    def __init__(self):
+        FileNodeDetails.__init__(self)
+        self.records = 0
+        self.masters = [] # esp file names
+        self.deps = [] # node Ids
+        self.uninstalledDeps = [] # node Ids
+        self.missingDeps = [] # file names
+
+class BsaFileNodeDetails(FileNodeDetails):
+    def __init__(self):
+        FileNodeDetails.__init__(self)
+        self.numFiles = 0
+
+class ResourceFileNodeDetails(FileNodeDetails):
+    def __init__(self):
+        FileNodeDetails.__init__(self)
+        self.thumbnailFilePath = None

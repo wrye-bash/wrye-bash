@@ -25,18 +25,30 @@
 from . import impl
 
 
-INSTALLERS_ROOT_NODE_ID = impl.nodeCounter.next()
-TARGET_ROOT_NODE_ID     = impl.nodeCounter.next()
+ROOT_NODE_ID = impl.nodeCounter.next()
 
-NODE_TYPE_GROUP = 0x01
-NODE_TYPE_PROJECT_ROOT = 0x02
-NODE_TYPE_SUBPROJECT = 0x04
-NODE_TYPE_ARCHIVE = 0x08
+NODE_TYPE_ROOT = 0x01
+NODE_TYPE_PACKAGE = 0x02
+NODE_TYPE_GROUP = 0x04
+NODE_TYPE_SUBPACKAGE = 0x08
 NODE_TYPE_DIRECTORY = 0x10
 NODE_TYPE_FILE = 0x20
 
-UPDATE_TYPE_ATTRIBUTES = 1
-UPDATE_TYPE_CHILDREN = 2
-UPDATE_TYPE_DETAILS  = 3
-UPDATE_TYPE_STATUS   = 4
-UPDATE_TYPE_ERROR   = 5
+ERROR_PERMISSIONS_READ = 1
+ERROR_PERMISSIONS_WRITE = 2
+ERROR_DISK_FULL = 3
+# TODO: ...
+
+# for node updates, the tuple is: (updateType, nodeType, nodeId, version)
+# for error, the tuple is: (UPDATE_TYPE_ERROR, errorCode, resourceName)
+UPDATE_TYPE_ATTRIBUTES = 0x01
+UPDATE_TYPE_CHILDREN = 0x02
+UPDATE_TYPE_DETAILS = 0x04
+UPDATE_TYPE_ERROR = 0x08
+
+
+class _VersionedData:
+    """version gets incremented for every change to the data.  clients can check the
+    version to ensure an update is for data newer than what it already has"""
+    def __init__(self):
+        self.version = 0

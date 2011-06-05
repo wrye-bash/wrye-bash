@@ -22,6 +22,40 @@
 #
 # =============================================================================
 
+import logging
+
+
+_logger = logging.getLogger(__name__)
+
+
 class BaitModel:
-    def __init__(self):
-        pass
+    def __init__(self, updateNotificationQueue, stateManager=None, ioProxy=None):
+        self.updateNotificationQueue = updateNotificationQueue;
+
+    def start(self):
+        _logger.debug("model starting")
+
+    def pause(self):
+        _logger.debug("model pausing")
+
+    def resume(self):
+        _logger.debug("model resuming")
+
+    def shutdown(self):
+        _logger.debug("model shutting down")
+        self.updateQueue.put(None)
+
+    def set_selected_package(self, nodeId):
+        _logger.debug("setting selected package to %d", nodeId)
+
+    def get_node_attributes(self, nodeId):
+        _logger.debug("retrieving attributes for node %d", nodeId)
+        return None
+
+    def get_node_children(self, nodeId):
+        _logger.debug("retrieving children for node %d", nodeId)
+        return None
+
+    def get_node_details(self, nodeId):
+        _logger.debug("retrieving details for node %d", nodeId)
+        return None

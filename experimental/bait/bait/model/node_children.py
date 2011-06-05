@@ -22,4 +22,10 @@
 #
 # =============================================================================
 
-# empty (for now)
+from .. import model
+
+
+class NodeChildren(model._VersionedData):
+    def __init__(self):
+        model._VersionedData.__init__(self)
+        self.children = []
