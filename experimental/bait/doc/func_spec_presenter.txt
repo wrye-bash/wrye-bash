@@ -7,6 +7,11 @@ Status: unorganized notes
 
 
 
+Overview
+--------
+The presenter makes all decisions about how data is displayed and implements all filtering and searching algorithms.  It is called by the view to communicate user actions.  It calls the model to perform low-level actions, retrieve data, and to communicate current areas of interest so the model can focus its calculations.  It reads from the model update queue and writes commands to the view queue.
+
+
 Presenter
   Keeps data display state
   Performs filtering and searches
