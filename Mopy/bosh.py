@@ -22081,7 +22081,10 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         if changed:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.items_list = items
+                try:
+                    override.items_list = items
+                except AttributeError:
+                    override.items_list = [item for item in items if item[0][0]]
                 class_mod_count = self.class_mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
