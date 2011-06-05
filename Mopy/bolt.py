@@ -60,10 +60,16 @@ UnicodeEncodings = (
     )
 NumEncodings = len(UnicodeEncodings)
 
-def Unicode(name):
+def Unicode(name,tryFirstEncoding=False):
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,unicode): return name
     if isinstance(name,str):
+        if tryFirstEncoding:
+            try:
+                return unicode(name,tryFirstEncoding)
+            except UnicodeDecodeError: 
+                deprint("Unable to decode '%s' in %s." % (name, tryFirstEncoding))
+                pass
         for i in range(NumEncodings):
             try:
                 return unicode(name,UnicodeEncodings[i])
@@ -80,7 +86,7 @@ def Encode(name,tryFirstEncoding=False):
             try:
                 return name.encode(tryFirstEncoding)
             except UnicodeEncodeError: 
-                deprint("Unable to encode '%s' in %s" % (name, tryFirstEncoding))
+                deprint("Unable to encode '%s' in %s." % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
             try:

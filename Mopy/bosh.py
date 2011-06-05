@@ -30483,9 +30483,9 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             buff = stringBuffer()
             buff.write(book.text)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(full+'\r\n')
+                buff.write(Unicode(full,'mbcs')+'\r\n')
                 for mgef,actorValue in effects[:num]:
-                    effectName = mgef_name[mgef]
+                    effectName = Unicode(mgef_name[mgef], 'mbcs')
                     if mgef in actorEffects: effectName += actorNames[actorValue]
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
@@ -30494,10 +30494,10 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         effect_ingred = {}
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
-                effectName = mgef_name[mgef]
+                effectName = Unicode(mgef_name[mgef], 'mbcs')
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 if effectName not in effect_ingred: effect_ingred[effectName] = []
-                effect_ingred[effectName].append((index,full))
+                effect_ingred[effectName].append((index,Unicode(full,'mbcs')))
         #--Effect catalogs
         iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
@@ -30510,7 +30510,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
                     buff.write(effectName+'\r\n')
                     for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
                         exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
+                        buff.write(' '+`index + 1`+exSpace+' '+Unicode(full,'mbcs')+'\r\n')
                     buff.write('\r\n')
             book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
         #--Log
