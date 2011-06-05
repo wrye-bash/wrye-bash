@@ -3358,14 +3358,14 @@ class InstallersPanel(SashTankPanel):
             if len(installer.subNames) <= 2:
                 self.gSubList.Clear()
             else:
-                balt.setCheckListItems(self.gSubList, installer.subNames[1:],installer.subActives[1:])
+                balt.setCheckListItems(self.gSubList, [x.replace('&','&&') for x in installer.subNames[1:]], installer.subActives[1:])
             #--Espms
             if not installer.espms:
                 self.gEspmList.Clear()
             else:
                 names = self.espms = sorted(installer.espms)
                 names.sort(key=lambda x: x.cext != '.esm')
-                balt.setCheckListItems(self.gEspmList, [['','*'][installer.isEspmRenamed(x.s)]+x.s for x in names],
+                balt.setCheckListItems(self.gEspmList, [['','*'][installer.isEspmRenamed(x.s)]+x.s.replace('&','&&') for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
             self.gComments.SetValue(installer.comments)
