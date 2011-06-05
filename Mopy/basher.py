@@ -1604,10 +1604,16 @@ class ModList(List):
         elif checkMark == 3: mouseText += _("Imported into Bashed Patch. ")
         elif status == 20:   mouseText += _("Masters have been re-ordered. ")
         #should mod be deactivated
-        if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
-            item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
-        else:
-            item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
+        try:
+            if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
+                item.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_SLANT, wx.FONTWEIGHT_NORMAL))
+            else:
+                item.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        except: # In case using a much older wxPython that didn't yet have the font family globals named nicely:
+            if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
+                item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
+            else:
+                item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['bash.doubleTime.load'])
@@ -5821,7 +5827,8 @@ class PatchDialog(wx.Dialog):
                 timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip('0')
                 logValue = re.sub('TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
-                readme.open('w').write(logValue)
+                with readme.open('w') as file:
+                    file.write(Encode(logValue,'UTF8'))
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 docsDir = bosh.modInfos.dir.join('Docs')
@@ -5898,7 +5905,7 @@ class PatchDialog(wx.Dialog):
                 logValue = re.sub('TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join('Docs',patchName.sroot+'.txt')
                 with readme.open('w') as file:
-                    file.write(logValue)
+                    file.write(Encode(logValue,'UTF8'))
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 docsDir = bosh.modInfos.dir.join('Docs')
