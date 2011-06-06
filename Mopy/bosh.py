@@ -21695,7 +21695,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         if script:
             # Only save if different from the master record
             if record.GName != record.fid[0]:
-                history = record.History()[0]
+                history = record.History()
                 if history and len(history) > 0:
                     masterRecord = history[0]
                     if masterRecord.GName == record.fid[0] and masterRecord.script == record.script:
