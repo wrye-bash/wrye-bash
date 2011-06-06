@@ -20861,9 +20861,8 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        #We'll merge changes with the winning record, so it doesn't matter if it's listed in srcs
-        ##if modFile.GName in self.srcs:
-        self.scan(modFile,record,bashTags,True)
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags,True)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
         for conflict in record.Conflicts(True):
