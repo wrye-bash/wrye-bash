@@ -20823,7 +20823,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
+    def scan(self,modFile,record,bashTags,forceScan=False):
         """Records information needed to apply the patch."""
         recordId = record.fid
         newPackages = bolt.MemorySet(record.aiPackages)
@@ -20831,7 +20831,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             self.previousPackages[recordId] = {}
         self.previousPackages[recordId][modFile.GName] = newPackages
 
-        if modFile.GName in self.srcs:
+        if modFile.GName in self.srcs or forceScan:
             oldPackages = self.previousPackages[recordId][modFile.GName]
             if recordId not in self.mergedPackageList:
                 self.mergedPackageList[recordId] = newPackages
@@ -20861,8 +20861,9 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
+        #We'll merge changes with the winning record, so it doesn't matter if it's listed in srcs
+        ##if modFile.GName in self.srcs:
+        self.scan(modFile,record,bashTags,True)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
         for conflict in record.Conflicts(True):
@@ -20875,37 +20876,17 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
         recordId = record.fid
         if recordId in self.mergedPackageList:
-            mergedPackages = self.mergedPackageList[recordId]
-            listPackages = list(mergedPackages)
+            mergedPackages = list(self.mergedPackageList[recordId])
             if self.OOOandUOP:
                 for pkg in listPackages:
                     if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
                         if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
                             mergedPackages.discard(pkg)
-            if(record.aiPackages != listPackages):
+            if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     try:
-                        # Do a merge with the winning record,
-                        # rather than just overriding it
-                        overrideModFile = self.patchFile.ObCollection.LookupModFile(record.GName)
-                        newPackages = bolt.MemorySet(override.aiPackages)
-                        for master in reversed(overrideModFile.TES4.masters):
-                            masterPath = GPath(master)
-                            masterPackages = self.previousPackages[recordId].get(masterPath,None)
-                            if masterPackages is None: continue
-
-                            added = newPackages - masterPackages
-                            sameButReordered = masterPackages & newPackages
-                            prevDeleted = bolt.MemorySet(mergedPackages.discarded)
-                            newDeleted = masterPackages - newPackages
-
-                            mergedPackages |= newPackages
-                            if 'Actors.AIPackagesForceAdd' not in bashTags:
-                                prevDeleted |= newDeleted
-                            prevDeleted -= newPackages
-                            mergedPackages -= prevDeleted
-                        override.aiPackages = list(mergedPackages)
+                        override.aiPackages = mergedPackages
                     except:
                         newMergedPackages = []
                         for pkg in mergedPackages:
