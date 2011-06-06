@@ -22,6 +22,9 @@
 #
 # =============================================================================
 
+from cStringIO import StringIO
+
+
 # command IDs
 ADD_GROUP = 1
 ADD_PACKAGE = 2
@@ -38,6 +41,8 @@ EXPAND_DIR = 12
 SELECT_FILES = 13
 SET_STYLE_MAPS = 14
 SET_PACKAGE_INFO = 15
+DISPLAY_ERROR = 16
+SET_SUMMARY = 17
 
 # style values
 FONT_STYLE_BOLD_FLAG = 1
@@ -71,8 +76,8 @@ ICON_INSTALLER_UNINSTALLABLE = 18
 # status states
 STATUS_OK = 1
 STATUS_LOADING = 2
-STATUS_NEEDS_ANNEALING = 3
-STATUS_DOING_IO = 4
+STATUS_DIRTY = 3
+STATUS_UNSTABLE = 4
 
 OP_ANNEAL = 1
 OP_RENAME = 2
@@ -80,7 +85,8 @@ OP_DELETE = 3
 
 
 class ViewCommandStyle:
-    def __init__(self, fontStyleMask=None, textColorId=None, hilightColorId=None, checkboxState=None, iconId=None):
+    def __init__(self, fontStyleMask=None, textColorId=None, hilightColorId=None,
+                 checkboxState=None, iconId=None):
         self.fontStyleMask = fontStyleMask
         self.textColorId = textColorId
         self.hilightColorId = hilightColorId
@@ -98,17 +104,33 @@ class ViewCommand:
     '''The commandId refers to the subclass type.  The requestId is the id of
     the associated request that instigated this command.  If this command was
     not sent in response to a request, it will be set to None'''
-    def __init__(self, commandId, requestId):
+    def __init__(self, commandId):
         self.commandId = commandId
-        self.requestId = requestId
+    def __str__(self):
+        outStr = StringIO()
+        outStr.write(self.__class__.__name__)
+        outStr.write("[")
+        isFirst = True
+        for varName in self.__dict__:
+            if not varName.startswith("_"):
+                if not isFirst:
+                    outStr.write("; ")
+                outStr.write(varName)
+                outStr.write("=")
+                outStr.write(str(self.__dict__[varName]))
+                isFirst = False
+        outStr.write("]")
+        return outStr.getvalue()
+
 
 class _AddNode(ViewCommand):
     '''Adds a node to a tree
        The parent node will either have been previously sent or will be None,
        meaning top-level.  The predecessor node will either have been previously
        sent or be None, meaning "first child of parent"'''
-    def __init__(self, commandId, label, nodeId, parentNodeId, predecessorNodeId, style=None, requestId=None):
-        ViewCommand.__init__(self, commandId, requestId)
+    def __init__(self, commandId, label, nodeId, parentNodeId, predecessorNodeId,
+                 style=None):
+        ViewCommand.__init__(self, commandId)
         self.label = label
         self.nodeId = nodeId
         self.parentNodeId = parentNodeId
@@ -117,56 +139,64 @@ class _AddNode(ViewCommand):
 
 class AddGroup(_AddNode):
     '''Adds a group node to the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None, requestId=None):
-        _AddNode.__init__(self, ADD_GROUP, label, nodeId, parentNodeId, predecessorNodeId, style, requestId)
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+        _AddNode.__init__(self, ADD_GROUP, label, nodeId, parentNodeId, predecessorNodeId,
+                          style)
 
 class AddPackage(_AddNode):
     '''Adds a package node to the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None, requestId=None):
-        _AddNode.__init__(self, ADD_PACKAGE, label, nodeId, parentNodeId, predecessorNodeId, style, requestId)
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+        _AddNode.__init__(self, ADD_PACKAGE, label, nodeId, parentNodeId,
+                          predecessorNodeId, style)
 
 class ExpandGroup(ViewCommand):
-    def __init__(self, nodeId, requestId=None):
-        ViewCommand.__init__(self, EXPAND_GROUP, requestId)
+    def __init__(self, nodeId):
+        ViewCommand.__init__(self, EXPAND_GROUP)
         self.nodeId = nodeId
 
 class ExpandDir(ViewCommand):
-    def __init__(self, nodeId, requestId=None):
-        ViewCommand.__init__(self, EXPAND_DIR, requestId)
+    def __init__(self, nodeId):
+        ViewCommand.__init__(self, EXPAND_DIR)
         self.nodeId = nodeId
 
 class ClearPackages(ViewCommand):
-    def __init__(self, requestId=None):
-        ViewCommand.__init__(self, CLEAR_PACKAGES, requestId)
+    def __init__(self):
+        ViewCommand.__init__(self, CLEAR_PACKAGES)
 
 class SelectPackages(ViewCommand):
     '''nodeIds will be a list of node Ids to select'''
-    def __init__(self, nodeIds, requestId=None):
-        ViewCommand.__init__(self, SELECT_PACKAGES, requestId)
+    def __init__(self, nodeIds):
+        ViewCommand.__init__(self, SELECT_PACKAGES)
         self.nodeIds = nodeIds
 
 class SelectFiles(ViewCommand):
     '''nodeIds will be a list of node Ids to select'''
-    def __init__(self, nodeIds, requestId=None):
-        ViewCommand.__init__(self, SELECT_FILES, requestId)
+    def __init__(self, nodeIds):
+        ViewCommand.__init__(self, SELECT_FILES)
         self.nodeIds = nodeIds
 
 class SetFilterStats(ViewCommand):
-    def __init__(self, filterId, current, total, requestId=None):
-        ViewCommand.__init__(self, SET_FILTER_STATS, requestId)
+    def __init__(self, filterId, current, total):
+        ViewCommand.__init__(self, SET_FILTER_STATS)
         self.filterId = filterId
         self.current = current
         self.total = total
 
+class SetSummary(ViewCommand):
+    def __init__(self, installedFiles, installedPlugins, bainMb, installedMb, freeMb):
+        ViewCommand.__init__(self, SET_SUMMARY)
+        self.installedFiles = installedFiles
+        self.installedPlugins = installedPlugins
+        self.bainMb = bainMb
+        self.installedMb = installedMb
+        self.freeMb = freeMb
+
 class SetStatus(ViewCommand):
-    def __init__(self, status, hilightColorId, activePlugins=None, totalPlugins=None, knownFiles=None, totalFiles=None, loadingComplete=None, loadingTotal=None, ioOperations=None, requestId=None):
-        ViewCommand.__init__(self, SET_STATUS, requestId)
+    def __init__(self, status, hilightColorId, loadingComplete=None,
+                 loadingTotal=None, ioOperations=None):
+        ViewCommand.__init__(self, SET_STATUS)
         self.status = status
         self.hilightColorId = hilightColorId
-        self.activePlugins = activePlugins
-        self.totalPlugins = totalPlugins
-        self.knownFiles = knownFiles
-        self.totalFiles = totalFiles
         self.loadingComplete = loadingComplete
         self.loadingTotal = loadingTotal
         self.ioOperations = ioOperations
@@ -174,32 +204,35 @@ class SetStatus(ViewCommand):
 class _SetText(ViewCommand):
     '''If text is None, it means nothing is selected.  If text is the
     empty string, it means there is no text to display for that item'''
-    def __init__(self, commandId, text, requestId=None):
-        ViewCommand.__init__(self, commandId, requestId)
+    def __init__(self, commandId, text):
+        ViewCommand.__init__(self, commandId)
         self.text = text
 
 class SetPackageLabel(_SetText):
-    """None means no package is selected, a blank label means multiple packages are selected"""
-    def __init__(self, text, requestId=None):
-        _SetText.__init__(self, SET_PACKAGE_LABEL, text, requestId)
+    """None means no package is selected, a blank label means multiple packages are
+    selected"""
+    def __init__(self, text):
+        _SetText.__init__(self, SET_PACKAGE_LABEL, text)
 
 class AddFile(_AddNode):
     '''Adds a subpackage/file/directory node to the file tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None, requestId=None):
-        _AddNode.__init__(self, ADD_FILE, label, nodeId, parentNodeId, predecessorNodeId, style, requestId)
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+        _AddNode.__init__(self, ADD_FILE, label, nodeId, parentNodeId,
+                          predecessorNodeId, style)
 
 class ClearFiles(ViewCommand):
-    def __init__(self, requestId=None):
-        ViewCommand.__init__(self, CLEAR_FILES, requestId)
+    def __init__(self):
+        ViewCommand.__init__(self, CLEAR_FILES)
 
 class SetFileDetails(_SetText):
-    def __init__(self, text, requestId=None):
-        _SetText.__init__(self, SET_FILE_DETAILS, text, requestId)
+    def __init__(self, text):
+        _SetText.__init__(self, SET_FILE_DETAILS, text)
 
 class SetStyleMaps(ViewCommand):
-    '''Contains the map from style IDs to RGB tuples (for colors) and file resources (for images)'''
-    def __init__(self, colorMap, checkedIconMap, uncheckedIconMap, requestId=None):
-        ViewCommand.__init__(self, SET_STYLE_MAPS, requestId)
+    '''Contains the map from style IDs to RGB tuples (for colors) and file resources
+    (for images)'''
+    def __init__(self, colorMap, checkedIconMap, uncheckedIconMap):
+        ViewCommand.__init__(self, SET_STYLE_MAPS)
         self.colorMap = colorMap
         self.checkedIconMap = checkedIconMap
         self.uncheckedIconMap = uncheckedIconMap
@@ -215,14 +248,25 @@ class SetPackageInfo(ViewCommand):
       lastModifiedTimestamp: a string representing the last modification date
       The following additional keys are optional, interpreted as 0 if absent
       numFiles, numDirty, numOverridden, numSkipped,
-      numSelectedMatched, numSelectedMismatched, numSelectedOverridden, numSelectedMissing, numTotalSelected,
-      numUnselectedMatched, numUnselectedMismatched, numUnselectedOverridden, numUnselectelectedMissing, numTotalUnselected,
-      numTotalMatched, numTotalMismatched, numTotalOverridden, numTotalMissing, numTotalSelectable
-    For the Dirty tab: data is a list of tuples: (actionType, path), where actionType is one of
-      the dirty filter IDs
-    For the Conflicts tab, TODO: define     
+      numSelectedMatched, numSelectedMismatched, numSelectedOverridden,
+      numSelectedMissing, numTotalSelected, numUnselectedMatched,
+      numUnselectedMismatched, numUnselectedOverridden, numUnselectelectedMissing,
+      numTotalUnselected, numTotalMatched, numTotalMismatched, numTotalOverridden,
+      numTotalMissing, numTotalSelectable
+    For the Dirty tab: data is a list of tuples: (actionType, path), where actionType
+      is one of the dirty filter IDs
+    For the Conflicts tab, TODO: define
     """
-    def __init__(self, tabId, data, requestId=None):
-        ViewCommand.__init__(self, SET_PACKAGE_INFO, requestId)
+    def __init__(self, tabId, data):
+        ViewCommand.__init__(self, SET_PACKAGE_INFO)
         self.tabId = tabId
         self.data = data
+
+class DisplayError(ViewCommand):
+    """Error codes instead of a message since we want to avoid localizable strings in
+    the non-view layers"""
+    def __init__(self, errorCode, resourceName):
+        ViewCommand.__init__(self, DISPLAY_ERROR)
+        self.errorCode = errorCode
+        self.resourceName = resourceName
+
