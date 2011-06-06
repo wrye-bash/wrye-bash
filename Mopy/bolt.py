@@ -1900,6 +1900,7 @@ class ProgressFile(Progress):
         self.out.write('%0.2f %s\n' % (progress,message))
 
 # WryeText --------------------------------------------------------------------
+codebox = None
 class WryeText:
     """This class provides a function for converting wtxt text files to html
     files.
@@ -1968,12 +1969,7 @@ class WryeText:
     p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
     p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
     p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    .code-0 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
-    .code-1 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 1em; }
-    .code-2 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 2em; }
-    .code-3 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 3em; }
-    .code-4 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 4em; }
-    .code-5 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 5em; }
+    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
     pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
     code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
     td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
@@ -2003,37 +1999,18 @@ class WryeText:
         reList = re.compile(r'( *)([-x!?\.\+\*o])(.*)')
         #--Code
         reCode = re.compile(r'\[code\](.*?)\[/code\]',re.I)
-        reCodeStart = re.compile(r'\[code\](\s*)(.*?)',re.I)
-        reCodeLine = re.compile(r'(\s*)(.*)')
-        reCodeEnd = re.compile(r'(\s*)(.*?)\[/code\]',re.I)
+        reCodeStart = re.compile(r'(.*?)\[code\](.*?)$',re.I)
+        reCodeEnd = re.compile(r'(.*?)\[/code\](.*?)$',re.I)
+        reCodeBoxStart = re.compile(r'\s*\[codebox\](.*?)',re.I)
+        reCodeBoxEnd = re.compile(r'(.*?)\[/codebox\]\s*',re.I)
+        reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*',re.I)
+        codeLines = None
+        codeboxLines = None
         def subCode(match):
-            if len(match.group(1)) > 0:
-                return '<p class="code-0">%s</p>' % match.group(1)
-            else:
-                return ''
-        def subCodeStart(match):
-            states['code'] = True
-            indent = min(len(match.group(1))/2, 5)
-            if len(match.group(2)) > 0:
-                return '<p class="code-%i">%s</p>' % (indent, match.group(2))
-            else:
-                return ''
-        def subCodeLine(match):
-            if states['code']:
-                indent = min(len(match.group(1))/2, 5)
-                if len(match.group(2)) > 0:
-                    return '<p class="code-%i">%s</p>' % (indent,match.group(2))
-                else:
-                    return ''
-            else:
-                return match.group(0)
-        def subCodeEnd(match):
-            if states['code']:
-                states['code'] = False
-                indent = min(len(match.group(1))/2, 5)
-                return '<p class="code-%i">%s</p>' % (indent,match.group(2))
-            else:
-                return '%s%s' % (match.group(1), match.group(2))
+            try:
+                return ' '.join(codebox([match.group(1)],False,False))
+            except:
+                return match(1)
         #--Misc. text
         reHr = re.compile('^------+$')
         reEmpty = re.compile(r'\s+$')
@@ -2114,6 +2091,57 @@ class WryeText:
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
+            #--Codebox -----------------------------------
+            if codebox:
+                if codeboxLines is not None:
+                    maCodeBoxEnd = reCodeBoxEnd.match(line)
+                    if maCodeBoxEnd:
+                        codeboxLines.append(maCodeBoxEnd.group(1))
+                        outLines.append('<pre style="width:850px;">')
+                        try:
+                            codeboxLines = codebox(codeboxLines)
+                        except:
+                            pass
+                        outLines.extend(codeboxLines)
+                        outLines.append('</pre>')
+                        codeboxLines = None
+                        continue
+                    else:
+                        codeboxLines.append(line)
+                        continue
+                maCodeBox = reCodeBox.match(line)
+                if maCodeBox:
+                    outLines.append('<pre style="width:850px;">')
+                    try:
+                        outLines.extend(codebox([maCodeBox.group(1)]))
+                    except:
+                        outLines.append(maCodeBox.group(1))
+                    outLines.append('</pre>\n')
+                    continue
+                maCodeBoxStart = reCodeBoxStart.match(line)
+                if maCodeBoxStart:
+                    codeboxLines = [maCodeBoxStart.group(1)]
+                    continue
+            #--Code --------------------------------------
+                if codeLines is not None:
+                    maCodeEnd = reCodeEnd.match(line)
+                    if maCodeEnd:
+                        codeLines.append(maCodeEnd.group(1))
+                        try:
+                            codeLines = codebox(codeLines,False)
+                        except:
+                            pass
+                        outLines.extend(codeLines)
+                        codeLines = None
+                        line = maCodeEnd.group(2)
+                    else:
+                        codeLines.append(line)
+                        continue
+                line = reCode.sub(subCode,line)
+                maCodeStart = reCodeStart.match(line)
+                if maCodeStart:
+                    line = maCodeStart.group(1)
+                    codeLines = [maCodeStart.group(2)]
             #--Preformatted? -----------------------------
             maPreBegin = rePreBegin.search(line)
             maPreEnd = rePreEnd.search(line)
@@ -2132,17 +2160,7 @@ class WryeText:
             maList  = reList.match(line)
             maPar   = rePar.match(line)
             maEmpty = reEmpty.match(line)
-            #--Code --------------------------------------
-            line = reCode.sub(subCode,line)
-            maCodeStart = reCodeStart.search(line)
-            maCodeEnd = reCodeEnd.search(line)
             #--Contents
-            if maCodeStart:
-                line = reCodeStart.sub(subCodeStart, line)
-            elif maCodeEnd:
-                line = reCodeEnd.sub(subCodeEnd, line)
-            else:
-                line = reCodeLine.sub(subCodeLine,line)
             if maContents:
                 if maContents.group(1):
                     addContents = int(maContents.group(1))
