@@ -31187,7 +31187,9 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                     deprint('',traceback=True)
                     newMergedList = []
                     for entry in mergedList:
-                        if entry[1][0] != None: newMergedList.append(entry)
+                        fid = entry[1]
+                        if not fid or fid[0] == None: continue
+                        newMergedList.append(entry)
                     override.entries_list = newMergedList
 
     def finishPatch(self,patchFile, progress):
