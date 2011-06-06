@@ -20875,17 +20875,37 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
         recordId = record.fid
         if recordId in self.mergedPackageList:
-            mergedPackages = list(self.mergedPackageList[recordId])
+            mergedPackages = self.mergedPackageList[recordId]
+            listPackages = list(mergedPackages)
             if self.OOOandUOP:
-                for pkg in mergedPackages:
+                for pkg in listPackages:
                     if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
                         if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
-                            mergedPackages.remove(pkg)
-            if(record.aiPackages != mergedPackages):
+                            mergedPackages.discard(pkg)
+            if(record.aiPackages != listPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     try:
-                        override.aiPackages = mergedPackages
+                        # Do a merge with the winning record,
+                        # rather than just overriding it
+                        overrideModFile = self.patchFile.ObCollection.LookupModFile(record.GName)
+                        newPackages = bolt.MemorySet(override.aiPackages)
+                        for master in reversed(overrideModFile.TES4.masters):
+                            masterPath = GPath(master)
+                            masterPackages = self.previousPackages[recordId].get(masterPath,None)
+                            if masterPackages is None: continue
+
+                            added = newPackages - masterPackages
+                            sameButReordered = masterPackages & newPackages
+                            prevDeleted = bolt.MemorySet(mergedPackages.discarded)
+                            newDeleted = masterPackages - newPackages
+
+                            mergedPackages |= newPackages
+                            if 'Actors.AIPackagesForceAdd' not in bashTags:
+                                prevDeleted |= newDeleted
+                            prevDeleted -= newPackages
+                            mergedPackages -= prevDeleted
+                        override.aiPackages = list(mergedPackages)
                     except:
                         newMergedPackages = []
                         for pkg in mergedPackages:
