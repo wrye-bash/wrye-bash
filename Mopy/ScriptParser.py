@@ -704,7 +704,7 @@ class Parser(object):
     def _emit(self, word=None, type=None):
         word = word or self.word
         if word is None: return
-        self.wordStart = self.wordStart or self.cCol - 1
+        if self.wordStart is None: self.wordStart = self.cCol - 1
         type = type or getType(word, self)
 
         # Try to figure out if it's mutliple operators bunched together
@@ -806,6 +806,9 @@ class Parser(object):
             return self._stateName
         if c in ["'",'"']:
             error('Unexpected quotation %s following name token.' % c)
+        if c == ':' and self.word.endswith('in'):
+            self._grow(c)
+            return self._stateOperator
         return self._stateSpace(c)
 
     def _stateOperator(self, c):
