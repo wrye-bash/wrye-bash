@@ -2,7 +2,7 @@
 
 Title: Wrye Bash Installer Tab Presenter Design Document
 Author: Myk Taylor (myk002)
-Status: unorganized notes
+Status: working draft
 
 
 See component_diagram_presenter.* for a visual representation of the following 
@@ -49,14 +49,16 @@ interactions among multiple threads:
 Update Dispatcher
 -----------------
 API:
-  __init__(self, modelUpdateNotificationQueue, viewCommandQueue)
+  __init__(self, modelUpdateQueue, viewCommandQueue, widgetManagers)
   start(self)
-  shutdown(self)
+  shutdown_output(self) # after this returns no more updates will be processed
+  shutdown_input(self) # after this returns, processing thread has been joined
 
 Data:
-  Queue _modelUpdateNotificationQueue
+  Queue _modelUpdateQueue
   Queue _viewCommandQueue
-  Thread _dispatchThread
+  list _widgetManagers
+  Thread _monitorThread
 
 Algorithm:
   pop _modelUpdateNotificationQueue

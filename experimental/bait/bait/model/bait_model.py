@@ -59,3 +59,5 @@ class BaitModel:
     def get_node_details(self, nodeId):
         _logger.debug("retrieving details for node %d", nodeId)
         return None
+
+    # TODO: functions to implement menu commands (e.g. "anneal")

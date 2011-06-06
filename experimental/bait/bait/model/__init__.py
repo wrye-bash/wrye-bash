@@ -39,13 +39,20 @@ ERROR_PERMISSIONS_WRITE = 2
 ERROR_DISK_FULL = 3
 # TODO: ...
 
-# for node updates, the tuple is: (updateType, nodeType, nodeId, version)
-# for error, the tuple is: (UPDATE_TYPE_ERROR, errorCode, resourceName)
 UPDATE_TYPE_ATTRIBUTES = 0x01
 UPDATE_TYPE_CHILDREN = 0x02
 UPDATE_TYPE_DETAILS = 0x04
 UPDATE_TYPE_ERROR = 0x08
 
+# for node updates, the tuple is: (updateType, nodeType, nodeId, version)
+UPDATE_TUPLE_IDX_TYPE = 0
+UPDATE_NODE_TUPLE_IDX_NODE_TYPE = 1
+UPDATE_NODE_TUPLE_IDX_NODE_ID = 2
+UPDATE_NODE_TUPLE_IDX_VERSION = 3
+
+# for error, the tuple is: (UPDATE_TYPE_ERROR, errorCode, resourceName)
+UPDATE_ERROR_TUPLE_IDX_CODE = 1
+UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME = 2
 
 class _VersionedData:
     """version gets incremented for every change to the data.  clients can check the
