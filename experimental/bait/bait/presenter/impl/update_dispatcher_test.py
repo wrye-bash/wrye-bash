@@ -100,7 +100,8 @@ def update_dispatcher_test():
     modelUpdateQueue.put(update)
 
     _logger.debug("waiting for updates to be processed")
-    time.sleep(1)
+    while not modelUpdateQueue.empty():
+        time.sleep(0)
 
     _logger.debug("shutting down UpdateDispatcher output")
     ud.shutdown_output()

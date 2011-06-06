@@ -60,7 +60,6 @@ class UpdateDispatcher:
 
     def _run(self):
         _logger.debug("model update dispatcher thread starting")
-        # TODO: catch exceptions and log warning
         while True:
             updateInfo = self._modelUpdateQueue.get()
             # quit on None
@@ -73,7 +72,7 @@ class UpdateDispatcher:
                 if self._shutdown:
                     continue
                 try:
-                    _logger.debug("received update: %s" % str(updateInfo))
+                    _logger.debug("received update: %s", str(updateInfo))
                     updateType = updateInfo[model.UPDATE_TUPLE_IDX_TYPE]
                     if updateType is model.UPDATE_TYPE_ERROR:
                         # propagate errors to view
