@@ -20823,7 +20823,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Returns the group types that this patcher checks"""
         return ['CREA','NPC_']
     #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags,forceScan=False):
+    def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         recordId = record.fid
         newPackages = bolt.MemorySet(record.aiPackages)
@@ -20831,7 +20831,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
             self.previousPackages[recordId] = {}
         self.previousPackages[recordId][modFile.GName] = newPackages
 
-        if modFile.GName in self.srcs or forceScan:
+        if modFile.GName in self.srcs:
             oldPackages = self.previousPackages[recordId][modFile.GName]
             if recordId not in self.mergedPackageList:
                 self.mergedPackageList[recordId] = newPackages
@@ -20862,7 +20862,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags,True)
+            self.scan(modFile,record,bashTags)
         #Must check for "unloaded" conflicts that occur past the winning record
         #If any exist, they have to be scanned
         for conflict in record.Conflicts(True):
@@ -20877,10 +20877,10 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if recordId in self.mergedPackageList:
             mergedPackages = list(self.mergedPackageList[recordId])
             if self.OOOandUOP:
-                for pkg in listPackages:
+                for pkg in mergedPackages:
                     if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
                         if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
-                            mergedPackages.discard(pkg)
+                            mergedPackages.remove(pkg)
             if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
