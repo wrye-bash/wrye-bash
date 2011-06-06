@@ -716,7 +716,7 @@ class WryeParser(ScriptParser.Parser):
             else:
                 lastBlank = 0
             if pre:
-                outLine = '<p class="code-n" style="display: inline;">%s</p>\n' % outLine
+                outLine = '<span class="code-n" style="display: inline;">%s</span>\n' % outLine
             else:
                 if br:
                     outLine = '<span class="code-n">%s</span><br />\n' % outLine
