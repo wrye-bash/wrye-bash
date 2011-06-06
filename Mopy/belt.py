@@ -574,27 +574,183 @@ class PageVersions(PageInstaller):
 #  wizards
 #-----------------------------------------------------------------
 class WryeParser(ScriptParser.Parser):
-    def __init__(self, parent, installer, subs, bArchive, path, bAuto):
+    codeboxRemaps = {
+        'Link': {
+            # These are links that have different names than their text
+            'SelectOne':'SelectOne1',
+            'SelectMany':'SelectMany1',
+            '=':'Assignment',
+            '+=':'CompountAssignmentetc',
+            '-=':'CompountAssignmentetc',
+            '*=':'CompountAssignmentetc',
+            '/=':'CompountAssignmentetc',
+            '^=':'CompountAssignmentetc',
+            '+':'Addition',
+            '-':'Subtraction',
+            '*':'Multiplication',
+            '/':'Division',
+            '^':'Exponentiation',
+            'and':'Andampand',
+            '&':'Andampand',
+            'or':'Oror',
+            '|':'Oror',
+            'not':'Notnot',
+            '!':'Notnot',
+            'in':'Inin',
+            'in:':'CaseInsensitiveInin',
+            '==':'Equal',
+            '==:':'CaseinsensitiveEqual',
+            '!=':'NotEqual',
+            '!=:':'CaseinsensitiveNotEqual',
+            '>=':'GreaterThanorEqualgt',
+            '>=:':'CaseInsensitiveGreaterThanorEqualgt',
+            '>':'GreaterThangt',
+            '>:':'CaseInsensitiveGreaterThangt',
+            '<=':'LessThanorEquallt',
+            '<=:':'CaseInsensitiveLessThanorEquallt',
+            '<':'LessThanlt',
+            '<:':'CaseInsensitiveLessThanlt',
+            '.':'DotOperator',
+            'SubPackages':'ForContinueBreakEndFor',
+            },
+        'Text': {
+            # These are symbols that need to be replaced to be xhtml compliant
+            '&':'&amp;',
+            '<':'&lt;',
+            '<:':'&lt;:',
+            '<=':'&lt;=',
+            '<=:':'&lt;=:',
+            '>':'&gt;',
+            '>:':'&gt;:',
+            '>=':'&gt;=',
+            '>=:':'&gt;=:',
+            },
+        'Color': {
+            # These are items that we want colored differently
+            'in':'blue',
+            'in:':'blue',
+            'and':'blue',
+            'or':'blue',
+            'not':'blue',
+            },
+        }
+    @staticmethod
+    def codebox(lines,pre=True,br=True):
+        self = WryeParser(None,None,None,None,None,None,True) 
+        def colorize(text,color='black',link=True):
+            href = text
+            text = WryeParser.codeboxRemaps['Text'].get(text,text)
+            if color != 'black' or link:
+                color = WryeParser.codeboxRemaps['Color'].get(text,color)
+                text = '<span style="color:%s;">%s</span>' % (color,text)
+            if link:
+                href = WryeParser.codeboxRemaps['Link'].get(href,href)
+                text = '<a href="#%s">%s</a>' % (href,text)
+            return text
+
+        self.cLine = 0
+        outLines = []
+        lastBlank = 0
+        while self.cLine < len(lines):
+            line = lines[self.cLine]
+            self.cLine += 1
+            self.tokens = []
+            self.TokenizeLine(line)
+            tokens = self.tokens
+            line = line.strip('\r\n')
+
+            lastEnd = 0
+            dotCount = 0
+            outLine = ''
+            for i in tokens:
+                start,stop = i.pos
+                if start is not None and stop is not None:
+                    # Not an inserted token from the parser
+                    if i.type == ScriptParser.STRING:
+                        start -= 1
+                        stop  += 1
+                    # Padding
+                    padding = line[lastEnd:start]
+                    outLine += padding
+                    lastEnd = stop
+                    # The token
+                    text = line[start:stop]
+                    # Check for ellipses
+                    if i.text == '.':
+                        dotCount += 1
+                        if dotCount == 3:
+                            dotCount = 0
+                            outLine += '...'
+                        continue
+                    else:
+                        while dotCount > 0:
+                            outLine += colorize('.')
+                            dotCount -= 1
+                    if i.type == ScriptParser.KEYWORD:
+                        outLine += colorize(text,'blue')
+                    elif i.type == ScriptParser.FUNCTION:
+                        outLine += colorize(text,'purple')
+                    elif i.type in (ScriptParser.INTEGER, ScriptParser.DECIMAL):
+                        outLine += colorize(text,'cyan',False)
+                    elif i.type == ScriptParser.STRING:
+                        outLine += colorize(text,'brown',False)
+                    elif i.type == ScriptParser.OPERATOR:
+                        outLine += colorize(i.text)
+                    elif i.type == ScriptParser.CONSTANT:
+                        outLine += colorize(text, 'cyan')
+                    elif i.type == ScriptParser.NAME:
+                        outLine += '<i>%s</i>' % text
+                    else:
+                        outLine += text
+            if self.runon:
+                outLine += ' \\'
+            if lastEnd < len(line):
+                comments = line[lastEnd:]
+                if ';' in comments:
+                    outLine += colorize(comments,'green',False)
+            if outLine == '':
+                if len(outLines) != 0:
+                    lastBlank = len(outLines)
+                else:
+                    continue
+            else:
+                lastBlank = 0
+            if pre:
+                outLine = '<p class="code-n" style="display: inline;">%s</p>\n' % outLine
+            else:
+                if br:
+                    outLine = '<span class="code-n">%s</span><br />\n' % outLine
+                else:
+                    outLine = '<span class="code-n">%s</span>' % outLine
+            outLines.append(outLine)
+        if lastBlank:
+            outLines = outLines[:lastBlank]
+        return outLines
+
+    def __init__(self, parent, installer, subs, bArchive, path, bAuto, codebox=False):
         ScriptParser.Parser.__init__(self)
 
-        self.parent = parent
-        self.installer = installer
-        self.bArchive = bArchive
-        self.path = path
-        self.bAuto = bAuto
-        self.page = None
+        if not codebox:
+            self.parent = parent
+            self.installer = installer
+            self.bArchive = bArchive
+            self.path = path
+            self.bAuto = bAuto
+            self.page = None
 
-        self.choices = []
-        self.choiceIdex = -1
-        self.sublist = {}
-        self.espmlist = {}
-        for i in installer.espmMap.keys():
-            for j in installer.espmMap[i]:
-                if j not in self.espmlist:
-                    self.espmlist[j] = False
-            if i == '': continue
-            self.sublist[i] = False
+            self.choices = []
+            self.choiceIdex = -1
+            self.sublist = {}
+            self.espmlist = {}
+            for i in installer.espmMap.keys():
+                for j in installer.espmMap[i]:
+                    if j not in self.espmlist:
+                        self.espmlist[j] = False
+                if i == '': continue
+                self.sublist[i] = False
 
+        #--Constants
+        self.SetConstant('SubPackages','SubPackages')
         #--Operators
         #Assignment
         self.SetOperator('=' , self.Ass, ScriptParser.OP.ASS, ScriptParser.RIGHT)
@@ -1404,3 +1560,4 @@ class WryeParser(ScriptParser.Parser):
     def kwdCancel(self, msg=_("No reason given")):
         self.page = PageError(self.parent, _('The installer wizard was canceled:'), msg)
 # END --------------------------------------------------------------------------------------------------
+bolt.codebox = WryeParser.codebox
