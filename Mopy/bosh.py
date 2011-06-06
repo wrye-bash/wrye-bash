@@ -21695,9 +21695,11 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         if script:
             # Only save if different from the master record
             if record.GName != record.fid[0]:
-                masterRecord = record.History()[0]
-                if masterRecord.GName == record.fid[0] and masterRecord.script == record.script:
-                    return # Same
+                history = record.History()[0]
+                if history and len(history) > 0:
+                    masterRecord = history[0]
+                    if masterRecord.GName == record.fid[0] and masterRecord.script == record.script:
+                        return # Same
             self.id_script[record.fid] = script['script']
 
     def apply(self,modFile,record,bashTags):
