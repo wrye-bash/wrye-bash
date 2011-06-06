@@ -34,26 +34,29 @@ _logger = logging.getLogger(__name__)
 
 class _FilteredTree(wx.Panel):
     '''Provides a tree with a filter panel at the top'''
-    def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter_, setFilterButtonLabelFn=None):
+    def __init__(self, parent, filterIds, filterLabelFormatPatterns,
+                 presenter_, setFilterButtonLabelFn=None):
         wx.Panel.__init__(self, parent, style=wx.SUNKEN_BORDER)
 
         tree = self._tree = CT.CustomTreeCtrl(self, style=wx.NO_BORDER,
                 agwStyle=CT.TR_HAS_VARIABLE_ROW_HEIGHT|CT.TR_HAS_BUTTONS|CT.TR_HIDE_ROOT|CT.TR_MULTIPLE|CT.TR_NO_LINES)
         self.SetBackgroundColour(tree.GetBackgroundColour())
-        filterPanel = self._filterPanel = filter_panel.FilterPanel(self, filterIds, filterLabelFormatPatterns, presenter_, setFilterButtonLabelFn=setFilterButtonLabelFn)
+        filterPanel = self._filterPanel = filter_panel.FilterPanel(
+            self, filterIds, filterLabelFormatPatterns, presenter_,
+            setFilterButtonLabelFn=setFilterButtonLabelFn)
 
         topSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer.Add(filterPanel, 0, wx.EXPAND)
         topSizer.Add(tree, 1, wx.EXPAND)
         self.SetSizer(topSizer)
-        
+
         # create tree base
         tree.AddRoot("root")
         self._presenter = presenter_
         self._nodeIdToItem = {}
         self._checkedIconMap = {}
         self._uncheckedIconMap = {}
-        
+
         # bind to events
         tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
         tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
@@ -76,7 +79,8 @@ class _FilteredTree(wx.Panel):
         self._uncheckedIconMap = {}
         imageList = None
         idx = 0
-        for iconMap, _iconMap in ((checkedIconMap, self._checkedIconMap), (uncheckedIconMap, self._uncheckedIconMap)):
+        for iconMap, _iconMap in ((checkedIconMap, self._checkedIconMap),
+                                  (uncheckedIconMap, self._uncheckedIconMap)):
             for iconId in iconMap:
                 _iconMap[iconId] = idx;
                 idx = idx + 1
@@ -88,7 +92,8 @@ class _FilteredTree(wx.Panel):
         if not imageList is None:
             self._tree.SetImageListCheck(width, height, imageList)
 
-    def add_item(self, nodeId, label, parentNodeId, predNodeId, isBold, isItalics, textColor, hilightColor, checkboxState, iconId):
+    def add_item(self, nodeId, label, parentNodeId, predNodeId, isBold, isItalics,
+                 textColor, hilightColor, checkboxState, iconId):
         _logger.debug("adding node %d: '%s'", nodeId, label)
         if parentNodeId is None:
             parent = self._tree.GetRootItem()
@@ -107,11 +112,12 @@ class _FilteredTree(wx.Panel):
 
         item = self._tree.InsertItem(parent, predecessor, label, ct_type)
         item.SetData(nodeId)
-        
+
         if not iconId is None:
             # item has no SetCheckedImage method, so fake it
             item._checkedimages[CT.TreeItemIcon_Checked] = self._checkedIconMap[iconId]
-            item._checkedimages[CT.TreeItemIcon_NotChecked] = self._uncheckedIconMap[iconId]
+            item._checkedimages[CT.TreeItemIcon_NotChecked] = \
+                self._uncheckedIconMap[iconId]
 
         attr = item.Attr()
         if not textColor is None:
@@ -150,7 +156,7 @@ class _FilteredTree(wx.Panel):
         _logger.debug("handling tree selection changed event")
         nodeIds = []
         for item in self._tree.GetSelections():
-            nodeIds.append(item.GetData())                
+            nodeIds.append(item.GetData())
         self._notify_presenter_of_tree_selections(nodeIds)
         event.Skip()
 
@@ -158,7 +164,7 @@ class _FilteredTree(wx.Panel):
         '''tracks item expansion'''
         _logger.debug("handling tree item expansion event")
         self._presenter.set_node_expanded(event.GetItem().GetData(), True)
-        
+
     def _on_item_collapsed(self, event):
         '''tracks item collapse'''
         _logger.debug("handling tree item collapse event")
@@ -167,14 +173,18 @@ class _FilteredTree(wx.Panel):
 
 class PackagesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
-        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter, setFilterButtonLabelFn=self._set_filter_button_label)
+        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns,
+                               presenter,
+                               setFilterButtonLabelFn=self._set_filter_button_label)
         self.Bind(wx.EVT_CONTEXT_MENU, self._on_context_menu)
         self.Bind(wx.EVT_LEFT_DCLICK, self._on_double_click)
 
-    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
+    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern,
+                                 current, total):
         label = filterLabelFormatPattern % (current, total)
         filterButton.SetLabel(label)
-        filterButton.SetToolTipString("%d of %d package(s) fit search terms" % (current, total))
+        filterButton.SetToolTipString(
+            "%d of %d package(s) fit search terms" % (current, total))
 
     def _notify_presenter_of_tree_selections(self, nodeIds):
         self._presenter.set_packages_tree_selections(nodeIds)
@@ -182,7 +192,7 @@ class PackagesTree(_FilteredTree):
     def _on_item_expanded(self, event):
         _logger.debug("handling group expansion event")
         self._presenter.set_group_node_expanded(event.GetItem().GetData(), True)
-        
+
     def _on_item_collapsed(self, event):
         _logger.debug("handling group collapse event")
         self._presenter.set_group_node_expanded(event.GetItem().GetData(), False)
@@ -261,7 +271,7 @@ class FilesTree(_FilteredTree):
     def _on_item_expanded(self, event):
         _logger.debug("handling directory expansion event")
         self._presenter.set_dir_node_expanded(event.GetItem().GetData(), True)
-        
+
     def _on_item_collapsed(self, event):
         _logger.debug("handling directory collapse event")
         self._presenter.set_dir_node_expanded(event.GetItem().GetData(), False)

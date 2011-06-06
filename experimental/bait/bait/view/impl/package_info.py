@@ -112,7 +112,7 @@ class PackageInfoPanel(wx.Panel):
         generalTabPanel.SetSizer(generalTabSizer)
         generalTabPanel.SetAutoLayout(True)
         generalTabPanel.SetupScrolling()
-        
+
         packageInfoSizer = wx.BoxSizer(wx.VERTICAL)
         packageInfoSizer.Add(self._label, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
         packageInfoSizer.Add(packageInfoTabs, 1, wx.EXPAND)
@@ -191,7 +191,7 @@ class PackageInfoPanel(wx.Panel):
 
         if generalStats["isArchive"] is True: packageType = "Archive"
         elif generalStats["isArchive"] is False: packageType = "Project"
-        
+
         if generalStats["isHidden"] is True: status = "Hidden"
         elif generalStats["isInstalled"] is True: status = "Installed"
         elif generalStats["isInstalled"] is False: status = "Not Installed"
@@ -206,7 +206,7 @@ Files: %d
   Skipped: %d""" % (packageType, status, generalStats["packageSize"], generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
                     generalStats.get("dataCrc", "00000000"), generalStats.get("numFiles", 0), generalStats.get("numDirty", 0),
                     generalStats.get("numOverridden", 0), generalStats.get("numSkipped", 0)))
-  
+
         generalTabStatsChart = self._generalTabStatsChart
         for key in _statsChartElementKeys:
             generalTabStatsChart[key].SetLabel(str(generalStats.get(key, 0)))

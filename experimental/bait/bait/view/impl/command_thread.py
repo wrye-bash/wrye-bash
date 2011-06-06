@@ -237,9 +237,9 @@ class CommandThread(threading.Thread):
                 hilightColor,
                 setStatusCommand.loadingComplete,
                 setStatusCommand.loadingTotal)
-        elif status is view_commands.STATUS_NEEDS_ANNEALING:
+        elif status is view_commands.STATUS_DIRTY:
             self._statusPanel.set_dirty_status(hilightColor)
-        elif status is view_commands.STATUS_DOING_IO:
+        elif status is view_commands.STATUS_UNSTABLE:
             self._statusPanel.set_io_status(hilightColor, setStatusCommand.ioOperations)
         else:
             _logger.warn("unknown status: %d", status)
