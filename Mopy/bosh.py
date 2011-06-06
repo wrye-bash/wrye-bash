@@ -31181,6 +31181,11 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 try:
                     override.entries_list = mergedList
                 except:
+                    deprint('Error setting the leveled list for mod', modFile.GName)
+                    deprint('mergedList=', mergedList)
+                    deprint("override has 'entries_list':", hasattr(override,'entries_list'))
+                    deprint("entries_list=", getattr(override,'entries_list',None))
+                    deprint('',traceback=True)
                     newMergedList = []
                     for entry in mergedList:
                         if entry[1][0] != None: newMergedList.append(entry)
