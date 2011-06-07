@@ -247,9 +247,9 @@ class Parser(object):
             super(Parser.Operator,self).__init__(function, min_args, passTokens=passTokens)
 
     class Keyword(Callable):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, splitCommas=True):
+        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, splitCommas=True, passCommas=False):
             self.splitCommas = splitCommas
-            super(Parser.Keyword,self).__init__(function, min_args, max_args, passTokens)
+            super(Parser.Keyword,self).__init__(function, min_args, max_args, passTokens, passCommas)
 
         def __call__(self, *args):
             gParser.StripOuterParens(args)
