@@ -67,8 +67,12 @@ class EnumValue(object):
         # this operation only makes sense for flag enums
         elif type(self) is not type(other) or not issubclass(self._type, FlagEnum):
             raise TypeError()
-        return EnumValue(
-            '{0.Name} & {1.Name}'.format(self, other), self.Value&other.Value, self._type)
+        value = self.Value & other.Value
+        if value is self.Value:
+            return self
+        elif value is other.Value:
+            return other
+        return self._type.get_enum_by_value(value)
     def __contains__(self, other):
         if self.Value == other.Value:
             return True
