@@ -468,6 +468,7 @@ class PageFinish(PageInstaller):
         path = bolt.GPath(self.listInis.GetString(index))
         lines = []
         for section in self.parent.ret.IniEdits[path]:
+            sectionlines = []
             if section == ']set[':
                 format = 'set %(setting)s to %(value)s'
             elif section == ']setgs[':
@@ -476,8 +477,9 @@ class PageFinish(PageInstaller):
                 lines.append('[%s]' % str(section))
                 format = '%(setting)s = %(value)s'
             for setting in self.parent.ret.IniEdits[path][section]:
-                lines.append(format % dict(setting=setting, value=self.parent.ret.IniEdits[path][section][setting]))
-        self.listTweaks.Set(sorted(lines))
+                sectionlines.append(format % dict(setting=setting, value=self.parent.ret.IniEdits[path][section][setting]))
+            lines.extend(sorted(sectionlines))
+        self.listTweaks.Set(lines)
 # End PageFinish -------------------------------------
 
 
@@ -830,11 +832,11 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword('ResetEspmName', self.kwdResetEspmName, 1)
         self.SetKeyword('ResetAllEspmNames', self.kwdResetAllEspmNames)
         self.SetKeyword('Note', self.kwdNote, 1)
-        self.SetKeyword('If', self.kwdIf, 1, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
-        self.SetKeyword('Elif', self.kwdElif, 1, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
+        self.SetKeyword('If', self.kwdIf, 1 )
+        self.SetKeyword('Elif', self.kwdElif, 1)
         self.SetKeyword('Else', self.kwdElse)
         self.SetKeyword('EndIf', self.kwdEndIf)
-        self.SetKeyword('While', self.kwdWhile, 1, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
+        self.SetKeyword('While', self.kwdWhile, 1)
         self.SetKeyword('Continue', self.kwdContinue)
         self.SetKeyword('EndWhile', self.kwdEndWhile)
         self.SetKeyword('For', self.kwdFor, 3, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
@@ -1150,21 +1152,20 @@ class WryeParser(ScriptParser.Parser):
         pass
 
     # Keywords, mostly for flow control (If, Select, etc)
-    def kwdIf(self, *args):
+    def kwdIf(self, bActive):
         if self.LenFlow() > 0 and self.PeekFlow().type == 'If' and not self.PeekFlow().active:
             #Inactive portion of an If-Elif-Else-EndIf statement, but we hit an If, so we need
             #To not count the next 'EndIf' towards THIS one
             self.PushFlow('If', False, ['If', 'EndIf'])
             return
-        bActive = self.ExecuteTokens(args)
         self.PushFlow('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
-    def kwdElif(self, *args):
+    def kwdElif(self, bActive):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
             error(UNEXPECTED % 'Elif')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
         else:
-            self.PeekFlow().active = self.ExecuteTokens(args)
+            self.PeekFlow().active = bActive
             self.PeekFlow().ifTrue = self.PeekFlow().active or self.PeekFlow().ifTrue
     def kwdElse(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
@@ -1180,13 +1181,12 @@ class WryeParser(ScriptParser.Parser):
             error(UNEXPECTED % 'EndIf')
         self.PopFlow()
 
-    def kwdWhile(self, *args):
+    def kwdWhile(self, bActive):
         if self.LenFlow() > 0 and self.PeekFlow().type == 'While' and not self.PeekFlow().active:
             #Within an un-true while statement, but we hit a new While, so we need to ignore the
             #next 'EndWhile' towards THIS one
             self.PushFlow('While', False, ['While', 'EndWhile'])
             return
-        bActive = self.ExecuteTokens(args)
         self.PushFlow('While', bActive, ['While', 'EndWhile'], cLine=self.cLine, expr=args)
     def kwdContinue(self):
         #Find the next up While or For statement to continue from
@@ -1478,7 +1478,7 @@ class WryeParser(ScriptParser.Parser):
             self.espmrenames[espm] = newName
     def kwdResetEspmName(self, espm):
         espm = self.GetEspm(espm)
-        if espm:
+        if espm and espm in self.espmrenames:
             del self.espmrenames[espm]
     def kwdResetAllEspmNames(self):
         self.espmrenames = dict()
