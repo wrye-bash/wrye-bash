@@ -31061,6 +31061,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
     selectCommands = False
+    allowUnloaded = False
     scanRequiresChecked = False
     applyRequiresChecked = False
 
