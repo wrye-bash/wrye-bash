@@ -62,7 +62,21 @@ class InstallerWizard(wiz.Wizard):
         bArchive = link.isSingleArchive()
         if bArchive:
             # Extract the wizard, and any images as well
-            installer.unpackToTemp(path, [installer.hasWizard, '*.jpg', '*.gif', '*.bmp', '*.png', '*.jpeg'], recurse=True)
+            installer.unpackToTemp(path, [installer.hasWizard,
+                '*.bmp',            # BMP's
+                '*.jpg', '*.jpeg',  # JPEG's
+                '*.png',            # PNG's
+                '*.gif',            # GIF's
+                '*.pcx',            # PCX's
+                '*.pnm',            # PNM's
+                '*.tif', '*.tiff',  # TIFF's
+                '*.tga',            # TGA's
+                '*.iff',            # IFF's
+                '*.xpm',            # XPM's
+                '*.ico',            # ICO's
+                '*.cur',            # CUR's
+                '*.ani',            # ANI's
+                ], recurse=True)
             self.wizard_file = installer.tempDir.join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
@@ -202,7 +216,7 @@ class ImagePanel(wx.Panel):
         self.bmp = bmp
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
-        self.OnSize(None)
+        self.OnSize()
 
     def SetBitmap(self, bmp=None):
         self.bmp = bmp
