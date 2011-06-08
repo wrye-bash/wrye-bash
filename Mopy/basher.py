@@ -11133,7 +11133,7 @@ class Mod_Patch_Update(Link):
             bosh.CBash_PatchFile.patchTime = fileInfo.mtime
             nullProgress = bolt.Progress()
             bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-            modList.RefreshUI()
+            self.window.RefreshUI()
         message = ""
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
         unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
