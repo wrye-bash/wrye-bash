@@ -31181,15 +31181,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                 try:
                     override.entries_list = mergedList
                 except:
-                    deprint('Error setting the leveled list for mod', modFile.GName)
-                    deprint('mergedList=', mergedList)
-                    deprint("override has 'entries_list':", hasattr(override,'entries_list'))
-                    deprint("entries_list=", getattr(override,'entries_list',None))
-                    deprint('',traceback=True)
                     newMergedList = []
                     for entry in mergedList:
                         fid = entry[1]
-                        if not fid or fid[0] == None: continue
+                        if not fid:
+                            deprint("WARNING: LeveledList with FormID ('%s',%06X) in '%s' has a malformed entry %s." % (record.fid[0],record.fid[1],record.GName,fid))
+                            continue
+                        if fid[0] == None: continue
                         newMergedList.append(entry)
                     override.entries_list = newMergedList
 
