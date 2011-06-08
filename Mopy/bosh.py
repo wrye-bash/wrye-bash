@@ -8732,52 +8732,21 @@ class ModInfos(FileInfos):
 
     def rescanMergeable(self,names,progress):
         """Will rescan specified mods."""
-        name_mergeInfo = self.table.getColumn('mergeInfo')
-        mergeableAdd = self.mergeable.add
-        mergeableDiscard = self.mergeable.discard
-        if CBash:
-            testMerge = CBash_PatchFile.modIsMergeableNoLoad
-            _modInfos = []
-            for name in names:
-                modInfo = self[name]
-                if testMerge(modInfo) == True:
-                    _modInfos.append(modInfo)
+        mod_mergeInfo = self.table.getColumn('mergeInfo')
+        for fileName in names:
+            if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
+            fileInfo = self[fileName]
+            if not CBash:
+                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+            else:
+                canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+            if canMerge == True:
+                mod_mergeInfo[fileName] = (fileInfo.size,True)
+            else:
+                if canMerge == "\n.    Has 'NoMerge' tag.":
+                    mod_mergeInfo[fileName] = (fileInfo.size,True)
                 else:
-                    mergeableDiscard(name)
-                    name_mergeInfo[name] = (modInfo.size,False)
-            if _modInfos:
-                Current = ObCollection(ModsPath=dirs['mods'].s)
-                for modInfo in _modInfos:
-                    Current.addMod(modInfo.getPath().stail, Flags=0x00000120)
-                Current.load()
-                testMerge = CBash_PatchFile.modIsMergeableLoad
-                for index,modInfo in enumerate(_modInfos):
-                    name = modInfo.name
-                    progress(index,name.s)
-                    try:
-                        _modFile = Current.LookupModFile(modInfo.getPath().stail)
-                    except KeyError, error:
-                        print "rescanMergeable"
-                        print error[0]
-                        continue
-                    canMerge = testMerge(modInfo,verbose=False,modFile=_modFile) == True
-                    if canMerge:
-                        mergeableAdd(name)
-                    else:
-                        mergeableDiscard(name)
-                    name_mergeInfo[name] = (modInfo.size,canMerge)
-                del Current
-        else:
-            testMerge = PatchFile.modIsMergeable
-            for index,name in enumerate(names):
-                progress(index,name.s)
-                modInfo = self[name]
-                canMerge = testMerge(modInfo,False) == True
-                if canMerge:
-                    mergeableAdd(name)
-                else:
-                    mergeableDiscard(name)
-                name_mergeInfo[name] = (modInfo.size,canMerge)
+                    mod_mergeInfo[fileName] = (fileInfo.size,False)
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
