@@ -11006,7 +11006,7 @@ class InstallerConverter(object):
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
-        ins = stringBuffer(ins)
+        ins = cStringIO.StringIO(Encode(ins))
         setter = object.__setattr__
         map(self.__setattr__, self.persistBCF, cPickle.load(ins))
         if fullLoad:
