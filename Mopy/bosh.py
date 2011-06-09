@@ -11088,13 +11088,13 @@ class InstallerConverter(object):
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
-            srcFile = srcDir_File[1]
+            srcFile = Unicode(srcDir_File[1],'mbcs')
             if isinstance(srcDir,basestring):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
                 srcFile = tempJoin(srcDir,srcFile)
             else:
                 srcFile = tempJoin("%08X" % srcDir,srcFile)
-            destFile = destJoin(destFile)
+            destFile = destJoin(Unicode(destFile,'mbcs'))
             if not srcFile.exists():
                 raise StateError(_("%s: Missing source file:\n%s") % (self.fullPath.stail, srcFile.s))
             if destFile == None:
@@ -11266,7 +11266,7 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,destArchive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
+                progress(index,Unicode(destArchive.s)+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1),'UTF8').strip())
                 index += 1
         result = ins.close()
         if result:
@@ -11285,7 +11285,7 @@ class InstallerConverter(object):
         #--Dump file list
         try:
             out = self.tempList.open('w')
-            out.write('\n'.join(fileNames))
+            out.write(Encode('\n'.join(fileNames),'UTF8'))
         finally:
             result = out.close()
             if result: raise StateError(_("Error creating file list for 7z:\nError Code: %s") % (result))
@@ -11778,10 +11778,7 @@ class InstallerProject(Installer):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                if bolt.bUseUnicode:
-                    progress(index,Unicode(archive.s)+_("\nCompressing files...\n%s") % unicode(maCompressing.group(1),'UTF8').strip())
-                else:
-                    progress(index,archive.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip()) 
+                progress(index,Unicode(archive.s)+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1)).strip())
                 index += 1
         result = ins.close()
         self.tempList.remove()
