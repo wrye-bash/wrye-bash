@@ -17268,8 +17268,12 @@ class ModCleaner:
                             subprogress2(k)
                             fid = record.fid
                             #--Scan UDR
-                            if doUDR and record.IsDeleted:
+                            if doUDR and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
                                 udr.add(fid)
+                            #--Scan fog
+                            if doFog and record._Type == 'CELL':
+                                if not (record.fogNear or record.fogFar or record.fogClip):
+                                    fog.add(fid)
                             #--Scan ITM
                             if doITM:
                                 if not fid or fid[0] == modFile.GName: continue
@@ -17279,10 +17283,6 @@ class ModCleaner:
                                 if not masterRecord: continue
                                 if record.IsIdenticalTo(masterRecord):
                                     itm.add(fid)
-                            #--Scan fog
-                            if doFog and record._Type == 'CELL':
-                                if not (record.fogNear or record.fogFar or record.fogClip):
-                                    fog.add(fid)
                 ret.append((udr,itm,fog))
             #--Unload
             collection.Unload()
@@ -18316,6 +18316,16 @@ class CBash_PatchFile(ObModFile):
                 pstate += 1
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
+        #--Fix UDR's
+        progress(0,_('Cleaning...'))
+        records = self.ACRES + self.ACHRS + self.REFRS
+        progress.setFull(max(len(records),1))
+        for i,record in enumerate(records):
+            progress(i)
+            if record.IsDeleted:
+                record.IsDeleted = False
+                record.IsIgnored = True
+        #--Done
         progress(progress.full,_('Patchers applied.'))
         self.ScanCollection = None
 
