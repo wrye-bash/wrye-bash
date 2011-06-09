@@ -19,12 +19,7 @@
     p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
     p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
     p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    .code-0 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
-    .code-1 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 1em; }
-    .code-2 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 2em; }
-    .code-3 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 3em; }
-    .code-4 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 4em; }
-    .code-5 { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; text-indent: 5em; }
+    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
     pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
     code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
     td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
@@ -111,6 +106,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#MarkMergeable">Mark Mergeable</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#NvidiaFogFix">Nvidia Fog Fix</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#RebuildPatch">Rebuild Patch</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ListPatchConfig">List Patch Config...</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#RemoveWorldOrphans">Remove World Orphans</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#UndeleteRefs">Undelete Refs</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#Version08">Version 0.8</a></p>
@@ -1067,28 +1063,16 @@
     <p class="list-3">&bull;&nbsp;  If multiple files are selected, this is done without any user input.</p>
   <p class="list-2">&bull;&nbsp;  <i><b><a id='Duplicate'>Duplicate</a></b></i> Creates a duplicate of the file in the mods directory.</p>
     <p class="list-3">&bull;&nbsp;  If multiple files are selected, this is done without any user input.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b><a id='Snapshot'>Snapshot</a>...</b></i> Creates a snapshot copy of the current mod in a subdirectory</p>
-<p>    (Bash\Snapshots).
-</p>
-    <p class="list-3">&bull;&nbsp;  Snapshots are indicated by appending to "-l.n.m" to the root of the</p>
-<p>      file name. E.g., "My.esp" becomes "My-01.esp" or "My Mod v1.01.esp" becomes "My Mod v1.01-01.esp".
-</p>
-    <p class="list-3">&bull;&nbsp;  Note that Bash will automatically generate the next available snapshot</p>
-<p>      number. However, you are free to choose a different number if you like.
-</p>
-    <p class="list-3">&bull;&nbsp;  Also, if there's an existing version line (e.g., "Version NN.MM-LL")</p>
-<p>      in the description field of the mod, then it will updated with the new version plus snapshot number when the snapshot is saved.
-</p>
+  <p class="list-2">&bull;&nbsp;  <i><b><a id='Snapshot'>Snapshot</a>...</b></i> Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).</p>
+    <p class="list-3">&bull;&nbsp;  Snapshots are indicated by appending to "-l.n.m" to the root of the file name. E.g., "My.esp" becomes "My-01.esp" or "My Mod v1.01.esp" becomes "My Mod v1.01-01.esp".</p>
+    <p class="list-3">&bull;&nbsp;  Note that Bash will automatically generate the next available snapshot number. However, you are free to choose a different number if you like.</p>
+    <p class="list-3">&bull;&nbsp;  Also, if there's an existing version line (e.g., "Version NN.MM-LL") in the description field of the mod, then it will updated with the new version plus snapshot number when the snapshot is saved.</p>
     <p class="list-3">&bull;&nbsp;  If multiple files are selected, this is done without any user input.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>Delete</b></i> Deletes the file... <i><b>Permanently.</b></i></p>
     <p class="list-3">&bull;&nbsp;  Also deletes all backups and temp files, but <i><b>not</b></i> snapshots.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>Hide</b></i> Moves the file to a subdirectory (Bash\Hidden).</p>
-    <p class="list-3">&bull;&nbsp;  Use this on seldom used mods to keep them from cluttering the mods</p>
-<p>      listing.
-</p>
-    <p class="list-3">&bull;&nbsp;  This is especially useful when modding, since the TESCS Data list</p>
-<p>      cannot be sorted.
-</p>
+    <p class="list-3">&bull;&nbsp;  Use this on seldom used mods to keep them from cluttering the mods listing.</p>
+    <p class="list-3">&bull;&nbsp;  This is especially useful when modding, since the TESCS Data list cannot be sorted.</p>
     <p class="list-3">&bull;&nbsp;  Note that there's a corresponding "Unhide..." command in the column context menu.</p>
     <p class="list-3">&bull;&nbsp;  If the file's group is defined (e.g. Heads), and if the Bash\Hidden directory has a subdirectory with the same name (e.g. Bash\Hidden\Heads), then the file will be hidden in it.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>Redate</b></i> Redates the selected mods to specified date/time. First mod will be moved to the specified date/time, with other mods following at one minute intervals.</p>
@@ -1096,18 +1080,10 @@
     <p class="list-3">&bull;&nbsp;  Modified time of first mod is set to time of first selected mod. Other mods follow it at one minute increments.</p>
     <p class="list-3">&bull;&nbsp;  <i><b>WARNING: Some mods must be loaded in a certain order (e.g., a patch mod must be loaded after the original). Sort may break that required ordering! Use sort with extreme caution! Note too that there is no "undo" command for sort!</b></i></p>
   <p class="list-2">&bull;&nbsp;  <i><b>Revert to Backup</b></i> Reverts the file to the last Backup made of it.</p>
-    <p class="list-3">&bull;&nbsp;  Bash will make a backup of a file the first time it is significantly</p>
-<p>      changed in an application session.
-</p>
-    <p class="list-3">&bull;&nbsp;  E.g., if you make two or three changes to a file in a given application</p>
-<p>      session, then only the first change will generate a backup.
-</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>Revert to First Backup</b></i> Same as Revert to Backup, only it reverts to</p>
-<p>    the very first backup that Bash made of the file.
-</p>
-    <p class="list-3">&bull;&nbsp;  The first backup is generated the first time that Bash alters a file, and</p>
-<p>      is never overwritten. Hence it is guaranteed to be free of any problem that Bash might introduce.
-</p>
+    <p class="list-3">&bull;&nbsp;  Bash will make a backup of a file the first time it is significantly changed in an application session.</p>
+    <p class="list-3">&bull;&nbsp;  E.g., if you make two or three changes to a file in a given application session, then only the first change will generate a backup.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>Revert to First Backup</b></i> Same as Revert to Backup, only it reverts to the very first backup that Bash made of the file.</p>
+    <p class="list-3">&bull;&nbsp;  The first backup is generated the first time that Bash alters a file, and is never overwritten. Hence it is guaranteed to be free of any problem that Bash might introduce.</p>
     <p class="list-3">&bull;&nbsp;  Of course, this also may mean that it's badly out of date!</p>
   <p class="list-2">&bull;&nbsp;  <i><b>Revert to Snapshot</b></i> Reverts the file to a selected snapshot.</p>
   <p class="empty">&nbsp;</p>
@@ -1323,6 +1299,10 @@
 <p class="empty">&nbsp;</p>
 <h3><a id='RebuildPatch'>Rebuild Patch</a></h3>
 <p class="list-1">&bull;&nbsp;  See <a href="#BashedPatches">Bashed Patches</a>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='ListPatchConfig'>List Patch Config...</a></h3>
+<p class="list-1">&bull;&nbsp;  Displays a summary of how you have configured your Bashed Patch.</p>
+<p class="list-1">&bull;&nbsp;  This summary will also be copied to your clipboard, so all you have to do to post it on a forum for help is paste it into a post.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='RemoveWorldOrphans'>Remove World Orphans</a></h3>
 <p class="list-1">&bull;&nbsp;  This command is for modders and advanced players only. Less experienced players will generally <i><b>not</b></i> need to use this.</p>
@@ -2699,6 +2679,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.</p>
   <p class="list-2">&bull;&nbsp;  Advanced ini options for compatibility with mTES4 Manager: <b>sInstallersData</b> and <b>sBashModData</b> to specify where <i><b>Installers.dat</b></i>, <i><b>Converters.dat</b></i>, etc are stored by Wrye Bash.</p>
   <p class="list-2">&bull;&nbsp;  Added an option to the <a href="#ModChecker">Mod Checker</a> to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.</p>
+  <p class="list-2">&bull;&nbsp;  New mod command <a href="#ListPatchConfig">List Patch Config...</a>, for posting your Bashed Patch configuration on the forums.</p>
   <p class="list-2">&bull;&nbsp;  Readme updated and thoroughly spellchecked (in American English).</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_2912212011GaticusGratis_monstaLojackmyk002PacificMorrowindSmoothSpotty42Waruddar'>291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</a></h3>
