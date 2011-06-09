@@ -1,4 +1,4 @@
-﻿= Wrye Bash ====================================================================#
+= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -826,22 +826,16 @@ These are the commands found on context menu for mods...
     * If multiple files are selected, this is done without any user input.
   * **{{A:Duplicate}}** Creates a duplicate of the file in the mods directory.
     * If multiple files are selected, this is done without any user input.
-  * **{{A:Snapshot}}...** Creates a snapshot copy of the current mod in a subdirectory
-    (Bash\Snapshots).
-    * Snapshots are indicated by appending to "-l.n.m" to the root of the
-      file name. E.g., "My.esp" becomes "My-01.esp" or "My Mod v1.01.esp" becomes "My Mod v1.01-01.esp".
-    * Note that Bash will automatically generate the next available snapshot
-      number. However, you are free to choose a different number if you like.
-    * Also, if there's an existing version line (e.g., "Version NN.MM-LL")
-      in the description field of the mod, then it will updated with the new version plus snapshot number when the snapshot is saved.
+  * **{{A:Snapshot}}...** Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).
+    * Snapshots are indicated by appending to "-l.n.m" to the root of the file name. E.g., "My.esp" becomes "My-01.esp" or "My Mod v1.01.esp" becomes "My Mod v1.01-01.esp".
+    * Note that Bash will automatically generate the next available snapshot number. However, you are free to choose a different number if you like.
+    * Also, if there's an existing version line (e.g., "Version NN.MM-LL") in the description field of the mod, then it will updated with the new version plus snapshot number when the snapshot is saved.
     * If multiple files are selected, this is done without any user input.
   * **Delete** Deletes the file... **Permanently.**
     * Also deletes all backups and temp files, but **not** snapshots.
   * **Hide** Moves the file to a subdirectory (Bash\Hidden).
-    * Use this on seldom used mods to keep them from cluttering the mods
-      listing.
-    * This is especially useful when modding, since the TESCS Data list
-      cannot be sorted.
+    * Use this on seldom used mods to keep them from cluttering the mods listing.
+    * This is especially useful when modding, since the TESCS Data list cannot be sorted.
     * Note that there's a corresponding "Unhide..." command in the column context menu.
     * If the file's group is defined (e.g. Heads), and if the Bash\Hidden directory has a subdirectory with the same name (e.g. Bash\Hidden\Heads), then the file will be hidden in it.
   * **Redate** Redates the selected mods to specified date/time. First mod will be moved to the specified date/time, with other mods following at one minute intervals.
@@ -849,14 +843,10 @@ These are the commands found on context menu for mods...
     * Modified time of first mod is set to time of first selected mod. Other mods follow it at one minute increments.
     * **WARNING: Some mods must be loaded in a certain order (e.g., a patch mod must be loaded after the original). Sort may break that required ordering! Use sort with extreme caution! Note too that there is no "undo" command for sort!**
   * **Revert to Backup** Reverts the file to the last Backup made of it.
-    * Bash will make a backup of a file the first time it is significantly
-      changed in an application session.
-    * E.g., if you make two or three changes to a file in a given application
-      session, then only the first change will generate a backup.
-  * **Revert to First Backup** Same as Revert to Backup, only it reverts to
-    the very first backup that Bash made of the file.
-    * The first backup is generated the first time that Bash alters a file, and
-      is never overwritten. Hence it is guaranteed to be free of any problem that Bash might introduce.
+    * Bash will make a backup of a file the first time it is significantly changed in an application session.
+    * E.g., if you make two or three changes to a file in a given application session, then only the first change will generate a backup.
+  * **Revert to First Backup** Same as Revert to Backup, only it reverts to the very first backup that Bash made of the file.
+    * The first backup is generated the first time that Bash alters a file, and is never overwritten. Hence it is guaranteed to be free of any problem that Bash might introduce.
     * Of course, this also may mean that it's badly out of date!
   * **Revert to Snapshot** Reverts the file to a selected snapshot.
 
@@ -1072,6 +1062,10 @@ These are the commands found on context menu for mods...
 
 === Rebuild Patch
 * See [[#|Bashed Patches]].
+
+=== List Patch Config...
+* Displays a summary of how you have configured your Bashed Patch.
+* This summary will also be copied to your clipboard, so all you have to do to post it on a forum for help is paste it into a post.
 
 === Remove World Orphans
 * This command is for modders and advanced players only. Less experienced players will generally **not** need to use this.
@@ -2407,6 +2401,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
   * Advanced ini options for compatibility with mTES4 Manager: __sInstallersData__ and __sBashModData__ to specify where **Installers.dat**, **Converters.dat**, etc are stored by Wrye Bash.
   * Added an option to the [[#|Mod Checker]] to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.
+  * New mod command [[#|List Patch Config...]], for posting your Bashed Patch configuration on the forums.
   * Readme updated and thoroughly spellchecked (in American English).
 
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]

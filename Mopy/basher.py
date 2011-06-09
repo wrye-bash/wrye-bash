@@ -11191,6 +11191,97 @@ class Mod_Patch_Update(Link):
         BashFrame.SaveSettings(bashFrame)
 
 #------------------------------------------------------------------------------
+class Mod_ListPatchConfig(Link):
+    """Lists the Bashed Patch configuration and copies to the clipboard."""
+    def AppendToMenu(self,menu,window,data):
+        """Append link to a menu."""
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('List Patch Config...'))
+        menu.AppendItem(menuItem)
+        enable = (len(self.data) == 1 and
+            bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
+        menuItem.Enable(enable)
+
+    def Execute(self,event):
+        """Handle execution."""
+        #--Patcher info
+        groupOrder = dict([(group,index) for index,group in
+            enumerate((_('General'),_('Importers'),_('Tweakers'),_('Special')))])
+        patchers = [copy.deepcopy(x) for x in PatchDialog.patchers]
+        patchers.sort(key=lambda a: a.__class__.name)
+        patchers.sort(key=lambda a: groupOrder[a.__class__.group])
+        patcherNames = [x.__class__.__name__ for x in patchers]
+        #--Config
+        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        #--Log & Clipboard text
+        log = bolt.LogFile(stringBuffer())
+        log.setHeader('= %s %s' % (self.data[0],_('Config')))
+        log(_('This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.\n'))
+        clip = stringBuffer()
+        clip.write('%s %s:' % (self.data[0],_('Config')))
+        clip.write('[spoiler][code]')
+        for patcher in patchers:
+            className = patcher.__class__.__name__
+            humanName = patcher.__class__.name
+            # Patcher in the config?
+            if not className in config: continue
+            # Patcher active?
+            conf = config[className]
+            if not conf.get('isEnabled',False): continue
+            # Active
+            log.setHeader('== '+humanName)
+            clip.write('== '+humanName+'\n')
+            if isinstance(patcher, bosh.CBash_MultiTweaker) or isinstance(patcher, bosh.MultiTweaker):
+                # Tweak patcher
+                patcher.getConfig(config)
+                for tweak in patcher.tweaks:
+                    if tweak.key in conf:
+                        enabled,value = conf.get(tweak.key,(False,''))
+                        label = tweak.getListLabel()
+                        if enabled:
+                            log('* __%s__' % label)
+                            clip.write(' ** %s\n' % label)
+                        else:
+                            log('. ~~%s~~' % label)
+                            clip.write('    %s\n' % label)
+                clip.write('\n')
+            elif isinstance(patcher, bosh.CBash_ListsMerger) or isinstance(patcher, bosh.ListsMerger):
+                # Leveled Lists
+                patcher.configChoices = conf.get('configChoices',{})
+                for item in conf.get('configItems',[]):
+                    log('. __%s__' % patcher.getItemLabel(item))
+                    clip.write('    %s\n' % patcher.getItemLabel(item))
+                clip.write('\n')
+            elif isinstance(patcher, (bosh.CBash_AliasesPatcher,bosh.AliasesPatcher)):
+                # Alias mod names
+                aliases = conf.get('aliases',{})
+                for mod in aliases:
+                    log('* __%s__ >> %s' % (mod.s, aliases[mod].s))
+                    clip.write('  %s >> %s\n' % (mod.s, aliases[mod].s))
+                clip.write('\n')
+            else:
+                items = conf.get('configItems',[])
+                if len(items) == 0:
+                    log(' ')
+                for item in conf.get('configItems',[]):
+                    checks = conf.get('configChecks',{})
+                    checked = checks.get(item,False)
+                    if checked:
+                        log('* __%s__' % item)
+                        clip.write(' ** %s\n' % item)
+                    else:
+                        log('. ~~%s~~' % item)
+                        clip.write('    %s\n' % item)
+                clip.write('\n')
+        #-- Show log
+        clip.write('[/code][/spoiler]')
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(clip.getvalue()))
+            wx.TheClipboard.Close()
+        clip.close()
+        balt.showWryeLog(self.window,log.out.getvalue(),_('Bashed Patch Configuration'),icons=bashBlue)
+
+#------------------------------------------------------------------------------
 class Mod_Ratings(Mod_Labels):
     """Add mod rating links."""
     def __init__(self):
@@ -14789,6 +14880,7 @@ def InitModLinks():
     #ModList.itemMenu.append(Mod_MarkLevelers())
     ModList.itemMenu.append(Mod_MarkMergeable())
     ModList.itemMenu.append(Mod_Patch_Update())
+    ModList.itemMenu.append(Mod_ListPatchConfig())
     #--Advanced
     ModList.itemMenu.append(SeparatorLink())
     if True: #--Export
