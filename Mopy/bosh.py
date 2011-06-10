@@ -17991,11 +17991,13 @@ class CBash_PatchFile(ObModFile):
             reasons += _("\n.    Empty mod.")
         #--New record
         else:
-            newblocks = modFile.GetNewRecordTypes()
-            if newblocks:
-                if not verbose: return False
-                reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" if modInfo.name.s in masters and curModInfo.name not in modInfos.mergeable]
+            tags = modInfos[modInfo.name].getBashTags()
+            if not tags & allowMissingMasters:
+                newblocks = modFile.GetNewRecordTypes()
+                if newblocks:
+                    if not verbose: return False
+                    reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
+        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
         if dependent:
             if not verbose: return False
             reasons += (_("\n.    Is a master of non-mergeable mod(s): ") + ', '.join(sorted(dependent))+'.')
