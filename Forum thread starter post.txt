@@ -10,6 +10,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [*][url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP Wrye Bash unofficial wiki[/url]
 [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
 [*]Waruddar's Bashed Patch option reference (see bottom of this post)
+[*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
 [/list]
 [b]Screenshots[/b]:
 [list]
