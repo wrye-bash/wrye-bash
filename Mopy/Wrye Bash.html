@@ -2411,8 +2411,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a id='ScreenshotsCommands'>Screenshots Commands</a></h3>
 <p>Right click on the column header to see these:
 </p>
-<p class="list-1">&bull;&nbsp;  <b>Explorer:</b> View the screenshot directory in Windows Explorer.</p>
+<p class="list-1">&bull;&nbsp;  <b>Open:</b> View the screenshot directory in Windows Explorer.</p>
 <p class="list-1">&bull;&nbsp;  <b>Next Shot:</b> Set the name/number of the next screenshot.</p>
+<p class="list-1">&bull;&nbsp;  <b>JPEG Quality:</b> Set the JPEG quality used when converting to JPEG.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='ScreenshotCommands'>Screenshot Commands</a></h3>
 <p>Right click on a screenshot to see these:
@@ -2570,51 +2571,54 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_29231122011Gratis_monstaLeandroCondemyk002PacificMorrowindLojackVadersAppvalda'>292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]</a></h3>
-<p class="list-1">&bull;&nbsp;  Bashed Patch:</p>
-  <p class="list-2">&bull;&nbsp;  Race Patcher</p>
+<h3><a id='_2921062011Gratis_monstaLeandroCondemyk002PacificMorrowindLojackVadersAppvalda'>292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>CBash</b> is live!  The default install now uses CBash.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#RaceRecords">Race Patcher</a></p>
     <p class="list-3">&bull;&nbsp;  Fixed error with setting race eyes for some uncommon races.</p>
     <p class="list-3">&bull;&nbsp;  eyes with undefined meshes now skipped and removed from races rather than causing fatal warning.</p>
     <p class="list-3">&bull;&nbsp;  CBash random eye setting fixed (was choosing only one eye per race).</p>
   <p class="list-2">&bull;&nbsp;  Fix for typos in CBash SpellStats Patcher</p>
-  <p class="list-2">&bull;&nbsp;  Tweak Actors patcher:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#TweakActors">Tweak Actors</a> patcher:</p>
     <p class="list-3">&bull;&nbsp;  Added note to MAO patcher that it requires MAO.</p>
     <p class="list-3">&bull;&nbsp;  Added a VORB patcher (requires VORB).</p>
     <p class="list-3">&bull;&nbsp;  Added Bigger Nords and Orcs tweaker</p>
     <p class="list-3">&bull;&nbsp;  Sexy Walk and Real Walk tweakers finally fixed to not replace the current animations but add the Swalk/Rwalk animation. (and CBash version of each added)</p>
-  <p class="list-2">&bull;&nbsp;  Tweak Settings (GMST) patcher:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#TweakSettings">Tweak Settings</a> (GMST) patcher:</p>
     <p class="list-3">&bull;&nbsp;  Now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)</p>
     <p class="list-3">&bull;&nbsp;  AI: Max Smile Distance tweak added.</p>
     <p class="list-3">&bull;&nbsp;  Combat: Max Ally Hits tweak added.</p>
-  <p class="list-2">&bull;&nbsp;  Import Names:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#ImportNames">Import Names</a>:</p>
     <p class="list-3">&bull;&nbsp;  Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)</p>
     <p class="list-3">&bull;&nbsp;  Added OOO Potion Names.csv - reverts OOO's alcoholic beverage naming to vanilla. (Contributed by Gratis_monsta)</p>
     <p class="list-3">&bull;&nbsp;  Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)</p>
   <p class="list-2">&bull;&nbsp;  Mark mergeable detection of other mods requiring current mod fixed.</p>
-  <p class="list-2">&bull;&nbsp;  Tweak Assorted patcher:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#TweakAssorted">Tweak Assorted</a> patcher:</p>
     <p class="list-3">&bull;&nbsp;  Added Set Sound Attenuation Levels tweaker.</p>
     <p class="list-3">&bull;&nbsp;  Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.</p>
     <p class="list-3">&bull;&nbsp;  Added 'Faction crime Gold Multiplier Fix' tweaker.</p>
     <p class="list-3">&bull;&nbsp;  Added 'No Light Fade Value Fix' tweaker.</p>
   <p class="list-2">&bull;&nbsp;  Added a cancel button to the build progress bar.</p>
   <p class="list-2">&bull;&nbsp;  New keyboard shortcuts: Ctrl+A and Ctrl+Shift+A in the patcher list box will SelectAll or DeselectAll suboptions, respectively.</p>
-<p class="list-1">&bull;&nbsp;  BAIN:</p>
+  <p class="list-2">&bull;&nbsp;  Deleted references in the Bashed Patch will automatically be undeleted and disabled.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
   <p class="list-2">&bull;&nbsp;  Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)</p>
   <p class="list-2">&bull;&nbsp;  Size of comments section saved between launches (contributed by myk002)</p>
   <p class="list-2">&bull;&nbsp;  Wizards:</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#Exec"><span style="color:purple;">Exec</span></a>: Execute wizard lines stored in a string.  Useful for dynamically creating menus.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#endswith"><span style="color:purple;">endswith</span></a>: Test what a string ends with.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#startswith"><span style="color:purple;">startswith</span></a>: Test what a string starts with.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#lower"><span style="color:purple;">lower</span></a>: Convert a string to lower case.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#find"><span style="color:purple;">find</span></a>: Find the first occurrence of a substring within a string.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#rfind"><span style="color:purple;">rfind</span></a>: Find the last occurrence of a substring within a string.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFilename"><span style="color:purple;">GetFilename</span></a>: For getting a filename from a path string.</p>
-    <p class="list-3">&bull;&nbsp;  New function - <a href="wizards.html#GetFolder"><span style="color:purple;">GetFolder</span></a>: For getting a folder name from a path string.</p>
+    <p class="list-3">&bull;&nbsp;  New functions:</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a>: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#Exec"><span style="color:purple;">Exec</span></a>: Execute wizard lines stored in a string.  Useful for dynamically creating menus.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#endswith"><span style="color:purple;">endswith</span></a>: Test what a string ends with.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#startswith"><span style="color:purple;">startswith</span></a>: Test what a string starts with.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#lower"><span style="color:purple;">lower</span></a>: Convert a string to lower case.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#find"><span style="color:purple;">find</span></a>: Find the first occurrence of a substring within a string.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#rfind"><span style="color:purple;">rfind</span></a>: Find the last occurrence of a substring within a string.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#GetFilename"><span style="color:purple;">GetFilename</span></a>: For getting a filename from a path string.</p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#GetFolder"><span style="color:purple;">GetFolder</span></a>: For getting a folder name from a path string.</p>
     <p class="list-3">&bull;&nbsp;  Improved <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> loops, for iterating over files in an installer:</p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>subpackage</i> in Subpackages</p>
-      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>file</i> in <i>subpackage</i></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>subpackage</i> <span style="color:blue;">in</span> <span style="color:cyan;">Subpackages</span></p>
+      <p class="list-4">&bull;&nbsp;  <a href="wizards.html#ForContinueBreakEndFor"><span style="color:blue;">For</span></a> <i>file</i> <span style="color:blue;">in</span> <i>subpackage</i></p>
     <p class="list-3">&bull;&nbsp;  <a href="wizards.html#CaseInsensitiveOperators">Case Insensitive Operators</a>: Operators that ignore the case of a string when comparing.</p>
     <p class="list-3">&bull;&nbsp;  The <a href="wizards.html#DotOperator">Dot Operator</a></p>
     <p class="list-3">&bull;&nbsp;  Bugfix <a href="wizards.html#RequireVersions"><span style="color:blue;">RequireVersions</span></a>: The version page will now show correctly if the Wrye Bash version is incorrect.</p>
@@ -2637,7 +2641,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.</p>
   <p class="list-2">&bull;&nbsp;  new ini option <b>bClearRO</b> to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations</p>
   <p class="list-2">&bull;&nbsp;  new ini option <b>sOblivionTexturesBSAName</b> incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.</p>
-<p class="list-1">&bull;&nbsp;  Saves Tab:</p>
+<p class="list-1">&bull;&nbsp;  <a href="#SavesTab">Saves Tab</a>:</p>
   <p class="list-2">&bull;&nbsp;  Yes to All option for overwrite on Move/Copy Saves</p>
   <p class="list-2">&bull;&nbsp;  'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).</p>
   <p class="list-2">&bull;&nbsp;  Statistics report now properly displays the Hexadecimal Mod Index instead of decimal.</p>
@@ -2649,7 +2653,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.</p>
     <p class="list-3">&bull;&nbsp;  updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.</p>
     <p class="list-3">&bull;&nbsp;  updated html snippets in Wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.</p>
-  <p class="list-2">&bull;&nbsp;  Improved INI Edits tab UI:</p>
+  <p class="list-2">&bull;&nbsp;  Improved <a href="#INIEditstab">INI Edits tab</a> UI:</p>
     <p class="list-3">&bull;&nbsp;  Column width is remembered now.</p>
     <p class="list-3">&bull;&nbsp;  Shows the contents of an INI tweak, including status of each line in it compared to the master INI.</p>
     <p class="list-3">&bull;&nbsp;  Shows the contents of the master INI</p>
@@ -2662,7 +2666,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  New automatic taglist generator to generate the taglist from the masterlist.</p>
   <p class="list-2">&bull;&nbsp;  New option to see all the tags on all installed/selected mods.</p>
   <p class="list-2">&bull;&nbsp;  Taglist updated to BOSS rev 2608.</p>
-  <p class="list-2">&bull;&nbsp;  Remove Balo and the Replacers Tab from the UI.  To re-enable, set <b>bEnableBalo</b> or <b>bEnableReplacers</b> to <i><b>True</b></i> as applicable in bash.ini</p>
+  <p class="list-2">&bull;&nbsp;  Removed <a href="#Balo">Balo</a> and the <a href="#ReplacersTab">Replacers Tab</a> from the UI.  To re-enable, set <b>bEnableBalo</b> or <b>bEnableReplacers</b> to <i><b>True</b></i> as applicable in bash.ini</p>
     <p class="list-3">&bull;&nbsp;  These features may be removed in future versions.</p>
   <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini</p>
   <p class="list-2">&bull;&nbsp;  In cases where the <b>bUseMyGameDirectory</b> is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.</p>
@@ -2676,7 +2680,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).</p>
     <p class="list-3">&bull;&nbsp;  Fixed translateable messages to be returned in unicode (contributed by valda).</p>
   <p class="list-2">&bull;&nbsp;  Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).</p>
-  <p class="list-2">&bull;&nbsp;  Selectable jpeg quality in the Screenshots Tab</p>
+  <p class="list-2">&bull;&nbsp;  Selectable jpeg quality in the <a href="#ScreenshotsTab">Screenshots Tab</a>.</p>
   <p class="list-2">&bull;&nbsp;  Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.</p>
   <p class="list-2">&bull;&nbsp;  Advanced ini options for compatibility with mTES4 Manager: <b>sInstallersData</b> and <b>sBashModData</b> to specify where <i><b>Installers.dat</b></i>, <i><b>Converters.dat</b></i>, etc are stored by Wrye Bash.</p>
   <p class="list-2">&bull;&nbsp;  Added an option to the <a href="#ModChecker">Mod Checker</a> to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.</p>
