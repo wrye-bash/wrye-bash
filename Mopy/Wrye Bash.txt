@@ -2144,8 +2144,9 @@ This allows you to preview your screenshots.
 
 === Screenshots Commands
 Right click on the column header to see these:
-* __Explorer:__ View the screenshot directory in Windows Explorer.
+* __Open:__ View the screenshot directory in Windows Explorer.
 * __Next Shot:__ Set the name/number of the next screenshot.
+* __JPEG Quality:__ Set the JPEG quality used when converting to JPEG.
 
 === Screenshot Commands
 Right click on a screenshot to see these:
@@ -2292,51 +2293,54 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 292 [31/12/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]
-* Bashed Patch:
-  * Race Patcher
+=== 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]
+* __CBash__ is live!  The default install now uses CBash.
+* [[#BashedPatches|Bashed Patch]]:
+  * [[#RaceRecords|Race Patcher]]
     * Fixed error with setting race eyes for some uncommon races.
     * eyes with undefined meshes now skipped and removed from races rather than causing fatal warning.
     * CBash random eye setting fixed (was choosing only one eye per race).
   * Fix for typos in CBash SpellStats Patcher
-  * Tweak Actors patcher:
+  * [[#|Tweak Actors]] patcher:
     * Added note to MAO patcher that it requires MAO.
     * Added a VORB patcher (requires VORB).
     * Added Bigger Nords and Orcs tweaker
     * Sexy Walk and Real Walk tweakers finally fixed to not replace the current animations but add the Swalk/Rwalk animation. (and CBash version of each added)
-  * Tweak Settings (GMST) patcher:
+  * [[#|Tweak Settings]] (GMST) patcher:
     * Now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
     * AI: Max Smile Distance tweak added.
     * Combat: Max Ally Hits tweak added.
-  * Import Names:
+  * [[#|Import Names]]:
     * Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
     * Added OOO Potion Names.csv - reverts OOO's alcoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
     * Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)
   * Mark mergeable detection of other mods requiring current mod fixed.
-  * Tweak Assorted patcher:
+  * [[#|Tweak Assorted]] patcher:
     * Added Set Sound Attenuation Levels tweaker.
     * Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
     * Added 'Faction crime Gold Multiplier Fix' tweaker.
     * Added 'No Light Fade Value Fix' tweaker.
   * Added a cancel button to the build progress bar.
   * New keyboard shortcuts: Ctrl+A and Ctrl+Shift+A in the patcher list box will SelectAll or DeselectAll suboptions, respectively.
-* BAIN:
+  * Deleted references in the Bashed Patch will automatically be undeleted and disabled.
+* [[#InstallersTab|BAIN]]:
   * Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
   * Size of comments section saved between launches (contributed by myk002)
   * Wizards:
-    * New function - [[wizards.html#GetEspmStatus|[color=purple]GetEspmStatus[/color]]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
-    * New function - [[wizards.html#EditINI|[color=purple]EditINI[/color]]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
-    * New function - [[wizards.html#Exec|[color=purple]Exec[/color]]]: Execute wizard lines stored in a string.  Useful for dynamically creating menus.
-    * New function - [[wizards.html#endswith|[color=purple]endswith[/color]]]: Test what a string ends with.
-    * New function - [[wizards.html#startswith|[color=purple]startswith[/color]]]: Test what a string starts with.
-    * New function - [[wizards.html#lower|[color=purple]lower[/color]]]: Convert a string to lower case.
-    * New function - [[wizards.html#find|[color=purple]find[/color]]]: Find the first occurrence of a substring within a string.
-    * New function - [[wizards.html#rfind|[color=purple]rfind[/color]]]: Find the last occurrence of a substring within a string.
-    * New function - [[wizards.html#GetFilename|[color=purple]GetFilename[/color]]]: For getting a filename from a path string.
-    * New function - [[wizards.html#GetFolder|[color=purple]GetFolder[/color]]]: For getting a folder name from a path string.
+    * New functions:
+      * [[wizards.html#GetEspmStatus|[color=purple]GetEspmStatus[/color]]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
+      * [[wizards.html#EditINI|[color=purple]EditINI[/color]]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+      * [[wizards.html#Exec|[color=purple]Exec[/color]]]: Execute wizard lines stored in a string.  Useful for dynamically creating menus.
+      * [[wizards.html#endswith|[color=purple]endswith[/color]]]: Test what a string ends with.
+      * [[wizards.html#startswith|[color=purple]startswith[/color]]]: Test what a string starts with.
+      * [[wizards.html#lower|[color=purple]lower[/color]]]: Convert a string to lower case.
+      * [[wizards.html#find|[color=purple]find[/color]]]: Find the first occurrence of a substring within a string.
+      * [[wizards.html#rfind|[color=purple]rfind[/color]]]: Find the last occurrence of a substring within a string.
+      * [[wizards.html#GetFilename|[color=purple]GetFilename[/color]]]: For getting a filename from a path string.
+      * [[wizards.html#GetFolder|[color=purple]GetFolder[/color]]]: For getting a folder name from a path string.
     * Improved [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] loops, for iterating over files in an installer:
-      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~subpackage~~ in Subpackages
-      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~file~~ in ~~subpackage~~
+      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~subpackage~~ [color=blue]in[/color] [color=cyan]Subpackages[/color]
+      * [[wizards.html#ForContinueBreakEndFor|[color=blue]For[/color]]] ~~file~~ [color=blue]in[/color] ~~subpackage~~
     * [[wizards.html#CaseInsensitiveOperators|Case Insensitive Operators]]: Operators that ignore the case of a string when comparing.
     * The [[wizards.html#DotOperator|Dot Operator]]
     * Bugfix [[wizards.html#RequireVersions|[color=blue]RequireVersions[/color]]]: The version page will now show correctly if the Wrye Bash version is incorrect.
@@ -2359,7 +2363,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
   * new ini option __bClearRO__ to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
   * new ini option __sOblivionTexturesBSAName__ incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
-* Saves Tab:
+* [[#|Saves Tab]]:
   * Yes to All option for overwrite on Move/Copy Saves
   * 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
   * Statistics report now properly displays the Hexadecimal Mod Index instead of decimal.
@@ -2371,7 +2375,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.
     * updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
     * updated html snippets in Wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
-  * Improved INI Edits tab UI:
+  * Improved [[#|INI Edits tab]] UI:
     * Column width is remembered now.
     * Shows the contents of an INI tweak, including status of each line in it compared to the master INI.
     * Shows the contents of the master INI
@@ -2384,7 +2388,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New automatic taglist generator to generate the taglist from the masterlist.
   * New option to see all the tags on all installed/selected mods.
   * Taglist updated to BOSS rev 2608.
-  * Remove Balo and the Replacers Tab from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
+  * Removed [[#|Balo]] and the [[#|Replacers Tab]] from the UI.  To re-enable, set __bEnableBalo__ or __bEnableReplacers__ to **True** as applicable in bash.ini
     * These features may be removed in future versions.
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the __bUseMyGameDirectory__ is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
@@ -2398,7 +2402,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).
     * Fixed translateable messages to be returned in unicode (contributed by valda).
   * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
-  * Selectable jpeg quality in the Screenshots Tab
+  * Selectable jpeg quality in the [[#|Screenshots Tab]].
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
   * Advanced ini options for compatibility with mTES4 Manager: __sInstallersData__ and __sBashModData__ to specify where **Installers.dat**, **Converters.dat**, etc are stored by Wrye Bash.
   * Added an option to the [[#|Mod Checker]] to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.
