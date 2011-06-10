@@ -20790,10 +20790,11 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         self.previousPackages = {}
         self.mergedPackageList = {}
         self.mod_count = {}
-        if "Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs:
-            if "Unofficial Oblivion Patch.esp" in self.srcs:
-                self.OOOandUOP = True
-        else: self.OOOandUOP = False
+        if ("Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs
+            and "Unofficial Oblivion Patch.esp" in self.srcs):
+            self.OOOandUOP = True
+        else:
+            self.OOOandUOP = False
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
