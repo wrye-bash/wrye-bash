@@ -30576,6 +30576,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.ingred_alchem:
             subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
             book = getBook(patchFile, objectId)
+            if not book: continue
             buff = stringBuffer()
             buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
