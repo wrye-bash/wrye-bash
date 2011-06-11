@@ -4178,6 +4178,23 @@ class ObPACKRecord(ObBaseRecord):
 
 class ObQUSTRecord(ObBaseRecord):
     _Type = 'QUST'
+
+    def mergeFilter(self,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters items."""
+        self.conditions_list = [x for x in self.conditions_list if (
+            (not isinstance(x.param1,tuple) or x.param1[0] in modSet)
+            and
+            (not isinstance(x.param2,tuple) or x.param2[0] in modSet)
+            )]
+        #for target in self.targets_list:
+        #    target.conditions_list = [x for x in target.conditions_list if (
+        #        (not isinstance(x.param1,tuple) or x.param1[0] in modSet)
+        #        and
+        #        (not isinstance(x.param2,tuple) or x.param2[0] in modSet)
+        #        )]
+
+
     class Stage(ListComponent):
         class Entry(ListX2Component):
             class ConditionX3(ListX3Component):
