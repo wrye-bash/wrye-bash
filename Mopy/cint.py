@@ -4182,13 +4182,13 @@ class ObQUSTRecord(ObBaseRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        self.conditions_list = [x for x in self.conditions_list if (
+        self.conditions = [x for x in self.conditions if (
             (not isinstance(x.param1,tuple) or x.param1[0] in modSet)
             and
             (not isinstance(x.param2,tuple) or x.param2[0] in modSet)
             )]
         #for target in self.targets_list:
-        #    target.conditions_list = [x for x in target.conditions_list if (
+        #    target.conditions = [x for x in target.conditions_list if (
         #        (not isinstance(x.param1,tuple) or x.param1[0] in modSet)
         #        and
         #        (not isinstance(x.param2,tuple) or x.param2[0] in modSet)
