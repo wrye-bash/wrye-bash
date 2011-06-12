@@ -3547,7 +3547,7 @@ class InstallersPanel(SashTankPanel):
         installer = self.data[self.detailsItem]
         espmNots = installer.espmNots
         index = event.GetSelection()
-        name = self.gEspmList.GetString(index)
+        name = self.gEspmList.GetString(index).replace('&&','&')
         if name[0] == '*':
             name = name[1:]
         espm = GPath(name)
