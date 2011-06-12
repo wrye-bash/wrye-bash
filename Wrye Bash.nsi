@@ -3,13 +3,14 @@
     !include MUI2.nsh
     !include LogicLib.nsh
     !include nsDialogs.nsh
+    !include WordFunc.nsh
 
     ;--Information passed by the packaging script
     !ifndef WB_NAME
-        !define WB_NAME "Wrye Bash 291"
+        !define WB_NAME "Wrye Bash 292"
     !endif
     !ifndef WB_FILEVERSION
-        !define WB_FILEVERSION "0.2.9.1"
+        !define WB_FILEVERSION "0.2.9.2"
     !endif
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
@@ -26,27 +27,54 @@
 ;-------------------------------- Variables:
     Var Dialog
     Var Label
+    Var Empty
+    Var True
     Var Path_OB
     Var Path_Nehrim
     Var Path_Ex1
     Var Path_Ex2
-    Var Empty
+
+    ;Game specific Data:
     Var Check_OB
     Var Check_Nehrim
     Var Check_Extra
     Var Check_Ex1
     Var Check_Ex2
-    ;Var Check_RemoveUserFiles
-    Var Check_Python
-    Var Check_wx
-    Var Check_pywin32
-    Var Check_Comtypes
     Var CheckState_OB
     Var CheckState_Nehrim
     Var CheckState_Extra
     Var CheckState_Ex1
     Var CheckState_Ex2
+    Var Check_OB_Py
+    Var Check_Nehrim_Py
+    Var Check_Ex1_Py
+    Var Check_Ex2_Py
+    Var CheckState_OB_Py
+    Var CheckState_Nehrim_Py
+    Var CheckState_Ex1_Py
+    Var CheckState_Ex2_Py
+    Var Check_OB_Exe
+    Var Check_Nehrim_Exe
+    Var Check_Ex1_Exe
+    Var Check_Ex2_Exe
+    Var CheckState_OB_Exe
+    Var CheckState_Nehrim_Exe
+    Var CheckState_Ex1_Exe
+    Var CheckState_Ex2_Exe
+    Var Reg_Value_OB_Py
+    Var Reg_Value_Nehrim_Py
+    Var Reg_Value_Ex1_Py
+    Var Reg_Value_Ex2_Py
+    Var Reg_Value_OB_Exe
+    Var Reg_Value_Nehrim_Exe
+    Var Reg_Value_Ex1_Exe
+    Var Reg_Value_Ex2_Exe
     ;Var CheckState_RemoveUserFiles
+    ;Var Check_RemoveUserFiles
+    Var Check_Python
+    Var Check_wx
+    Var Check_pywin32
+    Var Check_Comtypes
     Var CheckState_Python
     Var CheckState_wx
     Var CheckState_pywin32
@@ -71,10 +99,21 @@
     Var Python_pywin32
     Var Python_wx
     Var Requirements
+    Var PythonVersionInstall
+    Var ExeVersionInstall
+    Var Check_msvc
+    Var Link_Python
+    Var Link_Comtypes
+    Var Link_vcredist
+    Var Link_wx
+    Var Link_pywin32
+    Var MinVersion_Comtypes
+    Var MinVersion_wx
+    Var MinVersion_pywin32
 ;-------------------------------- Page List:
   !insertmacro MUI_PAGE_WELCOME
-  Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
   Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
+  Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_INSTFILES
   Page custom PAGE_FINISH PAGE_FINISH_Leave
@@ -85,17 +124,38 @@
 ;-------------------------------- Initialize Variables as required:
     Function un.onInit
         StrCpy $Empty ""
-        ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
-        ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
-        ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
-        ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
+        StrCpy $True "True"
+        ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
+        ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
+        ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
+        ReadRegStr $Path_Ex2             HKLM "Software\Wrye Bash" "Extra Path 2"
+        ReadRegStr $Reg_Value_OB_Py      HKLM "Software\Wrye Bash" "Oblivion Python Version"
+        ReadRegStr $Reg_Value_Nehrim_Py  HKLM "Software\Wrye Bash" "Nehrim Python Version"
+        ReadRegStr $Reg_Value_Ex1_Py     HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
+        ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
+        ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
+        ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
+        ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
+        ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
         FunctionEnd
     Function .onInit
         StrCpy $Empty ""
-        ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
-        ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
-        ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
-        ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
+        StrCpy $True "True"
+        StrCpy $MinVersion_Comtypes '0.6.2' 
+        StrCpy $MinVersion_wx '2.8.10'
+        StrCpy $MinVersion_pywin32 '213'
+        ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
+        ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
+        ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
+        ReadRegStr $Path_Ex2             HKLM "Software\Wrye Bash" "Extra Path 2"
+        ReadRegStr $Reg_Value_OB_Py      HKLM "Software\Wrye Bash" "Oblivion Python Version"
+        ReadRegStr $Reg_Value_Nehrim_Py  HKLM "Software\Wrye Bash" "Nehrim Python Version"
+        ReadRegStr $Reg_Value_Ex1_Py     HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
+        ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
+        ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
+        ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
+        ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
+        ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
 
         ${If} $Path_OB == $Empty
             ReadRegStr $Path_OB HKLM "Software\Bethesda Softworks\Oblivion" "Installed Path"
@@ -122,97 +182,135 @@
 ;-------------------------------- Custom Installation Pages and their Functions:
     Function PAGE_REQUIREMENTS
         !insertmacro MUI_HEADER_TEXT $(PAGE_REQUIREMENTS_TITLE) $(PAGE_REQUIREMENTS_SUBTITLE)
-        ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
-        ${If} $Python_Path != $Empty
-            StrCpy $Python_Ver "26"
-        ${Else}
-            ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
-            ${If} $Python_Path != $Empty
-                StrCpy $Python_Ver "25"
-            ${Else}
-                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
-                ${If} $Python_Path != $Empty
-                    StrCpy $Python_Ver "27"
-                ${EndIf}
-            ${EndIf}
-        ${EndIf}
-        ;Detect Python Components:
-        ${If} $Python_Path != $Empty
-            StrCpy $Python_Comtypes "0"
-            ;Detect Comtypes:
-            IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" 0 +10
-                FileOpen $0 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
-                FileRead $0 $1
-                FileRead $0 $1
-                FileRead $0 $1
-                FileRead $0 $1
-                FileRead $0 $1
-                FileRead $0 $1
-                FileClose $0
-                StrCpy $Python_Comtypes $1 5 -8
-            ${If} $Python_Ver == "25"
-                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
-                ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
-                StrCpy $Python_pywin32 $1 3 -3
-            ${ElseIf} $Python_Ver == "26"
-                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py26_is1" "DisplayVersion"
-                ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.6" "DisplayName"
-                StrCpy $Python_pywin32 $1 3 -3
-            ${ElseIf} $Python_Ver == "27"
-                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py27_is1" "DisplayVersion"
-                ReadRegStr $1 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
-                StrCpy $Python_pywin32 $1 3 -3
-            ${EndIf}
-        ${EndIf}
 
         nsDialogs::Create 1018
             Pop $Dialog
-
-        ${NSD_CreateRadioButton} 0 0 100% 16u "testing"
-
         ${If} $Dialog == error
             Abort
         ${EndIf}
-        ${If} $Python_Path != $Empty
-        ${AndIf} $Python_Comtypes == "0.6.2"
-        ${AndIf} $Python_pywin32 == "214"
-        ${AndIf} $Python_wx == "2.8.11.0-ansi"
-            StrCpy $Requirements "Met"
-           ${NSD_CreateLabel} 0 0 100% 16u "Congratulations the installer detects that you have a full install of all the prerequisites already!$\nPlease click 'Next' to continue."
-            Pop $Label
-        ${Else}
-            ${NSD_CreateLabel} 0 0 100% 8u "The installer cannot find the following requirement(s) installed on your computer.$\nIt is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them$\nor best that you let this installer download them for you and execute them so that you have to do the minimum work.$\nPlease check the component(s) that you are fine with this installer downloading and installing:"
+        
+        IntOp $0 0 + 0
+        ${NSD_CreateLabel} 0 $0u 100% 32u "Checking for requirements (Python && some Python addons for Python version of Wrye Bash, MS Visual C ++ redist for Standalone Executable Wrye Bash Version). This can quite easily give a false detection that you need some of those since if they aren't installed with the exact same version(s)/location(s) that this is guessing it may not find it."
+        IntOp $0 $0 + 34
+        ${If} $PythonVersionInstall == $True
+            ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
+            ${If} $Python_Path != $Empty
+                StrCpy $Python_Ver "26"
+            ${Else}
+                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
+                ${If} $Python_Path != $Empty
+                    StrCpy $Python_Ver "25"
+                ${Else}
+                    ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+                    ${If} $Python_Path != $Empty
+                        StrCpy $Python_Ver "27"
+                    ${EndIf}
+                ${EndIf}
+            ${EndIf}
+            ;Detect Python Components:
+            ${If} $Python_Path != $Empty
+                StrCpy $Python_Comtypes "1"
+                ;Detect Comtypes:
+                IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" 0 +10
+                    FileOpen $0 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
+                    FileRead $0 $1
+                    FileRead $0 $1
+                    FileRead $0 $1
+                    FileRead $0 $1
+                    FileRead $0 $1
+                    FileRead $0 $1
+                    FileClose $0
+                    StrCpy $Python_Comtypes $1 5 -8
+                    ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
+                ${If} $Python_Ver == "25"
+                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
+                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
+                    StrCpy $Python_pywin32 $1 3 -3
+                ${ElseIf} $Python_Ver == "26"
+                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py26_is1" "DisplayVersion"
+                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.6" "DisplayName"
+                    StrCpy $Python_pywin32 $1 3 -3
+                ${ElseIf} $Python_Ver == "27"
+                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py27_is1" "DisplayVersion"
+                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                    StrCpy $Python_pywin32 $1 3 -3
+                ${EndIf}
+                ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
+                ${VersionConvert} $Python_wx "+" $Python_wx
+                ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
+            ${EndIf}
+            ${If} $Python_Path != $Empty
+            ${AndIf} $Python_Comtypes != "1"
+            ${AndIf} $Python_pywin32 != "1"
+            ${AndIf} $Python_wx != "1"
+                StrCpy $Requirements "Met"
+               ${NSD_CreateLabel} 0 $0u 100% 16u "Congratulations the installer detects that you have a full install of all the Python prerequisites already! Please click 'Next' to continue."
                 Pop $Label
-            IntOp $0 0 + 9
-            ${If} $Python_Path == $Empty
-                ${NSD_CreateCheckBox} 0 $0u 100% 13u "Python 2.6.6"
-                    Pop $Check_Python
-                    ${NSD_SetState} $Check_Python $CheckState_Python
-                    IntOp $0 $0 + 13
+                IntOp $0 $0 + 16
+            ${Else}
+                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or that you let this installer download them for you and execute them so that you have to do the minimum work. Please check the component(s) that you are fine with this installer downloading and installing; or use the provided links to manually download and install."
+                    Pop $Label
+                IntOp $0 $0 + 41
+                ${If} $Python_Path == $Empty
+                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python 2.6.6"
+                        Pop $Check_Python
+                        ${NSD_SetState} $Check_Python $CheckState_Python
+                    IntOp $0 $0 + 2
+                    ${NSD_CreateLink} 40% $0u 60% 8u  "Python.org 2.6.6 Download Page" ;http://www.python.org/download/releases/2.6.6/
+                        Pop $Link_Python
+                        ${NSD_OnClick} $Link_Python onClick_Link 
+                    IntOp $0 $0 + 11
+                ${EndIf}
+                ${If} $Python_wx == "1"
+                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "wxPython 2.8.12.0-ansi"
+                        Pop $Check_wx
+                        ${NSD_SetState} $Check_wx $CheckState_wx
+                    IntOp $0 $0 + 2
+                    ${NSD_CreateLink} 40% $0u 60% 8u  "wxPython.org Download Page" ;http://www.wxpython.org/download.php#stable
+                        Pop $Link_wx
+                        ${NSD_OnClick} $Link_wx onClick_Link 
+                    IntOp $0 $0 + 11
+                ${EndIf}
+                ${If} $Python_Comtypes == "1"
+                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python Comtypes 0.6.2"
+                        Pop $Check_Comtypes
+                        ${NSD_SetState} $Check_Comtypes $CheckState_Comtypes
+                    IntOp $0 $0 + 2
+                    ${NSD_CreateLink} 40% $0u 60% 8u "Comtypes' Sourceforge Download Page" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
+                        Pop $Link_Comtypes
+                        ${NSD_OnClick} $Link_Comtypes onClick_Link 
+                    IntOp $0 $0 + 11
+                ${EndIf}
+                ${If} $Python_pywin32 == "1"
+                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python Extensions for Windows (PyWin32)"
+                        Pop $Check_pywin32
+                        ${NSD_SetState} $Check_pywin32 $CheckState_pywin32
+                    IntOp $0 $0 + 2
+                    ${NSD_CreateLink} 40% $0u 60% 8u  "PyWin32 216 Sourceforge Download Page" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
+                        Pop $Link_pywin32
+                        ${NSD_OnClick} $Link_pywin32 onClick_Link 
+                    IntOp $0 $0 + 11
+                ${EndIf}
             ${EndIf}
-            ${If} $Python_wx != "2.8.11.0-ansi"
-                ${NSD_CreateCheckBox} 0 $0u 100% 13u "wxPython 2.8.11.0-ansi"
-                    Pop $Check_wx
-                    ${NSD_SetState} $Check_wx $CheckState_wx
-                    IntOp $0 $0 + 13
-            ${EndIf}
-            ${If} $Python_Comtypes != "0.6.2"
-                ${NSD_CreateCheckBox} 0 $0u 100% 13u "Python Comtypes 0.6.2"
-                    Pop $Check_Comtypes
-                    ${NSD_SetState} $Check_Comtypes $CheckState_Comtypes
-                    IntOp $0 $0 + 13
-            ${EndIf}
-            ${If} $Python_pywin32 != "214"
-                ${NSD_CreateCheckBox} 0 $0u 100% 13u "Python Extensions for Windows (PyWin32) 214"
-                    Pop $Check_pywin32
-                    ${NSD_SetState} $Check_pywin32 $CheckState_pywin32
-                    IntOp $0 $0 + 13
+        ${EndIf}
+        ${If} $ExeVersionInstall == $True
+            StrCpy $9 ''
+            IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
+                StrCpy $9 "Installed"
+            ${If} $9 == $Empty
+                ${NSD_CreateLabel} 0 $0u 40% 17u "MSVC Redistributable 2008 (Must Manually Download && Install)"
+                    Pop $Check_msvc
+                IntOp $0 $0 + 2
+                ${NSD_CreateLink} 40% $0u 60% 8u  "MSVC 2008 Redist Download Page" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
+                    Pop $Link_vcredist
+                    ${NSD_OnClick} $Link_vcredist onClick_Link 
+                IntOp $0 $0 + 11
             ${EndIf}
         ${EndIf}
         nsDialogs::Show
 
         FunctionEnd
-    Function PAGE_REQUIREMENTS_Leave 
+    Function PAGE_REQUIREMENTS_Leave
         ${If} $Requirements != "Met"
             ${NSD_GetState} $Check_Python $CheckState_Python
             ${NSD_GetState} $Check_wx $CheckState_wx
@@ -279,15 +377,25 @@
 
         ${If} $Dialog == error
             Abort
-        ${EndIf}
+            ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 8u "Please select game(s)/extra location(s) to install Wrye Bash to:"
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select game(s)/extra location(s) to install Wrye Bash to.$\nAlso select which version(s) to install (python (default) and/or standalone executable version$\n(beta but doesn't require Python and Python addons))."
             Pop $Label
-        IntOp $0 0 + 9
+            IntOp $0 0 + 17
         ${If} $Path_OB != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 13u "Oblivion"
+            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
+            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                Pop $Check_OB_Py
+                ${If} $Reg_Value_OB_Py == $True
+                    ${NSD_SetState} $Check_OB_Py  ${BST_CHECKED}
+                ${EndIf}
+            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                Pop $Check_OB_Exe
+                ${If} $Reg_Value_OB_Exe == $True
+                    ${NSD_SetState} $Check_OB_Exe  ${BST_CHECKED}
+                ${EndIf}
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
@@ -297,9 +405,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
         ${If} $Path_Nehrim != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 13u "Nehrim"
+            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
+            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                Pop $Check_Nehrim_Py
+                ${If} $Reg_Value_Nehrim_Py == $True
+                    ${NSD_SetState} $Check_Nehrim_Py  ${BST_CHECKED}
+                ${EndIf}
+            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                Pop $Check_Nehrim_Exe
+                ${If} $Reg_Value_Nehrim_Exe == $True
+                    ${NSD_SetState} $Check_Nehrim_Exe  ${BST_CHECKED}
+                ${EndIf}
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
@@ -313,9 +431,19 @@
             ${NSD_SetState} $Check_Extra $CheckState_Extra
             nsDialogs::OnClick $Check_Extra $Function_Extra
             IntOp $0 $0 + 13
-            ${NSD_CreateCheckBox} 0 $0u 100% 13u "Extra Location #1:"
+            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
+                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                    Pop $Check_Ex1_Py
+                    ${If} $Reg_Value_Ex1_Py == $True
+                        ${NSD_SetState} $Check_Ex1_Py  ${BST_CHECKED}
+                    ${EndIf}
+                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                    Pop $Check_Ex1_Exe
+                    ${If} $Reg_Value_Ex1_Exe == $True
+                        ${NSD_SetState} $Check_Ex1_Exe  ${BST_CHECKED}
+                    ${EndIf}
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
@@ -323,35 +451,85 @@
                     Pop $Browse_Ex1
                     nsDialogs::OnClick $Browse_Ex1 $Function_Browse
                 IntOp $0 $0 + 13
-            ${NSD_CreateCheckBox} 0 $0u 100% 13u "Extra Location #2:"
+            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
+                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                    Pop $Check_Ex2_Py
+                    ${If} $Reg_Value_Ex2_Py == $True
+                        ${NSD_SetState} $Check_Ex2_Py  ${BST_CHECKED}
+                    ${EndIf}
+                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                    Pop $Check_Ex2_Exe
+                    ${If} $Reg_Value_Ex2_Exe == $True
+                        ${NSD_SetState} $Check_Ex2_Exe  ${BST_CHECKED}
+                    ${EndIf}
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
                 ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                     Pop $Browse_Ex2
-                    nsDialogs::OnClick $Browse_Ex1 $Function_Browse
+                    nsDialogs::OnClick $Browse_Ex2 $Function_Browse
         ${If} $CheckState_Extra != ${BST_CHECKED}
             ShowWindow $Check_Ex1 ${SW_HIDE}
+            ShowWindow $Check_Ex1_Py ${SW_HIDE}
+            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
             ShowWindow $Browse_Ex1 ${SW_HIDE}
             ShowWindow $Check_Ex2 ${SW_HIDE}
+            ShowWindow $Check_Ex2_Py ${SW_HIDE}
+            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
             ShowWindow $Browse_Ex2 ${SW_HIDE}
         ${EndIf}
         nsDialogs::Show
         FunctionEnd
     Function PAGE_INSTALLLOCATIONS_Leave
+        ; Game paths
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
+        ; Game states
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
+        ; Python states
+        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
+            ${If} $CheckState_OB_Py == ${BST_CHECKED}
+                StrCpy $PythonVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
+            ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
+                StrCpy $PythonVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
+            ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
+                StrCpy $PythonVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
+            ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
+                StrCpy $PythonVersionInstall "True"
+            ${Endif}
+        ; Standalone states
+        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
+            ${If} $CheckState_OB_Exe == ${BST_CHECKED}
+                StrCpy $ExeVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
+            ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
+                StrCpy $ExeVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
+            ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
+                StrCpy $ExeVersionInstall "True"
+            ${Endif}
+        ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
+            ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
+                StrCpy $ExeVersionInstall "True"
+            ${Endif}
         FunctionEnd
     Function PAGE_FINISH
         !insertmacro MUI_HEADER_TEXT $(PAGE_FINISH_TITLE) $(PAGE_FINISH_SUBTITLE)
@@ -368,7 +546,7 @@
         ${EndIf}
 
         IntOp $0 0 + 0
-        ${NSD_CreateLabel} 0 0 100% 16u "Please select which game(s)/extra location(s) that Wrye Bash is installed to that you want$\nto run Wrye Bash for right now:"
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which Wrye Bash Version(s) and game(s)/extra location(s) that Wrye Bash$\nis installed to that you want to run Wrye Bash from right now:"
             Pop $Label
         IntOp $0 0 + 17
         ${If} $Path_OB != $Empty
@@ -622,6 +800,8 @@
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 96.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 128.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, Disabled.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, Enabled.ini"
                 RMDir "$Path_Ex2\Mopy\Data\Actor Levels"
@@ -662,18 +842,44 @@
         ${NSD_GetState} $0 $CheckState_Extra
         ${If} $CheckState_Extra == ${BST_UNCHECKED}
             ShowWindow $Check_Ex1 ${SW_HIDE}
+            ShowWindow $Check_Ex1_Py ${SW_HIDE}
+            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
             ShowWindow $Browse_Ex1 ${SW_HIDE}
             ShowWindow $Check_Ex2 ${SW_HIDE}
+            ShowWindow $Check_Ex2_Py ${SW_HIDE}
+            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
             ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
             ShowWindow $Browse_Ex2 ${SW_HIDE}
         ${Else}
             ShowWindow $Check_Ex1 ${SW_SHOW}
+            ShowWindow $Check_Ex1_Py ${SW_SHOW}
+            ShowWindow $Check_Ex1_Exe ${SW_SHOW}
             ShowWindow $PathDialogue_Ex1 ${SW_SHOW}
             ShowWindow $Browse_Ex1 ${SW_SHOW}
             ShowWindow $Check_Ex2 ${SW_SHOW}
+            ShowWindow $Check_Ex2_Py ${SW_SHOW}
+            ShowWindow $Check_Ex2_Exe ${SW_SHOW}
             ShowWindow $PathDialogue_Ex2 ${SW_SHOW}
             ShowWindow $Browse_Ex2 ${SW_SHOW}
+        ${EndIf}
+        FunctionEnd
+    Function OnClick_Link
+        Pop $0
+        ${If} $0 == $Link_Comtypes
+            ExecShell "open" "http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/"
+        ${ElseIf} $0 == $Link_wx
+            ExecShell "open" "http://www.wxpython.org/download.php#stable"
+        ${ElseIf} $0 == $Link_Python
+            ExecShell "open" "http://www.python.org/download/releases/2.6.6/"
+        ${ElseIf} $0 == $Link_pywin32
+            ExecShell "open" "http://sourceforge.net/projects/pywin32/files/pywin32/Build216/"
+        ${ElseIf} $0 == $Link_vcredist
+            ExecShell "open" "http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"
+        ${EndIf}
+
+        ${If} $0 == error
+            Abort
         ${EndIf}
         FunctionEnd
 ;-------------------------------- The Installation Sections:
@@ -681,35 +887,119 @@
         SectionIn RO
 
         ${If} $CheckState_OB == ${BST_CHECKED}
+            ; Install resources:
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
+                ${If} $CheckState_OB_Py == ${BST_CHECKED}
+                    SetOutPath "$Path_OB\Mopy"
+                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_OB_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version" ""
+                    ${EndIf}
+                ${EndIf}
+                ${If} $CheckState_OB_Exe == ${BST_CHECKED}
+                    SetOutPath "$Path_OB\Mopy"
+                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_OB_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" ""
+                    ${EndIf}
+                ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
+            ; Install resources:
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
+                ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
+                    SetOutPath "$Path_Nehrim\Mopy"
+                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Nehrim_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version" ""
+                    ${EndIf}
+                ${EndIf}
+                ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
+                    SetOutPath "$Path_Nehrim\Mopy"
+                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Nehrim_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" ""
+                    ${EndIf}
+                ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
+            ; Install resources:
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
+                ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
+                    SetOutPath "$Path_Ex1\Mopy"
+                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Ex1_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version" ""
+                    ${EndIf}
+                ${EndIf}
+                ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
+                    SetOutPath "$Path_Ex1\Mopy"
+                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Ex1_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" ""
+                    ${EndIf}
+                ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
+            ; Install resources:
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.pyc*" /x "*.pyo" /x "*.bat" "Data" "Mopy"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
+                ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
+                    SetOutPath "$Path_Ex2\Mopy"
+                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Ex2_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version" ""
+                    ${EndIf}
+                ${EndIf}
+                ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
+                    SetOutPath "$Path_Ex2\Mopy"
+                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    ; Write the installation path into the registry
+                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" "True"
+                ${Else}
+                    ${If} $Reg_Value_Ex2_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" ""
+                    ${EndIf}
+                ${EndIf}
             ${EndIf}
         ${EndIf}
         ; Write the uninstall keys for Windows
@@ -720,7 +1010,7 @@
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://www.tesnexus.com/downloads/file.php?id=22368'
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/index.php?/topic/1145445-relz-wrye-bash-thead-55/'
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "Publisher" 'Wrye & Wrye Bash Development Team'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '2.9.1'
+        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '${WB_FILEVERSION}'
         WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoModify" 1
         WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoRepair" 1
         CreateDirectory "$COMMONFILES\Wrye Bash"
@@ -794,7 +1084,7 @@
             Abort
             ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s)/extra location(s) to uninstall Wrye Bash from:"
+        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s)/extra location(s) and version(s) to uninstall Wrye Bash from:"
         Pop $Label
 
         IntOp $0 0 + 9
@@ -894,6 +1184,8 @@
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} $Path_OB != $Empty
                 DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Oblivion Path"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version"
                 ;First delete OLD version files:
                 Delete "$Path_OB\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_OB\Data\Docs\Bashed Lists.html"
@@ -931,6 +1223,8 @@
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 96.ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 128.ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound, Disabled.ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound, Enabled.ini"
                 Delete "$Path_OB\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
@@ -990,20 +1284,21 @@
                 Delete "$Path_OB\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
+                Delete "$Path_OB\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
+                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
+                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-                Delete "$Path_OB\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
                 Delete "$Path_OB\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
                 Delete "$Path_OB\Mopy\*.bat"
                 Delete "$Path_OB\Mopy\7z.dll"
-                Delete "$Path_OB\Mopy\7z.exe"
+                Delete "$Path_OB\Mopy\7z*exe"
                 Delete "$Path_OB\Mopy\Rename_CBash.dll"
                 Delete "$Path_OB\Mopy\CBash.dll"
                 Delete "$Path_OB\Mopy\ScriptParser.p*"
@@ -1026,6 +1321,8 @@
                 Delete "$Path_OB\Mopy\bush.p*"
                 Delete "$Path_OB\Mopy\cint.p*"
                 Delete "$Path_OB\Mopy\gpl.txt"
+                Delete "$Path_OB\Mopy\w9xpopen.exe"
+                Delete "$Path_OB\Mopy\Wrye Bash.exe"
                 Delete "$Path_OB\Mopy\wizards.html"
                 Delete "$Path_OB\Mopy\wizards.txt"
                 Delete "$Path_OB\Mopy\Data\Italian.txt"
@@ -1035,8 +1332,8 @@
                 Delete "$Path_OB\Mopy\Data\pt_opt.txt"
                 Delete "$Path_OB\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
                 Delete "$Path_OB\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
-                Delete "$Path_OB\Mopy\Data\Extras\*.*"
-                Delete "$Path_OB\Mopy\Data\Images\*.*"
+                Delete "$Path_OB\Mopy\Extras\*.*"
+                Delete "$Path_OB\Mopy\Images\*.*"
                 Delete "$Path_OB\Mopy\Wizard Images\*.*"
                 RMDir "$Path_OB\Mopy\Wizard Images"
                 RMDir "$Path_OB\Mopy\Images"
@@ -1052,6 +1349,8 @@
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} $Path_Nehrim != $Empty
                 DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Nehrim Path"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version"
                 ;First delete OLD version files:
                 Delete "$Path_Nehrim\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Nehrim\Data\Docs\Bashed Lists.html"
@@ -1089,6 +1388,8 @@
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 96.ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 128.ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound, Disabled.ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound, Enabled.ini"
                 Delete "$Path_Nehrim\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
@@ -1148,20 +1449,21 @@
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
+                Delete "$Path_Nehrim\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
+                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
+                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-                Delete "$Path_Nehrim\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
                 Delete "$Path_Nehrim\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
                 Delete "$Path_Nehrim\Mopy\*.bat"
                 Delete "$Path_Nehrim\Mopy\7z.dll"
-                Delete "$Path_Nehrim\Mopy\7z.exe"
+                Delete "$Path_Nehrim\Mopy\7z*exe"
                 Delete "$Path_Nehrim\Mopy\Rename_CBash.dll"
                 Delete "$Path_Nehrim\Mopy\CBash.dll"
                 Delete "$Path_Nehrim\Mopy\ScriptParser.p*"
@@ -1184,6 +1486,8 @@
                 Delete "$Path_Nehrim\Mopy\bush.p*"
                 Delete "$Path_Nehrim\Mopy\cint.p*"
                 Delete "$Path_Nehrim\Mopy\gpl.txt"
+                Delete "$Path_Nehrim\Mopy\w9xpopen.exe"
+                Delete "$Path_Nehrim\Mopy\Wrye Bash.exe"
                 Delete "$Path_Nehrim\Mopy\wizards.html"
                 Delete "$Path_Nehrim\Mopy\wizards.txt"
                 Delete "$Path_Nehrim\Mopy\Data\Italian.txt"
@@ -1193,8 +1497,8 @@
                 Delete "$Path_Nehrim\Mopy\Data\pt_opt.txt"
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
-                Delete "$Path_Nehrim\Mopy\Data\Extras\*.*"
-                Delete "$Path_Nehrim\Mopy\Data\Images\*.*"
+                Delete "$Path_Nehrim\Mopy\Extras\*.*"
+                Delete "$Path_Nehrim\Mopy\Images\*.*"
                 Delete "$Path_Nehrim\Mopy\Wizard Images\*.*"
                 RMDir "$Path_Nehrim\Mopy\Wizard Images"
                 RMDir "$Path_Nehrim\Mopy\Images"
@@ -1210,6 +1514,8 @@
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
                 ;First delete OLD version files:
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.html"
@@ -1247,6 +1553,8 @@
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 96.ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 128.ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound, Disabled.ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound, Enabled.ini"
                 Delete "$Path_Ex1\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
@@ -1306,20 +1614,21 @@
                 Delete "$Path_Ex1\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
+                Delete "$Path_Ex1\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
+                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
+                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-                Delete "$Path_Ex1\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
                 Delete "$Path_Ex1\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
                 Delete "$Path_Ex1\Mopy\*.bat"
                 Delete "$Path_Ex1\Mopy\7z.dll"
-                Delete "$Path_Ex1\Mopy\7z.exe"
+                Delete "$Path_Ex1\Mopy\7z*exe"
                 Delete "$Path_Ex1\Mopy\Rename_CBash.dll"
                 Delete "$Path_Ex1\Mopy\CBash.dll"
                 Delete "$Path_Ex1\Mopy\ScriptParser.p*"
@@ -1342,6 +1651,8 @@
                 Delete "$Path_Ex1\Mopy\bush.p*"
                 Delete "$Path_Ex1\Mopy\cint.p*"
                 Delete "$Path_Ex1\Mopy\gpl.txt"
+                Delete "$Path_Ex1\Mopy\w9xpopen.exe"
+                Delete "$Path_Ex1\Mopy\Wrye Bash.exe"
                 Delete "$Path_Ex1\Mopy\wizards.html"
                 Delete "$Path_Ex1\Mopy\wizards.txt"
                 Delete "$Path_Ex1\Mopy\Data\Italian.txt"
@@ -1351,8 +1662,8 @@
                 Delete "$Path_Ex1\Mopy\Data\pt_opt.txt"
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
-                Delete "$Path_Ex1\Mopy\Data\Extras\*.*"
-                Delete "$Path_Ex1\Mopy\Data\Images\*.*"
+                Delete "$Path_Ex1\Mopy\Extras\*.*"
+                Delete "$Path_Ex1\Mopy\Images\*.*"
                 Delete "$Path_Ex1\Mopy\Wizard Images\*.*"
                 RMDir "$Path_Ex1\Mopy\Wizard Images"
                 RMDir "$Path_Ex1\Mopy\Images"
@@ -1368,6 +1679,8 @@
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} $Path_Ex2 != $Empty
                 DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version"
                 ;First delete OLD version files:
                 Delete "$Path_Ex2\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Ex2\Data\Docs\Bashed Lists.html"
@@ -1405,6 +1718,8 @@
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 96.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 128.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, Disabled.ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, Enabled.ini"
                 Delete "$Path_Ex2\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
@@ -1464,20 +1779,21 @@
                 Delete "$Path_Ex2\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
+                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-                Delete "$Path_Ex2\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
                 Delete "$Path_Ex2\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
                 Delete "$Path_Ex2\Mopy\*.bat"
                 Delete "$Path_Ex2\Mopy\7z.dll"
-                Delete "$Path_Ex2\Mopy\7z.exe"
+                Delete "$Path_Ex2\Mopy\7z*exe"
                 Delete "$Path_Ex2\Mopy\Rename_CBash.dll"
                 Delete "$Path_Ex2\Mopy\CBash.dll"
                 Delete "$Path_Ex2\Mopy\ScriptParser.p*"
@@ -1500,6 +1816,8 @@
                 Delete "$Path_Ex2\Mopy\bush.p*"
                 Delete "$Path_Ex2\Mopy\cint.p*"
                 Delete "$Path_Ex2\Mopy\gpl.txt"
+                Delete "$Path_Ex2\Mopy\w9xpopen.exe"
+                Delete "$Path_Ex2\Mopy\Wrye Bash.exe"
                 Delete "$Path_Ex2\Mopy\wizards.html"
                 Delete "$Path_Ex2\Mopy\wizards.txt"
                 Delete "$Path_Ex2\Mopy\Data\Italian.txt"
@@ -1509,8 +1827,8 @@
                 Delete "$Path_Ex2\Mopy\Data\pt_opt.txt"
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
-                Delete "$Path_Ex2\Mopy\Data\Extras\*.*"
-                Delete "$Path_Ex2\Mopy\Data\Images\*.*"
+                Delete "$Path_Ex2\Mopy\Extras\*.*"
+                Delete "$Path_Ex2\Mopy\Images\*.*"
                 Delete "$Path_Ex2\Mopy\Wizard Images\*.*"
                 RMDir "$Path_Ex2\Mopy\Wizard Images"
                 RMDir "$Path_Ex2\Mopy\Images"
