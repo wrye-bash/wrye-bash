@@ -28,11 +28,57 @@ from . import enum
 def flag_enum_test():
     class Air(enum.FlagEnum):
         __enumerables__ = ('NoAir', 'Oxygen', 'Nitrogen', 'Hydrogen')
-    e = Air.Oxygen | Air.Nitrogen | Air.Hydrogen
-    eValue = e.Value
-    assert e == Air.get_enum_by_value(eValue)
+        # not required; just here so autocomplete works
+        Oxygen = None
+        Nitrogen = None
+        Hydrogen = None
+
+    assert "Oxygen" != Air.Oxygen
+    assert "Oxygen" == Air.Oxygen.name
+    assert "Oxygen" == str(Air.Oxygen)
+    assert "Oxygen" == "%s" % Air.Oxygen
+    assert 0 != Air.Oxygen
+    assert Air.Oxygen
+    assert bool(Air.Oxygen)
+    assert 0 == Air.NoAir
+    assert not bool(Air.NoAir)
+    assert not Air.NoAir
+
+    allAir = Air.Oxygen | Air.Nitrogen | Air.Hydrogen
+    allValue = allAir.value
+    assert allAir == Air.parse_value(allValue)
+
+    assert Air.Oxygen ^ Air.Oxygen == Air.NoAir
+    assert Air.Oxygen ^ Air.Oxygen == 0
+    assert 0 == Air.Oxygen ^ Air.Oxygen
+
+    heavyAir = Air.Oxygen | Air.Nitrogen
+    assert 3 == heavyAir
+    assert Air.parse_value(5) != heavyAir
+    assert Air.parse_value(3) == heavyAir
+    assert Air.parse_value(10102) is None
+    assert Air.Hydrogen == ~heavyAir
+    assert Air.Oxygen in heavyAir
+    assert Air.Hydrogen not in heavyAir
+    assert Air.Oxygen == heavyAir & Air.Oxygen
+    assert allAir == heavyAir | Air.Hydrogen
+    assert allAir == heavyAir ^ Air.Hydrogen
+    assert allAir ^ heavyAir == Air.Hydrogen
+
+    assert allAir & None is None
+    assert allAir | None is None
+    assert allAir ^ None is None
+
 
 def enum_test():
     class Mammals(enum.Enum):
         __enumerables__ = ('Bat', 'Whale', ('Dog','Puppy',1), 'Cat')
-    assert Mammals.Bat == Mammals.get_enum_by_name("Bat")
+    assert Mammals.Bat == Mammals.parse_name("Bat")
+    assert Mammals.Dog == Mammals.Puppy
+    assert Mammals.Dog != Mammals.Whale
+
+
+def enum_enum_test():
+    enumClass = enum.enum("eclass", ('e1', 'e2', 'e3'))
+    assert "e2" == enumClass.e2.name
+    assert enumClass.e2 == enumClass.parse_name("e2")

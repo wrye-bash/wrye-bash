@@ -22,17 +22,20 @@
 #
 # =============================================================================
 
-# This file is largely based on example code in one of the responses at:
+# This file is based on example code in one of the responses at:
 #   http://stackoverflow.com/questions/36932/whats-the-best-way-to-implement-an-enum-in-python
-# I just added some type safety checks around the bitwise operators to ensure non-flag
-# enums weren't being accidentally manipulated with them
+# I fleshed out the implementation, especially around FlagEnums and bitwise operators
 
 
 import functools
 import itertools
+import logging
 
 
-class EnumValue(object):
+_logger = logging.getLogger(__name__)
+
+
+class _EnumValue(object):
     def __init__(self, name, value, type_):
         self.__value = value
         self.__name = name
@@ -42,39 +45,53 @@ class EnumValue(object):
     def __repr__(self):
         return '{cls}({0!r},{1!r},{2})'.format(
             self.__name, self.__value, self._type.__name__, cls=type(self).__name__)
-
     def __hash__(self):
         return hash(self.__value)
     def __nonzero__(self):
         return bool(self.__value)
     def __cmp__(self, other):
-        if isinstance(other, EnumValue):
+        if isinstance(other, _EnumValue):
             return cmp(self.__value, other.__value)
         else:
             # hopefully they're the same type, but this still makes sense if they're not
             return cmp(self.__value, other)
     def __or__(self, other):
         if other is None:
-            return self
+            _logger.warn("cannot evaluate bitwise operator with None argument")
+            return None
         # this operation only makes sense for flag enums
         elif type(self) is not type(other) or not issubclass(self._type, FlagEnum):
             raise TypeError()
-        return EnumValue(
-            '{0.Name} | {1.Name}'.format(self, other), self.Value|other.Value, self._type)
+        return _EnumValue(
+            '{0.name} | {1.name}'.format(self, other), self.value|other.value, self._type)
     def __and__(self, other):
         if other is None:
-            return self
+            _logger.warn("cannot evaluate bitwise operator with None argument")
+            return None
         # this operation only makes sense for flag enums
         elif type(self) is not type(other) or not issubclass(self._type, FlagEnum):
             raise TypeError()
-        value = self.Value & other.Value
-        if value is self.Value:
+        value = self.value & other.value
+        if value is self.value:
             return self
-        elif value is other.Value:
+        elif value is other.value:
             return other
-        return self._type.get_enum_by_value(value)
+        return self._type.parse_value(value)
+    def __xor__(self, other):
+        if other is None:
+            _logger.warn("cannot evaluate bitwise operator with None argument")
+            return None
+        # this operation only makes sense for flag enums
+        elif type(self) is not type(other) or not issubclass(self._type, FlagEnum):
+            raise TypeError()
+        value = self.value ^ other.value
+        if value is self.value:
+            return self
+        elif value is other.value:
+            return other
+        return self._type.parse_value(value)
     def __contains__(self, other):
-        if self.Value == other.Value:
+        if self.value == other.value:
             return True
         # this operation only makes sense for flag enums
         elif type(self) is not type(other) or not issubclass(self._type, FlagEnum):
@@ -86,18 +103,16 @@ class EnumValue(object):
             raise TypeError()
         enumerables = self._type.__enumerables__
         return functools.reduce(
-            EnumValue.__or__,
+            _EnumValue.__or__,
             (enum for enum in enumerables.itervalues() if enum not in self))
-
     @property
-    def Name(self):
+    def name(self):
         return self.__name
-
     @property
-    def Value(self):
+    def value(self):
         return self.__value
 
-class EnumMeta(type):
+class _EnumMeta(type):
     @staticmethod
     def __addToReverseLookup(rev, value, newKeys, nextIter, force=True):
         if value in rev:
@@ -106,11 +121,11 @@ class EnumMeta(type):
                 rev[value] = (True, items+newKeys)
             elif not forced: # move it to a new spot
                 next = nextIter.next()
-                EnumMeta.__addToReverseLookup(rev, next, items, nextIter, False)
+                _EnumMeta.__addToReverseLookup(rev, next, items, nextIter, False)
                 rev[value] = (force, newKeys)
             else: # not forcing this value
                 next = nextIter.next()
-                EnumMeta.__addToReverseLookup(rev, next, newKeys, nextIter, False)
+                _EnumMeta.__addToReverseLookup(rev, next, newKeys, nextIter, False)
                 rev[value] = (force, newKeys)
         else: # set it and forget it
             rev[value] = (force, newKeys)
@@ -129,52 +144,57 @@ class EnumMeta(type):
                 if isinstance(item, (tuple, list)):
                     items = list(item)
                     value = items.pop()
-                    EnumMeta.__addToReverseLookup(
+                    _EnumMeta.__addToReverseLookup(
                         reverseLookup, value, tuple(map(str,items)), nextIter)
                 else:
                     value = nextIter.next()
                     # add it to the reverse lookup, but don't force it to that value
-                    value = EnumMeta.__addToReverseLookup(
+                    value = _EnumMeta.__addToReverseLookup(
                         reverseLookup, value, (str(item), ), nextIter, False)
 
             # build values and clean up reverse lookup
             for value, fkeys in reverseLookup.iteritems():
                 f, keys = fkeys
                 for key in keys:
-                    enum = EnumValue(key, value, cls)
+                    enum = _EnumValue(key, value, cls)
                     setattr(cls, key, enum)
                     values[key] = enum
                 reverseLookup[value] = \
-                        tuple(val for val in values.itervalues() if val.Value == value)
+                        tuple(val for val in values.itervalues() if val.value == value)
         setattr(cls, '__reverseLookup__', reverseLookup)
         setattr(cls, '__enumerables__', values)
         setattr(cls, '_Max', max([key for key in reverseLookup] or [0]))
-        return super(EnumMeta, cls).__init__(name, bases, atts)
+        return super(_EnumMeta, cls).__init__(name, bases, atts)
 
     def __iter__(cls):
         for enum in cls.__enumerables__.itervalues():
             yield enum
-    def get_enum_by_name(cls, name):
+    def parse_name(cls, name):
         return cls.__enumerables__.get(name, None)
-    def get_enum_by_value(cls, value):
+    def parse_value(cls, value):
         if 0 == value or not issubclass(cls, FlagEnum):
-            return cls._get_enum_by_value(value)
+            return cls._parse_value(value)
         retVal = None
         for pos in itertools.count():
             if 0 == value: break
             lowBit = 0x1 & value
-            if 0x0 == lowBit: continue
-            flagVal = cls._get_enum_by_value(1 << pos)
-            if flagVal is None: return None
-            if retVal is None: retVal = flagVal
-            else: retVal = retVal|flagVal
             value = value >> 1
+            if 0x0 == lowBit:
+                continue
+            flagVal = 1 << pos
+            flagEnum = cls._parse_value(1 << pos)
+            if flagEnum is None:
+                # don't allow invalid bits in our enums
+                _logger.warn("invalid flag set for %s enum: 0x%x", cls.__name__, flagVal)
+                return None
+            if retVal is None: retVal = flagEnum
+            else: retVal = retVal|flagEnum
         return retVal
-    def _get_enum_by_value(cls, value):
+    def _parse_value(cls, value):
         return cls.__reverseLookup__.get(value, (None, ))[0]
 
 class Enum(object):
-    __metaclass__ = EnumMeta
+    __metaclass__ = _EnumMeta
     __enumerables__ = None
 
 class FlagEnum(Enum):
@@ -185,4 +205,4 @@ class FlagEnum(Enum):
             yield 1 << val
 
 def enum(name, *args):
-    return EnumMeta(name, (Enum, ), dict(__enumerables__=args))
+    return _EnumMeta(name, (Enum, ), dict(__enumerables__=args))
