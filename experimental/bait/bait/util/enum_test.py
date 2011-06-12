@@ -51,6 +51,12 @@ def flag_enum_test():
     assert Air.Oxygen ^ Air.Oxygen == Air.NoAir
     assert Air.Oxygen ^ Air.Oxygen == 0
     assert 0 == Air.Oxygen ^ Air.Oxygen
+    assert Air.Oxygen ^ Air.NoAir == Air.Oxygen
+    assert Air.NoAir ^ Air.Oxygen == Air.Oxygen
+
+    assert Air.Oxygen & Air.Oxygen == Air.Oxygen
+    assert Air.Oxygen in allAir
+    assert Air.Oxygen in Air.Oxygen
 
     heavyAir = Air.Oxygen | Air.Nitrogen
     assert 3 == heavyAir
@@ -68,6 +74,23 @@ def flag_enum_test():
     assert allAir & None is None
     assert allAir | None is None
     assert allAir ^ None is None
+    assert None & allAir is None
+    assert None | allAir is None
+    assert None ^ allAir is None
+
+    heavyAir |= Air.Hydrogen
+    assert heavyAir == allAir
+    heavyAir ^= Air.Hydrogen
+    assert heavyAir != allAir
+    assert heavyAir == Air.Oxygen | Air.Nitrogen
+    heavyAir &= Air.Hydrogen
+    assert heavyAir == 0
+
+    assert Air.NoAir not in allAir
+
+    for airType in Air:
+        if airType is not Air.NoAir:
+            assert airType in allAir
 
 
 def enum_test():
@@ -76,9 +99,51 @@ def enum_test():
     assert Mammals.Bat == Mammals.parse_name("Bat")
     assert Mammals.Dog == Mammals.Puppy
     assert Mammals.Dog != Mammals.Whale
+    assert 0 <= repr(Mammals.Dog).index("Dog")
+    assert 0 <= repr(Mammals.Dog).index("Mammals")
+
+    mdict = {Mammals.Bat:Mammals.Cat}
+    assert mdict[Mammals.Bat] == Mammals.Cat
+
+    try:
+        assert Mammals.Bat != Mammals.Bat | Mammals.Bat
+        assert False
+    except: pass
+    try:
+        assert Mammals.Bat != Mammals.Bat & Mammals.Bat
+        assert False
+    except: pass
+    try:
+        assert Mammals.Bat != Mammals.Bat ^ Mammals.Bat
+        assert False
+    except: pass
+
+    try:
+        dummy = ~Mammals.Bat
+        assert False
+    except: pass
+    try:
+        dummy = Mammals.Bat | 3
+        assert False
+    except: pass
 
 
-def enum_enum_test():
-    enumClass = enum.enum("eclass", ('e1', 'e2', 'e3'))
+def make_enum_test():
+    enumClass = enum.make_enum("eclass", 'e1', 'e2', 'e3')
     assert "e2" == enumClass.e2.name
     assert enumClass.e2 == enumClass.parse_name("e2")
+
+    flagEnumClass = enum.make_flag_enum("StubAir", 'NoAir', 'SomeAir', 'LotsaAir')
+
+    try:
+        dummy = flagEnumClass.SomeAir & enumClass.e2
+        assert False
+    except: pass
+    assert enumClass.e3
+
+    enumClass = enum.make_enum("eclass", ('e1',5), 'e2', ('e3',5))
+    assert enumClass.e1 == enumClass.e3
+
+    enumClass = enum.make_enum("eclass", ('e1',1), 'e2', 'e3')
+    assert enumClass.e1 != enumClass.e2
+    assert enumClass.e1 != enumClass.e3
