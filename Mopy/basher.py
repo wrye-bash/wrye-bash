@@ -8472,7 +8472,7 @@ class Installer_Espm_Rename(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        curName = gInstallers.gEspmList.GetString(self.data)
+        curName = gInstallers.gEspmList.GetString(self.data).replace('&&','&')
         if curName[0] == '*':
             curName = curName[1:]
         file = GPath(curName)
@@ -8493,7 +8493,7 @@ class Installer_Espm_Reset(InstallerLink):
             menuItem.Enable(False)
             return
         installer = gInstallers.data[gInstallers.detailsItem]
-        curName = gInstallers.gEspmList.GetString(self.data)
+        curName = gInstallers.gEspmList.GetString(self.data).replace('&&','&')
         if curName[0] == '*':
             curName = curName[1:]
         menuItem.Enable(installer.isEspmRenamed(curName))
@@ -8501,7 +8501,7 @@ class Installer_Espm_Reset(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        curName = gInstallers.gEspmList.GetString(self.data)
+        curName = gInstallers.gEspmList.GetString(self.data).replace('&&','&')
         if curName[0] == '*':
             curName = curName[1:]
         installer.resetEspmName(curName)
