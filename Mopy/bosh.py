@@ -17227,8 +17227,6 @@ class ModCleaner:
             if len(modInfo.masterNames) == 0: continue
             path = modInfo.getPath()
             collection.addMod(path.stail)
-            for master in modInfo.masterNames:
-                collection.addMod(master)
         collection.load()
         return collection
 
@@ -17946,7 +17944,7 @@ class CBash_PatchFile(ObModFile):
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
             if not verbose: return False
-            reasons += "\n.    Has 'NoMerge' tag."
+            reasons += _("\n.    Has 'NoMerge' tag.")
         if reasons: return reasons
         return True
 
@@ -17991,7 +17989,6 @@ class CBash_PatchFile(ObModFile):
             reasons += _("\n.    Empty mod.")
         #--New record
         else:
-            tags = modInfos[modInfo.name].getBashTags()
             if not tags & allowMissingMasters:
                 newblocks = modFile.GetNewRecordTypes()
                 if newblocks:
@@ -22700,6 +22697,19 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                     mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                     return
             fid = record.fid
+            # Only save if different from the master record
+            if record.GName != fid[0]:
+                history = record.History()
+                if history and len(history) > 0:
+                    masterRecord = history[0]
+                    if masterRecord.GName == record.fid[0]:
+                        same = True
+                        for attr in (self.faceFidData + self.faceData):
+                            if getattr(masterRecord,attr) != getattr(record,attr):
+                                same = False
+                                break
+                        if same:
+                            return
             self.id_face.setdefault(fid,{}).update(attr_fidvalue)
             self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
 
