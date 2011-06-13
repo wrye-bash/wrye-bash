@@ -8456,7 +8456,7 @@ class Installer_Espm_DeselectAll(InstallerLink):
         espmNots = installer.espmNots = set()
         for i in range(len(gInstallers.espms)):
             gInstallers.gEspmList.Check(i, False)
-            espm = GPath(gInstallers.gEspmList.GetString(i))
+            espm = GPath(gInstallers.gEspmList.GetString(i).replace('&&','&'))
             espmNots.add(espm)
         gInstallers.refreshCurrent(installer)
 
