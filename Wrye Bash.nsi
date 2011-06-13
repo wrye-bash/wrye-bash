@@ -141,7 +141,7 @@
     Function .onInit
         StrCpy $Empty ""
         StrCpy $True "True"
-        StrCpy $MinVersion_Comtypes '0.6.2' 
+        StrCpy $MinVersion_Comtypes '0.6.2'
         StrCpy $MinVersion_wx '2.8.10'
         StrCpy $MinVersion_pywin32 '213'
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
@@ -188,7 +188,7 @@
         ${If} $Dialog == error
             Abort
         ${EndIf}
-        
+
         IntOp $0 0 + 0
         ${NSD_CreateLabel} 0 $0u 100% 32u "Checking for requirements (Python && some Python addons for Python version of Wrye Bash, MS Visual C ++ redist for Standalone Executable Wrye Bash Version). This can quite easily give a false detection that you need some of those since if they aren't installed with the exact same version(s)/location(s) that this is guessing it may not find it."
         IntOp $0 $0 + 34
@@ -258,7 +258,7 @@
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 40% $0u 60% 8u  "Python.org 2.6.6 Download Page" ;http://www.python.org/download/releases/2.6.6/
                         Pop $Link_Python
-                        ${NSD_OnClick} $Link_Python onClick_Link 
+                        ${NSD_OnClick} $Link_Python onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_wx == "1"
@@ -268,7 +268,7 @@
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 40% $0u 60% 8u  "wxPython.org Download Page" ;http://www.wxpython.org/download.php#stable
                         Pop $Link_wx
-                        ${NSD_OnClick} $Link_wx onClick_Link 
+                        ${NSD_OnClick} $Link_wx onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_Comtypes == "1"
@@ -278,7 +278,7 @@
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 40% $0u 60% 8u "Comtypes' Sourceforge Download Page" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
                         Pop $Link_Comtypes
-                        ${NSD_OnClick} $Link_Comtypes onClick_Link 
+                        ${NSD_OnClick} $Link_Comtypes onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_pywin32 == "1"
@@ -288,7 +288,7 @@
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 40% $0u 60% 8u  "PyWin32 216 Sourceforge Download Page" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
                         Pop $Link_pywin32
-                        ${NSD_OnClick} $Link_pywin32 onClick_Link 
+                        ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
             ${EndIf}
@@ -303,7 +303,7 @@
                 IntOp $0 $0 + 2
                 ${NSD_CreateLink} 40% $0u 60% 8u  "MSVC 2008 Redist Download Page" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
                     Pop $Link_vcredist
-                    ${NSD_OnClick} $Link_vcredist onClick_Link 
+                    ${NSD_OnClick} $Link_vcredist onClick_Link
                 IntOp $0 $0 + 11
             ${EndIf}
         ${EndIf}
@@ -329,11 +329,11 @@
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py27.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=surfnet $TEMP\wxPython.msi
-                ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 $TEMP\wxPython.msi
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976102&use_mirror=cdnetworks-us-2 "$TEMP\wxPython.msi"
+                ${ElseIf} $Python_Ver == "25" ;last version of wxPython to suport py2.5x is 2.8.11 so download that version if you're using Python 2.5x
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$TEMP\wxPython.msi"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py26.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222635&use_mirror=cdnetworks-us-1 $TEMP\wxPython.msi
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976086&use_mirror=surfnet "$TEMP\wxPython.msi"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
@@ -343,7 +343,7 @@
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer $TEMP\comtypes-0.6.2.win32.exe
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\comtypes-0.6.2.win32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     Exec '"$TEMP\comtypes-0.6.2.win32.exe"'
@@ -353,15 +353,15 @@
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20214/pywin32-214.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%2520214%2F&ts=1291573188&use_mirror=cdnetworks-us-1 $TEMP\pywin32-214.win32.exe
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\pywin32-216.win32.exe"
                 ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20214/pywin32-214.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%2520214%2F&ts=1291573190&use_mirror=iweb $TEMP\pywin32-214.win32.exe
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$TEMP\pywin32-216.win32.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20214/pywin32-214.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%2520214%2F&ts=1291573187&use_mirror=cdnetworks-us-2 $TEMP\pywin32-214.win32.exe
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$TEMP\pywin32-216.win32.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\pywin32-214.win32.exe"'
+                    Exec '"$TEMP\pywin32-216.win32.exe"'
                 ${Else}
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
                 ${EndIf}
