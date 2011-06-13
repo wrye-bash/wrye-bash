@@ -41,9 +41,9 @@ class DataFetcher:
         self._shutdownLock = threading.Lock()
         self._shutdown = False
         self._updateInfo = zip(
-            (model.UPDATE_TYPE_ATTRIBUTES,
-             model.UPDATE_TYPE_CHILDREN,
-             model.UPDATE_TYPE_DETAILS),
+            (model.UpdateTypes.ATTRIBUTES,
+             model.UpdateTypes.CHILDREN,
+             model.UpdateTypes.DETAILS),
             (model_.get_node_attributes,
              model_.get_node_children,
              model_.get_node_details),
@@ -88,13 +88,12 @@ class DataFetcher:
                     continue
                 try:
                     nodeId, updateTypeMask, stateChangeQueue = fetchRequest
-                    _logger.debug("processing fetch request: %s %s",
-                                  str(nodeId), str(updateTypeMask))
-                    if updateTypeMask is 0:
+                    _logger.debug("fetching %s for nodeId %d", updateTypeMask, nodeId)
+                    if 0 == updateTypeMask:
                         _logger.warn("zero updateTypeMask in data fetcher")
                         continue
                     for updateType, updateFn, updateName in self._updateInfo:
-                        if updateTypeMask & updateType:
+                        if 0 != updateTypeMask & updateType:
                             updateTypeMask = updateTypeMask ^ updateType
                             data = updateFn(nodeId)
                             if data is None:
@@ -102,9 +101,10 @@ class DataFetcher:
                                               updateName, nodeId)
                             else:
                                 stateChangeQueue.put((updateType, nodeId, data))
-                        if updateTypeMask is 0:
+                        if 0 == updateTypeMask:
                             break
-                    if updateTypeMask is not 0:
-                        _logger.warn("unhandled fetch request type: 0x%x", updateTypeMask)
+                    if 0 != updateTypeMask:
+                        _logger.warn("unhandled fetch request type: 0x%x",
+                                     updateTypeMask.value)
                 except Exception as e:
                     _logger.warn("invalid fetch reqeuest: %s: %s", str(fetchRequest), e)

@@ -79,28 +79,30 @@ def _data_fetcher_test(numThreads):
     except RuntimeError as e:
         _logger.debug("correctly threw: %s", e)
 
-    update = (1, model.UPDATE_TYPE_ATTRIBUTES, stateChangeQueue)
+    update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
     _logger.debug("should successfully fetch attributes: %s", str(update))
     df.async_fetch(*update)
 
-    update = (1, model.UPDATE_TYPE_CHILDREN, stateChangeQueue)
+    update = (1, model.UpdateTypes.CHILDREN, stateChangeQueue)
     _logger.debug("should successfully fetch children: %s", str(update))
     df.async_fetch(*update)
 
-    update = (1, model.UPDATE_TYPE_DETAILS, stateChangeQueue)
+    update = (1, model.UpdateTypes.DETAILS, stateChangeQueue)
     _logger.debug("should successfully fetch details: %s", str(update))
     df.async_fetch(*update)
 
-    update = (0, model.UPDATE_TYPE_DETAILS, stateChangeQueue)
+    update = (0, model.UpdateTypes.DETAILS, stateChangeQueue)
     _logger.debug("should fail to fetch details: %s", str(update))
     df.async_fetch(*update)
 
-    update = (1, 0, stateChangeQueue)
+    update = (1, model.UpdateTypes.parse_value(0), stateChangeQueue)
     _logger.debug("should warn about empty updateTypeMask: %s", str(update))
     df.async_fetch(*update)
 
-    update = (1, model.UPDATE_TYPE_CHILDREN|model.UPDATE_TYPE_DETAILS|0x1000,
-              stateChangeQueue)
+    update = (
+        1,
+        model.UpdateTypes.CHILDREN|model.UpdateTypes.DETAILS|model.UpdateTypes.ERROR,
+        stateChangeQueue)
     _logger.debug("should fetch children and details, then warn about unhandled part: %s",
                   str(update))
     df.async_fetch(*update)
@@ -116,7 +118,7 @@ def _data_fetcher_test(numThreads):
     _logger.debug("shutting down DataFetcher output")
     df.shutdown()
 
-    update = (1, model.UPDATE_TYPE_ATTRIBUTES, stateChangeQueue)
+    update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
     _logger.debug("should skip: %s", str(update))
     df.async_fetch(*update)
 
@@ -130,3 +132,14 @@ def data_fetcher_test_single_threaded():
 
 def data_fetcher_test_multi_threaded():
     _data_fetcher_test(20)
+
+def data_fetcher_test_fast_shutdown():
+    stateChangeQueue = Queue.Queue()
+    df = data_fetcher.DataFetcher(_DummyModel())
+    df.start()
+    update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
+    for n in xrange(100):
+        df.async_fetch(*update)
+    df.shutdown()
+    stateChangeQueue.put(None)
+    _state_change_queue_reader(stateChangeQueue)

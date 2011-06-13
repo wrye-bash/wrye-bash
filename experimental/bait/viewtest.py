@@ -14,11 +14,15 @@ from bait import bait_factory
 from bait.test import mock_presenter
 
 
+_logger = None
+
+
 class MainWindow(wx.Frame):
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(1050,600))
         self.Bind(wx.EVT_CLOSE, self._on_close)
-        self._baitView = bait_factory.CreateBaitView(self, presenter=mock_presenter.MockPresenter())
+        self._baitView = bait_factory.CreateBaitView(
+            self, presenter=mock_presenter.MockPresenter())
         sizer = wx.BoxSizer()
         sizer.Add(self._baitView, 1, wx.EXPAND)
         self.SetMinSize(sizer.GetMinSize())
@@ -27,7 +31,9 @@ class MainWindow(wx.Frame):
         self.Show(True)
         try:
             self._baitView.start()
-        except:
+        except Exception as e:
+            _logger.error("caught exception while starting up")
+            _logger.exception(e)
             self._baitView.shutdown()
             raise
 
@@ -40,9 +46,9 @@ if __name__ == "__main__":
     multiprocessing.current_process().name = "Main"
     threading.current_thread().name = "Main"
     logging.config.fileConfig("logging.conf")
-    logger = logging.getLogger("viewtest")
-    logger.info("starting viewtest")
+    _logger = logging.getLogger("viewtest")
+    _logger.info("starting viewtest")
     app = wx.App(False)
     frame = MainWindow(None, "Bash Asynchronous Installer Tab (bait) View Test")
     app.MainLoop()
-    logger.info("exiting viewtest")
+    _logger.info("exiting viewtest")

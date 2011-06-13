@@ -24,58 +24,61 @@
 
 import logging
 
+from ... import presenter
 from .. import view_commands
 
 
 _logger = logging.getLogger(__name__)
-_colorMap = {
-        view_commands.TEXT_DISABLED:(142,139,138),
-        view_commands.TEXT_HAS_INACTIVE_OVERRIDDE:(255,165,0),
-        view_commands.HIGHLIGHT_ERROR:(193,205,205),
-        view_commands.HIGHLIGHT_MISSING_DEPENDENCY:(255,0,0),
-        view_commands.HIGHLIGHT_DIRTY:(255,215,0),
-        view_commands.HIGHLIGHT_LOADING:(255,255,0),
-        view_commands.HIGHLIGHT_OK:(0,255,0)
+_foregroundColorMap = {
+        view_commands.ForegroundColorIds.DISABLED:(142,139,138),
+        view_commands.ForegroundColorIds.HAS_INACTIVE_OVERRIDDE:(255,165,0)
+    }
+_highlightColorMap = {
+        view_commands.HighlightColorIds.ERROR:(193,205,205),
+        view_commands.HighlightColorIds.MISSING_DEPENDENCY:(255,0,0),
+        view_commands.HighlightColorIds.DIRTY:(255,215,0),
+        view_commands.HighlightColorIds.LOADING:(255,255,0),
+        view_commands.HighlightColorIds.OK:(0,255,0)
     }
 _checkedIconMap = {
-        view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_inc.png",
-        view_commands.ICON_PROJECT_MATCHES_WIZ:"images/diamond_green_inc_wiz.png",
-        view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
-        view_commands.ICON_PROJECT_MISMATCHED_WIZ:"images/diamond_orange_inc_wiz.png",
-        view_commands.ICON_PROJECT_MISSING:"images/diamond_red_inc.png",
-        view_commands.ICON_PROJECT_MISSING_WIZ:"images/diamond_red_inc_wiz.png",
-        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
-        view_commands.ICON_PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
-        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
-        view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_inc.png",
-        view_commands.ICON_INSTALLER_MATCHES_WIZ:"images/checkbox_green_inc_wiz.png",
-        view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
-        view_commands.ICON_INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_inc_wiz.png",
-        view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_inc.png",
-        view_commands.ICON_INSTALLER_MISSING_WIZ:"images/checkbox_red_inc_wiz.png",
-        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
-        view_commands.ICON_INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
-        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
+        view_commands.IconIds.PROJECT_MATCHES:"images/diamond_green_inc.png",
+        view_commands.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_inc_wiz.png",
+        view_commands.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
+        view_commands.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_inc_wiz.png",
+        view_commands.IconIds.PROJECT_MISSING:"images/diamond_red_inc.png",
+        view_commands.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_inc_wiz.png",
+        view_commands.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
+        view_commands.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
+        view_commands.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
+        view_commands.IconIds.INSTALLER_MATCHES:"images/checkbox_green_inc.png",
+        view_commands.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_inc_wiz.png",
+        view_commands.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
+        view_commands.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_inc_wiz.png",
+        view_commands.IconIds.INSTALLER_MISSING:"images/checkbox_red_inc.png",
+        view_commands.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_inc_wiz.png",
+        view_commands.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        view_commands.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
+        view_commands.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 _uncheckedIconMap = {
-        view_commands.ICON_PROJECT_MATCHES:"images/diamond_green_off.png",
-        view_commands.ICON_PROJECT_MATCHES_WIZ:"images/diamond_green_off_wiz.png",
-        view_commands.ICON_PROJECT_MISMATCHED:"images/diamond_orange_off.png",
-        view_commands.ICON_PROJECT_MISMATCHED_WIZ:"images/diamond_orange_off_wiz.png",
-        view_commands.ICON_PROJECT_MISSING:"images/diamond_red_off.png",
-        view_commands.ICON_PROJECT_MISSING_WIZ:"images/diamond_red_off_wiz.png",
-        view_commands.ICON_PROJECT_EMPTY:"images/diamond_white_off.png",
-        view_commands.ICON_PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
-        view_commands.ICON_PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
-        view_commands.ICON_INSTALLER_MATCHES:"images/checkbox_green_off.png",
-        view_commands.ICON_INSTALLER_MATCHES_WIZ:"images/checkbox_green_off_wiz.png",
-        view_commands.ICON_INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
-        view_commands.ICON_INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_off_wiz.png",
-        view_commands.ICON_INSTALLER_MISSING:"images/checkbox_red_off.png",
-        view_commands.ICON_INSTALLER_MISSING_WIZ:"images/checkbox_red_off_wiz.png",
-        view_commands.ICON_INSTALLER_EMPTY:"images/checkbox_white_off.png",
-        view_commands.ICON_INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
-        view_commands.ICON_INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
+        view_commands.IconIds.PROJECT_MATCHES:"images/diamond_green_off.png",
+        view_commands.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_off_wiz.png",
+        view_commands.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_off.png",
+        view_commands.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_off_wiz.png",
+        view_commands.IconIds.PROJECT_MISSING:"images/diamond_red_off.png",
+        view_commands.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_off_wiz.png",
+        view_commands.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
+        view_commands.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
+        view_commands.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
+        view_commands.IconIds.INSTALLER_MATCHES:"images/checkbox_green_off.png",
+        view_commands.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_off_wiz.png",
+        view_commands.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
+        view_commands.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_off_wiz.png",
+        view_commands.IconIds.INSTALLER_MISSING:"images/checkbox_red_off.png",
+        view_commands.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_off_wiz.png",
+        view_commands.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        view_commands.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
+        view_commands.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 
 
@@ -85,4 +88,5 @@ class ColorsAndIcons:
         # TODO: restore any custom colors
 
     def get_set_style_maps_command(self):
-        return view_commands.SetStyleMaps(_colorMap, _checkedIconMap, _uncheckedIconMap)
+        return view_commands.SetStyleMaps(_foregroundColorMap, _highlightColorMap,
+                                          _checkedIconMap, _uncheckedIconMap)

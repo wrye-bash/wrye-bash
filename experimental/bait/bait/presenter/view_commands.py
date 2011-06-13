@@ -22,106 +22,109 @@
 #
 # =============================================================================
 
-from cStringIO import StringIO
+from .. import model
+from ..util import debug_utils, enum
 
 
-# command IDs
-ADD_GROUP = 1
-ADD_PACKAGE = 2
-EXPAND_GROUP = 3
-CLEAR_PACKAGES = 4
-SET_FILTER_STATS = 5
-SET_STATUS = 6
-SET_PACKAGE_LABEL = 7
-ADD_FILE = 8
-CLEAR_FILES = 9
-SET_FILE_DETAILS = 10
-SELECT_PACKAGES = 11
-EXPAND_DIR = 12
-SELECT_FILES = 13
-SET_STYLE_MAPS = 14
-SET_PACKAGE_INFO = 15
-DISPLAY_ERROR = 16
-SET_SUMMARY = 17
+class CommandIds(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'ADD_GROUP', 'ADD_PACKAGE', 'EXPAND_GROUP',
+                       'CLEAR_PACKAGES', 'SET_FILTER_STATS', 'SET_STATUS',
+                       'SET_PACKAGE_LABEL', 'ADD_FILE', 'CLEAR_FILES', 'SET_FILE_DETAILS',
+                       'SELECT_PACKAGES', 'EXPAND_DIR', 'SELECT_FILES', 'SET_STYLE_MAPS',
+                       'SET_PACKAGE_INFO', 'DISPLAY_ERROR', 'SET_SUMMARY')
+    # for autocomplete
+    ADD_GROUP = None
+    ADD_PACKAGE = None
+    EXPAND_GROUP = None
+    CLEAR_PACKAGES = None
+    SET_FILTER_STATS = None
+    SET_STATUS = None
+    SET_PACKAGE_LABEL = None
+    ADD_FILE = None
+    CLEAR_FILES = None
+    SET_FILE_DETAILS = None
+    SELECT_PACKAGES = None
+    EXPAND_DIR = None
+    SELECT_FILES = None
+    SET_STYLE_MAPS = None
+    SET_PACKAGE_INFO = None
+    DISPLAY_ERROR = None
+    SET_SUMMARY = None
 
-# style values
-FONT_STYLE_BOLD_FLAG = 1
-FONT_STYLE_ITALICS_FLAG = 2
-TEXT_DISABLED = 1
-TEXT_HAS_INACTIVE_OVERRIDDE = 2
-HIGHLIGHT_ERROR = 3
-HIGHLIGHT_MISSING_DEPENDENCY = 4
-HIGHLIGHT_DIRTY = 5
-HIGHLIGHT_LOADING = 6
-HIGHLIGHT_OK = 7
-ICON_PROJECT_MATCHES = 1
-ICON_PROJECT_MATCHES_WIZ = 2
-ICON_PROJECT_MISMATCHED = 3
-ICON_PROJECT_MISMATCHED_WIZ = 4
-ICON_PROJECT_MISSING = 5
-ICON_PROJECT_MISSING_WIZ = 6
-ICON_PROJECT_EMPTY = 7
-ICON_PROJECT_EMPTY_WIZ = 8
-ICON_PROJECT_UNINSTALLABLE = 9
-ICON_INSTALLER_MATCHES = 10
-ICON_INSTALLER_MATCHES_WIZ = 11
-ICON_INSTALLER_MISMATCHED = 12
-ICON_INSTALLER_MISMATCHED_WIZ = 13
-ICON_INSTALLER_MISSING = 14
-ICON_INSTALLER_MISSING_WIZ = 15
-ICON_INSTALLER_EMPTY = 16
-ICON_INSTALLER_EMPTY_WIZ = 17
-ICON_INSTALLER_UNINSTALLABLE = 18
+class FontStyleIds(enum.FlagEnum):
+    __enumerables__ = ('UNKNOWN', 'BOLD', 'ITALICS')
+    # for autocomplete
+    BOLD = None
+    ITALICS = None
 
-# status states
-STATUS_OK = 1
-STATUS_LOADING = 2
-STATUS_DIRTY = 3
-STATUS_UNSTABLE = 4
+class ForegroundColorIds(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'DISABLED', 'HAS_INACTIVE_OVERRIDE')
+    # for autocomplete
+    DISABLED = None
+    HAS_INACTIVE_OVERRIDDE = None
 
-OP_ANNEAL = 1
-OP_RENAME = 2
-OP_DELETE = 3
+class HighlightColorIds(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'ERROR', 'MISSING_DEPENDENCY', 'DIRTY', 'LOADING', 'OK')
+    # for autocomplete
+    ERROR = None
+    MISSING_DEPENDENCY = None
+    DIRTY = None
+    LOADING = None
+    OK = None
+
+class IconIds(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'PROJECT_MATCHES', 'PROJECT_MATCHES_WIZ',
+                       'PROJECT_MISMATCHED', 'PROJECT_MISMATCHED_WIZ', 'PROJECT_MISSING',
+                       'PROJECT_MISSING_WIZ', 'PROJECT_EMPTY', 'PROJECT_EMPTY_WIZ',
+                       'PROJECT_UNINSTALLABLE', 'INSTALLER_MATCHES',
+                       'INSTALLER_MATCHES_WIZ', 'INSTALLER_MISMATCHED',
+                       'INSTALLER_MISMATCHED_WIZ', 'INSTALLER_MISSING',
+                       'INSTALLER_MISSING_WIZ', 'INSTALLER_EMPTY', 'INSTALLER_EMPTY_WIZ',
+                       'INSTALLER_UNINSTALLABLE')
+    # for autocomplete
+    PROJECT_MATCHES = None
+    PROJECT_MATCHES_WIZ = None
+    PROJECT_MISMATCHED = None
+    PROJECT_MISMATCHED_WIZ = None
+    PROJECT_MISSING = None
+    PROJECT_MISSING_WIZ = None
+    PROJECT_EMPTY = None
+    PROJECT_EMPTY_WIZ = None
+    PROJECT_UNINSTALLABLE = None
+    INSTALLER_MATCHES = None
+    INSTALLER_MATCHES_WIZ = None
+    INSTALLER_MISMATCHED = None
+    INSTALLER_MISMATCHED_WIZ = None
+    INSTALLER_MISSING = None
+    INSTALLER_MISSING_WIZ = None
+    INSTALLER_EMPTY = None
+    INSTALLER_EMPTY_WIZ = None
+    INSTALLER_UNINSTALLABLE = None
+
+class Status(model.Status):
+    pass
 
 
-class ViewCommandStyle:
-    def __init__(self, fontStyleMask=None, textColorId=None, hilightColorId=None,
+class ViewCommandStyle(debug_utils.Dumpable):
+    def __init__(self, fontStyleMask=None, foregroundColorId=None, highlightColorId=None,
                  checkboxState=None, iconId=None):
         self.fontStyleMask = fontStyleMask
-        self.textColorId = textColorId
-        self.hilightColorId = hilightColorId
+        self.foregroundColorId = foregroundColorId
+        self.highlightColorId = highlightColorId
         self.checkboxState = checkboxState
         self.iconId = iconId
 
-class IoOperation:
+class IoOperation(debug_utils.Dumpable):
     def __init__(self, type, target):
         self.type = type
         self.target = target
 
 
 # command classes
-class ViewCommand:
-    '''The commandId refers to the subclass type.  The requestId is the id of
-    the associated request that instigated this command.  If this command was
-    not sent in response to a request, it will be set to None'''
+class ViewCommand(debug_utils.Dumpable):
+    '''The commandId indicates the subclass type'''
     def __init__(self, commandId):
         self.commandId = commandId
-    def __str__(self):
-        outStr = StringIO()
-        outStr.write(self.__class__.__name__)
-        outStr.write("[")
-        isFirst = True
-        for varName in self.__dict__:
-            if not varName.startswith("_"):
-                if not isFirst:
-                    outStr.write("; ")
-                outStr.write(varName)
-                outStr.write("=")
-                outStr.write(str(self.__dict__[varName]))
-                isFirst = False
-        outStr.write("]")
-        return outStr.getvalue()
-
 
 class _AddNode(ViewCommand):
     '''Adds a node to a tree
@@ -140,51 +143,51 @@ class _AddNode(ViewCommand):
 class AddGroup(_AddNode):
     '''Adds a group node to the packages tree'''
     def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
-        _AddNode.__init__(self, ADD_GROUP, label, nodeId, parentNodeId, predecessorNodeId,
-                          style)
+        _AddNode.__init__(self, CommandIds.ADD_GROUP, label, nodeId, parentNodeId,
+                          predecessorNodeId, style)
 
 class AddPackage(_AddNode):
     '''Adds a package node to the packages tree'''
     def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
-        _AddNode.__init__(self, ADD_PACKAGE, label, nodeId, parentNodeId,
+        _AddNode.__init__(self, CommandIds.ADD_PACKAGE, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
 
 class ExpandGroup(ViewCommand):
     def __init__(self, nodeId):
-        ViewCommand.__init__(self, EXPAND_GROUP)
+        ViewCommand.__init__(self, CommandIds.EXPAND_GROUP)
         self.nodeId = nodeId
 
 class ExpandDir(ViewCommand):
     def __init__(self, nodeId):
-        ViewCommand.__init__(self, EXPAND_DIR)
+        ViewCommand.__init__(self, CommandIds.EXPAND_DIR)
         self.nodeId = nodeId
 
 class ClearPackages(ViewCommand):
     def __init__(self):
-        ViewCommand.__init__(self, CLEAR_PACKAGES)
+        ViewCommand.__init__(self, CommandIds.CLEAR_PACKAGES)
 
 class SelectPackages(ViewCommand):
     '''nodeIds will be a list of node Ids to select'''
     def __init__(self, nodeIds):
-        ViewCommand.__init__(self, SELECT_PACKAGES)
+        ViewCommand.__init__(self, CommandIds.SELECT_PACKAGES)
         self.nodeIds = nodeIds
 
 class SelectFiles(ViewCommand):
     '''nodeIds will be a list of node Ids to select'''
     def __init__(self, nodeIds):
-        ViewCommand.__init__(self, SELECT_FILES)
+        ViewCommand.__init__(self, CommandIds.SELECT_FILES)
         self.nodeIds = nodeIds
 
 class SetFilterStats(ViewCommand):
     def __init__(self, filterId, current, total):
-        ViewCommand.__init__(self, SET_FILTER_STATS)
+        ViewCommand.__init__(self, CommandIds.SET_FILTER_STATS)
         self.filterId = filterId
         self.current = current
         self.total = total
 
 class SetSummary(ViewCommand):
     def __init__(self, installedFiles, installedPlugins, bainMb, installedMb, freeMb):
-        ViewCommand.__init__(self, SET_SUMMARY)
+        ViewCommand.__init__(self, CommandIds.SET_SUMMARY)
         self.installedFiles = installedFiles
         self.installedPlugins = installedPlugins
         self.bainMb = bainMb
@@ -192,11 +195,11 @@ class SetSummary(ViewCommand):
         self.freeMb = freeMb
 
 class SetStatus(ViewCommand):
-    def __init__(self, status, hilightColorId, loadingComplete=None,
+    def __init__(self, status, highlightColorId, loadingComplete=None,
                  loadingTotal=None, ioOperations=None):
-        ViewCommand.__init__(self, SET_STATUS)
+        ViewCommand.__init__(self, CommandIds.SET_STATUS)
         self.status = status
-        self.hilightColorId = hilightColorId
+        self.highlightColorId = highlightColorId
         self.loadingComplete = loadingComplete
         self.loadingTotal = loadingTotal
         self.ioOperations = ioOperations
@@ -212,28 +215,30 @@ class SetPackageLabel(_SetText):
     """None means no package is selected, a blank label means multiple packages are
     selected"""
     def __init__(self, text):
-        _SetText.__init__(self, SET_PACKAGE_LABEL, text)
+        _SetText.__init__(self, CommandIds.SET_PACKAGE_LABEL, text)
 
 class AddFile(_AddNode):
     '''Adds a subpackage/file/directory node to the file tree'''
     def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
-        _AddNode.__init__(self, ADD_FILE, label, nodeId, parentNodeId,
+        _AddNode.__init__(self, CommandIds.ADD_FILE, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
 
 class ClearFiles(ViewCommand):
     def __init__(self):
-        ViewCommand.__init__(self, CLEAR_FILES)
+        ViewCommand.__init__(self, CommandIds.CLEAR_FILES)
 
 class SetFileDetails(_SetText):
     def __init__(self, text):
-        _SetText.__init__(self, SET_FILE_DETAILS, text)
+        _SetText.__init__(self, CommandIds.SET_FILE_DETAILS, text)
 
 class SetStyleMaps(ViewCommand):
     '''Contains the map from style IDs to RGB tuples (for colors) and file resources
     (for images)'''
-    def __init__(self, colorMap, checkedIconMap, uncheckedIconMap):
-        ViewCommand.__init__(self, SET_STYLE_MAPS)
-        self.colorMap = colorMap
+    def __init__(self, foregroundColorMap, highlightColorMap,
+                 checkedIconMap, uncheckedIconMap):
+        ViewCommand.__init__(self, CommandIds.SET_STYLE_MAPS)
+        self.foregroundColorMap = foregroundColorMap
+        self.highlightColorMap = highlightColorMap
         self.checkedIconMap = checkedIconMap
         self.uncheckedIconMap = uncheckedIconMap
 
@@ -258,7 +263,7 @@ class SetPackageInfo(ViewCommand):
     For the Conflicts tab, TODO: define
     """
     def __init__(self, tabId, data):
-        ViewCommand.__init__(self, SET_PACKAGE_INFO)
+        ViewCommand.__init__(self, CommandIds.SET_PACKAGE_INFO)
         self.tabId = tabId
         self.data = data
 
@@ -266,7 +271,7 @@ class DisplayError(ViewCommand):
     """Error codes instead of a message since we want to avoid localizable strings in
     the non-view layers"""
     def __init__(self, errorCode, resourceName):
-        ViewCommand.__init__(self, DISPLAY_ERROR)
+        ViewCommand.__init__(self, CommandIds.DISPLAY_ERROR)
         self.errorCode = errorCode
         self.resourceName = resourceName
 

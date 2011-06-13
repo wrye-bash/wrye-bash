@@ -23,26 +23,52 @@
 # =============================================================================
 
 from . import impl
+from ..util import debug_utils, enum
 
 
 ROOT_NODE_ID = impl.nodeCounter.next()
 
-NODE_TYPE_ROOT = 0x01
-NODE_TYPE_PACKAGE = 0x02
-NODE_TYPE_GROUP = 0x04
-NODE_TYPE_SUBPACKAGE = 0x08
-NODE_TYPE_DIRECTORY = 0x10
-NODE_TYPE_FILE = 0x20
+class NodeTypes(enum.FlagEnum):
+    __enumerables__ = (
+        'UNKNOWN', 'ROOT', 'PACKAGE', 'GROUP', 'SUBPACKAGE', 'DIRECTORY', 'FILE')
+    # so IDEs can autocomplete
+    ROOT = None
+    PACKAGE = None
+    GROUP = None
+    SUBPACKAGE = None
+    DIRECTORY = None
+    FILE = None
 
-ERROR_PERMISSIONS_READ = 1
-ERROR_PERMISSIONS_WRITE = 2
-ERROR_DISK_FULL = 3
-# TODO: ...
+class Errors(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'PERMISSIONS_READ', 'PERMISSIONS_WRITE', 'DISK_FULL')
+    # for autocomplete
+    PERMISSIONS_READ = None
+    PERMISSIONS_WRITE = None
+    DISK_FULL = None
+    # TODO: ...
 
-UPDATE_TYPE_ATTRIBUTES = 0x01
-UPDATE_TYPE_CHILDREN = 0x02
-UPDATE_TYPE_DETAILS = 0x04
-UPDATE_TYPE_ERROR = 0x08
+class Status(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'OK', 'LOADING', 'DIRTY', 'UNSTABLE')
+    # for autocomplete
+    OK = None
+    LOADING = None
+    DIRTY = None
+    UNSTABLE = None
+
+class Operations(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'COPY', 'RENAME', 'DELETE')
+    # for autocomplete
+    COPY = None
+    RENAME = None
+    DELETE = None
+
+class UpdateTypes(enum.FlagEnum):
+    __enumerables__ = ('UNKNOWN', 'ATTRIBUTES', 'CHILDREN', 'DETAILS', 'ERROR')
+    # for autocomplete
+    ATTRIBUTES = None
+    CHILDREN = None
+    DETAILS = None
+    ERROR = None
 
 # for node updates, the tuple is: (updateType, nodeType, nodeId, version)
 UPDATE_TUPLE_IDX_TYPE = 0
@@ -54,7 +80,7 @@ UPDATE_NODE_TUPLE_IDX_VERSION = 3
 UPDATE_ERROR_TUPLE_IDX_CODE = 1
 UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME = 2
 
-class _VersionedData:
+class _VersionedData(debug_utils.Dumpable):
     """version gets incremented for every change to the data.  clients can check the
     version to ensure an update is for data newer than what it already has"""
     def __init__(self):

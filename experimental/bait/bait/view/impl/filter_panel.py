@@ -77,15 +77,18 @@ class FilterPanel(wx.Panel):
 
     def set_filter_stats(self, filterId, current, total):
         filterButton, filterLabelFormatPattern = self._filters[filterId]
-        _logger.debug("updating filter %d label with stats: current=%d; total=%d", filterId, current, total)
-        self._set_filter_button_label(filterButton, filterLabelFormatPattern, current, total)
+        _logger.debug("updating filter %s label with stats: current=%d; total=%d",
+                      filterId, current, total)
+        self._set_filter_button_label(
+            filterButton, filterLabelFormatPattern, current, total)
         # resize button width to fit the new label
         curHeight = filterButton.GetSize()[1]
         filterButton.SetMinSize((filterButton.GetBestSize()[0], curHeight))
         self.Layout()
         self.Fit()
 
-    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern, current, total):
+    def _set_filter_button_label(self, filterButton, filterLabelFormatPattern,
+                                 current, total):
         """may be overridden in the constructor"""
         filterButton.SetLabel(filterLabelFormatPattern % total)
 

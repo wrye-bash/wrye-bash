@@ -32,18 +32,40 @@ from ... import presenter
 
 
 _logger = logging.getLogger(__name__)
-_statsChartElementKeys = ["numSelectedMatched", "numSelectedMismatched", "numSelectedOverridden", "numSelectedMissing", "numTotalSelected", "numUnselectedMatched", "numUnselectedMismatched", "numUnselectedOverridden", "numUnselectelectedMissing", "numTotalUnselected", "numTotalMatched", "numTotalMismatched", "numTotalOverridden", "numTotalMissing", "numTotalSelectable"]
-_dirtyTabFilterIds = frozenset((presenter.FILTER_ID_DIRTY_ADD, presenter.FILTER_ID_DIRTY_UPDATE, presenter.FILTER_ID_DIRTY_DELETE))
-_conflictsTabFilterIds = frozenset((presenter.FILTER_ID_CONFLICTS_SELECTED, presenter.FILTER_ID_CONFLICTS_UNSELECTED, presenter.FILTER_ID_CONFLICTS_ACTIVE, presenter.FILTER_ID_CONFLICTS_INACTIVE, presenter.FILTER_ID_CONFLICTS_HIGHER, presenter.FILTER_ID_CONFLICTS_LOWER))
-_selectedTabFilterIds = frozenset((presenter.FILTER_ID_SELECTED_MATCHED, presenter.FILTER_ID_SELECTED_MISMATCHED, presenter.FILTER_ID_SELECTED_OVERRIDDEN, presenter.FILTER_ID_SELECTED_MISSING))
-_unselectedTabFilterIds = frozenset((presenter.FILTER_ID_UNSELECTED_MATCHED, presenter.FILTER_ID_UNSELECTED_MISMATCHED, presenter.FILTER_ID_UNSELECTED_OVERRIDDEN, presenter.FILTER_ID_UNSELECTED_MISSING))
-_skippedTabFilterIds = frozenset((presenter.FILTER_ID_SKIPPED_NONGAME, presenter.FILTER_ID_SKIPPED_MASKED))
+_statsChartElementKeys = [
+    "numSelectedMatched", "numSelectedMismatched", "numSelectedOverridden",
+    "numSelectedMissing", "numTotalSelected", "numUnselectedMatched",
+    "numUnselectedMismatched", "numUnselectedOverridden", "numUnselectelectedMissing",
+    "numTotalUnselected", "numTotalMatched", "numTotalMismatched", "numTotalOverridden",
+    "numTotalMissing", "numTotalSelectable"]
+_dirtyTabFilterIds = frozenset((presenter.FilterIds.DIRTY_ADD,
+                                presenter.FilterIds.DIRTY_UPDATE,
+                                presenter.FilterIds.DIRTY_DELETE))
+_conflictsTabFilterIds = frozenset((presenter.FilterIds.CONFLICTS_SELECTED,
+                                    presenter.FilterIds.CONFLICTS_UNSELECTED,
+                                    presenter.FilterIds.CONFLICTS_ACTIVE,
+                                    presenter.FilterIds.CONFLICTS_INACTIVE,
+                                    presenter.FilterIds.CONFLICTS_HIGHER,
+                                    presenter.FilterIds.CONFLICTS_LOWER))
+_selectedTabFilterIds = frozenset((presenter.FilterIds.SELECTED_MATCHED,
+                                   presenter.FilterIds.SELECTED_MISMATCHED,
+                                   presenter.FilterIds.SELECTED_OVERRIDDEN,
+                                   presenter.FilterIds.SELECTED_MISSING))
+_unselectedTabFilterIds = frozenset((presenter.FilterIds.UNSELECTED_MATCHED,
+                                     presenter.FilterIds.UNSELECTED_MISMATCHED,
+                                     presenter.FilterIds.UNSELECTED_OVERRIDDEN,
+                                     presenter.FilterIds.UNSELECTED_MISSING))
+_skippedTabFilterIds = frozenset((presenter.FilterIds.SKIPPED_NONGAME,
+                                  presenter.FilterIds.SKIPPED_MASKED))
 
 
-def _add_tab(parent, tabName, filterIds, filterLabelFormatPatterns, presenter_, additionalStyle=0):
+def _add_tab(parent, tabName, filterIds, filterLabelFormatPatterns,
+             presenter_, additionalStyle=0):
     tabPanel = wx.Panel(parent)
-    filterPanel = filter_panel.FilterPanel(tabPanel, filterIds, filterLabelFormatPatterns, presenter_)
-    textCtrl = wx.TextCtrl(tabPanel, style=wx.TE_READONLY|wx.TE_MULTILINE|wx.NO_BORDER|additionalStyle)
+    filterPanel = filter_panel.FilterPanel(tabPanel, filterIds,
+                                           filterLabelFormatPatterns, presenter_)
+    textCtrl = wx.TextCtrl(
+        tabPanel, style=wx.TE_READONLY|wx.TE_MULTILINE|wx.NO_BORDER|additionalStyle)
     textCtrl.SetBackgroundColour(parent.GetBackgroundColour())
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(filterPanel, 0, wx.EXPAND)
@@ -64,42 +86,67 @@ class PackageInfoPanel(wx.Panel):
         generalTabPanel = wx.lib.scrolledpanel.ScrolledPanel(packageInfoTabs)
         generalTabSummary = self._generalTabSummary = wx.StaticText(generalTabPanel)
         generalTabChartPanel = self._generalTabChartPanel = wx.Panel(generalTabPanel)
-        generalTabStatsChart = self._generalTabStatsChart = dict((key, wx.StaticText(generalTabChartPanel)) for key in _statsChartElementKeys)
+        generalTabStatsChart = self._generalTabStatsChart = dict(
+            (key, wx.StaticText(generalTabChartPanel)) for key in _statsChartElementKeys)
         packageInfoTabs.AddPage(generalTabPanel, "General")
 
-        self._dirtyFilterPanel, self._dirtyText = _add_tab(packageInfoTabs, "Dirty",
-            (presenter.FILTER_ID_DIRTY_ADD, presenter.FILTER_ID_DIRTY_UPDATE, presenter.FILTER_ID_DIRTY_DELETE),
+        self._dirtyFilterPanel, self._dirtyText = _add_tab(
+            packageInfoTabs, "Dirty",
+            (presenter.FilterIds.DIRTY_ADD,
+             presenter.FilterIds.DIRTY_UPDATE,
+             presenter.FilterIds.DIRTY_DELETE),
             ("Add (%d)", "Update (%d)", "Delete (%d)"), presenter_, wx.TE_RICH2)
-        self._conflictsFilterPanel, self._conflictsText = _add_tab(packageInfoTabs, "Conflicts",
-            (presenter.FILTER_ID_CONFLICTS_SELECTED, presenter.FILTER_ID_CONFLICTS_UNSELECTED,
-             presenter.FILTER_ID_CONFLICTS_ACTIVE, presenter.FILTER_ID_CONFLICTS_INACTIVE,
-             presenter.FILTER_ID_CONFLICTS_HIGHER, presenter.FILTER_ID_CONFLICTS_LOWER),
-            ("Selected (%d)", "Unselected (%d)", "Active (%d)", "Inactive (%d)", "Higher (%d)", "Lower (%d)"), presenter_)
-        self._selectedFilterPanel, self._selectedText = _add_tab(packageInfoTabs, "Selected",
-            (presenter.FILTER_ID_SELECTED_MATCHED, presenter.FILTER_ID_SELECTED_MISMATCHED,
-             presenter.FILTER_ID_SELECTED_OVERRIDDEN, presenter.FILTER_ID_SELECTED_MISSING),
-            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"), presenter_)
-        self._unselectedFilterPanel, self._unselectedText = _add_tab(packageInfoTabs, "Unselected",
-            (presenter.FILTER_ID_UNSELECTED_MATCHED, presenter.FILTER_ID_UNSELECTED_MISMATCHED,
-             presenter.FILTER_ID_UNSELECTED_OVERRIDDEN, presenter.FILTER_ID_UNSELECTED_MISSING),
-            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"), presenter_)
+        self._conflictsFilterPanel, self._conflictsText = _add_tab(
+            packageInfoTabs, "Conflicts",
+            (presenter.FilterIds.CONFLICTS_SELECTED,
+             presenter.FilterIds.CONFLICTS_UNSELECTED,
+             presenter.FilterIds.CONFLICTS_ACTIVE, presenter.FilterIds.CONFLICTS_INACTIVE,
+             presenter.FilterIds.CONFLICTS_HIGHER, presenter.FilterIds.CONFLICTS_LOWER),
+            ("Selected (%d)", "Unselected (%d)", "Active (%d)",
+             "Inactive (%d)", "Higher (%d)", "Lower (%d)"),
+            presenter_)
+        self._selectedFilterPanel, self._selectedText = _add_tab(
+            packageInfoTabs, "Selected",
+            (presenter.FilterIds.SELECTED_MATCHED,
+             presenter.FilterIds.SELECTED_MISMATCHED,
+             presenter.FilterIds.SELECTED_OVERRIDDEN,
+             presenter.FilterIds.SELECTED_MISSING),
+            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"),
+            presenter_)
+        self._unselectedFilterPanel, self._unselectedText = _add_tab(
+            packageInfoTabs, "Unselected",
+            (presenter.FilterIds.UNSELECTED_MATCHED,
+             presenter.FilterIds.UNSELECTED_MISMATCHED,
+             presenter.FilterIds.UNSELECTED_OVERRIDDEN,
+             presenter.FilterIds.UNSELECTED_MISSING),
+            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"),
+            presenter_)
         self._skippedFilterPanel, self._skippedText = _add_tab(packageInfoTabs, "Skipped",
-            (presenter.FILTER_ID_SKIPPED_NONGAME, presenter.FILTER_ID_SKIPPED_MASKED),
+            (presenter.FilterIds.SKIPPED_NONGAME, presenter.FilterIds.SKIPPED_MASKED),
             ("Non-game (%d)", "Masked (%d)"), presenter_)
 
         generalTabChartSizer = wx.GridBagSizer(2, 5)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Matched"), (0,1), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Mismatched"), (0,2), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Overridden"), (0,3), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Missing"), (0,4), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (0,5), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Selected"), (1,0), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Unselected"), (2,0), flag=wx.ALIGN_CENTER)
-        generalTabChartSizer.Add(wx.StaticText(generalTabChartPanel, label="Total"), (3,0), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Matched"), (0,1), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Mismatched"), (0,2), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Overridden"), (0,3), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Missing"), (0,4), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Total"), (0,5), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Selected"), (1,0), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Unselected"), (2,0), flag=wx.ALIGN_CENTER)
+        generalTabChartSizer.Add(wx.StaticText(
+            generalTabChartPanel, label="Total"), (3,0), flag=wx.ALIGN_CENTER)
         row = 1
         col = 1
         for statsChartElement in _statsChartElementKeys:
-            generalTabChartSizer.Add(generalTabStatsChart[statsChartElement], (row,col), flag=wx.ALIGN_RIGHT)
+            generalTabChartSizer.Add(
+                generalTabStatsChart[statsChartElement], (row,col), flag=wx.ALIGN_RIGHT)
             col += 1
             if col is 6:
                 col = 1
@@ -119,13 +166,21 @@ class PackageInfoPanel(wx.Panel):
         self.SetMinSize(packageInfoSizer.GetMinSize())
         self.SetSizer(packageInfoSizer)
 
-        self._detailsTabIndexToTabId = {0:presenter.DETAILS_TAB_ID_GENERAL, 1:presenter.DETAILS_TAB_ID_DIRTY, 2:presenter.DETAILS_TAB_ID_CONFLICTS, 3:presenter.DETAILS_TAB_ID_SELECTED, 4:presenter.DETAILS_TAB_ID_UNSELECTED, 5:presenter.DETAILS_TAB_ID_SKIPPED}
+        self._detailsTabIndexToTabId = {
+            0:presenter.DetailsTabIds.GENERAL, 1:presenter.DetailsTabIds.DIRTY,
+            2:presenter.DetailsTabIds.CONFLICTS, 3:presenter.DetailsTabIds.SELECTED,
+            4:presenter.DetailsTabIds.UNSELECTED, 5:presenter.DetailsTabIds.SKIPPED}
         self._presenter = presenter_
         self._greyColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         # TODO: make colors configurable?
         # TODO: get colors from style map?
-        self._dirtyAttrs = {presenter.FILTER_ID_DIRTY_ADD:wx.TextAttr(wx.Color(34,139,34)), presenter.FILTER_ID_DIRTY_UPDATE:wx.TextAttr(wx.Color(0,0,139)), presenter.FILTER_ID_DIRTY_DELETE:wx.TextAttr(wx.Color(178,34,34))}
-        self._dirtyActions = {presenter.FILTER_ID_DIRTY_ADD:" (add)", presenter.FILTER_ID_DIRTY_UPDATE:" (update)", presenter.FILTER_ID_DIRTY_DELETE:" (delete)"}
+        self._dirtyAttrs = {
+            presenter.FilterIds.DIRTY_ADD:wx.TextAttr(wx.Color(34,139,34)),
+            presenter.FilterIds.DIRTY_UPDATE:wx.TextAttr(wx.Color(0,0,139)),
+            presenter.FilterIds.DIRTY_DELETE:wx.TextAttr(wx.Color(178,34,34))}
+        self._dirtyActions = {presenter.FilterIds.DIRTY_ADD:" (add)",
+                              presenter.FilterIds.DIRTY_UPDATE:" (update)",
+                              presenter.FilterIds.DIRTY_DELETE:" (delete)"}
 
         packageInfoTabs.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self._on_tab_changing)
         self.set_label(None)
@@ -148,7 +203,9 @@ class PackageInfoPanel(wx.Panel):
         else:
             _logger.warn("filter stats set for unknown filterId: %d", filterId)
             return
-        target.set_filter_stats(setFilterStatsCommand.filterId, setFilterStatsCommand.current, setFilterStatsCommand.total)
+        target.set_filter_stats(setFilterStatsCommand.filterId,
+                                setFilterStatsCommand.current,
+                                setFilterStatsCommand.total)
 
     def set_label(self, label):
         if label is None:
@@ -165,18 +222,25 @@ class PackageInfoPanel(wx.Panel):
         self._generalTabChartPanel.Hide()
         self._dirtyText.SetValue("Loading...")
         self._dirtyText.Disable()
-        for textCtrl in (self._conflictsText, self._selectedText, self._unselectedText, self._skippedText):
+        for textCtrl in (self._conflictsText, self._selectedText,
+                         self._unselectedText, self._skippedText):
             textCtrl.SetValue("Loading...")
             textCtrl.SetForegroundColour(self._greyColor)
             textCtrl.Disable()
 
     def set_tab_data(self, tabId, data):
-        if tabId is presenter.DETAILS_TAB_ID_GENERAL: self._set_general_info(data)
-        elif tabId is presenter.DETAILS_TAB_ID_DIRTY: self._set_dirty_info(data)
-        elif tabId is presenter.DETAILS_TAB_ID_CONFLICTS: self._set_tab_text(self._conflictsText, data)
-        elif tabId is presenter.DETAILS_TAB_ID_SELECTED: self._set_tab_text(self._selectedText, data)
-        elif tabId is presenter.DETAILS_TAB_ID_UNSELECTED: self._set_tab_text(self._unselectedText, data)
-        elif tabId is presenter.DETAILS_TAB_ID_SKIPPED: self._set_tab_text(self._skippedText, data)
+        if tabId is presenter.DetailsTabIds.GENERAL:
+            self._set_general_info(data)
+        elif tabId is presenter.DetailsTabIds.DIRTY:
+            self._set_dirty_info(data)
+        elif tabId is presenter.DetailsTabIds.CONFLICTS:
+            self._set_tab_text(self._conflictsText, data)
+        elif tabId is presenter.DetailsTabIds.SELECTED:
+            self._set_tab_text(self._selectedText, data)
+        elif tabId is presenter.DetailsTabIds.UNSELECTED:
+            self._set_tab_text(self._unselectedText, data)
+        elif tabId is presenter.DetailsTabIds.SKIPPED:
+            self._set_tab_text(self._skippedText, data)
         else:
             _logger.error("unhandled tab id: %s", tabId)
 
@@ -203,9 +267,12 @@ Data CRC: %s
 Files: %d
   Dirty: %d
   Overridden: %d
-  Skipped: %d""" % (packageType, status, generalStats["packageSize"], generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
-                    generalStats.get("dataCrc", "00000000"), generalStats.get("numFiles", 0), generalStats.get("numDirty", 0),
-                    generalStats.get("numOverridden", 0), generalStats.get("numSkipped", 0)))
+  Skipped: %d""" % (packageType, status, generalStats["packageSize"],
+                    generalStats["contentsSize"], generalStats["lastModifiedTimestamp"],
+                    generalStats.get("dataCrc", "00000000"),
+                    generalStats.get("numFiles", 0), generalStats.get("numDirty", 0),
+                    generalStats.get("numOverridden", 0),
+                    generalStats.get("numSkipped", 0)))
 
         generalTabStatsChart = self._generalTabStatsChart
         for key in _statsChartElementKeys:

@@ -74,7 +74,7 @@ class UpdateDispatcher:
                 try:
                     _logger.debug("received update: %s", str(updateInfo))
                     updateType = updateInfo[model.UPDATE_TUPLE_IDX_TYPE]
-                    if updateType is model.UPDATE_TYPE_ERROR:
+                    if updateType is model.UpdateTypes.ERROR:
                         # propagate errors to view
                         self._viewCommandQueue.put(
                             view_commands.DisplayError(

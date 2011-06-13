@@ -27,26 +27,29 @@ import logging
 
 from .. import presenter
 from . import view_commands
-from impl import colors_and_icons, update_monitor
+from impl import colors_and_icons, update_dispatcher
 
 
 _logger = logging.getLogger(__name__)
 
 
 class BaitPresenter:
-    def __init__(self, model, viewCommandQueue, stateManager=None):
+    def __init__(self, model_, viewCommandQueue, stateManager=None):
+        """don't do anything major here (like start threads) since we may be initialized
+        in a different process from where we're started"""
         self.viewCommandQueue = viewCommandQueue
-        self._model = model
+        self._model = model_
         self._stateManager = stateManager
-        self._updateMonitorThread = None
-        self._colorsAndIcons = None
-        self._filterMask = 0
-        self._groupExpansionStates = {}
-        self._dirExpansionStates = {}
-        self._curDetailsTab = 0
-        self._selectedPackages = []
-        self._selectedFiles = []
-        self._searchString = None
+        self._updateDispatcher = update_dispatcher.UpdateDispatcher(
+            model_.updateNotificationQueue, viewCommandQueue, widgetManagers)
+        #self._colorsAndIcons = None
+        #self._filterMask = 0
+        #self._groupExpansionStates = {}
+        #self._dirExpansionStates = {}
+        #self._curDetailsTab = 0
+        #self._selectedPackages = []
+        #self._selectedFiles = []
+        #self._searchString = None
 
     def start(self, curDetailsTabId, filterStateMap):
         _logger.debug("presenter starting")
@@ -57,15 +60,15 @@ class BaitPresenter:
             loadingComplete=0, loadingTotal=100))
         self._curDetailsTab = curDetailsTabId
         for filterId, value in filterStateMap.iteritems():
-            _logger.debug("initializing filter %d to %s", filterId, value)
+            _logger.debug("initializing filter 0x%x to %s", filterId, value)
             self._filterMask |= filterId
         self.set_packages_tree_selections([])
         self.set_files_tree_selections([])
         self.viewCommandQueue.put(view_commands.SetPackageInfo(
             presenter.DETAILS_TAB_ID_GENERAL, None))
         self._model.start()
-        self._updateMonitorThread = update_monitor.UpdateMonitor(self._model.updateQueue)
-        self._updateMonitorThread.start()
+        self._modelMonitorThread = model_monitor.ModelMonitor(self._model.updateQueue)
+        self._modelMonitorThread.start()
 
     def pause(self):
         _logger.debug("presenter pausing")

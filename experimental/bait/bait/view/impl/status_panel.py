@@ -27,13 +27,14 @@ import wx
 import wx.lib.platebtn
 from cStringIO import StringIO
 
-from ...presenter import view_commands
+from ... import presenter
 
 
 _logger = logging.getLogger(__name__)
 _operationNames = {
-        view_commands.OP_ANNEAL:"Annealing",
-        view_commands.OP_DELETE:"Deleting"
+        presenter.AnnealOperations.COPY:"Copying",
+        presenter.AnnealOperations.DELETE:"Deleting",
+        presenter.AnnealOperations.RENAME:"Renaming"
     }
 
 def _make_iops_str(ioOperations, separator):
@@ -61,7 +62,7 @@ class StatusPanel(wx.Panel):
         okSizer = wx.BoxSizer(wx.HORIZONTAL)
         okSizer.Add(dataStats, 0, wx.ALIGN_CENTER_VERTICAL)
         okPanel.SetSizer(okSizer)
-        
+
         # "loading" panel
         loadingPanel = self._loadingPanel = wx.Panel(self)
         loadingText = wx.StaticText(loadingPanel, label="Loading packages: ")
@@ -70,7 +71,7 @@ class StatusPanel(wx.Panel):
         loadingSizer.Add(loadingText, 0, wx.ALIGN_CENTER_VERTICAL)
         loadingSizer.Add(loadingPercent, 0, wx.ALIGN_CENTER_VERTICAL)
         loadingPanel.SetSizer(loadingSizer)
-        
+
         # "needs annealing" panel
         dirtyPanel = self._dirtyPanel = wx.Panel(self)
         annealAllButton = wx.Button(dirtyPanel, label="Anneal all now")
@@ -80,15 +81,15 @@ class StatusPanel(wx.Panel):
         dirtySizer.Add(annealAllButton, 0, wx.ALIGN_CENTER_VERTICAL)
         dirtySizer.Add(dirtyText, 0, wx.ALIGN_CENTER_VERTICAL)
         dirtyPanel.SetSizer(dirtySizer)
-        
+
         # "doing IO" panel
-        # show cancel button, comma separated list of actions that trail off the right side of the panel 
+        # show cancel button, comma separated list of actions that trail off the right side of the panel
         ioPanel = self._ioPanel = wx.Panel(self)
         iopsText = self._iopsText = wx.StaticText(ioPanel)
         ioSizer = wx.BoxSizer(wx.HORIZONTAL)
         ioSizer.Add(iopsText, 0, wx.ALIGN_CENTER_VERTICAL)
         ioPanel.SetSizer(ioSizer)
-        
+
         statusSizer = wx.BoxSizer(wx.HORIZONTAL)
         statusSizer.Add(okPanel, 1, wx.ALIGN_CENTER_VERTICAL)
         statusSizer.Add(loadingPanel, 1, wx.ALIGN_CENTER_VERTICAL)
@@ -100,7 +101,7 @@ class StatusPanel(wx.Panel):
         loadingPanel.Hide()
         dirtyPanel.Hide()
         ioPanel.Hide()
-        
+
         self._curPanel = self._okPanel
 
 
@@ -114,7 +115,7 @@ class StatusPanel(wx.Panel):
         self._curPanel.Hide()
         self._okPanel.Show()
         self._curPanel = self._okPanel
-        
+
     def set_loading_status(self, hilightColor, current, total):
         _logger.debug("showing 'loading' panel; num complete: %d/%d", current, total)
         self._loadingPercent.SetRange(total)
@@ -123,14 +124,14 @@ class StatusPanel(wx.Panel):
         self._curPanel.Hide()
         self._loadingPanel.Show()
         self._curPanel = self._loadingPanel
-        
+
     def set_dirty_status(self, hilightColor):
         _logger.debug("showing 'dirty' panel")
         self._dirtyPanel.SetBackgroundColour(hilightColor)
         self._curPanel.Hide()
         self._dirtyPanel.Show()
         self._curPanel = self._dirtyPanel
-        
+
     def set_io_status(self, hilightColor, ioOperations):
         _logger.debug("showing 'io' panel; %d operations", len(ioOperations))
         self._iopsText.SetLabel(_make_iops_str(ioOperations, ", "))

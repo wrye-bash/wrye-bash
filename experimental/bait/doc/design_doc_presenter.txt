@@ -72,7 +72,7 @@ Algorithm:
 DataFetcher
 -----------
 API:
-  __init__(self)
+  __init__(self, numThreads)
   start(self)
   shutdown(self)
   async_fetch(self, nodeId, updateTypeMask, stateChangeQueue)
@@ -82,6 +82,7 @@ Data:
   Queue _fetchQueue
   list<Thread> _fetchThreads # each runs _fetch_loop
   bool _shutdown
+  Model _model
 
 Algorithm:
   async_fetch
@@ -131,22 +132,21 @@ Filters
 -------
 This design is approximate.  I suspect we will use a hierarchy of filter 
 classes.  One filter class for each filter defined in the UI, then aggregate 
-filters that combine them in proper and and or groups, then top-level filters 
+filters that combine them in proper AND and OR groups, then top-level filters 
 that represent all filters that affect a particular widget.
 
 API:
   __init__(self, viewUpdateQueue)
   bool matches(self, nodeId, nodeAttributes)
   remove(self, nodeId) # remove nodeId from _matchedSet
-  bool set_filter_mask(self, filterMask)  # returns whether state was changed
+  bool set_active_mask(self, filterMask)  # returns whether state was changed
   update_view(self) # send ViewUpdateCommand to update filter btn state/label
   reset(self) # clear sets
-  set get_visible_node_ids(self)
-  set _get_matched_node_ids(self)
+  set get_matched_node_ids(self)
 
 Data:
   int _idMask # can be multiple filter ids or'd together for aggregate fitlers
-  bool _enabled
+  bool _active
   set _matchedSet # used by underlying individual filters
   set _visibleSet # used by top-level filters
 

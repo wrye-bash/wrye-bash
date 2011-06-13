@@ -52,9 +52,9 @@ class BaitView(wx.Panel):
         search = wx.SearchCtrl(mainPanel)
         statusPanel = status_panel.StatusPanel(mainPanel, presenter_)
         packageTree = self._packageTree = filtered_tree.PackagesTree(mainPanel,
-                (presenter.FILTER_ID_PACKAGES_HIDDEN,
-                 presenter.FILTER_ID_PACKAGES_INSTALLED,
-                 presenter.FILTER_ID_PACKAGES_NOT_INSTALLED),
+                (presenter.FilterIds.PACKAGES_HIDDEN,
+                 presenter.FilterIds.PACKAGES_INSTALLED,
+                 presenter.FilterIds.PACKAGES_NOT_INSTALLED),
                 ("Hidden (%d/%d)", "Installed (%d/%d)", "Not Installed (%d/%d)"),
                 presenter_)
 
@@ -72,9 +72,9 @@ class BaitView(wx.Panel):
             fileTreePanel, bitmap=settingsIcon, style=wx.NO_BORDER)
         fileTreeLabel = wx.StaticText(fileTreePanel, label="Package contents")
         self._fileTree = filtered_tree.FilesTree(fileTreePanel,
-                (presenter.FILTER_ID_FILES_PLUGINS,
-                 presenter.FILTER_ID_FILES_RESOURCES,
-                 presenter.FILTER_ID_FILES_OTHER),
+                (presenter.FilterIds.FILES_PLUGINS,
+                 presenter.FilterIds.FILES_RESOURCES,
+                 presenter.FilterIds.FILES_OTHER),
                 ("Plugins (%d)", "Resources (%d)", "Other (%d)"),
                 presenter_)
         fileInfoPanel = wx.Panel(fileTreeSplitter)
@@ -189,36 +189,36 @@ class BaitView(wx.Panel):
         self._splitters["details"].SetSashPosition(paneWidth*0.22)
         self._splitters["fileTree"].SetSashPosition(paneWidth*0.32)
         filterStateMap = {
-            presenter.FILTER_ID_PACKAGES_HIDDEN:False,
-            presenter.FILTER_ID_PACKAGES_INSTALLED:True,
-            presenter.FILTER_ID_PACKAGES_NOT_INSTALLED:True,
-            presenter.FILTER_ID_FILES_PLUGINS:True,
-            presenter.FILTER_ID_FILES_RESOURCES:False,
-            presenter.FILTER_ID_FILES_OTHER:False,
-            presenter.FILTER_ID_DIRTY_ADD:True,
-            presenter.FILTER_ID_DIRTY_UPDATE:True,
-            presenter.FILTER_ID_DIRTY_DELETE:True,
-            presenter.FILTER_ID_CONFLICTS_SELECTED:True,
-            presenter.FILTER_ID_CONFLICTS_UNSELECTED:False,
-            presenter.FILTER_ID_CONFLICTS_ACTIVE:True,
-            presenter.FILTER_ID_CONFLICTS_INACTIVE:False,
-            presenter.FILTER_ID_CONFLICTS_HIGHER:True,
-            presenter.FILTER_ID_CONFLICTS_LOWER:False,
-            presenter.FILTER_ID_SELECTED_MATCHED:True,
-            presenter.FILTER_ID_SELECTED_MISMATCHED:True,
-            presenter.FILTER_ID_SELECTED_OVERRIDDEN:True,
-            presenter.FILTER_ID_SELECTED_MISSING:True,
-            presenter.FILTER_ID_UNSELECTED_MATCHED:True,
-            presenter.FILTER_ID_UNSELECTED_MISMATCHED:True,
-            presenter.FILTER_ID_UNSELECTED_OVERRIDDEN:True,
-            presenter.FILTER_ID_UNSELECTED_MISSING:False,
-            presenter.FILTER_ID_SKIPPED_NONGAME:True,
-            presenter.FILTER_ID_SKIPPED_MASKED:False}
+            presenter.FilterIds.PACKAGES_HIDDEN:False,
+            presenter.FilterIds.PACKAGES_INSTALLED:True,
+            presenter.FilterIds.PACKAGES_NOT_INSTALLED:True,
+            presenter.FilterIds.FILES_PLUGINS:True,
+            presenter.FilterIds.FILES_RESOURCES:False,
+            presenter.FilterIds.FILES_OTHER:False,
+            presenter.FilterIds.DIRTY_ADD:True,
+            presenter.FilterIds.DIRTY_UPDATE:True,
+            presenter.FilterIds.DIRTY_DELETE:True,
+            presenter.FilterIds.CONFLICTS_SELECTED:True,
+            presenter.FilterIds.CONFLICTS_UNSELECTED:False,
+            presenter.FilterIds.CONFLICTS_ACTIVE:True,
+            presenter.FilterIds.CONFLICTS_INACTIVE:False,
+            presenter.FilterIds.CONFLICTS_HIGHER:True,
+            presenter.FilterIds.CONFLICTS_LOWER:False,
+            presenter.FilterIds.SELECTED_MATCHED:True,
+            presenter.FilterIds.SELECTED_MISMATCHED:True,
+            presenter.FilterIds.SELECTED_OVERRIDDEN:True,
+            presenter.FilterIds.SELECTED_MISSING:True,
+            presenter.FilterIds.UNSELECTED_MATCHED:True,
+            presenter.FilterIds.UNSELECTED_MISMATCHED:True,
+            presenter.FilterIds.UNSELECTED_OVERRIDDEN:True,
+            presenter.FilterIds.UNSELECTED_MISSING:False,
+            presenter.FilterIds.SKIPPED_NONGAME:True,
+            presenter.FilterIds.SKIPPED_MASKED:False}
         self._packageTree.start(filterStateMap)
         self._fileTree.start(filterStateMap)
         self._packageInfoPanel.start(filterStateMap)
         _logger.debug("starting presenter")
-        self._presenter.start(presenter.DETAILS_TAB_ID_GENERAL, filterStateMap)
+        self._presenter.start(presenter.DetailsTabIds.GENERAL, filterStateMap)
         _logger.debug("starting command processing thread")
         self._commandThread.start()
         _logger.debug("view successfully started")

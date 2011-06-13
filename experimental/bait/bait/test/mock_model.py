@@ -28,16 +28,16 @@ import threading
 import time
 
 from .. import model
-from ..model import node_attributes, node_children, node_details
+from ..model import bait_model, node_attributes, node_children, node_details
 from mock_presenter_data import *
 
 
 _logger = logging.getLogger(__name__)
 
 
-class MockModel:
+class MockModel(bait_model.BaitModel):
     def __init__(self):
-        self.updateQueue = Queue.Queue()
+        bait_model.BaitModel.__init__(self, Queue.Queue())
 
     def start(self):
         _logger.debug("mock model starting")

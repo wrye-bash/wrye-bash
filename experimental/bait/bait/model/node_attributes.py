@@ -23,21 +23,12 @@
 # =============================================================================
 
 from .. import model
+from ..util import debug_utils, enum
 
 
-STATUS_OK = 1
-STATUS_LOADING = 2
-STATUS_DIRTY = 3
-STATUS_UNSTABLE = 4
-
-OPERATION_ANNEAL = 1
-OPERATION_RENAME = 2
-OPERATION_DELETE = 3
-
-
-class StatusOkData:
+class StatusOkData(debug_utils.Dumpable):
     def __init__(self):
-        self.status = STATUS_OK
+        self.status = model.Status.OK
         self.numBainFiles = 0
         self.installedFiles = 0
         self.bainMb = 0
@@ -45,28 +36,28 @@ class StatusOkData:
         self.freeBainMb = 0
         self.freeInstalledMb = 0
 
-class StatusLoadingData:
+class StatusLoadingData(debug_utils.Dumpable):
     def __init__(self):
-        self.status = STATUS_LOADING
+        self.status = model.Status.LOADING
         self.loadedPackages = 0
         self.totalPackages = 0
         self.loadedFiles = 0
         self.totalFiles = 0
 
-class StatusDirtyData:
+class StatusDirtyData(debug_utils.Dumpable):
     def __init__(self):
-        self.status = STATUS_DIRTY
+        self.status = model.Status.DIRTY
         self.dirtyPackageNodeIds = []
 
-class StatusUnstableData:
+class StatusUnstableData(debug_utils.Dumpable):
     def __init__(self):
-        self.status = STATUS_UNSTABLE
+        self.status = model.Status.UNSTABLE
         self.operations = [] # tuples of (operationId, nodeId)
 
 class RootNodeAttributes(model._VersionedData):
     def __init__(self, statusData):
         model._VersionedData.__init__(self)
-        self.nodeType = self, model.NODE_TYPE_ROOT
+        self.nodeType = self, model.NodeTypes.ROOT
         self.statusData = statusData
 
 class _TreeNodeAttributes(model._VersionedData):
@@ -79,24 +70,26 @@ class _TreeNodeAttributes(model._VersionedData):
 
 class PackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NODE_TYPE_PACKAGE)
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE)
         self.installed = False
         self.hidden = False
+        self.archive = False
 
 class GroupNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NODE_TYPE_GROUP)
-        self.hasNonHidden = False
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.GROUP)
+        self.hasInstalled = False
+        self.hasNotInstalled = False
         self.hasHidden = False
 
 class SubPackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NODE_TYPE_SUBPACKAGE)
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.SUBPACKAGE)
 
 class DirectoryNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NODE_TYPE_DIRECTORY)
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.DIRECTORY)
 
 class FileNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NODE_TYPE_FILE)
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.FILE)
