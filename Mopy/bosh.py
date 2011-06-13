@@ -25447,6 +25447,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                 except:
                     try:
                         if record.maleIcon or record.femaleIcon: continue
+                        if record.flags.notPlayable: continue
                     except: continue
                 if type == 'ALCH':
                     record.icon = r"Clutter\Potions\IconPotion01.dds"
@@ -25531,6 +25532,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                     record.icon = r"Clutter\Soulgems\AzurasStar.dds"
                     changed = True
                 elif type == 'QUST':
+                    if not record.stages: continue
                     record.icon = r"Quest\icon_miscellaneous.dds"
                     changed = True
                 elif type == 'SGST':
@@ -25628,6 +25630,8 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
         if getattr(record, 'maleIconPath', None): return
         if getattr(record, 'femaleIconPath', None): return
         if record._Type == 'LIGH' and not record.IsCanTake: return
+        if record._Type == 'QUST' and not record.stages: return
+        if record._Type in ['ARMO','CLOT'] and not record.IsPlayable: return
 
         override = record.CopyAsOverride(self.patchFile)
         if override:
