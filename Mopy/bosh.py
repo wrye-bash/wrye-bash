@@ -9648,7 +9648,7 @@ class ConfigHelpers:
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
         reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
-        reDirty = re.compile(r'\s*IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
+        reDirty = re.compile(r'.*?IF\s*\(\s*([a-fA-Z0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$')
         if path.exists():
             if path.mtime != mtime:
                 tags.clear()
@@ -9672,14 +9672,17 @@ class ConfigHelpers:
                         tags[GPath(mod)] = tuple(modTags)
                     elif maDirty:
                         # BOSS 1.7+ dirty mod listing
-                        crc = long(maDirty.group(1),16)
-                        ##mod = LString(maDirty.group(2))
-                        action = maDirty.group(3)
-                        if 'tes4edit' in action.lower():
-                            cleanIt = True
-                        else:
-                            cleanIt = False
-                        self.bossDirtyMods[crc] = (cleanIt, action)
+                        try:
+                            crc = long(maDirty.group(1),16)
+                            ##mod = LString(maDirty.group(2))
+                            action = maDirty.group(3)
+                            if 'tes4edit' in action.lower():
+                                cleanIt = True
+                            else:
+                                cleanIt = False
+                            self.bossDirtyMods[crc] = (cleanIt, action)
+                        except:
+                            deprint("An error occured parsing BOSS's masterlist for dirty crc's:\n", traceback=True)
                 ins.close()
                 self.bossMasterTime = path.mtime
         if userpath.exists():
