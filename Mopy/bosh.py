@@ -8744,12 +8744,12 @@ class ModInfos(FileInfos):
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
-                self.mergeable.discard(fileName)
                 if canMerge == _("\n.    Has 'NoMerge' tag."):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
+                    self.mergeable.add(fileName)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
-
+                    self.mergeable.discard(fileName)
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
         """Adds/removes balo headers as necessary. This is called by refresh(),
