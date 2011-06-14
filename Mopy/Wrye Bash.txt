@@ -2269,7 +2269,7 @@ Bash now supports localization for most? western languages (translation of progr
   * Delete the old translator text file, and rename the new one to replace it.
   * Edit the new translator file, adding translations to replace any that are missing or incorrect.
 * **Translation Tips**
-  * Here's part of the a translator file .
+  * Here's part of the a translator file:
 <pre>
 === basher.py, 3711
 Active profile cannot be removed.
@@ -2293,7 +2293,20 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]
+=== 292 [31/12/2011] [PacificMorrowind,Lojack]
+* Bugs fixed (CBash):
+  * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
+  * Bug with the [[#ImportActorsAIPackages|NPC AI Packages]] patcher fixed (incorrectly detecting if OOO and the UOP were installed).
+  * Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+  * [[#ImportNPCFaces|NPC Face data]] should properly be merged, vice overridden.
+  * Fixed merging of QUST records from Filter mods.
+  * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
+* Bugs fixed (General):
+  * Fixed multiple issues dealing with '&amp;' in filenames.
+  * BOSS's dirty edit CRC's will be properly read from the masterlist now.
+* Updated NSIS installer.
+
+=== 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]
 * __CBash__ is live!  The default install now uses CBash.
 * [[#BashedPatches|Bashed Patch]]:
   * [[#RaceRecords|Race Patcher]]
