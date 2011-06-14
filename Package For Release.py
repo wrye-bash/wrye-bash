@@ -223,8 +223,6 @@ if __name__ == '__main__':
     try:
         args,extra = parser.parse_args()
     except:
-        #print 'exception:', e
-        #print ' type:', type(Exception)
         parser.print_help()
     else:
         if len(extra) > 0:
@@ -247,19 +245,20 @@ if __name__ == '__main__':
                 print 'Creating Manual version...'
                 BuildManualVersion(version, pipe)
 
+            exe_made = False
             if args.exe or args.wbsa or args.installer:
                 print 'Creating StandAlone exe...'
-                CreateStandaloneExe(version, file_version, pipe)
+                exe_made = CreateStandaloneExe(version, file_version, pipe)
 
-            if args.wbsa:
+            if args.wbsa and exe_made:
                 print 'Creating StandAlone version...'
                 PackStandaloneVersion(version, pipe)
 
-            if args.installer:
+            if args.installer and exe_made:
                 print 'Creating Installer version...'
                 BuildInstallerVersion(version, file_version, args.nsis, pipe)
 
-            if (args.installer or args.wbsa) and not args.exe:
+            if not args.exe:
                 # Clean up the WBSA exe's if necessary
                 CleanupStandaloneFiles()
 
