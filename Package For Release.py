@@ -220,42 +220,49 @@ if __name__ == '__main__':
                         dest='quiet',
                         help='Quiet mode, supress output from 7z, py2exe, etc'
                         )
-    args,extra = parser.parse_args()
-    if len(extra) > 0:
+    try:
+        args,extra = parser.parse_args()
+    except:
+        #print 'exception:', e
+        #print ' type:', type(Exception)
         parser.print_help()
     else:
-        if not args.wbsa and not args.manual and not args.installer and not args.exe:
-            # No arguments specified, build them all
-            args.wbsa = True
-            args.manual = True
-            args.installer = True
-
-        version, file_version = GetVersionInfo()
-
-        if args.quiet:
-            pipe = open('log.tmp', 'w')
+        if len(extra) > 0:
+            parser.print_help()
         else:
-            pipe = None
+            if not args.wbsa and not args.manual and not args.installer and not args.exe:
+                # No arguments specified, build them all
+                args.wbsa = True
+                args.manual = True
+                args.installer = True
 
-        if args.manual:
-            print 'Creating Manual version...'
-            BuildManualVersion(version, pipe)
+            version, file_version = GetVersionInfo()
 
-        exe_made = False
-        if args.exe:
-            print 'Creating StandAlone exe...'
-            exe_made = CreateStandaloneExe(version, file_version, pipe)
-        if args.wbsa:
-            print 'Creating StandAlone version...'
-            if not exe_made:
-                BuildStandaloneVersion(version, file_version, pipe)
+            if args.quiet:
+                pipe = open('log.tmp', 'w')
             else:
+                pipe = None
+
+            if args.manual:
+                print 'Creating Manual version...'
+                BuildManualVersion(version, pipe)
+
+            if args.exe or args.wbsa or args.installer:
+                print 'Creating StandAlone exe...'
+                CreateStandaloneExe(version, file_version, pipe)
+
+            if args.wbsa:
+                print 'Creating StandAlone version...'
                 PackStandaloneVersion(version, pipe)
 
-        if args.installer:
-            print 'Creating Installer version...'
-            BuildInstallerVersion(version, file_version, args.nsis, pipe)
+            if args.installer:
+                print 'Creating Installer version...'
+                BuildInstallerVersion(version, file_version, args.nsis, pipe)
 
-        if args.quiet:
-            pipe.close()
-            rm('log.tmp')
+            if (args.installer or args.wbsa) and not args.exe:
+                # Clean up the WBSA exe's if necessary
+                CleanupStandaloneFiles()
+
+            if args.quiet:
+                pipe.close()
+                rm('log.tmp')
