@@ -63,6 +63,12 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [*]What version of Windows are you using?  Is UAC enabled?
 [*]Is CBash enabled? If so, what version is displayed?
 [*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
+[*]Is it a Bashed Patch problem?  If so, be sure to include:
+ [list]
+ [*]Your Load Order (Right Click on Mods header->List Mods...)
+ [*]Bashed Tags in use (Right Click on Mods header->List Bash Tags...)
+ [*]Your Bashed Patch's config (Right Click on Bashed Patch->List Patch Config...)
+ [/list]
 [*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
 [/list][*]If you're using the WBSA, things are a bit trickier.  There are currently a few known issues:[list=1]
 [*]Wrye Bash wont work correctly if you launch it from the command line (DOS).  Always launch by double clicking the exe or a shortcut to it.
