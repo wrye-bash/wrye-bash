@@ -10453,7 +10453,7 @@ class Mod_MarkMergeable(Link):
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
             else:
-                if canMerge == "\n.    Has 'NoMerge' tag.":
+                if canMerge == _("\n.    Has 'NoMerge' tag."):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
