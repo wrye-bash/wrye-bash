@@ -9648,7 +9648,7 @@ class ConfigHelpers:
         reComment = re.compile(r'^\\.*')
         reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
         reBashTags = re.compile(r'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
-        reDirty = re.compile(r'.*?IF\s*\(\s*([a-fA-Z0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$')
+        reDirty = re.compile(r'.*?IF\s*\(\s*([a-fA-F0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$')
         if path.exists():
             if path.mtime != mtime:
                 tags.clear()
