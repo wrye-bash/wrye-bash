@@ -5954,7 +5954,7 @@ class PatchDialog(wx.Dialog):
         patchConfigs = {'ImportedMods':set()}
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
-        table.setItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',patchConfigs)
+        table.setItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)])),'bash.patch.configs',patchConfigs)
         table.save()
 
     def ImportConfig(self,event=None):
@@ -5968,7 +5968,18 @@ class PatchDialog(wx.Dialog):
         pklPath = textPath+'.pkl'
         table = bolt.Table(bosh.PickleDict(
             textPath, pklPath))
-        patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
+        #try the current Bashed Patch mode.
+        patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)])),'bash.patch.configs',{})
+        if not patchConfigs: #try the old format:
+            deprint('old format')
+            patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
+            if not self.patchers[0].__class__.__name__ in patchConfigs and not self.patchers[1].__class__.__name__ in patchConfigs:
+                self.UpdateConfig(patchConfigs)
+        if not patchConfigs: #try the non-current Bashed Patch mode:
+            patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)-1])),'bash.patch.configs',{})  
+            if patchConfigs:
+                self.UpdateConfig(patchConfigs)
+                return
         for index,patcher in enumerate(self.patchers):
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -5977,7 +5988,7 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.items):
                     try:
                         patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: deprint(_('item %s not in saved configs') % (item))
+                    except KeyError: pass#deprint(_('item %s not in saved configs') % (item))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
@@ -5985,6 +5996,29 @@ class PatchDialog(wx.Dialog):
                     except: deprint(_('item %s not in saved configs') % (item))
         self.SetOkEnable()
 
+    def UpdateConfig(self,patchConfigs,event=None):
+        if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)" % (['Python','CBash'][bool(CBash)], ['Python','CBash'][bool(CBash)-1]))): return
+        if not CBash:
+            bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
+        else:
+            bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
+        for index,patcher in enumerate(self.patchers):
+            otherPatcher = otherPatcherDict[patcher.__class__.__name__]
+            otherPatcher.getConfig(patchConfigs)
+            self.gPatchers.Check(index,otherPatcher.isEnabled)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
+                for index, item in enumerate(patcher.items):
+                    try:
+                        patcher.gList.Check(index,otherPatcher.configChecks[item])
+                    except KeyError: deprint(_('item %s not in saved configs') % (item))
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(otherPatcher.tweaks):
+                    try:
+                        patcher.gList.Check(index,item.isEnabled)
+                    except: deprint(_('item %s not in saved configs') % (item))
+        self.SetOkEnable()
+        
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
@@ -6531,8 +6565,8 @@ class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
 class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
 class CBash_GraphicsPatcher(bosh.CBash_GraphicsPatcher,ListPatcher): pass
 
-class ActorAnimPatcher(bosh.KFFZPatcher,ListPatcher): pass
-class CBash_ActorAnimPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
+class KFFZPatcher(bosh.KFFZPatcher,ListPatcher): pass
+class CBash_KFFZPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
 
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 class CBash_NPCAIPackagePatcher(bosh.CBash_NPCAIPackagePatcher,ListPatcher): pass
@@ -6584,8 +6618,8 @@ class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
 class ImportScriptContents(bosh.ImportScriptContents,ListPatcher):pass
 ##class CBash_ImportScriptContents(bosh.CBash_ImportScriptContents,ListPatcher):pass
 
-class ImportSpells(bosh.SpellsPatcher,ListPatcher):pass
-class CBash_ImportSpells(bosh.CBash_SpellsPatcher,ListPatcher):pass
+class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
+class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
 class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
@@ -6645,7 +6679,7 @@ if not CBash:
         AssortedTweaker(),
         PatchMerger(),
         AlchemicalCatalogs(),
-        ActorAnimPatcher(),
+        KFFZPatcher(),
         ActorImporter(),
         DeathItemPatcher(),
         NPCAIPackagePatcher(),
@@ -6658,7 +6692,7 @@ if not CBash:
         GraphicsPatcher(),
         ImportFactions(),
         ImportInventory(),
-        ImportSpells(),
+        SpellsPatcher(),
         TweakActors(),
         ImportRelations(),
         ImportScripts(),
@@ -6683,7 +6717,7 @@ else:
         CBash_AssortedTweaker(),
         CBash_PatchMerger(),
         CBash_AlchemicalCatalogs(),
-        CBash_ActorAnimPatcher(),
+        CBash_KFFZPatcher(),
         CBash_ActorImporter(),
         CBash_DeathItemPatcher(),
         CBash_NPCAIPackagePatcher(),
@@ -6696,7 +6730,7 @@ else:
         CBash_GraphicsPatcher(),
         CBash_ImportFactions(),
         CBash_ImportInventory(),
-        CBash_ImportSpells(),
+        CBash_SpellsPatcher(),
         CBash_TweakActors(),
         CBash_ImportRelations(),
         CBash_ImportScripts(),
@@ -6716,6 +6750,75 @@ else:
         CBash_ContentsChecker(),
 ##        CBash_ForceMerger(),
         ))
+otherPatcherDict = {AliasesPatcher().__class__.__name__ : CBash_AliasesPatcher(),
+                    AssortedTweaker().__class__.__name__ : CBash_AssortedTweaker(),
+                    PatchMerger().__class__.__name__ : CBash_PatchMerger(),
+                    AlchemicalCatalogs().__class__.__name__ : CBash_AlchemicalCatalogs(),
+                    KFFZPatcher().__class__.__name__ : CBash_KFFZPatcher(),
+                    ActorImporter().__class__.__name__ : CBash_ActorImporter(),
+                    DeathItemPatcher().__class__.__name__ : CBash_DeathItemPatcher(),
+                    NPCAIPackagePatcher().__class__.__name__ : CBash_NPCAIPackagePatcher(),
+                    CoblExhaustion().__class__.__name__ : CBash_CoblExhaustion(),
+                    UpdateReferences().__class__.__name__ : CBash_UpdateReferences(),
+                    CellImporter().__class__.__name__ : CBash_CellImporter(),
+                    ClothesTweaker().__class__.__name__ : CBash_ClothesTweaker(),
+                    GlobalsTweaker().__class__.__name__ : CBash_GlobalsTweaker(),
+                    GmstTweaker().__class__.__name__ : CBash_GmstTweaker(),
+                    GraphicsPatcher().__class__.__name__ : CBash_GraphicsPatcher(),
+                    ImportFactions().__class__.__name__ : CBash_ImportFactions(),
+                    ImportInventory().__class__.__name__ : CBash_ImportInventory(),
+                    SpellsPatcher().__class__.__name__ : CBash_SpellsPatcher(),
+                    TweakActors().__class__.__name__ : CBash_TweakActors(),
+                    ImportRelations().__class__.__name__ : CBash_ImportRelations(),
+                    ImportScripts().__class__.__name__ : CBash_ImportScripts(),
+                    ImportScriptContents().__class__.__name__ : ImportScriptContents(), #No CBash equiv
+                    ImportActorsSpells().__class__.__name__ : CBash_ImportActorsSpells(),
+                    ListsMerger().__class__.__name__ : CBash_ListsMerger(),
+                    MFactMarker().__class__.__name__ : CBash_MFactMarker(),
+                    NamesPatcher().__class__.__name__ : CBash_NamesPatcher(),
+                    NamesTweaker().__class__.__name__ : CBash_NamesTweaker(),
+                    NpcFacePatcher().__class__.__name__ : CBash_NpcFacePatcher(),
+                    PowerExhaustion().__class__.__name__ : CBash_PowerExhaustion(),
+                    RacePatcher().__class__.__name__ : CBash_RacePatcher(),
+                    RoadImporter().__class__.__name__ : CBash_RoadImporter(),
+                    SoundPatcher().__class__.__name__ : CBash_SoundPatcher(),
+                    StatsPatcher().__class__.__name__ : CBash_StatsPatcher(),
+                    SEWorldEnforcer().__class__.__name__ : CBash_SEWorldEnforcer(),
+                    ContentsChecker().__class__.__name__ : CBash_ContentsChecker(),
+                    CBash_AliasesPatcher().__class__.__name__ : AliasesPatcher(),
+                    CBash_AssortedTweaker().__class__.__name__ : AssortedTweaker(),
+                    CBash_PatchMerger().__class__.__name__ : PatchMerger(),
+                    CBash_AlchemicalCatalogs().__class__.__name__ : AlchemicalCatalogs(),
+                    CBash_KFFZPatcher().__class__.__name__ : KFFZPatcher(),
+                    CBash_ActorImporter().__class__.__name__ : ActorImporter(),
+                    CBash_DeathItemPatcher().__class__.__name__ : DeathItemPatcher(),
+                    CBash_NPCAIPackagePatcher().__class__.__name__ : NPCAIPackagePatcher(),
+                    CBash_CoblExhaustion().__class__.__name__ : CoblExhaustion(),
+                    CBash_UpdateReferences().__class__.__name__ : UpdateReferences(),
+                    CBash_CellImporter().__class__.__name__ : CellImporter(),
+                    CBash_ClothesTweaker().__class__.__name__ : ClothesTweaker(),
+                    CBash_GlobalsTweaker().__class__.__name__ : GlobalsTweaker(),
+                    CBash_GmstTweaker().__class__.__name__ : GmstTweaker(),
+                    CBash_GraphicsPatcher().__class__.__name__ : GraphicsPatcher(),
+                    CBash_ImportFactions().__class__.__name__ : ImportFactions(),
+                    CBash_ImportInventory().__class__.__name__ : ImportInventory(),
+                    CBash_SpellsPatcher().__class__.__name__ : SpellsPatcher(),
+                    CBash_TweakActors().__class__.__name__ : TweakActors(),
+                    CBash_ImportRelations().__class__.__name__ : ImportRelations(),
+                    CBash_ImportScripts().__class__.__name__ : ImportScripts(),
+                    CBash_ImportActorsSpells().__class__.__name__ : ImportActorsSpells(),
+                    CBash_ListsMerger().__class__.__name__ : ListsMerger(),
+                    CBash_MFactMarker().__class__.__name__ : MFactMarker(),
+                    CBash_NamesPatcher().__class__.__name__ : NamesPatcher(),
+                    CBash_NamesTweaker().__class__.__name__ : NamesTweaker(),
+                    CBash_NpcFacePatcher().__class__.__name__ : NpcFacePatcher(),
+                    CBash_PowerExhaustion().__class__.__name__ : PowerExhaustion(),
+                    CBash_RacePatcher().__class__.__name__ : RacePatcher(),
+                    CBash_RoadImporter().__class__.__name__ : RoadImporter(),
+                    CBash_SoundPatcher().__class__.__name__ : SoundPatcher(),
+                    CBash_StatsPatcher().__class__.__name__ : StatsPatcher(),
+                    CBash_SEWorldEnforcer().__class__.__name__ : SEWorldEnforcer(),
+                    CBash_ContentsChecker().__class__.__name__ : ContentsChecker()}
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class BoolLink(Link):
