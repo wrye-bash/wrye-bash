@@ -2032,7 +2032,7 @@ class MreHasEffects:
                 effectName = mgef_name[effect.name]
                 if effect.name in avEffects:
                     effectName = re.sub(_('(Attribute|Skill)'),aValues[effect.actorValue],effectName)
-            buffWrite('o+*'[effect.recipient]+' '+effectName)
+            buffWrite('o+*'[effect.recipient]+' '+Unicode(effectName,'mbcs'))
             if effect.magnitude: buffWrite(' '+`effect.magnitude`+'m')
             if effect.area: buffWrite(' '+`effect.area`+'a')
             if effect.duration > 1: buffWrite(' '+`effect.duration`+'d')
