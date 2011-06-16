@@ -30484,12 +30484,12 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             book.longFids = True
             book.changed = True
             book.eid = eid
-            book.full = full
+            book.full = Encode(full, 'mbcs')
             book.value = value
             book.weight = 0.2
             book.fid = keep((GPath('Cobl Main.esm'),objectId))
             book.text = '<div align="left"><font face=3 color=4444>'
-            book.text += _("Salan's Catalog of %s\r\n\r\n") % full
+            book.text += Encode(_("Salan's Catalog of %s\r\n\r\n") % full, 'mbcs')
             book.iconPath = iconPath
             book.model = book.getDefault('model')
             book.model.modPath = modelPath
@@ -30505,10 +30505,10 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             buff = stringBuffer()
             buff.write(book.text)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(Unicode(full,'mbcs')+'\r\n')
+                buff.write(full+'\r\n')
                 for mgef,actorValue in effects[:num]:
-                    effectName = Unicode(mgef_name[mgef], 'mbcs')
-                    if mgef in actorEffects: effectName += actorNames[actorValue]
+                    effectName = Encode(mgef_name[mgef],'mbcs')
+                    if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
             book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
@@ -30516,10 +30516,10 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         effect_ingred = {}
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
-                effectName = Unicode(mgef_name[mgef], 'mbcs')
-                if mgef in actorEffects: effectName += actorNames[actorValue]
+                effectName = Encode(mgef_name[mgef],'mbcs')
+                if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
                 if effectName not in effect_ingred: effect_ingred[effectName] = []
-                effect_ingred[effectName].append((index,Unicode(full,'mbcs')))
+                effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
@@ -30532,7 +30532,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
                     buff.write(effectName+'\r\n')
                     for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
                         exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+Unicode(full,'mbcs')+'\r\n')
+                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
                     buff.write('\r\n')
             book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
         #--Log
@@ -30618,9 +30618,9 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             book = getBook(patchFile, objectId)
             if not book: continue
             buff = stringBuffer()
-            buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
+            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_("Salan's Catalog of %s\r\n\r\n") % full,'mbcs'))
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(full+'\r\n')
+                buff.write(Encode(full,'mbcs')+'\r\n')
                 for effect in effects_list[:num]:
                     mgef = effect[0] #name field
                     try:
@@ -30636,7 +30636,8 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                             effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                         else:
                             effectName = 'Unknown Effect'
-                    if mgef in actorEffects: effectName += actorNames[effect[5]] #actorValue field
+                    effectName = Encode(effectName,'mbcs')
+                    if mgef in actorEffects: effectName += Encode(actorNames[effect[5]],'mbcs') #actorValue field
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
             book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
@@ -30659,14 +30660,15 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                         effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                     else:
                         effectName = 'Unknown Effect'
-                if mgef in actorEffects: effectName += actorNames[actorValue]
+                effectName = Encode(effectName,'mbcs')
+                if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
         for (num,objectId,full,value) in bush.effect_alchem:
             subProgress(pstate, _("Cataloging Effects...\n%s") % full)
             book = getBook(patchFile,objectId)
             buff = stringBuffer()
-            buff.write('<div align="left"><font face=3 color=4444>' + _("Salan's Catalog of %s\r\n\r\n") % full)
+            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_("Salan's Catalog of %s\r\n\r\n") % full, 'mbcs'))
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
                 if effects:
