@@ -14019,38 +14019,48 @@ def InitImages():
     #--ColorChecks
     images['checkbox.red.x'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
     images['checkbox.red.x.16'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.24'] = Image(r'images/checkbox_red_x_24.png',wx.BITMAP_TYPE_PNG)
     images['checkbox.red.x.32'] = Image(r'images/checkbox_red_x_32.png',wx.BITMAP_TYPE_PNG)
     images['checkbox.red.off.16'] = (Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.off.24'] = (Image(r'images/checkbox_red_off_24.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.red.off.32'] = (Image(r'images/checkbox_red_off_32.png',wx.BITMAP_TYPE_PNG))
 
     images['checkbox.green.on.16'] = (Image(r'images/checkbox_green_on.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.on.24'] = (Image(r'images/checkbox_green_on_24.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.24'] = (Image(r'images/checkbox_green_off_24.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
     images['checkbox.green.off.32'] = (Image(r'images/checkbox_green_off_32.png',wx.BITMAP_TYPE_PNG))
     #--Bash
     images['bash.16'] = Image(r'images/bash_16.png',wx.BITMAP_TYPE_PNG)
+    images['bash.24'] = Image(r'images/bash_24.png',wx.BITMAP_TYPE_PNG)
     images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
     images['bash.16.blue'] = Image(r'images/bash_16_blue.png',wx.BITMAP_TYPE_PNG)
+    images['bash.24.blue'] = Image(r'images/bash_24_blue.png',wx.BITMAP_TYPE_PNG)
     images['bash.32.blue'] = Image(r'images/bash_32_blue.png',wx.BITMAP_TYPE_PNG)
     #--Bash Patch Dialogue
     images['monkey.16'] = Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG)
   #  images['monkey.32'] = Image(r'images/wryemonkey32.jpg',wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
     images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
+    images['doc.24'] = Image(r'images/DocBrowser24.png',wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
     bashRed.Add(images['bash.16'])
+    bashRed.Add(images['bash.24'])
     bashRed.Add(images['bash.32'])
     #--Application Subwindow Icons
     global bashBlue
     bashBlue = balt.ImageBundle()
     bashBlue.Add(images['bash.16.blue'])
+    bashBlue.Add(images['bash.24.blue'])
     bashBlue.Add(images['bash.32.blue'])
     global bashDocBrowser
     bashDocBrowser = balt.ImageBundle()
     bashDocBrowser.Add(images['doc.16'])
+    bashDocBrowser.Add(images['doc.24'])
     bashDocBrowser.Add(images['doc.32'])
     global bashMonkey
     bashMonkey = balt.ImageBundle()
