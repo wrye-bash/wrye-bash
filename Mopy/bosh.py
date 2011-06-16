@@ -6226,7 +6226,7 @@ class SaveFile:
                             stringData = ins.read(stringLength)
                             log(_('    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
                             log(_('    ID  :  %u') % stringID)
-                            log(_('    Data:  %s') % stringData)
+                            log(_('    Data:  %s') % Unicode(stringData,'mbcs'))
                         elif chunkType == 'RVRA':
                             #--OBSE Array
                             modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
@@ -6276,7 +6276,7 @@ class SaveFile:
                                 elif dataType == 3:
                                     dataLen, = unpack('=H',2)
                                     data = ins.read(dataLen)
-                                    dataStr = data
+                                    dataStr = Unicode(data,'mbcs')
                                 elif dataType == 4:
                                     data, = unpack('=I',4)
                                     dataStr = '%u' % data
@@ -6304,7 +6304,7 @@ class SaveFile:
                             log(_('      StrID : %u') % (strId,))
                             log(_('      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
                             log(_('      Flags : %u') % (strFlags,))
-                            log(_('      Data  : %s') % (strData,))
+                            log(_('      Data  : %s') % (Unicode(strData,'mbcs'),))
                         elif (chunkTypeNum == 3):
                             #--Pluggy TypeArray
                             log(_('    Pluggy Array'))
@@ -6349,7 +6349,7 @@ class SaveFile:
                             log(_('    Pluggy HudS'))
                             #UNTESTED - uncomment following line to skip this record type
                             #continue
-                            hudSid,modId,hudFlags,hoodRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
+                            hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
                             hudFileName = ins.read(len(chunkBuff) - ins.tell())
                             log(_('      HudSID : %u') % (hudSid,))
                             log(_('      ModID  : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
@@ -6362,7 +6362,7 @@ class SaveFile:
                             log(_('      Alpha  : %02X') % (hudAlpha,))
                             log(_('      Align  : %02X') % (hudAlignment,))
                             log(_('      AutoSc : %02X') % (hudAutoScale,))
-                            log(_('      File   : %s') % (hudFileName,))
+                            log(_('      File   : %s') % (Unicode(hudFileName,'mbcs'),))
                         elif (chunkTypeNum == 7):
                             #--Pluggy TypeHudT
                             log(_('    Pluggy HudT'))
@@ -6387,13 +6387,13 @@ class SaveFile:
                             log(_('      Width  : %u') % (hudWidth,))
                             log(_('      Height : %u') % (hudHeight,))
                             log(_('      Format : %u') % (hudFormat,))
-                            log(_('      FName  : %s') % (hudFontName,))
+                            log(_('      FName  : %s') % (Unicode(hudFontName,'mbcs'),))
                             log(_('      FHght  : %u') % (hudFontHeight,))
                             log(_('      FWdth  : %u') % (hudFontWidth,))
                             log(_('      FWeigh : %u') % (hudWeight,))
                             log(_('      FItal  : %u') % (hudItalic,))
                             log(_('      FRGB   : %u,%u,%u') % (hudFontR,hudFontG,hudFontB,))
-                            log(_('      FText  : %s') % (hudText,))
+                            log(_('      FText  : %s') % (Unicode(hudText,'mbcs'),))
                     ins.close()
 
     def findBloating(self,progress=None):
