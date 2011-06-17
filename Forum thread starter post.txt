@@ -1,4 +1,4 @@
-Continuing from the [topic=1196710]previous thread[/topic]...
+Continuing from the [topic=1200323]previous thread[/topic]...
 
 Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I mean a LOT.  It's like twenty tools rolled into one.  It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has.
 
@@ -20,7 +20,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [/list]
 [b]Requirements[/b]:
 [list]
-[*]It's easiest to just download the WryePython04 package from [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url], or the older WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
+[*]It's easiest to just download the WryePython04 package, or the older WryePython03a: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
 [*]If you want to do things manually: [spoiler][list][*]Python 2.5:[list]
   [*][url=http://www.python.org/ftp/python/2.5.4/python-2.5.4.msi]Python 2.5.4[/url]
   [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py25.exe"]wxPython 2.8.11.0 ansi for Python 2.5[/url]
@@ -42,7 +42,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 
 [b]Installation[/b]:
 [list]
-[*]If you are installing for the first time, make sure you have installed WryePython03a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url]
+[*]If you are installing for the first time, make sure you have installed WryePython04 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url], unless you plan on using the Standalone version.
 [*]Then just download and run the installer for the most recent release.  You can upgrade this way too.
 [*]For manual installations/upgrades, download the archive version and extract in your Oblivion game folder (so that the Mopy directory appears in the Oblivion directory)
 [*]For WBSA (Wrye Bash StandAlone) versions, no Python components are required, but remember it is a beta and there are currently issues (see the section under [b]Reporting Bugs[/b].)
@@ -59,11 +59,14 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
  [*]ComTypes
  [*]psyco
  [*]PyWin32
- [/list]
-[*]What version of Windows are you using?  Is UAC enabled?
-[*]Is CBash enabled? If so, what version is displayed?
+ [/list][*]What version of Windows are you using?  Is UAC enabled?
+[*]Is CBash enabled? If so, what version is displayed?  Does the problem exist if you disable CBash (rename CBash.dll to any other name)?
 [*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
 [*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
+[*]Is the problem related to the Bashed Patch?  If so include the following:[list]
+ [*]Your Load Order (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Mods...'
+ [*]Your Bashed Tags (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Bash Tags...'
+ [*]Your Bashed Patch config (in spoiler tags).  Get this by right clicking on the Bashed Patch and selecting 'List Patch Config...'[/list]
 [/list][*]If you're using the WBSA, things are a bit trickier.  There are currently a few known issues:[list=1]
 [*]Wrye Bash wont work correctly if you launch it from the command line (DOS).  Always launch by double clicking the exe or a shortcut to it.
 [*]Due to issue #1, no debug mode is available.  Some errors that happen will still be printed either to a "Wrye Bash.exe.txt" file, or to the "stdout/stderr" window that shows up with errors sometimes.
