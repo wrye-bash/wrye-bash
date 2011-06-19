@@ -66,21 +66,29 @@ class _TreeNodeAttributes(model._VersionedData):
         self.nodeType = nodeType
         self.parentNodeId = None
         self.label = None
-        self.dirty = False
+        self.isDirty = False
+        self.isInstalled = False
+        self.isNotInstalled = False
+        self.isHidden = False
+        self.isNew = False
+        self.isUnrecognized = False
+        self.isCorrupt = False
+        self.hasMissingDeps = False
+        self.updateAvailable = False
 
 class PackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
         _TreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE)
-        self.installed = False
-        self.hidden = False
-        self.archive = False
+        self.isArchive = False
+        self.hasWizard = False
+        self.hasMatched = False
+        self.hasMismatched = False
+        self.hasMissing = False
+        self.hasSubpackages = False
 
 class GroupNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
         _TreeNodeAttributes.__init__(self, model.NodeTypes.GROUP)
-        self.hasInstalled = False
-        self.hasNotInstalled = False
-        self.hasHidden = False
 
 class SubPackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):

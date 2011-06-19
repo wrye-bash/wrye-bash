@@ -27,14 +27,18 @@ from ..util import debug_utils, enum
 
 
 class CommandIds(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'ADD_GROUP', 'ADD_PACKAGE', 'EXPAND_GROUP',
+    __enumerables__ = ('UNKNOWN', 'ADD_GROUP', 'UPDATE_GROUP', 'ADD_PACKAGE',
+                       'UPDATE_PACKAGE', 'REMOVE_PACKAGES_TREE_NODE', 'EXPAND_GROUP',
                        'CLEAR_PACKAGES', 'SET_FILTER_STATS', 'SET_STATUS',
                        'SET_PACKAGE_LABEL', 'ADD_FILE', 'CLEAR_FILES', 'SET_FILE_DETAILS',
                        'SELECT_PACKAGES', 'EXPAND_DIR', 'SELECT_FILES', 'SET_STYLE_MAPS',
                        'SET_PACKAGE_INFO', 'DISPLAY_ERROR', 'SET_SUMMARY')
     # for autocomplete
     ADD_GROUP = None
+    UPDATE_GROUP = None
     ADD_PACKAGE = None
+    UPDATE_PACKAGE = None
+    REMOVE_PACKAGES_TREE_NODE = None
     EXPAND_GROUP = None
     CLEAR_PACKAGES = None
     SET_FILTER_STATS = None
@@ -52,15 +56,17 @@ class CommandIds(enum.Enum):
     SET_SUMMARY = None
 
 class FontStyleIds(enum.FlagEnum):
-    __enumerables__ = ('UNKNOWN', 'BOLD', 'ITALICS')
+    __enumerables__ = ('NONE', 'BOLD', 'ITALICS')
     # for autocomplete
+    NONE = None
     BOLD = None
     ITALICS = None
 
 class ForegroundColorIds(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'DISABLED', 'HAS_INACTIVE_OVERRIDE')
+    __enumerables__ = ('UNKNOWN', 'DISABLED', 'HAS_SUBPACKAGES', 'HAS_INACTIVE_OVERRIDE')
     # for autocomplete
     DISABLED = None
+    HAS_SUBPACKAGES = None
     HAS_INACTIVE_OVERRIDDE = None
 
 class HighlightColorIds(enum.Enum):
@@ -104,8 +110,7 @@ class IconIds(enum.Enum):
 class Status(model.Status):
     pass
 
-
-class ViewCommandStyle(debug_utils.Dumpable):
+class Style(debug_utils.Dumpable):
     def __init__(self, fontStyleMask=None, foregroundColorId=None, highlightColorId=None,
                  checkboxState=None, iconId=None):
         self.fontStyleMask = fontStyleMask
@@ -146,11 +151,34 @@ class AddGroup(_AddNode):
         _AddNode.__init__(self, CommandIds.ADD_GROUP, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
 
+class UpdateGroup(_AddNode):
+    '''Updates a group node in the packages tree'''
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+        _AddNode.__init__(self, CommandIds.UPDATE_GROUP, label, nodeId, parentNodeId,
+                          predecessorNodeId, style)
+
 class AddPackage(_AddNode):
     '''Adds a package node to the packages tree'''
     def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
         _AddNode.__init__(self, CommandIds.ADD_PACKAGE, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
+
+class UpdatePackage(_AddNode):
+    '''Updates a package node in the packages tree'''
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+        _AddNode.__init__(self, CommandIds.UPDATE_PACKAGE, label, nodeId, parentNodeId,
+                          predecessorNodeId, style)
+
+class _RemoveNode(ViewCommand):
+    '''Removes a node from a tree'''
+    def __init__(self, commandId, nodeId):
+        ViewCommand.__init__(self, commandId)
+        self.nodeId = nodeId
+
+class RemovePackagesTreeNode(_RemoveNode):
+    '''Removes a node from the packages tree'''
+    def __init__(self, nodeId):
+        _RemoveNode.__init__(self, CommandIds.REMOVE_PACKAGES_TREE_NODE, nodeId)
 
 class ExpandGroup(ViewCommand):
     def __init__(self, nodeId):

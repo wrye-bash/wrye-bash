@@ -123,12 +123,12 @@ def _populate_package_details_map(detailsMap, nodes=None):
     detailsMap[presenter.DetailsTabIds.SKIPPED] = _get_files_text(nodes, _FIFO)
 
 
-_hidden = view_commands.ViewCommandStyle(
+_hidden = view_commands.Style(
     foregroundColorId=view_commands.ForegroundColorIds.DISABLED)
-_pkgUninst = view_commands.ViewCommandStyle(
+_pkgUninst = view_commands.Style(
     checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING)
-_inst = view_commands.ViewCommandStyle(checkboxState=True)
-_pkgInst = view_commands.ViewCommandStyle(
+_inst = view_commands.Style(checkboxState=True)
+_pkgInst = view_commands.Style(
     checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES)
 
 _nullTextMap = {}
@@ -150,56 +150,56 @@ pkgNodes[9] = ["MenuQue",                                                 False,
 # test various icons
 # TODO: add "unreadable" icons
 pkgNodes[10] = ["icon test", False, None, 9, _NTGRP, _FINO, None, True, _nullTextMap, None]
-pkgNodes[11] = ["installed project (matches)", False, 10, None, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[12] = ["installed project (mismatched)", False, 10, 11, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISMATCHED), True, _nullTextMap, None]
-pkgNodes[13] = ["installed project (missing)", False, 10, 12, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISSING), True, _nullTextMap, None]
-pkgNodes[14] = ["installed project (empty) [should not be checked]", False, 10, 13, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY), True, _nullTextMap, None]
-pkgNodes[15] = ["installed project (unrecognized structure) [should not be checked]", False, 10, 14, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[16] = ["installed project (has wizard, matches)", False, 10, 15, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES_WIZ), True, _nullTextMap, None]
-pkgNodes[17] = ["installed project (has wizard, mismatched)", False, 10, 16, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISMATCHED_WIZ), True, _nullTextMap, None]
-pkgNodes[18] = ["installed project (has wizard, missing)", False, 10, 17, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISSING_WIZ), True, _nullTextMap, None]
-pkgNodes[19] = ["installed project (has wizard, empty) [should not be checked]", False, 10, 18, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY_WIZ), True, _nullTextMap, None]
-pkgNodes[20] = ["installed project (has wizard, unrecognized structure) [should not be checked, should not have wiz icon]", False, 10, 19, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[21] = ["installed installer (matches)", False, 10, 20, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[22] = ["installed installer (mismatched)", False, 10, 21, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
-pkgNodes[23] = ["installed installer (missing)", False, 10, 22, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
-pkgNodes[24] = ["installed installer (empty)", False, 10, 23, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_EMPTY), True, _nullTextMap, None]
-pkgNodes[25] = ["installed installer (unrecognized structure)", False, 10, 24, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[26] = ["installed installer (has wizard, matches)", False, 10, 25, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES_WIZ), True, _nullTextMap, None]
-pkgNodes[27] = ["installed installer (has wizard, mismatched)", False, 10, 26, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED_WIZ), True, _nullTextMap, None]
-pkgNodes[28] = ["installed installer (has wizard, missing)", False, 10, 27, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISSING_WIZ), True, _nullTextMap, None]
-pkgNodes[29] = ["installed installer (has wizard, empty) [should not be checked]", False, 10, 28, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_EMPTY_WIZ), True, _nullTextMap, None]
-pkgNodes[30] = ["installed installer (has wizard, unrecognized structure) [should not be checked, should not have wiz icon]", False, 10, 29, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[31] = ["uninstalled project (matches)", False, 10, 30, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[32] = ["uninstalled project (mismatched)", False, 10, 31, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISMATCHED), True, _nullTextMap, None]
-pkgNodes[33] = ["uninstalled project (missing)", False, 10, 32, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISSING), True, _nullTextMap, None]
-pkgNodes[34] = ["uninstalled project (empty)", False, 10, 33, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY), True, _nullTextMap, None]
-pkgNodes[35] = ["uninstalled project (unrecognized structure)", False, 10, 34, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[36] = ["uninstalled project (has wizard, matches)", False, 10, 35, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MATCHES_WIZ), True, _nullTextMap, None]
-pkgNodes[37] = ["uninstalled project (has wizard, mismatched)", False, 10, 36, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISMATCHED_WIZ), True, _nullTextMap, None]
-pkgNodes[38] = ["uninstalled project (has wizard, missing)", False, 10, 37, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISSING_WIZ), True, _nullTextMap, None]
-pkgNodes[39] = ["uninstalled project (has wizard, empty)", False, 10, 38, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY_WIZ), True, _nullTextMap, None]
-pkgNodes[40] = ["uninstalled project (has wizard, unrecognized structure) [should not have wiz icon]", False, 10, 39, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[41] = ["uninstalled installer (matches)", False, 10, 40, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[42] = ["uninstalled installer (mismatched)", False, 10, 41, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
-pkgNodes[43] = ["uninstalled installer (missing)", False, 10, 42, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
-pkgNodes[44] = ["uninstalled installer (empty)", False, 10, 43, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_EMPTY), True, _nullTextMap, None]
-pkgNodes[45] = ["uninstalled installer (unrecognized structure)", False, 10, 44, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[46] = ["uninstalled installer (has wizard, matches)", False, 10, 45, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MATCHES_WIZ), True, _nullTextMap, None]
-pkgNodes[47] = ["uninstalled installer (has wizard, mismatched)", False, 10, 46, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISMATCHED_WIZ), True, _nullTextMap, None]
-pkgNodes[48] = ["uninstalled installer (has wizard, missing)", False, 10, 47, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING_WIZ), True, _nullTextMap, None]
-pkgNodes[49] = ["uninstalled installer (has wizard, empty)", False, 10, 48, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_EMPTY_WIZ), True, _nullTextMap, None]
-pkgNodes[50] = ["uninstalled installer (has wizard, unrecognized structure) [should not have wiz icon]", False, 10, 49, _NTPKG, _FIPN, view_commands.ViewCommandStyle(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[11] = ["installed project (matches)", False, 10, None, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[12] = ["installed project (mismatched)", False, 10, 11, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[13] = ["installed project (missing)", False, 10, 12, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISSING), True, _nullTextMap, None]
+pkgNodes[14] = ["installed project (empty) [should not be checked]", False, 10, 13, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY), True, _nullTextMap, None]
+pkgNodes[15] = ["installed project (unrecognized structure) [should not be checked]", False, 10, 14, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[16] = ["installed project (has wizard, matches)", False, 10, 15, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES_WIZ), True, _nullTextMap, None]
+pkgNodes[17] = ["installed project (has wizard, mismatched)", False, 10, 16, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISMATCHED_WIZ), True, _nullTextMap, None]
+pkgNodes[18] = ["installed project (has wizard, missing)", False, 10, 17, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MISSING_WIZ), True, _nullTextMap, None]
+pkgNodes[19] = ["installed project (has wizard, empty) [should not be checked]", False, 10, 18, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY_WIZ), True, _nullTextMap, None]
+pkgNodes[20] = ["installed project (has wizard, unrecognized structure) [should not be checked, should not have wiz icon]", False, 10, 19, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[21] = ["installed installer (matches)", False, 10, 20, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
+pkgNodes[22] = ["installed installer (mismatched)", False, 10, 21, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[23] = ["installed installer (missing)", False, 10, 22, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
+pkgNodes[24] = ["installed installer (empty)", False, 10, 23, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_EMPTY), True, _nullTextMap, None]
+pkgNodes[25] = ["installed installer (unrecognized structure)", False, 10, 24, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[26] = ["installed installer (has wizard, matches)", False, 10, 25, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES_WIZ), True, _nullTextMap, None]
+pkgNodes[27] = ["installed installer (has wizard, mismatched)", False, 10, 26, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED_WIZ), True, _nullTextMap, None]
+pkgNodes[28] = ["installed installer (has wizard, missing)", False, 10, 27, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISSING_WIZ), True, _nullTextMap, None]
+pkgNodes[29] = ["installed installer (has wizard, empty) [should not be checked]", False, 10, 28, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_EMPTY_WIZ), True, _nullTextMap, None]
+pkgNodes[30] = ["installed installer (has wizard, unrecognized structure) [should not be checked, should not have wiz icon]", False, 10, 29, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[31] = ["uninstalled project (matches)", False, 10, 30, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[32] = ["uninstalled project (mismatched)", False, 10, 31, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[33] = ["uninstalled project (missing)", False, 10, 32, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISSING), True, _nullTextMap, None]
+pkgNodes[34] = ["uninstalled project (empty)", False, 10, 33, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY), True, _nullTextMap, None]
+pkgNodes[35] = ["uninstalled project (unrecognized structure)", False, 10, 34, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[36] = ["uninstalled project (has wizard, matches)", False, 10, 35, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MATCHES_WIZ), True, _nullTextMap, None]
+pkgNodes[37] = ["uninstalled project (has wizard, mismatched)", False, 10, 36, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISMATCHED_WIZ), True, _nullTextMap, None]
+pkgNodes[38] = ["uninstalled project (has wizard, missing)", False, 10, 37, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_MISSING_WIZ), True, _nullTextMap, None]
+pkgNodes[39] = ["uninstalled project (has wizard, empty)", False, 10, 38, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY_WIZ), True, _nullTextMap, None]
+pkgNodes[40] = ["uninstalled project (has wizard, unrecognized structure) [should not have wiz icon]", False, 10, 39, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.PROJECT_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[41] = ["uninstalled installer (matches)", False, 10, 40, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
+pkgNodes[42] = ["uninstalled installer (mismatched)", False, 10, 41, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[43] = ["uninstalled installer (missing)", False, 10, 42, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
+pkgNodes[44] = ["uninstalled installer (empty)", False, 10, 43, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_EMPTY), True, _nullTextMap, None]
+pkgNodes[45] = ["uninstalled installer (unrecognized structure)", False, 10, 44, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[46] = ["uninstalled installer (has wizard, matches)", False, 10, 45, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MATCHES_WIZ), True, _nullTextMap, None]
+pkgNodes[47] = ["uninstalled installer (has wizard, mismatched)", False, 10, 46, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISMATCHED_WIZ), True, _nullTextMap, None]
+pkgNodes[48] = ["uninstalled installer (has wizard, missing)", False, 10, 47, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING_WIZ), True, _nullTextMap, None]
+pkgNodes[49] = ["uninstalled installer (has wizard, empty)", False, 10, 48, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_EMPTY_WIZ), True, _nullTextMap, None]
+pkgNodes[50] = ["uninstalled installer (has wizard, unrecognized structure) [should not have wiz icon]", False, 10, 49, _NTPKG, _FIPN, view_commands.Style(checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
 
 # test text and hilight styles
-pkgNodes[51] = ["corrupt_or_partial_download.7z", False, None, 10, _NTPKG, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.ERROR, checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
-pkgNodes[52] = ["installed, but missing dependency", False, None, 51, _NTPKG, _FIPI, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.MISSING_DEPENDENCY, checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
-pkgNodes[53] = ["installed, but dirty", False, None, 52, _NTPKG, _FIPI, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.DIRTY, checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
-pkgNodes[54] = ["newpackage.7z", False, None, 53, _NTPKG, _FIPN, view_commands.ViewCommandStyle(fontStyleMask=view_commands.FontStyleIds.BOLD, checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
+pkgNodes[51] = ["corrupt_or_partial_download.7z", False, None, 10, _NTPKG, _FIPN, view_commands.Style(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.ERROR, checkboxState=False, iconId=view_commands.IconIds.INSTALLER_UNINSTALLABLE), True, _nullTextMap, None]
+pkgNodes[52] = ["installed, but missing dependency", False, None, 51, _NTPKG, _FIPI, view_commands.Style(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.MISSING_DEPENDENCY, checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MATCHES), True, _nullTextMap, None]
+pkgNodes[53] = ["installed, but dirty", False, None, 52, _NTPKG, _FIPI, view_commands.Style(fontStyleMask=view_commands.FontStyleIds.ITALICS, highlightColorId=view_commands.HighlightColorIds.DIRTY, checkboxState=True, iconId=view_commands.IconIds.INSTALLER_MISMATCHED), True, _nullTextMap, None]
+pkgNodes[54] = ["newpackage.7z", False, None, 53, _NTPKG, _FIPN, view_commands.Style(fontStyleMask=view_commands.FontStyleIds.BOLD, checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
 
 # test non-ascii
-pkgNodes[55] = ["utf8 Mandarin Chinese: 繁體和简体", False, None, 54, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[56] = ["utf8 Vietnamese: tiếng Việt", False, None, 55, _NTPKG, _FIPI, view_commands.ViewCommandStyle(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[55] = ["utf8 Mandarin Chinese: 繁體和简体", False, None, 54, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[56] = ["utf8 Vietnamese: tiếng Việt", False, None, 55, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
 
 # files
 """

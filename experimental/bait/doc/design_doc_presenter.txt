@@ -124,7 +124,7 @@ Algorithm:
     check update for scope; if out of scope, return False
     if in scope, check relevance
     if relevant, send to dataFetcher
-    returnt True
+    return True
 
 
 
@@ -172,7 +172,7 @@ engine thread.  There will be at least two different diff engines (for the
 packages tree and for the package contents), so this design is approximate.
 
 API:
-  __init__(self)
+  __init__(self, stateChangeQueue)
   start(self)
   shutdown(self)
   set_filter_mask(self, filterMask)

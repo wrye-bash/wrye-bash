@@ -281,7 +281,7 @@ class _HiddenPackagesFilter(_SimpleFilter):
     def matches(self, nodeId, nodeAttributes):
         """returns true iff it is a package node and is hidden."""
         return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               nodeAttributes.hidden
+               nodeAttributes.isHidden
 
 class _InstalledPackagesFilter(_SimpleFilter):
     """Controls display of installed packages in the packages tree"""
@@ -291,7 +291,7 @@ class _InstalledPackagesFilter(_SimpleFilter):
     def matches(self, nodeId, nodeAttributes):
         """returns true iff it is a package node and it is marked for install"""
         return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               nodeAttributes.installed
+               nodeAttributes.isInstalled
 
 class _NotInstalledPackagesFilter(_SimpleFilter):
     """Controls display of non-installed packages in the packages tree"""
@@ -302,7 +302,7 @@ class _NotInstalledPackagesFilter(_SimpleFilter):
         """returns true iff it is a package node and is is marked neither as hidden or
         for install"""
         return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               not nodeAttributes.installed and not nodeAttributes.hidden
+               not nodeAttributes.isInstalled and not nodeAttributes.isHidden
 
 class _PackageTreeFilter:
     """Filters contents of the packages tree"""
@@ -399,6 +399,7 @@ class _StubFilter:
     def __init__(self, viewUpdateQueue, filterIds):
         self.visibleNodeIds = set()
         self._matchedNodeIds = set()
+        self._matchedLeafNodeIds = set()
         self._viewUpdateQueue = viewUpdateQueue
         self._filterIds = filterIds
     def set_active_mask(self, idMask):

@@ -147,3 +147,11 @@ def make_enum_test():
     enumClass = enum.make_enum("eclass", ('e1',1), 'e2', 'e3')
     assert enumClass.e1 != enumClass.e2
     assert enumClass.e1 != enumClass.e3
+
+    assert enum.make_enum("enum1", ('e1', 5)).e1 is not \
+           enum.make_enum("enum1", ('e1', 5)).e1
+    try:
+        dummy = enum.make_enum("enum1", ('e1', 5)).e1 == \
+                enum.make_enum("enum1", ('e1', 5)).e1
+        assert False
+    except: pass

@@ -51,6 +51,10 @@ class _EnumValue(object):
         return bool(self.__value)
     def __cmp__(self, other):
         if isinstance(other, _EnumValue):
+            if self._type is not other._type:
+                _logger.warn("cannot compare enums of different types: %s, %s",
+                             self._type, other._type)
+                raise TypeError("cannot compare enums of different types")
             return cmp(self.__value, other.__value)
         else:
             # hopefully they're the same type, but this still makes sense if they're not
@@ -109,7 +113,7 @@ class _EnumValue(object):
         if not issubclass(self._type, FlagEnum):
             _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
                          self._type.__name__)
-            raise TypeError()
+            raise TypeError("incompatible type for FlagEnum bitwise operator")
         enumerables = self._type.__enumerables__
         return functools.reduce(
             _EnumValue.__or__,
@@ -117,15 +121,15 @@ class _EnumValue(object):
     def _validate_bitwise_operator_context(self, other):
         if type(self) is not type(other):
             _logger.warn("cannot apply bitwise operator to non-enum: %s", type(other))
-            raise TypeError()
+            raise TypeError("cannot apply bitwise operator to non-enum")
         if not issubclass(self._type, FlagEnum):
             _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
                          self._type.__name__)
-            raise TypeError()
+            raise TypeError("incompatible type for FlagEnum bitwise operator")
         if not issubclass(other._type, FlagEnum):
             _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
                          other._type.__name__)
-            raise TypeError()
+            raise TypeError("incompatible type for FlagEnum bitwise operator")
     @property
     def name(self):
         return self.__name

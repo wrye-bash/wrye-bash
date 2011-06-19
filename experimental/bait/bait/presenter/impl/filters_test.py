@@ -50,19 +50,19 @@ def package_tree_filter_test():
 
     data = {}
     package1 = node_attributes.PackageNodeAttributes()
-    package1.installed = True
+    package1.isInstalled = True
     data[0] = package1
     group1 = node_attributes.GroupNodeAttributes()
-    group1.hasNotInstalled = True
-    group1.hasHidden = True
+    group1.isNotInstalled = True
+    group1.isHidden = True
     data[1] = group1
     package2 = node_attributes.PackageNodeAttributes()
     data[2] = package2
     group2 = node_attributes.GroupNodeAttributes()
-    group2.hasHidden = True
+    group2.isHidden = True
     data[3] = group2
     package3 = node_attributes.PackageNodeAttributes()
-    package3.hidden = True
+    package3.isHidden = True
     data[4] = package3
 
     #hpf = filters._HiddenPackagesFilter(viewCommandQueue)
@@ -132,16 +132,16 @@ def package_tree_filter_test():
     _drain_queue(viewCommandQueue)
 
     _logger.debug("updating node 4 from hidden to installed")
-    package3.hidden = False
-    package3.installed = True
+    package3.isHidden = False
+    package3.isInstalled = True
     ptf.filter(4, data[4], True)
     _logger.debug("updating view")
     ptf.update_view()
     _drain_queue(viewCommandQueue)
 
     _logger.debug("updating node 4 from installed to hidden")
-    package3.hidden = True
-    package3.installed = False
+    package3.isHidden = True
+    package3.isInstalled = False
     ptf.filter(4, data[4], True)
     _logger.debug("updating view")
     ptf.update_view()

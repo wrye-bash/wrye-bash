@@ -96,7 +96,7 @@ The menu button also provides a place to set the following options (the options
 set here can be overridden per-package):
 - Allow OBSE plugins (users probably want this on, but it is an explicit option 
 due to OBSE plugins being opaque binary blobs, and therefore a real security 
-risk that users should acknoledge)
+risk that users should acknowledge)
 - Skip DistantLOD by default (enable this if you have TES4LODGen and want to 
 run it manually to generate correct DistantLOD files for your load order)
 - Skip LOD meshes by default (TODO: why would one want this?)
@@ -166,7 +166,7 @@ the Bash Installers directory, but are in the tree as parent nodes for
 organizational purposes.  Group nodes can be children of other group nodes, 
 leading to a potential hierarchical structure.  If no groups are used, the tree 
 degenerates (in appearance) to a list similar to the one in the old installer 
-tab (except with no columns).
+tab (except that it has no columns).
 
 A group is created by selecting one or more packages, r-clicking and selecting 
 "create group from selected packages".  Once a group is created, packages can 
@@ -185,8 +185,10 @@ many of the packages they govern match the given search string.
 
 A file/directory can be dragged directly to the desired position in the tree 
 from an external file manager application.  The file/directory will be copied 
-to the Bash Installers directory and the package will appear at the indicated 
-position in the tree.
+(or moved, if shift is held down when the mose button is released) to the Bash
+Installers directory and the package will appear at the indicated position in
+the tree.  We will also support Ctrl-V pasting of files that have copied or cut
+from a file manager window.
 
 When a package is being dragged, packages that are currently not being shown 
 due to a search string or filter setting appear, grayed out, in the vicinity of 
