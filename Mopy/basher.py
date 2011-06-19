@@ -5975,6 +5975,7 @@ class PatchDialog(wx.Dialog):
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if not self.patchers[0].__class__.__name__ in patchConfigs and not self.patchers[1].__class__.__name__ in patchConfigs:
                 self.UpdateConfig(patchConfigs)
+                return
         if not patchConfigs: #try the non-current Bashed Patch mode:
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)-1])),'bash.patch.configs',{})  
             if patchConfigs:
@@ -6006,17 +6007,20 @@ class PatchDialog(wx.Dialog):
             otherPatcher = otherPatcherDict[patcher.__class__.__name__]
             otherPatcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,otherPatcher.isEnabled)
+            patcher.isEnabled = otherPatcher.isEnabled
             if isinstance(patcher, ListPatcher):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try:
-                        patcher.gList.Check(index,otherPatcher.configChecks[item])
+                        patcher.configChecks[item] = otherPatcher.configChecks[item]
+                        patcher.gList.Check(index,patcher.configChecks[item])
                     except KeyError: deprint(_('item %s not in saved configs') % (item))
             elif isinstance(patcher, TweakPatcher):
-                for index, item in enumerate(otherPatcher.tweaks):
+                for index, item in enumerate(tuple(zip(patcher.tweaks,otherPatcher.tweaks))):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                    except: deprint(_('item %s not in saved configs') % (item))
+                        item[0].isEnabled = item[1].isEnabled
+                        patcher.gList.Check(index,item[0].isEnabled)
+                    except: deprint(_('item %s not in saved configs') % (item[0]))
         self.SetOkEnable()
         
     def RevertConfig(self,event=None):
