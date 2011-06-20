@@ -30,7 +30,7 @@ import sys
 if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
-import getopt
+import optparse
 import re
 
 import bolt
@@ -39,105 +39,7 @@ import bosh
 import barb
 import basher
 import balt
-
-# ----------------------------------------------------------------------------------
-def ShowHelp():
-    print _('SYNTAX:')
-    print '\"' + GPath(sys.argv[0]).tail.s + '\"' + _(
-          ' [-o OblivionPath] [-u userPath] [-p personalPath] [-l localAppDataPath] [-b backupFilePath] [-r backupFilePath] [-q] [-d] [0]')
-    print '---------------------------------------------------------------------------'
-    print _('For all arguments:')
-    print _('Note that Python reads the backslash \"\\\" as an escape character,'
-          + ' (that is, the backslash itself is ignored and the following character is read literally)'
-          + ' so for any paths you\'ll want to either use two backslashes (C:\\\\Folder\\\\)'
-          + ' or a forwardslash (C:/Folder/).')
-    print
-    print _('The -o, -u, -p and -l arguments can be set in the .ini file.')
-    print _('Arguments have precedence over ini settings.'
-          + ' You can use a mix of arguments and ini settings.'
-          + ' Ini settings don\'t require a double backslash and can have relative paths.')
-    print '---------------------------------------------------------------------------'
-    print _('Oblivion directory argument (-o).')
-    print _('-o OblivionPath: Specify Oblivion directory (containing Oblivion.exe).')
-    print _('Use this argument if Bash is located outside of the Oblivion directory.')
-    print _('Example: -o \"C:\\\\Games\\\\Oblivion\\\\\"')
-    print '---------------------------------------------------------------------------'
-    print _('User directory arguments (-u, -p, and -l).')
-    print _('These arguments allow you to specify your user directories in several ways.'
-          + ' These are only useful if the regular procedure for getting the user directory fails.'
-          + ' And even in that case, the user is probably better off installing win32com.')
-    print _('However, the arguments are:')
-    print
-    print _('-u userPath: Specify the user profile path. May help if HOMEDRIVE and/or HOMEPATH'
-          + ' are missing from the user\'s environgment.')
-    print _('Example: -u \"C:\\\\Documents and Settings\\\\Wrye\"')
-    print
-    print _('-p personalPath: Specify the user\'s personal directory.')
-    print _('If you need to set this then you probably need to set -l too.')
-    print _('Example: -p \"C:\\\\Documents and Settings\\\\Wrye\\\\My Documents\"')
-    print
-    print _('-l localAppDataPath: Specify the user\'s local application data directory.')
-    print _('If you need to set this then you probably need to set -p too.')
-    print _('Example: -l \"C:\\\\Documents and Settings\\\\Wrye\\\\Local Settings\\\\Application Data\"')
-    print '---------------------------------------------------------------------------'
-    print _('Quiet/Quit Mode:')
-    print _('-q Close Bash after creating or restoring backup and do not display any prompts or message dialogs.')
-    print _('Only used with -b and -r options. Otherwise ignored.')
-    print '---------------------------------------------------------------------------'
-    print _('Backup Bash Settings:')
-    print _('-b backupFilePath: Backup all Bash settings to an archive file before the app launches.')
-    print _('Example: -b \"C:\\\\Games\\\\Bash Backups\\\\BashBackupFile.7z\"')
-    print _('Prompts the user for the backup file path if an empty string is given or'
-          + ' the path does not end with \'.7z\' or the specified file already exists.')
-    print
-    print _('When the -q flag is used, no dialogs will be displayed and Bash will quit after completing the backup.')
-    print _('  If backupFilePath does not specify a valid directory, the default directory will be used:')
-    print _('    \'[Oblivion Mods]\\Bash Mod Data\\Bash Backup\'')
-    print _('  If backupFilePath does not specify a filename, a default name including'
-          + ' the Bash version and current timestamp will be used.')
-    print _('    \'Backup Bash Settings vVER (DD-MM-YYYY hhmm.ss).7z\'')
-    print '---------------------------------------------------------------------------'
-    print _('Restore Bash Settings:')
-    print _('-r backupFilePath: Restore all Bash settings from backup file before the app launches.')
-    print _('Example: -r \"C:\\\\Games\\\\Bash Backups\\\\BashBackupFile.7z\"')
-    print _('Bash will prompt the user for the backup file path if an empty string is given or'
-          + ' the path does not end with \'.7z\' or the specified file does not exist.')
-    print
-    print _('When the -q flag is used, no dialogs will be displayed and Bash will quit after restoring the settings.')
-    print _('  If backupFilePath is not valid, the user will be prompted for the backup file to restore.')
-    print '---------------------------------------------------------------------------'
-    print _('Debug argument:')
-    print _('-d Send debug text to the console rather than to a newly created debug window.')
-    print _('Useful if bash is crashing on startup or if you want to print a lot of'
-          + ' information (e.g. while developing or debugging).')
-    print '---------------------------------------------------------------------------'
-
-# ----------------------------------------------------------------------------------
-def ParseArgs():
-    #--Parse arguments
-    optlist,args = getopt.getopt(sys.argv[1:],'o:u:p:l:b:r:qd',('restarting'))
-    opts = dict(optlist)
-
-    #strip options from sys.argv that should not be reinvoked on app restart
-    try:
-        for opt,argc in (('-b',1),('-r',1),('-q',0),('--restarting',0)):
-            if opt in opts:
-                if opt in sys.argv:
-                    i = sys.argv.index(opt)
-                    del sys.argv[i:i+argc+1]
-                else:
-                    reOpt = re.compile(re.escape(opt)+'.*$')
-                    arg = [x for x in sys.argv if reOpt.match(x)]
-                    raise Exception('Invalid command line option: \'' + arg[0] +'\'')
-
-    except Exception, e:
-        print e
-        print
-        ShowHelp()
-        sys.exit(1)
-
-    return (opts, args)
-
+  
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -168,10 +70,10 @@ def cmdBackup():
     # backup settings if app version has changed or on user request
     backup = None
     path = None
-    quit = '-b' in opts and '-q' in opts
-    if '-b' in opts: path = GPath(opts['-b'])
+    quit = opts.backup and opts.quietquit
+    if opts.backup: path = GPath(opts.filename)
     backup = barb.BackupSettings(basher.bashFrame,path, quit)
-    if backup.PromptMismatch() or '-b' in opts:
+    if backup.PromptMismatch() or opts.backup:
         try:
             backup.Apply()
         except bolt.StateError:
@@ -189,9 +91,9 @@ def cmdRestore():
     # restore settings on user request
     backup = None
     path = None
-    quit = '-r' in opts and '-q' in opts
-    if '-r' in opts: path = GPath(opts['-r'])
-    if '-r' in opts:
+    quit = opts.restore and opts.quietquit
+    if opts.restore: path = GPath(opts.filename)
+    if opts.restore:
         try:
             backup = barb.RestoreSettings(basher.bashFrame,path, quit)
             backup.Apply()
@@ -207,7 +109,7 @@ def oneInstanceChecker():
     pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
     lockfd = None
 
-    if '--restarting' in opts: # wait up to 10 seconds for previous instance to close
+    if opts.restarting: # wait up to 10 seconds for previous instance to close
         t = time()
         while (time()-t < 10) and pidpath.exists(): sleep(1)
 
@@ -246,25 +148,110 @@ def exit():
 
 # Main ------------------------------------------------------------------------
 def main():
-    global opts, args
-    #import warnings
-    #warnings.filterwarnings('error')
-
-    #--Parse arguments
-    opts, args = ParseArgs()
-
+    global opts, extra
+    
+    parser = optparse.OptionParser()
+    pathGroup = optparse.OptionGroup(parser, "Path Arguments",
+                         r"All path arguments must be absolute paths and use either forward slashes (/) or two backward slashes (\\). All of these can also be set in the ini (where  you can also use relative paths) and if set in both cmd line takes precedence.")
+    pathGroup.add_option('-o', '--oblivionPath',
+                        action='store',
+                        type='string',
+                        default='',
+                        dest='oblivionPath',
+                        help='Specifies the Oblivion directory (the one containing Oblivion.exe). Use this argument if Bash is located outside of the Oblivion directory.')
+    userPathGroup = optparse.OptionGroup(parser, "'User Directory Arguments",
+                        'These arguments allow you to specify your user directories in several ways.'
+                        ' These are only useful if the regular procedure for getting the user directory fails.'
+                        ' And even in that case, the user is probably better off installing win32com.')
+    userPathGroup.add_option('-p', '--personalPath',
+                        action='store',
+                        type='string',
+                        default='',
+                        dest='personalPath',
+                        help='Specify the user\'s personal directory. (Like "C:\\\\Documents and Settings\\\\Wrye\\\\My Documents\") '
+                             'If you need to set this then you probably need to set -l too')
+    userPathGroup.add_option('-u', '--userPath',
+                        action='store',
+                        type='string',
+                        default='',
+                        dest='userPath',
+                        help='Specify the user profile path. May help if HOMEDRIVE and/or HOMEPATH'
+                             ' are missing from the user\'s environment')
+    userPathGroup.add_option('-l', '--localAppDataPath',
+                        action='store',
+                        type='string',
+                        default='',
+                        dest='localAppDataPath',
+                        help='Specify the user\'s local application data directory.'
+                             'If you need to set this then you probably need to set -p too.')
+    backupGroup = optparse.OptionGroup(parser, "'Backup and Restore Arguments",
+                        'These arguments allow you to specify your user directories in several ways.'
+                        ' These are only useful if the regular procedure for getting the user directory fails.'
+                        ' And even in that case, the user is probably better off installing win32com.')
+    backupGroup.add_option('-b', '--backup',
+                        action='store_true',
+                        default=False,
+                        dest='backup',
+                        help='Backup all Bash settings to an archive file before the app launches. Either specify the filepath with  the -f/--filename options or Wrye Bash will prompt the user for the backup file path.')
+    backupGroup.add_option('-r', '--restore',
+                        action='store_true',
+                        default=False,
+                        dest='restore',
+                        help='Backup all Bash settings to an archive file before the app launches. Either specify the filepath with  the -f/--filename options or Wrye Bash will prompt the user for the backup file path.')
+    backupGroup.add_option('-f', '--filename',
+                        action='store',
+                        default='',
+                        dest='filename',
+                        help='The file to use with the -r or -b options. Must end in \'.7z\' and be a valid path and for -r exist and for -b not already exist.')
+    backupGroup.add_option('-q', '--quiet-quit',
+                        action='store_true',
+                        default=False,
+                        dest='quietquit',
+                        help='Close Bash after creating or restoring backup and do not display any prompts or message dialogs.')
+    parser.add_option('-d', '--debug',
+                        action='store_true',
+                        default=False,
+                        dest='debug',
+                        help='Useful if bash is crashing on startup or if you want to print a lot of '
+                             'information (e.g. while developing or debugging).')
+    parser.add_option('--no-psyco',
+                        action='store_false',
+                        default=True,
+                        dest='Psyco',
+                        help='Disables import of Psyco')
+    parser.add_option('-c', '--cbash-mode',
+                        action='store_true',
+                        default=True,
+                        dest='CBash',
+                        help='enables CBash and uses CBash to build bashed patch.')
+    parser.add_option('-y', '--python-mode',
+                        action='store_true',
+                        default=True,
+                        dest='CBash',
+                        help='disables CBash and uses python code to build bashed patch.')                        
+    parser.add_option('--restarting',
+                        action='store_true',
+                        default=False,
+                        dest='restarting',
+                        help=optparse.SUPPRESS_HELP) 
+    parser.add_option_group(pathGroup)
+    parser.add_option_group(userPathGroup)
+    parser.add_option_group(backupGroup)
+    
+    opts,extra = parser.parse_args()
+    if len(extra) > 0:
+        parser.print_help()
+        return
+        
     #--Initialize Directories and some settings
     #  required before the rest has imported
-    SetUserPath('bash.ini',opts.get('-u'))
-    personal = opts.get('-p')
-    localAppData = opts.get('-l')
-    oblivionPath = opts.get('-o')
+    SetUserPath('bash.ini',opts.userPath)#get('-u'))
 
     try:
-        bosh.initBosh(personal,localAppData,oblivionPath)
+        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['mopy'].join(bosh.exe7z).s
     except bolt.PermissionError, e:
-        if '-d' in opts or (args and args[0] == '0'):
+        if opts.debug:
             if hasattr(sys,'frozen'):
                 app = basher.BashApp()
             else:
@@ -292,7 +279,7 @@ def main():
     basher.InitLinks()
     basher.InitImages()
     #--Start application
-    if '-d' in opts or (args and args[0] == '0'):
+    if opts.debug:
         if hasattr(sys, 'frozen'):
             # Special case for py2exe version
             app = basher.BashApp()
@@ -322,10 +309,10 @@ def main():
 ##        print "Really exitted"
 
 if __name__ == '__main__':
-    try:
-        if '-d' not in opts and '0' not in args:
-            import psyco
-            psyco.full()
-    except:
-        pass
+#    try:
+#        if '-d' not in opts and '0' not in args:
+#            import psyco
+#            psyco.full()
+#    except:
+#        pass
     main()
