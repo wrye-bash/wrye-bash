@@ -32,455 +32,437 @@ from ...presenter import view_commands
 _logger = logging.getLogger(__name__)
 
 
-# elegant design, but does not meet all requirements
 class _Filter:
-    """Base class for filters"""
-    def __init__(self, viewUpdateQueue, idMask):
-        self.dirty = False
-        self._viewUpdateQueue = viewUpdateQueue
+    """This class and all subclasses are intended only for single-threaded access"""
+    def __init__(self, idMask):
+        assert(idMask != presenter.FilterIds.NONE)
         self._idMask = idMask
-        self._activeMask = 0
-        self._matchedNodeIds = set()
+        self._activeMask = presenter.FilterIds.NONE
+        self.visibleNodeIds = None
     def set_active_mask(self, idMask):
         """returns the bitwise xor between the relevant bits of the old mask and the new
         one"""
         activeMask = self._idMask & idMask
         diff = self._activeMask ^ activeMask
-        _logger.debug("changing activemask from 0x%x to 0x%x (diff: 0x%x)",
-                      self._activeMask, activeMask, diff)
-        if self._activeMask is not activeMask:
-            self._activeMask = activeMask
-            self.dirty = True
+        _logger.debug("changing activemask for %s from %s to %s (diff: %s)",
+                      self.__class__.__name__, self._activeMask, activeMask, diff)
+        self._activeMask = activeMask
         return diff
-    def add(self, nodeId, nodeAttributes):
-        """filters given node; returns whether node was successfully added (i.e. it
-        matched this filter)"""
-        if self._matches(nodeId, nodeAttributes):
-            if nodeId not in self._matchedNodeIds:
-                self._matchedNodeIds.add(nodeId)
-                self.dirty = True
-            return True
+    def get_active_mask(self):
+        return self._activeMask
+    def is_active(self):
+        return self._activeMask != 0
+    def process_and_get_visibility(self, nodeId, nodeAttributes):
+        """adds node to appropriate sets and returns true if this node is visible at this
+        filter level (although it may not be visible at the top level)"""
+        raise NotImplementedError("subclass must implement")
+    def get_visible_node_ids(self, filterMask):
+        # returns set of nodes that are visible when filterMask is the active filter mask
+        raise NotImplementedError("subclass must implement")
+    def remove(self, nodeIds):
+        """remove nodes from state"""
+        raise NotImplementedError("subclass must implement")
+    def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
+        """sync node counts to the filter button labels in the view"""
+        raise NotImplementedError("subclass must implement")
+    def update_view(self, nodeId, getHypotheticalVisibilityFn):
+        """incrementally update the view"""
+        raise NotImplementedError("subclass must implement")
+
+class _FilterButton(_Filter):
+    def __init__(self, filterId, viewUpdateQueue):
+        _Filter.__init__(self, filterId)
+        self._viewUpdateQueue = viewUpdateQueue
+        self._matchedNodeIds = set()
+        self._matchedLeafNodeIds = set()
+        self._hypotheticallyVisibleLeafNodeIds = set()
+        self._prevNumVisibleLeafNodes = 0
+        self._prevNumMatchedLeafNodes = 0
+    def set_active_mask(self, idMask):
+        diff = _Filter.set_active_mask(self, idMask)
+        if self.is_active():
+            self.visibleNodeIds = self._matchedNodeIds
         else:
-            self.remove(nodeId)
-            return False
-    def remove(self, nodeId):
-        """removes given node from state"""
-        if nodeId in self._matchedNodeIds:
+            self.visibleNodeIds = None
+        return diff
+    def process_and_get_visibility(self, nodeId, nodeAttributes):
+        if not self._match(nodeId, nodeAttributes):
             self._matchedNodeIds.discard(nodeId)
-            self.dirty = True
-    def update_view(self):
-        self._update_view(len(self._matchedNodeIds))
-    def reset(self):
-        if len(self._matchedNodeIds) is 0:
-            _logger.debug("state already reset")
+            self._matchedLeafNodeIds.discard(nodeId)
+            return False
+        _logger.debug("filter %s matched node %d (%s)",
+                      self._idMask, nodeId, nodeAttributes.label)
+        return self.is_active()
+    def get_visible_node_ids(self, filterId):
+        if filterId & self._idMask != 0:
+            _logger.debug("contributing %d nodes from filter %s",
+                          len(self._matchedNodeIds), self._idMask)
+            return self._matchedNodeIds
+        return None
+    def remove(self, nodeIds):
+        _logger.debug("removing nodes %s from filter %s", nodeIds, self._idMask)
+        self._matchedNodeIds.difference_update(nodeIds)
+        self._matchedLeafNodeIds.difference_update(nodeIds)
+        self._hypotheticallyVisibleLeafNodeIds.difference_update(nodeIds)
+    def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
+        visibleNodeIds = getHypotheticalVisibleNodeIdsFn(self._idMask)
+        if visibleNodeIds is None:
+            self._hypotheticallyVisibleLeafNodeIds = set()
         else:
-            _logger.debug("resetting state")
-            self._matchedNodeIds.clear()
-            self.dirty = True
-    def _matches(self, nodeId, nodeAttributes):
-        """returns whether the specified node matches the filter, regardless of whether
-        the filter is active"""
-        raise NotImplementedError("subclass must override this method")
-    def _update_view(self, numVisibleNodes):
-        if not self.dirty:
-            _logger.debug("view already up to date")
+            self._hypotheticallyVisibleLeafNodeIds = \
+                self._matchedLeafNodeIds.intersection(visibleNodeIds)
+        self._sync_to_view()
+    def update_view(self, nodeId, getHypotheticalVisibilityFn):
+        if nodeId in self._matchedLeafNodeIds and \
+           getHypotheticalVisibilityFn(nodeId, self._idMask):
+            _logger.debug("adding node %d to filter %s's hypothetically visible list",
+                          nodeId, self._idMask)
+            self._hypotheticallyVisibleLeafNodeIds.add(nodeId)
         else:
-            numMatchedNodes = len(self._matchedNodeIds)
-            _logger.debug("syncing state to view: filter 0x%x: %d/%d",
-                          self._idMask, numVisibleNodes, numMatchedNodes)
+            _logger.debug("removing node %d from filter %s's hypothetically visible list",
+                          nodeId, self._idMask)
+            self._hypotheticallyVisibleLeafNodeIds.discard(nodeId)
+        self._sync_to_view()
+    def _sync_to_view(self):
+        numVisibleLeafNodes = len(self._hypotheticallyVisibleLeafNodeIds)
+        numMatchedLeafNodes = len(self._matchedLeafNodeIds)
+        if numVisibleLeafNodes != self._prevNumVisibleLeafNodes or \
+           numMatchedLeafNodes != self._prevNumMatchedLeafNodes:
+            _logger.debug("syncing state to view: filter %s: %d/%d",
+                          self._idMask, numVisibleLeafNodes, numMatchedLeafNodes)
             self._viewUpdateQueue.put(view_commands.SetFilterStats(
-                self._idMask, numVisibleNodes, numMatchedNodes))
-            self.dirty = False
+                self._idMask, numVisibleLeafNodes, numMatchedLeafNodes))
+            self._prevNumVisibleLeafNodes = numVisibleLeafNodes
+            self._prevNumMatchedLeafNodes = numMatchedLeafNodes
+        else:
+            _logger.debug("not syncing identical state to view: %s: %d/%d",
+              self._idMask, numVisibleLeafNodes, numMatchedLeafNodes)
+
+    def _match(self, nodeId, nodeAttributes):
+        """returns whether the filter matches the given node, regardless of whether it is
+        active"""
+        raise NotImplementedError("subclass must implement")
 
 class _AggregateFilter(_Filter):
-    """Combines a collection of subfilters to form a boolean chain.  The matchedNodeIds
-    set in AggregateFilter subclasses contains only nodeIds that match /active/
-    subfilters"""
+    """Combines a collection of subfilters to form a boolean chain."""
     def __init__(self, filters):
-        _Filter.__init__(self, None, self._get_aggregate_id(filters))
+        _Filter.__init__(self, self._get_aggregate_id(filters))
         if len(filters) < 2:
             raise RuntimeError("Cannot aggregate less than 2 subfilters")
         self._filters = filters
-        for filter in filters:
-            # attach a set used for tracking nodes that are visible if the filter is
-            # active, given the state of other filters in the aggregation
-            filter._visibleNodeIds = set()
+        self.visibleNodeIds = set()
     def set_active_mask(self, idMask):
-        for filter in self._filters:
-            filter.set_active_mask(idMask)
-        changedIdMask = _Filter.set_active_mask(self, idMask)
-        self._refresh(changedIdMask)
-        return changedIdMask
-    def update_view(self):
-        if self.dirty:
-            for filter in self._filters:
-                filter._update_view(len(filter._visibleNodeIds))
-            self.dirty = False
-    def remove(self, nodeId):
-        for filter in self._filters:
-            filter.remove(nodeId)
-            if filter._dirty:
-                self.dirty = True
-        _Filter.remove(self, nodeId)
-    def reset(self):
-        for filter in self._filters:
-            filter.reset()
-            if filter._dirty:
-                self.dirty = True
-        _Filter.reset(self)
+        diff = _Filter.set_active_mask(self, idMask)
+        if diff != 0:
+            for f in self._filters:
+                f.set_active_mask(idMask)
+        return diff
+    def process_and_get_visibility(self, nodeId, nodeAttributes):
+        if self._process_and_get_visibility(nodeId, nodeAttributes):
+            self.visibleNodeIds.add(nodeId)
+            return True
+        else:
+            self.visibleNodeIds.discard(nodeId)
+        return False
+    def remove(self, nodeIds):
+        self.visibleNodeIds.difference_update(nodeIds)
+        for f in self._filters:
+            f.remove(nodeIds)
+    def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
+        for f in self._filters:
+            f.refresh_view(getHypotheticalVisibleNodeIdsFn)
+    def update_view(self, nodeId, getHypotheticalVisibilityFn):
+        for f in self._filters:
+            f.update_view(nodeId, getHypotheticalVisibilityFn)
     def _get_aggregate_id(self, filters):
         """ORs together the IDs of all aggregated filters"""
-        id = 0
-        for filter in filters:
-            id = id | filter._idMask
-        return id
-    def _refresh(self, changedIdMask):
-        """updates the aggregate filter's matchedNodeIds set"""
-        raise NotImplementedError("subclass must override this method")
-
-class _AndFilter(_AggregateFilter):
-    """ANDs a collection of subfilters.  Does not short-circuit boolean expression to
-    ensure all subfilters have accurate statistics"""
-    def __init__(self, filters):
-        _AggregateFilter.__init__(self, filters)
-    def _matches(self, nodeId, nodeAttributes):
-        """returns true iff all subfilters return true"""
-        retVal = True
-        for filter in self._filters:
-            if not filter.passes(nodeId, nodeAttributes):
-                retVal = False
-        return retVal
-    def _refresh(self, changedIdMask):
-        """resyncs to the intersection of the subfilters"""
-        matchedNodeIds = None
-        copyPending = True
-        for filter in self._filters:
-            if filter._activeMask is not 0:
-                if matchedNodeIds is None:
-                    matchedNodeIds = filter._matchedNodeIds
-                else:
-                    matchedNodeIds = matchedNodeIds.intersection(filter._matchedNodeIds)
-                    copyPending = False
-        if matchedNodeIds is None:
-            self._matchedNodeIds = set()
-        elif copyPending:
-            self._matchedNodeIds = set(matchedNodeIds)
-        else:
-            self._matchedNodeIds = matchedNodeIds
+        filterId = presenter.FilterIds.NONE
+        for f in filters:
+            filterId |= f._idMask
+        return filterId
 
 class _OrFilter(_AggregateFilter):
-    """ORs a collection of subfilters.  Does not short-circuit boolean expression to
-    ensure all subfilters have accurate statistics"""
     def __init__(self, filters):
         _AggregateFilter.__init__(self, filters)
-        self._isDisjoint = True
-        self._containsAggregateFilters = False
-        for filter in self._filters:
-            if isinstance(filter, _AggregateFilter):
-                self._containsAggregateFilters = True
-    def remove(self, nodeId):
-        _AggregateFilter.remove(self, nodeId)
-        if len(self._matchedNodeIds) is 0:
-            self._isDisjoint = True
-    def reset(self):
-        _AggregateFilter.reset(self)
-        self._isDisjoint = True
-    def _matches(self, nodeId, nodeAttributes):
-        """returns true iff at least on subfilter returns true"""
+    def set_active_mask(self, idMask):
+        diff = _AggregateFilter.set_active_mask(self, idMask)
+        if diff != 0:
+            self.visibleNodeIds = set.union(
+                *[f.visibleNodeIds for f in self._filters if f.is_active()])
+        return diff
+    def get_visible_node_ids(self, filterId):
+        if filterId & self._idMask != 0:
+            visibleNodeIdSets = [f.get_visible_node_ids(filterId) for f in self._filters]
+            return set.union(*[v for v in visibleNodeIdSets if v is not None])
+        return None
+    def _process_and_get_visibility(self, nodeId, nodeAttributes):
+        """returns false iff all subfilters return false"""
         retVal = False
-        for filter in self._filters:
-            if filter.passes(nodeId, nodeAttributes):
-                if retVal:
-                    self._isDisjoint = False
+        for f in self._filters:
+            # don't break early -- newly mismatched nodes might need to be removed
+            if f.process_and_get_visibility(nodeId, nodeAttributes):
                 retVal = True
         return retVal
-    def _refresh_fast(self, changedIdMask):
-        # if the subfilters are disjoint, we can refresh faster by just addressing the
-        # changed subfilter(s).  if the subfilters are aggregate filters, the entire
-        # aggregate filter must be switched on or off for this to make sense
-        if not self._isDisjoint:
-            return False
-        # ensure that this optimization is applicable
-        remainingChangedIdMask = changedIdMask
-        for filter in self._filters:
-            if filter._id & remainingChangedIdMask is filter._id:
-                remainingChangedIdMask = remainingChangedIdMask ^ filter._id
-        if remainingChangedIdMask is not 0:
-            return False
-        # we're good
-        remainingChangedIdMask = changedIdMask
-        for filter in self._filters:
-            if remainingChangedIdMask is 0:
-                break
-            if filter._id & remainingChangedIdMask is filter._id:
-                remainingChangedIdMask = remainingChangedIdMask ^ filter._id
-                if 0 == filter._activeMask:
-                    # remove nodeIds from set
-                    self._matchedNodeIds = self._matchedNodeIds.symmetric_difference(
-                        filter._matchedNodeIds)
-                else:
-                    # add nodeIds to set
-                    self._matchedNodeIds = self._matchedNodeIds.union(
-                        filter._matchedNodeIds)
-        return True
 
-    def _refresh(self, changedIdMask):
-        """resyncs to the union of the subfilters"""
-        if self._refresh_fast(changedIdMask):
-            return
-        # otherwise, do it the slow way
-        matchedNodeIds = None
-        copyPending = True
-        for filter in self._filters:
-            if filter._activeMask is not 0:
-                if matchedNodeIds is None:
-                    matchedNodeIds = filter._matchedNodeIds
-                else:
-                    if self._isDisjoint and self._containsAggregateFilters:
-                        # ensure sets are still disjoint
-                        numDups = len(matchedNodeIds.intersection(filter._matchedNodeIds))
-                        self._isDisjoint = numDups is 0
-                    matchedNodeIds = matchedNodeIds.union(filter._matchedNodeIds)
-                    copyPending = False
-        if matchedNodeIds is None:
-            self._matchedNodeIds = set()
-        elif copyPending:
-            self._matchedNodeIds = set(matchedNodeIds)
-        else:
-            self._matchedNodeIds = matchedNodeIds
-
-# inelegant design, but meets requirements
-class _SimpleFilter:
-    def __init__(self, viewUpdateQueue, filterId):
-        _logger.debug("initializing filter %s", filterId)
-        self._viewUpdateQueue = viewUpdateQueue
-        self.filterId = filterId
-        self.active = False
-        self.matchedNodeIds = set()
-        self.visibleNodeIds = set()
+class _AndFilter(_AggregateFilter):
+    def __init__(self, filters):
+        _AggregateFilter.__init__(self, filters)
     def set_active_mask(self, idMask):
-        self.active = self.filterId & idMask is self.filterId
-        if self.active: _logger.debug("activating filter %s", self.filterId)
-        else: _logger.debug("deactivating filter %s", self.filterId)
-    def update_view(self):
-        numMatchedNodes = len(self.matchedNodeIds)
-        numVisibleNodes = len(self.visibleNodeIds)
-        _logger.debug("syncing state to view: filter %s: %d/%d",
-                      self.filterId, numVisibleNodes, numMatchedNodes)
-        self._viewUpdateQueue.put(view_commands.SetFilterStats(
-            self.filterId, numVisibleNodes, numMatchedNodes))
-    def matches(self, nodeId, nodeAttributes):
-        """returns whether the specified node matches the filter, regardless of whether
-        the filter is active"""
-        raise NotImplementedError("subclass must override this method")
+        diff = _AggregateFilter.set_active_mask(self, idMask)
+        if diff != 0:
+            self.visibleNodeIds = set.intersection(
+                *[f.visibleNodeIds for f in self._filters if f.is_active()])
+        return diff
+    def get_visible_node_ids(self, filterId):
+        if filterId & self._idMask != 0:
+            visibleNodeIdSets = [f.get_visible_node_ids(filterId) for f in self._filters]
+            return set.intersection(*[v for v in visibleNodeIdSets if v is not None])
+        return None
+    def _process_and_get_visibility(self, nodeId, nodeAttributes):
+        """returns true iff all subfilters return true"""
+        retVal = True
+        for f in self._filters:
+            # don't break early -- newly mismatched nodes might need to be removed
+            if not f.process_and_get_visibility(nodeId, nodeAttributes):
+                retVal = False
+        return retVal
 
-class _HiddenPackagesFilter(_SimpleFilter):
+class _FilterGroup:
+    def __init__(self, wrappedFilter):
+        self._filter = wrappedFilter
+        self.visibleNodeIds = self._get_visible_node_ids()
+    def set_active_mask(self, idMask):
+        """sets active filters and returns whether state has changed"""
+        _logger.debug("modifying active mask for %s: %s", self.__class__.__name__, idMask)
+        # apply mask to filters so they can update their visible nodes
+        if self._filter.set_active_mask(idMask) == 0:
+            return False
+        # set top level visibleNodeIds
+        self.visibleNodeIds = self._get_visible_node_ids()
+        # update view button labels
+        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        return True
+    def process_and_get_visibility(self, nodeId, nodeAttributes):
+        """adds/updates node and returns whether the node should be visible"""
+        return self._process_and_get_visibility(nodeId, nodeAttributes, None)
+    def remove(self, nodeIds):
+        _logger.debug("removing nodes for %s: %s", self.__class__.__name__, nodeIds)
+        # remove references to nodes from all data structures
+        self._filter.remove(nodeIds)
+        self._update_visible_node_ids(nodeIds, False, None)
+        # update view button labels
+        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+    def _process_and_get_visibility(self, nodeId, nodeAttributes, arg):
+        """adds/updates node and returns whether the node should be visible"""
+        _logger.debug("processing node for %s: %d (%s)",
+                      self.__class__.__name__, nodeId, nodeAttributes.label)
+        # process and incrementally update state
+        retVal = self._filter.process_and_get_visibility(nodeId, nodeAttributes)
+        self._update_visible_node_ids(nodeId, retVal, arg)
+        # update view button labels
+        self._filter.update_view(nodeId, self._get_hypothetical_visibility)
+        return retVal
+    def _get_visible_node_ids(self):
+        """subclass may override; default implementation returns a reference to the
+        wrapped filter's visibleNodeIds set"""
+        return self._filter.visibleNodeIds
+    def _update_visible_node_ids(self, nodeIds, isVisible, arg):
+        """subclass may override; default implementation assumes set has already been
+        updated"""
+        pass
+    def _get_hypothetical_visible_node_ids(self, filterId):
+        # returns set of nodes that would be visible if filterId were enabled
+        activeMask = self._filter.get_active_mask()
+        if filterId in activeMask:
+            return self.visibleNodeIds
+        return self._filter.get_visible_node_ids(activeMask|filterId)
+    def _get_hypothetical_visibility(self, nodeId, filterId):
+        # returns if the given node would be visible if filterId were enabled
+        activeMask = self._filter.get_active_mask()
+        if filterId in activeMask:
+            return nodeId in self.visibleNodeIds
+        visibleNodeIds = self._filter.get_visible_node_ids(activeMask|filterId)
+        return visibleNodeIds is not None and nodeId in visibleNodeIds
+
+class _HiddenPackagesFilter(_FilterButton):
     """Controls display of hidden packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _SimpleFilter.__init__(self, viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN)
-    def matches(self, nodeId, nodeAttributes):
-        """returns true iff it is a package node and is hidden."""
-        return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               nodeAttributes.isHidden
+        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN, viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isHidden:
+            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
 
-class _InstalledPackagesFilter(_SimpleFilter):
+class _InstalledPackagesFilter(_FilterButton):
     """Controls display of installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _SimpleFilter.__init__(self, viewUpdateQueue,
-                               presenter.FilterIds.PACKAGES_INSTALLED)
-    def matches(self, nodeId, nodeAttributes):
-        """returns true iff it is a package node and it is marked for install"""
-        return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               nodeAttributes.isInstalled
+        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_INSTALLED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isInstalled:
+            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
 
-class _NotInstalledPackagesFilter(_SimpleFilter):
+class _NotInstalledPackagesFilter(_FilterButton):
     """Controls display of non-installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _SimpleFilter.__init__(self, viewUpdateQueue,
-                               presenter.FilterIds.PACKAGES_NOT_INSTALLED)
-    def matches(self, nodeId, nodeAttributes):
-        """returns true iff it is a package node and is is marked neither as hidden or
-        for install"""
-        return nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
-               not nodeAttributes.isInstalled and not nodeAttributes.isHidden
+        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_NOT_INSTALLED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isNotInstalled:
+            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
 
-class _PackageTreeFilter:
+class _ResourceFilesFilter(_FilterButton):
+    """Controls display of resource files in the package contents tree"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.FILES_RESOURCES, viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isResource:
+            if nodeAttributes.nodeType is model.NodeTypes.FILE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
+
+class _PluginFilesFilter(_FilterButton):
+    """Controls display of plugin files in the package contents tree"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.FILES_PLUGINS,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isPlugin:
+            if nodeAttributes.nodeType is model.NodeTypes.FILE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
+
+class _OtherFilesFilter(_FilterButton):
+    """Controls display of cruft files in the package contents tree"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.FILES_OTHER,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.isOther:
+            if nodeAttributes.nodeType is model.NodeTypes.FILE:
+                self._matchedLeafNodeIds.add(nodeId)
+            self._matchedNodeIds.add(nodeId)
+            return True
+        return False
+
+
+class PackagesTreeFilter(_FilterGroup):
     """Filters contents of the packages tree"""
     def __init__(self, viewUpdateQueue):
-        self.visibleNodeIds = set()
-        self._filters = [_HiddenPackagesFilter(viewUpdateQueue),
-                         _InstalledPackagesFilter(viewUpdateQueue),
-                         _NotInstalledPackagesFilter(viewUpdateQueue)]
-    def set_active_mask(self, idMask):
-        """adjusts state to reflect new filter configuration."""
-        # if any filters have changed state, recalculate top-level visibleNodes
-        visibleNodeIds = set()
-        for f in self._filters:
-            f.set_active_mask(idMask)
-            if f.active:
-                _logger.debug("adding %d visible nodes from filter %s",
-                              len(f.visibleNodeIds), f.filterId)
-                visibleNodeIds.update(f.visibleNodeIds)
-        self.visibleNodeIds = visibleNodeIds
-        _logger.debug("PackagesTreeFilter visible nodes: %s", self.visibleNodeIds)
-
-    def apply_search(self, matchesSearchNodeIds):
-        """adjusts state to reflect new search overlay.  returns True if state has
-        changed"""
-        # intersect set with each child's matchedNodes set to form the child's visibleNode
-        # set; set dirty flags only if state has changed
-        _logger.debug("applying search; matched nodes: %s", matchesSearchNodeIds)
-        visibleNodeIds = set()
-        for f in self._filters:
-            if matchesSearchNodeIds is None:
-                f.visibleNodeIds = set(f.matchedNodeIds)
-            else:
-                f.visibleNodeIds = f.matchedNodeIds.intersection(matchesSearchNodeIds)
-            if f.active:
-                visibleNodeIds.update(f.visibleNodeIds)
-        self.visibleNodeIds = visibleNodeIds
-        _logger.debug("PackagesTreeFilter visible nodes: %s", self.visibleNodeIds)
-
-    def filter(self, nodeId, nodeAttributes, matchesSearch):
-        """adds or updates a node; adjusts state accordingly.  returns True if state has
-        changed"""
-        # for each child
-        #   if the node matches, add to matched set
-        #   if matchesSearch is True, add to child's visibleNodes
-        #   if the child is additionally active, add to top-level visibleNodes set
-
-        # ensure we don't remove a node that we just added to the visible set when a node
-        # is updated
-        addedVisibleNodeIds = set()
-        for f in self._filters:
-            if f.matches(nodeId, nodeAttributes):
-                _logger.debug("match: node %d in filter %s", nodeId, f.filterId)
-                f.matchedNodeIds.add(nodeId)
-                if matchesSearch:
-                    _logger.debug("visible: node %d in filter %s", nodeId, f.filterId)
-                    f.visibleNodeIds.add(nodeId)
-                    if f.active:
-                        _logger.debug("visible: node %d", nodeId)
-                        self.visibleNodeIds.add(nodeId)
-                        addedVisibleNodeIds.add(nodeId)
-                else:
-                    _logger.debug("not visible: node %d in filter %s",
-                                  nodeId, f.filterId)
-                    f.visibleNodeIds.discard(nodeId)
-            else:
-                _logger.debug("not matched: node %d in filter %s", nodeId, f.filterId)
-                if nodeId in f.matchedNodeIds:
-                    _logger.debug("removing node %d from filter %s", nodeId, f.filterId)
-                    f.matchedNodeIds.remove(nodeId)
-                    f.visibleNodeIds.discard(nodeId)
-                    if nodeId not in addedVisibleNodeIds:
-                        _logger.debug("removing node %d from visible set", nodeId)
-                        self.visibleNodeIds.discard(nodeId)
-        _logger.debug("PackagesTreeFilter visible nodes: %s", self.visibleNodeIds)
-
-    def remove(self, nodeId):
-        """removes a node; adjusts state accordingly.  returns True if state has
-        changed"""
-        # remove from visibleNodes and all children's matched and visible sets
-        _logger.debug("removing node %d", nodeId)
-        for f in self._filters:
-            f.matchedNodeIds.discard(nodeId)
-            f.visibleNodeIds.discard(nodeId)
-        self.visibleNodeIds.discard(nodeId)
-        _logger.debug("PackagesTreeFilter visible nodes: %s", self.visibleNodeIds)
-
-    def update_view(self):
-        """if there are changes to sync, syncs filter state and statistics to view"""
-        for f in self._filters:
-            f.update_view()
-
-# stub classes for now until I figure out the above mess
-class _StubFilter:
-    def __init__(self, viewUpdateQueue, filterIds):
-        self.visibleNodeIds = set()
-        self._matchedNodeIds = set()
-        self._matchedLeafNodeIds = set()
-        self._viewUpdateQueue = viewUpdateQueue
-        self._filterIds = filterIds
-    def set_active_mask(self, idMask):
-        _logger.debug("modifying active mask for %s: %s", self.__class__.__name__, idMask)
-    def filter(self, nodeId, nodeAttributes, matchesSearch=True):
-        _logger.debug("filtering node for %s: %d", self.__class__.__name__, nodeId)
-        self._matchedNodeIds.add(nodeId)
-        if matchesSearch:
-            self.visibleNodeIds.add(nodeId)
-    def remove(self, nodeId):
-        _logger.debug("removing node for %s: %d", self.__class__.__name__, nodeId)
-        self._matchedNodeIds.discard(nodeId)
-        self.visibleNodeIds.discard(nodeId)
-    def update_view(self):
-        _logger.debug("updating view for %s", self.__class__.__name__)
-        for filterId in self._filterIds:
-            self._viewUpdateQueue.put(view_commands.SetFilterStats(
-                filterId, len(self.visibleNodeIds), len(self._matchedNodeIds)))
-
-class PackageTreeFilter(_StubFilter):
-    """Filters contents of the packages tree"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.PACKAGES_HIDDEN,
-                              presenter.FilterIds.PACKAGES_INSTALLED,
-                              presenter.FilterIds.PACKAGES_NOT_INSTALLED])
+        self._matchesSearchNodeIds = None
+        _FilterGroup.__init__(self,
+                              _OrFilter([_InstalledPackagesFilter(viewUpdateQueue),
+                                         _HiddenPackagesFilter(viewUpdateQueue),
+                                         _NotInstalledPackagesFilter(viewUpdateQueue)]))
     def apply_search(self, matchesSearchNodeIds):
         _logger.debug("applying search; matched nodes: %s", matchesSearchNodeIds)
         if matchesSearchNodeIds is None:
-            self.visibleNodeIds = set(self._matchedNodeIds)
+            self._matchesSearchNodeIds = None
         else:
-            self._visibleNodeIds = self._matchedNodeIds.intersection(matchesSearchNodeIds)
+            self._matchesSearchNodeIds = set(matchesSearchNodeIds)
+        self.visibleNodeIds = self._get_visible_node_ids()
+        _logger.debug("%s visibleNodeIds now: %s",
+                      self.__class__.__name__, self.visibleNodeIds)
+        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+    def process_and_get_visibility(self, nodeId, nodeAttributes, matchesSearch):
+        if self._matchesSearchNodeIds is not None:
+            if matchesSearch:
+                self._matchesSearchNodeIds.add(nodeId)
+            else:
+                self._matchesSearchNodeIds.discard(nodeId)
+        return self._process_and_get_visibility(nodeId, nodeAttributes, matchesSearch) \
+               and matchesSearch
+    def _get_visible_node_ids(self):
+        """and the search match nodes with the wrapped filter's visibleNodeIds set"""
+        if self._matchesSearchNodeIds is None:
+            return set(self._filter.visibleNodeIds)
+        return self._matchesSearchNodeIds.intersection(self._filter.visibleNodeIds)
+    def _update_visible_node_ids(self, nodeIds, isVisible, matchesSearch):
+        if isVisible and matchesSearch:
+            self.visibleNodeIds.add(nodeIds)
+        else:
+            if hasattr(nodeIds, "__iter__"):
+                self.visibleNodeIds.difference_update(nodeIds)
+            else:
+                self.visibleNodeIds.discard(nodeIds)
+    def _get_hypothetical_visible_node_ids(self, filterId):
+        visibleNodeIds = _FilterGroup._get_hypothetical_visible_node_ids(self, filterId)
+        if self._matchesSearchNodeIds is None:
+            return visibleNodeIds
+        return self._matchesSearchNodeIds.intersection(visibleNodeIds)
+    def _get_hypothetical_visibility(self, nodeId, filterId):
+        if self._matchesSearchNodeIds is not None and \
+           nodeId not in self._matchesSearchNodeIds:
+            return False
+        return _FilterGroup._get_hypothetical_visibility(self, nodeId, filterId)
 
-class FileTreeFilter(_StubFilter):
-    """Filters contents of the files tree"""
+class PackageContentsTreeFilter(_FilterGroup):
+    """Filters contents of the package contents tree"""
     def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.FILES_PLUGINS,
-                              presenter.FilterIds.FILES_RESOURCES,
-                              presenter.FilterIds.FILES_OTHER])
+        _FilterGroup.__init__(self,
+                              _OrFilter([_ResourceFilesFilter(viewUpdateQueue),
+                                         _PluginFilesFilter(viewUpdateQueue),
+                                         _OtherFilesFilter(viewUpdateQueue)]))
 
-class DirtyFilter(_StubFilter):
-    """Filters contents of the dirty list"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.DIRTY_ADD,
-                              presenter.FilterIds.DIRTY_UPDATE,
-                              presenter.FilterIds.DIRTY_DELETE])
+#class DirtyFilter(_FilterGroup):
+    #"""Filters contents of the dirty files list"""
+    #def __init__(self, viewUpdateQueue):
+        #_FilterGroup.__init__(self,
+                              #_OrFilter([_DirtyAddFilter(viewUpdateQueue),
+                                         #_DirtyUpdateFilter(viewUpdateQueue),
+                                         #_DirtyDeleteFilter(viewUpdateQueue)]))
 
-class ConflictsFilter(_StubFilter):
-    """Filters contents of the conflicts list"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.CONFLICTS_ACTIVE,
-                              presenter.FilterIds.CONFLICTS_HIGHER,
-                              presenter.FilterIds.CONFLICTS_INACTIVE,
-                              presenter.FilterIds.CONFLICTS_LOWER,
-                              presenter.FilterIds.CONFLICTS_SELECTED,
-                              presenter.FilterIds.CONFLICTS_UNSELECTED])
+#class ConflictsFilter(_StubFilter):
+    #"""Filters contents of the conflicts list"""
+    #def __init__(self, viewUpdateQueue):
+        #_StubFilter.__init__(self, viewUpdateQueue,
+                             #[presenter.FilterIds.CONFLICTS_SELECTED,
+                              #presenter.FilterIds.CONFLICTS_UNSELECTED,
+                              #presenter.FilterIds.CONFLICTS_ACTIVE,
+                              #presenter.FilterIds.CONFLICTS_INACTIVE,
+                              #presenter.FilterIds.CONFLICTS_HIGHER,
+                              #presenter.FilterIds.CONFLICTS_LOWER,
+                              #presenter.FilterIds.CONFLICTS_MISMATCHED,
+                              #presenter.FilterIds.CONFLICTS_MATCHED])
 
-class SelectedFilter(_StubFilter):
-    """Filters contents of the selected list"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.SELECTED_MATCHED,
-                              presenter.FilterIds.SELECTED_MISMATCHED,
-                              presenter.FilterIds.SELECTED_MISSING,
-                              presenter.FilterIds.SELECTED_OVERRIDDEN])
+#class SelectedFilter(_StubFilter):
+    #"""Filters contents of the selected list"""
+    #def __init__(self, viewUpdateQueue):
+        #_StubFilter.__init__(self, viewUpdateQueue,
+                             #[presenter.FilterIds.SELECTED_MATCHED,
+                              #presenter.FilterIds.SELECTED_MISMATCHED,
+                              #presenter.FilterIds.SELECTED_MISSING,
+                              #presenter.FilterIds.SELECTED_HAS_CONFLICTS,
+                              #presenter.FilterIds.SELECTED_NO_CONFLICTS])
 
-class UnselectedFilter(_StubFilter):
-    """Filters contents of the unselected list"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.UNSELECTED_MATCHED,
-                              presenter.FilterIds.UNSELECTED_MISMATCHED,
-                              presenter.FilterIds.UNSELECTED_MISSING,
-                              presenter.FilterIds.UNSELECTED_OVERRIDDEN])
+#class UnselectedFilter(_StubFilter):
+    #"""Filters contents of the unselected list"""
+    #def __init__(self, viewUpdateQueue):
+        #_StubFilter.__init__(self, viewUpdateQueue,
+                             #[presenter.FilterIds.UNSELECTED_MATCHED,
+                              #presenter.FilterIds.UNSELECTED_MISMATCHED,
+                              #presenter.FilterIds.UNSELECTED_MISSING,
+                              #presenter.FilterIds.UNSELECTED_HAS_CONFLICTS,
+                              #presenter.FilterIds.UNSELECTED_NO_CONFLICTS])
 
-class SkippedFilter(_StubFilter):
-    """Filters contents of the dirty list"""
-    def __init__(self, viewUpdateQueue):
-        _StubFilter.__init__(self, viewUpdateQueue,
-                             [presenter.FilterIds.SKIPPED_MASKED,
-                              presenter.FilterIds.SKIPPED_NONGAME])
+#class SkippedFilter(_StubFilter):
+    #"""Filters contents of the dirty list"""
+    #def __init__(self, viewUpdateQueue):
+        #_StubFilter.__init__(self, viewUpdateQueue,
+                             #[presenter.FilterIds.SKIPPED_MASKED,
+                              #presenter.FilterIds.SKIPPED_NONGAME])

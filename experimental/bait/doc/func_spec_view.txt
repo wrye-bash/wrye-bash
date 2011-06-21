@@ -325,19 +325,26 @@ deleted.  There are three filter buttons at the top of the tab to allow
 listings of each type of operation to be filtered independently.  In the list, 
 names of added files are colored green, updated: blue, and deleted: red.
 
-The Conflicts tab shows whether any of the package's files conflict with files 
-in other packages.  If a group is marked as "ignore conflicts within group", 
+The Conflicts tab shows which files in other packages conflict with files in
+the current package.  If a group is marked as "ignore conflicts within group",
 then a conflict that would otherwise show may not show up here.  However the 
 conflicted file may still show up as a mismatched file in the next tab.  The 
 Conflicts tab has eight filters: selected, unselected, active, inactive, 
 higher, lower, mismatched, matched.  Selected/unselected refer to the file's 
 status in the current package.  Active/inactive refer to the file's status in 
 any conflicting package.  Higher/lower refer to the conflicting package's 
-position in the install order.  Paired filters are additive (e.g. if both 
-active and inactive are selected, /both/ active and inactive files are shown), 
-but otherwise the filters are subtractive (if selected, active, and higher are 
-on, only conflicting files that are selected in the current package and active 
-in some higher priority package are shown.
+position in the install order.  Mismatched/matched refer to whether the
+conflicting file in the other package is actually identical to the one in this
+pacakge.  Paired filters are additive (e.g. if both active and inactive are
+selected, both active and inactive files are shown, as long as they match the
+other selected filters), but otherwise the filters are subtractive (if
+selected, active, and higher are on, only conflicting files that are selected
+in the current package and active in some higher priority package are shown.
+The files shown are grouped by conflicting package.  A file may appear more
+than once if it has more than one conflict.
+TODO: is it useful to show conflicting packages whose conflicting files are
+all masked by currently selected filters?  It would be more informative if we
+do show them, but we would have to be careful not to clutter up the screen.
 
 The Selected tab shows the list of selected files, that is, the list of files 
 that have their checkmarks checked, indicating that they should be installed.  

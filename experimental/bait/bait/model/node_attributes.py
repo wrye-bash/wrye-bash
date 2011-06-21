@@ -71,14 +71,18 @@ class _TreeNodeAttributes(model._VersionedData):
         self.isNotInstalled = False
         self.isHidden = False
         self.isNew = False
+        self.hasMissingDeps = False
+
+class _PackageTreeNodeAttributes(_TreeNodeAttributes):
+    def __init__(self, nodeType):
+        _TreeNodeAttributes.__init__(self, nodeType)
         self.isUnrecognized = False
         self.isCorrupt = False
-        self.hasMissingDeps = False
         self.updateAvailable = False
 
-class PackageNodeAttributes(_TreeNodeAttributes):
+class PackageNodeAttributes(_PackageTreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE)
+        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE)
         self.isArchive = False
         self.hasWizard = False
         self.hasMatched = False
@@ -86,18 +90,25 @@ class PackageNodeAttributes(_TreeNodeAttributes):
         self.hasMissing = False
         self.hasSubpackages = False
 
-class GroupNodeAttributes(_TreeNodeAttributes):
+class GroupNodeAttributes(_PackageTreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NodeTypes.GROUP)
+        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.GROUP)
 
 class SubPackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
         _TreeNodeAttributes.__init__(self, model.NodeTypes.SUBPACKAGE)
 
-class DirectoryNodeAttributes(_TreeNodeAttributes):
-    def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NodeTypes.DIRECTORY)
+class _PackageContentsTreeNodeAttributes(_TreeNodeAttributes):
+    def __init__(self, nodeType):
+        _TreeNodeAttributes.__init__(self, nodeType)
+        self.isPlugin = False
+        self.isResource = False
+        self.isOther = False
 
-class FileNodeAttributes(_TreeNodeAttributes):
+class DirectoryNodeAttributes(_PackageContentsTreeNodeAttributes):
     def __init__(self):
-        _TreeNodeAttributes.__init__(self, model.NodeTypes.FILE)
+        _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.DIRECTORY)
+
+class FileNodeAttributes(_PackageContentsTreeNodeAttributes):
+    def __init__(self):
+        _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.FILE)

@@ -45,9 +45,6 @@ class BaitModel:
         _logger.debug("model shutting down")
         self.updateQueue.put(None)
 
-    def set_selected_package(self, nodeId):
-        _logger.debug("setting selected package to %d", nodeId)
-
     def get_node_attributes(self, nodeId):
         _logger.debug("retrieving attributes for node %d", nodeId)
         return None

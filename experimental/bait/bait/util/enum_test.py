@@ -77,6 +77,12 @@ def flag_enum_test():
     assert None & allAir is None
     assert None | allAir is None
     assert None ^ allAir is None
+    assert ~allAir == Air.NoAir
+
+    # test iterations
+    assert [elem for elem in allAir] == [Air.Oxygen, Air.Nitrogen, Air.Hydrogen]
+    assert [elem for elem in Air.NoAir] == []
+    assert [elem for elem in Air.Hydrogen] == [Air.Hydrogen]
 
     heavyAir |= Air.Hydrogen
     assert heavyAir == allAir
@@ -124,6 +130,11 @@ def enum_test():
     except: pass
     try:
         dummy = Mammals.Bat | 3
+        assert False
+    except: pass
+
+    try:
+        for elem in Mammals.Bat: pass
         assert False
     except: pass
 

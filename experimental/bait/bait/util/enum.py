@@ -118,6 +118,21 @@ class _EnumValue(object):
         return functools.reduce(
             _EnumValue.__or__,
             (enum for enum in enumerables.itervalues() if enum not in self))
+    def __iter__(self):
+        # this operation only makes sense for flag enums
+        if not issubclass(self._type, FlagEnum):
+            _logger.warn("incompatible type for FlagEnum iteration: %s",
+                         self._type.__name__)
+            raise TypeError("incompatible type for FlagEnum iteration")
+        value = self.__value
+        if value != 0:
+            for pos in itertools.count():
+                if 0 == value: break
+                lowBit = 0x1 & value
+                value = value >> 1
+                if 0x0 == lowBit:
+                    continue
+                yield self._type._parse_value(1 << pos)
     def _validate_bitwise_operator_context(self, other):
         if type(self) is not type(other):
             _logger.warn("cannot apply bitwise operator to non-enum: %s", type(other))
@@ -214,7 +229,7 @@ class _EnumMeta(type):
             if 0x0 == lowBit:
                 continue
             flagVal = 1 << pos
-            flagEnum = cls._parse_value(1 << pos)
+            flagEnum = cls._parse_value(flagVal)
             if flagEnum is None:
                 # don't allow invalid bits in our enums
                 _logger.warn("invalid flag set for %s enum: 0x%x", cls.__name__, flagVal)

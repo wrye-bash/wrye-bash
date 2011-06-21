@@ -34,115 +34,226 @@ from ...model import node_attributes
 _logger = logging.getLogger(__name__)
 
 
-def _drain_queue(viewCommandQueue):
-    while viewCommandQueue.qsize() > 0:
-        viewCommand = viewCommandQueue.get()
-        _logger.debug("received viewCommand: %s", str(viewCommand))
+def assert_stats_update(viewUpdateQueue, filterId, current, total):
+    assert(not viewUpdateQueue.empty())
+    setFilterStatsUpdate = viewUpdateQueue.get()
+    assert(filterId == setFilterStatsUpdate.filterId)
+    assert(current == setFilterStatsUpdate.current)
+    assert(total == setFilterStatsUpdate.total)
 
-def _add_nodes(f, data):
-    for nodeId in xrange(len(data)):
-        node = data[nodeId]
-        _logger.debug("filtering node %d: %s", nodeId, str(node))
-        f.filter(nodeId, node, True)
 
-def package_tree_filter_test():
-    viewCommandQueue = Queue.Queue()
+def package_contents_tree_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    pctf = filters.PackageContentsTreeFilter(viewUpdateQueue)
 
+    # define initial data structure
     data = {}
-    package1 = node_attributes.PackageNodeAttributes()
-    package1.isInstalled = True
-    data[0] = package1
-    group1 = node_attributes.GroupNodeAttributes()
-    group1.isNotInstalled = True
-    group1.isHidden = True
-    data[1] = group1
-    package2 = node_attributes.PackageNodeAttributes()
-    data[2] = package2
-    group2 = node_attributes.GroupNodeAttributes()
-    group2.isHidden = True
-    data[3] = group2
-    package3 = node_attributes.PackageNodeAttributes()
-    package3.isHidden = True
-    data[4] = package3
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "plugin1.esp"
+    fileAttributes1.isPlugin = True
+    data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "resource.nif"
+    fileAttributes2.isResource = True
+    data[1] = fileAttributes2
+    fileAttributes3 = node_attributes.FileNodeAttributes()
+    fileAttributes3.label = "document.txt"
+    fileAttributes3.isOther = True
+    data[2] = fileAttributes3
+    dirAttributes1 = node_attributes.DirectoryNodeAttributes()
+    dirAttributes1.label = "screenshotsDir"
+    dirAttributes1.isOther = True
+    data[3] = dirAttributes1
+    fileAttributes4 = node_attributes.FileNodeAttributes()
+    fileAttributes4.label = "screenie.jpg"
+    fileAttributes4.isOther = True
+    data[4] = fileAttributes4
 
-    #hpf = filters._HiddenPackagesFilter(viewCommandQueue)
+    # test initial conditions
+    assert(len(pctf.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
 
-    #_logger.debug("ensuring valid initial state for hidden packages filter")
-    #assert(hpf._idMask == presenter.FILTER_ID_PACKAGES_HIDDEN)
-    #assert(len(hpf._matchedNodeIds) is 0)
-    #assert(not hpf.dirty)
+    # test setting active filter mask with no data
+    assert(not pctf.set_active_mask(presenter.FilterIds.NONE))
+    assert(not pctf.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN))
+    assert(pctf.set_active_mask(presenter.FilterIds.FILES_RESOURCES))
+    assert(len(pctf.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
 
-    #_logger.debug("ensuring correct nodes are matched by hidden packages filter")
-    #_add_nodes(hpf, data)
-    #assert(hpf._matchedNodeIds == set([4]))
-    #assert(hpf.dirty)
-    #_logger.debug("updating view")
-    #hpf.update_view()
-    #_drain_queue(viewCommandQueue)
+    # test adding data
+    assert(not pctf.process_and_get_visibility(0, data[0]))
+    assert(len(pctf.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    assert(pctf.process_and_get_visibility(1, data[1]))
+    assert(len(pctf.visibleNodeIds) == 1)
+    assert(1 in pctf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    assert(not pctf.process_and_get_visibility(2, data[2]))
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    assert(not pctf.process_and_get_visibility(3, data[3]))
+    assert(viewUpdateQueue.empty())
+
+    assert(not pctf.process_and_get_visibility(4, data[4]))
+    assert(len(pctf.visibleNodeIds) == 1)
+    assert(1 in pctf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 2, 2)
+    assert(viewUpdateQueue.empty())
+
+    # test adjusting active filters while we have data
+    assert(pctf.set_active_mask(
+        presenter.FilterIds.FILES_OTHER|presenter.FilterIds.PACKAGES_HIDDEN))
+    assert(viewUpdateQueue.empty())
+    assert(len(pctf.visibleNodeIds) == 3)
+    assert(2 in pctf.visibleNodeIds)
+    assert(3 in pctf.visibleNodeIds)
+    assert(4 in pctf.visibleNodeIds)
+
+    # test removals
+    pctf.remove([2])
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
+    assert(viewUpdateQueue.empty())
+    assert(len(pctf.visibleNodeIds) == 2)
+    assert(3 in pctf.visibleNodeIds)
+    assert(4 in pctf.visibleNodeIds)
+    pctf.remove([3, 4])
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 0, 0)
+    assert(viewUpdateQueue.empty())
+    assert(len(pctf.visibleNodeIds) == 0)
+    assert(pctf.set_active_mask(presenter.FilterIds.FILES_PLUGINS))
+    assert(viewUpdateQueue.empty())
+    assert(len(pctf.visibleNodeIds) == 1)
+    assert(0 in pctf.visibleNodeIds)
+    pctf.remove([0, 1])
+    # order of following two lines is not set in stone
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 0, 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 0, 0)
+    assert(viewUpdateQueue.empty())
+    assert(len(pctf.visibleNodeIds) == 0)
 
 
-    ptf = filters.PackageTreeFilter(viewCommandQueue)
+def packages_tree_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    ptf = filters.PackagesTreeFilter(viewUpdateQueue)
 
-    _logger.debug("adding nodes")
-    _add_nodes(ptf, data)
+    # define initial data structure
+    data = {}
+    groupAttributes1 = node_attributes.GroupNodeAttributes()
+    groupAttributes1.label = "groupAll"
+    groupAttributes1.isHidden = True
+    groupAttributes1.isInstalled = True
+    groupAttributes1.isNotInstalled = True
+    data[0] = groupAttributes1
+    groupAttributes2 = node_attributes.GroupNodeAttributes()
+    groupAttributes2.label = "groupHidden"
+    groupAttributes2.isHidden = True
+    data[1] = groupAttributes2
+    packageAttributes1 = node_attributes.PackageNodeAttributes()
+    packageAttributes1.label = "hiddenPackage"
+    packageAttributes1.isHidden = True
+    data[2] = packageAttributes1
+    packageAttributes2 = node_attributes.PackageNodeAttributes()
+    packageAttributes2.label = "installedPackage"
+    packageAttributes2.isInstalled = True
+    data[3] = packageAttributes2
+    packageAttributes3 = node_attributes.PackageNodeAttributes()
+    packageAttributes3.label = "notInstalledPackage"
+    packageAttributes3.isNotInstalled = True
+    data[4] = packageAttributes3
 
-    #_logger.debug("checking visible nodes")
-    #assert(len(ptf.visibleNodeIds) is 0)
+    # test initial conditions
+    assert(len(ptf.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
 
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
-
-    _logger.debug("turning on some filters")
+    # set active filters and add some data without an active search
     ptf.set_active_mask(
-        presenter.FilterIds.PACKAGES_HIDDEN|presenter.FilterIds.PACKAGES_INSTALLED)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
+        presenter.FilterIds.PACKAGES_INSTALLED|presenter.FilterIds.PACKAGES_NOT_INSTALLED)
+    assert(ptf.process_and_get_visibility(0, data[0], True))
+    assert(len(ptf.visibleNodeIds) == 1)
+    assert(0 in ptf.visibleNodeIds)
+    assert(viewUpdateQueue.empty())
 
-    _logger.debug("applying search")
-    ptf.apply_search(set([0, 2]))
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
+    assert(not ptf.process_and_get_visibility(1, data[1], True))
+    assert(len(ptf.visibleNodeIds) == 1)
+    assert(0 in ptf.visibleNodeIds)
+    assert(viewUpdateQueue.empty())
 
-    _logger.debug("removing node 0")
-    ptf.remove(0)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
+    assert(not ptf.process_and_get_visibility(2, data[2], True))
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 1, 1)
+    assert(viewUpdateQueue.empty())
 
-    _logger.debug("removing and re-adding node 4")
-    ptf.remove(4)
-    ptf.filter(4, data[4], False)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
+    # apply the search "notIns"
+    ptf.apply_search([])
+    assert(len(ptf.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 0, 1)
+    assert(viewUpdateQueue.empty())
 
-    _logger.debug("cancelling search")
+    # add some more data, one that doesn't match the search and one that does
+    # both match the active filters
+    assert(not ptf.process_and_get_visibility(3, data[3], False))
+    assert(len(ptf.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 1)
+    assert(viewUpdateQueue.empty())
+
+    assert(ptf.process_and_get_visibility(0, data[0], True))
+    assert(ptf.process_and_get_visibility(4, data[4], True))
+    assert(len(ptf.visibleNodeIds) == 2)
+    assert(0 in ptf.visibleNodeIds)
+    assert(4 in ptf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    # change the active mask to hidden
+    ptf.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN)
+    assert(len(ptf.visibleNodeIds) == 1)
+    assert(0 in ptf.visibleNodeIds)
+    # reapply search
+    ptf.apply_search([])
+    assert(len(ptf.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 1)
+    assert(viewUpdateQueue.empty())
+
+    # change the active mask to everything
+    ptf.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN | \
+                        presenter.FilterIds.PACKAGES_INSTALLED | \
+                        presenter.FilterIds.PACKAGES_NOT_INSTALLED)
+    assert(len(ptf.visibleNodeIds) == 0)
+    # change the search string to "installed"
+    ptf.apply_search([0, 3, 4])
+    assert(len(ptf.visibleNodeIds) == 3)
+    assert(0 in ptf.visibleNodeIds)
+    assert(3 in ptf.visibleNodeIds)
+    assert(4 in ptf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    # remove some data, including the installed package
+    ptf.remove([1, 2, 3])
+    assert(len(ptf.visibleNodeIds) == 2)
+    assert(0 in ptf.visibleNodeIds)
+    assert(4 in ptf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 0, 0)
+    assert(viewUpdateQueue.empty())
+
+    # update the not installed package so that it is now installed
+    assert(ptf.process_and_get_visibility(4, data[3], True))
+    assert(len(ptf.visibleNodeIds) == 2)
+    assert(0 in ptf.visibleNodeIds)
+    assert(4 in ptf.visibleNodeIds)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 0)
+    assert(viewUpdateQueue.empty())
+
+    # remove the search restriction; check that nothing changes
     ptf.apply_search(None)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
-
-    _logger.debug("adding node 0 back in")
-    ptf.filter(0, data[0], True)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
-
-    _logger.debug("updating node 4 from hidden to installed")
-    package3.isHidden = False
-    package3.isInstalled = True
-    ptf.filter(4, data[4], True)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
-
-    _logger.debug("updating node 4 from installed to hidden")
-    package3.isHidden = True
-    package3.isInstalled = False
-    ptf.filter(4, data[4], True)
-    _logger.debug("updating view")
-    ptf.update_view()
-    _drain_queue(viewCommandQueue)
+    assert(len(ptf.visibleNodeIds) == 2)
+    assert(0 in ptf.visibleNodeIds)
+    assert(4 in ptf.visibleNodeIds)
+    assert(viewUpdateQueue.empty())
