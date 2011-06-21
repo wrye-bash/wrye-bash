@@ -242,7 +242,14 @@ def main():
     if len(extra) > 0:
         parser.print_help()
         return
-        
+     
+    if opts.Psyco:
+        try:
+            import psyco
+            psyco.full()
+        except:
+            pass
+            
     #--Initialize Directories and some settings
     #  required before the rest has imported
     SetUserPath('bash.ini',opts.userPath)#get('-u'))
@@ -309,10 +316,4 @@ def main():
 ##        print "Really exitted"
 
 if __name__ == '__main__':
-#    try:
-#        if '-d' not in opts and '0' not in args:
-#            import psyco
-#            psyco.full()
-#    except:
-#        pass
     main()
