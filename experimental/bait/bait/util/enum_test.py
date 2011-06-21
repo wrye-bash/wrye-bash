@@ -114,29 +114,29 @@ def enum_test():
     try:
         assert Mammals.Bat != Mammals.Bat | Mammals.Bat
         assert False
-    except: pass
+    except TypeError: pass
     try:
         assert Mammals.Bat != Mammals.Bat & Mammals.Bat
         assert False
-    except: pass
+    except TypeError: pass
     try:
         assert Mammals.Bat != Mammals.Bat ^ Mammals.Bat
         assert False
-    except: pass
+    except TypeError: pass
 
     try:
         dummy = ~Mammals.Bat
         assert False
-    except: pass
+    except TypeError: pass
     try:
         dummy = Mammals.Bat | 3
         assert False
-    except: pass
+    except TypeError: pass
 
     try:
         for elem in Mammals.Bat: pass
         assert False
-    except: pass
+    except TypeError: pass
 
 
 def make_enum_test():
@@ -149,7 +149,7 @@ def make_enum_test():
     try:
         dummy = flagEnumClass.SomeAir & enumClass.e2
         assert False
-    except: pass
+    except TypeError: pass
     assert enumClass.e3
 
     enumClass = enum.make_enum("eclass", ('e1',5), 'e2', ('e3',5))
@@ -165,4 +165,4 @@ def make_enum_test():
         dummy = enum.make_enum("enum1", ('e1', 5)).e1 == \
                 enum.make_enum("enum1", ('e1', 5)).e1
         assert False
-    except: pass
+    except TypeError: pass

@@ -112,4 +112,12 @@ class DirectoryNodeAttributes(_PackageContentsTreeNodeAttributes):
 class FileNodeAttributes(_PackageContentsTreeNodeAttributes):
     def __init__(self):
         _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.FILE)
+        self.crc = None
         self.pendingOperation = model.Operations.NONE
+        self.packageNodeId = None
+        self.isMatched = False
+        self.isMismatched = False
+        self.isMissing = False
+        self.hasConflicts = False
+        self.isMasked = False
+        self.isCruft = False

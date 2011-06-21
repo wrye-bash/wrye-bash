@@ -42,6 +42,49 @@ def assert_stats_update(viewUpdateQueue, filterId, current, total):
     assert(total == setFilterStatsUpdate.total)
 
 
+def incomplete_subclasses_test():
+    # this is just to get some lines out of the "Missing" list of the coverage tool
+    viewUpdateQueue = Queue.Queue()
+    class BadFilter(filters._Filter):
+        def __init__(self):
+            filters._Filter.__init__(self, None)
+    f = BadFilter()
+    try:
+        f.process_and_get_visibility(0, None)
+        assert(False)
+    except NotImplementedError: pass
+    try:
+        f.get_visible_node_ids(None)
+        assert(False)
+    except NotImplementedError: pass
+    try:
+        f.remove(None)
+        assert(False)
+    except NotImplementedError: pass
+    try:
+        f.refresh_view(None)
+        assert(False)
+    except NotImplementedError: pass
+    try:
+        f.update_view(None, None)
+        assert(False)
+    except NotImplementedError: pass
+
+    class BadFilterButton(filters._FilterButton):
+        def __init__(self):
+            filters._FilterButton.__init__(self, None, None)
+    f = BadFilterButton()
+    try:
+        f._match(None, None)
+        assert(False)
+    except NotImplementedError: False
+
+    try:
+        f = filters._AggregateFilter([filters._DirtyAddFilter(viewUpdateQueue)])
+        assert(False)
+    except RuntimeError: pass
+
+
 def package_contents_tree_filter_test():
     viewUpdateQueue = Queue.Queue()
     f = filters.PackageContentsTreeFilter(viewUpdateQueue)
@@ -333,3 +376,208 @@ def dirty_list_filter_test():
     assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_ADD, 0, 0)
     assert(viewUpdateQueue.empty())
 
+
+def conflict_list_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    f = filters.ConflictsFilter(viewUpdateQueue, 1)
+
+    # define data structure
+    data = {}
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "file1"
+    fileAttributes1.packageNodeId = 100
+    fileAttributes1.crc = 0x11111111
+    fileAttributes1.isInstalled = True
+    data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "file1"
+    fileAttributes2.packageNodeId = 101
+    fileAttributes2.crc = 0x22222222
+    fileAttributes2.isInstalled = True
+    data[1] = fileAttributes2
+    fileAttributes3 = node_attributes.FileNodeAttributes()
+    fileAttributes3.label = "file1"
+    fileAttributes3.packageNodeId = 102
+    fileAttributes3.crc = 0x11111111
+    fileAttributes3.isInstalled = False
+    data[2] = fileAttributes3
+
+    # test initial conditions
+    assert(len(f.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
+
+    # set active filters
+    f.set_active_mask(presenter.FilterIds.CONFLICTS_SELECTED| \
+                      presenter.FilterIds.CONFLICTS_ACTIVE| \
+                      presenter.FilterIds.CONFLICTS_HIGHER| \
+                      presenter.FilterIds.CONFLICTS_MISMATCHED)
+
+    # add data
+    assert f.process_and_get_visibility(0, data[0], data[1], 2)
+    assert len(f.visibleNodeIds) == 1
+    assert (101, 0) in f.visibleNodeIds
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_SELECTED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_ACTIVE, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_HIGHER, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_MISMATCHED, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+    assert not f.process_and_get_visibility(0, data[0], data[2], 3)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_SELECTED, 1, 2)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_INACTIVE, 0, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_HIGHER, 1, 2)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_MATCHED, 0, 1)
+    assert(viewUpdateQueue.empty())
+
+
+def selected_list_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    f = filters.SelectedFilter(viewUpdateQueue)
+
+    # define data structure
+    data = {}
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "matchedFile"
+    fileAttributes1.isMatched = True
+    data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "mismatchedFile"
+    fileAttributes2.isInstalled = True
+    fileAttributes2.isMismatched = True
+    data[1] = fileAttributes2
+    fileAttributes3 = node_attributes.FileNodeAttributes()
+    fileAttributes3.label = "missingFile"
+    fileAttributes3.isInstalled = True
+    fileAttributes3.isMissing = True
+    data[2] = fileAttributes3
+    fileAttributes4 = node_attributes.FileNodeAttributes()
+    fileAttributes4.label = "conflictingFile"
+    fileAttributes4.isInstalled = True
+    fileAttributes4.hasConflicts = True
+    fileAttributes4.isMatched = True
+    data[3] = fileAttributes4
+
+    # add data
+    assert not f.process_and_get_visibility(0, data[0])
+    assert(len(f.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(1, data[1])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MISMATCHED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_NO_CONFLICTS, 1, 1)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MISSING, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_NO_CONFLICTS, 2, 2)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(3, data[3])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MATCHED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_HAS_CONFLICTS, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+
+def unselected_list_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    f = filters.UnselectedFilter(viewUpdateQueue)
+
+    # define data structure
+    data = {}
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "matchedFile"
+    fileAttributes1.isInstalled = True
+    fileAttributes1.isMatched = True
+    data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "mismatchedFile"
+    fileAttributes2.isNotInstalled = True
+    fileAttributes2.isMismatched = True
+    data[1] = fileAttributes2
+    fileAttributes3 = node_attributes.FileNodeAttributes()
+    fileAttributes3.label = "missingFile"
+    fileAttributes3.isNotInstalled = True
+    fileAttributes3.isMissing = True
+    data[2] = fileAttributes3
+    fileAttributes4 = node_attributes.FileNodeAttributes()
+    fileAttributes4.label = "conflictingFile"
+    fileAttributes4.isNotInstalled = True
+    fileAttributes4.hasConflicts = True
+    fileAttributes4.isMatched = True
+    data[3] = fileAttributes4
+
+    # add data
+    assert not f.process_and_get_visibility(0, data[0])
+    assert(len(f.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(1, data[1])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MISMATCHED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_NO_CONFLICTS, 1, 1)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MISSING, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_NO_CONFLICTS, 2, 2)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(3, data[3])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MATCHED, 1, 1)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_HAS_CONFLICTS, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+
+def skipped_list_filter_test():
+    viewUpdateQueue = Queue.Queue()
+    f = filters.SkippedFilter(viewUpdateQueue)
+
+    # define data structure
+    data = {}
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "regularFile"
+    data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "maskedFile"
+    fileAttributes2.isMasked= True
+    data[1] = fileAttributes2
+    fileAttributes3 = node_attributes.FileNodeAttributes()
+    fileAttributes3.label = "cruftFile"
+    fileAttributes3.isCruft = True
+    data[2] = fileAttributes3
+
+    # add data
+    assert not f.process_and_get_visibility(0, data[0])
+    assert(len(f.visibleNodeIds) == 0)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(1, data[1])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_MASKED, 1, 1)
+    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2])
+    assert(len(f.visibleNodeIds) == 0)
+    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_NONGAME, 1, 1)
+    assert(viewUpdateQueue.empty())
+
+
+def last_bits_test():
+    class DummyFilter(filters._FilterGroup):
+        def __init__(self, viewUpdateQueue):
+            filters._FilterGroup.__init__(
+                self,
+                filters._OrFilter([
+                    filters._AndFilter([filters._SkippedMaskedFilter(viewUpdateQueue),
+                                        filters._SkippedNonGameFilter(viewUpdateQueue)]),
+                    filters._AndFilter([filters._DirtyAddFilter(viewUpdateQueue),
+                                        filters._DirtyDeleteFilter(viewUpdateQueue)])]))
+
+    viewUpdateQueue = Queue.Queue()
+    f = DummyFilter(viewUpdateQueue)
+
+    data = {}
+    fileAttributes1 = node_attributes.FileNodeAttributes()
+    fileAttributes1.label = "testFile"
+    fileAttributes1.isMasked = True
+    fileAttributes1.pendingOperation = model.Operations.COPY
+    data[0] = fileAttributes1
+
+    assert not f.process_and_get_visibility(0, data[0])

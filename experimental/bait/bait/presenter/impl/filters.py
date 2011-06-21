@@ -31,6 +31,11 @@ from ...presenter import view_commands
 
 _logger = logging.getLogger(__name__)
 
+_CONFLICT_LOCAL_NODE_ATTRIBUTES_IDX = 0
+_CONFLICT_OTHER_NODE_ATTRIBUTES_IDX = 1
+_CONFLICT_LOCAL_PACKAGE_ORDINAL_IDX = 2
+_CONFLICT_OTHER_PACKAGE_ORDINAL_IDX = 3
+
 
 class _Filter:
     """This class and all subclasses are intended only for single-threaded access"""
@@ -90,8 +95,7 @@ class _FilterButton(_Filter):
             self._discard_node_id(nodeId)
             return False
         self._matchedNodeIds.add(nodeId)
-        _logger.debug("filter %s matched node %d (%s)",
-                      self._idMask, nodeId, nodeAttributes.label)
+        _logger.debug("filter %s matched node %s", self._idMask, nodeId)
         return self.is_active()
     def get_visible_node_ids(self, filterId):
         if filterId & self._idMask != 0:
@@ -114,11 +118,11 @@ class _FilterButton(_Filter):
     def update_view(self, nodeId, getHypotheticalVisibilityFn):
         matchedNodeIds = self._get_matched_node_ids_for_stats()
         if nodeId in matchedNodeIds and getHypotheticalVisibilityFn(nodeId, self._idMask):
-            _logger.debug("adding node %d to filter %s's hypothetically visible list",
+            _logger.debug("adding node %s to filter %s's hypothetically visible list",
                           nodeId, self._idMask)
             self._hypotheticallyVisibleNodeIds.add(nodeId)
         else:
-            _logger.debug("removing node %d from filter %s's hypothetically visible list",
+            _logger.debug("removing node %s from filter %s's hypothetically visible list",
                           nodeId, self._idMask)
             self._hypotheticallyVisibleNodeIds.discard(nodeId)
         self._sync_to_view(matchedNodeIds)
@@ -272,8 +276,7 @@ class _FilterGroup:
         self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
     def _process_and_get_visibility(self, nodeId, nodeAttributes, arg):
         """adds/updates node and returns whether the node should be visible"""
-        _logger.debug("processing node for %s: %d (%s)",
-                      self.__class__.__name__, nodeId, nodeAttributes.label)
+        _logger.debug("processing node for %s: %s", self.__class__.__name__, nodeId)
         # process and incrementally update state
         retVal = self._filter.process_and_get_visibility(nodeId, nodeAttributes)
         self._update_visible_node_ids(nodeId, retVal, arg)
@@ -305,7 +308,8 @@ class _FilterGroup:
 class _HiddenPackagesFilter(_TreeFilterButton):
     """Controls display of hidden packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN, viewUpdateQueue)
+        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN,
+                                   viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isHidden:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
@@ -317,7 +321,7 @@ class _InstalledPackagesFilter(_TreeFilterButton):
     """Controls display of installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
         _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_INSTALLED,
-                               viewUpdateQueue)
+                                   viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isInstalled:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
@@ -329,7 +333,7 @@ class _NotInstalledPackagesFilter(_TreeFilterButton):
     """Controls display of non-installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
         _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_NOT_INSTALLED,
-                               viewUpdateQueue)
+                                   viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isNotInstalled:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
@@ -353,7 +357,7 @@ class _PluginFilesFilter(_TreeFilterButton):
     """Controls display of plugin files in the package contents tree"""
     def __init__(self, viewUpdateQueue):
         _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_PLUGINS,
-                               viewUpdateQueue)
+                                   viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isPlugin:
             if nodeAttributes.nodeType is model.NodeTypes.FILE:
@@ -381,7 +385,7 @@ class _DirtyAddFilter(_FilterButton):
                nodeAttributes.pendingOperation == model.Operations.COPY
 
 class _DirtyUpdateFilter(_FilterButton):
-    """Controls display of plugin files in the package contents tree"""
+    """Controls display of pending overwrites in the dirty list"""
     def __init__(self, viewUpdateQueue):
         _FilterButton.__init__(self, presenter.FilterIds.DIRTY_UPDATE, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
@@ -389,12 +393,184 @@ class _DirtyUpdateFilter(_FilterButton):
                nodeAttributes.pendingOperation == model.Operations.OVERWRITE
 
 class _DirtyDeleteFilter(_FilterButton):
-    """Controls display of cruft files in the package contents tree"""
+    """Controls display of pending deletes in the dirty list"""
     def __init__(self, viewUpdateQueue):
         _FilterButton.__init__(self, presenter.FilterIds.DIRTY_DELETE, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         return nodeAttributes.nodeType is model.NodeTypes.FILE and \
                nodeAttributes.pendingOperation == model.Operations.DELETE
+
+class _ConflictsSelectedFilter(_FilterButton):
+    """Controls display of local selected files in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_SELECTED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_LOCAL_NODE_ATTRIBUTES_IDX].isInstalled
+
+class _ConflictsUnselectedFilter(_FilterButton):
+    """Controls display of local unselected files in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_UNSELECTED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return not nodeAttributes[_CONFLICT_LOCAL_NODE_ATTRIBUTES_IDX].isInstalled
+
+class _ConflictsActiveFilter(_FilterButton):
+    """Controls display of foreign selected files in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_ACTIVE,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_OTHER_NODE_ATTRIBUTES_IDX].isInstalled
+
+class _ConflictsInactiveFilter(_FilterButton):
+    """Controls display of foreign unselected files in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_INACTIVE,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return not nodeAttributes[_CONFLICT_OTHER_NODE_ATTRIBUTES_IDX].isInstalled
+
+class _ConflictsHigherFilter(_FilterButton):
+    """Controls display of files in higher-priority packages in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_HIGHER,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_LOCAL_PACKAGE_ORDINAL_IDX] < \
+               nodeAttributes[_CONFLICT_OTHER_PACKAGE_ORDINAL_IDX]
+
+class _ConflictsLowerFilter(_FilterButton):
+    """Controls display of files in lower-priority packages in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_LOWER,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_LOCAL_PACKAGE_ORDINAL_IDX] > \
+               nodeAttributes[_CONFLICT_OTHER_PACKAGE_ORDINAL_IDX]
+
+class _ConflictsMatchedFilter(_FilterButton):
+    """Controls display of matching files in other packages in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_MATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_LOCAL_NODE_ATTRIBUTES_IDX].crc == \
+               nodeAttributes[_CONFLICT_OTHER_NODE_ATTRIBUTES_IDX].crc
+
+class _ConflictsMismatchedFilter(_FilterButton):
+    """Controls display of non-matching files in other packages in the conflicts list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.CONFLICTS_MISMATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        # it is assumed that this is a file
+        return nodeAttributes[_CONFLICT_LOCAL_NODE_ATTRIBUTES_IDX].crc != \
+               nodeAttributes[_CONFLICT_OTHER_NODE_ATTRIBUTES_IDX].crc
+
+class _SelectedMatchedFilter(_FilterButton):
+    """Controls display of selected, matched files in the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SELECTED_MATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isInstalled and nodeAttributes.isMatched
+
+class _SelectedMismatchedFilter(_FilterButton):
+    """Controls display of selected, mismatched files in the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SELECTED_MISMATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isInstalled and nodeAttributes.isMismatched
+
+class _SelectedMissingFilter(_FilterButton):
+    """Controls display of selected, missing files in the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SELECTED_MISSING,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isInstalled and nodeAttributes.isMissing
+
+class _SelectedHasConflictsFilter(_FilterButton):
+    """Controls display of selected, conflicting files in the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SELECTED_HAS_CONFLICTS,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isInstalled and nodeAttributes.hasConflicts
+
+class _SelectedNoConflictsFilter(_FilterButton):
+    """Controls display of selected, unique files in the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SELECTED_NO_CONFLICTS,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isInstalled and not nodeAttributes.hasConflicts
+
+class _UnselectedMatchedFilter(_FilterButton):
+    """Controls display of unselected, matched files in the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.UNSELECTED_MATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isNotInstalled and nodeAttributes.isMatched
+
+class _UnselectedMismatchedFilter(_FilterButton):
+    """Controls display of unselected, mismatched files in the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.UNSELECTED_MISMATCHED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isNotInstalled and nodeAttributes.isMismatched
+
+class _UnselectedMissingFilter(_FilterButton):
+    """Controls display of unselected, missing files in the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.UNSELECTED_MISSING,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isNotInstalled and nodeAttributes.isMissing
+
+class _UnselectedHasConflictsFilter(_FilterButton):
+    """Controls display of unselected, conflicting files in the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.UNSELECTED_HAS_CONFLICTS,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isNotInstalled and nodeAttributes.hasConflicts
+
+class _UnselectedNoConflictsFilter(_FilterButton):
+    """Controls display of unselected, unique files in the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.UNSELECTED_NO_CONFLICTS,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isNotInstalled and not nodeAttributes.hasConflicts
+
+class _SkippedMaskedFilter(_FilterButton):
+    """Controls display of masked files in the skipped list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SKIPPED_MASKED,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isMasked
+
+class _SkippedNonGameFilter(_FilterButton):
+    """Controls display of non-game files in the skipped list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.SKIPPED_NONGAME,
+                               viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.isCruft
 
 
 class PackagesTreeFilter(_FilterGroup):
@@ -463,42 +639,57 @@ class DirtyFilter(_FilterGroup):
                                          _DirtyUpdateFilter(viewUpdateQueue),
                                          _DirtyDeleteFilter(viewUpdateQueue)]))
 
-#class ConflictsFilter(_StubFilter):
-    #"""Filters contents of the conflicts list"""
-    #def __init__(self, viewUpdateQueue):
-        #_StubFilter.__init__(self, viewUpdateQueue,
-                             #[presenter.FilterIds.CONFLICTS_SELECTED,
-                              #presenter.FilterIds.CONFLICTS_UNSELECTED,
-                              #presenter.FilterIds.CONFLICTS_ACTIVE,
-                              #presenter.FilterIds.CONFLICTS_INACTIVE,
-                              #presenter.FilterIds.CONFLICTS_HIGHER,
-                              #presenter.FilterIds.CONFLICTS_LOWER,
-                              #presenter.FilterIds.CONFLICTS_MISMATCHED,
-                              #presenter.FilterIds.CONFLICTS_MATCHED])
+class ConflictsFilter(_FilterGroup):
+    """Filters contents of the conflicts list.  visibleNodeIds will be a set of tuples of
+    the form: (conflictingPackageNodeId, nodeId)"""
+    def __init__(self, viewUpdateQueue, referencePackageIdx):
+        _FilterGroup.__init__(self,
+                              _AndFilter([
+                                  _OrFilter([_ConflictsSelectedFilter(viewUpdateQueue),
+                                             _ConflictsUnselectedFilter(
+                                                 viewUpdateQueue)]),
+                                  _OrFilter([_ConflictsActiveFilter(viewUpdateQueue),
+                                             _ConflictsInactiveFilter(viewUpdateQueue)]),
+                                  _OrFilter([_ConflictsHigherFilter(viewUpdateQueue),
+                                             _ConflictsLowerFilter(viewUpdateQueue)]),
+                                  _OrFilter([_ConflictsMismatchedFilter(viewUpdateQueue),
+                                             _ConflictsMatchedFilter(viewUpdateQueue)])]))
+        self._referencePackageIdx = referencePackageIdx
+    def process_and_get_visibility(self, nodeId, nodeAttributes,
+                                   conflictNodeAttributes, conflictNodePackageIdx):
+        """It is assumed only file nodes with conflicts will be passed in here"""
+        return _FilterGroup.process_and_get_visibility(
+            self, (conflictNodeAttributes.packageNodeId, nodeId),
+            (nodeAttributes, conflictNodeAttributes,
+             self._referencePackageIdx, conflictNodePackageIdx))
 
-#class SelectedFilter(_StubFilter):
-    #"""Filters contents of the selected list"""
-    #def __init__(self, viewUpdateQueue):
-        #_StubFilter.__init__(self, viewUpdateQueue,
-                             #[presenter.FilterIds.SELECTED_MATCHED,
-                              #presenter.FilterIds.SELECTED_MISMATCHED,
-                              #presenter.FilterIds.SELECTED_MISSING,
-                              #presenter.FilterIds.SELECTED_HAS_CONFLICTS,
-                              #presenter.FilterIds.SELECTED_NO_CONFLICTS])
+class SelectedFilter(_FilterGroup):
+    """Filters contents of the selected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterGroup.__init__(self,
+                              _AndFilter([
+                                  _OrFilter([_SelectedMatchedFilter(viewUpdateQueue),
+                                             _SelectedMismatchedFilter(viewUpdateQueue),
+                                             _SelectedMissingFilter(viewUpdateQueue)]),
+                                  _OrFilter([
+                                      _SelectedHasConflictsFilter(viewUpdateQueue),
+                                      _SelectedNoConflictsFilter(viewUpdateQueue)])]))
 
-#class UnselectedFilter(_StubFilter):
-    #"""Filters contents of the unselected list"""
-    #def __init__(self, viewUpdateQueue):
-        #_StubFilter.__init__(self, viewUpdateQueue,
-                             #[presenter.FilterIds.UNSELECTED_MATCHED,
-                              #presenter.FilterIds.UNSELECTED_MISMATCHED,
-                              #presenter.FilterIds.UNSELECTED_MISSING,
-                              #presenter.FilterIds.UNSELECTED_HAS_CONFLICTS,
-                              #presenter.FilterIds.UNSELECTED_NO_CONFLICTS])
+class UnselectedFilter(_FilterGroup):
+    """Filters contents of the unselected list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterGroup.__init__(self,
+                              _AndFilter([
+                                  _OrFilter([_UnselectedMatchedFilter(viewUpdateQueue),
+                                             _UnselectedMismatchedFilter(viewUpdateQueue),
+                                             _UnselectedMissingFilter(viewUpdateQueue)]),
+                                  _OrFilter([
+                                      _UnselectedHasConflictsFilter(viewUpdateQueue),
+                                      _UnselectedNoConflictsFilter(viewUpdateQueue)])]))
 
-#class SkippedFilter(_StubFilter):
-    #"""Filters contents of the dirty list"""
-    #def __init__(self, viewUpdateQueue):
-        #_StubFilter.__init__(self, viewUpdateQueue,
-                             #[presenter.FilterIds.SKIPPED_MASKED,
-                              #presenter.FilterIds.SKIPPED_NONGAME])
+class SkippedFilter(_FilterGroup):
+    """Filters contents of the dirty list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterGroup.__init__(self,
+                              _OrFilter([_SkippedMaskedFilter(viewUpdateQueue),
+                                         _SkippedNonGameFilter(viewUpdateQueue)]))
