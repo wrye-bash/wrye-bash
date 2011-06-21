@@ -62,7 +62,10 @@ def flag_enum_test():
     assert 3 == heavyAir
     assert Air.parse_value(5) != heavyAir
     assert Air.parse_value(3) == heavyAir
-    assert Air.parse_value(10102) is None
+    try:
+        dummy = Air.parse_value(10102)
+        assert False
+    except ValueError: pass
     assert Air.Hydrogen == ~heavyAir
     assert Air.Oxygen in heavyAir
     assert Air.Hydrogen not in heavyAir
@@ -71,12 +74,30 @@ def flag_enum_test():
     assert allAir == heavyAir ^ Air.Hydrogen
     assert allAir ^ heavyAir == Air.Hydrogen
 
-    assert allAir & None is None
-    assert allAir | None is None
-    assert allAir ^ None is None
-    assert None & allAir is None
-    assert None | allAir is None
-    assert None ^ allAir is None
+    try:
+        dummy = allAir & None
+        assert False
+    except ValueError: pass
+    try:
+        dummy = allAir | None
+        assert False
+    except ValueError: pass
+    try:
+        dummy = allAir ^ None
+        assert False
+    except ValueError: pass
+    try:
+        dummy = None & allAir
+        assert False
+    except ValueError: pass
+    try:
+        dummy = None | allAir
+        assert False
+    except ValueError: pass
+    try:
+        dummy = None ^ allAir
+        assert False
+    except ValueError: pass
     assert ~allAir == Air.NoAir
 
     # test iterations
@@ -97,6 +118,20 @@ def flag_enum_test():
     for airType in Air:
         if airType is not Air.NoAir:
             assert airType in allAir
+
+    # test identities
+    heavyAir = Air.Oxygen | Air.Nitrogen
+    assert heavyAir | Air.NoAir == heavyAir
+    assert Air.NoAir | heavyAir == heavyAir
+    assert heavyAir | heavyAir == heavyAir
+    assert allAir | heavyAir == allAir
+
+    # test overlapping values
+    lightAir = Air.Hydrogen | Air.Nitrogen
+    assert heavyAir.value | lightAir.value == allAir.value
+    assert heavyAir | lightAir == allAir
+    assert lightAir | heavyAir == allAir
+    assert str(heavyAir|lightAir) == str(lightAir|heavyAir)
 
 
 def enum_test():

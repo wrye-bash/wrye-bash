@@ -569,9 +569,19 @@ def last_bits_test():
                                         filters._SkippedNonGameFilter(viewUpdateQueue)]),
                     filters._AndFilter([filters._DirtyAddFilter(viewUpdateQueue),
                                         filters._DirtyDeleteFilter(viewUpdateQueue)])]))
+    class DummyFilter2(filters._FilterGroup):
+        def __init__(self, viewUpdateQueue):
+            filters._FilterGroup.__init__(
+                self,
+                filters._AndFilter([
+                    filters._OrFilter([filters._SkippedMaskedFilter(viewUpdateQueue),
+                                       filters._SkippedNonGameFilter(viewUpdateQueue)]),
+                    filters._OrFilter([filters._DirtyAddFilter(viewUpdateQueue),
+                                       filters._DirtyDeleteFilter(viewUpdateQueue)])]))
 
     viewUpdateQueue = Queue.Queue()
     f = DummyFilter(viewUpdateQueue)
+    f2 = DummyFilter2(viewUpdateQueue)
 
     data = {}
     fileAttributes1 = node_attributes.FileNodeAttributes()
@@ -579,5 +589,21 @@ def last_bits_test():
     fileAttributes1.isMasked = True
     fileAttributes1.pendingOperation = model.Operations.COPY
     data[0] = fileAttributes1
+    fileAttributes2 = node_attributes.FileNodeAttributes()
+    fileAttributes2.label = "testFile2"
+    fileAttributes2.isMasked = True
+    fileAttributes2.isCruft = True
+    data[1] = fileAttributes2
 
     assert not f.process_and_get_visibility(0, data[0])
+    assert not f2.process_and_get_visibility(1, data[1])
+
+    f.set_active_mask(presenter.FilterIds.SKIPPED_MASKED|\
+                      presenter.FilterIds.SKIPPED_NONGAME)
+    f2.set_active_mask(presenter.FilterIds.SKIPPED_MASKED|\
+                       presenter.FilterIds.SKIPPED_NONGAME)
+    assert f.process_and_get_visibility(1, data[1])
+    f.set_active_mask(presenter.FilterIds.DIRTY_ADD|\
+                      presenter.FilterIds.DIRTY_DELETE)
+    f2.set_active_mask(presenter.FilterIds.DIRTY_ADD|\
+                       presenter.FilterIds.DIRTY_DELETE)

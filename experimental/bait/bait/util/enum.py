@@ -52,22 +52,27 @@ class _EnumValue(object):
     def __cmp__(self, other):
         if isinstance(other, _EnumValue):
             if self._type is not other._type:
-                _logger.warn("cannot compare enums of different types: %s, %s",
-                             self._type, other._type)
-                raise TypeError("cannot compare enums of different types")
+                raise TypeError("cannot compare enums of different types: %s, %s" % \
+                             (self._type, other._type))
             return cmp(self.__value, other.__value)
         else:
             # hopefully they're the same type, but this still makes sense if they're not
             return cmp(self.__value, other)
     def __or__(self, other):
         if other is None:
-            _logger.warn("cannot evaluate bitwise operator with None argument")
-            return None
+            raise ValueError("cannot evaluate bitwise operator with None argument")
         self._validate_bitwise_operator_context(other)
-        return _EnumValue(
-            '{0.name} | {1.name}'.format(self, other),
-            self.__value|other.__value,
-            self._type)
+        value = self.__value|other.__value
+        if value == self.__value:
+            return self
+        if value == other.__value:
+            return other
+        if self.__value & other.__value == 0:
+            return _EnumValue(
+                '{0.name} | {1.name}'.format(self, other),
+                self.__value|other.__value,
+                self._type)
+        return self._type.parse_value(value)
     def __ror__(self, other):
         return self.__or__(other)
     def __ior__(self, other):
@@ -75,8 +80,7 @@ class _EnumValue(object):
         return self.__or__(other)
     def __and__(self, other):
         if other is None:
-            _logger.warn("cannot evaluate bitwise operator with None argument")
-            return None
+            raise ValueError("cannot evaluate bitwise operator with None argument")
         self._validate_bitwise_operator_context(other)
         value = self.__value & other.__value
         if value is self.__value:
@@ -91,8 +95,7 @@ class _EnumValue(object):
         return self.__and__(other)
     def __xor__(self, other):
         if other is None:
-            _logger.warn("cannot evaluate bitwise operator with None argument")
-            return None
+            raise ValueError("cannot evaluate bitwise operator with None argument")
         self._validate_bitwise_operator_context(other)
         value = self.__value ^ other.__value
         if value is self.__value:
@@ -111,9 +114,8 @@ class _EnumValue(object):
     def __invert__(self):
         # this operation only makes sense for flag enums
         if not issubclass(self._type, FlagEnum):
-            _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
-                         self._type.__name__)
-            raise TypeError("incompatible type for FlagEnum bitwise operator")
+            raise TypeError("incompatible type for FlagEnum bitwise operator: %s" % \
+                            self._type.__name__)
         enumerables = self._type.__enumerables__
         return functools.reduce(
             _EnumValue.__or__,
@@ -121,9 +123,8 @@ class _EnumValue(object):
     def __iter__(self):
         # this operation only makes sense for flag enums
         if not issubclass(self._type, FlagEnum):
-            _logger.warn("incompatible type for FlagEnum iteration: %s",
-                         self._type.__name__)
-            raise TypeError("incompatible type for FlagEnum iteration")
+            raise TypeError("incompatible type for FlagEnum iteration: %s" % \
+                            self._type.__name__)
         value = self.__value
         if value != 0:
             for pos in itertools.count():
@@ -135,16 +136,13 @@ class _EnumValue(object):
                 yield self._type._parse_value(1 << pos)
     def _validate_bitwise_operator_context(self, other):
         if type(self) is not type(other):
-            _logger.warn("cannot apply bitwise operator to non-enum: %s", type(other))
-            raise TypeError("cannot apply bitwise operator to non-enum")
+            raise TypeError("cannot apply bitwise operator to non-enum: %s" % type(other))
         if not issubclass(self._type, FlagEnum):
-            _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
-                         self._type.__name__)
-            raise TypeError("incompatible type for FlagEnum bitwise operator")
+            raise TypeError("incompatible type for FlagEnum bitwise operator: %s" % \
+                            self._type.__name__)
         if not issubclass(other._type, FlagEnum):
-            _logger.warn("incompatible type for FlagEnum bitwise operator: %s",
-                         other._type.__name__)
-            raise TypeError("incompatible type for FlagEnum bitwise operator")
+            raise TypeError("incompatible type for FlagEnum bitwise operator: %s" % \
+                            other._type.__name__)
     @property
     def name(self):
         return self.__name
@@ -232,8 +230,8 @@ class _EnumMeta(type):
             flagEnum = cls._parse_value(flagVal)
             if flagEnum is None:
                 # don't allow invalid bits in our enums
-                _logger.warn("invalid flag set for %s enum: 0x%x", cls.__name__, flagVal)
-                return None
+                raise ValueError(
+                    "invalid flag set for %s enum: 0x%x" % (cls.__name__, flagVal))
             if retVal is None: retVal = flagEnum
             else: retVal = retVal|flagEnum
         return retVal

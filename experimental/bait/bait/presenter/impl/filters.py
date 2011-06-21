@@ -49,8 +49,9 @@ class _Filter:
         one"""
         activeMask = self._idMask & idMask
         diff = self._activeMask ^ activeMask
-        _logger.debug("changing activemask for %s from %s to %s (diff: %s)",
-                      self.__class__.__name__, self._activeMask, activeMask, diff)
+        _logger.debug("changing activemask for %s(%s) from %s to %s (diff: %s)",
+                      self.__class__.__name__, self._idMask,
+                      self._activeMask, activeMask, diff)
         self._activeMask = activeMask
         return diff
     def get_active_mask(self):
@@ -109,11 +110,7 @@ class _FilterButton(_Filter):
     def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
         visibleNodeIds = getHypotheticalVisibleNodeIdsFn(self._idMask)
         matchedNodeIds = self._get_matched_node_ids_for_stats()
-        if visibleNodeIds is None:
-            self._hypotheticallyVisibleNodeIds = set()
-        else:
-            self._hypotheticallyVisibleNodeIds = \
-                matchedNodeIds.intersection(visibleNodeIds)
+        self._hypotheticallyVisibleNodeIds = matchedNodeIds.intersection(visibleNodeIds)
         self._sync_to_view(matchedNodeIds)
     def update_view(self, nodeId, getHypotheticalVisibilityFn):
         matchedNodeIds = self._get_matched_node_ids_for_stats()
@@ -209,8 +206,11 @@ class _OrFilter(_AggregateFilter):
     def set_active_mask(self, idMask):
         diff = _AggregateFilter.set_active_mask(self, idMask)
         if diff != 0:
-            self.visibleNodeIds = set.union(
-                *[f.visibleNodeIds for f in self._filters if f.is_active()])
+            visibleNodeIdSets = [f.visibleNodeIds for f in self._filters if f.is_active()]
+            if len(visibleNodeIdSets) == 0:
+                self.visibleNodeIds = set()
+            else:
+                self.visibleNodeIds = set.union(*visibleNodeIdSets)
         return diff
     def get_visible_node_ids(self, filterId):
         if filterId & self._idMask != 0:
@@ -232,8 +232,11 @@ class _AndFilter(_AggregateFilter):
     def set_active_mask(self, idMask):
         diff = _AggregateFilter.set_active_mask(self, idMask)
         if diff != 0:
-            self.visibleNodeIds = set.intersection(
-                *[f.visibleNodeIds for f in self._filters if f.is_active()])
+            visibleNodeIdSets = [f.visibleNodeIds for f in self._filters if f.is_active()]
+            if len(visibleNodeIdSets) == 0:
+                self.visibleNodeIds = set()
+            else:
+                self.visibleNodeIds = set.intersection(*visibleNodeIdSets)
         return diff
     def get_visible_node_ids(self, filterId):
         if filterId & self._idMask != 0:
