@@ -56,10 +56,11 @@ class Status(enum.Enum):
     UNSTABLE = None
 
 class Operations(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'COPY', 'RENAME', 'DELETE')
+    __enumerables__ = ('NONE', 'COPY', 'OVERWRITE', 'DELETE')
     # for autocomplete
+    NONE = None
     COPY = None
-    RENAME = None
+    OVERWRITE = None
     DELETE = None
 
 class UpdateTypes(enum.FlagEnum):

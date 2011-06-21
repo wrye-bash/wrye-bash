@@ -74,10 +74,10 @@ class _FilterButton(_Filter):
         _Filter.__init__(self, filterId)
         self._viewUpdateQueue = viewUpdateQueue
         self._matchedNodeIds = set()
-        self._matchedLeafNodeIds = set()
-        self._hypotheticallyVisibleLeafNodeIds = set()
-        self._prevNumVisibleLeafNodes = 0
-        self._prevNumMatchedLeafNodes = 0
+        # only includes nodes that count in the label statistics
+        self._hypotheticallyVisibleNodeIds = set()
+        self._prevNumCurrentNodes = 0
+        self._prevTotalNodes = 0
     def set_active_mask(self, idMask):
         diff = _Filter.set_active_mask(self, idMask)
         if self.is_active():
@@ -87,9 +87,9 @@ class _FilterButton(_Filter):
         return diff
     def process_and_get_visibility(self, nodeId, nodeAttributes):
         if not self._match(nodeId, nodeAttributes):
-            self._matchedNodeIds.discard(nodeId)
-            self._matchedLeafNodeIds.discard(nodeId)
+            self._discard_node_id(nodeId)
             return False
+        self._matchedNodeIds.add(nodeId)
         _logger.debug("filter %s matched node %d (%s)",
                       self._idMask, nodeId, nodeAttributes.label)
         return self.is_active()
@@ -101,47 +101,65 @@ class _FilterButton(_Filter):
         return None
     def remove(self, nodeIds):
         _logger.debug("removing nodes %s from filter %s", nodeIds, self._idMask)
-        self._matchedNodeIds.difference_update(nodeIds)
-        self._matchedLeafNodeIds.difference_update(nodeIds)
-        self._hypotheticallyVisibleLeafNodeIds.difference_update(nodeIds)
+        self._discard_node_ids(nodeIds)
     def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
         visibleNodeIds = getHypotheticalVisibleNodeIdsFn(self._idMask)
+        matchedNodeIds = self._get_matched_node_ids_for_stats()
         if visibleNodeIds is None:
-            self._hypotheticallyVisibleLeafNodeIds = set()
+            self._hypotheticallyVisibleNodeIds = set()
         else:
-            self._hypotheticallyVisibleLeafNodeIds = \
-                self._matchedLeafNodeIds.intersection(visibleNodeIds)
-        self._sync_to_view()
+            self._hypotheticallyVisibleNodeIds = \
+                matchedNodeIds.intersection(visibleNodeIds)
+        self._sync_to_view(matchedNodeIds)
     def update_view(self, nodeId, getHypotheticalVisibilityFn):
-        if nodeId in self._matchedLeafNodeIds and \
-           getHypotheticalVisibilityFn(nodeId, self._idMask):
+        matchedNodeIds = self._get_matched_node_ids_for_stats()
+        if nodeId in matchedNodeIds and getHypotheticalVisibilityFn(nodeId, self._idMask):
             _logger.debug("adding node %d to filter %s's hypothetically visible list",
                           nodeId, self._idMask)
-            self._hypotheticallyVisibleLeafNodeIds.add(nodeId)
+            self._hypotheticallyVisibleNodeIds.add(nodeId)
         else:
             _logger.debug("removing node %d from filter %s's hypothetically visible list",
                           nodeId, self._idMask)
-            self._hypotheticallyVisibleLeafNodeIds.discard(nodeId)
-        self._sync_to_view()
-    def _sync_to_view(self):
-        numVisibleLeafNodes = len(self._hypotheticallyVisibleLeafNodeIds)
-        numMatchedLeafNodes = len(self._matchedLeafNodeIds)
-        if numVisibleLeafNodes != self._prevNumVisibleLeafNodes or \
-           numMatchedLeafNodes != self._prevNumMatchedLeafNodes:
+            self._hypotheticallyVisibleNodeIds.discard(nodeId)
+        self._sync_to_view(matchedNodeIds)
+    def _sync_to_view(self, matchedNodeIds):
+        numCurrentNodes = len(self._hypotheticallyVisibleNodeIds)
+        totalNodes = len(matchedNodeIds)
+        if numCurrentNodes != self._prevNumCurrentNodes or \
+           totalNodes != self._prevTotalNodes:
             _logger.debug("syncing state to view: filter %s: %d/%d",
-                          self._idMask, numVisibleLeafNodes, numMatchedLeafNodes)
+                          self._idMask, numCurrentNodes, totalNodes)
             self._viewUpdateQueue.put(view_commands.SetFilterStats(
-                self._idMask, numVisibleLeafNodes, numMatchedLeafNodes))
-            self._prevNumVisibleLeafNodes = numVisibleLeafNodes
-            self._prevNumMatchedLeafNodes = numMatchedLeafNodes
+                self._idMask, numCurrentNodes, totalNodes))
+            self._prevNumCurrentNodes = numCurrentNodes
+            self._prevTotalNodes = totalNodes
         else:
             _logger.debug("not syncing identical state to view: %s: %d/%d",
-              self._idMask, numVisibleLeafNodes, numMatchedLeafNodes)
-
+              self._idMask, numCurrentNodes, totalNodes)
+    def _discard_node_id(self, nodeId):
+        self._matchedNodeIds.discard(nodeId)
+    def _discard_node_ids(self, nodeIds):
+        self._matchedNodeIds.difference_update(nodeIds)
+        self._hypotheticallyVisibleNodeIds.difference_update(nodeIds)
+    def _get_matched_node_ids_for_stats(self):
+        return self._matchedNodeIds
     def _match(self, nodeId, nodeAttributes):
         """returns whether the filter matches the given node, regardless of whether it is
         active"""
         raise NotImplementedError("subclass must implement")
+
+class _TreeFilterButton(_FilterButton):
+    def __init__(self, filterId, viewUpdateQueue):
+        _FilterButton.__init__(self, filterId, viewUpdateQueue)
+        self._matchedLeafNodeIds = set()
+    def _discard_node_id(self, nodeId):
+        _FilterButton._discard_node_id(self, nodeId)
+        self._matchedLeafNodeIds.discard(nodeId)
+    def _discard_node_ids(self, nodeIds):
+        _FilterButton._discard_node_ids(self, nodeIds)
+        self._matchedLeafNodeIds.difference_update(nodeIds)
+    def _get_matched_node_ids_for_stats(self):
+        return self._matchedLeafNodeIds
 
 class _AggregateFilter(_Filter):
     """Combines a collection of subfilters to form a boolean chain."""
@@ -284,81 +302,99 @@ class _FilterGroup:
         visibleNodeIds = self._filter.get_visible_node_ids(activeMask|filterId)
         return visibleNodeIds is not None and nodeId in visibleNodeIds
 
-class _HiddenPackagesFilter(_FilterButton):
+class _HiddenPackagesFilter(_TreeFilterButton):
     """Controls display of hidden packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN, viewUpdateQueue)
+        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isHidden:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
 
-class _InstalledPackagesFilter(_FilterButton):
+class _InstalledPackagesFilter(_TreeFilterButton):
     """Controls display of installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_INSTALLED,
+        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_INSTALLED,
                                viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isInstalled:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
 
-class _NotInstalledPackagesFilter(_FilterButton):
+class _NotInstalledPackagesFilter(_TreeFilterButton):
     """Controls display of non-installed packages in the packages tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.PACKAGES_NOT_INSTALLED,
+        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_NOT_INSTALLED,
                                viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isNotInstalled:
             if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
 
-class _ResourceFilesFilter(_FilterButton):
+class _ResourceFilesFilter(_TreeFilterButton):
     """Controls display of resource files in the package contents tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.FILES_RESOURCES, viewUpdateQueue)
+        _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_RESOURCES,
+                                   viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isResource:
             if nodeAttributes.nodeType is model.NodeTypes.FILE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
 
-class _PluginFilesFilter(_FilterButton):
+class _PluginFilesFilter(_TreeFilterButton):
     """Controls display of plugin files in the package contents tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.FILES_PLUGINS,
+        _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_PLUGINS,
                                viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isPlugin:
             if nodeAttributes.nodeType is model.NodeTypes.FILE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
 
-class _OtherFilesFilter(_FilterButton):
+class _OtherFilesFilter(_TreeFilterButton):
     """Controls display of cruft files in the package contents tree"""
     def __init__(self, viewUpdateQueue):
-        _FilterButton.__init__(self, presenter.FilterIds.FILES_OTHER,
-                               viewUpdateQueue)
+        _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_OTHER, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         if nodeAttributes.isOther:
             if nodeAttributes.nodeType is model.NodeTypes.FILE:
                 self._matchedLeafNodeIds.add(nodeId)
-            self._matchedNodeIds.add(nodeId)
             return True
         return False
+
+class _DirtyAddFilter(_FilterButton):
+    """Controls display of pending additions in the dirty list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.DIRTY_ADD, viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.nodeType is model.NodeTypes.FILE and \
+               nodeAttributes.pendingOperation == model.Operations.COPY
+
+class _DirtyUpdateFilter(_FilterButton):
+    """Controls display of plugin files in the package contents tree"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.DIRTY_UPDATE, viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.nodeType is model.NodeTypes.FILE and \
+               nodeAttributes.pendingOperation == model.Operations.OVERWRITE
+
+class _DirtyDeleteFilter(_FilterButton):
+    """Controls display of cruft files in the package contents tree"""
+    def __init__(self, viewUpdateQueue):
+        _FilterButton.__init__(self, presenter.FilterIds.DIRTY_DELETE, viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        return nodeAttributes.nodeType is model.NodeTypes.FILE and \
+               nodeAttributes.pendingOperation == model.Operations.DELETE
 
 
 class PackagesTreeFilter(_FilterGroup):
@@ -419,13 +455,13 @@ class PackageContentsTreeFilter(_FilterGroup):
                                          _PluginFilesFilter(viewUpdateQueue),
                                          _OtherFilesFilter(viewUpdateQueue)]))
 
-#class DirtyFilter(_FilterGroup):
-    #"""Filters contents of the dirty files list"""
-    #def __init__(self, viewUpdateQueue):
-        #_FilterGroup.__init__(self,
-                              #_OrFilter([_DirtyAddFilter(viewUpdateQueue),
-                                         #_DirtyUpdateFilter(viewUpdateQueue),
-                                         #_DirtyDeleteFilter(viewUpdateQueue)]))
+class DirtyFilter(_FilterGroup):
+    """Filters contents of the dirty files list"""
+    def __init__(self, viewUpdateQueue):
+        _FilterGroup.__init__(self,
+                              _OrFilter([_DirtyAddFilter(viewUpdateQueue),
+                                         _DirtyUpdateFilter(viewUpdateQueue),
+                                         _DirtyDeleteFilter(viewUpdateQueue)]))
 
 #class ConflictsFilter(_StubFilter):
     #"""Filters contents of the conflicts list"""

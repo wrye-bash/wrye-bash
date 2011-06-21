@@ -112,3 +112,4 @@ class DirectoryNodeAttributes(_PackageContentsTreeNodeAttributes):
 class FileNodeAttributes(_PackageContentsTreeNodeAttributes):
     def __init__(self):
         _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.FILE)
+        self.pendingOperation = model.Operations.NONE
