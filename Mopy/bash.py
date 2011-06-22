@@ -229,7 +229,7 @@ def main():
                         const=1,
                         dest='mode',
                         help='disables CBash and uses python code to build bashed patch.')
-parser.add_option('--restarting',
+    parser.add_option('--restarting',
                         action='store_true',
                         default=False,
                         dest='restarting',
