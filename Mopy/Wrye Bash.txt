@@ -1622,9 +1622,9 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Magic: Script Effect Silencer__
   * Script Effect will be silenced and have no graphics.
 * __Set Sound Attenuation Levels:__
-  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. (Lower attenuation = higher volume.) This one only affects Nirnroots.'
+  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
 * __Set Sound Attenuation Levels: Nirnroots Only__
-  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. (Lower attenuation = higher volume.) This one only affects Nirnroots.'
+  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
 
 === Tweak Clothes
 * __Overview:__ This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated -- however your tastes may vary.
