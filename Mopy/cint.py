@@ -3,6 +3,7 @@ import struct
 import math
 from os.path import exists
 try:
+    import bolt
     from bolt import GPath, deprint, _
     import bush
     import bosh
@@ -13,8 +14,20 @@ except:
 _CBashRequiredVersion = (0,5,2)
 
 CBash = None
-if(exists(".\\CBash.dll")):
-    CBash = CDLL("CBash.dll")
+CBashdll = None
+if bolt.CBash == 0: #regular depends on the filepath existing.
+    if exists(".\\CBash.dll"):
+        CBashdll = ".\\CBash.dll"
+elif bolt.CBash == 1: #force python mode
+    CBash = None
+elif bolt.CBash == 2: #attempt to force CBash mode
+    for filename in [".\\CBash.dll",".\\rename_CBash.dll",".\\_CBash.dll"]:
+        if exists(filename):
+            CBashdll = filename
+            break
+
+if CBashdll:
+    CBash = CDLL(CBashdll)
     try:
         try:
             _CGetVersionMajor = CBash.GetVersionMajor
@@ -157,7 +170,7 @@ FORMIDAttrs = {
                 'SLGM':['script'],
                 'WEAP':['script','enchantment']
                 }
-                
+
 #Helper functions
 class API_FIELDS(object):
     """These fields MUST be defined in the same order as in CBash's Common.h"""
@@ -1773,7 +1786,7 @@ class ObBaseRecord(object):
                     if isinstance(tempconflicting[attr],tuple) and tempconflicting[attr][0] == None:
                         try:
                             deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GName, tempconflicting[attr]))
-                        except: #an record type that doesn't have a full subrecord:
+                        except: #a record type that doesn't have a full subrecord:
                             deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GName, tempconflicting[attr]))
                         continue
                 conflicting[attr]=tempconflicting[attr]
@@ -5940,7 +5953,7 @@ class ObCollection:
 
     def __del__(self):
         _CDeleteCollection(self._CollectionID)
-    
+
     def Debug_DumpModFiles(self):
         value = "Collection (%08X) contains the following modfiles:\n" % (self._CollectionID,)
         for mod in self.AllMods:

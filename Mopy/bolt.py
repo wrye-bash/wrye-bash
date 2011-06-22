@@ -179,6 +179,7 @@ if os.path.exists(languagePkl):
 else:
     def _(text,encode=True): return text
 
+CBash = 0
 # Errors ----------------------------------------------------------------------
 class BoltError(Exception):
     """Generic error with a string message."""
