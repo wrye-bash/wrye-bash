@@ -33059,6 +33059,7 @@ def testPermissions(path,permissions='rwcd'):
         w = write permission
         c = file creation permission
         d = file deletion permission'''
+    return True # Temporarily disabled, for testing purposes
     path = GPath(path)
     permissions = permissions.lower()
     def getTemp(path):  # Get a temp file name
