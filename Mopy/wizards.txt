@@ -286,8 +286,8 @@ Return index of first occurrance of a substring
 * __Arguments:__
   * **string:** a string or variable to search in.
   * **substring:** a string or variable to search for.
-  * **start:** Index to start searching in **string.** (Optional.  If not specified, searching will start at the beggining of **string**)
-  * **stop:** Index to start searching. (Optional.  If not specified, searching will stop at the end of **string**)
+  * **start:** Index at which to start searching in **string.** (Optional.  If not specified, searching will start at the beggining of **string**)
+  * **stop:** Index at which to stop searching. (Optional.  If not specified, searching will stop at the end of **string**)
 * __Return:__
   * The index of the first occurance of **substring** in **string**
   * **-1** if **substring** could not be found
