@@ -49,12 +49,14 @@ _conflictsTabFilterIds = frozenset((presenter.FilterIds.CONFLICTS_SELECTED,
                                     presenter.FilterIds.CONFLICTS_LOWER))
 _selectedTabFilterIds = frozenset((presenter.FilterIds.SELECTED_MATCHED,
                                    presenter.FilterIds.SELECTED_MISMATCHED,
-                                   presenter.FilterIds.SELECTED_OVERRIDDEN,
-                                   presenter.FilterIds.SELECTED_MISSING))
+                                   presenter.FilterIds.SELECTED_MISSING,
+                                   presenter.FilterIds.SELECTED_NO_CONFLICTS,
+                                   presenter.FilterIds.SELECTED_HAS_CONFLICTS))
 _unselectedTabFilterIds = frozenset((presenter.FilterIds.UNSELECTED_MATCHED,
                                      presenter.FilterIds.UNSELECTED_MISMATCHED,
-                                     presenter.FilterIds.UNSELECTED_OVERRIDDEN,
-                                     presenter.FilterIds.UNSELECTED_MISSING))
+                                     presenter.FilterIds.UNSELECTED_MISSING,
+                                     presenter.FilterIds.UNSELECTED_NO_CONFLICTS,
+                                     presenter.FilterIds.UNSELECTED_HAS_CONFLICTS))
 _skippedTabFilterIds = frozenset((presenter.FilterIds.SKIPPED_NONGAME,
                                   presenter.FilterIds.SKIPPED_MASKED))
 
@@ -109,17 +111,21 @@ class PackageInfoPanel(wx.Panel):
             packageInfoTabs, "Selected",
             (presenter.FilterIds.SELECTED_MATCHED,
              presenter.FilterIds.SELECTED_MISMATCHED,
-             presenter.FilterIds.SELECTED_OVERRIDDEN,
-             presenter.FilterIds.SELECTED_MISSING),
-            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"),
+             presenter.FilterIds.SELECTED_MISSING,
+             presenter.FilterIds.SELECTED_NO_CONFLICTS,
+             presenter.FilterIds.SELECTED_HAS_CONFLICTS),
+            ("Matched (%d)", "Mismatched (%d)", "Missing (%d)",
+             "Non-Unique (%d)", "Unique (%d)"),
             presenter_)
         self._unselectedFilterPanel, self._unselectedText = _add_tab(
             packageInfoTabs, "Unselected",
             (presenter.FilterIds.UNSELECTED_MATCHED,
              presenter.FilterIds.UNSELECTED_MISMATCHED,
-             presenter.FilterIds.UNSELECTED_OVERRIDDEN,
-             presenter.FilterIds.UNSELECTED_MISSING),
-            ("Matched (%d)", "Mismatched (%d)", "Overridden (%d)", "Missing (%d)"),
+             presenter.FilterIds.UNSELECTED_MISSING,
+             presenter.FilterIds.UNSELECTED_NO_CONFLICTS,
+             presenter.FilterIds.UNSELECTED_HAS_CONFLICTS),
+            ("Matched (%d)", "Mismatched (%d)", "Missing (%d)",
+             "Non-Unique (%d)", "Unique (%d)"),
             presenter_)
         self._skippedFilterPanel, self._skippedText = _add_tab(packageInfoTabs, "Skipped",
             (presenter.FilterIds.SKIPPED_NONGAME, presenter.FilterIds.SKIPPED_MASKED),
@@ -317,6 +323,6 @@ Files: %d
             return
         oldTabId = self._detailsTabIndexToTabId[event.GetOldSelection()]
         newTabId = self._detailsTabIndexToTabId[event.GetSelection()]
-        _logger.debug("details tab changing from %d to %d", oldTabId, newTabId)
+        _logger.debug("details tab changing from %s to %s", oldTabId, newTabId)
         self._presenter.set_details_tab_selection(newTabId)
         event.Skip()

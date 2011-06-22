@@ -206,12 +206,14 @@ class BaitView(wx.Panel):
             presenter.FilterIds.CONFLICTS_LOWER:False,
             presenter.FilterIds.SELECTED_MATCHED:True,
             presenter.FilterIds.SELECTED_MISMATCHED:True,
-            presenter.FilterIds.SELECTED_OVERRIDDEN:True,
             presenter.FilterIds.SELECTED_MISSING:True,
+            presenter.FilterIds.SELECTED_NO_CONFLICTS:True,
+            presenter.FilterIds.SELECTED_HAS_CONFLICTS:True,
             presenter.FilterIds.UNSELECTED_MATCHED:True,
             presenter.FilterIds.UNSELECTED_MISMATCHED:True,
-            presenter.FilterIds.UNSELECTED_OVERRIDDEN:True,
-            presenter.FilterIds.UNSELECTED_MISSING:False,
+            presenter.FilterIds.UNSELECTED_MISSING:True,
+            presenter.FilterIds.UNSELECTED_NO_CONFLICTS:True,
+            presenter.FilterIds.UNSELECTED_HAS_CONFLICTS:True,
             presenter.FilterIds.SKIPPED_NONGAME:True,
             presenter.FilterIds.SKIPPED_MASKED:False}
         self._packageTree.start(filterStateMap)

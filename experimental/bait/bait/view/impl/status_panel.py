@@ -32,9 +32,9 @@ from ... import presenter
 
 _logger = logging.getLogger(__name__)
 _operationNames = {
-        presenter.AnnealOperations.COPY:"Copying",
+        presenter.AnnealOperations.COPY:"Adding",
         presenter.AnnealOperations.DELETE:"Deleting",
-        presenter.AnnealOperations.RENAME:"Renaming"
+        presenter.AnnealOperations.OVERWRITE:"Updating"
     }
 
 def _make_iops_str(ioOperations, separator):
