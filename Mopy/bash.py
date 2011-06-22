@@ -35,11 +35,7 @@ import re
 
 import bolt
 from bolt import _, GPath
-import bosh
-import barb
-import basher
-import balt
-  
+basherImported = False#
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -68,6 +64,8 @@ def SetUserPath(iniPath, uArg=None):
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
     # backup settings if app version has changed or on user request
+    if not basherImported: 
+        import basher, barb
     backup = None
     path = None
     quit = opts.backup and opts.quietquit
@@ -89,6 +87,7 @@ def cmdBackup():
 
 def cmdRestore():
     # restore settings on user request
+    if not basherImported: import basher, barb
     backup = None
     path = None
     quit = opts.restore and opts.quietquit
@@ -106,7 +105,7 @@ def cmdRestore():
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 def oneInstanceChecker():
     global pidpath, lockfd
-    pidpath = bosh.dirs['mopy'].join('pidfile.tmp')
+    pidpath = bolt.Path.getcwd().root.join('pidfile.tmp')
     lockfd = None
 
     if opts.restarting: # wait up to 10 seconds for previous instance to close
@@ -132,7 +131,7 @@ def exit():
     except OSError, e:
         print e
 
-    if basher.appRestart:
+    if basherImported and basher.appRestart:
         exePath = GPath(sys.executable)
         sys.argv = [exePath.stail] + sys.argv + ['--restarting']
         sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
@@ -149,7 +148,7 @@ def exit():
 # Main ------------------------------------------------------------------------
 def main():
     global opts, extra
-    
+
     parser = optparse.OptionParser()
     pathGroup = optparse.OptionGroup(parser, "Path Arguments",
                          r"All path arguments must be absolute paths and use either forward slashes (/) or two backward slashes (\\). All of these can also be set in the ini (where  you can also use relative paths) and if set in both cmd line takes precedence.")
@@ -219,42 +218,49 @@ def main():
                         default=True,
                         dest='Psyco',
                         help='Disables import of Psyco')
-    parser.add_option('-c', '--cbash-mode',
-                        action='store_true',
-                        default=True,
-                        dest='CBash',
+    parser.set_defaults(mode=0)
+    parser.add_option('-C', '--Cbash-mode',
+                        action='store_const',
+                        const=2,
+                        dest='mode',
                         help='enables CBash and uses CBash to build bashed patch.')
-    parser.add_option('-y', '--python-mode',
-                        action='store_true',
-                        default=True,
-                        dest='CBash',
-                        help='disables CBash and uses python code to build bashed patch.')                        
-    parser.add_option('--restarting',
+    parser.add_option('-P', '--Python-mode',
+                        action='store_const',
+                        const=1,
+                        dest='mode',
+                        help='disables CBash and uses python code to build bashed patch.')
+parser.add_option('--restarting',
                         action='store_true',
                         default=False,
                         dest='restarting',
-                        help=optparse.SUPPRESS_HELP) 
+                        help=optparse.SUPPRESS_HELP)
+    
     parser.add_option_group(pathGroup)
     parser.add_option_group(userPathGroup)
     parser.add_option_group(backupGroup)
-    
+
     opts,extra = parser.parse_args()
     if len(extra) > 0:
         parser.print_help()
         return
-     
+
     if opts.Psyco:
         try:
             import psyco
             psyco.full()
         except:
             pass
-            
+
     #--Initialize Directories and some settings
     #  required before the rest has imported
-    SetUserPath('bash.ini',opts.userPath)#get('-u'))
+    SetUserPath('bash.ini',opts.userPath)
 
     try:
+        bolt.CBash = opts.mode
+        import bosh
+        import basher
+        import barb
+        import balt
         bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['mopy'].join(bosh.exe7z).s
     except bolt.PermissionError, e:
