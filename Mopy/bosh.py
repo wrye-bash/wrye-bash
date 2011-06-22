@@ -8736,10 +8736,13 @@ class ModInfos(FileInfos):
         for fileName in names:
             if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
             fileInfo = self[fileName]
-            if not CBash:
-                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
-            else:
-                canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+            try:
+                if not CBash:
+                    canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+                else:
+                    canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+            except Exception, e:
+                deprint (_("Error scanning mod %s (%s)" %(fileName, str(e))))
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
@@ -20143,7 +20146,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 
 #------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
+    """Merges changes to actors."""
     name = _('Import Actors')
     text = _("Import Actor components from source mods.")
     tip = text
