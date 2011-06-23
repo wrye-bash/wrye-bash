@@ -131,7 +131,7 @@ class MockPresenter:
     def set_filter_state(self, filterId, value):
         _logger.debug("setting filter %s to %s", filterId, value)
         if (not 0 is self._filterMask & filterId) is value:
-            _logger.debug("filter %d already set to %s; ignoring", filterId, value)
+            _logger.debug("filter %s already set to %s; ignoring", filterId, value)
             return
         if value:
             self._filterMask |= filterId

@@ -44,15 +44,14 @@ def _create_queue(isMultiprocess):
 def CreateBaitView(parent, presenter=None, model=None, isMultiprocess=False):
     _logger.debug("creating BAIT components")
 
-    if not model is None:
-        _logger.debug("using custom model (class: %s)", model.__class__)
-    else:
-        _logger.debug("instantiating default model")
-        model = bait_model.BaitModel(_create_queue(isMultiprocess))
-
-    if not presenter is None:
+    if presenter is not None:
         _logger.debug("using custom presenter (class: %s)", presenter.__class__)
     else:
+        if model is not None:
+            _logger.debug("using custom model (class: %s)", model.__class__)
+        else:
+            _logger.debug("instantiating default model")
+            model = bait_model.BaitModel(_create_queue(isMultiprocess))
         _logger.debug("instantiating default presenter")
         presenter = bait_presenter.BaitPresenter(model, _create_queue(isMultiprocess))
 
