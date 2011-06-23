@@ -35,9 +35,10 @@ from ...presenter import view_commands
 _logger = logging.getLogger(__name__)
 
 _IS_VISIBLE_IDX = 0
-_PRED_NODE_ID_IDX = 1
-_ATTRIBUTES_IDX = 2
-_CHILDREN_IDX = 3
+_MATCHES_SEARCH = 1
+_PRED_NODE_ID_IDX = 2
+_ATTRIBUTES_IDX = 3
+_CHILDREN_IDX = 4
 
 
 def _visit_tree(rootNodeId, tree, quitEarlyIfFalseFn, visitor):
@@ -270,12 +271,12 @@ class _DiffEngine:
     """
 
     def __init__(self, generalTabManager, viewCommandQueue):
-        self.loadRequestQueue = Queue.Queue() # tuples of (updateType, nodeId)
+        self.loadRequestQueue = Queue.Queue() # tuples of (updateTypeMask, nodeId)
         self._generalTabManager = generalTabManager
         self._viewCommandQueue = viewCommandQueue
         self._pendingFilterMask = presenter.FilterIds.NONE
         self._selectedNodes = set()
-        self._tree = {} # nodeId -> [isVisible, predNodeId, attributes, children]
+        self._tree = {} # nodeId -> [isVisible, matchesSearch, predNodeId, attributes, children]
 
     def set_pending_filter_mask(self, filterMask):
         self._pendingFilterMask = filterMask
@@ -287,9 +288,9 @@ class PackagesTreeDiffEngine(_DiffEngine):
         self._packageContentsManager = packageContentsManager
         self._pendingSearchString = None
         self._searchExpression = None
-        self._filters = filters.PackageTreeFilter(viewCommandQueue)
+        self._filter = filters.PackagesTreeFilter(viewCommandQueue)
         self._expandedNodeIds = set()
-        self._tree[model.ROOT_NODE_ID] = [True, None, None]
+        self._tree[model.ROOT_NODE_ID] = [True, False, None, None]
 
     def update_is_in_scope(self, updateType, nodeType):
         # called to determine if model updates are in scope for this diff engine
@@ -302,6 +303,9 @@ class PackagesTreeDiffEngine(_DiffEngine):
 
     def could_use_update(self, updateType, nodeId, version):
         # assumes update is in scope
+        # the following algorithm is thread safe in the sense that it does not mess up
+        # other algorithms, being read-only.  These conditions will be checked again, of
+        # course, by the thread that actually modifies the data structures
         nodeData = self._tree.get(nodeId)
         if nodeData is None:
             return False
@@ -339,12 +343,14 @@ class PackagesTreeDiffEngine(_DiffEngine):
         nodeData = self._tree[nodeId]
         if len(nodeData) > _ATTRIBUTES_IDX:
             curNodeAttributes = nodeData[_ATTRIBUTES_IDX]
-            if curNodeAttributes.version >= nodeAttributes.version:
+            if nodeAttributes.version <= curNodeAttributes.version:
                 _logger.debug("stale incoming update (version %d <= %d); skipping update",
                               nodeAttributes.version, curNodeAttributes.version)
                 return
-        matchesSearch = self._matches_search(nodeAttributes)
-        isVisible = self._filters.filter(nodeId, nodeAttributes, matchesSearch)
+        matchesSearch = self._matches_search_expression(nodeAttributes)
+        nodeData[_MATCHES_SEARCH] = matchesSearch
+        isVisible = self._filter.process_and_get_visibility(nodeId, nodeAttributes,
+                                                            matchesSearch)
         if isVisible == nodeData[_IS_VISIBLE_IDX]:
             if isVisible:
                 _add_node(nodeId, nodeData, self._tree, self._viewCommandQueue, True)
@@ -364,29 +370,36 @@ class PackagesTreeDiffEngine(_DiffEngine):
                     parentNodeData = self._tree[parentNodeId]
                     _add_node(parentNodeId, parentNodeData, self._tree,
                               self._viewCommandQueue, False)
-                # show downstream nodes if not already visible
-                _visit_tree(nodeId, self._tree, None,
-                            _MakeTreeVisibleVisitor(self._tree, self._viewCommandQueue))
+                _add_node(nodeId, nodeData, self._tree, self._viewCommandQueue)
                 nodeData[_IS_VISIBLE_IDX] = True
+                # if this node specifically matched the search, ensure downstream nodes
+                # are visible
+                if self._searchExpression is not None and matchesSearch:
+                    _visit_tree(nodeId, self._tree, None,
+                                _MakeTreeVisibleVisitor(self._tree,
+                                                        self._viewCommandQueue))
             else:
                 # if this is a leaf node, get rid of it and any parent groups that now
                 # have 0 visible children
-                if len(nodeData) <= _CHILDREN_IDX or len(nodeData[_CHILDREN_IDX]) == 0:
-                    nodeToRemove = nodeId
+                if len(nodeData) <= _CHILDREN_IDX or \
+                   len(nodeData[_CHILDREN_IDX].children) == 0:
+                    branchRootNodeIdToRemove = nodeId
                     nodeData[_IS_VISIBLE_IDX] = False
                     parentNodeId = nodeAttributes.parentNodeId
-                    while parentNodeId is not None:
+                    while parentNodeId is not model.ROOT_NODE_ID:
                         parentNodeData = self._tree[parentNodeId]
                         hasVisibleChildren = False
-                        for siblingNodeId in parentNodeData[_CHILDREN_IDX]:
-                            if self._tree[siblingNodeId][_IS_VISIBLE_IDX]:
+                        # is upstream from us, so must have children
+                        for childNodeId in parentNodeData[_CHILDREN_IDX].children:
+                            if self._tree[childNodeId][_IS_VISIBLE_IDX]:
                                 hasVisibleChildren = True
                                 break
                         if not hasVisibleChildren:
-                            nodeToRemove = parentNodeId
+                            branchRootNodeIdToRemove = parentNodeId
+                        else: break
                         parentNodeId = parentNodeData[_ATTRIBUTES_IDX].parentNodeId
                     self._viewCommandQueue.put(
-                        view_commands.RemovePackagesTreeNode(nodeId))
+                        view_commands.RemovePackagesTreeNode(branchRootNodeIdToRemove))
                 else:
                     # otherwise, check its extended family to see if it should be visible
                     pass
@@ -433,9 +446,9 @@ class PackagesTreeDiffEngine(_DiffEngine):
         _logger.debug("updating filter mask to %s", filterMask)
         def is_filter_mask_current():
             return filterMask == self._pendingFilterMask
-        self._filters.set_active_mask(filterMask)
+        self._filter.set_active_mask(filterMask)
         _visit_tree(model.ROOT_NODE_ID, self._tree, is_filter_mask_current,
-                   _SyncVisibleNodesVisitor(self._tree, self._filters.visibleNodeIds,
+                   _SyncVisibleNodesVisitor(self._tree, self._filter.visibleNodeIds,
                                             self._viewCommandQueue))
 
     def update_search_string(self, searchString):
@@ -444,21 +457,21 @@ class PackagesTreeDiffEngine(_DiffEngine):
             return searchString == self._pendingSearchString
         if searchString is None or len(searchString) == 0:
             expression = None
-            self._filters.apply_search(None)
+            self._filter.apply_search(None)
         else:
             expression = re.compile(searchString, re.IGNORECASE)
-            # walk the tree, matching nodes against the search string, stopping early if the
-            # search string goes out of date
+            # walk the tree, matching nodes against the search string, stopping early if
+            # the search string goes out of date
             searchVisitor = _SearchVisitor(self._tree, expression)
             _visit_tree(model.ROOT_NODE_ID, self._tree, is_search_string_current,
                        searchVisitor)
-            self._filters.apply_search(searchVisitor.matchedNodeIds)
+            self._filter.apply_search(searchVisitor.matchedNodeIds)
         _visit_tree(model.ROOT_NODE_ID, self._tree, is_search_string_current,
-                   _SyncVisibleNodesVisitor(self._tree, self._filters.visibleNodeIds,
+                   _SyncVisibleNodesVisitor(self._tree, self._filter.visibleNodeIds,
                                             self._viewCommandQueue))
         self._searchExpression = expression
 
-    def _matches_search(self, nodeAttributes):
+    def _matches_search_expression(self, nodeAttributes):
         if self._searchExpression is None:
             return True
         return self._searchExpression.search(nodeAttributes.label)
