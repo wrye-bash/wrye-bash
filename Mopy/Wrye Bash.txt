@@ -2293,18 +2293,29 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 292 [31/12/2011] [PacificMorrowind,Lojack]
-* Bugs fixed (CBash):
-  * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
-  * Bug with the [[#ImportActorsAIPackages|NPC AI Packages]] patcher fixed (incorrectly detecting if OOO and the UOP were installed).
-  * Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
-  * [[#ImportNPCFaces|NPC Face data]] should properly be merged, vice overridden.
-  * Fixed merging of QUST records from Filter mods.
+=== 293 [31/12/2011] [PacificMorrowind,Lojack]
+* [[#BashedPatches|Bashed Patch]]:
+  * Bugs fixed (CBash):
+    * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
+    * Bug with the [[#ImportActorsAIPackages|NPC AI Packages]] patcher fixed (incorrectly detecting if OOO and the UOP were installed).
+    * Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+    * [[#ImportNPCFaces|NPC Face data]] should properly be merged, vice overridden.
+    * Fixed merging of QUST records from Filter mods.
   * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
+  * Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
 * Updated NSIS installer.
+* Startup
+  * refactored cmdline opt getting
+  * added/changed cmdline options:
+    * -d/--debug: no longer automatically disables Psyco import.
+    * --no-psyco: disable Psyco import.
+    * -C/--Cbash-mode: force cbash mode (requires CBash.dll to be named one of Rename_CBash.dll, CBash.dll or _CBash.dll).
+    * -P/--Python-mode: force python mode (whether or not CBash.dll exists).
+    * -U/--Unicode: equivalent to setting __bEnableUnicode__ to **True** in bash.ini (but the cmdline options overide the ini when specified).
+    * -A/--Ansi: equivalent to setting __bEnableUnicode__ to **False** in bash.ini (but the cmdline options overide the ini when specified).
 
 === 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]
 * __CBash__ is live!  The default install now uses CBash.

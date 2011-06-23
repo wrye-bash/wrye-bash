@@ -35,7 +35,7 @@ import re
 
 import bolt
 from bolt import _, GPath
-basherImported = False#
+basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -184,9 +184,7 @@ def main():
                         help='Specify the user\'s local application data directory.'
                              'If you need to set this then you probably need to set -p too.')
     backupGroup = optparse.OptionGroup(parser, "'Backup and Restore Arguments",
-                        'These arguments allow you to specify your user directories in several ways.'
-                        ' These are only useful if the regular procedure for getting the user directory fails.'
-                        ' And even in that case, the user is probably better off installing win32com.')
+                        'These arguments allow you to do backup and restore settings operations.')
     backupGroup.add_option('-b', '--backup',
                         action='store_true',
                         default=False,
@@ -229,6 +227,15 @@ def main():
                         const=1,
                         dest='mode',
                         help='disables CBash and uses python code to build bashed patch.')
+    parser.set_defaults(unicode='')
+    parser.add_option('-U', '--Unicode',
+                        action='store_true',
+                        dest='unicode',
+                        help='enables Unicode mode, overriding the ini if it exists.')
+    parser.add_option('-A', '--Ansi',
+                        action='store_false',
+                        dest='unicode',
+                        help='disables Unicode mode, overriding the ini if it exists.')
     parser.add_option('--restarting',
                         action='store_true',
                         default=False,
@@ -250,7 +257,8 @@ def main():
             psyco.full()
         except:
             pass
-
+    if opts.unicode != '':
+        bolt.bUseUnicode = int(opts.unicode)
     #--Initialize Directories and some settings
     #  required before the rest has imported
     SetUserPath('bash.ini',opts.userPath)
