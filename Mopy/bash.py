@@ -70,7 +70,7 @@ def cmdBackup():
     path = None
     quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
-    backup = barb.BackupSettings(basher.bashFrame,path, quit)
+    backup = barb.BackupSettings(basher.bashFrame,path, quit, opts.backup_images)
     if backup.PromptMismatch() or opts.backup:
         try:
             backup.Apply()
@@ -94,7 +94,7 @@ def cmdRestore():
     if opts.restore: path = GPath(opts.filename)
     if opts.restore:
         try:
-            backup = barb.RestoreSettings(basher.bashFrame,path, quit)
+            backup = barb.RestoreSettings(basher.bashFrame,path, quit, opts.backup_images)
             backup.Apply()
         except barb.BackupCancelled:
             pass
@@ -205,6 +205,17 @@ def main():
                         default=False,
                         dest='quietquit',
                         help='Close Bash after creating or restoring backup and do not display any prompts or message dialogs.')
+    parser.set_defaults(backup_images=0)                    
+    backupGroup.add_option('-i', '--include-changed-images',
+                        action='store_const',
+                        const=1,
+                        dest='backup_images',
+                        help='Include changed images from mopy\images in the backup. Include any image(s) from backup file in restore.')
+    backupGroup.add_option('-I', '--include-all-images',
+                        action='store_const',
+                        const=2,
+                        dest='backup_images',
+                        help='Include all images from mopy\images in the backup/restore (if present in backup file).')
     parser.add_option('-d', '--debug',
                         action='store_true',
                         default=False,
