@@ -208,7 +208,8 @@ class BackupSettings(BaseBackupSettings):
         return askYes(self.parent,msg,_('Backup Bash Settings?'))
 
     def PromptMismatch(self):
-        #returns False if same app version or user cancels
+        #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
+        if basher.settings['bash.readme'][1] == '0': return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _('A different version of Wrye Bash was previously installed.\n') +
             _('Previous Version: %s\n') % (basher.settings['bash.readme'][1]) +
