@@ -4825,6 +4825,7 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
+        deprint(_("Wrye Bash in %s Mode") % (['ANSI','Unicode'][bolt.bUseUnicode]))
         if bolt.bUseUnicode: 
             wxver = wx.version()
             deprint(wxver)
@@ -9701,7 +9702,8 @@ class User_BackupSettings(Link):
         BashFrame.SaveSettings(bashFrame)
         backup = barb.BackupSettings(bashFrame)
         try:
-            if backup.PromptConfirm(): backup.Apply()
+            if backup.PromptConfirm(): 
+                backup.Apply()
         except StateError:
             backup.WarnFailed()
         except barb.BackupCancelled:
@@ -9720,7 +9722,9 @@ class User_RestoreSettings(Link):
     def Execute(self,event):
         try:
             backup = barb.RestoreSettings(bashFrame)
-            if backup.PromptConfirm(): backup.Apply()
+            if backup.PromptConfirm():
+                backup.restore_images = balt.askYes(self.window,_('Do you want to restore saved images as well as settings?'),_('Restore Settings'))
+                backup.Apply()
         except barb.BackupCancelled: #cancelled
             pass
         #end try
@@ -15254,6 +15258,7 @@ def InitSettingsLinks():
     global SettingsMenu
     SettingsMenu = MenuLink(_('Settings'))
     SettingsMenu.links.append(User_BackupSettings())
+    SettingsMenu.links.append(User_RestoreSettings())
     SettingsMenu.links.append(User_SaveSettings())
     SettingsMenu.links.append(Installers_ExportDllInfo())
     SettingsMenu.links.append(Installers_ImportDllInfo())
