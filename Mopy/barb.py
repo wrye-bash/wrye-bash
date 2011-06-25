@@ -30,6 +30,7 @@ from subprocess import Popen, PIPE
 import bash
 import bosh
 import basher
+import bolt
 from bosh import startupinfo, dirs
 from bolt import _, BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
@@ -101,7 +102,7 @@ class BaseBackupSettings:
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
-    def __init__(self, parent=None, path=None, quit=False):
+    def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
         for path, name, tmpdir in (
               (dirs['mopy'],                      'Bash.ini',             'Oblivion\\Mopy'),
@@ -142,7 +143,27 @@ class BackupSettings(BaseBackupSettings):
             for name in path.list():
                 if path.join(name).isfile():
                     self.files[tmpdir.join(name)] = path.join(name)
-
+        
+        #backup image files if told to
+        if backup_images == 1: #changed images only
+            tmpdir = GPath('Oblivion\\Mopy\\Images')
+            path = dirs['mopy'].join('Images')
+            for name in dirs['mopy'].join('Images').list():
+                fullname = path.join(name)
+                if fullname.isfile():
+                    changed = True
+                    for ver_list in bolt.images_list:
+                        if name.s in bolt.images_list[ver_list] and bolt.images_list[ver_list][name.s] == fullname.size:
+                            changed = False
+                    if changed and not name.s.lower() == 'thumbs.db':
+                        self.files[tmpdir.join(name)] = fullname
+        elif backup_images == 2: #all images
+            tmpdir = GPath('Oblivion\\Mopy\\Images')
+            path = dirs['mopy'].join('Images')
+            for name in dirs['mopy'].join('Images').list():
+                if path.join(name).isfile() and not name.s.lower() == 'thumbs.db':
+                    self.files[tmpdir.join(name)] = path.join(name)
+                    
         #backup save profile settings
         savedir = GPath('My Games\\Oblivion')
         profiles = [''] + [x for x in dirs['saveBase'].join('Saves').list() if dirs['saveBase'].join('Saves',x).isdir() and str(x).lower() != 'bash']
@@ -247,7 +268,7 @@ class BackupSettings(BaseBackupSettings):
 
 #------------------------------------------------------------------------------
 class RestoreSettings(BaseBackupSettings):
-    def __init__(self, parent=None, path=None, quit=False):
+    def __init__(self, parent=None, path=None, quit=False, restore_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
 
         if not self.PromptFile():
@@ -264,6 +285,7 @@ class RestoreSettings(BaseBackupSettings):
         ins = self.tmp.join('backup.dat').open('rb')
         self.verDat = cPickle.load(ins)
         self.verApp = cPickle.load(ins)
+        self.restore_images = restore_images
         ins.close()
 
     def Apply(self):
@@ -279,27 +301,33 @@ class RestoreSettings(BaseBackupSettings):
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
         tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')
-        opts, args = bash.ParseArgs()
-        bash.SetUserPath(tmpBash.s,opts.get('-u'))
+        opts, args = bash.opts, bash.extra
+
+        
+        bash.SetUserPath(tmpBash.s,opts.userPath)
 
         bashIni = bash.GetBashIni(tmpBash.s)
-        bosh.initDirs(bashIni,opts.get('-p'),opts.get('-l'),opts.get('-o'))
+        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
 
         # restore all the settings files
-        for fpath, tpath in (
-              (dirs['mopy'],                              'Oblivion\\Mopy'),
-              (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
-              (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
-              (dirs['mods'].join('Bash'),                 'Oblivion\\Data\\Bash'),
-              (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
-              (dirs['mods'].join('Docs'),                 'Oblivion\\Data\\Docs'),
-              (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
-              (dirs['modsBash'],                          'Oblivion Mods\\Bash Mod Data'),
-              (dirs['modsBash'].join('INI Data'),         'Oblivion Mods\\Bash Mod Data\\INI Data'),
-              (dirs['installers'].join('Bash'),           'Oblivion Mods\\Bash Installers\\Bash'),
-              (dirs['userApp'],                           'LocalAppData\\Oblivion'),
-              (dirs['saveBase'],                          'My Games\\Oblivion'),
-                ):
+        restore_paths = (
+                (dirs['mopy'],                              'Oblivion\\Mopy'),
+                (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
+                (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
+                (dirs['mods'].join('Bash'),                 'Oblivion\\Data\\Bash'),
+                (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
+                (dirs['mods'].join('Docs'),                 'Oblivion\\Data\\Docs'),
+                (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
+                (dirs['modsBash'],                          'Oblivion Mods\\Bash Mod Data'),
+                (dirs['modsBash'].join('INI Data'),         'Oblivion Mods\\Bash Mod Data\\INI Data'),
+                (dirs['installers'].join('Bash'),           'Oblivion Mods\\Bash Installers\\Bash'),
+                (dirs['userApp'],                           'LocalAppData\\Oblivion'),
+                (dirs['saveBase'],                          'My Games\\Oblivion'),
+                )
+        if self.restore_images:
+            restore_paths += (
+                (dirs['mopy'].join('Images'),               'Oblivion\\Mopy\\Images'),)
+        for fpath, tpath in restore_paths:
             path = self.tmp.join(tpath)
             if path.exists():
                 for name in path.list():
