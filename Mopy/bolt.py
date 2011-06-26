@@ -2330,7 +2330,7 @@ class Log:
         self.doFooter = doFooter
         if writeNow: self()
 
-    def __call__(self,message=None):
+    def __call__(self,message=None,appendNewline=True):
         """Callable. Writes message, and if necessary, header and footer."""
         if self.header != self.prevHeader:
             if self.prevHeader and self.doFooter:
@@ -2338,7 +2338,7 @@ class Log:
             if self.header:
                 self.writeHeader(self.header)
             self.prevHeader = self.header
-        if message: self.writeMessage(message)
+        if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...
     def writeHeader(self,header):
@@ -2347,7 +2347,7 @@ class Log:
     def writeFooter(self):
         """Write mess. Abstract/null version."""
         pass
-    def writeMessage(self,message):
+    def writeMessage(self,message,appendNewline):
         """Write message to log. Abstract/null version."""
         pass
 
@@ -2364,8 +2364,9 @@ class LogFile(Log):
     def writeFooter(self):
         self.out.write('\n')
 
-    def writeMessage(self,message):
-        self.out.write(message+'\n')
+    def writeMessage(self,message,appendNewline):
+        self.out.write(message)
+        if appendNewline: self.out.write('\n')
 
 #------------------------------------------------------------------------------
 class Progress:

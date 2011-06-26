@@ -8992,7 +8992,6 @@ class ModInfos(FileInfos):
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
         sDelinquent = (_('----> Delinquent MASTER: '),_('  * __Delinquent Master:__ '))[wtxt]
         sImported = ('**','&bull; &bull;')[wtxt]
-        if not wtxt: log.out.write('[spoiler]')
         if fileInfo:
             masters = set(fileInfo.header.masters)
             missing = sorted([x for x in masters if x not in self])
@@ -9013,6 +9012,7 @@ class ModInfos(FileInfos):
         allMods = self.getOrdered([x for x in allMods if x in self])
         #--List
         modIndex,header = 0, None
+        if not wtxt: log('[spoiler]', False)
         for name in allMods:
             if name in masters:
                 prefix = bul+'%02X' % (modIndex)
@@ -12595,12 +12595,12 @@ class InstallersData(bolt.TankData, DataDict):
         """Returns package list as text."""
         #--Setup
         log = bolt.LogFile(stringBuffer())
-        log.out.write('[spoiler]')
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
         allPackages = sorted(self.data,key=orderKey)
         #--List
         modIndex,header = 0, None
+        log('[spoiler]',False)
         for package in allPackages:
             prefix = '%03d' % (self.data[package].order)
             if isinstance(self.data[package],InstallerMarker):

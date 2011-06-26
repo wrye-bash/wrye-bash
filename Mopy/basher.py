@@ -11353,8 +11353,8 @@ class Mod_ListPatchConfig(Link):
         log.setHeader('= %s %s' % (self.data[0],_('Config')))
         log(_('This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.\n'))
         clip = stringBuffer()
-        clip.write('%s %s:' % (self.data[0],_('Config')))
-        clip.write('[spoiler][code]')
+        clip.write('%s %s:\n' % (self.data[0],_('Config')))
+        clip.write('[spoiler][xml]')
         for patcher in patchers:
             className = patcher.__class__.__name__
             humanName = patcher.__class__.name
@@ -11365,6 +11365,7 @@ class Mod_ListPatchConfig(Link):
             if not conf.get('isEnabled',False): continue
             # Active
             log.setHeader('== '+humanName)
+            clip.write('\n')
             clip.write('== '+humanName+'\n')
             if isinstance(patcher, bosh.CBash_MultiTweaker) or isinstance(patcher, bosh.MultiTweaker):
                 # Tweak patcher
@@ -11379,21 +11380,18 @@ class Mod_ListPatchConfig(Link):
                         else:
                             log('. ~~%s~~' % label)
                             clip.write('    %s\n' % label)
-                clip.write('\n')
             elif isinstance(patcher, bosh.CBash_ListsMerger) or isinstance(patcher, bosh.ListsMerger):
                 # Leveled Lists
                 patcher.configChoices = conf.get('configChoices',{})
                 for item in conf.get('configItems',[]):
                     log('. __%s__' % patcher.getItemLabel(item))
                     clip.write('    %s\n' % patcher.getItemLabel(item))
-                clip.write('\n')
             elif isinstance(patcher, (bosh.CBash_AliasesPatcher,bosh.AliasesPatcher)):
                 # Alias mod names
                 aliases = conf.get('aliases',{})
                 for mod in aliases:
                     log('* __%s__ >> %s' % (mod.s, aliases[mod].s))
                     clip.write('  %s >> %s\n' % (mod.s, aliases[mod].s))
-                clip.write('\n')
             else:
                 items = conf.get('configItems',[])
                 if len(items) == 0:
@@ -11407,9 +11405,8 @@ class Mod_ListPatchConfig(Link):
                     else:
                         log('. ~~%s~~' % item)
                         clip.write('    %s\n' % item)
-                clip.write('\n')
         #-- Show log
-        clip.write('[/code][/spoiler]')
+        clip.write('[/xml][/spoiler]')
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(clip.getvalue()))
             wx.TheClipboard.Close()
