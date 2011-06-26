@@ -9699,10 +9699,34 @@ class User_BackupSettings(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
+        def OnClickAll(event):
+            dialog.EndModal(2)
+        def OnClickNone(event):
+            dialog.EndModal(1)
+        def PromptConfirm(msg=None):
+            msg = msg or _('Do you want to backup your Bash settings now?')
+            return balt.askYes(bashFrame,msg,_('Backup Bash Settings?'))
+            
         BashFrame.SaveSettings(bashFrame)
-        backup = barb.BackupSettings(bashFrame)
+        #backup = barb.BackupSettings(bashFrame)
         try:
-            if backup.PromptConfirm(): 
+            if PromptConfirm():
+                dialog = wx.Dialog(bashFrame,-1,_('Backup Images?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                icon = wx.StaticBitmap(dialog,-1,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+                sizer = vSizer(
+                    (hSizer(
+                        (icon,0,wx.ALL,6),
+                        (staticText(dialog,_("Do you want to backup any images?"),style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                        ),1,wx.EXPAND|wx.ALL,6),
+                    (hSizer(
+                        spacer,
+                        button(dialog,id=606,label='Backup All Images',onClick=OnClickAll),
+                        (button(dialog,id=607,label='Backup Changed Images',onClick=OnClickNone),0,wx.LEFT,4),
+                        (button(dialog,id=wx.ID_CANCEL, label = 'None'),0,wx.LEFT,4),
+                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    )
+                dialog.SetSizer(sizer)
+                backup = barb.BackupSettings(bashFrame,backup_images=dialog.ShowModal())
                 backup.Apply()
         except StateError:
             backup.WarnFailed()
