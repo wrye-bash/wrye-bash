@@ -2293,7 +2293,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 293 [31/12/2011] [PacificMorrowind,Lojack]
+=== 293 [31/12/2011] [PacificMorrowind,Lojack,myk002]
 * [[#BashedPatches|Bashed Patch]]:
   * Bugs fixed (CBash):
     * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
@@ -2306,6 +2306,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
+  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809|here]]
 * Updated NSIS installer.
 * Startup
   * refactored cmdline opt getting
