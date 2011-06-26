@@ -8744,7 +8744,7 @@ class ModInfos(FileInfos):
             except Exception, e:
                 deprint (_("Error scanning mod %s (%s)" %(fileName, str(e))))
                 canMerge = False #presume non-mergeable.
-            if filename == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False
+            if fileName == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
