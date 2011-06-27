@@ -5935,9 +5935,10 @@ class SaveFile:
         progress(0,_('Writing Header.'))
         out.write(self.header)
         #--Save Header
-        pack('=IIB',5+len(self.pcName)+1+len(self.postNameHeader),
-            self.saveNum, len(self.pcName)+1)
-        out.write(self.pcName+'\x00')
+        pcName = Encode(self.pcName,'mbcs')
+        pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
+            self.saveNum, len(pcName)+1)
+        out.write(pcName+'\x00')
         out.write(self.postNameHeader)
         #--Masters
         pack('B',len(self.masters))
@@ -17625,7 +17626,7 @@ class Save_NPCEdits:
         saveFile.load()
         (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
-        npc.full = newName
+        npc.full = Encode(newName,'mbcs')
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()
