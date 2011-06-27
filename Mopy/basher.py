@@ -5700,6 +5700,27 @@ class PatchDialog(wx.Dialog):
         groupOrder = dict([(group,index) for index,group in
             enumerate((_('General'),_('Importers'),_('Tweakers'),_('Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
+        # If the patch config isn't from the same mode (CBash/Python), try converting
+        # it over to the current mode
+        configIsCBash = False
+        for className in patchConfigs:
+            if 'CBash' in className:
+                configIsCBash = True
+                break
+        if configIsCBash != self.doCBash:
+            # Config CBash/Python doesn't match current CBash/Python mode
+            if not balt.askContinue(parent,
+                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to importyour settings over, however some may not be copied correctly.")
+                        % (patchInfo.name.s,['Python','CBash'][configIsCBash],['Python','CBash'][self.doCBash]),
+                    'bash.patch.CBashMismatch'):
+                raise CancelError
+            newConfig = {}
+            for key in patchConfigs:
+                if key in otherPatcherDict:
+                    newConfig[otherPatcherDict[key].__class__.__name__] = patchConfigs[key]
+                else:
+                    newConfig[key] = patchConfigs[key]
+            patchConfigs = newConfig
         self.patchInfo = patchInfo
         if doCBash:
             self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
@@ -11282,8 +11303,7 @@ class Mod_Patch_Update(Link):
                 if 'CBash' in className:
                     thisIsCBash = True
                     break
-            if (thisIsCBash and self.doCBash) or (not thisIsCBash and not self.doCBash):
-                check = True
+            check = bool(thisIsCBash == self.doCBash)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
@@ -11357,7 +11377,10 @@ class Mod_Patch_Update(Link):
             warning = balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
             if not warning:
                 return
-        patchDialog = PatchDialog(self.window,fileInfo,self.doCBash)
+        try:
+            patchDialog = PatchDialog(self.window,fileInfo,self.doCBash)
+        except CancelError:
+            return
         patchDialog.ShowModal()
         self.window.RefreshUI(detail=fileName)
         # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
