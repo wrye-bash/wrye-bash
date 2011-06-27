@@ -11394,7 +11394,11 @@ class Mod_ListPatchConfig(Link):
         log.setHeader('== '+_('Patch Mode'))
         clip.write('== '+_('Patch Mode')+'\n')
         if doCBash:
-            msg = 'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
+            if settings['bash.CBashEnabled']:
+                msg = 'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
+            else:
+                # It's a CBash patch config, but CBash.dll is unavailable (either by -P command line, or it's not there)
+                msg = 'CBash'
             log(msg)
             clip.write(' ** %s\n' % msg)
         else:
