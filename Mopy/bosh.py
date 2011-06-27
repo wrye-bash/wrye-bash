@@ -1501,7 +1501,7 @@ class MelSet:
                 print error
                 eid = getattr(record,'eid',_('<<NO EID>>'))
                 if not eid: eid = _('<<NO EID>>)')
-                print _('Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d') % (record.recType,record.fid,eid,type,size)
+                print _(Unicode('Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d') % (record.recType,record.fid,eid,type,size))
                 raise
         if _debug: print '<<<<',getattr(record,'eid','[NO EID]')
 
@@ -8738,7 +8738,7 @@ class ModInfos(FileInfos):
         """Will rescan specified mods."""
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         for fileName in names:
-            if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
+            if fileName in ('Oblivion.esm','Oblivion_1.1.esm',): continue
             fileInfo = self[fileName]
             try:
                 if not doCBash:
@@ -8748,7 +8748,7 @@ class ModInfos(FileInfos):
             except Exception, e:
                 deprint (_("Error scanning mod %s (%s)" %(fileName, str(e))))
                 canMerge = False #presume non-mergeable.
-            if fileName == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False
+            if fileName == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
