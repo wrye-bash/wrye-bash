@@ -11417,7 +11417,7 @@ class Mod_ListPatchConfig(Link):
                 for tweak in patcher.tweaks:
                     if tweak.key in conf:
                         enabled,value = conf.get(tweak.key,(False,''))
-                        label = tweak.getListLabel()
+                        label = tweak.getListLabel().replace('[[','[').replace(']]',']')
                         if enabled:
                             log('* __%s__' % label)
                             clip.write(' ** %s\n' % label)
