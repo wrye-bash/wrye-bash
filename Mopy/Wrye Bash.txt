@@ -2313,7 +2313,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809|here]]
 * Updated NSIS installer.
 * Unicode Mode:
-  * Bug fixed for debug printing failing of an error in reading a mod failing with some unicode mods.
+  * Bugs fixed:
+    * debug printing failing of an error in reading a mod failing with some unicode mods.
+    * Rename Player
+    * Rename Save items (including Enchanted, Potions, Spells)
 * Startup
   * refactored cmdline opt getting
   * added/changed cmdline options:
