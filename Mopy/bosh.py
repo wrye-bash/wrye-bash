@@ -18075,6 +18075,9 @@ class CBash_PatchFile(ObModFile):
 
     def mergeModFile(self,modFile,progress,doFilter,iiMode):
         """Copies contents of modFile into self."""
+        """Note that GMST and MGEF records will get assigned new FormID's, due to the way
+           that CBash works.  This is ok, since these types of records are only
+           referenced via their EditorID's."""
         mergeIds = self.mergeIds
         loadSet = self.loadSet
         parentsToLoad = set()
