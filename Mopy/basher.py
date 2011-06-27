@@ -11394,8 +11394,9 @@ class Mod_ListPatchConfig(Link):
         log.setHeader('== '+_('Patch Mode'))
         clip.write('== '+_('Patch Mode')+'\n')
         if doCBash:
-            log('CBash')
-            clip.write(' ** CBash v%u.%u.%u\n' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision()))
+            msg = 'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
+            log(msg)
+            clip.write(' ** %s\n' % msg)
         else:
             log('Python')
             clip.write(' ** Python\n')
@@ -15064,8 +15065,12 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     #ModList.itemMenu.append(Mod_MarkLevelers())
-    ModList.itemMenu.append(Mod_MarkMergeable())
-    ModList.itemMenu.append(Mod_Patch_Update())
+    ModList.itemMenu.append(Mod_MarkMergeable(False))
+    if CBash:
+        ModList.itemMenu.append(Mod_MarkMergeable(True))
+    ModList.itemMenu.append(Mod_Patch_Update(False))
+    if CBash:
+        ModList.itemMenu.append(Mod_Patch_Update(True))
     ModList.itemMenu.append(Mod_ListPatchConfig())
     #--Advanced
     ModList.itemMenu.append(SeparatorLink())
