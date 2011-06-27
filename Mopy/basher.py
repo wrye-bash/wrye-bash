@@ -5681,13 +5681,19 @@ class ImportFaceDialog(wx.Dialog):
 #------------------------------------------------------------------------------
 class PatchDialog(wx.Dialog):
     """Bash Patch update dialog."""
-    patchers = [] #--All patchers. These are copied as needed.
+    patchers = []       #--All patchers. These are copied as needed.
+    CBash_patchers = [] #--All patchers (CBash mode).  These are copied as needed.
 
-    def __init__(self,parent,patchInfo):
+    def __init__(self,parent,patchInfo,doCBash=None):
         """Initialized."""
         self.parent = parent
+        if (doCBash or doCBash is None) and settings['bash.CBashEnabled']:
+            doCBash = True
+        else:
+            doCBash = False
+        self.doCBash = doCBash
         size = balt.sizes.get(self.__class__.__name__,(400,400))
-        wx.Dialog.__init__(self,parent,-1,_("Update ")+patchInfo.name.s, size=size,
+        wx.Dialog.__init__(self,parent,-1,_("Update ")+patchInfo.name.s+['',' (CBash)'][doCBash], size=size,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.SetSizeHints(400,300)
         #--Data
@@ -5695,7 +5701,10 @@ class PatchDialog(wx.Dialog):
             enumerate((_('General'),_('Importers'),_('Tweakers'),_('Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
         self.patchInfo = patchInfo
-        self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.patchers]
+        if doCBash:
+            self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
+        else:
+            self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.patchers]
         self.patchers.sort(key=lambda a: a.__class__.name)
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
@@ -5781,7 +5790,7 @@ class PatchDialog(wx.Dialog):
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'), abort=True)
         ###Remove from Bash after CBash integrated
-        if not CBash:
+        if not self.doCBash:
             try:
                 from datetime import timedelta
                 timer1 = time.clock()
@@ -5955,7 +5964,7 @@ class PatchDialog(wx.Dialog):
         patchConfigs = {'ImportedMods':set()}
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
-        table.setItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)])),'bash.patch.configs',patchConfigs)
+        table.setItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
         table.save()
 
     def ImportConfig(self,event=None):
@@ -5970,7 +5979,7 @@ class PatchDialog(wx.Dialog):
         table = bolt.Table(bosh.PickleDict(
             textPath, pklPath))
         #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)])),'bash.patch.configs',{})
+        patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][self.doCBash])),'bash.patch.configs',{})
         if not patchConfigs: #try the old format:
             deprint('old format')
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
@@ -5978,7 +5987,7 @@ class PatchDialog(wx.Dialog):
                 self.UpdateConfig(patchConfigs)
                 return
         if not patchConfigs: #try the non-current Bashed Patch mode:
-            patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bool(CBash)-1])),'bash.patch.configs',{})  
+            patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})  
             if patchConfigs:
                 self.UpdateConfig(patchConfigs)
                 return
@@ -5999,8 +6008,8 @@ class PatchDialog(wx.Dialog):
         self.SetOkEnable()
 
     def UpdateConfig(self,patchConfigs,event=None):
-        if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)" % (['Python','CBash'][bool(CBash)], ['Python','CBash'][bool(CBash)-1]))): return
-        if not CBash:
+        if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)" % (['CBash','Python'][self.doCBash], ['Python','CBash'][self.doCBash]))): return
+        if not self.doCBash:
             bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
         else:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
@@ -6678,46 +6687,46 @@ class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
-if not CBash:
-    PatchDialog.patchers.extend((
-        AliasesPatcher(),
-        AssortedTweaker(),
-        PatchMerger(),
-        AlchemicalCatalogs(),
-        KFFZPatcher(),
-        ActorImporter(),
-        DeathItemPatcher(),
-        NPCAIPackagePatcher(),
-        CoblExhaustion(),
-        UpdateReferences(),
-        CellImporter(),
-        ClothesTweaker(),
-        GlobalsTweaker(),
-        GmstTweaker(),
-        GraphicsPatcher(),
-        ImportFactions(),
-        ImportInventory(),
-        SpellsPatcher(),
-        TweakActors(),
-        ImportRelations(),
-        ImportScripts(),
-        ImportScriptContents(),
-        ImportActorsSpells(),
-        ListsMerger(),
-        MFactMarker(),
-        NamesPatcher(),
-        NamesTweaker(),
-        NpcFacePatcher(),
-        PowerExhaustion(),
-        RacePatcher(),
-        RoadImporter(),
-        SoundPatcher(),
-        StatsPatcher(),
-        SEWorldEnforcer(),
-        ContentsChecker(),
-        ))
-else:
-    PatchDialog.patchers.extend((
+#if not CBash:
+PatchDialog.patchers.extend((
+    AliasesPatcher(),
+    AssortedTweaker(),
+    PatchMerger(),
+    AlchemicalCatalogs(),
+    KFFZPatcher(),
+    ActorImporter(),
+    DeathItemPatcher(),
+    NPCAIPackagePatcher(),
+    CoblExhaustion(),
+    UpdateReferences(),
+    CellImporter(),
+    ClothesTweaker(),
+    GlobalsTweaker(),
+    GmstTweaker(),
+    GraphicsPatcher(),
+    ImportFactions(),
+    ImportInventory(),
+    SpellsPatcher(),
+    TweakActors(),
+    ImportRelations(),
+    ImportScripts(),
+    ImportScriptContents(),
+    ImportActorsSpells(),
+    ListsMerger(),
+    MFactMarker(),
+    NamesPatcher(),
+    NamesTweaker(),
+    NpcFacePatcher(),
+    PowerExhaustion(),
+    RacePatcher(),
+    RoadImporter(),
+    SoundPatcher(),
+    StatsPatcher(),
+    SEWorldEnforcer(),
+    ContentsChecker(),
+    ))
+if CBash:
+    PatchDialog.CBash_patchers.extend((
         CBash_AliasesPatcher(),
         CBash_AssortedTweaker(),
         CBash_PatchMerger(),
@@ -10569,9 +10578,17 @@ class Mod_MarkLevelers(Link):
 #------------------------------------------------------------------------------
 class Mod_MarkMergeable(Link):
     """Returns true if can act as patch mod."""
+    def __init__(self,doCBash):
+        Link.__init__(self)
+        self.doCBash = doCBash
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Mark Mergeable...'))
+        if self.doCBash:
+            title = _('Mark Mergeable (CBash)...')
+        else:
+            title = _('Mark Mergeable...')
+        menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(data))
 
@@ -10581,7 +10598,7 @@ class Mod_MarkMergeable(Link):
         for fileName in map(GPath,self.data):
             if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
             fileInfo = bosh.modInfos[fileName]
-            if not CBash:
+            if not self.doCBash:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
             else:
                 canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
@@ -10594,7 +10611,7 @@ class Mod_MarkMergeable(Link):
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                 no.append("%s:%s" % (fileName.s,canMerge))
-        message = ''
+        message = '== %s ' % (['Python','CBash'][self.doCBash])+_('Mergeability')+'\n\n' 
         if yes:
             message += _('=== Mergeable\n* ') + '\n\n* '.join(x.s for x in yes)
         if yes and no:
@@ -11246,10 +11263,18 @@ class Mod_FullNames_Import(Link):
 #------------------------------------------------------------------------------
 class Mod_Patch_Update(Link):
     """Updates a Bashed Patch."""
+    def __init__(self,doCBash=False):
+        Link.__init__(self)
+        self.doCBash = doCBash
+
     def AppendToMenu(self,menu,window,data):
         """Append link to a menu."""
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Rebuild Patch...'))
+        if self.doCBash:
+            title = _('Rebuild Patch (CBash)...')
+        else:
+            title = _('Rebuild Patch...')
+        menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
         enable = (len(self.data) == 1 and
             bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
@@ -11263,12 +11288,12 @@ class Mod_Patch_Update(Link):
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
             return
-        if not CBash:
+        if not self.doCBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
         else:
             bosh.CBash_PatchFile.patchTime = fileInfo.mtime
             nullProgress = bolt.Progress()
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,self.doCBash)
             self.window.RefreshUI()
         message = ""
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
@@ -11320,7 +11345,7 @@ class Mod_Patch_Update(Link):
             warning = balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
             if not warning:
                 return
-        patchDialog = PatchDialog(self.window,fileInfo)
+        patchDialog = PatchDialog(self.window,fileInfo,self.doCBash)
         patchDialog.ShowModal()
         self.window.RefreshUI(detail=fileName)
         # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
@@ -11343,12 +11368,21 @@ class Mod_ListPatchConfig(Link):
         #--Patcher info
         groupOrder = dict([(group,index) for index,group in
             enumerate((_('General'),_('Importers'),_('Tweakers'),_('Special')))])
-        patchers = [copy.deepcopy(x) for x in PatchDialog.patchers]
+        #--Config
+        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        # Detect CBash/Python mode patch
+        doCBash = False
+        for className in config:
+            if 'CBash' in className:
+                doCBash = True
+                break
+        if doCBash:
+            patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
+        else:
+            patchers = [copy.deepcopy(x) for x in PatchDialog.patchers]
         patchers.sort(key=lambda a: a.__class__.name)
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         patcherNames = [x.__class__.__name__ for x in patchers]
-        #--Config
-        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
         #--Log & Clipboard text
         log = bolt.LogFile(stringBuffer())
         log.setHeader('= %s %s' % (self.data[0],_('Config')))
@@ -11356,6 +11390,15 @@ class Mod_ListPatchConfig(Link):
         clip = stringBuffer()
         clip.write('%s %s:\n' % (self.data[0],_('Config')))
         clip.write('[spoiler][xml]')
+        # CBash/Python patch?
+        log.setHeader('== '+_('Patch Mode'))
+        clip.write('== '+_('Patch Mode')+'\n')
+        if doCBash:
+            log('CBash')
+            clip.write(' ** CBash v%u.%u.%u\n' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision()))
+        else:
+            log('Python')
+            clip.write(' ** Python\n')
         for patcher in patchers:
             className = patcher.__class__.__name__
             humanName = patcher.__class__.name
