@@ -362,6 +362,7 @@ class PageFinish(PageInstaller):
 
         subs = subsList.keys()
         subs.sort(lambda l,r: cmp(l, r))
+        subs = [x.replace('&','&&') for x in subs]
         espms = espmsList.keys()
         espms.sort(lambda l,r: cmp(l, r))
 
@@ -372,6 +373,7 @@ class PageFinish(PageInstaller):
                 espmShow.append(x + ' -> ' + espmRenames[x])
             else:
                 espmShow.append(x)
+        espmShow = [x.replace('&','&&') for x in espmShow]
 
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
