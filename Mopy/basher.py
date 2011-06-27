@@ -9480,7 +9480,7 @@ class Mods_SelectedFirst(Link):
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     def __init__(self): BoolLink.__init__(self,
-                                          _("Check mods against BOSS's dirty mod list (BOSS 1.7+)"),
+                                          _("Check mods against BOSS's dirty mod list"),
                                           'bash.mods.scanDirty',
                                           )
 
@@ -10308,7 +10308,7 @@ class Mod_SkipDirtyCheck(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list (BOSS 1.7+)"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
             menu.AppendItem(menuItem)
             self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
             menuItem.Check(self.ignoreDirty)
