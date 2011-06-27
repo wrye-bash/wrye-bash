@@ -25133,8 +25133,8 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
             (_('60%'),  60),
             (_('70%'),  70),
             (_('80%'),  80),
-            (_('90%'), 90),
-            (_('100%'),  100),
+            (_('90%'),  90),
+            (_('100%'), 100),
             (_('Custom'),0),
             )
 
@@ -25189,16 +25189,16 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
         CBash_MultiTweakItem.__init__(self,False,_("Harvest Chance"),
             _('Harvest chances on all plants will be set to the chosen percentage.'),
             'HarvestChance',
-            (_('10'),  10),
-            (_('20'),  20),
-            (_('30'),  30),
-            (_('40'),  40),
-            (_('50'),  50),
-            (_('60'),  60),
-            (_('70'),  70),
-            (_('80'),  80),
-            (_('90'),  90),
-            (_('100'),  100),
+            (_('10%'),  10),
+            (_('20%'),  20),
+            (_('30%'),  30),
+            (_('40%'),  40),
+            (_('50%'),  50),
+            (_('60%'),  60),
+            (_('70%'),  70),
+            (_('80%'),  80),
+            (_('90%'),  90),
+            (_('100%'), 100),
             (_('Custom'),0),
             )
         self.mod_count = {}
@@ -30012,7 +30012,7 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Real walk for female NPCs"),
+        MultiTweakItem.__init__(self,False,_("Real Walk for female NPCs"),
             _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
             'Mur Zuk RWalk',
             ('1.0',  '1.0'),
