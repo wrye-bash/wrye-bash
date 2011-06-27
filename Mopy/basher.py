@@ -7891,6 +7891,7 @@ class Installer_Wizard(InstallerLink):
         gInstallers.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
         espms = gInstallers.gEspmList.GetStrings()
+        espms = [x.replace('&&','&') for x in espms]
         installer.espmNots = set()
         for index, espm in enumerate(gInstallers.espms):
             if espms[index] in ret.SelectEspms:
