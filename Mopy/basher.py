@@ -12733,8 +12733,9 @@ class Save_EditCreatedData(balt.ListEditorData):
                 if not record.full: continue
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record
-                if record.full not in data: data[record.full] = (record.full,[])
-                data[record.full][1].append(record)
+                record_full = Unicode(record.full,'mbcs')
+                if record_full not in data: data[record_full] = (record_full,[])
+                data[record_full][1].append(record)
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -12802,7 +12803,7 @@ class Save_EditCreatedData(balt.ListEditorData):
             for newName,(oldName,records) in self.data.items():
                 if newName == oldName: continue
                 for record in records:
-                    record.full = newName
+                    record.full = Encode(newName,'mbcs')
                     record.setChanged()
                     record.getSize()
                 count += 1
