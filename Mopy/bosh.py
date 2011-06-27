@@ -8732,13 +8732,15 @@ class ModInfos(FileInfos):
         return newMods
 
     def rescanMergeable(self,names,progress,doCBash=None):
+        """Will rescan specified mods."""
         if doCBash is None:
             doCBash = bool(CBash)
         elif doCBash and not bool(CBash):
             doCBash = False
-        """Will rescan specified mods."""
         mod_mergeInfo = self.table.getColumn('mergeInfo')
-        for fileName in names:
+        progress.setFull(len(names))
+        for i,fileName in enumerate(names):
+            progress(i,fileName.s)
             if fileName in ('Oblivion.esm','Oblivion_1.1.esm',): continue
             fileInfo = self[fileName]
             try:
@@ -8760,6 +8762,7 @@ class ModInfos(FileInfos):
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                     self.mergeable.discard(fileName)
+
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
         """Adds/removes balo headers as necessary. This is called by refresh(),
@@ -27844,7 +27847,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
         CBash_GmstTweak(False,_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
             ('iVampirismAgeOffset',),
-            (_('Fix it!'),0),
+            ('Fix it!',0),
             ),
         CBash_GmstTweak(True,_('AI: Max Dead Actors'),
             _("Maximum number of dead actors allowed before they're removed."),

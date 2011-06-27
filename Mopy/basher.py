@@ -6004,13 +6004,18 @@ class PatchDialog(wx.Dialog):
         if not patchConfigs: #try the old format:
             deprint('old format')
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
-            if not self.patchers[0].__class__.__name__ in patchConfigs and not self.patchers[1].__class__.__name__ in patchConfigs:
-                self.UpdateConfig(patchConfigs)
-                return
-        if not patchConfigs: #try the non-current Bashed Patch mode:
-            patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})  
             if patchConfigs:
-                patchConfigs = self.UpdateConfig(patchConfigs)
+                configIsCBash = False
+                for key in patchConfigs:
+                    if 'CBash' in key:
+                        configIsCBash = True
+                        break
+                if configIsCBash != self.doCBash:
+                    patchConfigs = self.UpdateConfig(patchConfigs)
+            else:   #try the non-current Bashed Patch mode:
+                patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})  
+                if patchConfigs:
+                    patchConfigs = self.UpdateConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -11298,7 +11303,8 @@ class Mod_Patch_Update(Link):
         enable = (len(self.data) == 1 and
             bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         menuItem.Enable(enable)
-        menuItem.Check(check)
+        if settings['bash.CBashEnabled']:
+            menuItem.Check(check)
 
     def Execute(self,event):
         """Handle activation event."""
