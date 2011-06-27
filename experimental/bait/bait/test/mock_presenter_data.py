@@ -198,8 +198,8 @@ pkgNodes[53] = ["installed, but dirty", False, None, 52, _NTPKG, _FIPI, view_com
 pkgNodes[54] = ["newpackage.7z", False, None, 53, _NTPKG, _FIPN, view_commands.Style(fontStyleMask=view_commands.FontStyleIds.BOLD, checkboxState=False, iconId=view_commands.IconIds.INSTALLER_MISSING), True, _nullTextMap, None]
 
 # test non-ascii
-pkgNodes[55] = ["utf8 Mandarin Chinese: 繁體和简体", False, None, 54, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
-pkgNodes[56] = ["utf8 Vietnamese: tiếng Việt", False, None, 55, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[55] = [u"utf8 Mandarin Chinese: 繁體和简体", False, None, 54, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
+pkgNodes[56] = [u"utf8 Vietnamese: tiếng Việt", False, None, 55, _NTPKG, _FIPI, view_commands.Style(checkboxState=True, iconId=view_commands.IconIds.PROJECT_MATCHES), True, _nullTextMap, None]
 
 # files
 """

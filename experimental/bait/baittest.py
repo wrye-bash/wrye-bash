@@ -5,10 +5,12 @@
 
 
 import argparse
+import locale
 import logging
 import logging.config
 import multiprocessing
 import re
+import sys
 import threading
 import wx
 
@@ -19,7 +21,7 @@ from bait.test import mock_presenter, mock_model
 _logger = None
 
 
-class MainWindow(wx.Frame):
+class _MainWindow(wx.Frame):
     def __init__(self, options):
         windowTitle = "Bash Asynchronous Installer Tab (BAIT) Test App"
         if options.view:
@@ -68,7 +70,12 @@ class MainWindow(wx.Frame):
         event.Skip()
 
 
-def parse_commandline():
+def _dump_env():
+    _logger.info("wxPython version: %s", wx.version())
+    _logger.info("default encodings: input: %s; output: %s", sys.stdin.encoding, sys.stdout.encoding)
+    _logger.info("default locale: %s", locale.getdefaultlocale())
+
+def _parse_commandline():
     parser = argparse.ArgumentParser(description='The BAIT interactive GUI test driver.')
 
     parser.add_argument(
@@ -128,9 +135,10 @@ if __name__ == "__main__":
     logging.config.fileConfig("logging.conf")
     _logger = logging.getLogger("baittest")
     _logger.info("starting baittest")
-    options = parse_commandline()
+    _dump_env()
+    options = _parse_commandline()
     _logger.info("options: %s", options)
     app = wx.App(False)
-    MainWindow(options)
+    _MainWindow(options)
     app.MainLoop()
     _logger.info("exiting baittest")
