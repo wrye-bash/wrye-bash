@@ -1,55 +1,46 @@
 Continuing from the [topic=1202320]previous thread[/topic]...
 
-Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I mean a LOT.  It's like twenty tools rolled into one.  It includes as subfeatures the entire feature sets of other tools, and offers plenty of other features that no other mod tool has.
+Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
+
+Its two best-known features are the Bashed Patch, which allows you to enable multiple overlapping mod plugins and have them work together sensibly, and the BAIN installation framework, an easy-to-use interface for installing and uninstalling mods that automatically heals your game data when multiple mods try to install the same files.  Related to and beyond these, it also has many capabilities targeted at mod creators and power users.
 
 [b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url]
 
 [b]Documentation[/b]:
 [list]
-[*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html"]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
-[*][url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP Wrye Bash unofficial wiki[/url]
-[*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
-[*]Waruddar's Bashed Patch option reference (see bottom of this post)
-[*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
+  [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html"]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
+  [*][url="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash"]UESP Wrye Bash unofficial wiki[/url]
+  [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
+  [*]Waruddar's Bashed Patch option reference (see bottom of this post)
+  [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
 [/list]
 [b]Screenshots[/b]:
 [list]
-[*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_1.png"]Building a bashed patch[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_2.png"]2[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_3.png"]3[/url]
-[*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab.png"]Installers tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab_conflicts.png"]2[/url]
-[*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/mods_tab.png"]Mods tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/saves_tab.png"]Saves tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/ini_edits_tab.png"]INI Edits tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/screenshots_tab.png"]Screenshots tab[/url]
+  [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_1.png"]Building a bashed patch[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_2.png"]2[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_3.png"]3[/url]
+  [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab.png"]Installers tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab_conflicts.png"]2[/url]
+  [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/mods_tab.png"]Mods tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/saves_tab.png"]Saves tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/ini_edits_tab.png"]INI Edits tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/screenshots_tab.png"]Screenshots tab[/url]
 [/list]
 [b]Requirements[/b]:
 [list]
-[*]It's easiest to just download the WryePython04 package, or the older WryePython03a: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
-[*]If you want to do things manually: [spoiler][list][*]Python 2.5:[list]
-  [*][url=http://www.python.org/ftp/python/2.5.4/python-2.5.4.msi]Python 2.5.4[/url]
-  [*][url="http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py25.exe"]wxPython 2.8.11.0 ansi for Python 2.5[/url]
-  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url] *included in Wrye Python 03a/04
-  [*][url="http://sourceforge.net/projects/psyco/files/psyco/1.6/psyco-1.6.win32-py25.exe/download"]psyco 1.6 for Python 2.5[/url] (optional)
-  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.5.exe/download"]PyWin32 for Python 2.5[/url][/list][*]Python 2.6: *included in Wrye Python 03a (With the exception of wxPython 2.8.12.0 ansi - 03a includes 2.8.11.0)[list]
-  [*][url="http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi"]Python 2.6.6[/url]
-  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe"]wxPython 2.8.12.0 ansi for Python 2.6[/url]
-  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
-  [*][url="http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip"]psyco 1.6 for Python 2.6[/url] (optional)
-  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download"]PyWin32 for Python 2.6[/url][/list][*]Python 2.7: *included in Wrye Python 04[list]
-  [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
-  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe"]wxPython 2.8.12.0 ansi for Python 2.7[/url] *unicode version included in Wrye Python 04
-  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
-  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Python 3.x: [b][u]NOT Supported[/b][/u]
-[*]Other setups _may_work_, but these are probably the most widely used and tested.[/list][/spoiler][*]If you're using the Standalone version, you don't need [i]any[/i] of the Python components, however you may need the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url].
+  [*]It's easiest to just download the WryePython04a package: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
+  [*]If you want or need to do things manually: [spoiler][list][*]included in Wrye Python 04a[list]
+    [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
+    [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe"]wxPython 2.8.12.0 ansi for Python 2.7[/url]
+    [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
+    [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Other setups _may_work_, but this is the only officially supported setup.
+    [*]Python 3.x: [b][u]NOT Supported[/u][/b]
+  [/list][/spoiler][*]If you're using the Standalone version, which has the requirements embedded, you don't need [i]any[/i] of the individual Python components, however you may need the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url].
 [/list]
-[b]Development[/b]: The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Found a bug?  Report it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901"]here[/url]!  Feeling brave?  SVN versions are often half working, have serious problems, or Just Don't Work(TM)!  If you know what you're doing and still want to help us test new features and track down bugs, download the SVN [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=tar]here[/url]!  You don't need a SourceForge account -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).
-
 [b]Installation[/b]:
 [list]
-[*]If you are installing for the first time, make sure you have installed WryePython04 package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url], unless you plan on using the Standalone version.
-[*]Then just download and run the installer for the most recent release.  You can upgrade this way too.
+[*]If you are installing for the first time, make sure you have installed WryePython04a package from [url="http://tesnexus.com/downloads/file.php?id=22368"]TesNexus[/url] (unless you plan on using the Standalone version).
+[*]Download and run the installer for the most recent release.  You can upgrade this way too.
 [*]For manual installations/upgrades, download the archive version and extract in your Oblivion game folder (so that the Mopy directory appears in the Oblivion directory)
 [*]For WBSA (Wrye Bash StandAlone) versions, no Python components are required, but remember it is a beta and there are currently issues (see the section under [b]Reporting Bugs[/b].)
 [/list]
-[b]Reporting Bugs[/b]:
-[list][*]Try to give us enough information to diagnose your problem.  The following is useful information for us:
-[spoiler][list]
+[b]Development[/b]: The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Found a bug?  Report it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901"]here[/url]!  Want to be in the know for bleeding-edge code?  Subscribe to the list  [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]!  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and still want to help us test new features and track down bugs, download the latest SVN [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=tar]here[/url]!  You don't need a SourceForge account -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).
+
+[b]Reporting Bugs[/b]:[list][*]Try to give us enough information to diagnose your problem.  The following is useful information for us:[spoiler][list]
 [*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpful), what you expected, and what happened.
 [*]If Oblivion isn't installed in the default location, where is it installed?
 [*]What version of the python components are installed?
@@ -60,7 +51,7 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
  [*]psyco
  [*]PyWin32
  [/list][*]What version of Windows are you using?  Is UAC enabled?
-[*]Is CBash enabled? If so, what version is displayed?  Does the problem exist if you disable CBash (rename CBash.dll to any other name)?
+[*]Does the problem exist if you disable CBash (rename CBash.dll to any other name and restart Wrye Bash)?
 [*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
 [*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
 [*]Is the problem related to the Bashed Patch?  If so include the following:[list]
@@ -71,72 +62,12 @@ Wrye Bash is a mod management tool for Oblivion.  It has a lot of features.  I m
 [*]Wrye Bash wont work correctly if you launch it from the command line (DOS).  Always launch by double clicking the exe or a shortcut to it.
 [*]Due to issue #1, no debug mode is available.  Some errors that happen will still be printed either to a "Wrye Bash.exe.txt" file, or to the "stdout/stderr" window that shows up with errors sometimes.
 [*]There may be plenty more...just think of them as "undocumented features"[/list][*]If you think you've found an error in the WBSA, be sure to uninstall ALL python components and test it again first, to be sure we get an accurate report.  Having python installed can sometimes trick the WBSA into thinking that it has all of the files it requires, even if it really doesn't.[/list]
-[/spoiler][b]Linking[/b]:
-[list]
-[*]If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual Bash zip file, since that changes fairly frequently.
-[/list]
-[b]Bain[/b]
-[list]
-[*]Install/uninstall mods from zip, 7z, rar, etc., or just from a directory of uncompressed files. No OMODs required!
-[/list]
-[b]Bashed Patches[/b]
-Get more mods working together than you ever thought possible!  Customize the game to your liking!
-[list]
-[*]Merge leveled lists
-[*]Merge TNR faces over other changes to npcs
-[*]Merge race eye/hair/body/voice changes over other changes to races
-[*]Merge entire mods into the bashed patch, allowing mods beyond the 255 plugin limit
-[*]Tweak clothes: Show amulets with robes, zero weight rings and amulets, etc.
-[*]Tweak global settings
-[/list]
-[b]Repair/Edit Stuff[/b]
-[list]
-[*]Repair frozen animations
-[*]Repair missing hair CTD bug
-[*]Remove spells from spell list
-[*]Rename created spells and enchanted items
-[*]Remove savegame bloating (one use of this reduced a 158 Mb save to 2.5 Mb)
-[*]Import NPC levels into an existing savegame (essential when switching to/from OOO, Frans, etc.)
-[*]Import PC face from other savegame or any mod (e.g., import any of TNR's faces into game)
-[*]Easily generate html readmes using wiki-like syntax.
-[/list]
-[b]Mod, Savegame, and Screenshot Management[/b]
-[list]
-[*]Auto-Ghost mods to reduce [topic=941296]espm thrashing[/topic].
-[*]View, delete, batch rename, duplicate, open, etc.
-[*]Save Profiles: Have different sets of saves for different npcs with different loadlists, etc.
-[*]Readme Browser: Quickly view readme of currently selected mod.
-[*]Quick/Autoswap between SI and pre-SI versions of Oblivion.esm.
-[*]Launch Oblivion and TESCS (with or without OBSE).
-[/list]
-[quote name='dev_akm' date='Apr 2 2007, 03:22 PM']
-You should add a few more things to that list, Wrye. Almost none of the items from my list of the most compelling features in Wrye Bash are on your list:
+[/spoiler][b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual Bash zip file, since that changes fairly frequently.
 
-For everyone:
-[list]
-[*]Accurately and quickly managing your load order (correctly sorts ESMs)
-[*]Locking your load order (so updated mods automatically load in the exact same spot as the old version)
-[*]Checking your load list for problems (missing mod dependencies)
-[*]Checking savegames against load list and syncing load list to savegame
-[*]Archive Invalidation (now supports BSA-alteration BSA-redirection method)
-[*]Change master entry in savegame (to avoid losing items, quest progress, etc. when the name of a mod has changed)
-[/list]
-For mod-makers:
-[list]
-[*]Add a master to a plugin (for mod de-isolation)
-[*]Change master entry in plugin (for mod de-isolation)
-[*]Locking your load order (so changes you make don't move the plugin to the end of your load list)
-[*]Savegame profiles (so you can easily test with only your mod active, then easily switch back to playing with all your mods active)
-[/list]
-[/quote]
-[b]Fallout 3[/b]:
-[list]
+[b]Related Projects[/b]:[list]
+[*]Load orders should be managed with [url="http://tesnexus.com/downloads/file.php?id=20516"]BOSS[/url] (Better Oblivion Sorting Software), which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a recent taglist is shipped with each version of Wrye Bash)
 [*]TheLORDofDOOM has taken on making a FO3 version, Wrye4Fallout3... and
 here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [topic=1102449"]garybash[/topic].
-[/list]
-[b]Other news[/b]:
-[list]
-[*]There is now a listserve for the svn and bug/request/patch/support trackers; if you want to get emails whenever changes to those items happen just join over [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]. You can also use it for support requests/questions if you desire.
 [/list]
 [b]Latest Version[/b]:
 === 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]
@@ -225,7 +156,7 @@ here's the first little bit of it (not all translated to account for FO3 but it'
     [*] These features may be removed in future versions.[/list]  [*] Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set [b]bResetBSATimestamps[/b] to [i]False[/i] in bash.ini
   [*] In cases where the [b]bUseMyGameDirectory[/b] is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
   [*] Unicode improvements: (all only applicable in unicode mode)[list]
-    [*] Fixed viewing/saving modfiles with tejón and other non-ascii author names.
+    [*] Fixed viewing/saving modfiles with tejÃ³n and other non-ascii author names.
     [*] Fixed project view/scanning for projects containing non-ascii filenames.
     [*] Fixed project->archive packaging for projects that contain files with non-ascii names.
     [*] Warning added if using Unicode Wrye Bash but using non-unicode wxPython.
@@ -240,8 +171,7 @@ here's the first little bit of it (not all translated to account for FO3 but it'
   [*] New mod command List Patch Config..., for posting your Bashed Patch configuration on the forums.
   [*] Readme updated and thoroughly spellchecked (in American English).[/list][/list][/spoiler]
 
-Patch option reference (by Waruddar):
-[spoiler]
+[b]Patch option reference (by Waruddar)[/b]:[spoiler]
 Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below). Also when I say mods, I mean just that, mods. Don't check any of the csv files unless you know that they're what you want.
 
 Alias Mod Names
@@ -254,7 +184,7 @@ Merge Patches
 [list]
 [*]Should you check it? Yes. Unless you need it, it won't help you, but it also doesn't hurt to have it active.
 [*]What does it do? It copies mods into the Bashed Patch so that they don't have to be active.
-[*]When does the user need it? If you're running out of space in your load order (Oblivion can only handle 255 mods at a time) this can merge some mods into the Bashed Patch so that you have more space. Some mods have to be merged to work properly (filter mods, Item Interchange), but this should be noted in the mod's readme.
+[*]When does the user need it? If you're running out of space in your load order (Oblivion can only handle 254 mods at a time) this can merge some mods into the Bashed Patch so that you have more space. Some mods have to be merged to work properly (filter mods, Item Interchange), but this should be noted in the mod's readme.
 [*]When does a modder need it? If you're creating a filter or item interchange type mod. See the readme for details.
 [/list]
 Replace Form IDs
@@ -627,4 +557,4 @@ SEWorld Tests
 [*]What does it do? It fixes any quests that aren't suspended while your character is in the Shivering Isles.
 [*]When does the user need it? Always (assuming you aren't using a really old patch). If you don't have the Shivering Isles expansion, this won't do you any good, but it also won't hurt you. So it's safer to just leave it enabled.
 [/list]
-[/spoiler]
+[/spoiler]
