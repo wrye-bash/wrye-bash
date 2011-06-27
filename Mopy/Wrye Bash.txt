@@ -2300,6 +2300,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
     * Bug with the [[#ImportActorsAIPackages|NPC AI Packages]] patcher fixed (incorrectly detecting if OOO and the UOP were installed).
     * Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+    * Hack added to make sure that OOO.esp is reported as non-mergeable.
+    * Fix for mergeability detection for corrupted/unrecognized format mods (presume non-mergeable and warn if in debug mode but don't fail - which could prevent rebuilding of patch in CBash mode).
     * [[#ImportNPCFaces|NPC Face data]] should properly be merged, vice overridden.
     * Fixed merging of QUST records from Filter mods.
   * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
@@ -2310,6 +2312,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
   * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809|here]]
 * Updated NSIS installer.
+* Unicode Mode:
+  * Bug fixed for debug printing failing of an error in reading a mod failing with some unicode mods.
 * Startup
   * refactored cmdline opt getting
   * added/changed cmdline options:
@@ -2319,6 +2323,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * -P/--Python-mode: force python mode (whether or not CBash.dll exists).
     * -U/--Unicode: equivalent to setting __bEnableUnicode__ to **True** in bash.ini (but the cmdline options overide the ini when specified).
     * -A/--Ansi: equivalent to setting __bEnableUnicode__ to **False** in bash.ini (but the cmdline options overide the ini when specified).
+    * -i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.
+    * -I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.
 
 === 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]
 * __CBash__ is live!  The default install now uses CBash.
