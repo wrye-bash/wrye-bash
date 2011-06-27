@@ -5708,12 +5708,7 @@ class PatchDialog(wx.Dialog):
                 configIsCBash = True
                 break
         if configIsCBash != self.doCBash:
-            # Config CBash/Python doesn't match current CBash/Python mode
-            if not balt.askContinue(parent,
-                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
-                        % (patchInfo.name.s,['Python','CBash'][configIsCBash],['Python','CBash'][self.doCBash]),
-                    'bash.patch.CBashMismatch'):
-                raise CancelError
+            # Config CBash/Python doesn't match current CBash/Python mode, convert
             newConfig = {}
             for key in patchConfigs:
                 if key in otherPatcherDict:
@@ -11278,6 +11273,7 @@ class Mod_Patch_Update(Link):
     def __init__(self,doCBash=False):
         Link.__init__(self)
         self.doCBash = doCBash
+        self.CBashMismatch = False
 
     def AppendToMenu(self,menu,window,data):
         """Append link to a menu."""
@@ -11296,7 +11292,7 @@ class Mod_Patch_Update(Link):
                 if 'CBash' in className:
                     thisIsCBash = True
                     break
-            check = bool(thisIsCBash == self.doCBash)
+            self.CBashMismatch = bool(thisIsCBash != self.doCBash)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
@@ -11304,7 +11300,7 @@ class Mod_Patch_Update(Link):
             bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         menuItem.Enable(enable)
         if settings['bash.CBashEnabled']:
-            menuItem.Check(check)
+            menuItem.Check(not self.CBashMismatch)
 
     def Execute(self,event):
         """Handle activation event."""
@@ -11314,6 +11310,13 @@ class Mod_Patch_Update(Link):
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
             return
+        # Verify they want to build a previous Python patch in CBash mode, or vice versa
+        if self.CBashMismatch:
+            if not balt.askContinue(self.window,
+                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
+                        % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),
+                    'bash.patch.CBashMismatch'):
+                return
         if not self.doCBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
             if settings['bash.CBashEnabled']:
