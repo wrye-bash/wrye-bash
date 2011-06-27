@@ -5710,7 +5710,7 @@ class PatchDialog(wx.Dialog):
         if configIsCBash != self.doCBash:
             # Config CBash/Python doesn't match current CBash/Python mode
             if not balt.askContinue(parent,
-                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to importyour settings over, however some may not be copied correctly.")
+                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
                         % (patchInfo.name.s,['Python','CBash'][configIsCBash],['Python','CBash'][self.doCBash]),
                     'bash.patch.CBashMismatch'):
                 raise CancelError
@@ -12387,13 +12387,15 @@ class Mod_ScanDirty(Link):
                 return sorted(fids)
         for i,modInfo in enumerate(modInfos):
             udr,itm,fog = ret[i]
-            if udr or itm:
+            if udr or (itm and modInfo.header.author not in ('BASHED PATCH','BASHED LISTS')):
                 log('* __'+modInfo.name.s+'__:')
                 log(_('  * UDR: %i') % len(udr))
                 for fid in sortedFidList(udr): # Sorted by master, then id
                     log(_('    * %s') % strFid(fid))
                 if not settings['bash.CBashEnabled']: continue
-                log(_('  * ITM: %i') % len(itm))
+                if modInfo.header.author not in ('BASHED PATCH','BASHED LISTS'):
+                    # Bashed Patched are supposed to have ITM records
+                    log(_('  * ITM: %i') % len(itm))
                 for fid in sortedFidList(itm):
                     log(_('    * %s') % strFid(fid))
             else:
