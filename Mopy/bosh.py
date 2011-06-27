@@ -8943,18 +8943,19 @@ class ModInfos(FileInfos):
 
     def getSemiActive(self,masters):
         """Returns (merged,imported) mods made semi-active by Bashed Patch."""
-        merged,imported,nullDict = set(),set(),{}
+        merged,imported = set(),set()
         for modName,modInfo in [(modName,self[modName]) for modName in masters]:
             if modInfo.header.author != 'BASHED PATCH': continue
             patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
             if not patchConfigs: continue
-            if not CBash:
-                if patchConfigs.get('PatchMerger',nullDict).get('isEnabled'):
+            configIsCBash = CBash_PatchFile.configIsCBash(patchConfigs)
+            if not configIsCBash:
+                if patchConfigs.get('PatchMerger',{}).get('isEnabled'):
                     configChecks = patchConfigs['PatchMerger']['configChecks']
                     for modName in configChecks:
                         if configChecks[modName]: merged.add(modName)
             else:
-                if patchConfigs.get('CBash_PatchMerger',nullDict).get('isEnabled'):
+                if patchConfigs.get('CBash_PatchMerger',{}).get('isEnabled'):
                     configChecks = patchConfigs['CBash_PatchMerger']['configChecks']
                     for modName in configChecks:
                         if configChecks[modName]: merged.add(modName)
@@ -17941,6 +17942,13 @@ class CBash_PatchFile(ObModFile):
     """Defines and executes patcher configuration."""
 
     #--Class
+    @staticmethod
+    def configIsCBash(patchConfigs):
+        for key in patchConfigs:
+            if 'CBash' in key:
+                return True
+        return False
+
     @staticmethod
     def modIsMergeableNoLoad(modInfo,verbose=False):
         reasons = ''

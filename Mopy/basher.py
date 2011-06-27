@@ -5702,11 +5702,7 @@ class PatchDialog(wx.Dialog):
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
         # If the patch config isn't from the same mode (CBash/Python), try converting
         # it over to the current mode
-        configIsCBash = False
-        for className in patchConfigs:
-            if 'CBash' in className:
-                configIsCBash = True
-                break
+        configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
         if configIsCBash != self.doCBash:
             # Config CBash/Python doesn't match current CBash/Python mode, convert
             newConfig = {}
@@ -6000,11 +5996,7 @@ class PatchDialog(wx.Dialog):
             deprint('old format')
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if patchConfigs:
-                configIsCBash = False
-                for key in patchConfigs:
-                    if 'CBash' in key:
-                        configIsCBash = True
-                        break
+                configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
                 if configIsCBash != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
@@ -11287,11 +11279,7 @@ class Mod_Patch_Update(Link):
             menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
             # Detect if the patch was build with Python or CBash
             config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
-            thisIsCBash = False
-            for className in config:
-                if 'CBash' in className:
-                    thisIsCBash = True
-                    break
+            thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
             self.CBashMismatch = bool(thisIsCBash != self.doCBash)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
@@ -11408,11 +11396,7 @@ class Mod_ListPatchConfig(Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
-        doCBash = False
-        for className in config:
-            if 'CBash' in className:
-                doCBash = True
-                break
+        doCBash = bosh.CBash_PatchFile.configIsCBash(config)
         if doCBash:
             patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
         else:
