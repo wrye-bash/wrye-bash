@@ -30654,7 +30654,9 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                             self.DebugPrintOnce = 1
                             print patchFile.ObCollection.Debug_DumpModFiles()
                             print
-                            print mgef_name
+                            print 'mgef_name:', mgef_name
+                            print
+                            print 'mgef:', mgef
                             print
                         if mgef in bush.mgef_name:
                             effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
