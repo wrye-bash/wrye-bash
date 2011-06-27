@@ -11310,10 +11310,15 @@ class Mod_Patch_Update(Link):
             return
         if not self.doCBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
+            if settings['bash.CBashEnabled']:
+                # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
+                with balt.Progress(_("Mark Mergeable")+' '*30) as progress:
+                    bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
+                self.window.RefreshUI()
         else:
             bosh.CBash_PatchFile.patchTime = fileInfo.mtime
             nullProgress = bolt.Progress()
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,self.doCBash)
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
             self.window.RefreshUI()
         message = ""
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
