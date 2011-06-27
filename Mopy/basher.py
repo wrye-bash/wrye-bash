@@ -6687,7 +6687,6 @@ class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
-#if not CBash:
 PatchDialog.patchers.extend((
     AliasesPatcher(),
     AssortedTweaker(),
@@ -6725,45 +6724,44 @@ PatchDialog.patchers.extend((
     SEWorldEnforcer(),
     ContentsChecker(),
     ))
-if CBash:
-    PatchDialog.CBash_patchers.extend((
-        CBash_AliasesPatcher(),
-        CBash_AssortedTweaker(),
-        CBash_PatchMerger(),
-        CBash_AlchemicalCatalogs(),
-        CBash_KFFZPatcher(),
-        CBash_ActorImporter(),
-        CBash_DeathItemPatcher(),
-        CBash_NPCAIPackagePatcher(),
-        CBash_CoblExhaustion(),
-        CBash_UpdateReferences(),
-        CBash_CellImporter(),
-        CBash_ClothesTweaker(),
-        CBash_GlobalsTweaker(),
-        CBash_GmstTweaker(),
-        CBash_GraphicsPatcher(),
-        CBash_ImportFactions(),
-        CBash_ImportInventory(),
-        CBash_SpellsPatcher(),
-        CBash_TweakActors(),
-        CBash_ImportRelations(),
-        CBash_ImportScripts(),
-##        CBash_ImportScriptContents(),
-        CBash_ImportActorsSpells(),
-        CBash_ListsMerger(),
-        CBash_MFactMarker(),
-        CBash_NamesPatcher(),
-        CBash_NamesTweaker(),
-        CBash_NpcFacePatcher(),
-        CBash_PowerExhaustion(),
-        CBash_RacePatcher(),
-        CBash_RoadImporter(),
-        CBash_SoundPatcher(),
-        CBash_StatsPatcher(),
-        CBash_SEWorldEnforcer(),
-        CBash_ContentsChecker(),
-##        CBash_ForceMerger(),
-        ))
+PatchDialog.CBash_patchers.extend((
+    CBash_AliasesPatcher(),
+    CBash_AssortedTweaker(),
+    CBash_PatchMerger(),
+    CBash_AlchemicalCatalogs(),
+    CBash_KFFZPatcher(),
+    CBash_ActorImporter(),
+    CBash_DeathItemPatcher(),
+    CBash_NPCAIPackagePatcher(),
+    CBash_CoblExhaustion(),
+    CBash_UpdateReferences(),
+    CBash_CellImporter(),
+    CBash_ClothesTweaker(),
+    CBash_GlobalsTweaker(),
+    CBash_GmstTweaker(),
+    CBash_GraphicsPatcher(),
+    CBash_ImportFactions(),
+    CBash_ImportInventory(),
+    CBash_SpellsPatcher(),
+    CBash_TweakActors(),
+    CBash_ImportRelations(),
+    CBash_ImportScripts(),
+##    CBash_ImportScriptContents(),
+    CBash_ImportActorsSpells(),
+    CBash_ListsMerger(),
+    CBash_MFactMarker(),
+    CBash_NamesPatcher(),
+    CBash_NamesTweaker(),
+    CBash_NpcFacePatcher(),
+    CBash_PowerExhaustion(),
+    CBash_RacePatcher(),
+    CBash_RoadImporter(),
+    CBash_SoundPatcher(),
+    CBash_StatsPatcher(),
+    CBash_SEWorldEnforcer(),
+    CBash_ContentsChecker(),
+##    CBash_ForceMerger(),
+    ))
 otherPatcherDict = {AliasesPatcher().__class__.__name__ : CBash_AliasesPatcher(),
                     AssortedTweaker().__class__.__name__ : CBash_AssortedTweaker(),
                     PatchMerger().__class__.__name__ : CBash_PatchMerger(),
@@ -11274,11 +11272,25 @@ class Mod_Patch_Update(Link):
             title = _('Rebuild Patch (CBash)...')
         else:
             title = _('Rebuild Patch...')
-        menuItem = wx.MenuItem(menu,self.id,title)
+        check = False
+        if settings['bash.CBashEnabled']:
+            menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
+            # Detect if the patch was build with Python or CBash
+            config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+            thisIsCBash = False
+            for className in config:
+                if 'CBash' in className:
+                    thisIsCBash = True
+                    break
+            if (thisIsCBash and self.doCBash) or (not thisIsCBash and not self.doCBash):
+                check = True
+        else:
+            menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
         enable = (len(self.data) == 1 and
             bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         menuItem.Enable(enable)
+        menuItem.Check(check)
 
     def Execute(self,event):
         """Handle activation event."""
