@@ -8732,8 +8732,8 @@ class ModInfos(FileInfos):
 
     def rescanMergeable(self,names,progress,doCBash=None):
         if doCBash is None:
-            doCBash = settings['bash.CBashEnabled']
-        elif doCBash and not settings['bash.CBashEnabled']:
+            doCBash = bool(CBash)
+        elif doCBash and not bool(CBash):
             doCBash = False
         """Will rescan specified mods."""
         mod_mergeInfo = self.table.getColumn('mergeInfo')
