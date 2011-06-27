@@ -6010,8 +6010,7 @@ class PatchDialog(wx.Dialog):
         if not patchConfigs: #try the non-current Bashed Patch mode:
             patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})  
             if patchConfigs:
-                self.UpdateConfig(patchConfigs)
-                return
+                patchConfigs = self.UpdateConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -6034,26 +6033,15 @@ class PatchDialog(wx.Dialog):
             bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
         else:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
-        for index,patcher in enumerate(self.patchers):
-            otherPatcher = otherPatcherDict[patcher.__class__.__name__]
-            otherPatcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,otherPatcher.isEnabled)
-            patcher.isEnabled = otherPatcher.isEnabled
-            if isinstance(patcher, ListPatcher):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try:
-                        patcher.configChecks[item] = otherPatcher.configChecks[item]
-                        patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: deprint(_('item %s not in saved configs') % (item))
-            elif isinstance(patcher, TweakPatcher):
-                for index, item in enumerate(tuple(zip(patcher.tweaks,otherPatcher.tweaks))):
-                    try:
-                        item[0].isEnabled = item[1].isEnabled
-                        patcher.gList.Check(index,item[0].isEnabled)
-                    except: deprint(_('item %s not in saved configs') % (item[0]))
-        self.SetOkEnable()
-        
+        # Convert the config
+        newConfig = {}
+        for key in patchConfigs:
+            if key in otherPatcherDict:
+                newConfig[otherPatcherDict[key].__class__.__name__] = patchConfigs[key]
+            else:
+                newConfig[key] = patchConfigs[key]
+        return newConfig
+
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
