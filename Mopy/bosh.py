@@ -9787,11 +9787,11 @@ class ConfigHelpers:
                         ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
                         for i,mod in enumerate(scan):
                             udrs,itms,fog = ret[i]
-                            if udrs or itms:
+                            if udrs or (itms and mod.header.author not in ('BASHED PATCH','BASHED LISTS')):
                                 cleanMsg = []
                                 if udrs:
                                     cleanMsg.append('UDR(%i)' % len(udrs))
-                                if itms:
+                                if itms and mod.header.author not in ('BASHED PATCH','BASHED LISTS'):
                                     cleanMsg.append('ITM(%i)' % len(itms))
                                 cleanMsg = ', '.join(cleanMsg)
                                 shouldClean[mod.name] = cleanMsg
