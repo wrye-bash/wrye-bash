@@ -8730,14 +8730,18 @@ class ModInfos(FileInfos):
                 newMods.append(name)
         return newMods
 
-    def rescanMergeable(self,names,progress):
+    def rescanMergeable(self,names,progress,doCBash=None):
+        if doCBash is None:
+            doCBash = settings['bash.CBashEnabled']
+        elif doCBash and not settings['bash.CBashEnabled']:
+            doCBash = False
         """Will rescan specified mods."""
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         for fileName in names:
             if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
             fileInfo = self[fileName]
             try:
-                if not CBash:
+                if not doCBash:
                     canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
                 else:
                     canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
