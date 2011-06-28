@@ -2883,6 +2883,7 @@ class InstallersList(balt.Tank):
         num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
         wx.BeginBusyCursor()
+        refreshNeeded = False
         for archive in selected:
             installer = self.data[archive]
             newName = GPath(root+numStr+archive.ext)
@@ -2906,15 +2907,18 @@ class InstallersList(balt.Tank):
                             bosh.modInfos.table[i]['installer'] = newPath.stail
                         for i in ifiles:
                             bosh.iniInfos.table[i]['installer'] = newPath.stail
-                del self.data[archive]
+                if InstallerType is bosh.InstallerMarker:
+                    del self.data[archive]
+                refreshNeeded = True
             num += 1
             numStr = `num`
             numStr = '0'*(numLen-len(numStr))+numStr
         #--Refresh UI
-        self.data.refresh(what='I')
-        modList.RefreshUI()
-        iniList.RefreshUI()
-        self.RefreshUI()
+        if refreshNeeded:
+            self.data.refresh(what='I')
+            modList.RefreshUI()
+            iniList.RefreshUI()
+            self.RefreshUI()
         event.Veto()
         wx.EndBusyCursor()
 
