@@ -35,6 +35,7 @@ import time
 import subprocess
 import collections
 from subprocess import Popen, PIPE
+close_fds = True
 import types
 from binascii import crc32
 import ConfigParser
@@ -1186,9 +1187,9 @@ class Path(object):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self._cext == '.exe':
             if not exeArgs:
-                subprocess.Popen([self.s], close_fds=True)
+                subprocess.Popen([self.s], close_fds=close_fds)
             else:
-                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
+                subprocess.Popen(exeArgs, executable=self.s, close_fds=close_fds)
         else:
             os.startfile(self._s)
     def copyTo(self,destName):

@@ -13796,7 +13796,7 @@ class App_Button(Link):
                 cwd = bolt.Path.getcwd()
                 self.jar.head.setcwd()
                 try:
-                    subprocess.Popen((self.java.stail,'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=True) #close_fds is needed for the one instance checker
+                    subprocess.Popen((self.java.stail,'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
@@ -13821,7 +13821,7 @@ class App_Button(Link):
                 cwd = bolt.Path.getcwd()
                 exePath.head.setcwd()
                 try:
-                    subprocess.Popen(exeArgs, executable=exePath.s, close_fds=True) #close_fds is needed for the one instance checker
+                    subprocess.Popen(exeArgs, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
