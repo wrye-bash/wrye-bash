@@ -758,7 +758,7 @@ def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
     reComment = re.compile(r'^\\.*')
     reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
     reBashTags = re.compile(r'(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
-    reDirty = re.compile(r'IF\s*\(\s*(.*?)\s*\|\s*[\"\'](.*?)[\'\"]\s*\)\s*DIRTY:\s*(.*)\s*$')
+    reDirty = re.compile(r'.*?IF\s*\(\s*([a-fA-F0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$')
     ins = GPath(inPath).open('r')
     mod = None
     for line in ins:
