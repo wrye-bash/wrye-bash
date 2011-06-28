@@ -113,23 +113,32 @@ class Image:
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
-    def __init__(self,file,type=wx.BITMAP_TYPE_ANY ):
+    def __init__(self,file,type=wx.BITMAP_TYPE_ANY,iconSize=16):
         self.file = GPath(file)
         self.type = type
         self.bitmap = None
         self.icon = None
+        self.iconSize = iconSize
         if not GPath(self.file).exists():
             raise ArgumentError(_("Missing resource file: %s.") % (self.file,))
 
     def GetBitmap(self):
         if not self.bitmap:
-            self.bitmap = wx.Bitmap(self.file.s,self.type)
+            if self.type == wx.BITMAP_TYPE_ICO:
+                self.GetIcon()
+                self.bitmap = wx.EmptyBitmap(self.iconSize,self.iconSize)
+                self.bitmap.CopyFromIcon(self.icon)
+            else:
+                self.bitmap = wx.Bitmap(self.file.s,self.type)
         return self.bitmap
 
     def GetIcon(self):
         if not self.icon:
-            self.icon = wx.EmptyIcon()
-            self.icon.CopyFromBitmap(self.GetBitmap())
+            if self.type == wx.BITMAP_TYPE_ICO:
+                self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
+            else:
+                self.icon = wx.EmptyIcon()
+                self.icon.CopyFromBitmap(self.GetBitmap())
         return self.icon
 
 #------------------------------------------------------------------------------

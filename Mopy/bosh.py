@@ -112,6 +112,7 @@ screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
+links = None
 
 def listArchiveContents(fileName):
     command = r'"%s" l -slt "%s"' % (exe7z, fileName)
@@ -33321,6 +33322,20 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData'):
         dirs[key].makedirs()
 
+def initLinks(appDir):
+    #-- Other tools
+    try:
+        import win32com.client
+        global links
+        links = {}
+        for file in appDir.list():
+            if appDir.join(file).isfile() and file.cext == '.lnk':
+                sh = win32com.client.Dispatch('WScript.Shell')
+                shortcut = sh.CreateShortCut(appDir.join(file).s)
+                links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,shortcut.Description)
+    except:
+        deprint('Error initializing links:',traceback=True)
+
 def initDefaultTools():
     #-- Other tool directories
     #   First to default path
@@ -33399,24 +33414,6 @@ def initDefaultTools():
     tooldirs['WTV'] = GPath(r'C:\Program Files\WindowsTextureViewer\WTV.exe')
     tooldirs['Switch'] = GPath(r'C:\Program Files\NCH Swift Sound\Switch\switch.exe')
     tooldirs['Freeplane'] = GPath(r'C:\Program Files\Freeplane\freeplane.exe')
-    tooldirs['Custom1'] = undefinedPath
-    tooldirs['Custom2'] = undefinedPath
-    tooldirs['Custom3'] = undefinedPath
-    tooldirs['Custom4'] = undefinedPath
-    tooldirs['Custom5'] = undefinedPath
-    tooldirs['Custom6'] = undefinedPath
-    tooldirs['Custom7'] = undefinedPath
-    tooldirs['Custom8'] = undefinedPath
-    tooldirs['Custom9'] = undefinedPath
-    tooldirs['Custom10'] = undefinedPath
-    tooldirs['Custom11'] = undefinedPath
-    tooldirs['Custom12'] = undefinedPath
-    tooldirs['Custom13'] = undefinedPath
-    tooldirs['Custom14'] = undefinedPath
-    tooldirs['Custom15'] = undefinedPath
-    tooldirs['Custom16'] = undefinedPath
-    tooldirs['Custom17'] = undefinedPath
-    tooldirs['Custom18'] = undefinedPath
 
 def initDefaultSettings():
     #other settings from the INI:
@@ -33439,42 +33436,6 @@ def initDefaultSettings():
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
     inisettings['7zExtraCompressionArguments'] = ''
-    inisettings['Custom1txt'] = 'Not Set in INI'
-    inisettings['Custom2txt'] = 'Not Set in INI'
-    inisettings['Custom3txt'] = 'Not Set in INI'
-    inisettings['Custom4txt'] = 'Not Set in INI'
-    inisettings['Custom5txt'] = 'Not Set in INI'
-    inisettings['Custom6txt'] = 'Not Set in INI'
-    inisettings['Custom7txt'] = 'Not Set in INI'
-    inisettings['Custom8txt'] = 'Not Set in INI'
-    inisettings['Custom9txt'] = 'Not Set in INI'
-    inisettings['Custom10txt'] = 'Not Set in INI'
-    inisettings['Custom11txt'] = 'Not Set in INI'
-    inisettings['Custom12txt'] = 'Not Set in INI'
-    inisettings['Custom13txt'] = 'Not Set in INI'
-    inisettings['Custom14txt'] = 'Not Set in INI'
-    inisettings['Custom15txt'] = 'Not Set in INI'
-    inisettings['Custom16txt'] = 'Not Set in INI'
-    inisettings['Custom17txt'] = 'Not Set in INI'
-    inisettings['Custom18txt'] = 'Not Set in INI'
-    inisettings['Custom1opt'] = ''
-    inisettings['Custom2opt'] = ''
-    inisettings['Custom3opt'] = ''
-    inisettings['Custom4opt'] = ''
-    inisettings['Custom5opt'] = ''
-    inisettings['Custom6opt'] = ''
-    inisettings['Custom7opt'] = ''
-    inisettings['Custom8opt'] = ''
-    inisettings['Custom9opt'] = ''
-    inisettings['Custom10opt'] = ''
-    inisettings['Custom11opt'] = ''
-    inisettings['Custom12opt'] = ''
-    inisettings['Custom13opt'] = ''
-    inisettings['Custom14opt'] = ''
-    inisettings['Custom15opt'] = ''
-    inisettings['Custom16opt'] = ''
-    inisettings['Custom17opt'] = ''
-    inisettings['Custom18opt'] = ''
     inisettings['IconSize'] = '16'
     inisettings['AutoItemCheck'] = False
     inisettings['SkipHideConfirmation'] = False
