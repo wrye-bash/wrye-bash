@@ -1191,6 +1191,9 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
     * Some components do not need to be configured (e.g., [[#|Alchemical Catalogs]]).
     * Configuration of specific components is covered below.
     * the Select All button (where available) will select all items and if the item has a choice (i.e. in Tweak Settings) will select the first one in the list.
+  * __Revert To Saved:__ Restores the last saved configuration for your Bashed Patch.  Basically, this is a giant Undo button for any changed you may have made this session.
+  * __Export Patch Configuration:__ Saves your Bashed Patch's configuration into an external file for backup.
+  * __Import Patch Configuration:__ Restores your Bashed Patch's configuration by reading an external file saved using the __Export Patch Configuration__ command.
 * __Build the Patch__
   * Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel to quit without updating the patch mod.
 
@@ -2306,6 +2309,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
   * Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
   * Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based [[#|Mark Mergeable]] to be automatically executed before rebuilding.
+  * [[#PatchUsage|Revert to Saved]] option, to restore the settings last used to build the Bashed Patch.
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
