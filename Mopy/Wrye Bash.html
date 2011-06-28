@@ -584,12 +584,19 @@
     <p class="list-3">&bull;&nbsp;  <a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a> 16 <img src="images/RADVideoTools16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/RADVideoTools32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img></p>
     <p class="list-3">&bull;&nbsp;  <a href="http://www.filehippo.com/download_winsnap/">WinSnap</a> 16 <img src="images/WinSnap16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/WinSnap32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img></p>
     <p class="empty">&nbsp;</p>
-  <p class="list-2">&bull;&nbsp;  18 Custom buttons</p>
-    <p class="list-3">&bull;&nbsp;  <img src="images/Custom116.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom216.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom416.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom516.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom616.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom716.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom816.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom916.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1016.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1116.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1216.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1416.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1516.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1616.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1716.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1816.png" width="16" height="16" style="border: 0;"  alt="tool image"></img></p>
-    <p class="list-3">&bull;&nbsp;  <img src="images/Custom132.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom232.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom432.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom532.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom632.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom732.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom832.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom932.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1032.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1132.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1232.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1432.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1532.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1632.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1732.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1832.png" width="32" height="32" style="border: 0;"  alt="tool image"></img></p>
-    <p class="list-3">&bull;&nbsp;  These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).</p>
-    <p class="list-3">&bull;&nbsp;  You can also set the arguments for any type of Custom button - see ini for full instructions.</p>
-    <p class="empty">&nbsp;</p>
+  <p class="list-2">&bull;&nbsp;  <b><a id='Custombuttons'>Custom buttons</a>:</b></p>
+    <p class="list-3">&bull;&nbsp;  Put any shortcut in the Mopy\Apps directory.</p>
+      <p class="list-4">&bull;&nbsp;  Wrye Bash will read the shortcut and get the following information from it:</p>
+        <p class="list-5">&bull;&nbsp;  Icon</p>
+        <p class="list-5">&bull;&nbsp;  Working directory</p>
+        <p class="list-5">&bull;&nbsp;  Command line</p>
+        <p class="list-5">&bull;&nbsp;  Comment</p>
+      <p class="list-4">&bull;&nbsp;  Note that automatic icons from the shortcut do not work well when you have specified a 24 pixel icon size in bash.ini, so be sure to specify a custom icon if you want 24x24 icons.</p>
+    <p class="list-3">&bull;&nbsp;  If you want a custom icon, just put a PNG with the same name as the shortcut, ending in the icon size, in the same folder.</p>
+    <p class="list-3">&nbsp;&nbsp;  For example:</p>
+      <p class="list-4">&nbsp;&nbsp;  Notepadpp.lnk</p>
+      <p class="list-4">&nbsp;&nbsp;  Notepadpp24.png  <- custom 24x24 icon to use</p>
+      <p class="empty">&nbsp;</p>
 <h3><a id='BashOptionButtons'>Bash Option Buttons</a></h3>
 <p class="list-1">&bull;&nbsp;  OBSE 16off <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img></p>
   <p class="list-2">&bull;&nbsp;  When checked this will launch OBSE when either the Oblivion or TESCS buttons are clicked.</p>
@@ -2574,7 +2581,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_2932762011PacificMorrowindLojackmyk002rev1280'>293 [27/6/2011] [PacificMorrowind,Lojack,myk002] [rev 1280]</a></h3>
+<h3><a id='_29412122011PacificMorrowindvaldaLojack'>294 [12/12/2011] [PacificMorrowind,valda,Lojack]</a></h3>
+<p class="list-1">&bull;&nbsp;  Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.</p>
+<p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
+  <p class="list-2">&bull;&nbsp;  More bugfixes from valda</p>
+<p class="list-1">&bull;&nbsp;  Bugs fixed (General):</p>
+  <p class="list-2">&bull;&nbsp;  Fixed corrupted size saved when maximizing a Wizard.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#Custombuttons">Custom launcher buttons</a> are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.</p>
+<p class="list-1">&bull;&nbsp;  Saves Tab:</p>
+  <p class="list-2">&bull;&nbsp;  Added ability to export screenshot from savegame.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='_2932762011PacificMorrowindLojackmyk002valdarev1280'>293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]</a></h3>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
   <p class="list-2">&bull;&nbsp;  Bugs fixed (CBash):</p>
     <p class="list-3">&bull;&nbsp;  Filter mods that were incorrectly being treated as not mergeable are mergeable once again.</p>

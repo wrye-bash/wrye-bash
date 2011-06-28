@@ -368,11 +368,18 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]] 16 <img src="images/RADVideoTools16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/RADVideoTools32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
     * [[http://www.filehippo.com/download_winsnap/ | WinSnap]] 16 <img src="images/WinSnap16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/WinSnap32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
 
-  * 18 Custom buttons
-    * <img src="images/Custom116.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom216.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom416.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom516.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom616.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom716.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom816.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom916.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1016.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1116.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1216.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1416.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1516.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1616.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1716.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1816.png" width="16" height="16" style="border: 0;"  alt="tool image"></img>
-    * <img src="images/Custom132.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom232.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom432.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom532.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom632.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom732.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom832.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom932.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1032.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1132.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1232.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1432.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1532.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1632.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1732.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> <img src="images/Custom1832.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * These buttons can be set to any executable (.exe), Java (.jar), or double-clickable file (as in Explorer).
-    * You can also set the arguments for any type of Custom button - see ini for full instructions.
+  * __{{A:Custom buttons}}:__
+    * Put any shortcut in the Mopy\Apps directory.
+      * Wrye Bash will read the shortcut and get the following information from it:
+        * Icon
+        * Working directory
+        * Command line
+        * Comment
+      * Note that automatic icons from the shortcut do not work well when you have specified a 24 pixel icon size in bash.ini, so be sure to specify a custom icon if you want 24x24 icons.
+    * If you want a custom icon, just put a PNG with the same name as the shortcut, ending in the icon size, in the same folder.
+    . For example:
+      . Notepadpp.lnk
+      . Notepadpp24.png  <- custom 24x24 icon to use
 
 === Bash Option Buttons
 * OBSE 16off <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
@@ -2302,6 +2309,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * More bugfixes from valda
 * Bugs fixed (General):
   * Fixed corrupted size saved when maximizing a Wizard.
+* [[#Custombuttons|Custom launcher buttons]] are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
 * Saves Tab:
   * Added ability to export screenshot from savegame.
 
