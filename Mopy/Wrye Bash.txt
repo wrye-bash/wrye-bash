@@ -2296,7 +2296,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 293 [31/12/2011] [PacificMorrowind,Lojack,myk002]
+=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
   * Bugs fixed (CBash):
     * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
@@ -2309,6 +2309,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
   * Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
   * Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based [[#|Mark Mergeable]] to be automatically executed before rebuilding.
+    * No more renaming CBash.dll!
   * [[#PatchUsage|Revert to Saved]] option, to restore the settings last used to build the Bashed Patch.
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
