@@ -9693,11 +9693,19 @@ class Mods_BOSSDisableLockTimes(BoolLink):
 #------------------------------------------------------------------------------
 class Mods_BOSSShowUpdate(BoolLink):
     """Toggle Lock Times disabling when launching BOSS through Bash."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _('Always Update BOSS Masterlist prior to running BOSS.'),
-                                          'BOSS.AlwaysUpdate',
-                                          _("If selected, will tell BOSS to update the masterlist before sorting the mods.")
-                                          )
+    def __init__(self):
+        BoolLink.__init__(self,
+            _('Always Update BOSS Masterlist prior to running BOSS.'),
+            'BOSS.AlwaysUpdate',
+            _("If selected, will tell BOSS to update the masterlist before sorting the mods.")
+            )
+
+    def AppendToMenu(self,menu,window,data):
+        if bosh.configHelpers.bossVersion >= 3:
+            # BOSS 1.8+ don't supply this option, as it's on by default,
+            # and configurable through the BOSS ini
+            return
+        BoolLink.AppendToMenu(self,menu,window,data)
 
 #------------------------------------------------------------------------------
 class User_BackupSettings(Link):
@@ -13917,7 +13925,8 @@ class App_BOSS(App_Button):
                     for fileName in bosh.modInfos:
                         bosh.modInfos[fileName].setGhost(False)
                 if version >= 1:
-                    if settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85):
+                    if version <= 2 and (settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85)):
+                        # Disable for BOSS 1.8+ (specified in the BOSS.ini now)
                         exeArgs += ('-u',) # Update - BOSS version 1.6+
                     if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
                         exeArgs += ('-r 2',) # Revert level 2 - BOSS version 1.6+
@@ -14270,7 +14279,7 @@ def InitStatusBar():
     configHelpers = bosh.ConfigHelpers()
     configHelpers.refresh()
     version = configHelpers.bossVersion
-    if version > 2: version = 1
+    if version > 3: version = 1
     elif version < 0: version = 0
     BashStatusBar.buttons.append( #BOSS --
         App_BOSS(

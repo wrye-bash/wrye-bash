@@ -1279,7 +1279,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 * __Automatic Tagging__
   * If the bash tags field is set to "Automatic" for a given mod (which is by default), then Bash will attempt to automatically tag the mod according to all available of several sources. These sources are:
     * The description field.
-    * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\Data\BOSS). Also with the newest BOSS version reads the userlist.txt file; APPEND for bash tags is as it sounds, Bash adds them to the list of tags, REPLACE replaces the BOSS masterlist tagging suggestions with the userlist suggestions, neither does anything to the existing tags from the description.
+    * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\BOSS). Also with the newest BOSS version reads the userlist.txt file; APPEND for bash tags is as it sounds, Bash adds them to the list of tags, REPLACE replaces the BOSS masterlist tagging suggestions with the userlist suggestions, neither does anything to the existing tags from the description.
     * Bash Patches\Leveled Lists.csv file. This file has a very small list and is largely surpassed by BOSS. (But is useful for people who don't have BOSS installed.)
     * Bash Patches\taglist.txt (if the masterlit.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist
   * Keep in mind that there is no guarantee that all mods will be correctly tagged. However, between the description field and BOSS, most important tags are covered.
@@ -2311,6 +2311,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
   * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809|here]]
+  * Fixed the launching of OBSE when a Steam install is detected.
 * Updated NSIS installer.
 * Unicode Mode:
   * Bugs fixed:
@@ -2328,6 +2329,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * -A/--Ansi: equivalent to setting __bEnableUnicode__ to **False** in bash.ini (but the cmdline options overide the ini when specified).
     * -i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.
     * -I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.
+* Preliminary support for BOSS 1.8
 
 === 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]
 * __CBash__ is live!  The default install now uses CBash.
