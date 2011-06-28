@@ -4837,9 +4837,9 @@ class BashFrame(wx.Frame):
         if not title:
             ###Remove from Bash after CBash integrated
             if not CBash:
-                title = "Wrye Bash %s: " % (settings['bash.readme'][1],)
+                title = "Wrye Bash %s%s: " % (settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
             else:
-                title = "Wrye Bash %s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
+                title = "Wrye Bash %s%s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], ('',' (Standalone)')[settings['bash.standalone']],CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
@@ -14104,6 +14104,8 @@ def InitSettings():
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join('WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bosh.dirs['mods'].join('Docs')
+    #--StandAlone version?
+    settings['bash.standalone'] = hasattr(sys,'frozen')
 
 def InitImages():
     """Initialize color and image collections."""
