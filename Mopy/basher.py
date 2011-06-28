@@ -1559,7 +1559,7 @@ class ModList(List):
             elif col == 'Size':
                 value = formatInteger(fileInfo.size/1024)+' KB'
             elif col == 'Author' and fileInfo.header:
-                value = fileInfo.header.author
+                Unicode(fileInfo.header.author,'mbcs')
             elif col == 'Load Order':
                 ordered = bosh.modInfos.ordered
                 if fileName in ordered:
@@ -1663,7 +1663,7 @@ class ModList(List):
         if col == 'File':
             pass #--Done by default
         elif col == 'Author':
-            self.items.sort(key=lambda a: data[a].header.author.lower())
+            self.items.sort(key=lambda a: Unicode(data[a].header.author.lower(),'mbcs'))
         elif col == 'Rating':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',''))
         elif col == 'Group':
@@ -1884,9 +1884,9 @@ class ModDetails(wx.Window):
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = Unicode(modInfo.name.s)
-            self.authorStr = Unicode(modInfo.header.author)
+            self.authorStr = Unicode(modInfo.header.author,'mbcs')
             self.modifiedStr = Unicode(formatDate(modInfo.mtime))
-            self.descriptionStr = Unicode(modInfo.header.description)
+            self.descriptionStr = Unicode(modInfo.header.description,'mbcs')
             self.versionStr = Unicode('v%0.1f' % (modInfo.header.version,))
             tagsStr = Unicode('\n').join(sorted(modInfo.getBashTags()))
         #--Editable mtime?
@@ -1985,8 +1985,8 @@ class ModDetails(wx.Window):
         #--Change Tests
         changeName = (self.fileStr != modInfo.name)
         changeDate = (self.modifiedStr != formatDate(modInfo.mtime))
-        changeHedr = ((self.authorStr != Unicode(modInfo.header.author)) or
-            (self.descriptionStr != modInfo.header.description ))
+        changeHedr = ((self.authorStr != Unicode(modInfo.header.author,'mbcs')) or
+            (self.descriptionStr != Unicode(modInfo.header.description,'mbcs') ))
         changeMasters = self.masters.edited
         #--Warn on rename if file has BSA and/or dialog
         hasBsa, hasVoices = modInfo.hasResources()
@@ -2022,8 +2022,8 @@ class ModDetails(wx.Window):
             fileName = newName
         #--Change hedr/masters?
         if changeHedr or changeMasters:
-            modInfo.header.author = Encode(self.authorStr.strip())
-            modInfo.header.description = bolt.winNewLines(self.descriptionStr.strip())
+            modInfo.header.author = Encode(self.authorStr.strip(),'mbcs')
+            modInfo.header.description = Encode(bolt.winNewLines(self.descriptionStr.strip()),'mbcs')
             modInfo.header.masters = self.masters.GetNewMasters()
             modInfo.header.changed = True
             modInfo.writeHeader()
