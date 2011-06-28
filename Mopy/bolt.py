@@ -2517,6 +2517,7 @@ class WryeText:
     @staticmethod
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
+        import string, urllib
         # Path or Stream? -----------------------------------------------
         if isinstance(ins,(Path,str,unicode)):
             srcPath = GPath(ins)
@@ -2557,7 +2558,7 @@ class WryeText:
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            anchor = reWd.sub('',text)
+            anchor = urllib.quote(reWd.sub('',text))
             count = 0
             if re.match(r'\d', anchor):
                 anchor = '_' + anchor
@@ -2588,7 +2589,8 @@ class WryeText:
         reLink = re.compile(r'\[\[(.*?)\]\]')
         reHttp = re.compile(r' (http://[_~a-zA-Z0-9\./%-]+)')
         reWww = re.compile(r' (www\.[_~a-zA-Z0-9\./%-]+)')
-        reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')
+        #reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')     # \[[^\]]+\] doesn't match.
+        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace('_',''))) 
         rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)')
         reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)')
         reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I)
@@ -2601,7 +2603,7 @@ class WryeText:
             address = text = match.group(1).strip()
             if '|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split('|',1)]
-                if address == '#': address += reWd.sub('',text)
+                if address == '#': address += urllib.quote(reWd.sub('',text))
             if address.startswith('!'):
                 newWindow = ' target="_blank"'
                 address = address[1:]
@@ -2716,7 +2718,7 @@ class WryeText:
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(' *=*#?$','',text.strip())
-                anchor = reWd.sub('',text)
+                anchor = urllib.quote(reWd.sub('',text))
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(r'\d', anchor):
@@ -2794,7 +2796,7 @@ class WryeText:
                             out.write('<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
                     didContents = True
             else:
-                out.write(line)
+                out.write(Encode(line,'UTF8'))
         out.write('</body>\n</html>\n')
         #--Close files?
         if srcPath:
