@@ -1055,7 +1055,6 @@ These are the commands found on context menu for mods...
   * <code>Merge</code> [[#BashTags|Bash tag]] is no longer used. Instead Bash remembers internally whether a given mod is mergeable or not.
 * __Note: Changes as of Bash v278__
   * The <code>NoMerge</code> will prevent a mod from being marked as Mergeable, make the mod text be black and be excluded from the Bashed Patch's MergePatches list, however the NoMerge tag will be listed in the mark mergeable dialogue as the reason it is not mergeable.
-* Note when building a non-CBash Bashed Patch: If the last patch you built was with CBash mode, or if the last Mark Mergeable you did was with CBash, then be sure to re run this scan in non-CBash mode.  Failure to do this will result in the non-CBash patch thinking that more mods are mergeable than is actually possible without CBash.
 
 === Nvidia Fog Fix
 * Systems with Nvidia cards can suffer a black screen bug when the player enters interior cells where near fog, far fog and fog clipping distance are all equal to 0. To avoid this, this function scans the mod and sets near fog to 0.001 in problem cells.
@@ -2306,7 +2305,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Fixed merging of QUST records from Filter mods.
   * [[#TweakAssorted|Tweak Assorted]]__: Default Icons__ updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
   * Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
-  * Added the ability to build a Python Bashed Patch when CBash is active.  Be sure to run the non-CBash [[#|Mark Mergeable]] before building a Python Bashed Patch while CBash is active.
+  * Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based [[#|Mark Mergeable]] to be automatically executed before rebuilding.
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
