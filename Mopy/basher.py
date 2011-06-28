@@ -6037,6 +6037,15 @@ class PatchDialog(wx.Dialog):
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
+        if bosh.CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
+            # Conversion needed
+            newConfig = {}
+            for key in patchConfigs:
+                if key in otherPatcherDict:
+                    newConfig[otherPatcherDict[key].__class__.__name__] = patchConfigs[key]
+                else:
+                    newConfig[key] = patchConfigs[key]
+            patchConfigs = newConfig
         for index,patcher in enumerate(self.patchers):
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
