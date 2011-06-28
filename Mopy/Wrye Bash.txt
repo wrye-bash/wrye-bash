@@ -2296,10 +2296,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 294 [12/12/2011] [PacificMorrowind]
+=== 294 [12/12/2011] [PacificMorrowind,valda,Lojack]
 * Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
+* Unicode Mode:
+  * More bugfixes from valda
+* Bugs fixed (General):
+  * Fixed corrupted size saved when maximizing a Wizard.
 
-=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002] [rev 1280]
+=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
   * Bugs fixed (CBash):
     * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
