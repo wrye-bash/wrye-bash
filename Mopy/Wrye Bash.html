@@ -1523,7 +1523,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Automatic Tagging</b></p>
   <p class="list-2">&bull;&nbsp;  If the bash tags field is set to "Automatic" for a given mod (which is by default), then Bash will attempt to automatically tag the mod according to all available of several sources. These sources are:</p>
     <p class="list-3">&bull;&nbsp;  The description field.</p>
-    <p class="list-3">&bull;&nbsp;  BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do <i>not</i> need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\Data\BOSS). Also with the newest BOSS version reads the userlist.txt file; APPEND for bash tags is as it sounds, Bash adds them to the list of tags, REPLACE replaces the BOSS masterlist tagging suggestions with the userlist suggestions, neither does anything to the existing tags from the description.</p>
+    <p class="list-3">&bull;&nbsp;  BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do <i>not</i> need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\BOSS). Also with the newest BOSS version reads the userlist.txt file; APPEND for bash tags is as it sounds, Bash adds them to the list of tags, REPLACE replaces the BOSS masterlist tagging suggestions with the userlist suggestions, neither does anything to the existing tags from the description.</p>
     <p class="list-3">&bull;&nbsp;  Bash Patches\Leveled Lists.csv file. This file has a very small list and is largely surpassed by BOSS. (But is useful for people who don't have BOSS installed.)</p>
     <p class="list-3">&bull;&nbsp;  Bash Patches\taglist.txt (if the masterlit.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist</p>
   <p class="list-2">&bull;&nbsp;  Keep in mind that there is no guarantee that all mods will be correctly tagged. However, between the description field and BOSS, most important tags are covered.</p>
@@ -2589,6 +2589,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Fixed multiple issues dealing with '&amp;' in filenames.</p>
   <p class="list-2">&bull;&nbsp;  BOSS's dirty edit CRC's will be properly read from the masterlist now.</p>
   <p class="list-2">&bull;&nbsp;  Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 <a href="http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809">here</a></p>
+  <p class="list-2">&bull;&nbsp;  Fixed the launching of OBSE when a Steam install is detected.</p>
 <p class="list-1">&bull;&nbsp;  Updated NSIS installer.</p>
 <p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
   <p class="list-2">&bull;&nbsp;  Bugs fixed:</p>
@@ -2606,7 +2607,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  -A/--Ansi: equivalent to setting <b>bEnableUnicode</b> to <i><b>False</b></i> in bash.ini (but the cmdline options overide the ini when specified).</p>
     <p class="list-3">&bull;&nbsp;  -i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.</p>
     <p class="list-3">&bull;&nbsp;  -I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.</p>
-    <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  Preliminary support for BOSS 1.8</p>
+<p class="empty">&nbsp;</p>
 <h3><a id='_2921062011Gratis_monstaLeandroCondemyk002PacificMorrowindLojackVadersAppvaldarev1176'>292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>CBash</b> is live!  The default install now uses CBash.</p>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
