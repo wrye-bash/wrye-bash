@@ -7890,13 +7890,20 @@ class Installer_Wizard(InstallerLink):
         saved = settings['bash.wizard.size']
         default = settingDefaults['bash.wizard.size']
         pos = settings['bash.wizard.pos']
-        pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
+        if not isinstance(pos,tuple) or len(pos) != 2:
+            deprint('Saved Wizard position was not a tuple, reverting to default position.')
+            pos = wx.DefaultPosition
+        if not isinstance(saved,tuple) or len(pos) != 2:
+            deprint('Saved Wizard size was not a tuple, reverting to default size.')
+            pageSize = default.copy()
+        else:
+            pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
         wizard = belt.InstallerWizard(self, subs, pageSize, pos)
         balt.ensureDisplayed(wizard)
         wx.EndBusyCursor()
         ret = wizard.Run()
-        settings['bash.wizard.size'] = ret.PageSize
-        settings['bash.wizard.pos'] = ret.Pos
+        settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
+        settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
         if ret.Canceled:
             installer.remaps = oldRemaps
             gInstallers.refreshCurrent(installer)
