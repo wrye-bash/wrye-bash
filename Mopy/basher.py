@@ -5462,7 +5462,7 @@ class BashApp(wx.App):
         #--Constants
         self.InitResources()
         #--Init Data
-        progress = wx.ProgressDialog("Wrye Bash",_("Initializing Data")+' '*10,
+        progress = wx.ProgressDialog("Wrye Bash",Encode(_("Initializing Data"))+' '*10,
             style=wx.PD_AUTO_HIDE | wx.PD_APP_MODAL | (sys.version[:3] != '2.4' and wx.PD_SMOOTH))
         self.InitData(progress)
         progress.Update(70,_("Initializing Version"))
