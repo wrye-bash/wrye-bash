@@ -13792,7 +13792,7 @@ class App_Button(Link):
                 exeObse = bosh.dirs['app'].join('obse_loader.exe')
                 exeArgs = ' '.join(self.exeArgs)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
-                    if bosh.inisettings['SteamInstall'] and '\\oblivion.exe' in self.exePath.s:
+                    if bosh.inisettings['SteamInstall'] and self.exePath.tail.cs == 'oblivion.exe':
                         exePath = self.exePath
                     else:
                         exePath = exeObse
