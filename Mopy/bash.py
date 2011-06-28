@@ -137,7 +137,7 @@ def exit():
         sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
         try:
             import subprocess
-            subprocess.Popen(sys.argv, executable=exePath.s, close_fds=True) #close_fds is needed for the one instance checker
+            subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
         except Exception, error:
             print error
             print _("Error Attempting to Restart Wrye Bash!")
@@ -321,6 +321,15 @@ def main():
     else:
         app = basher.BashApp()
 
+    if sys.version[0:3] < '2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
+        bolt.close_fds = False
+        if sys.version[0:3] == 2.5:
+            run = balt.askYes(None,"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur. Updating is recommended but not imperative. Do you still want to run Wrye Bash right now?","Warning OLD Python version detected")
+        else:
+            run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.6x or 2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
+        if not run:
+            return
+        
     # process backup/restore options
     quit = False # quit if either is true, but only after calling both
     quit = quit or not cmdBackup()
