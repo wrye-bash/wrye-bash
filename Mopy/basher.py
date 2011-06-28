@@ -12686,6 +12686,21 @@ class Save_RenamePlayer(Link):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
+class Save_ExportScreenshot(Link):
+    """exports the saved screenshot from a save game."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Export Screenshot...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data) == 1)
+
+    def Execute(self,event):
+        saveInfo = bosh.saveInfos[self.data[0]]
+        imagePath = balt.askSave(bashFrame,_('Save Screenshot as:'), bosh.dirs['patches'].s,'Screenshot %s.jpg' % self.data[0].s,'*.jpg')
+        width,height,data = saveInfo.header.image
+        image = wx.EmptyImage(width,height)
+        image.SetData(data)
+        image.SaveFile(imagePath.s,wx.BITMAP_TYPE_JPEG)
 #------------------------------------------------------------------------------
 class Save_DiffMasters(Link):
     """Shows how saves masters differ from active mod list."""
@@ -15270,6 +15285,9 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_ReweighPotions())
     SaveList.itemMenu.append(Save_UpdateNPCLevels())
     #--------------------------------------------
+    SaveList.itemMenu.append(SeparatorLink())
+    SaveList.itemMenu.append(Save_ExportScreenshot())
+     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_Unbloat())
     SaveList.itemMenu.append(Save_RepairAbomb())
