@@ -7890,11 +7890,12 @@ class Installer_Wizard(InstallerLink):
         saved = settings['bash.wizard.size']
         default = settingDefaults['bash.wizard.size']
         pos = settings['bash.wizard.pos']
+        # Sanity checks on saved size/position
         if not isinstance(pos,tuple) or len(pos) != 2:
-            deprint('Saved Wizard position was not a tuple, reverting to default position.')
+            deprint('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.' % (pos,type(pos)))
             pos = wx.DefaultPosition
         if not isinstance(saved,tuple) or len(pos) != 2:
-            deprint('Saved Wizard size was not a tuple, reverting to default size.')
+            deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
             pageSize = default.copy()
         else:
             pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
@@ -7902,6 +7903,13 @@ class Installer_Wizard(InstallerLink):
         balt.ensureDisplayed(wizard)
         wx.EndBusyCursor()
         ret = wizard.Run()
+        # Sanity checks on returned size/position
+        if not isinstance(ret.Pos,wx.Point):
+            deprint('Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.' % (ret.Pos, type(ret.Pos)))
+            ret.Pos = wx.DefaultPosition
+        if not isinstance(ret.PageSize,wx.Size):
+            deprint('Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.' % (ret.PageSize, type(ret.PageSize)))
+            ret.PageSize = default.copy()
         settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
         settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
         if ret.Canceled:

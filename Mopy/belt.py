@@ -31,8 +31,8 @@ class WizardReturn(object):
         self.SelectSubPackages = []
         self.IniEdits = {}
         self.Install = False
-        self.PageSize = ()
-        self.Pos = ()
+        self.PageSize = wx.DefaultSize
+        self.Pos = wx.DefaultPosition
 
 # InstallerWizard ----------------------------------
 #  Class used by Wrye Bash, creates a wx Wizard that

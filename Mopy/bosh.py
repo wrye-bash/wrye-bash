@@ -2722,7 +2722,7 @@ class MreGmst(MelRecord):
         """Returns Oblivion.esm fid in long format for specified eid."""
         myClass = self.__class__
         if not myClass.oblivionIds:
-            myClass.oblivionIds = cPickle.load(GPath(r'Data\Oblivion_ids.pkl').open())['GMST']
+            myClass.oblivionIds = cPickle.load(dirs['mopy'].join('Data','Oblivion_ids.pkl').open())['GMST']
         return (modInfos.masterName, myClass.oblivionIds[self.eid])
 
 #------------------------------------------------------------------------------
