@@ -30663,15 +30663,17 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     except KeyError:
                         if not self.DebugPrintOnce:
                             self.DebugPrintOnce = 1
-                            print patchFile.ObCollection.Debug_DumpModFiles()
-                            print
-                            print 'mgef_name:', mgef_name
-                            print
-                            print 'mgef:', mgef
-                            print
+                            deprint(patchFile.ObCollection.Debug_DumpModFiles())
+                            deprint()
+                            deprint('mgef_name:', mgef_name)
+                            deprint()
+                            deprint('mgef:', mgef)
+                            deprint()
                         if mgef in bush.mgef_name:
+                            deprint('mgef found in bush.mgef_name')
                             effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                         else:
+                            deprint('mgef not found in bush.mgef_name')
                             effectName = 'Unknown Effect'
                     effectName = Encode(effectName,'mbcs')
                     if mgef in actorEffects: effectName += Encode(actorNames[effect[5]],'mbcs') #actorValue field
@@ -30689,13 +30691,15 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 except KeyError:
                     if not self.DebugPrintOnce:
                         self.DebugPrintOnce = 1
-                        print patchFile.ObCollection.Debug_DumpModFiles()
-                        print
-                        print mgef_name
-                        print
+                        deprint(patchFile.ObCollection.Debug_DumpModFiles())
+                        deprint()
+                        deprint(mgef_name)
+                        deprint()
                     if mgef in bush.mgef_name:
+                        deprint('mgef found in bush.mgef_name')
                         effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                     else:
+                        deprint('mgef not found in bush.mgef_name')
                         effectName = 'Unknown Effect'
                 effectName = Encode(effectName,'mbcs')
                 if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
