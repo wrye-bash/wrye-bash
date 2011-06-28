@@ -1292,8 +1292,7 @@
   <p class="list-2">&bull;&nbsp;  <code>Merge</code> <a href="#BashTags">Bash tag</a> is no longer used. Instead Bash remembers internally whether a given mod is mergeable or not.</p>
 <p class="list-1">&bull;&nbsp;  <b>Note: Changes as of Bash v278</b></p>
   <p class="list-2">&bull;&nbsp;  The <code>NoMerge</code> will prevent a mod from being marked as Mergeable, make the mod text be black and be excluded from the Bashed Patch's MergePatches list, however the NoMerge tag will be listed in the mark mergeable dialogue as the reason it is not mergeable.</p>
-<p class="list-1">&bull;&nbsp;  Note when building a non-CBash Bashed Patch: If the last patch you built was with CBash mode, or if the last Mark Mergeable you did was with CBash, then be sure to re run this scan in non-CBash mode.  Failure to do this will result in the non-CBash patch thinking that more mods are mergeable than is actually possible without CBash.</p>
-<p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 <h3><a id='NvidiaFogFix'>Nvidia Fog Fix</a></h3>
 <p class="list-1">&bull;&nbsp;  Systems with Nvidia cards can suffer a black screen bug when the player enters interior cells where near fog, far fog and fog clipping distance are all equal to 0. To avoid this, this function scans the mod and sets near fog to 0.001 in problem cells.</p>
 <p class="list-1">&bull;&nbsp;  This feature is based on Quarn's <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859">Nvidia Black Screen Fix</a></p>
@@ -2584,7 +2583,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  Fixed merging of QUST records from Filter mods.</p>
   <p class="list-2">&bull;&nbsp;  <a href="#TweakAssorted">Tweak Assorted</a><b>: Default Icons</b> updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).</p>
   <p class="list-2">&bull;&nbsp;  Added ability to import Bashed Patch config from CBash to Python and Python to CBash.</p>
-  <p class="list-2">&bull;&nbsp;  Added the ability to build a Python Bashed Patch when CBash is active.  Be sure to run the non-CBash <a href="#MarkMergeable">Mark Mergeable</a> before building a Python Bashed Patch while CBash is active.</p>
+  <p class="list-2">&bull;&nbsp;  Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based <a href="#MarkMergeable">Mark Mergeable</a> to be automatically executed before rebuilding.</p>
 <p class="list-1">&bull;&nbsp;  Bugs fixed (General):</p>
   <p class="list-2">&bull;&nbsp;  Fixed multiple issues dealing with '&amp;' in filenames.</p>
   <p class="list-2">&bull;&nbsp;  BOSS's dirty edit CRC's will be properly read from the masterlist now.</p>
