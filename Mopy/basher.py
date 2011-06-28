@@ -1669,7 +1669,7 @@ class ModList(List):
         elif col == 'Group':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',''))
         elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',''))
+            self.items.sort(key=lambda a: Unicode(bosh.modInfos.table.getItem(a,'installer',''),'mbcs'))
         elif col == 'Load Order':
             self.items = bosh.modInfos.getOrdered(self.items,False)
         elif col == 'Modified':
