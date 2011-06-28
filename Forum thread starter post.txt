@@ -1,4 +1,4 @@
-Continuing from the [topic=1202320]previous thread[/topic]...
+﻿Continuing from the [topic=1202320]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
@@ -70,106 +70,38 @@ Its two best-known features are the Bashed Patch, which allows you to enable mul
 here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [topic=1102449"]garybash[/topic].
 [/list]
 [b]Latest Version[/b]:
-=== 292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda]
-[spoiler][list]
-[*] [b]CBash[/b] is live!  The default install now uses CBash.
+=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002] [rev 1280][spoiler][list]
 [*] Bashed Patch:[list]
-  [*] Race Patcher[list]
-    [*] Fixed error with setting race eyes for some uncommon races.
-    [*] eyes with undefined meshes now skipped and removed from races rather than causing fatal warning.
-    [*] CBash random eye setting fixed (was choosing only one eye per race).[/list]  [*] Fix for typos in CBash SpellStats Patcher
-  [*] Tweak Actors patcher:[list]
-    [*] Added note to MAO patcher that it requires MAO.
-    [*] Added a VORB patcher (requires VORB).
-    [*] Added Bigger Nords and Orcs tweaker
-    [*] Sexy Walk and Real Walk tweakers finally fixed to not replace the current animations but add the Swalk/Rwalk animation. (and CBash version of each added)[/list]  [*] Tweak Settings (GMST) patcher:[list]
-    [*] Now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
-    [*] AI: Max Smile Distance tweak added.
-    [*] Combat: Max Ally Hits tweak added.[/list]  [*] Import Names:[list]
-    [*] Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
-    [*] Added OOO Potion Names.csv - reverts OOO's alcoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
-    [*] Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)[/list]  [*] Mark mergeable detection of other mods requiring current mod fixed.
-  [*] Tweak Assorted patcher:[list]
-    [*] Added Set Sound Attenuation Levels tweaker.
-    [*] Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
-    [*] Added 'Faction crime Gold Multiplier Fix' tweaker.
-    [*] Added 'No Light Fade Value Fix' tweaker.[/list]  [*] Added a cancel button to the build progress bar.
-  [*] New keyboard shortcuts: Ctrl+A and Ctrl+Shift+A in the patcher list box will SelectAll or DeselectAll suboptions, respectively.
-  [*] Deleted references in the Bashed Patch will automatically be undeleted and disabled.[/list][*] BAIN:[list]
-  [*] Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
-  [*] Size of comments section saved between launches (contributed by myk002)
-  [*] Wizards:[list]
-    [*] New functions:[list]
-      [*] GetEspmStatus: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
-      [*] EditINI: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
-      [*] Exec: Execute wizard lines stored in a string.  Useful for dynamically creating menus.
-      [*] endswith: Test what a string ends with.
-      [*] startswith: Test what a string starts with.
-      [*] lower: Convert a string to lower case.
-      [*] find: Find the first occurrence of a substring within a string.
-      [*] rfind: Find the last occurrence of a substring within a string.
-      [*] GetFilename: For getting a filename from a path string.
-      [*] GetFolder: For getting a folder name from a path string.[/list]    [*] Improved For loops, for iterating over files in an installer:[list]
-      [*] For [i]subpackage[/i] in Subpackages
-      [*] For [i]file[/i] in [i]subpackage[/i][/list]    [*] Case Insensitive Operators: Operators that ignore the case of a string when comparing.
-    [*] The Dot Operator
-    [*] Bugfix RequireVersions: The version page will now show correctly if the Wrye Bash version is incorrect.
-    [*] A new icon will indicate that an installer contains a wizard.
-    [*] The Wizard window is now resizable, with automatic scaling images.
-    [*] Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
-    [*] Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
-    [*] To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:[list]
-      [*] SelectOne
-      [*] SelectMany
-      [*] RenameEspm
-      [*] RequireVersions
-      [*] This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:[list]
-        [*] [b]name[/b] = "00 Base "
-        [*] SelectSubPackage([b]name[/b]+"Textures")[/list][/list]    [*] Function DataFileExists extended to allow testing of multiple files with one function call.  It will return [i]True[/i] if all of the files exist, and [i]False[/i] if one or more of the files does not exist.  Additionally, DataFileExists will also detect ghosted ESPs and ESMs now.
-    [*] Changed the default for [b][i]Auto-Anneal/Install Wizards[/i][/b] to be checked.  Be sure to check this setting, and set it to your preference.[/list]  [*] Added a cancel button to the Refresh Data progress bar.
-  [*] New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
-  [*] Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
-  [*] new ini option [b]bClearRO[/b] to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
-  [*] new ini option [b]sOblivionTexturesBSAName[/b] in case you've for some reason renamed you oblivion - textures - compressed.bsa to something else.[/list][*] Saves Tab:[list]
-  [*] Yes to All option for overwrite on Move/Copy Saves
-  [*] 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
-  [*] Statistics report now properly displays the Hexadecimal Mod Index instead of decimal.[/list][*] General:[list]
-  [*] Fixed [b]s7zExtraCompressionArguments[/b] to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
-  [*] Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
-  [*] Import Scripts CBash and non-CBash modes fixed to maintain Python 2.5 compatibility.
-  [*] Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
-  [*] updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.[list]
-    [*] updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
-    [*] updated html snippets in Wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.[/list]  [*] Improved INI Edits tab UI:[list]
-    [*] Column width is remembered now.
-    [*] Shows the contents of an INI tweak, including status of each line in it compared to the master INI.
-    [*] Shows the contents of the master INI
-    [*] Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
-    [*] New INI Tweak file command "Copy to new Tweak", for creating a tweak file with the same settings as the target INI.
-    [*] Bugfix for batch script ini's that would incorrectly replace some variables.[/list]  [*] Various small UI improvements
-  [*] regex for TesNexus searching updated to work with a few less common mod archive name formats.
-  [*] Support for BOSS 1.7.
-  [*] New automatic taglist generator to generate the taglist from the masterlist.
-  [*] New option to see all the tags on all installed/selected mods.
-  [*] Taglist updated to BOSS rev 2608.
-  [*] Removed Balo and the Replacers Tab from the UI.  To re-enable, set [b]bEnableBalo[/b] or [b]bEnableReplacers[/b] to [i]True[/i] as applicable in bash.ini[list]
-    [*] These features may be removed in future versions.[/list]  [*] Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set [b]bResetBSATimestamps[/b] to [i]False[/i] in bash.ini
-  [*] In cases where the [b]bUseMyGameDirectory[/b] is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
-  [*] Unicode improvements: (all only applicable in unicode mode)[list]
-    [*] Fixed viewing/saving modfiles with tejón and other non-ascii author names.
-    [*] Fixed project view/scanning for projects containing non-ascii filenames.
-    [*] Fixed project->archive packaging for projects that contain files with non-ascii names.
-    [*] Warning added if using Unicode Wrye Bash but using non-unicode wxPython.
-    [*] Fixed viewing savefile with non-ascii data (contributed by valda).
-    [*] Fixed omod config viewing/editing wtih non-ascii data.
-    [*] Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).
-    [*] Fixed translateable messages to be returned in unicode (contributed by valda).[/list]  [*] Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
-  [*] Selectable jpeg quality in the Screenshots Tab.
-  [*] Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
-  [*] Advanced ini options for compatibility with mTES4 Manager: [b]sInstallersData[/b] and [b]sBashModData[/b] to specify where [i]Installers.dat[/i], [i]Converters.dat[/i], etc are stored by Wrye Bash.
-  [*] Added an option to the Mod Checker to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.
-  [*] New mod command List Patch Config..., for posting your Bashed Patch configuration on the forums.
-  [*] Readme updated and thoroughly spellchecked (in American English).[/list][/list][/spoiler]
+  [*] Bugs fixed (CBash):[list]
+    [*] Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
+    [*] Bug with the NPC AI Packages patcher fixed (incorrectly detecting if OOO and the UOP were installed).
+    [*] Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+    [*] Hack added to make sure that OOO.esp is reported as non-mergeable.
+    [*] Fix for mergeability detection for corrupted/unrecognized format mods (presume non-mergeable and warn if in debug mode but don't fail - which could prevent rebuilding of patch in CBash mode).
+    [*] NPC Face data should properly be merged, vice overridden.
+    [*] Fixed merging of QUST records from Filter mods.[/list]  [*] Tweak Assorted: Default Icons updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
+  [*] Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
+  [*] Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based [[#|Mark Mergeable]] to be automatically executed before rebuilding.[list]
+    [*] No more renaming CBash.dll![/list]  [*] 'Revert to Saved' option, to restore the settings last used to build the Bashed Patch.[/list][*] Bugs fixed (General):[list]
+  [*] Fixed multiple issues dealing with '&' (ampersand) in filenames.
+  [*] BOSS's dirty edit CRC's will be properly read from the masterlist now.
+  [*] Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [url=http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809]here[/url]
+  [*] Fixed the launching of OBSE when a Steam install is detected.[/list][*] Updated NSIS installer.
+[*] Unicode Mode:[list]
+  [*] Bugs fixed:[list]
+    [*] debug printing failing of an error in reading a mod failing with some unicode mods.
+    [*] Rename Player
+    [*] Rename Save items (including Enchanted, Potions, Spells)[/list][/list][*] Startup:[list]
+  [*] refactored cmdline opt getting
+  [*] added/changed cmdline options:[list]
+    [*] -d/--debug: no longer automatically disables Psyco import.
+    [*] --no-psyco: disable Psyco import.
+    [*] -C/--Cbash-mode: force cbash mode (requires CBash.dll to be named one of Rename_CBash.dll, CBash.dll or _CBash.dll).
+    [*] -P/--Python-mode: force python mode (whether or not CBash.dll exists).
+    [*] -U/--Unicode: equivalent to setting [b]bEnableUnicode[/b] to [i]True[/i] in bash.ini (but the cmdline options overide the ini when specified).
+    [*] -A/--Ansi: equivalent to setting [b]bEnableUnicode[/b] to [i]False[/i] in bash.ini (but the cmdline options overide the ini when specified).
+    [*] -i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.
+    [*] -I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.[/list][/list][*] Preliminary support for BOSS 1.8[/list][/spoiler]
 
 [b]Patch option reference (by Waruddar)[/b]:[spoiler]
 Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below). Also when I say mods, I mean just that, mods. Don't check any of the csv files unless you know that they're what you want.
