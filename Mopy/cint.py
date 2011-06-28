@@ -1737,12 +1737,12 @@ class ObBaseRecord(object):
         if not (FormIDToReplace or ReplacementFormID): return 0
         return _CUpdateReferences(self._CollectionID, self._ModID, self._RecordID, FormIDToReplace, ReplacementFormID)
 
-    def History(self, GetExtendedConflicts=False):
+    def History(self):
         cModIDs = (c_ulong * 257)() #just allocate enough for the max number + size
         cRecordIDs = (c_ulong * 257)() #just allocate enough for the max number + size
-        numRecords = _CGetRecordHistory(self._CollectionID, self._ModID, self._RecordID, byref(cModIDs), byref(cRecordIDs), c_ulong(GetExtendedConflicts))
+        numRecords = _CGetRecordHistory(self._CollectionID, self._ModID, self._RecordID, byref(cModIDs), byref(cRecordIDs))
         parent = getattr(self, '_ParentID', 0)
-        return [self.__class__(self._CollectionID, cModIDs[x], cRecordIDs[x], parent, self._CopyFlags) for x in range(0, numRecords)]#,c_ulong(GetExtendedConflicts)]
+        return [self.__class__(self._CollectionID, cModIDs[x], cRecordIDs[x], parent, self._CopyFlags) for x in range(0, numRecords)]
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
@@ -1761,7 +1761,6 @@ class ObBaseRecord(object):
         return []
 
     def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
-        GetExtendedConflicts=False
         conflicting = {}
         tempconflicting = {}
         if attrs is None:
@@ -1775,10 +1774,7 @@ class ObBaseRecord(object):
         #Equivalent to commented out code.
         #parentRecords = [parent for parent in conflicts if parent.ModName in recordMasters]
         #parentRecords.reverse()
-        if not GetExtendedConflicts:
-            parentRecords = self.History()
-        else:
-            parentRecords = self.History(True)
+        parentRecords = self.History()
         if parentRecords:
             tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
         else: #is the first instance of the record
@@ -5327,7 +5323,6 @@ class ObModFile(object):
         _CUnloadMod(self._CollectionID, self._ModID)
 
     def save(self, CloseCollection=True):
-        deprint('saving mod %s')
         return _CSaveMod(self._CollectionID, self._ModID, c_ulong(CloseCollection))
 
     @property
