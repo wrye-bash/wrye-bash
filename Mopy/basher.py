@@ -2906,13 +2906,10 @@ class InstallersList(balt.Tank):
                             bosh.modInfos.table[i]['installer'] = newPath.stail
                         for i in ifiles:
                             bosh.iniInfos.table[i]['installer'] = newPath.stail
+                del self.data[archive]
             num += 1
             numStr = `num`
             numStr = '0'*(numLen-len(numStr))+numStr
-        if InstallerType is bosh.InstallerMarker:
-            #--For markers, we're actually making a new one, and deleting the old ones
-            for item in selected:
-                del self.data[item]
         #--Refresh UI
         self.data.refresh(what='I')
         modList.RefreshUI()
