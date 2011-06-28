@@ -2302,6 +2302,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * More bugfixes from valda
 * Bugs fixed (General):
   * Fixed corrupted size saved when maximizing a Wizard.
+* Saves Tab:
+  * Added ability to export screenshot from savegame.
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
