@@ -1559,7 +1559,7 @@ class ModList(List):
             elif col == 'Size':
                 value = formatInteger(fileInfo.size/1024)+' KB'
             elif col == 'Author' and fileInfo.header:
-                Unicode(fileInfo.header.author,'mbcs')
+                value = Unicode(fileInfo.header.author,'mbcs')
             elif col == 'Load Order':
                 ordered = bosh.modInfos.ordered
                 if fileName in ordered:
