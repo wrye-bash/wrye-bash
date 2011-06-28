@@ -11325,7 +11325,6 @@ class Mod_Patch_Update(Link):
 
     def Execute(self,event):
         """Handle activation event."""
-        wx.BeginBusyCursor() # just to show users that it hasn't stalled but is doing stuff.
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
@@ -11338,6 +11337,7 @@ class Mod_Patch_Update(Link):
                         % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),
                     'bash.patch.CBashMismatch'):
                 return
+        wx.BeginBusyCursor() # just to show users that it hasn't stalled but is doing stuff.
         if not self.doCBash:
             bosh.PatchFile.patchTime = fileInfo.mtime
             if settings['bash.CBashEnabled']:
