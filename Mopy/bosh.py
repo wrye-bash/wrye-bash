@@ -193,7 +193,7 @@ class Path(str):
     compatibility with old pickle files."""
     def __init__(self, path):
         """Initialize."""
-        raise "Path necromancy!"
+        raise RuntimeError("Path necromancy!")
 
     def __getstate__(self):
         """Used by pickler. State is determined by underlying string, so return psempty tuple."""
@@ -2456,7 +2456,7 @@ class MreCsty(MelRecord):
                 #-- This one is present once: VidCaptureNoAttacks and it isn't actually used.
                 unpacked = ins.unpack('2B2s8f2B2s3fB3s2f5B3s2f2B2s',size,readId)
             else:
-                raise "Unexpected size encountered for CSTD subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for CSTD subrecord: ')+str(size))
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2578,7 +2578,7 @@ class MreEfsh(MelRecord):
                 # Only used twice in test shaders (0004b6d5, 0004b6d6)
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8fI',size,readId)
             else:
-                raise "Unexpected size encountered for EFSH subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for EFSH subrecord: ')+str(size))
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2884,7 +2884,7 @@ class MreLigh(MelRecord):
                 #--Else 24 byte record (skips value and weight...
                 unpacked = ins.unpack('iI3BsIff',size,readId)
             else:
-                raise "Unexpected size encountered for LIGH:DATA subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: ')+str(size))
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3004,7 +3004,7 @@ class MreMgef(MelRecord):
                 #--Else is data for DARK record, read it all.
                 unpacked = ins.unpack('IfIiiH2sIfI',size,readId)
             else:
-                raise "Unexpected size encountered for MGEF:DATA subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for MGEF:DATA subrecord: ')+str(size))
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3454,7 +3454,7 @@ class MreRefr(MelRecord):
                 #--Else is skipping unused2
                 unpacked = ins.unpack('B3sIB3s',size,readId)
             else:
-                raise "Unexpected size encountered for REFR:XLOC subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for REFR:XLOC subrecord: ')+str(size))
             unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3862,7 +3862,7 @@ class MreWatr(MelRecord):
                 #-- previous truncated record.
                 unpacked = ins.unpack('2s',size,readId)
             else:
-                raise "Unexpected size encountered for WATR subrecord: %s" % size
+                raise ModError(ins.inName,_('Unexpected size encountered for WATR subrecord: ')+str(size))
             unpacked = unpacked[:-1]
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
