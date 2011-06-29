@@ -33352,17 +33352,17 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
 def initLinks(appDir):
     #-- Other tools
+    global links
+    links = {}
     try:
         import win32com.client
-        global links
-        links = {}
         for file in appDir.list():
             if appDir.join(file).isfile() and file.cext == '.lnk':
                 sh = win32com.client.Dispatch('WScript.Shell')
                 shortcut = sh.CreateShortCut(appDir.join(file).s)
                 links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,shortcut.Description)
     except:
-        deprint('Error initializing links:',traceback=True)
+        deprint(_("Error initializing links:"),traceback=True)
 
 def initDefaultTools():
     #-- Other tool directories
