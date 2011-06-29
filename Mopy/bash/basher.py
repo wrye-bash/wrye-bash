@@ -9581,7 +9581,7 @@ class Mods_DumpTranslator(Link):
         dumpedKeys = set()
         reKey = re.compile(r'_\([\'\"](.+?)[\'\"]\)')
         reTrans = bolt.reTrans
-        for pyPath in (GPath(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt')):
+        for pyPath in (GPath('bash').join(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt')):
             pyText = pyPath.open()
             for lineNum,line in enumerate(pyText):
                 line = re.sub('#.*','',line)
