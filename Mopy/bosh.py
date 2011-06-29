@@ -20202,7 +20202,11 @@ class ActorImporter(ImportPatcher):
             self.recAttrs_class[recClass] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
                 'Actors.Stats': ('skills','health','attributes'),
-                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.autoCalc','flags.pcLevelOffset'),
+                                'barterGold','flags.female','flags.essential','flags.respawn','flags.noLowLevel',
+                                'flags.noRumors','flags.summonable','flags.noPersuasion','flags.canCorpseCheck',
+                                ),
+                #'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
                 'NPC.Class': ('iclass',),
                 'NPC.Race': ('race',),
                 'Actors.CombatStyle': ('combatStyle',),
@@ -20213,7 +20217,13 @@ class ActorImporter(ImportPatcher):
             self.recAttrs_class[recClass] = {
                 'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
                 'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
-                'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.pcLevelOffset',),
+                                'barterGold','flags.biped','flags.essential','flags.weaponAndShield',
+                                'flags.respawn','flags.swims','flags.flies','flags.walks','flags.noLowLevel',
+                                'flags.noBloodSpray','flags.noBloodDecal','flags.noHead','flags.noRightArm',
+                                'flags.noLeftArm','flags.noCombatInWater','flags.noShadow','flags.noCorpseCheck',
+                                ),
+                #'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
                 'NPC.Class': (),
                 'NPC.Race': (),
                 'Actors.CombatStyle': ('combatStyle',),
@@ -20248,7 +20258,12 @@ class ActorImporter(ImportPatcher):
                 attrs = set(reduce(operator.add, (self.recAttrs_class[actorClass][bashKey] for bashKey in srcInfo.getBashTags() if bashKey in self.recAttrs_class[actorClass])))
                 for record in srcFile.tops[actorClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in attrs)
+                    temp_id_data[fid] = dict()
+                    for attr in attrs:
+                        if isinstance(attr, str):
+                            temp_id_data[fid][attr] = reduce(getattr, attr.split('.'), record)
+                        elif isinstance(attr,(list,tuple,set)):
+                            temp_id_data[fid][attr] = dict((subattr,reduce(getattr, subattr.split('.'), record)) for subattr in attr)
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -20267,13 +20282,24 @@ class ActorImporter(ImportPatcher):
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
+                            if isinstance(attr,str):
+                                if value == reduce(getattr, attr.split('.'), record): continue
+                                else:
+                                    if fid not in id_data: id_data[fid] = dict()
+                                    try:
+                                        id_data[fid][attr] = temp_id_data[fid][attr]
+                                    except KeyError:
+                                        id_data[fid].setdefault(attr,value)
+                            elif isinstance(attr,(list,tuple,set)):
+                                temp_values = {}
+                                keep = False
+                                for subattr in attr:
+                                    if value[subattr] != reduce(getattr, subattr.split('.'), record):
+                                        keep = True
+                                    temp_values[subattr] = value[subattr]
+                                if keep:
+                                    id_data.setdefault(fid,{})
+                                    id_data[fid].update(temp_values)
             progress.plus()
         temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
@@ -20296,7 +20322,7 @@ class ActorImporter(ImportPatcher):
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
+                    if reduce(getattr,attr.split('.'),record) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
@@ -20315,12 +20341,12 @@ class ActorImporter(ImportPatcher):
                 fid = record.fid
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
+                    if reduce(getattr,attr.split('.'),record) != value:
                         break
                 else:
                     continue
                 for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
+                    setattr(reduce(getattr,attr.split('.')[:-1],record),attr.split('.')[-1], value)
                 keep(fid)
                 type_count[type] += 1
         log.setHeader('= '+self.__class__.name)
