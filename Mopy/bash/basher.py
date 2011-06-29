@@ -7879,7 +7879,7 @@ class Installer_Wizard(InstallerLink):
             if not isinstance(pos,tuple) or len(pos) != 2:
                 deprint('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.' % (pos,type(pos)))
                 pos = wx.DefaultPosition
-            if not isinstance(saved,tuple) or len(pos) != 2:
+            if not isinstance(saved,tuple) or len(saved) != 2:
                 deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
                 pageSize = tuple(default)
             else:
