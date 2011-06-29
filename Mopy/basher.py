@@ -11293,8 +11293,10 @@ class Mod_Patch_Update(Link):
             title = _('Rebuild Patch (CBash)...')
         else:
             title = _('Rebuild Patch...')
+        enable = (len(self.data) == 1 and
+            bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         check = False
-        if settings['bash.CBashEnabled']:
+        if enable and settings['bash.CBashEnabled']:
             menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
             # Detect if the patch was build with Python or CBash
             config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
@@ -11303,10 +11305,8 @@ class Mod_Patch_Update(Link):
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
-        enable = (len(self.data) == 1 and
-            bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         menuItem.Enable(enable)
-        if settings['bash.CBashEnabled']:
+        if enable and settings['bash.CBashEnabled']:
             menuItem.Check(not self.CBashMismatch)
 
     def Execute(self,event):
