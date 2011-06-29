@@ -5705,14 +5705,7 @@ class PatchDialog(wx.Dialog):
         # it over to the current mode
         configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
         if configIsCBash != self.doCBash:
-            # Config CBash/Python doesn't match current CBash/Python mode, convert
-            newConfig = {}
-            for key in patchConfigs:
-                if key in otherPatcherDict:
-                    newConfig[otherPatcherDict[key].__class__.__name__] = patchConfigs[key]
-                else:
-                    newConfig[key] = patchConfigs[key]
-            patchConfigs = newConfig
+            patchConfigs = self.ConvertConfig(patchConfigs)
         self.patchInfo = patchInfo
         if doCBash:
             self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
@@ -6024,7 +6017,9 @@ class PatchDialog(wx.Dialog):
             bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
         else:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
-        # Convert the config
+        return self.ConvertConfig(patchConfigs)
+
+    def ConvertConfig(self,patchConfigs):
         newConfig = {}
         for key in patchConfigs:
             if key in otherPatcherDict:
@@ -6037,14 +6032,7 @@ class PatchDialog(wx.Dialog):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
         if bosh.CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
-            # Conversion needed
-            newConfig = {}
-            for key in patchConfigs:
-                if key in otherPatcherDict:
-                    newConfig[otherPatcherDict[key].__class__.__name__] = patchConfigs[key]
-                else:
-                    newConfig[key] = patchConfigs[key]
-            patchConfigs = newConfig
+            patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
@@ -13769,9 +13757,22 @@ class App_Button(Link):
     def __init__(self,exePathArgs,image,tip,obseTip=None,obseArg=None,workingDir=None):
         """Initialize
         exePathArgs (string): exePath
-        exePathArgs (tuple): (exePath,*exeArgs)"""
+        exePathArgs (tuple): (exePath,*exeArgs)
+        exePathArgs (list):  [exePathArgs,altExePathArgs,...]"""
         Link.__init__(self)
         self.gButton = None
+        if isinstance(exePathArgs, list):
+            use = exePathArgs[0]
+            for item in exePathArgs:
+                if isinstance(item, tuple):
+                    exePath = item[0]
+                else:
+                    exePath = item
+                if exePath.exists():
+                    # Use this one
+                    use = item
+                    break
+            exePathArgs = use
         if isinstance(exePathArgs,tuple):
             self.exePath = exePathArgs[0]
             self.exeArgs = exePathArgs[1:]
