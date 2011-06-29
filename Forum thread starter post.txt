@@ -1,10 +1,19 @@
-﻿Continuing from the [topic=1202320]previous thread[/topic]...
+﻿Continuing from the [topic=1204328]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
 Its two best-known features are the Bashed Patch, which allows you to enable multiple overlapping mod plugins and have them work together sensibly, and the BAIN installation framework, an easy-to-use interface for installing and uninstalling mods that automatically heals your game data when multiple mods try to install the same files.  Related to and beyond these, it also has many capabilities targeted at mod creators and power users.
 
-[b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url]
+[b]FAQ of the day[/b]: What is CBash?
+
+CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp) file parser. It is written in C, and executes much faster on most systems than the current python code. CBash parses more types of records than the python code does, since parsing those records in python would be prohibitively slow. The practical benefits of using CBash are:
+[list=1]
+[*] building the bashed patch is much faster (for most people -- if it is slower on your system please post your system specs, operating system version, etc.)
+[*] more plugins are mergeable, giving you the ability to cram more goodness into Oblivion
+[*] in the future, more interesting kinds of tweaks will be practical to implement
+[/list]There are some technical differences from the python-based parser in how it makes the parsed data available, and this is why there are currently a few bugs. There's nothing wrong with CBash, per se, it's just that the merging and importing logic in python needs to be rethought in order to use the CBash framework.  At this stage CBash is in BETA.
+
+[b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
 
 [b]Documentation[/b]:
 [list]
@@ -70,7 +79,7 @@ Its two best-known features are the Bashed Patch, which allows you to enable mul
 here's the first little bit of it (not all translated to account for FO3 but it's showing promise). And another, a bit further along, by Valda called [topic=1102449"]garybash[/topic].
 [/list]
 [b]Latest Version[/b]:
-=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002] [rev 1280][spoiler][list]
+=== 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280][spoiler][list]
 [*] Bashed Patch:[list]
   [*] Bugs fixed (CBash):[list]
     [*] Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
@@ -489,4 +498,4 @@ SEWorld Tests
 [*]What does it do? It fixes any quests that aren't suspended while your character is in the Shivering Isles.
 [*]When does the user need it? Always (assuming you aren't using a really old patch). If you don't have the Shivering Isles expansion, this won't do you any good, but it also won't hurt you. So it's safer to just leave it enabled.
 [/list]
-[/spoiler]
+[/spoiler]
