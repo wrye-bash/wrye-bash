@@ -9026,7 +9026,7 @@ class ModInfos(FileInfos):
         allMods = self.getOrdered([x for x in allMods if x in self])
         #--List
         modIndex,header = 0, None
-        if not wtxt: log('[spoiler]', False)
+        if not wtxt: log('[spoiler][xml]', False)
         for name in allMods:
             if name in masters:
                 prefix = bul+'%02X' % (modIndex)
@@ -9054,7 +9054,7 @@ class ModInfos(FileInfos):
                         log(sMissing+master2.s)
                     elif self.getOrdered((name,master2))[1] == master2:
                         log(sDelinquent+master2.s)
-        if not wtxt: log('[/spoiler]')
+        if not wtxt: log('[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 
     def getTagList(self,modList=None):
@@ -11599,13 +11599,13 @@ class InstallerArchive(Installer):
         bUseUnicode = inisettings['EnableUnicode']
         log = bolt.LogFile(stringBuffer())
         if bUseUnicode:
-            log.out.write(u'[spoiler]')
             log.setHeader(_(u'Package Structure:'))
+            log(u'[spoiler][xml]', False)
             reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
             file = u''
         else:
-            log.out.write('[spoiler]')
             log.setHeader(_('Package Structure:'))
+            log('[spoiler][xml]', False)
             reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
             file = ''
         isdir = False
@@ -11668,7 +11668,7 @@ class InstallerArchive(Installer):
                     log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
                 else:
                     log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
-        log('[/spoiler]')
+        log('[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -11882,12 +11882,12 @@ class InstallerProject(Installer):
                  log(' ' * depth + file)
         #--Setup
         log = bolt.LogFile(stringBuffer())
-        log.out.write('[spoiler]')
         log.setHeader(_('Package Structure:'))
+        log('[spoiler][xml]', False)
         apath = dirs['installers'].join(archive)
 
         walkPath(apath.s, 0)
-        log('[/spoiler]')
+        log('[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
@@ -12625,7 +12625,7 @@ class InstallersData(bolt.TankData, DataDict):
         allPackages = sorted(self.data,key=orderKey)
         #--List
         modIndex,header = 0, None
-        log('[spoiler]',False)
+        log('[spoiler][xml]',False)
         for package in allPackages:
             prefix = '%03d' % (self.data[package].order)
             if isinstance(self.data[package],InstallerMarker):
@@ -12634,7 +12634,7 @@ class InstallersData(bolt.TankData, DataDict):
                 log('++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
             elif showInactive:
                 log('-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
-        log('[/spoiler]')
+        log('[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
