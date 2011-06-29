@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -21,8 +23,7 @@
 
 """This module starts the Wrye Bash application in GUI mode."""
 
-import bash
-import bolt
+from bash import bash, bolt
 
 #For Wrye Bash Launcher.pyw, default to debug mode Off
 bolt.deprintOn = False

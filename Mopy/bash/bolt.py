@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bolt.
 #
@@ -154,7 +156,8 @@ if locale.getlocale() == (None,None):
     locale.setlocale(locale.LC_ALL,'')
 language = locale.getlocale()[0].split('_',1)[0]
 if language.lower() == 'german': language = 'de' #--Hack for German speakers who aren't 'DE'.
-languagePkl, languageTxt = (os.path.join('data',language+ext) for ext in ('.pkl','.txt'))
+# TODO: use bosh.dirs['l10n'] once we solve the circular import
+languagePkl, languageTxt = (os.path.join('bash','l10n',language+ext) for ext in ('.pkl','.txt'))
 #--Recompile pkl file?
 if os.path.exists(languageTxt) and (
     not os.path.exists(languagePkl) or (
@@ -1764,9 +1767,27 @@ class PickleDict:
                     except ValueError:
                         os.remove(path)
                         continue # file corrupt - try next file
-                    if header == 'VDATA':
+                    if header == 'VDATA2':
                         self.vdata.update(cPickle.load(ins))
                         self.data.update(cPickle.load(ins))
+                    elif header == 'VDATA':
+                        # translate data types to new hierarchy
+                        class _Translator:
+                            def __init__(self, fileToWrap):
+                                self._file = fileToWrap
+                            def read(self, numBytes):
+                                return self._translate(self._file.read(numBytes))
+                            def readline(self):
+                                return self._translate(self._file.readline())
+                            def _translate(self, s):
+                                return re.sub('^(bolt|bosh)$', r'bash.\1', s)
+                        translator = _Translator(ins)
+                        try:
+                            self.vdata.update(cPickle.load(translator))
+                            self.data.update(cPickle.load(translator))
+                        except:
+                            deprint("unable to unpickle data", traceback=True)
+                            raise
                     else:
                         self.data.update(header)
                     ins.close()
@@ -1781,7 +1802,7 @@ class PickleDict:
         if self.readOnly: return False
         #--Pickle it
         out = self.path.temp.open('wb')
-        for data in ('VDATA',self.vdata,self.data):
+        for data in ('VDATA2',self.vdata,self.data):
             cPickle.dump(data,out,-1)
         out.close()
         self.path.untemp(True)

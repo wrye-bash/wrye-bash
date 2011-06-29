@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -2723,7 +2725,7 @@ class MreGmst(MelRecord):
         """Returns Oblivion.esm fid in long format for specified eid."""
         myClass = self.__class__
         if not myClass.oblivionIds:
-            myClass.oblivionIds = cPickle.load(dirs['mopy'].join('Data','Oblivion_ids.pkl').open())['GMST']
+            myClass.oblivionIds = cPickle.load(dirs['db'].join('Oblivion_ids.pkl').open())['GMST']
         return (modInfos.masterName, myClass.oblivionIds[self.eid])
 
 #------------------------------------------------------------------------------
@@ -7366,7 +7368,7 @@ class OmodFile:
 
         # Now decompress
         progress(0.3)
-        cmd = ['lzma','d',outPath.join(dataPath.sbody+'.tmp').s, outPath.join(dataPath.sbody+'.uncomp').s]
+        cmd = [dirs['compiled'].join('lzma').s,'d',outPath.join(dataPath.sbody+'.tmp').s, outPath.join(dataPath.sbody+'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
         progress(0.8)
 
@@ -33282,9 +33284,12 @@ def getLegacyPath(newPath, oldPath):
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
-    dirs['mopyData'] = dirs['mopy'].join('Data')
-    dirs['mopyExtras'] = dirs['mopy'].join('Extras')
-    dirs['mopyImages'] = dirs['mopy'].join('Images')
+    dirs['bash'] = dirs['mopy'].join('bash')
+    dirs['compiled'] = dirs['bash'].join('compiled')
+    dirs['l10n'] = dirs['bash'].join('l10n')
+    dirs['db'] = dirs['bash'].join('db')
+    dirs['templates'] = dirs['mopy'].join('templates')
+    dirs['images'] = dirs['bash'].join('images')
 
     #--Oblivion (Application) Directories
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)

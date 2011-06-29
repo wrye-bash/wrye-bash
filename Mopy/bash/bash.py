@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -217,12 +219,12 @@ def main():
                         action='store_const',
                         const=1,
                         dest='backup_images',
-                        help='Include changed images from mopy\images in the backup. Include any image(s) from backup file in restore.')
+                        help='Include changed images from mopy/bash/images in the backup. Include any image(s) from backup file in restore.')
     backupGroup.add_option('-I', '--include-all-images',
                         action='store_const',
                         const=2,
                         dest='backup_images',
-                        help='Include all images from mopy\images in the backup/restore (if present in backup file).')
+                        help='Include all images from mopy/bash/images in the backup/restore (if present in backup file).')
     parser.add_option('-d', '--debug',
                         action='store_true',
                         default=False,
@@ -286,11 +288,12 @@ def main():
     try:
         bolt.CBash = opts.mode
         import bosh
+        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
+        bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
+
         import basher
         import barb
         import balt
-        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
-        bosh.exe7z = bosh.dirs['mopy'].join(bosh.exe7z).s
     except bolt.PermissionError, e:
         if opts.debug:
             if hasattr(sys,'frozen'):

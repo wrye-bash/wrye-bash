@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -18,6 +20,7 @@
 #  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
 #
 # =============================================================================
+
 # Rollback library.
 
 import os
@@ -105,7 +108,7 @@ class BackupSettings(BaseBackupSettings):
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
         for path, name, tmpdir in (
-              (dirs['mopy'],                      'Bash.ini',             'Oblivion\\Mopy'),
+              (dirs['mopy'],                      'bash.ini',             'Oblivion\\Mopy'),
               (dirs['mods'].join('Bash'),         'Table',                'Oblivion\\Data\\Bash'),
               (dirs['mods'].join('Docs'),         'Bash Readme Template', 'Oblivion\\Data\\Docs'),
               (dirs['mods'].join('Docs'),         'Bashed Lists',         'Oblivion\\Data\\Docs'),
@@ -134,8 +137,7 @@ class BackupSettings(BaseBackupSettings):
 
         #backup all files in Mopy\Data, Data\Bash Patches and Data\INI Tweaks
         for path, tmpdir in (
-              (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
-              (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
+              (dirs['l10n'],                              'Oblivion\\Mopy\\bash\\l10n'),
               (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
               (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
                 ):
@@ -146,9 +148,9 @@ class BackupSettings(BaseBackupSettings):
         
         #backup image files if told to
         if backup_images == 1: #changed images only
-            tmpdir = GPath('Oblivion\\Mopy\\Images')
-            path = dirs['mopy'].join('Images')
-            for name in dirs['mopy'].join('Images').list():
+            tmpdir = GPath('Oblivion\\Mopy\\bash\\images')
+            path = dirs['images']
+            for name in path.list():
                 fullname = path.join(name)
                 if fullname.isfile():
                     changed = True
@@ -158,9 +160,9 @@ class BackupSettings(BaseBackupSettings):
                     if changed and not name.s.lower() == 'thumbs.db':
                         self.files[tmpdir.join(name)] = fullname
         elif backup_images == 2: #all images
-            tmpdir = GPath('Oblivion\\Mopy\\Images')
-            path = dirs['mopy'].join('Images')
-            for name in dirs['mopy'].join('Images').list():
+            tmpdir = GPath('Oblivion\\Mopy\\bash\\images')
+            path = dirs['images']
+            for name in path.list():
                 if path.join(name).isfile() and not name.s.lower() == 'thumbs.db':
                     self.files[tmpdir.join(name)] = path.join(name)
                     
@@ -303,7 +305,6 @@ class RestoreSettings(BaseBackupSettings):
         tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 
-        
         bash.SetUserPath(tmpBash.s,opts.userPath)
 
         bashIni = bash.GetBashIni(tmpBash.s)
@@ -312,8 +313,6 @@ class RestoreSettings(BaseBackupSettings):
         # restore all the settings files
         restore_paths = (
                 (dirs['mopy'],                              'Oblivion\\Mopy'),
-                (dirs['mopy'].join('Data'),                 'Oblivion\\Mopy\\Data'),
-                (dirs['mopy'].join('Data','Actor Levels'),  'Oblivion\\Mopy\\Data\\Actor Levels'),
                 (dirs['mods'].join('Bash'),                 'Oblivion\\Data\\Bash'),
                 (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
                 (dirs['mods'].join('Docs'),                 'Oblivion\\Data\\Docs'),
@@ -324,9 +323,19 @@ class RestoreSettings(BaseBackupSettings):
                 (dirs['userApp'],                           'LocalAppData\\Oblivion'),
                 (dirs['saveBase'],                          'My Games\\Oblivion'),
                 )
-        if self.restore_images:
+        if 293 >= self.verApp:
+            # restore from old data paths
             restore_paths += (
-                (dirs['mopy'].join('Images'),               'Oblivion\\Mopy\\Images'),)
+                (dirs['l10n'],                              'Oblivion\\Data'),)
+            if self.restore_images:
+                restore_paths += (
+                    (dirs['images'],                        'Oblivion\\Mopy\\images'),)
+        else:
+            restore_paths += (
+                (dirs['l10n'],                              'Oblivion\\bash\\l10n'),)
+            if self.restore_images:
+                restore_paths += (
+                    (dirs['images'],                        'Oblivion\\Mopy\\bash\\images'),)
         for fpath, tpath in restore_paths:
             path = self.tmp.join(tpath)
             if path.exists():
@@ -416,9 +425,9 @@ def pack7z(dstFile, srcDir, progress=None):
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
     if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['mopy'].join('7zUnicode.exe').s
+        app7z = dirs['compiled'].join('7zUnicode.exe').s
     else:
-        app7z = dirs['mopy'].join('7z.exe').s
+        app7z = dirs['compiled'].join('7z.exe').s
     command = '"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
     progress(0,_("%s\nCompressing files...") % dstFile.s)
@@ -459,9 +468,9 @@ def unpack7z(srcFile, dstDir, progress=None):
     length = 0
     reList = re.compile('Path = (.*?)(?:\r\n|\n)')
     if bosh.inisettings['EnableUnicode']:
-        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7zUnicode.exe').s, srcFile.s)
+        command = r'"%s" l -slt "%s"' % (dirs['compiled'].join('7zUnicode.exe').s, srcFile.s)
     else:
-        command = r'"%s" l -slt "%s"' % (dirs['mopy'].join('7z.exe').s, srcFile.s)
+        command = r'"%s" l -slt "%s"' % (dirs['compiled'].join('7z.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     ins = stringBuffer(ins)
     for line in ins: length += 1
@@ -473,9 +482,9 @@ def unpack7z(srcFile, dstDir, progress=None):
     #end if
 
     if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['mopy'].join('7zUnicode.exe').s
+        app7z = dirs['compiled'].join('7zUnicode.exe').s
     else:
-        app7z = dirs['mopy'].join('7z.exe').s
+        app7z = dirs['compiled'].join('7z.exe').s
     command = '"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files
