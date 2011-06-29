@@ -1761,6 +1761,11 @@ class ObBaseRecord(object):
         return []
 
     def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
+        """New: attrs is an iterable, for each item, the following is checked:
+           if the item is a string type: changes are reported
+           if the item is another iterable (set,list,tuple), then if any of the subitems is
+             different, then all sub items are reported.  This allows grouping of dependant
+             items."""
         conflicting = {}
         tempconflicting = {}
         if attrs is None:
@@ -1776,9 +1781,27 @@ class ObBaseRecord(object):
         #parentRecords.reverse()
         parentRecords = self.History()
         if parentRecords:
-            tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords for attr in attrs if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+            for attr in attrs:
+                if isinstance(attr,(str,unicode)):
+                    # Single attr
+                    tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for parentRecord in parentRecords if reduce(getattr, attr.split('.'), self) != reduce(getattr, attr.split('.'), parentRecord)])
+                elif isinstance(attr,(list,tuple,set)):
+                    # Group of attrs that need to stay together
+                    for parentRecord in parentRecords:
+                        subconflicting = {}
+                        conflict = False
+                        for subattr in attr:
+                            if not conflict and reduce(getattr, subattr.split('.'), self) != reduce(getattr, subattr.split('.'), parentRecord):
+                                conflict = True
+                            subconflicting.update([(subattr,reduce(getattr, subattr.split('.'), self))])
+                        if conflict:
+                            tempconflicting.update(subconflicting)
         else: #is the first instance of the record
-            tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self)) for attr in attrs ])
+            for attr in attrs:
+                if isinstance(attr,(str,unicode)):
+                    tempconflicting.update([(attr,reduce(getattr, attr.split('.'), self))])
+                elif isinstance(attr,(list,tuple,set)):
+                    tempconflicting.update([(subattr,reduce(getattr, subattr.split('.'), self)) for subattr in attr])
         if self._Type in FORMIDAttrs:
             curformidattrs = FORMIDAttrs[self._Type]
             for attr in tempconflicting:
