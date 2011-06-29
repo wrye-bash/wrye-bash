@@ -7,6 +7,12 @@ import re
 import sys
 import optparse
 
+# Some paths
+root = os.getcwd()
+mopy = os.path.join(root,'Mopy')
+exe7z = os.path.join(mopy,'bash','compiled','7z.exe')
+readme = os.path.join(mopy,'Wrye Bash.txt')
+
 try:
     #--Needed for the Installer version to find NSIS
     import _winreg
@@ -22,7 +28,7 @@ except:
     have_py2exe = False
 
 #--GetVersionInfo: Gets version information about Wrye Bash
-def GetVersionInfo(readme=r'.\Mopy\Wrye Bash.txt', padding=4):
+def GetVersionInfo(readme=readme, padding=4):
     '''Gets version information from Wrye Bash.txt, returns
        a tuple: (version, file_version).  For example, a
        version of 291 would with default padding would return:
@@ -62,7 +68,7 @@ def mv(file, dest):
 #--Create the standard manual installer version
 def BuildManualVersion(version, pipe=None):
     archive = 'Wrye Bash %s -- Archive Version.7z' % version
-    cmd_7z = [r'.\Mopy\7z.exe', 'a', '-mx9', '-xr!.svn', archive, 'Mopy', 'Data']
+    cmd_7z = [exe7z, 'a', '-mx9', '-xr!.svn', archive, 'Mopy', 'Data']
     rm(archive)
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
 
@@ -73,7 +79,6 @@ def BuildStandaloneVersion(version, file_version, pipe=None):
         CleanupStandaloneFiles()
 
 def CleanupStandaloneFiles():
-    mopy = os.path.join(os.getcwd(), 'Mopy')
     rm(os.path.join(mopy, 'Wrye Bash.exe'))
     rm(os.path.join(mopy, 'w9xpopen.exe'))
 
@@ -82,9 +87,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     if not have_py2exe:
         print " Could not find python module 'py2exe', aborting StandAlone creation."
         return False
-    root = os.getcwd()
     wbsa = os.path.join(root, 'experimental', 'standalone')
-    mopy = os.path.join(root, 'mopy')
     reshacker = os.path.join(wbsa, 'Reshacker.exe')
     upx = os.path.join(wbsa, 'upx.exe')
     icon = os.path.join(wbsa, 'bash.ico')
@@ -146,20 +149,15 @@ def CreateStandaloneExe(version, file_version, pipe=None):
 
 #--Package up all the files for the StandAlone version    
 def PackStandaloneVersion(version, pipe=None):
-    root = os.getcwd()
-    mopy = os.path.join(root, 'Mopy')
     archive = 'Wrye Bash %s -- Standalone Version.7z' % version
 
-    cmd_7z = [os.path.join(mopy, '7z.exe'), 'a', '-mx9', '-xr!.svn',
+    cmd_7z = [exe7z, 'a', '-mx9',
+              '-xr!.svn',   # Skip '.svn' dirs
+              '-xr!*.py', '-xr!*.pyc', '-xr!.pyw', # Skip python files
               archive,
-              r'Mopy\*.exe', r'Mopy\*.dll', r'Mopy\*.ini', r'Mopy\*html', r'Mopy\*.txt',
               'Data',
+              'Mopy',
               ]
-    for file in os.listdir(mopy):
-        path = os.path.join(mopy, file)
-        if os.path.isdir(path):
-            if file.lower() != '.svn':
-                cmd_7z.append('Mopy\\'+file)
     rm(archive)
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
 
