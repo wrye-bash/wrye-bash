@@ -153,7 +153,7 @@ def PackStandaloneVersion(version, pipe=None):
 
     cmd_7z = [exe7z, 'a', '-mx9',
               '-xr!.svn',   # Skip '.svn' dirs
-              '-xr!*.py', '-xr!*.pyc', '-xr!.pyw', # Skip python files
+              '-xr!*.py', '-xr!*.pyc', '-xr!*.pyw', # Skip python files
               archive,
               'Data',
               'Mopy',
