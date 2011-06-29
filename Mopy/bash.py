@@ -131,6 +131,13 @@ def exit():
     except OSError, e:
         print e
 
+    try:
+        # Cleanup temp installers directory
+        import bosh
+        bosh.Installer.tempDir.rmtree(bosh.Installer.tempDir.stail)
+    except:
+        pass
+
     if basherImported and basher.appRestart:
         exePath = GPath(sys.executable)
         sys.argv = [exePath.stail] + sys.argv + ['--restarting']
