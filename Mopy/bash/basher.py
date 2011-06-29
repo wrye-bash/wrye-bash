@@ -7881,7 +7881,7 @@ class Installer_Wizard(InstallerLink):
                 pos = wx.DefaultPosition
             if not isinstance(saved,tuple) or len(pos) != 2:
                 deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
-                pageSize = default.copy()
+                pageSize = tuple(default)
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
             wizard = belt.InstallerWizard(self, subs, pageSize, pos)
@@ -7893,7 +7893,7 @@ class Installer_Wizard(InstallerLink):
             ret.Pos = wx.DefaultPosition
         if not isinstance(ret.PageSize,wx.Size):
             deprint('Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.' % (ret.PageSize, type(ret.PageSize)))
-            ret.PageSize = default.copy()
+            ret.PageSize = tuple(default)
         settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
         settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
         if ret.Canceled:
