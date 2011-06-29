@@ -33365,7 +33365,10 @@ def initLinks(appDir):
             if appDir.join(file).isfile() and file.cext == '.lnk':
                 sh = win32com.client.Dispatch('WScript.Shell')
                 shortcut = sh.CreateShortCut(appDir.join(file).s)
-                links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,shortcut.Description)
+                description = shortcut.Description
+                if not description:
+                    description = _('Launch')+' '+file.sbody
+                links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
     except:
         deprint(_("Error initializing links:"),traceback=True)
 
