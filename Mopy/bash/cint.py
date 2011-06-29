@@ -1,7 +1,30 @@
+# -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#
+# =============================================================================
+
 from ctypes import *
 import struct
 import math
-from os.path import exists
+from os import path
 try:
     import bolt
     from bolt import GPath, deprint, _
@@ -15,15 +38,19 @@ _CBashRequiredVersion = (0,5,2)
 
 CBash = None
 CBashdll = None
+# path to compiled dir hardcoded since importing bosh would be circular
+# TODO: refactor to avoid circular deps
 if bolt.CBash == 0: #regular depends on the filepath existing.
-    if exists(".\\CBash.dll"):
-        CBashdll = ".\\CBash.dll"
+    _CBashPath = path.join("bash", "compiled", "CBash.dll")
+    if path.exists(_CBashPath):
+        CBashdll = _CBashPath
 elif bolt.CBash == 1: #force python mode
     CBash = None
 elif bolt.CBash == 2: #attempt to force CBash mode
-    for filename in [".\\CBash.dll",".\\rename_CBash.dll",".\\_CBash.dll"]:
-        if exists(filename):
-            CBashdll = filename
+    for filename in ["CBash.dll","rename_CBash.dll","_CBash.dll"]:
+        _CBashPath = path.join("bash", "compiled", filename)
+        if exists(_CBashPath):
+            CBashdll = _CBashPath
             break
 
 if CBashdll:
