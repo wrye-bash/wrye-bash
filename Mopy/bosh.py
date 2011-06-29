@@ -33342,81 +33342,84 @@ def initLinks(appDir):
 def initDefaultTools():
     #-- Other tool directories
     #   First to default path
+    pf = [GPath(r'C:\Program Files'),GPath(r'C:\Program Files (x86)')]
+    def pathlist(*args): return [x.join(*args) for x in pf]
+
     tooldirs['Tes4FilesPath'] = dirs['app'].join('Tools','TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join('TES4Edit.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
     tooldirs['Tes4GeckoPath'] = dirs['app'].join('Tes4Gecko.jar')
     tooldirs['OblivionBookCreatorPath'] = dirs['mods'].join('OblivionBookCreator.jar')
-    tooldirs['NifskopePath'] = GPath(r'C:\Program Files\NifTools\NifSkope\Nifskope.exe')
-    tooldirs['BlenderPath'] = GPath(r'C:\Program Files\Blender Foundation\Blender\blender.exe')
+    tooldirs['NifskopePath'] = pathlist('NifTools','NifSkope','Nifskope.exe')
+    tooldirs['BlenderPath'] = pathlist('Blender Foundation','Blender','blender.exe')
     tooldirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
-    tooldirs['MaxPath'] = GPath(r'C:\Program Files\Autodesk\3ds Max 2010\3dsmax.exe')
+    tooldirs['MaxPath'] = pathlist('Autodesk','3ds Max 2010','3dsmax.exe')
     tooldirs['MayaPath'] = undefinedPath
-    tooldirs['PhotoshopPath'] = GPath(r'C:\Program Files\Adobe\Adobe Photoshop CS3\Photoshop.exe')
-    tooldirs['GIMP'] = GPath(r'C:\Program Files\GIMP-2.0\bin\gimp-2.6.exe')
+    tooldirs['PhotoshopPath'] = pathlist('Adobe','Adobe Photoshop CS3','Photoshop.exe')
+    tooldirs['GIMP'] = pathlist('GIMP-2.0','bin','gimp-2.6.exe')
     tooldirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
     tooldirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
     tooldirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
     tooldirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
-    tooldirs['NPP'] = GPath(r'C:\Program Files\Notepad++\notepad++.exe')
+    tooldirs['NPP'] = pathlist('Notepad++','notepad++.exe')
     tooldirs['Fraps'] = GPath(r'C:\Fraps\Fraps.exe')
-    tooldirs['Audacity'] = GPath(r'C:\Program Files\Audacity\Audacity.exe')
-    tooldirs['Artweaver'] = GPath(r'C:\Program Files\Artweaver 1.0\Artweaver.exe')
-    tooldirs['DDSConverter'] = GPath(r'C:\Program Files\DDS Converter 2\DDS Converter 2.exe')
-    tooldirs['PaintNET'] = GPath(r'C:\Program Files\Paint.NET\PaintDotNet.exe')
-    tooldirs['Milkshape3D'] = GPath(r'C:\Program Files\MilkShape 3D 1.8.4\ms3d.exe')
-    tooldirs['Wings3D'] = GPath(r'C:\Program Files\wings3d_1.2\Wings3D.exe')
-    tooldirs['BSACMD'] = GPath(r'C:\Program Files\BSACommander\bsacmd.exe')
-    tooldirs['MAP'] = dirs['app'].join(r'Modding Tools\Interactive Map of Cyrodiil and Shivering Isles 3.52\Mapa v 3.52.exe')
-    tooldirs['OBMLG'] = dirs['app'].join(r'Modding Tools\Oblivion Mod List Generator\Oblivion Mod List Generator.exe')
-    tooldirs['OBFEL'] = GPath(r'C:\Program Files\Oblivion Face Exchange Lite\OblivionFaceExchangeLite.exe')
-    tooldirs['ArtOfIllusion'] = GPath(r'C:\Program Files\ArtOfIllusion\Art of Illusion.exe')
-    tooldirs['ABCAmberAudioConverter'] = GPath(r'C:\Program Files\ABC Amber Audio Converter\abcaudio.exe')
-    tooldirs['GimpShop'] = GPath(r'C:\Program Files\GIMPshop\bin\gimp-2.2.exe')
-    tooldirs['PixelStudio'] = GPath(r'C:\Program Files\Pixel\Pixel.exe')
-    tooldirs['TwistedBrush'] = GPath(r'C:\Program Files\Pixarra\TwistedBrush Open Studio\tbrush_open_studio.exe')
-    tooldirs['PhotoScape'] = GPath(r'C:\Program Files\PhotoScape\PhotoScape.exe')
-    tooldirs['Photobie'] = GPath(r'C:\Program Files\Photobie\Photobie.exe')
-    tooldirs['PhotoFiltre'] = GPath(r'C:\Program Files\PhotoFiltre\PhotoFiltre.exe')
-    tooldirs['PaintShopPhotoPro'] = GPath(r'C:\Program Files\Corel\Corel PaintShop Photo Pro\X3\PSPClassic\Corel Paint Shop Pro Photo.exe')
-    tooldirs['Dogwaffle'] = GPath(r'C:\Program Files\project dogwaffle\dogwaffle.exe')
-    tooldirs['GeneticaViewer'] = GPath(r'C:\Program Files\Spiral Graphics\Genetica Viewer 3\Genetica Viewer 3.exe')
-    tooldirs['LogitechKeyboard'] = GPath(r'C:\Program Files\Logitech\GamePanel Software\G-series Software\LGDCore.exe')
-    tooldirs['AutoCad'] = GPath(r'C:\Program Files\Autodesk Architectural Desktop 3\acad.exe')
-    tooldirs['Genetica'] = GPath(r'C:\Program Files\Spiral Graphics\Genetica 3.5\Genetica.exe')
-    tooldirs['IrfanView'] = GPath(r'C:\Program Files\IrfanView\i_view32.exe')
-    tooldirs['XnView'] = GPath(r'C:\Program Files\XnView\xnview.exe')
-    tooldirs['FastStone'] = GPath(r'C:\Program Files\FastStone Image Viewer\FSViewer.exe')
-    tooldirs['Steam'] = GPath(r'C:\Program Files\Steam\steam.exe')
-    tooldirs['EVGAPrecision'] = GPath(r'C:\Program Files\EVGA Precision\EVGAPrecision.exe')
-    tooldirs['IcoFX'] = GPath(r'C:\Program Files\IcoFX 1.6\IcoFX.exe')
-    tooldirs['AniFX'] = GPath(r'C:\Program Files\AniFX 1.0\AniFX.exe')
-    tooldirs['WinMerge'] = GPath(r'C:\Program Files\WinMerge\WinMergeU.exe')
-    tooldirs['FreeMind'] = GPath(r'C:\Program Files\FreeMind\Freemind.exe')
-    tooldirs['MediaMonkey'] = GPath(r'C:\Program Files\MediaMonkey\MediaMonkey.exe')
-    tooldirs['Inkscape'] = GPath(r'C:\Program Files\Inkscape\inkscape.exe')
-    tooldirs['FileZilla'] = GPath(r'C:\Program Files\FileZilla FTP Client\filezilla.exe')
-    tooldirs['RADVideo'] = GPath(r'C:\Program Files\RADVideo\radvideo.exe')
-    tooldirs['EggTranslator'] = GPath(r'C:\Program Files\Egg Translator\EggTranslator.exe')
-    tooldirs['Sculptris'] = GPath(r'C:\Program Files\sculptris\Sculptris.exe')
-    tooldirs['Mudbox'] = GPath(r'C:\Program Files\Autodesk\Mudbox2011\mudbox.exe')
-    tooldirs['Tabula'] = dirs['app'].join(r'C:\Program Files\Bethesda Softworks\Oblivion\Modding Tools\Tabula\Tabula.exe')
-    tooldirs['MyPaint'] = GPath(r'CC:\Program Files\MyPaint\mypaint.exe')
-    tooldirs['Pixia'] = GPath(r'C:\Program Files\Pixia\pixia.exe')
-    tooldirs['DeepPaint'] = GPath(r'C:\Program Files\Right Hemisphere\Deep Paint\DeepPaint.exe')
-    tooldirs['CrazyBump'] = GPath(r'C:\Program Files\Crazybump\CrazyBump.exe')
-    tooldirs['xNormal'] = GPath(r'C:\Program Files\Santiago Orgaz\xNormal\3.17.3\x86\xNormal.exe')
+    tooldirs['Audacity'] = pathlist('Audacity','Audacity.exe')
+    tooldirs['Artweaver'] = pathlist('Artweaver 1.0','Artweaver.exe')
+    tooldirs['DDSConverter'] = pathlist('DDS Converter 2','DDS Converter 2.exe')
+    tooldirs['PaintNET'] = pathlist('Paint.NET','PaintDotNet.exe')
+    tooldirs['Milkshape3D'] = pathlist('MilkShape 3D 1.8.4','ms3d.exe')
+    tooldirs['Wings3D'] = pathlist('wings3d_1.2','Wings3D.exe')
+    tooldirs['BSACMD'] = pathlist('BSACommander','bsacmd.exe')
+    tooldirs['MAP'] = dirs['app'].join('Modding Tools','Interactive Map of Cyrodiil and Shivering Isles 3.52','Mapa v 3.52.exe')
+    tooldirs['OBMLG'] = dirs['app'].join('Modding Tools','Oblivion Mod List Generator','Oblivion Mod List Generator.exe')
+    tooldirs['OBFEL'] = pathlist('Oblivion Face Exchange Lite','OblivionFaceExchangeLite.exe')
+    tooldirs['ArtOfIllusion'] = pathlist('ArtOfIllusion','Art of Illusion.exe')
+    tooldirs['ABCAmberAudioConverter'] = pathlist('ABC Amber Audio Converter','abcaudio.exe')
+    tooldirs['GimpShop'] = pathlist('GIMPshop','bin','gimp-2.2.exe')
+    tooldirs['PixelStudio'] = pathlist('Pixel','Pixel.exe')
+    tooldirs['TwistedBrush'] = pathlist('Pixarra','TwistedBrush Open Studio','tbrush_open_studio.exe')
+    tooldirs['PhotoScape'] = pathlist('PhotoScape','PhotoScape.exe')
+    tooldirs['Photobie'] = pathlist('Photobie','Photobie.exe')
+    tooldirs['PhotoFiltre'] = pathlist('PhotoFiltre','PhotoFiltre.exe')
+    tooldirs['PaintShopPhotoPro'] = pathlist('Corel','Corel PaintShop Photo Pro','X3','PSPClassic','Corel Paint Shop Pro Photo.exe')
+    tooldirs['Dogwaffle'] = pathlist('project dogwaffle','dogwaffle.exe')
+    tooldirs['GeneticaViewer'] = pathlist('Spiral Graphics','Genetica Viewer 3','Genetica Viewer 3.exe')
+    tooldirs['LogitechKeyboard'] = pathlist('Logitech','GamePanel Software','G-series Software','LGDCore.exe')
+    tooldirs['AutoCad'] = pathlist('Autodesk Architectural Desktop 3','acad.exe')
+    tooldirs['Genetica'] = pathlist('Spiral Graphics','Genetica 3.5','Genetica.exe')
+    tooldirs['IrfanView'] = pathlist('IrfanView','i_view32.exe')
+    tooldirs['XnView'] = pathlist('XnView','xnview.exe')
+    tooldirs['FastStone'] = pathlist('FastStone Image Viewer','FSViewer.exe')
+    tooldirs['Steam'] = pathlist('Steam','steam.exe')
+    tooldirs['EVGAPrecision'] = pathlist('EVGA Precision','EVGAPrecision.exe')
+    tooldirs['IcoFX'] = pathlist('IcoFX 1.6','IcoFX.exe')
+    tooldirs['AniFX'] = pathlist('AniFX 1.0','AniFX.exe')
+    tooldirs['WinMerge'] = pathlist('WinMerge','WinMergeU.exe')
+    tooldirs['FreeMind'] = pathlist('FreeMind','Freemind.exe')
+    tooldirs['MediaMonkey'] = pathlist('MediaMonkey','MediaMonkey.exe')
+    tooldirs['Inkscape'] = pathlist('Inkscape','inkscape.exe')
+    tooldirs['FileZilla'] = pathlist('FileZilla FTP Client','filezilla.exe')
+    tooldirs['RADVideo'] = pathlist('RADVideo','radvideo.exe')
+    tooldirs['EggTranslator'] = pathlist('Egg Translator','EggTranslator.exe')
+    tooldirs['Sculptris'] = pathlist('sculptris','Sculptris.exe')
+    tooldirs['Mudbox'] = pathlist('Autodesk','Mudbox2011','mudbox.exe')
+    tooldirs['Tabula'] = dirs['app'].join('Modding Tools','Tabula','Tabula.exe')
+    tooldirs['MyPaint'] = pathlist('MyPaint','mypaint.exe')
+    tooldirs['Pixia'] = pathlist('Pixia','pixia.exe')
+    tooldirs['DeepPaint'] = pathlist('Right Hemisphere','Deep Paint','DeepPaint.exe')
+    tooldirs['CrazyBump'] = pathlist('Crazybump','CrazyBump.exe')
+    tooldirs['xNormal'] = pathlist('Santiago Orgaz','xNormal','3.17.3','x86','xNormal.exe')
     tooldirs['SoftimageModTool'] = GPath(r'C:\Softimage\Softimage_Mod_Tool_7.5\Application\bin\XSI.bat')
-    tooldirs['SpeedTree'] = GPath(r'C:\not\a\valid\path.exe')
-    tooldirs['Treed'] = GPath(r'C:\Program Files\gile[s]\plugins\tree[d]\tree[d].exe')
-    tooldirs['WinSnap'] = GPath(r'C:\Program Files\WinSnap\WinSnap.exe')
-    tooldirs['PhotoSEAM'] = GPath(r'C:\Program Files\PhotoSEAM\PhotoSEAM.exe')
-    tooldirs['TextureMaker'] = GPath(r'C:\Program Files\Texture Maker\texturemaker.exe')
-    tooldirs['MaPZone'] = GPath(r'C:\Program Files\Allegorithmic\MaPZone 2.6\MaPZone2.exe')
-    tooldirs['NVIDIAMelody'] = GPath(r'C:\Program Files\NVIDIA Corporation\Melody\Melody.exe')
-    tooldirs['WTV'] = GPath(r'C:\Program Files\WindowsTextureViewer\WTV.exe')
-    tooldirs['Switch'] = GPath(r'C:\Program Files\NCH Swift Sound\Switch\switch.exe')
-    tooldirs['Freeplane'] = GPath(r'C:\Program Files\Freeplane\freeplane.exe')
+    tooldirs['SpeedTree'] = undefinedPath
+    tooldirs['Treed'] = pathlist('gile[s]','plugins','tree[d]','tree[d].exe')
+    tooldirs['WinSnap'] = pathlist('WinSnap','WinSnap.exe')
+    tooldirs['PhotoSEAM'] = pathlist('PhotoSEAM','PhotoSEAM.exe')
+    tooldirs['TextureMaker'] = pathlist('Texture Maker','texturemaker.exe')
+    tooldirs['MaPZone'] = pathlist('Allegorithmic','MaPZone 2.6','MaPZone2.exe')
+    tooldirs['NVIDIAMelody'] = pathlist('NVIDIA Corporation','Melody','Melody.exe')
+    tooldirs['WTV'] = pathlist('WindowsTextureViewer','WTV.exe')
+    tooldirs['Switch'] = pathlist('NCH Swift Sound','Switch','switch.exe')
+    tooldirs['Freeplane'] = pathlist('Freeplane','freeplane.exe')
 
 def initDefaultSettings():
     #other settings from the INI:
@@ -33450,7 +33453,7 @@ def initOptions(bashIni):
     initDefaultSettings()
 
     defaultOptions = {}
-    type_key = {str:'s',int:'i',bool:'b',bolt.Path:'s'}
+    type_key = {str:'s',list:'s',int:'i',bool:'b',bolt.Path:'s'}
     allOptions = [tooldirs,inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
@@ -33469,7 +33472,7 @@ def initOptions(bashIni):
                 usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
                 defaultValue = usedSettings.get(usedKey,'')
                 settingType = type(defaultValue)
-                if settingType is bolt.Path:
+                if settingType in (bolt.Path,list):
                     value = GPath(value)
                     if not value.isabs():
                         value = dirs['app'].join(value)
@@ -33484,14 +33487,11 @@ def initOptions(bashIni):
                     compValue = compValue.lower()
                     if compValue in (_('-option(s)'),_('tooltip text'),_('default')):
                         compValue = compDefaultValue
-                if compValue != compDefaultValue:
-    ##                print section
-    ##                print "  ", usedKey
-    ##                print "  ", key,'=',defaultValue
-    ##                print "  ", key,'=',value
-    ##                print
+                if settingType is list:
+                    if compValue != compDefaultValue[0]:
+                        usedSettings[usedKey] = value
+                elif compValue != compDefaultValue:
                     usedSettings[usedKey] = value
-    ##    print unknownSettings
 
     tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join('TES4View.exe')
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join('TES4Trans.exe')
