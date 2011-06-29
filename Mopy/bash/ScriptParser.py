@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Parser.py =======================================
 #  A generic class for handling parsing of
 #  scripts and equations.

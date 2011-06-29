@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
@@ -415,7 +417,7 @@ class ColorChecks(balt.ImageList):
             for status in ('purple','blue','green','orange','yellow','red'):
                 shortKey = status+'.'+state
                 imageKey = 'checkbox.'+shortKey
-                file = GPath(r'images/checkbox_'+status+'_'+state+'.png')
+                file = GPath(bosh.dirs['images'].join('checkbox_'+status+'_'+state+'.png'))
                 image = images[imageKey] = Image(file,wx.BITMAP_TYPE_PNG)
                 self.Add(image,shortKey)
 
@@ -455,78 +457,78 @@ class ColorChecks(balt.ImageList):
 colorChecks = ColorChecks()
 karmacons = balt.ImageList(16,16)
 karmacons.data.extend({
-    'karma+5': Image(r'images/checkbox_purple_inc.png',wx.BITMAP_TYPE_PNG),
-    'karma+4': Image(r'images/checkbox_blue_inc.png',wx.BITMAP_TYPE_PNG),
-    'karma+3': Image(r'images/checkbox_blue_inc.png',wx.BITMAP_TYPE_PNG),
-    'karma+2': Image(r'images/checkbox_green_inc.png',wx.BITMAP_TYPE_PNG),
-    'karma+1': Image(r'images/checkbox_green_inc.png',wx.BITMAP_TYPE_PNG),
-    'karma+0': Image(r'images/checkbox_white_off.png',wx.BITMAP_TYPE_PNG),
-    'karma-1': Image(r'images/checkbox_yellow_off.png',wx.BITMAP_TYPE_PNG),
-    'karma-2': Image(r'images/checkbox_yellow_off.png',wx.BITMAP_TYPE_PNG),
-    'karma-3': Image(r'images/checkbox_orange_off.png',wx.BITMAP_TYPE_PNG),
-    'karma-4': Image(r'images/checkbox_orange_off.png',wx.BITMAP_TYPE_PNG),
-    'karma-5': Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG),
+    'karma+5': Image(GPath(bosh.dirs['images'].join('checkbox_purple_inc.png')),wx.BITMAP_TYPE_PNG),
+    'karma+4': Image(GPath(bosh.dirs['images'].join('checkbox_blue_inc.png')),wx.BITMAP_TYPE_PNG),
+    'karma+3': Image(GPath(bosh.dirs['images'].join('checkbox_blue_inc.png')),wx.BITMAP_TYPE_PNG),
+    'karma+2': Image(GPath(bosh.dirs['images'].join('checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
+    'karma+1': Image(GPath(bosh.dirs['images'].join('checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
+    'karma+0': Image(GPath(bosh.dirs['images'].join('checkbox_white_off.png')),wx.BITMAP_TYPE_PNG),
+    'karma-1': Image(GPath(bosh.dirs['images'].join('checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
+    'karma-2': Image(GPath(bosh.dirs['images'].join('checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
+    'karma-3': Image(GPath(bosh.dirs['images'].join('checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
+    'karma-4': Image(GPath(bosh.dirs['images'].join('checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
+    'karma-5': Image(GPath(bosh.dirs['images'].join('checkbox_red_off.png')),wx.BITMAP_TYPE_PNG),
     }.items())
 installercons = balt.ImageList(16,16)
 installercons.data.extend({
     #--Off/Archive
-    'off.green':  Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG),
-    'off.grey':   Image(r'images/checkbox_grey_off.png',wx.BITMAP_TYPE_PNG),
-    'off.red':    Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG),
-    'off.white':  Image(r'images/checkbox_white_off.png',wx.BITMAP_TYPE_PNG),
-    'off.orange': Image(r'images/checkbox_orange_off.png',wx.BITMAP_TYPE_PNG),
-    'off.yellow': Image(r'images/checkbox_yellow_off.png',wx.BITMAP_TYPE_PNG),
+    'off.green':  Image(GPath(bosh.dirs['images'].join('checkbox_green_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.grey':   Image(GPath(bosh.dirs['images'].join('checkbox_grey_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.red':    Image(GPath(bosh.dirs['images'].join('checkbox_red_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.white':  Image(GPath(bosh.dirs['images'].join('checkbox_white_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.orange': Image(GPath(bosh.dirs['images'].join('checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.yellow': Image(GPath(bosh.dirs['images'].join('checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
     #--Off/Archive - Wizard
-    'off.green.wiz':    Image(r'images/checkbox_green_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.green.wiz':    Image(GPath(bosh.dirs['images'].join('checkbox_green_off_wiz.png')),wx.BITMAP_TYPE_PNG),
     #grey
-    'off.red.wiz':      Image(r'images/checkbox_red_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.white.wiz':    Image(r'images/checkbox_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.orange.wiz':   Image(r'images/checkbox_orange_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.yellow.wiz':   Image(r'images/checkbox_yellow_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.red.wiz':      Image(GPath(bosh.dirs['images'].join('checkbox_red_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.white.wiz':    Image(GPath(bosh.dirs['images'].join('checkbox_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.orange.wiz':   Image(GPath(bosh.dirs['images'].join('checkbox_orange_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.yellow.wiz':   Image(GPath(bosh.dirs['images'].join('checkbox_yellow_off_wiz.png')),wx.BITMAP_TYPE_PNG),
     #--On/Archive
-    'on.green':  Image(r'images/checkbox_green_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.grey':   Image(r'images/checkbox_grey_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.red':    Image(r'images/checkbox_red_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.white':  Image(r'images/checkbox_white_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.orange': Image(r'images/checkbox_orange_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.yellow': Image(r'images/checkbox_yellow_inc.png',wx.BITMAP_TYPE_PNG),
+    'on.green':  Image(GPath(bosh.dirs['images'].join('checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.grey':   Image(GPath(bosh.dirs['images'].join('checkbox_grey_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.red':    Image(GPath(bosh.dirs['images'].join('checkbox_red_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.white':  Image(GPath(bosh.dirs['images'].join('checkbox_white_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.orange': Image(GPath(bosh.dirs['images'].join('checkbox_orange_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.yellow': Image(GPath(bosh.dirs['images'].join('checkbox_yellow_inc.png')),wx.BITMAP_TYPE_PNG),
     #--On/Archive - Wizard
-    'on.green.wiz':  Image(r'images/checkbox_green_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.green.wiz':  Image(GPath(bosh.dirs['images'].join('checkbox_green_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
     #grey
-    'on.red.wiz':    Image(r'images/checkbox_red_inc_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.white.wiz':  Image(r'images/checkbox_white_inc_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.orange.wiz': Image(r'images/checkbox_orange_inc_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.yellow.wiz': Image(r'images/checkbox_yellow_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.red.wiz':    Image(GPath(bosh.dirs['images'].join('checkbox_red_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.white.wiz':  Image(GPath(bosh.dirs['images'].join('checkbox_white_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.orange.wiz': Image(GPath(bosh.dirs['images'].join('checkbox_orange_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.yellow.wiz': Image(GPath(bosh.dirs['images'].join('checkbox_yellow_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
     #--Off/Directory
-    'off.green.dir':  Image(r'images/diamond_green_off.png',wx.BITMAP_TYPE_PNG),
-    'off.grey.dir':   Image(r'images/diamond_grey_off.png',wx.BITMAP_TYPE_PNG),
-    'off.red.dir':    Image(r'images/diamond_red_off.png',wx.BITMAP_TYPE_PNG),
-    'off.white.dir':  Image(r'images/diamond_white_off.png',wx.BITMAP_TYPE_PNG),
-    'off.orange.dir': Image(r'images/diamond_orange_off.png',wx.BITMAP_TYPE_PNG),
-    'off.yellow.dir': Image(r'images/diamond_yellow_off.png',wx.BITMAP_TYPE_PNG),
+    'off.green.dir':  Image(GPath(bosh.dirs['images'].join('diamond_green_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.grey.dir':   Image(GPath(bosh.dirs['images'].join('diamond_grey_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.red.dir':    Image(GPath(bosh.dirs['images'].join('diamond_red_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.white.dir':  Image(GPath(bosh.dirs['images'].join('diamond_white_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.orange.dir': Image(GPath(bosh.dirs['images'].join('diamond_orange_off.png')),wx.BITMAP_TYPE_PNG),
+    'off.yellow.dir': Image(GPath(bosh.dirs['images'].join('diamond_yellow_off.png')),wx.BITMAP_TYPE_PNG),
     #--Off/Directory - Wizard
-    'off.green.dir.wiz':  Image(r'images/diamond_green_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.green.dir.wiz':  Image(GPath(bosh.dirs['images'].join('diamond_green_off_wiz.png')),wx.BITMAP_TYPE_PNG),
     #grey
-    'off.red.dir.wiz':    Image(r'images/diamond_red_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.white.dir.wiz':  Image(r'images/diamond_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.orange.dir.wiz': Image(r'images/diamond_orange_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'off.yellow.dir.wiz': Image(r'images/diamond_yellow_off_wiz.png',wx.BITMAP_TYPE_PNG),
+    'off.red.dir.wiz':    Image(GPath(bosh.dirs['images'].join('diamond_red_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.white.dir.wiz':  Image(GPath(bosh.dirs['images'].join('diamond_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.orange.dir.wiz': Image(GPath(bosh.dirs['images'].join('diamond_orange_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'off.yellow.dir.wiz': Image(GPath(bosh.dirs['images'].join('diamond_yellow_off_wiz.png')),wx.BITMAP_TYPE_PNG),
     #--On/Directory
-    'on.green.dir':  Image(r'images/diamond_green_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.grey.dir':   Image(r'images/diamond_grey_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.red.dir':    Image(r'images/diamond_red_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.white.dir':  Image(r'images/diamond_white_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.orange.dir': Image(r'images/diamond_orange_inc.png',wx.BITMAP_TYPE_PNG),
-    'on.yellow.dir': Image(r'images/diamond_yellow_inc.png',wx.BITMAP_TYPE_PNG),
+    'on.green.dir':  Image(GPath(bosh.dirs['images'].join('diamond_green_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.grey.dir':   Image(GPath(bosh.dirs['images'].join('diamond_grey_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.red.dir':    Image(GPath(bosh.dirs['images'].join('diamond_red_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.white.dir':  Image(GPath(bosh.dirs['images'].join('diamond_white_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.orange.dir': Image(GPath(bosh.dirs['images'].join('diamond_orange_inc.png')),wx.BITMAP_TYPE_PNG),
+    'on.yellow.dir': Image(GPath(bosh.dirs['images'].join('diamond_yellow_inc.png')),wx.BITMAP_TYPE_PNG),
     #--On/Directory - Wizard
-    'on.green.dir.wiz':  Image(r'images/diamond_green_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.green.dir.wiz':  Image(GPath(bosh.dirs['images'].join('diamond_green_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
     #grey
-    'on.red.dir.wiz':    Image(r'images/diamond_red_inc_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.white.dir.wiz':  Image(r'images/diamond_white_off_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.orange.dir.wiz': Image(r'images/diamond_orange_inc_wiz.png',wx.BITMAP_TYPE_PNG),
-    'on.yellow.dir.wiz': Image(r'images/diamond_yellow_inc_wiz.png',wx.BITMAP_TYPE_PNG),
+    'on.red.dir.wiz':    Image(GPath(bosh.dirs['images'].join('diamond_red_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.white.dir.wiz':  Image(GPath(bosh.dirs['images'].join('diamond_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.orange.dir.wiz': Image(GPath(bosh.dirs['images'].join('diamond_orange_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
+    'on.yellow.dir.wiz': Image(GPath(bosh.dirs['images'].join('diamond_yellow_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
     #--Broken
-    'corrupt':   Image(r'images/red_x.png',wx.BITMAP_TYPE_PNG),
+    'corrupt':   Image(GPath(bosh.dirs['images'].join('red_x.png')),wx.BITMAP_TYPE_PNG),
     }.items())
 
 #--Icon Bundles
@@ -9572,7 +9574,7 @@ class Mods_DumpTranslator(Link):
             return
         import locale
         language = locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['mopy'].join('Data','NEW%s.txt' % (language,))
+        outPath = bosh.dirs['l10n'].join('NEW%s.txt' % (language,))
         outFile = outPath.open('w')
         #--Scan for keys and dump to
         keyCount = 0
@@ -14094,7 +14096,7 @@ class App_DocBrowser(Link):
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
 
-        gButton = bitmapButton(window,Image(r'images/DocBrowser'+bosh.inisettings['IconSize']+'.png').GetBitmap(),style=style,
+        gButton = bitmapButton(window,Image(GPath(bosh.dirs['images'].join('DocBrowser'+bosh.inisettings['IconSize']+'.png'))).GetBitmap(),style=style,
             onClick=self.Execute,tip=_("Doc Browser"))
         return gButton
 
@@ -14111,7 +14113,7 @@ class App_ModChecker(Link):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        gButton = bitmapButton(window,Image(r'images/ModChecker'+bosh.inisettings['IconSize']+'.png').GetBitmap(),style=style,
+        gButton = bitmapButton(window,Image(GPath(bosh.dirs['images'].join('ModChecker'+bosh.inisettings['IconSize']+'.png'))).GetBitmap(),style=style,
             onClick=self.Execute,tip=_("Mod Checker"))
         return gButton
 
@@ -14159,44 +14161,44 @@ def InitImages():
     colors['bash.ini.matched'] = (0xC1,0xFF,0xC1)
 
     #--Standard
-    images['save.on'] = Image(r'images/save_on.png',wx.BITMAP_TYPE_PNG)
-    images['save.off'] = Image(r'images/save_off.png',wx.BITMAP_TYPE_PNG)
+    images['save.on'] = Image(GPath(bosh.dirs['images'].join('save_on.png')),wx.BITMAP_TYPE_PNG)
+    images['save.off'] = Image(GPath(bosh.dirs['images'].join('save_off.png')),wx.BITMAP_TYPE_PNG)
     #--Misc
-    #images['oblivion'] = Image(r'images/oblivion.png',wx.BITMAP_TYPE_PNG)
-    images['help'] = Image(r'images/help'+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    #images['oblivion'] = Image(GPath(bosh.dirs['images'].join('oblivion.png')),wx.BITMAP_TYPE_PNG)
+    images['help'] = Image(GPath(bosh.dirs['images'].join('help'))+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--Tools
-    images['doc.on'] = Image(r'images/page_find'+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
-    images['bashmon'] = Image(r'images/bashmon'+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
-    images['modChecker'] = Image(r'images/table_error'+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['doc.on'] = Image(GPath(bosh.dirs['images'].join('page_find'))+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['bashmon'] = Image(GPath(bosh.dirs['images'].join('bashmon'))+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
+    images['modChecker'] = Image(GPath(bosh.dirs['images'].join('table_error'))+bosh.inisettings['IconSize']+'.png',wx.BITMAP_TYPE_PNG)
     #--ColorChecks
-    images['checkbox.red.x'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.16'] = Image(r'images/checkbox_red_x.png',wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.24'] = Image(r'images/checkbox_red_x_24.png',wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.32'] = Image(r'images/checkbox_red_x_32.png',wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.off.16'] = (Image(r'images/checkbox_red_off.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.red.off.24'] = (Image(r'images/checkbox_red_off_24.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.red.off.32'] = (Image(r'images/checkbox_red_off_32.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.x'] = Image(GPath(bosh.dirs['images'].join('checkbox_red_x.png')),wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.16'] = Image(GPath(bosh.dirs['images'].join('checkbox_red_x.png')),wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.24'] = Image(GPath(bosh.dirs['images'].join('checkbox_red_x_24.png')),wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.x.32'] = Image(GPath(bosh.dirs['images'].join('checkbox_red_x_32.png')),wx.BITMAP_TYPE_PNG)
+    images['checkbox.red.off.16'] = (Image(GPath(bosh.dirs['images'].join('checkbox_red_off.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.off.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_red_off_24.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.off.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_red_off_32.png')),wx.BITMAP_TYPE_PNG))
 
-    images['checkbox.green.on.16'] = (Image(r'images/checkbox_green_on.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.16'] = (Image(r'images/checkbox_green_off.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.on.24'] = (Image(r'images/checkbox_green_on_24.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.24'] = (Image(r'images/checkbox_green_off_24.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.on.32'] = (Image(r'images/checkbox_green_on_32.png',wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.32'] = (Image(r'images/checkbox_green_off_32.png',wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.on.16'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_on.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.16'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_off.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.on.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_on_24.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_off_24.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_on_32.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_off_32.png')),wx.BITMAP_TYPE_PNG))
     #--Bash
-    images['bash.16'] = Image(r'images/bash_16.png',wx.BITMAP_TYPE_PNG)
-    images['bash.24'] = Image(r'images/bash_24.png',wx.BITMAP_TYPE_PNG)
-    images['bash.32'] = Image(r'images/bash_32.png',wx.BITMAP_TYPE_PNG)
-    images['bash.16.blue'] = Image(r'images/bash_16_blue.png',wx.BITMAP_TYPE_PNG)
-    images['bash.24.blue'] = Image(r'images/bash_24_blue.png',wx.BITMAP_TYPE_PNG)
-    images['bash.32.blue'] = Image(r'images/bash_32_blue.png',wx.BITMAP_TYPE_PNG)
+    images['bash.16'] = Image(GPath(bosh.dirs['images'].join('bash_16.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.24'] = Image(GPath(bosh.dirs['images'].join('bash_24.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.32'] = Image(GPath(bosh.dirs['images'].join('bash_32.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.16.blue'] = Image(GPath(bosh.dirs['images'].join('bash_16_blue.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.24.blue'] = Image(GPath(bosh.dirs['images'].join('bash_24_blue.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join('bash_32_blue.png')),wx.BITMAP_TYPE_PNG)
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(r'images/wryemonkey16.jpg',wx.BITMAP_TYPE_JPEG)
-  #  images['monkey.32'] = Image(r'images/wryemonkey32.jpg',wx.BITMAP_TYPE_JPEG)
+    images['monkey.16'] = Image(GPath(bosh.dirs['images'].join('wryemonkey16.jpg')),wx.BITMAP_TYPE_JPEG)
+  #  images['monkey.32'] = Image(GPath(bosh.dirs['images'].join('wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
-    images['doc.16'] = Image(r'images/DocBrowser16.png',wx.BITMAP_TYPE_PNG)
-    images['doc.24'] = Image(r'images/DocBrowser24.png',wx.BITMAP_TYPE_PNG)
-    images['doc.32'] = Image(r'images/DocBrowser32.png',wx.BITMAP_TYPE_PNG)
+    images['doc.16'] = Image(GPath(bosh.dirs['images'].join('DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
+    images['doc.24'] = Image(GPath(bosh.dirs['images'].join('DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
+    images['doc.32'] = Image(GPath(bosh.dirs['images'].join('DocBrowser32.png')),wx.BITMAP_TYPE_PNG)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -14226,96 +14228,96 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #OBLIVION
         Oblivion_Button(
             bosh.dirs['app'].join('Oblivion.exe'),
-            Image(r'images/oblivion'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('oblivion'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Oblivion"),
             _("Launch Oblivion + OBSE"),
             ''))
     BashStatusBar.buttons.append( #TESCS
         App_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
-            Image(r'images/tescs'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tescs'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch TESCS"),
             _("Launch TESCS + OBSE"),
             '-editor'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
             bosh.dirs['app'].join('OblivionModManager.exe'),
-            Image(r'images/obmm'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('obmm'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch OBMM")))
     BashStatusBar.buttons.append( #ISOBL
         App_Button(
             bosh.tooldirs['ISOBL'],
-            Image(r'images/isobl'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('isobl'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append( #ISRMG
         App_Button(
             bosh.tooldirs['ISRMG'],
-            Image(r"images/insanity'sreadmegenerator"+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join("insanity'sreadmegenerator"+bosh.inisettings['IconSize']+'.png'))),
             _("Launch InsanitySorrow's Readme Generator")))
     BashStatusBar.buttons.append( #ISRNG
         App_Button(
             bosh.tooldirs['ISRNG'],
-            Image(r"images/insanity'srng"+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join("insanity'srng"+bosh.inisettings['IconSize']+'.png'))),
             _("Launch InsanitySorrow's Random Name Generator")))
     BashStatusBar.buttons.append( #ISRNPCG
         App_Button(
             bosh.tooldirs['ISRNPCG'],
-            Image(r'images/randomnpc'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('randomnpc'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append( #OBFEL
         App_Button(
             bosh.tooldirs['OBFEL'],
-            Image(r'images/oblivionfaceexchangerlite'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('oblivionfaceexchangerlite'+bosh.inisettings['IconSize']+'.png'))),
             _("Oblivion Face Exchange Lite")))
     BashStatusBar.buttons.append( #OBMLG
         App_Button(
             bosh.tooldirs['OBMLG'],
-            Image(r'images/modlistgenerator'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('modlistgenerator'+bosh.inisettings['IconSize']+'.png'))),
             _("Oblivion Mod List Generator")))
     BashStatusBar.buttons.append( #OblivionBookCreator
         App_Button(
             (bosh.tooldirs['OblivionBookCreatorPath'],bosh.inisettings['OblivionBookCreatorJavaArg']),
-            Image(r'images/oblivionbookcreator'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('oblivionbookcreator'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Oblivion Book Creator")))
     BashStatusBar.buttons.append( #BSACommander
         App_Button(
             bosh.tooldirs['BSACMD'],
-            Image(r'images/bsacommander'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('bsacommander'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch BSA Commander")))
     BashStatusBar.buttons.append( #Tabula
         App_Button(
             bosh.tooldirs['Tabula'],
-            Image(r'images/tabula'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tabula'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Tabula")))
     BashStatusBar.buttons.append( #Tes4Files
         App_Button(
             bosh.tooldirs['Tes4FilesPath'],
-            Image(r'images/tes4files'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4files'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch TES4Files")))
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Button(
             (bosh.tooldirs['Tes4GeckoPath'],bosh.inisettings['Tes4GeckoJavaArg']),
-            Image(r'images/tes4gecko'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4gecko'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Tes4Gecko")))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bosh.tooldirs['Tes4ViewPath'],'-TES4'), #no cmd argument to force view mode
-            Image(r'images/tes4view'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4view'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch TES4View")))
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View(
             (bosh.tooldirs['Tes4EditPath'],'-TES4 -edit'),
-            Image(r'images/tes4edit'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4edit'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch TES4Edit")))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],'-TES4 -translate'),
-            Image(r'images/tes4trans'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4trans'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch TES4Trans")))
     BashStatusBar.buttons.append( #Tes4LODGen
         App_Tes4View(
             (bosh.tooldirs['Tes4LodGenPath'],'-TES4 -lodgen'),
-            Image(r'images/tes4lodgen'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('tes4lodgen'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Tes4LODGen")))
     configHelpers = bosh.ConfigHelpers()
     configHelpers.refresh()
@@ -14324,322 +14326,322 @@ def InitStatusBar():
     elif version < 0: version = 0
     BashStatusBar.buttons.append( #BOSS --
         App_BOSS(
-            (bosh.dirs['app'].join('Data\\BOSS.bat'),bosh.dirs['app'].join('Data\\BOSS.exe'),bosh.dirs['app'].join('BOSS\\BOSS.exe'))[version],
-            Image(r'images/Boss'+bosh.inisettings['IconSize']+'.png'),
+            (bosh.dirs['app'].join('Data','BOSS.bat'),bosh.dirs['app'].join('Data','BOSS.exe'),bosh.dirs['app'].join('BOSS','BOSS.exe'))[version],
+            Image(GPath(bosh.dirs['images'].join('Boss'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch BOSS")))
     if bosh.inisettings['ShowModelingToolLaunchers']:
         BashStatusBar.buttons.append( #AutoCad
             App_Button(
                 bosh.tooldirs['AutoCad'],
-                Image(r'images/autocad'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('autocad'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch AutoCad")))
         BashStatusBar.buttons.append( #Blender
             App_Button(
                 bosh.tooldirs['BlenderPath'],
-                Image(r'images/blender'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('blender'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Blender")))
         BashStatusBar.buttons.append( #Dogwaffle
             App_Button(
                 bosh.tooldirs['Dogwaffle'],
-                Image(r'images/dogwaffle'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('dogwaffle'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Dogwaffle")))
         BashStatusBar.buttons.append( #GMax
             App_Button(
                 bosh.tooldirs['GmaxPath'],
-                Image(r'images/gmax'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('gmax'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Gmax")))
         BashStatusBar.buttons.append( #Maya
             App_Button(
                 bosh.tooldirs['MayaPath'],
-                Image(r'images/maya'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('maya'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Maya")))
         BashStatusBar.buttons.append( #Max
             App_Button(
                 bosh.tooldirs['MaxPath'],
-                Image(r'images/3dsmax'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('3dsmax'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
             App_Button(
                 bosh.tooldirs['Milkshape3D'],
-                Image(r'images/milkshape3d'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('milkshape3d'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Milkshape 3D")))
         BashStatusBar.buttons.append( #Mudbox
             App_Button(
                 bosh.tooldirs['Mudbox'],
-                Image(r'images/mudbox'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('mudbox'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Mudbox")))
         BashStatusBar.buttons.append( #Sculptris
             App_Button(
                 bosh.tooldirs['Sculptris'],
-                Image(r'images/sculptris'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('sculptris'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Sculptris")))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
                 (bosh.tooldirs['SoftimageModTool'],'-mod'),
-                Image(r'images/softimagemodtool'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('softimagemodtool'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Softimage Mod Tool")))
         BashStatusBar.buttons.append( #SpeedTree
             App_Button(
                 bosh.tooldirs['SpeedTree'],
-                Image(r'images/speedtree'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('speedtree'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch SpeedTree")))
         BashStatusBar.buttons.append( #Tree[d]
             App_Button(
                 bosh.tooldirs['Treed'],
-                Image(r'images/treed'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('treed'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Tree\[d\]")))
         BashStatusBar.buttons.append( #Wings3D
             App_Button(
                 bosh.tooldirs['Wings3D'],
-                Image(r'images/wings3d'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('wings3d'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Wings 3D")))
     if bosh.inisettings['ShowModelingToolLaunchers'] or bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             App_Button(
                 bosh.tooldirs['NifskopePath'],
-                Image(r'images/nifskope'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('nifskope'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Nifskope")))
     if bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #AniFX
             App_Button(
                 bosh.tooldirs['AniFX'],
-                Image(r'images/anifx'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('anifx'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch AniFX")))
         BashStatusBar.buttons.append( #Art Of Illusion
             App_Button(
                 bosh.tooldirs['ArtOfIllusion'],
-                Image(r'images/artofillusion'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('artofillusion'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Art Of Illusion")))
         BashStatusBar.buttons.append( #Artweaver
             App_Button(
                 bosh.tooldirs['Artweaver'],
-                Image(r'images/artweaver'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('artweaver'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Artweaver")))
         BashStatusBar.buttons.append( #CrazyBump
             App_Button(
                 bosh.tooldirs['CrazyBump'],
-                Image(r'images/crazybump'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('crazybump'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch CrazyBump")))
         BashStatusBar.buttons.append( #DDSConverter
             App_Button(
                 bosh.tooldirs['DDSConverter'],
-                Image(r'images/ddsconverter'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('ddsconverter'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch DDSConverter")))
         BashStatusBar.buttons.append( #DeepPaint
             App_Button(
                 bosh.tooldirs['DeepPaint'],
-                Image(r'images/deeppaint'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('deeppaint'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch DeepPaint")))
         BashStatusBar.buttons.append( #FastStone Image Viewer
             App_Button(
                 bosh.tooldirs['FastStone'],
-                Image(r'images/faststoneimageviewer'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('faststoneimageviewer'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Genetica
             App_Button(
                 bosh.tooldirs['Genetica'],
-                Image(r'images/genetica'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('genetica'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Genetica")))
         BashStatusBar.buttons.append( #Genetica Viewer
             App_Button(
                 bosh.tooldirs['GeneticaViewer'],
-                Image(r'images/geneticaviewer'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('geneticaviewer'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Genetica Viewer")))
         BashStatusBar.buttons.append( #GIMP
             App_Button(
                 bosh.tooldirs['GIMP'],
-                Image(r'images/gimp'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('gimp'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch GIMP")))
         BashStatusBar.buttons.append( #GIMP Shop
             App_Button(
                 bosh.tooldirs['GimpShop'],
-                Image(r'images/gimpshop'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('gimpshop'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch GIMP Shop")))
         BashStatusBar.buttons.append( #IcoFX
             App_Button(
                 bosh.tooldirs['IcoFX'],
-                Image(r'images/icofx'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('icofx'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch IcoFX")))
         BashStatusBar.buttons.append( #Inkscape
             App_Button(
                 bosh.tooldirs['Inkscape'],
-                Image(r'images/inkscape'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('inkscape'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Inkscape")))
         BashStatusBar.buttons.append( #IrfanView
             App_Button(
                 bosh.tooldirs['IrfanView'],
-                Image(r'images/irfanview'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('irfanview'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch IrfanView")))
         BashStatusBar.buttons.append( #MaPZone
             App_Button(
                 bosh.tooldirs['MaPZone'],
-                Image(r'images/mapzone'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('mapzone'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch MaPZone")))
         BashStatusBar.buttons.append( #MyPaint
             App_Button(
                 bosh.tooldirs['MyPaint'],
-                Image(r'images/mypaint'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('mypaint'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch MyPaint")))
         BashStatusBar.buttons.append( #NVIDIAMelody
             App_Button(
                 bosh.tooldirs['NVIDIAMelody'],
-                Image(r'images/nvidiamelody'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('nvidiamelody'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Nvidia Melody")))
         BashStatusBar.buttons.append( #Paint.net
             App_Button(
                 bosh.tooldirs['PaintNET'],
-                Image(r'images/paint.net'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('paint.net'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Paint.NET")))
         BashStatusBar.buttons.append( #PaintShop Photo Pro
             App_Button(
                 bosh.tooldirs['PaintShopPhotoPro'],
-                Image(r'images/paintshopprox3'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('paintshopprox3'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch PaintShop Photo Pro")))
         BashStatusBar.buttons.append( #Photoshop
             App_Button(
                 bosh.tooldirs['PhotoshopPath'],
-                Image(r'images/photoshop'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('photoshop'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Photoshop")))
         BashStatusBar.buttons.append( #PhotoScape
             App_Button(
                 bosh.tooldirs['PhotoScape'],
-                Image(r'images/photoscape'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('photoscape'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch PhotoScape")))
         BashStatusBar.buttons.append( #PhotoSEAM
             App_Button(
                 bosh.tooldirs['PhotoSEAM'],
-                Image(r'images/photoseam'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('photoseam'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch PhotoSEAM")))
         BashStatusBar.buttons.append( #Photobie Design Studio
             App_Button(
                 bosh.tooldirs['Photobie'],
-                Image(r'images/photobie'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('photobie'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Photobie")))
         BashStatusBar.buttons.append( #PhotoFiltre
             App_Button(
                 bosh.tooldirs['PhotoFiltre'],
-                Image(r'images/photofiltre'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('photofiltre'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch PhotoFiltre")))
         BashStatusBar.buttons.append( #Pixel Studio Pro
             App_Button(
                 bosh.tooldirs['PixelStudio'],
-                Image(r'images/pixelstudiopro'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('pixelstudiopro'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Pixel Studio Pro")))
         BashStatusBar.buttons.append( #Pixia
             App_Button(
                 bosh.tooldirs['Pixia'],
-                Image(r'images/pixia'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('pixia'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Pixia")))
         BashStatusBar.buttons.append( #TextureMaker
             App_Button(
                 bosh.tooldirs['TextureMaker'],
-                Image(r'images/texturemaker'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('texturemaker'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch TextureMaker")))
         BashStatusBar.buttons.append( #Twisted Brush
             App_Button(
                 bosh.tooldirs['TwistedBrush'],
-                Image(r'images/twistedbrush'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('twistedbrush'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch TwistedBrush")))
         BashStatusBar.buttons.append( #Windows Texture Viewer
             App_Button(
                 bosh.tooldirs['WTV'],
-                Image(r'images/wtv'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('wtv'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Windows Texture Viewer")))
         BashStatusBar.buttons.append( #xNormal
             App_Button(
                 bosh.tooldirs['xNormal'],
-                Image(r'images/xnormal'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('xnormal'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch xNormal")))
         BashStatusBar.buttons.append( #XnView
             App_Button(
                 bosh.tooldirs['XnView'],
-                Image(r'images/xnview'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('xnview'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch XnView")))
     if bosh.inisettings['ShowAudioToolLaunchers']:
         BashStatusBar.buttons.append( #Audacity
             App_Button(
                 bosh.tooldirs['Audacity'],
-                Image(r'images/audacity'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('audacity'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Audacity")))
         BashStatusBar.buttons.append( #ABCAmberAudioConverter
             App_Button(
                 bosh.tooldirs['ABCAmberAudioConverter'],
-                Image(r'images/abcamberaudioconverter'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('abcamberaudioconverter'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch ABC Amber Audio Converter")))
         BashStatusBar.buttons.append( #Switch
             App_Button(
                 bosh.tooldirs['Switch'],
-                Image(r'images/switch'+bosh.inisettings['IconSize']+'.png'),
+                Image(GPath(bosh.dirs['images'].join('switch'+bosh.inisettings['IconSize']+'.png'))),
                 _("Launch Switch")))
     BashStatusBar.buttons.append( #Fraps
         App_Button(
             bosh.tooldirs['Fraps'],
-            Image(r'images/fraps'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('fraps'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Fraps")))
     BashStatusBar.buttons.append( #MAP
         App_Button(
             bosh.tooldirs['MAP'],
-            Image(r'images/interactivemapofcyrodiil'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('interactivemapofcyrodiil'+bosh.inisettings['IconSize']+'.png'))),
             _("Interactive Map of Cyrodiil and Shivering Isles")))
     BashStatusBar.buttons.append( #LogitechKeyboard
         App_Button(
             bosh.tooldirs['LogitechKeyboard'],
-            Image(r'images/logitechkeyboard'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('logitechkeyboard'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch LogitechKeyboard")))
     BashStatusBar.buttons.append( #MediaMonkey
         App_Button(
             bosh.tooldirs['MediaMonkey'],
-            Image(r'images/mediamonkey'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('mediamonkey'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch MediaMonkey")))
     BashStatusBar.buttons.append( #NPP
         App_Button(
             bosh.tooldirs['NPP'],
-            Image(r'images/notepad++'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('notepad++'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Notepad++")))
     BashStatusBar.buttons.append( #Steam
         App_Button(
             bosh.tooldirs['Steam'],
-            Image(r'images/steam'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('steam'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Steam")))
     BashStatusBar.buttons.append( #EVGA Precision
         App_Button(
             bosh.tooldirs['EVGAPrecision'],
-            Image(r'images/evgaprecision'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('evgaprecision'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch EVGA Precision")))
     BashStatusBar.buttons.append( #WinMerge
         App_Button(
             bosh.tooldirs['WinMerge'],
-            Image(r'images/winmerge'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('winmerge'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch WinMerge")))
     BashStatusBar.buttons.append( #Freemind
         App_Button(
             bosh.tooldirs['FreeMind'],
-            Image(r'images/freemind'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('freemind'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch FreeMind")))
     BashStatusBar.buttons.append( #Freeplane
         App_Button(
             bosh.tooldirs['Freeplane'],
-            Image(r'images/freeplane'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('freeplane'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Freeplane")))
     BashStatusBar.buttons.append( #FileZilla
         App_Button(
             bosh.tooldirs['FileZilla'],
-            Image(r'images/filezilla'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('filezilla'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch FileZilla")))
     BashStatusBar.buttons.append( #EggTranslator
         App_Button(
             bosh.tooldirs['EggTranslator'],
-            Image(r'images/eggtranslator'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('eggtranslator'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch Egg Translator")))
     BashStatusBar.buttons.append( #RADVideoTools
         App_Button(
             bosh.tooldirs['RADVideo'],
-            Image(r'images/radvideotools'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('radvideotools'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch RAD Video Tools")))
     BashStatusBar.buttons.append( #WinSnap
         App_Button(
             bosh.tooldirs['WinSnap'],
-            Image(r'images/winsnap'+bosh.inisettings['IconSize']+'.png'),
+            Image(GPath(bosh.dirs['images'].join('winsnap'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch WinSnap")))
     #--Custom Apps
     bosh.initLinks(bosh.dirs['mopy'].join('Apps'))
@@ -14663,7 +14665,7 @@ def InitStatusBar():
                     icon = Image(icon,wx.BITMAP_TYPE_ICO,int(bosh.inisettings['IconSize']))
             # Last, use the 'x' icon
                 else:
-                    icon = Image(r'images/x.png')
+                    icon = Image(GPath(bosh.dirs['images'].join('x.png')))
             BashStatusBar.buttons.append(
                 App_Button(
                     (path,args),
@@ -14674,8 +14676,8 @@ def InitStatusBar():
     #--Final couple
     BashStatusBar.buttons.append(
         App_Button(
-            bosh.dirs['mopy'].join('bashmon.py'),
-            Image(r'images/Bashmon'+bosh.inisettings['IconSize']+'.png'),
+            bosh.dirs['bash'].join('bashmon.py'),
+            Image(GPath(bosh.dirs['images'].join('Bashmon'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch BashMon")))
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
