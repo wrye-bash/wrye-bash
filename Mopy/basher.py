@@ -5871,7 +5871,6 @@ class PatchDialog(wx.Dialog):
                             % (fileName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
-                progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
                 pass
@@ -5949,7 +5948,6 @@ class PatchDialog(wx.Dialog):
                     modList.RefreshUI()
                 del patchFile
             except bosh.FileEditError, error:
-                progress.Destroy()
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
                 del patchFile
@@ -13854,19 +13852,21 @@ class App_Button(Link):
                     if self.obseArg != '': exeArgs += " %s" % self.obseArg
                 else:
                     exePath = self.exePath
-                if extraArgs: exeArgs += ' '+' '.join(extraArgs)
-                statusBar.SetStatusText(exeArgs,1)
+                args = [exePath.s]
+                args.extend(self.exeArgs)
+                if extraArgs: args.extend(extraArgs)
+                statusBar.SetStatusText(' '.join(args[1:]),1)
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
                     self.workingDir.setcwd()
                 else:
                     exePath.head.setcwd()
                 try:
-                    subprocess.Popen([exePath.s,exeArgs], close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), exeArgs
+                    print _("Used Arguments: "), args
                     print
                     raise
                 finally:
