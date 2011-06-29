@@ -268,7 +268,9 @@ def main():
     if len(extra) > 0:
         parser.print_help()
         return
-
+    
+    bolt.deprintOn = opts.debug
+    
     if opts.Psyco:
         try:
             import psyco
@@ -324,7 +326,6 @@ def main():
             app = basher.BashApp()
         else:
             app = basher.BashApp(False)
-        bolt.deprintOn = True
     else:
         app = basher.BashApp()
 
