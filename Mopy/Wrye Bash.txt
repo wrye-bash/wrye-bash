@@ -25,7 +25,7 @@ In particular, see:
 == Quick Tour
 <img src="bash/images/WryeBash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
 
-* At the top are the main tabs: [[#InstallersTab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
+* At the top are the main tabs: [[#InstallersTab|Installers]], [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
 * The file details for the currently selected savegame are shown to the right. File name, stats and savegame preview image are all shown.
 * The __masters list__ for the savegame is shown at the bottom of the details. The masters for the savegame are just the mods (esps and esms) that the savegame depends on.
