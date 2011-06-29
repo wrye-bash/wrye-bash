@@ -1,15 +1,14 @@
-﻿= Wrye Bash ====================================================================#
+= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1196710-wrye-bash-thread-67/|RELZ Topic]]
+* [[http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/|RELZ Topic]]
 * [[https://sourceforge.net/projects/oblivionworks/|SourceForge Developement Site]]
-* Download:
-  * [[http://www.wryemusings.com/|Wrye Musings]]
-  * [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]]
+* Download: [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]]
 * [[wizards.html|BAIN Wizard Reference]]
+* [[patch_option_reference.html|Patch Option Reference]]
 * [[#Versions|Change Log]]
 
 === Contents
@@ -24,7 +23,7 @@ In particular, see:
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Advanced|Wrye Bash Advanced FAQs]]: Overviews of using advanced Bash features.
 
 == Quick Tour
-<img src="images/WryeBash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
+<img src="bash/images/WryeBash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
 
 * At the top are the main tabs: [[#InstallersTab|Installers]], [[#ReplacersTab|Replacers]] (if enabled but superseded by Installers Tab), [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
@@ -35,19 +34,21 @@ In particular, see:
 * At the bottom is the [[#LaunchButtons|launch bar]], with buttons for launching Oblivion, OBMM, TESCS and options for launching OBSE and quitting Bash when launching Oblivion.
 
 == Credits and Contact ========================================================
-<img src="images/wrye_monkey_87.jpg" width="87" height="87" style="border: 1; align: right;" alt="Monkey God of Modding"></img>
-=== Authors
-* **Head Monkey**
-  * Wrye: Monkey God of Modding!
-* **Assistant Monkeys**
-  * Waruddar: Extensive additions/improvements/fixes.
-  * Ralgor: Cell support and Import Cells.
-  * Pacific Morrowind: New imports, exports, tweaks, etc.
-  * Raziel23x: new tweaks etc.
-  * Lojack: Wizard based install system, Ini tab etc.
-  * Haama: OBSE cofile definitions, various fixes, improvements etc
-  * Badhair: OBSE cofile reading code, various optimizations etc.
-  * Breeze582000: Bashmon
+<img src="bash/images/wrye_monkey_87.jpg" width="87" height="87" style="border: 1; align: right;" alt="Monkey God of Modding"></img>
+
+=== Current Maintainers
+* Pacific Morrowind: New imports, exports, tweaks, etc.
+* Lojack: Wizard based install system, Ini tab, etc.
+* myk002: Project management, Asynchronous installer tab, etc.
+
+=== Past Authors
+* **Wrye**: Monkey God of Modding!
+* Waruddar: Extensive additions/improvements/fixes, primary author of CBash
+* Ralgor: Cell support and Import Cells.
+* Raziel23x: new tweaks etc.
+* Haama: OBSE cofile definitions, various fixes, improvements etc
+* Badhair: OBSE cofile reading code, various optimizations etc.
+* Breeze582000: Bashmon
 
 === Additional Credits
 * **Translators:**
@@ -73,7 +74,7 @@ In particular, see:
   * Veritas_Secreto: Tamriel NPCs Revamped
 * **Additional Thanks**
   * ElminsterEU: Bug catching, technical suggestions.
-  * <img src="images/MCowAvi32.png" width="32" height="32" style="align: AbsMiddle;" alt="Metallicow's Icon"></img> Metallicow: Shiny new tool launcher icons.
+  * <img src="bash/images/MCowAvi32.png" width="32" height="32" style="align: AbsMiddle;" alt="Metallicow's Icon"></img> Metallicow: Shiny new tool launcher icons.
   * Tom Suprgan: Several well researched suggestions.
   * Sativarg: Proofreading
   * Kmacg94: Additional power exhaustion coverage.
@@ -104,33 +105,31 @@ In particular, see:
 
 === Contact
 * If you have a question/comment about Wrye Bash, it's best to post it on the current RELZ topic on the Bethesda Game Studios (BGS) forums.
-* If you need to contact me personally, PM me at the BGS forums. However, if it's a general help question, I may ignore it, since such questions are better posted on the forum topic.
-* If I'm not available (offline or working on other projects), then the Elder Scrolls forums are the best place to go for help with Wrye Bash.
 
 == License ===================================================================
-Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed gpl.txt file for license details.
+Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed [[license.txt]] file for license details.
 
 {{CONTENTS=2}}
 </td></tr></table>
 
 == Installation ===============================================================
 === Get and Install
-* __Download and run Wrye Python [ [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionUtilities.Detail&amp;id=44|PlanetElderScrolls]] | [[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]] ]__
-  * Select all components, then select the temporary install directory and click "Install". Upon doing so, installers for selected components will be unzipped and run in sequence. It's best to accept the default settings for each installer.
+* __Download and run Wrye Python ([[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]])__
+  * Install all components. It's best to accept the default settings for each installer.
   * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
-* __Download and Unzip [[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]__
-  * Unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find bash.py and other bash files under Oblivion\Mopy.
+* __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]) or Install ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.exe]])__
+  * For the manual archive instalation, unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Upgrading__
-  * If you're upgrading from an older version of Wrye bash, then just get the last Wrye Bash XXX.Zip file from Wrye Musings and unzip to Oblivion directory. There's no need to remove anything or reinstall any python components.
+  * If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any python components.
 * __Advanced:__
-  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the [[#StartingWryeBash|OblivionPath]].
+  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the [[#StartingWryeBash|OblivionPath]] option.
     * This will probably only be useful for Bash developers (latest stable release in Oblivion directory + development version outside = my life is easier).
     * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
     * Remember when upgrading to install the "Data" folder to "\Oblivion\" and the "Mopy" folder to wherever you have it now
 
 === Windows Vista/7
-* On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against write by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
+* On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
 * **Alternate Solutions:** Alternatively, you might always run as admin, or turn off UAC -- but both of those approaches are ill-advised. For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
 
@@ -156,7 +155,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * __Generating the Bugdump__
   * Open a command shell (Start: Programs: Accessories: Command Prompt).
   * __chdir__ to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
-  * __Type:__ <code>c:\python26\python.exe bash.py -d</code>
+  * __Type:__ <code>c:\python27\python.exe bash.py -d</code>
     * If you have a different version/location of python, adapt the first argument accordingly.
   * Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.
 * __Dealing with Bugdump__
@@ -190,27 +189,21 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
 * If uninstalling old Python and Python addon versions (recommended) make sure to uninstall all of them starting with the addons via the control panel->Add/Remove Programs or Programs &amp; Features.
 * __Components:__
-  * __Python 2.6__ or __Python 2.7__
-    * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries. Python 2.7 is the preferred version for Wrye Bash.
-    * Download link: __Python [ [[http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi|2.6.6]] | [[http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi|2.7.1]] ]__
-  * __wxPython 2.8.11.0 ANSI__
+  * __Python 2.7__
+    * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries.
+    * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi|Python 2.7.1]] ]__
+  * __wxPython 2.8.12.0 ANSI__
     * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
-    * Download link: __wxPython 2.8.11.0 ANSI [ [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py26.exe|Python 2.6]] | [[http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.11.0-py27.exe|Python 2.7]] ].__
+    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe|wxPython 2.8.12.0 ansi for Python 2.7]] ]__
   * __PyWin32__
     * Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards, so it is required for Wizards to function.
-    * Download link: __PyWin32 216 [ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.6.exe/download|Python 2.6]] | [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|Python 2.7]] ]__
+    * Download link: __[ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|PyWin32 216 for Python 2.7]] ]__
   * __ComTypes 0.6.2__
     * Optional component (for the PM Archives Tab).  If [[http://starship.python.net/crew/theller/comtypes/|ComTypes]] is not installed, the PM Archives tab will not be visible.
-    * Download link:  __ComTypes 0.6.2 [ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download|Python (all versions)]] ]__
-  * __Psyco 1.6__
-    * __[[http://psyco.sourceforge.net/|Psyco]]__ provides a performance boost for python programs (at the cost of using more memory). Psyco is not required by Wrye Bash, but will be used if it is present. The performance boost can be useful if you frequently rebuild the Bashed Patch.
-    * Download link: __Psyco 1.6 [ [[http://www.voidspace.org.uk/downloads/psyco-1.6.win32-py2.6.zip|Python 2.6]] ]__
-* __Wrye Python Debris__
-  * Wrye Python does **not** have an uninstall feature. Instead, run uninstall for separate components. If you're uninstalling everything, then uninstall python ~~last~~.
-  * After running Wrye Python, you'll be left with separate installer files for each of the components. You can discard or keep these as you prefer.
+    * Download link:  __[ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download|comtypes 0.6.2 for Python (all versions)]] ]__
 * __Alternate Python Installations__
-  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.11.0, etc. are the preferred versions.
-  * Python 2.5x-2.7x should work fine however a wxPython version of at least 2.8.9.x (and possible 2.8.10.x) is definitely required.
+  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.12.0, etc. are the preferred versions.
+
 
 == Help! ======================================================================
 * __Startup Problems:__ See [[#|If Bash Won't Start]].
@@ -231,6 +224,7 @@ __Overview:__
   * "Oblivion\Mopy"
     * Contains Bash itself.
     * Does not need to be backed up since you can simply reinstall Bash.
+    * If you are working on any localization files, you may want to back them up, though: Oblivion\Mopy\bash\l10n
   * "Oblivion\Data\Bash Patches"
     * Contains various csv files used by the export/import functions.
     * Only needs backing up if you've exported any csv files that you want to keep.
@@ -270,27 +264,27 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * Tip: If you don't want certain launcher icons to show up you can place a semi-colon ; in the path in the bash.ini after you set up your paths.
     * Example: sPhotoshopPath=;C:\Program Files\Adobe\Photoshop 7.0\Photoshop.exe
 * __Applications:__
-  * Oblivion (Main Oblivion executable, not the launcher.) 16 <img src="images/oblivion16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/oblivion32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-  * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]] 16 <img src="images/tescs16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/tescs32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+  * Oblivion (Main Oblivion executable, not the launcher.) 16 <img src="bash/images/oblivion16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/oblivion32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+  * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]] 16 <img src="bash/images/tescs16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/tescs32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
 
   * __General Tools__
-    * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]] 16 <img src="images/OBMM16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/OBMM32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]] 16 <img src="images/ISOBL16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/ISOBL32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]] 16 <img src="images/Insanity'sReadmeGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/Insanity'sReadmeGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]] 16 <img src="images/Insanity'sRNG16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/Insanity'sRNG32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]] 16 <img src="images/RandomNPC16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/RandomNPC32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]] 16 <img src="images/OblivionFaceExchangerLite16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/OblivionFaceExchangerLite32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="images/ModListGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/ModListGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258 | Oblivion Book Creator]] 16 <img src="images/OblivionBookCreator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/OblivionBookCreator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]] 16 <img src="images/BSACommander16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/BSACommander32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=33486 | Tabula]] 16 <img src="images/Tabula16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/Tabula32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]] 16 <img src="images/tes4files16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/tes4files32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]] 16 <img src="images/TES4Gecko16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/TES4Gecko32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]] 16 <img src="images/tes4view16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/tes4view32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="images/TES4Edit16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/TES4Edit32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="images/TES4Trans16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="images/TES4Trans32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="images/Tes4LODGen16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Tes4LODGen32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="images/Boss16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Boss32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> (Compatible with all released versions up to December 5th 2010) This one has some options!:
+    * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]] 16 <img src="bash/images/OBMM16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OBMM32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]] 16 <img src="bash/images/ISOBL16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ISOBL32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]] 16 <img src="bash/images/Insanity'sReadmeGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sReadmeGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]] 16 <img src="bash/images/Insanity'sRNG16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sRNG32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]] 16 <img src="bash/images/RandomNPC16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/RandomNPC32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]] 16 <img src="bash/images/OblivionFaceExchangerLite16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionFaceExchangerLite32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="bash/images/ModListGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ModListGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258 | Oblivion Book Creator]] 16 <img src="bash/images/OblivionBookCreator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionBookCreator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]] 16 <img src="bash/images/BSACommander16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/BSACommander32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=33486 | Tabula]] 16 <img src="bash/images/Tabula16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Tabula32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]] 16 <img src="bash/images/tes4files16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4files32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]] 16 <img src="bash/images/TES4Gecko16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Gecko32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]] 16 <img src="bash/images/tes4view16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4view32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="bash/images/TES4Edit16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Edit32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="bash/images/TES4Trans16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Trans32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="bash/images/Tes4LODGen16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Tes4LODGen32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="bash/images/Boss16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Boss32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> (Compatible with all released versions up to December 5th 2010) This one has some options!:
       * If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
       * For BOSS version 1.6+ (released October 2010):
         * If the option in the main menu is selected/ __U__ is pressed will tell BOSS to update the masterlist first.
@@ -299,74 +293,74 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
         * if __Shift-R__ is pressed will do a level 2 revert (to the state just prior to the 2nd last sort).
 
   * __Model Tools__
-    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="images/ArtOfIllusion16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/ArtOfIllusion32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652 | AutoCad]] 16 <img src="images/AutoCad16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/AutoCad32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.blender.org | Blender]] 16 <img src="images/Blender16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Blender32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.turbosquid.com/gmax | GMax]] 16 <img src="images/gmax16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/gmax32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897 | Maya]] 16 <img src="images/Maya16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Maya32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410 | 3ds Max]] 16 <img src="images/3dsMax16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/3dsMax32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]] 16 <img src="images/Milkshape3D16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Milkshape3D32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063 | Mudbox]] 16 <img src="images/Mudbox16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Mudbox32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.sculptris.com | Sculptris]] 16 <img src="images/Sculptris16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Sculptris32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112 | Softimage Mod Tool]] 16 <img src="images/SoftimageModTool16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/SoftimageModTool32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.speedtree.com/ | SpeedTree]] 16 <img src="images/SpeedTree16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/SpeedTree32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.frecle.net/index.php?show=treed.about | Tree[d]]] 16 <img src="images/Treed16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Treed32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.wings3d.com/ | Wings3D]] 16 <img src="images/Wings3D16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Wings3D32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="images/nifskope16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/nifskope32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.artofillusion.org/ | Art of Illusion]] 16 <img src="bash/images/ArtOfIllusion16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/ArtOfIllusion32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652 | AutoCad]] 16 <img src="bash/images/AutoCad16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/AutoCad32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.blender.org | Blender]] 16 <img src="bash/images/Blender16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Blender32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.turbosquid.com/gmax | GMax]] 16 <img src="bash/images/gmax16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/gmax32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897 | Maya]] 16 <img src="bash/images/Maya16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Maya32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410 | 3ds Max]] 16 <img src="bash/images/3dsMax16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/3dsMax32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://chumbalum.swissquake.ch/ | MilkShape 3D]] 16 <img src="bash/images/Milkshape3D16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Milkshape3D32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063 | Mudbox]] 16 <img src="bash/images/Mudbox16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Mudbox32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.sculptris.com | Sculptris]] 16 <img src="bash/images/Sculptris16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Sculptris32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112 | Softimage Mod Tool]] 16 <img src="bash/images/SoftimageModTool16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/SoftimageModTool32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.speedtree.com/ | SpeedTree]] 16 <img src="bash/images/SpeedTree16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/SpeedTree32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.frecle.net/index.php?show=treed.about | Tree[d]]] 16 <img src="bash/images/Treed16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Treed32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.wings3d.com/ | Wings3D]] 16 <img src="bash/images/Wings3D16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Wings3D32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://niftools.sourceforge.net/wiki/NifTools | Nifskope]] 16 <img src="bash/images/nifskope16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/nifskope32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
 
   * __Texture Tools__
-    * [[http://icofx.ro/anifx/index.html | AniFX]]16 <img src="images/AniFX16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/AniFX32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.artweaver.de/ |Artweaver]] 16 <img src="images/artweaver16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/artweaver32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.crazybump.com/ | CrazyBump]] 16 <img src="images/CrazyBump16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/CrazyBump32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]] 16 <img src="images/DDSConverter16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/DDSConverter32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://download.chip.eu/en/Deep-Paint-2.0_132831.html | DeepPaint]] 16 <img src="images/DeepPaint16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/DeepPaint32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="images/Dogwaffle16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Dogwaffle32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]] 16 <img src="images/Genetica16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Genetica32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]] 16 <img src="images/GeneticaViewer16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/GeneticaViewer32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.gimp.org/downloads/ | GIMP]] 16 <img src="images/gimp16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/gimp32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.gimpshop.com/ | Gimp Shop]] 16 <img src="images/GIMPShop16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/GIMPShop32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://icofx.ro/index.html | IcoFX]] 16 <img src="images/IcoFX16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/IcoFX32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.inkscape.org/ | Inkscape]] 16 <img src="images/Inkscape16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Inkscape32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.irfanview.com/ | Irfan View]] 16 <img src="images/IrfanView16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/IrfanView32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.faststone.org/ | FastStone Image Viewer]] 16 <img src="images/FastStoneImageViewer16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/FastStoneImageViewer32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.mapzoneeditor.com/ | MaPZone]] 16 <img src="images/MaPZone16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/MaPZone32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://mypaint.intilinux.com/ | MyPaint]] 16 <img src="images/MyPaint16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/MyPaint32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://developer.nvidia.com/object/melody_home.html | NVIDIAMelody]] 16 <img src="images/NVIDIAMelody16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/NVIDIAMelody32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.getpaint.net/download.html | Paint.NET]] 16 <img src="images/paint.net16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/paint.net32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051 | PaintShop Photo Pro]] 16 <img src="images/PaintShopProX316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/PaintShopProX332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.photobie.com/ | Photobie Design Studio]] 16 <img src="images/Photobie16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Photobie32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.photofiltre.com/ | PhotoFiltre]] 16 <img src="images/PhotoFiltre16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/PhotoFiltre32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.photoscape.org/ps/main/index.php | PhotoScape]] 16 <img src="images/PhotoScape16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/PhotoScape32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.mediachance.com/pseam/ | PhotoSEAM]] 16 <img src="images/PhotoSEAM16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/PhotoSEAM32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.adobe.com/ | Photoshop]] 16 <img src="images/photoshop16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/photoshop32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="images/PixelStudioPro16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/PixelStudioPro32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.ne.jp/asahi/mighty/knight/index.html | Pixia]] 16 <img src="images/Pixia16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Pixia32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.texturemaker.com/download.php | TextureMaker]] 16 <img src="images/TextureMaker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/TextureMaker32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="images/TwistedBrush16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/TwistedBrush32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://developer.nvidia.com/object/windows_texture_viewer.html | Windows Texture Viewer]] 16 <img src="images/WTV16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/WTV32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.xnormal.net/ | xNormal]] 16 <img src="images/xNormal16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/xNormal32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.xnview.com/ | XnView]] 16 <img src="images/XnView16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/XnView32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://icofx.ro/anifx/index.html | AniFX]]16 <img src="bash/images/AniFX16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/AniFX32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.artweaver.de/ |Artweaver]] 16 <img src="bash/images/artweaver16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/artweaver32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.crazybump.com/ | CrazyBump]] 16 <img src="bash/images/CrazyBump16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/CrazyBump32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://eliteforce2.filefront.com/file/DDS_Converter;29412 | DDSConverter]] 16 <img src="bash/images/DDSConverter16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/DDSConverter32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://download.chip.eu/en/Deep-Paint-2.0_132831.html | DeepPaint]] 16 <img src="bash/images/DeepPaint16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/DeepPaint32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.thebest3d.com/dogwaffle/free/ | Dogwaffle]] 16 <img src="bash/images/Dogwaffle16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Dogwaffle32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.spiralgraphics.biz/genetica.htm | Genetica]] 16 <img src="bash/images/Genetica16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Genetica32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.spiralgraphics.biz/viewer/ | Genetica Viewer]] 16 <img src="bash/images/GeneticaViewer16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/GeneticaViewer32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.gimp.org/downloads/ | GIMP]] 16 <img src="bash/images/gimp16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/gimp32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.gimpshop.com/ | Gimp Shop]] 16 <img src="bash/images/GIMPShop16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/GIMPShop32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://icofx.ro/index.html | IcoFX]] 16 <img src="bash/images/IcoFX16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/IcoFX32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.inkscape.org/ | Inkscape]] 16 <img src="bash/images/Inkscape16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Inkscape32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.irfanview.com/ | Irfan View]] 16 <img src="bash/images/IrfanView16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/IrfanView32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.faststone.org/ | FastStone Image Viewer]] 16 <img src="bash/images/FastStoneImageViewer16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/FastStoneImageViewer32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.mapzoneeditor.com/ | MaPZone]] 16 <img src="bash/images/MaPZone16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/MaPZone32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://mypaint.intilinux.com/ | MyPaint]] 16 <img src="bash/images/MyPaint16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/MyPaint32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://developer.nvidia.com/object/melody_home.html | NVIDIAMelody]] 16 <img src="bash/images/NVIDIAMelody16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/NVIDIAMelody32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.getpaint.net/download.html | Paint.NET]] 16 <img src="bash/images/paint.net16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/paint.net32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051 | PaintShop Photo Pro]] 16 <img src="bash/images/PaintShopProX316.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/PaintShopProX332.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.photobie.com/ | Photobie Design Studio]] 16 <img src="bash/images/Photobie16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Photobie32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.photofiltre.com/ | PhotoFiltre]] 16 <img src="bash/images/PhotoFiltre16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/PhotoFiltre32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.photoscape.org/ps/main/index.php | PhotoScape]] 16 <img src="bash/images/PhotoScape16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/PhotoScape32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.mediachance.com/pseam/ | PhotoSEAM]] 16 <img src="bash/images/PhotoSEAM16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/PhotoSEAM32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.adobe.com/ | Photoshop]] 16 <img src="bash/images/photoshop16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/photoshop32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://pixelstudiopro.com/ | Pixel Studio Pro]] 16 <img src="bash/images/PixelStudioPro16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/PixelStudioPro32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.ne.jp/asahi/mighty/knight/index.html | Pixia]] 16 <img src="bash/images/Pixia16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Pixia32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.texturemaker.com/download.php | TextureMaker]] 16 <img src="bash/images/TextureMaker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/TextureMaker32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.pixarra.com/ | Twisted Brush]] 16 <img src="bash/images/TwistedBrush16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/TwistedBrush32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://developer.nvidia.com/object/windows_texture_viewer.html | Windows Texture Viewer]] 16 <img src="bash/images/WTV16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/WTV32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.xnormal.net/ | xNormal]] 16 <img src="bash/images/xNormal16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/xNormal32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.xnview.com/ | XnView]] 16 <img src="bash/images/XnView16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/XnView32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
 
   * __Audio Tools__
-    * [[http://audacity.sourceforge.net/ | Audacity]] 16 <img src="images/audacity16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/audacity32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]] 16 <img src="images/ABCAmberAudioConverter16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/ABCAmberAudioConverter32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.nch.com.au/switch/index.html | Switch]] 16 <img src="images/Switch16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Switch32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://audacity.sourceforge.net/ | Audacity]] 16 <img src="bash/images/audacity16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/audacity32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.processtext.com/abcmp3wav.html | ABC Amber Audio Converter]] 16 <img src="bash/images/ABCAmberAudioConverter16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/ABCAmberAudioConverter32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.nch.com.au/switch/index.html | Switch]] 16 <img src="bash/images/Switch16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Switch32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
 
   * __Misc__
-    * [[http://www.fraps.com/download.php | Fraps]] 16 <img src="images/fraps16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/fraps32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]] 16 <img src="images/InteractiveMapofCyrodiil16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/InteractiveMapofCyrodiil32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.logitech.com/index.cfm/434/285&amp;cl=za | Logitech G11 Keyboard Profiler]] 16 <img src="images/LogitechKeyboard16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/LogitechKeyboard32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.mediamonkey.com/ | Media Monkey]] 16 <img src="images/MediaMonkey16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/MediaMonkey32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://notepad-plus.sourceforge.net/ | Notepad++]] 16 <img src="images/notepad++16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/notepad++32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.steampowered.com/ | Steam]] 16 <img src="images/Steam16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Steam32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.evga.com/ | EVGA Precision]] 16 <img src="images/EVGAPrecision16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/EVGAPrecision32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://winmerge.org/ | WinMerge]] 16 <img src="images/WinMerge16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/WinMerge32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://freemind.sourceforge.net/wiki/index.php/Main_Page | FreeMind]] 16 <img src="images/FreeMind16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/FreeMind32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://freeplane.sourceforge.net/wiki/index.php/Main_Page | Freeplane]] 16 <img src="images/Freeplane16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/Freeplane32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://filezilla-project.org/ | Filezilla]] 16 <img src="images/FileZilla16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/FileZilla32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825 | Egg Translator]] 16 <img src="images/EggTranslator16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/EggTranslator32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]] 16 <img src="images/RADVideoTools16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/RADVideoTools32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.filehippo.com/download_winsnap/ | WinSnap]] 16 <img src="images/WinSnap16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/WinSnap32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.fraps.com/download.php | Fraps]] 16 <img src="bash/images/fraps16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/fraps32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]] 16 <img src="bash/images/InteractiveMapofCyrodiil16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/InteractiveMapofCyrodiil32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.logitech.com/index.cfm/434/285&amp;cl=za | Logitech G11 Keyboard Profiler]] 16 <img src="bash/images/LogitechKeyboard16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/LogitechKeyboard32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.mediamonkey.com/ | Media Monkey]] 16 <img src="bash/images/MediaMonkey16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/MediaMonkey32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://notepad-plus.sourceforge.net/ | Notepad++]] 16 <img src="bash/images/notepad++16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/notepad++32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.steampowered.com/ | Steam]] 16 <img src="bash/images/Steam16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Steam32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.evga.com/ | EVGA Precision]] 16 <img src="bash/images/EVGAPrecision16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/EVGAPrecision32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://winmerge.org/ | WinMerge]] 16 <img src="bash/images/WinMerge16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/WinMerge32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://freemind.sourceforge.net/wiki/index.php/Main_Page | FreeMind]] 16 <img src="bash/images/FreeMind16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/FreeMind32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://freeplane.sourceforge.net/wiki/index.php/Main_Page | Freeplane]] 16 <img src="bash/images/Freeplane16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Freeplane32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://filezilla-project.org/ | Filezilla]] 16 <img src="bash/images/FileZilla16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/FileZilla32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825 | Egg Translator]] 16 <img src="bash/images/EggTranslator16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/EggTranslator32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.radgametools.com/bnkdown.htm | RAD Video Tools]] 16 <img src="bash/images/RADVideoTools16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/RADVideoTools32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://www.filehippo.com/download_winsnap/ | WinSnap]] 16 <img src="bash/images/WinSnap16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/WinSnap32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
 
   * __{{A:Custom buttons}}:__
     * Put any shortcut in the Mopy\Apps directory.
@@ -382,18 +376,18 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
       . Notepadpp24.png  <- custom 24x24 icon to use
 
 === Bash Option Buttons
-* OBSE 16off <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* OBSE 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * When checked this will launch OBSE when either the Oblivion or TESCS buttons are clicked.
-* Auto-Quit 16off <img src="images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="images/checkbox_red_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="images/checkbox_red_x_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Auto-Quit 16off <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="bash/images/checkbox_red_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_red_x_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
-* BashMon 16 <img src="images/bashmon16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/bashmon32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* BashMon 16 <img src="bash/images/bashmon16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/bashmon32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * This launches bashmon.py in a command shell window. This is for use with Breeze582000's Seducers/Succubi mod and Wrye's Morph mod.
   * For more info, see [[http://forums.bethsoft.com/?showtopic=746499 | [WIPZ] Succubi Race]].
-* Help 16 <img src="images/help16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/help32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Help 16 <img src="bash/images/help16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/help32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * Show this help file in the default web browser.
-* Doc Browser 16 <img src="images/DocBrowser16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/DocBrowser32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Doc Browser 16 <img src="bash/images/DocBrowser16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/DocBrowser32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * Show the [[#|Doc Browser]]. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-* Mod Checker 16 <img src="images/ModChecker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="images/ModChecker32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Mod Checker 16 <img src="bash/images/ModChecker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/ModChecker32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * Show the [[#|Mod Checker]].
 
 == Installers Tab =============================================================
@@ -432,16 +426,16 @@ Bain will search for and display packages from the (new) __Oblivion Mods\Bash In
   * Installed packages will be marked with a "+".
 * __Icon Colors__
 . Icon colors indicate the degree to which the package is synchronized with the Oblivion\Data directory:
-  * <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green -- since it too is fully synced with the data directory.
-  * <img src="images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Red: Some files in the package are missing from the data directory.
-  * <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Orange: All package files are present in the data directory, but some esps/esms are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
-  * <img src="images/checkbox_yellow_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Yellow: All package files are present in the data directory, but some resource files are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
-  * <img src="images/checkbox_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> White: This is relatively rare. It just means that the package is configured in a way that it has no files to install. This can happen for complex packages where none of the sub-packages are checked.
-  * <img src="images/checkbox_grey_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install.
-  * <img src="images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
+  * <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Green: Package is fully synced. Note that a package can be green even if it is not "Active". E.g. if you have two identical packages and one is (fully) installed, then it will be green and checked. But the identical package will also be green -- since it too is fully synced with the data directory.
+  * <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Red: Some files in the package are missing from the data directory.
+  * <img src="bash/images/checkbox_orange_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Orange: All package files are present in the data directory, but some esps/esms are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
+  * <img src="bash/images/checkbox_yellow_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Yellow: All package files are present in the data directory, but some resource files are not identical. (E.g. another package installed an alternative version of that file, or the user modified the file after installation.)
+  * <img src="bash/images/checkbox_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> White: This is relatively rare. It just means that the package is configured in a way that it has no files to install. This can happen for complex packages where none of the sub-packages are checked.
+  * <img src="bash/images/checkbox_grey_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Grey: This indicates that the package has a structure that Bain does not recognize, and so cannot install.
+  * <img src="bash/images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Red X: The package is corrupt and/or incomplete. You'll likely see this for packages that you are currently downloading into the Installers directory.
 * __Icon Shape__
-  * <img src="images/diamond_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Diamond: A project, i.e. a subdirectory in the Installers directory.
-  * <img src="images/checkbox_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
+  * <img src="bash/images/diamond_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Diamond: A project, i.e. a subdirectory in the Installers directory.
+  * <img src="bash/images/checkbox_white_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> Square: A mod package archive. Note that only rar, 7z and zip formats are supported.
 * __Text Colors__
   * [color=#000080]Navy Blue:[/color] Indicates a package with sub-packages. The files to be installed, and thus the install state of the package will depend on which sub-packages you have activated.
   * [bg=white][color=#BEBEBE]Grey:[/color][/bg] This indicates that the package has a structure that Bain does not recognize, and so, cannot install.
@@ -706,7 +700,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * Go to the Installers tab and activate "BSA Redirection" from the main context menu (right click on the main column header).
 
 == Mods Tab ===================================================================
-<img src="images/WryeBash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
+<img src="bash/images/WryeBash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
 
 === Mods List
 * __Sorting__
@@ -739,12 +733,12 @@ If you're currently using the Textures BSA facility, you should switch to using 
     * **__Slant__:** A file that is recommended to be imported and deactivated (i.e. has the 'Deactivate' tag).
     * __Normal:__ Any other file.
 * __Checkbox Types__
-  * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.
-  * <img src="images/checkbox_green_inc.png" width="16" height="16" style="border: 0;" alt="Merged" /> Plus sign checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
-  * <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Imported" /> Dot checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
-  * <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: Mod is not active, imported or merged.
+  * <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.
+  * <img src="bash/images/checkbox_green_inc.png" width="16" height="16" style="border: 0;" alt="Merged" /> Plus sign checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
+  * <img src="bash/images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Imported" /> Dot checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
+  * <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: Mod is not active, imported or merged.
 * __Checkbox Colors__
-  * <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
+  * <img src="bash/images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="bash/images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="bash/images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
   * Checkbox colors indicate the "health" of the mod file's master files.
   * Blue or Green: Good.
   * Orange: Some mods have changed order. Oblivion and TESCS will adjust for this when you load. However, if some of the mods that you depend made conflicting changes to the same item, a different mod may now dominate because of the reordering.
@@ -1183,7 +1177,7 @@ Balo provides a default "canonical" set of groups designed to reduce problems du
 * To tag a mod, include the line "Group: [Group Name]" in the description field of the mod. (E.g. "Group: Tweak+1".) The tag must be on a line by itself.
 
 == Bashed Patches =============================================================
-<img src="images/WryeBash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
+<img src="bash/images/WryeBash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
 A __Bashed Patch__ is a configurable, custom built patch. The patch can have multiple components, which you can choose and configure as you like. You can also have multiple patches (typically, you would have one patch per major set of load mods).
 
 === Patch Usage
@@ -1447,7 +1441,7 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Names
 * __Overview__
-. This component is intended to merge changes from a renamer mod (e.g., [[http://www.Wryemusings.com/Rational%20Names%202.html | Rational Names]]) or file into other mods. It will also (to a small degree) handle localization of foreign language mods. An example of a renamer mod is [[http://www.Wryemusings.com/Rational%20Names%202.html | Rational Names]].
+. This component is intended to merge changes from a renamer mod or file into other mods. It can also handle localization of foreign language mods.
 * __Configuration:__
   * Source mods are automatically recognized if they have a <code>Names</code> [[#BashTags|tag]] in the mod description.
   * Source text files are automatically recognized if they are in the <code>Oblivion\Data\Bash Patches</code> directory and end with <code>Names.csv</code>. Note that the [[#|Export/Import Names]] command will export files in this format.
@@ -1717,7 +1711,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 
 === Cobl Catalogs
 * __Overview__
-. This patcher component will update the alchemical catalogs found in the [[http://www.Wryemusings.com/Cobl.html|Common Oblivion]]. No configuration is required and the catalogs will not be produced unless __Cobl Main.esm__ is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods. See [[http://www.Wryemusings.com/Cobl.html| COBL docs]] for more information on how to acquire the catalogs.
+. This patcher component will update the alchemical catalogs found in COBL (Common Oblivion). No configuration is required and the catalogs will not be produced unless __Cobl Main.esm__ is in the load list. The original catalogs list all ingredients found in Oblivion.esm. The update will add ingredients from all selected mods.
 
 === Cobl Exhaustion
 * Requires Cobl 1.66 or higher.
@@ -1816,7 +1810,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 * To show the Doc Browser window, go to the Mods Tab and double click on any mod in the main list.
 
 === Using the Doc Browser
-<img src="images/WryeBash_DocBrowser.png" width="787" height="500" style="border: 0;"  alt="tool image"></img>
+<img src="bash/images/WryeBash_DocBrowser.png" width="787" height="500" style="border: 0;"  alt="tool image"></img>
 * When you the Doc Browser is showing and you click on the name of a Mod in the Mods Tab, Bash will try to show the document for that mod in the Doc Browser window. If Bash does not know which document to associate with the mod, it will show a blank page.
 * To associate a document with a mod:
   * Select the mod in the Mods Tab.
@@ -1894,8 +1888,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Update:__ The report will usually auto-regenerate (if necessary) when you raise the Mod Checker window. But if it doesn't you can force it to regenerate with this button.
 
 == INI Edits Tab ==================================================================
-<img src="images/ini-oblivion.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
-<img src="images/ini-all natural.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
+<img src="bash/images/ini-oblivion.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
+<img src="bash/images/ini-all natural.png" height="400" width="663" style="border: 1;" alt="INI Edits Tab" />
 * This feature allows you to quickly modify an Ini file (such as Oblivion.ini) by copying settings from an Ini Tweak file. Ini tweak files are just like Oblivion.ini, except they contain ~~only~~ the section/key settings that are to be changed.
 * Tweaks can also be applied to Ini files that contain scripts to configure mods.  These Ini tweak files are just like the script you're trying to tweak, except the contain ~~only~~ the settings that are to be changed.  Wrye Bash can modify any __set__ or __setGS__ commands in these script files.
 * Clicking on a tweak will show its contents, along with the status of each specific tweak in it:
@@ -1906,13 +1900,13 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another.
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__
-  * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" /> <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" /> <img src="images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" /> <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />
+  * <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" /> <img src="bash/images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" /> <img src="bash/images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" /> <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="bash/images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />
   * Checkbox colors indicate the status of the ini tweak
-    * <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
-    * <img src="images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" />: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
-    * <img src="images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.
-    * <img src="images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.  The ones that are not, ARE the same as another tweak file from the same installer.
-    * <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" />: Valid and Active.
+    * <img src="bash/images/checkbox_orange_off.png" width="16" height="16" style="border: 0;" alt="Orange" />: Invalid; some or all variables set in the INI do not exist in the selected Ini file.
+    * <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Green" />: Valid; all values exist in the target Ini, but none of the settings are the same as in the tweak file
+    * <img src="bash/images/checkbox_yellow_imp.png" width="16" height="16" style="border: 0;" alt="Yellow with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.
+    * <img src="bash/images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Green with Dot" />: Valid, some of the settings in target Ini are the same, but some are not.  The ones that are not, ARE the same as another tweak file from the same installer.
+    * <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green with Check" />: Valid and Active.
 
 === INI Tweaks Options
 * The drop down selection box chooses your target Ini file for applying the tweaks to.
@@ -1929,11 +1923,11 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Delete:__ Delete the tweak file.
 
 == Saves Tab ==================================================================
-<img src="images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
+<img src="bash/images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
 
 === Saves List
 * __Checkbox Colors__
-  * <img src="images/checkbox_purple_on.png" width="16" height="16" style="border: 0;" alt="Purple" /> <img src="images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
+  * <img src="bash/images/checkbox_purple_on.png" width="16" height="16" style="border: 0;" alt="Purple" /> <img src="bash/images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="bash/images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="bash/images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
   * Checkbox colors indicate the "health" of the mod file's master files.
     * Purple: Good. Exactly synced with currently selected mods.
     * Blue: Good. Compatible with currently selected mods. However, current mod set includes some mods that are not used by this save game.
@@ -2106,7 +2100,7 @@ These are the commands found on context menu for saves...
 * Repair Hair will check to see if your PC's hair has become lost, and if so, replace it with the default hair for that race/gender.
 
 == Face Import ================================================================
-<img src="images/WryeBash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
+<img src="bash/images/WryeBash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
 
 === Import to Save
 * __Procedure__
@@ -2149,7 +2143,7 @@ These are the commands found on context menu for saves...
   * ~~In short, Bash will only import eyes/hair if the eyes/hair come from an esm if the esp already has access (i.e., is dependent on) that esm.~~
 
 == Screenshots Tab ============================================================
-<img src="images/WryeBash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/WryeBash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
 This allows you to preview your screenshots.
 
 === Screenshots Commands
@@ -2168,7 +2162,7 @@ Right click on a screenshot to see these:
   * If file by new name already exists, then rename for that file will be skipped.
 
 == PM Archive Tab =============================================================
-<img src="images/WryeBash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/WryeBash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
 Archive, view, search PM's from the official forum. **Note:** This is fairly new and a bit experimental at this time (11/6/2007). It should be fairly safe, but I suggest that you keep a backup of any messages that you enter into this.
 
 === Import Archives
@@ -2197,7 +2191,7 @@ Archive, view, search PM's from the official forum. **Note:** This is fairly new
 * When you select messages, they're actually temporarily written to an html file. You can view this directly, mail it to people, etc. You'll find the temporary file at "My Games\Oblivion\Messages.html"
 
 == People Tab =================================================================
-<img src="images/WryeBash_PeopleTab.png" width="834" height="600" style="border: 0;"  alt="tool image"></img>
+<img src="bash/images/WryeBash_PeopleTab.png" width="834" height="600" style="border: 0;"  alt="tool image"></img>
 The People tab is a simple database that you can use to keep reminders about various people on the forums. You may find it useful if you're on the forums and want to keep some reminders about various people. (E.g. why you blocked someone, or what awesome mod a person did.)
 
 === General
@@ -2207,13 +2201,13 @@ The People tab is a simple database that you can use to keep reminders about var
   * Header: the first 75 characters of the text.
 * Text: Description of the person. You'll probably want to start with a brief summary (maybe using keywords), since that's what will show up in the header column.
 * Icon: The icon for each person reflects their karma:
-  * <img src="images/checkbox_purple_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +5: Purple
-  * <img src="images/checkbox_blue_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +3,+4: Blue
-  * <img src="images/checkbox_green_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +1,+2: Green
-  * <img src="images/checkbox_grey_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +0: Grey (Default)
-  * <img src="images/checkbox_yellow_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -1,-2: Yellow
-  * <img src="images/checkbox_orange_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -3,-4: Orange
-  * <img src="images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -5: Red
+  * <img src="bash/images/checkbox_purple_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +5: Purple
+  * <img src="bash/images/checkbox_blue_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +3,+4: Blue
+  * <img src="bash/images/checkbox_green_inc.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +1,+2: Green
+  * <img src="bash/images/checkbox_grey_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> +0: Grey (Default)
+  * <img src="bash/images/checkbox_yellow_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -1,-2: Yellow
+  * <img src="bash/images/checkbox_orange_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -3,-4: Orange
+  * <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> -5: Red
 
 === Add/Delete People
 * You can add and delete records by clicking using the Add/Delete commands.
