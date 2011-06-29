@@ -296,8 +296,10 @@ def main():
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
+            print "generating HTML file from: '%s'" % opts.genHtml
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
+            print "done"
             return
 
         import basher
