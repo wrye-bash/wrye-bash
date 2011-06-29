@@ -1018,6 +1018,15 @@ class Picture(wx.Window):
         self.Refresh()
 
 #------------------------------------------------------------------------------
+class BusyCursor(object):
+    """Wrapper around wx.BeginBusyCursor and wx.EndBusyCursor, to be used with
+       Pythons 'with' semantics."""
+    def __enter__(self):
+        wx.BeginBusyCursor()
+    def __exit__(self,type,value,traceback):
+        wx.EndBusyCursor()
+
+#------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_('Progress'),message=' '*60,parent=None,
