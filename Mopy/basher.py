@@ -86,8 +86,7 @@ try:
     bEnableWizard = True
 except ImportError:
     bEnableWizard = False
-    if bolt.deprintOn:
-        raise
+    deprint(_("Error initializing installer wizards:"),traceback=True)
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
