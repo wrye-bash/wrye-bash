@@ -42,6 +42,7 @@ import types
 from binascii import crc32
 import ConfigParser
 #-- To make commands executed with Popen hidden
+startupinfo = None
 if os.name == 'nt':
     startupinfo = subprocess.STARTUPINFO()
     try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
