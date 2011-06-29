@@ -1319,11 +1319,8 @@ class INIList(List):
         if event.ControlDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            try:
-                wx.BeginBusyCursor()
+            with balt.BusyCursor():
                 self.DeleteSelected()
-            finally:
-                wx.EndBusyCursor()
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -2882,45 +2879,44 @@ class InstallersList(balt.Tank):
         numLen = len(numStr)
         num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
-        wx.BeginBusyCursor()
-        refreshNeeded = False
-        for archive in selected:
-            installer = self.data[archive]
-            newName = GPath(root+numStr+archive.ext)
-            if InstallerType is bosh.InstallerMarker:
-                newName = GPath('==' + newName.s + '==')
-            if newName != archive:
-                oldPath = installersDir.join(archive)
-                newPath = installersDir.join(newName)
-                if not newPath.exists():
-                    if InstallerType is not bosh.InstallerMarker:
-                        oldPath.moveTo(newPath)
-                    self.data.pop(installer)
-                    installer.archive = newName.s
-                    #--Add the new archive to Bash
-                    self.data[newName] = installer
-                    #--Update the iniInfos & modInfos for 'installer'
-                    if InstallerType is not bosh.InstallerMarker:
-                        mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
-                        ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
-                        for i in mfiles:
-                            bosh.modInfos.table[i]['installer'] = newPath.stail
-                        for i in ifiles:
-                            bosh.iniInfos.table[i]['installer'] = newPath.stail
+        with balt.BusyCursor():
+            refreshNeeded = False
+            for archive in selected:
+                installer = self.data[archive]
+                newName = GPath(root+numStr+archive.ext)
                 if InstallerType is bosh.InstallerMarker:
-                    del self.data[archive]
-                refreshNeeded = True
-            num += 1
-            numStr = `num`
-            numStr = '0'*(numLen-len(numStr))+numStr
-        #--Refresh UI
-        if refreshNeeded:
-            self.data.refresh(what='I')
-            modList.RefreshUI()
-            iniList.RefreshUI()
-            self.RefreshUI()
-        event.Veto()
-        wx.EndBusyCursor()
+                    newName = GPath('==' + newName.s + '==')
+                if newName != archive:
+                    oldPath = installersDir.join(archive)
+                    newPath = installersDir.join(newName)
+                    if not newPath.exists():
+                        if InstallerType is not bosh.InstallerMarker:
+                            oldPath.moveTo(newPath)
+                        self.data.pop(installer)
+                        installer.archive = newName.s
+                        #--Add the new archive to Bash
+                        self.data[newName] = installer
+                        #--Update the iniInfos & modInfos for 'installer'
+                        if InstallerType is not bosh.InstallerMarker:
+                            mfiles = [x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail]
+                            ifiles = [x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail]
+                            for i in mfiles:
+                                bosh.modInfos.table[i]['installer'] = newPath.stail
+                            for i in ifiles:
+                                bosh.iniInfos.table[i]['installer'] = newPath.stail
+                    if InstallerType is bosh.InstallerMarker:
+                        del self.data[archive]
+                    refreshNeeded = True
+                num += 1
+                numStr = `num`
+                numStr = '0'*(numLen-len(numStr))+numStr
+            #--Refresh UI
+            if refreshNeeded:
+                self.data.refresh(what='I')
+                modList.RefreshUI()
+                iniList.RefreshUI()
+                self.RefreshUI()
+            event.Veto()
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
@@ -3026,20 +3022,18 @@ class InstallersList(balt.Tank):
                 return
             if gCheckBox.GetValue():
                 settings['bash.installers.onDropFiles.action'] = action
-        if action == 'COPY':
-            #--Copy the dropped files
-            wx.BeginBusyCursor()
-            for file in filenames:
-                file.copyTo(bosh.dirs['installers'].join(file.tail))
-        elif action == 'MOVE':
-            wx.BeginBusyCursor()
-            for file in filenames:
-                file.moveTo(bosh.dirs['installers'].join(file.tail))
-        else:
-            return
-        modList.RefreshUI()
-        iniList.RefreshUI()
-        wx.EndBusyCursor()
+        with balt.BusyCursor():
+            if action == 'COPY':
+                #--Copy the dropped files
+                for file in filenames:
+                    file.copyTo(bosh.dirs['installers'].join(file.tail))
+            elif action == 'MOVE':
+                for file in filenames:
+                    file.moveTo(bosh.dirs['installers'].join(file.tail))
+            else:
+                return
+            modList.RefreshUI()
+            iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.OnShow()
 
@@ -3110,11 +3104,8 @@ class InstallersList(balt.Tank):
             self.SelectAll()
         ##Delete - delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            try:
-                wx.BeginBusyCursor()
+            with balt.BusyCursor():
                 self.DeleteSelected()
-            finally:
-                wx.EndBusyCursor()
         ##F2 - Rename selected.
         elif event.GetKeyCode() == wx.WXK_F2:
             if len(self.GetSelected()) > 0:
@@ -3652,11 +3643,8 @@ class ReplacersList(List):
             replacer = self.data[item]
             #--Unselect?
             if replacer.isApplied():
-                try:
-                    wx.BeginBusyCursor()
+                with balt.BusyCursor():
                     replacer.remove()
-                finally:
-                    wx.EndBusyCursor()
             #--Select?
             else:
                 with balt.Progress(item.s) as progress:
@@ -3818,27 +3806,26 @@ class ScreensList(List):
         numLen = len(numStr)
         num = int(numStr or 0)
         screensDir = bosh.screensData.dir
-        wx.BeginBusyCursor()
-        newselected = []
-        for file in selected:
-            newName = GPath(root+numStr+file.ext)
-            newselected.append(newName)
-            newPath = screensDir.join(newName)
-            oldPath = screensDir.join(file)
-            if not newPath.exists():
-                oldPath.moveTo(newPath)
-            num += 1
-            numStr = `num`
-            numStr = '0'*(numLen-len(numStr))+numStr
-        bosh.screensData.refresh()
-        self.RefreshUI()
-        #--Reselected the renamed items
-        for file in newselected:
-            index = self.list.FindItem(0,file.s)
-            if index != -1:
-                self.list.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        event.Veto()
-        wx.EndBusyCursor()
+        with balt.BusyCursor():
+            newselected = []
+            for file in selected:
+                newName = GPath(root+numStr+file.ext)
+                newselected.append(newName)
+                newPath = screensDir.join(newName)
+                oldPath = screensDir.join(file)
+                if not newPath.exists():
+                    oldPath.moveTo(newPath)
+                num += 1
+                numStr = `num`
+                numStr = '0'*(numLen-len(numStr))+numStr
+            bosh.screensData.refresh()
+            self.RefreshUI()
+            #--Reselected the renamed items
+            for file in newselected:
+                index = self.list.FindItem(0,file.s)
+                if index != -1:
+                    self.list.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            event.Veto()
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3912,12 +3899,9 @@ class ScreensList(List):
                     self.list.EditLabel(index)
         ##Delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            try:
-                wx.BeginBusyCursor()
+            with balt.BusyCursor():
                 self.DeleteSelected()
-            finally:
-                wx.EndBusyCursor()
-                self.RefreshUI()
+            self.RefreshUI()
         ##Enter
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             screensDir = bosh.screensData.dir
@@ -7217,17 +7201,16 @@ class File_RevertToSnapshot(Link):
         message = (_("Revert %s to snapshot %s dated %s?")
             % (fileInfo.name.s, snapName.s, formatDate(snapPath.mtime)))
         if not balt.askYes(self.window,message,_('Revert to Snapshot')): return
-        wx.BeginBusyCursor()
-        destPath = fileInfo.getPath()
-        snapPath.copyTo(destPath)
-        fileInfo.setmtime()
-        try:
-            self.window.data.refreshFile(fileName)
-        except bosh.FileError:
-            balt.showError(self,_('Snapshot file is corrupt!'))
-            self.window.details.SetFile(None)
-        wx.EndBusyCursor()
-        self.window.RefreshUI(fileName)
+        with balt.BusyCursor():
+            destPath = fileInfo.getPath()
+            snapPath.copyTo(destPath)
+            fileInfo.setmtime()
+            try:
+                self.window.data.refreshFile(fileName)
+            except bosh.FileError:
+                balt.showError(self,_('Snapshot file is corrupt!'))
+                self.window.details.SetFile(None)
+            self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
 class File_Backup(Link):
@@ -7276,18 +7259,17 @@ class File_RevertToBackup:
         message = _("Revert %s to backup dated %s?") % (fileName.s,
             formatDate(backup.mtime))
         if balt.askYes(self.window,message,_('Revert to Backup')):
-            wx.BeginBusyCursor()
-            dest = fileInfo.dir.join(fileName)
-            backup.copyTo(dest)
-            fileInfo.setmtime()
-            if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
-                bosh.CoSaves(backup).copy(dest)
-            try:
-                self.window.data.refreshFile(fileName)
-            except bosh.FileError:
-                balt.showError(self,_('Old file is corrupt!'))
-            wx.EndBusyCursor()
-        self.window.RefreshUI(fileName)
+            with balt.BusyCursor():
+                dest = fileInfo.dir.join(fileName)
+                backup.copyTo(dest)
+                fileInfo.setmtime()
+                if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
+                    bosh.CoSaves(backup).copy(dest)
+                try:
+                    self.window.data.refreshFile(fileName)
+                except bosh.FileError:
+                    balt.showError(self,_('Old file is corrupt!'))
+                self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
 class File_Open(Link):
@@ -7774,7 +7756,7 @@ class InstallerLink(Link):
     def isSingleInstallable(self):
         if len(self.selected) == 1:
             installer = self.data[self.selected[0]]
-            if not (isinstance(installer,bosh.InstallerProject) or isinstance(installer,bosh.InstallerArchive)):
+            if not isinstance(installer,(bosh.InstallerProject,bosh.InstallerArchive)):
                 return False
             elif installer.type not in (1,2):
                 return False
@@ -7830,18 +7812,34 @@ class Installer_EditWizard(InstallerLink):
     """Edit the wizard.txt associated with this project"""
     def AppendToMenu(self, menu, window, data):
         Link.AppendToMenu(self, menu, window, data)
-        menuItem = wx.MenuItem(menu, self.id, _('Edit Wizard...'))
+        if self.isSingleArchive():
+            title = _('View Wizard...')
+        else:
+            title = _('Edit Wizard...')
+        menuItem = wx.MenuItem(menu, self.id, title)
         menu.AppendItem(menuItem)
-        if self.isSingleProject():
-            menuItem.Enable(self.data[self.selected[0]].hasWizard != False)
+        if self.isSingleInstallable():
+            menuItem.Enable(bool(self.data[self.selected[0]].hasWizard))
         else:
             menuItem.Enable(False)
 
     def Execute(self, event):
         path = self.selected[0]
-        dir = self.data.dir
-        dir.join(path.s, self.data[path].hasWizard).start()
-
+        if self.isSingleProject():
+            # Project, open for edit
+            dir = self.data.dir
+            dir.join(path.s, self.data[path].hasWizard).start()
+        else:
+            # Archive, open for viewing
+            archive = self.data[path]
+            with balt.BusyCursor():
+                # This is going to leave junk temp files behind...
+                archive.unpackToTemp(path, [archive.hasWizard])
+            archive.tempDir.join(archive.hasWizard).start()
+            try:
+                archive.tempDir.rmtree(archive.tempDir.stail)
+            except:
+                pass
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -7865,29 +7863,28 @@ class Installer_Wizard(InstallerLink):
             menuItem.Enable(False)
 
     def Execute(self, event):
-        wx.BeginBusyCursor()
-        installer = self.data[self.selected[0]]
-        subs = []
-        oldRemaps = installer.remaps
-        installer.resetAllEspmNames()
-        gInstallers.refreshCurrent(installer)
-        for index in range(gInstallers.gSubList.GetCount()):
-            subs.append(gInstallers.gSubList.GetString(index))
-        saved = settings['bash.wizard.size']
-        default = settingDefaults['bash.wizard.size']
-        pos = settings['bash.wizard.pos']
-        # Sanity checks on saved size/position
-        if not isinstance(pos,tuple) or len(pos) != 2:
-            deprint('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.' % (pos,type(pos)))
-            pos = wx.DefaultPosition
-        if not isinstance(saved,tuple) or len(pos) != 2:
-            deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
-            pageSize = default.copy()
-        else:
-            pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
-        wizard = belt.InstallerWizard(self, subs, pageSize, pos)
-        balt.ensureDisplayed(wizard)
-        wx.EndBusyCursor()
+        with balt.BusyCursor():
+            installer = self.data[self.selected[0]]
+            subs = []
+            oldRemaps = installer.remaps
+            installer.resetAllEspmNames()
+            gInstallers.refreshCurrent(installer)
+            for index in range(gInstallers.gSubList.GetCount()):
+                subs.append(gInstallers.gSubList.GetString(index))
+            saved = settings['bash.wizard.size']
+            default = settingDefaults['bash.wizard.size']
+            pos = settings['bash.wizard.pos']
+            # Sanity checks on saved size/position
+            if not isinstance(pos,tuple) or len(pos) != 2:
+                deprint('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.' % (pos,type(pos)))
+                pos = wx.DefaultPosition
+            if not isinstance(saved,tuple) or len(pos) != 2:
+                deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
+                pageSize = default.copy()
+            else:
+                pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
+            wizard = belt.InstallerWizard(self, subs, pageSize, pos)
+            balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         # Sanity checks on returned size/position
         if not isinstance(ret.Pos,wx.Point):
@@ -8059,13 +8056,10 @@ class Installer_Duplicate(InstallerLink):
                 _("%s does not have correct extension (%s).") % (newName.s,curName.ext))
             return
         #--Duplicate
-        try:
-            wx.BeginBusyCursor()
+        with balt.BusyCursor():
             self.data.copy(curName,newName)
-        finally:
-            wx.EndBusyCursor()
-        self.data.refresh(what='N')
-        self.gTank.RefreshUI()
+            self.data.refresh(what='N')
+            self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installer_Hide(InstallerLink):
@@ -8094,12 +8088,9 @@ class Installer_Hide(InstallerLink):
                     % (newName.stail,))
                 if not balt.askYes(self.gTank,message,_('Hide Files')): return
             #Move
-            try:
-                wx.BeginBusyCursor()
+            with balt.BusyCursor():
                 file = bosh.dirs['installers'].join(curName)
                 file.moveTo(newName)
-            finally:
-                wx.EndBusyCursor()
         self.data.refresh(what='ION')
         self.gTank.RefreshUI()
 
@@ -11323,50 +11314,48 @@ class Mod_Patch_Update(Link):
                         % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),
                     'bash.patch.CBashMismatch'):
                 return
-        wx.BeginBusyCursor() # just to show users that it hasn't stalled but is doing stuff.
-        if not self.doCBash:
-            bosh.PatchFile.patchTime = fileInfo.mtime
-            if settings['bash.CBashEnabled']:
-                # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                with balt.Progress(_("Mark Mergeable")+' '*30) as progress:
-                    bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
+        with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
+            if not self.doCBash:
+                bosh.PatchFile.patchTime = fileInfo.mtime
+                if settings['bash.CBashEnabled']:
+                    # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
+                    with balt.Progress(_("Mark Mergeable")+' '*30) as progress:
+                        bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
+                    self.window.RefreshUI()
+            else:
+                bosh.CBash_PatchFile.patchTime = fileInfo.mtime
+                nullProgress = bolt.Progress()
+                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
-        else:
-            bosh.CBash_PatchFile.patchTime = fileInfo.mtime
-            nullProgress = bolt.Progress()
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-            self.window.RefreshUI()
-        message = ""
-        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
-        unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in ActivePriortoPatch if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-        noMerge = [x for x in ActivePriortoPatch if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-        deactivate = [x for x in ActivePriortoPatch if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
-        if deactivate: message += _("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s") % ('\n* '.join(x.s for x in deactivate)) + '\n\n'
-        if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
-        if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
-        if noMerge: message += _("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s") % ('\n* '.join(x.s for x in noMerge)) + '\n\n'
-        wx.EndBusyCursor()
+            message = ""
+            ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
+            unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
+            merge = [x for x in ActivePriortoPatch if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
+            noMerge = [x for x in ActivePriortoPatch if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
+            deactivate = [x for x in ActivePriortoPatch if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
+            if deactivate: message += _("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s") % ('\n* '.join(x.s for x in deactivate)) + '\n\n'
+            if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
+            if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
+            if noMerge: message += _("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s") % ('\n* '.join(x.s for x in noMerge)) + '\n\n'
         if message:
             message += 'Automatically deactivate those mods now?'
             if balt.showLog(self.window,message,_('Deactivate Suggested Mods?'),icons=bashBlue,question=True):
-                wx.BeginBusyCursor()
-                if deactivate:
-                    for mod in deactivate:
-                        bosh.modInfos.unselect(mod,False)
-                if unfiltered:
-                    for mod in unfiltered:
-                        bosh.modInfos.unselect(mod,False)
-                if merge:
-                    for mod in merge:
-                        bosh.modInfos.unselect(mod,False)
-                if noMerge:
-                    for mod in noMerge:
-                        bosh.modInfos.unselect(mod,False)
-                bosh.modInfos.refreshInfoLists()
-                bosh.modInfos.plugins.save()
-                self.window.RefreshUI(detail=fileName)
-                wx.EndBusyCursor()
+                with balt.BusyCursor():
+                    if deactivate:
+                        for mod in deactivate:
+                            bosh.modInfos.unselect(mod,False)
+                    if unfiltered:
+                        for mod in unfiltered:
+                            bosh.modInfos.unselect(mod,False)
+                    if merge:
+                        for mod in merge:
+                            bosh.modInfos.unselect(mod,False)
+                    if noMerge:
+                        for mod in noMerge:
+                            bosh.modInfos.unselect(mod,False)
+                    bosh.modInfos.refreshInfoLists()
+                    bosh.modInfos.plugins.save()
+                    self.window.RefreshUI(detail=fileName)
         previousMods = set()
         text = ''
         for mod in bosh.modInfos.ordered:
