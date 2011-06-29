@@ -261,6 +261,9 @@ def main():
                         default=False,
                         dest='restarting',
                         help=optparse.SUPPRESS_HELP)
+    parser.add_option('--genHtml',
+                        default=None,
+                        help=optparse.SUPPRESS_HELP)
     
     parser.add_option_group(pathGroup)
     parser.add_option_group(userPathGroup)
@@ -290,6 +293,12 @@ def main():
         import bosh
         bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
+
+        # if HTML file generation was requested, just do it and quit
+        if opts.genHtml is not None:
+            import belt
+            bolt.WryeText.genHtml(opts.genHtml)
+            return
 
         import basher
         import barb

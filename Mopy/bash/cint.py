@@ -54,8 +54,8 @@ elif bolt.CBash == 2: #attempt to force CBash mode
             break
 
 if CBashdll:
-    CBash = CDLL(CBashdll)
     try:
+        CBash = CDLL(CBashdll)
         try:
             _CGetVersionMajor = CBash.GetVersionMajor
             _CGetVersionMinor = CBash.GetVersionMinor
@@ -157,6 +157,9 @@ if CBashdll:
         CBash = None
         print error
     except ImportError, error:
+        CBash = None
+        print error
+    except OSError, error:
         CBash = None
         print error
     except:
