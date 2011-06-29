@@ -21308,26 +21308,24 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         factions = record.ConflictDetails(('factions_list',))
         if factions:
-            # Only add/remove factions if different than master record
-            if record.GName != record.fid[0]:
-                history = record.History()
-                if history and len(history) > 0:
-                    masterRecord = history[0]
-                    if masterRecord.GName == record.fid[0]:
-                        masterFactions = masterRecord.factions_list
-                        thisFactions = factions['factions_list']
-                        masterFids = set([x[0] for x in masterFactions])
-                        thisFids = set([x[0] for x in thisFactions])
-                        removedFids = masterFids - thisFids
-                        modifiedFids = thisFids - removedFids
-                        modifiedFactions = [x for x in thisFactions if x[0] in modifiedFids and x[0][0] in self.patchFile.loadSet]
-                        # Add/update new/modified factions
-                        self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in modifiedFactions))
-                        # Remove removed factions
-                        for fid in removedFids:
-                            self.id_factions[record.fid].pop(fid,None)
-                        return
-            self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
+            history = record.History()
+            if history and len(history) > 0:
+                # Only add/remove factions if different than master record
+                masterRecord = record.History()[0]
+                masterFactions = masterRecord.factions_list
+                thisFactions = factions['factions_list']
+                masterFids = set([x[0] for x in masterFactions])
+                thisFids = set([x[0] for x in thisFactions])
+                removedFids = masterFids - thisFids
+                modifiedFids = thisFids - removedFids
+                modifiedFactions = [x for x in thisFactions if x[0] in modifiedFids and x[0][0] in self.patchFile.loadSet]
+                # Add/Update new/modified factions
+                self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in modifiedFactions))
+                # Remove removed factions
+                for fid in removedFids:
+                    self.id_factions[record.fid].pop(fid,None)
+            else:
+                self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -21354,15 +21352,16 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         if changed:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                for faction,rank in changed:
-                    for entry in override.factions:
-                        if entry.faction == faction:
-                            entry.rank = rank
-                            break
-                    else:
-                        entry = override.create_faction()
-                        entry.faction = faction
-                        entry.rank = rank
+                override.factions_list = self.id_factions[fid].items()
+                #for faction,rank in changed:
+                #    for entry in override.factions:
+                #        if entry.faction == faction:
+                #            entry.rank = rank
+                #            break
+                #    else:
+                #        entry = override.create_faction()
+                #        entry.faction = faction
+                #        entry.rank = rank
                 class_mod_count = self.class_mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
