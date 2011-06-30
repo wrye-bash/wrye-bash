@@ -21310,24 +21310,25 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         factions = record.ConflictDetails(('factions_list',))
         if factions:
-            history = record.History()
-            if history and len(history) > 0:
-                # Only add/remove factions if different than master record
-                masterRecord = record.History()[0]
-                masterFactions = masterRecord.factions_list
-                thisFactions = factions['factions_list']
-                masterFids = set([x[0] for x in masterFactions])
-                thisFids = set([x[0] for x in thisFactions])
-                removedFids = masterFids - thisFids
-                modifiedFids = thisFids - removedFids
-                modifiedFactions = [x for x in thisFactions if x[0] in modifiedFids and x[0][0] in self.patchFile.loadSet]
-                # Add/Update new/modified factions
-                self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in modifiedFactions))
-                # Remove removed factions
-                for fid in removedFids:
-                    self.id_factions[record.fid].pop(fid,None)
-            else:
-                self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
+            masterRecord = [x for x in self.patchFile.ObCollection.LookupRecords(record.fid)][-1]
+            masterFactions = masterRecord.factions_list
+            masterDict = dict((x[0],x[1]) for x in masterFactions)
+            if record.fid not in self.id_factions:
+                # Initialize the factions list with what's in the master record
+                self.id_factions[record.fid] = masterDict
+            # Only add/remove records if different than the master record
+            thisFactions = factions['factions_list']
+            masterFids = set([x[0] for x in masterFactions])
+            thisFids = set([x[0] for x in thisFactions])
+            removedFids = masterFids - thisFids
+            addedFids = thisFids - masterFids
+            # Add new factions
+            self.id_factions[record.fid].update(dict((x[0],x[1]) for x in thisFactions if x[0] in addedFids and x[0][0] in self.patchFile.loadSet))
+            # Remove deleted factions
+            for fid in removedFids:
+                self.id_factions[record.fid].pop(fid,None)
+            #else:
+            #    self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
