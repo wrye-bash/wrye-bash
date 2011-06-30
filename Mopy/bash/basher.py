@@ -13834,16 +13834,17 @@ class App_Button(Link):
                     cwd.setcwd()
             elif self.isExe:
                 exeObse = bosh.dirs['app'].join('obse_loader.exe')
-                exeArgs = ' '.join(self.exeArgs)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     if bosh.inisettings['SteamInstall'] and self.exePath.tail.cs == 'oblivion.exe':
                         exePath = self.exePath
                     else:
                         exePath = exeObse
-                    if self.obseArg != '': exeArgs += " %s" % self.obseArg
+                    args = [exePath.s]
+                    if self.obseArg != '':
+                        args.append('%s' % self.obseArg)
                 else:
                     exePath = self.exePath
-                args = [exePath.s]
+                    args = [exePath.s]
                 args.extend(self.exeArgs)
                 if extraArgs: args.extend(extraArgs)
                 statusBar.SetStatusText(' '.join(args[1:]),1)
