@@ -731,6 +731,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * **[bg=#E8E8E8]Grey:[/bg]** A file that is ghosted (see [[#|Auto-Ghost]])
 * __Text Styles__
     * **__Slant__:** A file that is recommended to be imported and deactivated (i.e. has the 'Deactivate' tag).
+    * __Underline:__ A file identified in the BOSS masterlist as having Dirty Edits (Identical to Master, Deleted References, or otherwise necessary cleaning)
     * __Normal:__ Any other file.
 * __Checkbox Types__
   * <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.
