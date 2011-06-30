@@ -21352,7 +21352,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             return
         curFactions = set([(faction[0],faction[1]) for faction in record.factions_list])
         changed = newFactions - curFactions
-        if changed:
+        removed = curFactions - newFactions
+        if changed or removed:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.factions_list = self.id_factions[fid].items()
