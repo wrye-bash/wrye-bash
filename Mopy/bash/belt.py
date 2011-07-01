@@ -416,6 +416,7 @@ class PageFinish(PageInstaller):
         self.listSubs = wx.CheckListBox(self, 666, choices=subs)
         wx.EVT_CHECKLISTBOX(self, 666, self.OnSelectSubs)
         for index,key in enumerate(subs):
+            key = key.replace('&&','&')
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
