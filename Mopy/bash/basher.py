@@ -14347,7 +14347,8 @@ def InitStatusBar():
     configHelpers = bosh.ConfigHelpers()
     configHelpers.refresh()
     version = configHelpers.bossVersion
-    if version > 3: version = 1
+    if version in (2,3): version = 2
+    elif version > 3: version = 1
     elif version < 0: version = 0
     BashStatusBar.buttons.append( #BOSS --
         App_BOSS(

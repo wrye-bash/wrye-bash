@@ -21327,8 +21327,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             # Remove deleted factions
             for fid in removedFids:
                 self.id_factions[record.fid].pop(fid,None)
-            #else:
-            #    self.id_factions.setdefault(record.fid,{}).update(dict((faction[0],faction[1]) for faction in factions['factions_list'] if faction [0][0] in self.patchFile.loadSet))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -21357,15 +21355,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.factions_list = self.id_factions[fid].items()
-                #for faction,rank in changed:
-                #    for entry in override.factions:
-                #        if entry.faction == faction:
-                #            entry.rank = rank
-                #            break
-                #    else:
-                #        entry = override.create_faction()
-                #        entry.faction = faction
-                #        entry.rank = rank
                 class_mod_count = self.class_mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
