@@ -11547,7 +11547,7 @@ class InstallerArchive(Installer):
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(max(len(dest_src),1))
         for dest,src in dest_src.iteritems():
-            subprogress(i,archive.s+_("\nMoving files...")+'\n'+dest.s)
+            subprogress(i,Unicode(archive.s)+_("\nMoving files...")+'\n'+dest.s)
             i += 1
             size,crc = data_sizeCrc[dest]
             srcFull = tempDir.join(src)
@@ -17692,7 +17692,7 @@ class PatchFile(ModFile):
             modFile.load(True)
         except ModError, error:
             if not verbose: return False
-            reasons += '\n.    ' + str(error)+'.'
+            reasons += '\n.    ' + Unicode(error)+'.'
         #--Skipped over types?
         if modFile.topsSkipped:
             if not verbose: return False
