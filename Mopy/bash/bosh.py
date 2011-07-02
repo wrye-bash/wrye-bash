@@ -9807,11 +9807,13 @@ class ConfigHelpers:
                         ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
                         for i,mod in enumerate(scan):
                             udrs,itms,fog = ret[i]
-                            if udrs or (itms and mod.header.author not in ('BASHED PATCH','BASHED LISTS')):
+                            if mod.name == GPath('Unofficial Oblivion Patch.esp'): itms.discard((GPath('Oblivion.esm'),0x00AA3C))
+                            if mod.header.author in ('BASHED PATCH','BASHED LISTS'): itms = set()
+                            if udrs or itms:
                                 cleanMsg = []
                                 if udrs:
                                     cleanMsg.append('UDR(%i)' % len(udrs))
-                                if itms and mod.header.author not in ('BASHED PATCH','BASHED LISTS'):
+                                if itms:
                                     cleanMsg.append('ITM(%i)' % len(itms))
                                 cleanMsg = ', '.join(cleanMsg)
                                 shouldClean[mod.name] = cleanMsg
@@ -31025,9 +31027,10 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         OverhaulCompat = False
         OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
         FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
+        WCMods = set([GPath("Oblivion Warcry.esp"),GPath("Oblivion Warcry EV.esp")])
         TIEMods = set([GPath("TIE.esp")])
         if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
-            if OOOMods & self.srcMods:
+            if (OOOMods|WCMods) & self.srcMods:
                 OverhaulCompat = True
             elif FransMods & self.srcMods:
                 if TIEMods & self.srcMods:
@@ -31260,9 +31263,10 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         OverhaulCompat = False
         OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
         FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
+        WCMods = set([GPath("Oblivion Warcry.esp"),GPath("Oblivion Warcry EV.esp")])
         TIEMods = set([GPath("TIE.esp")])
         if GPath("Unofficial Oblivion Patch.esp") in importMods:
-            if OOOMods & importMods:
+            if (OOOMods|WCMods) & importMods:
                 OverhaulCompat = True
             elif FransMods & importMods:
                 if TIEMods & importMods:
