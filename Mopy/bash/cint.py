@@ -1692,7 +1692,7 @@ class ObBaseRecord(object):
                     #--CELLs, this could take a while
                     # First, see if new CELLs are added to the WorldCELL
                     selfCELLs = dict((x.fid,x) for x in self.CELLS)
-                    otherCELLs = dict((x.fid,x) for x in other.CELLs)
+                    otherCELLs = dict((x.fid,x) for x in other.CELLS)
                     selfCELLfids = set(selfCELLs.keys())
                     otherCELLfids = set(otherCELLs.keys())
                     newCELLfids = selfCELLfids - otherCELLfids
