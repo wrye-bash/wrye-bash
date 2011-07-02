@@ -7822,6 +7822,8 @@ class ModInfo(FileInfo):
         mtime = int(mtime or self.mtime)
         FileInfo.setmtime(self,mtime)
         modInfos.mtimes[self.name] = mtime
+        # Prevent re-calculating the File CRC
+        modInfos.table.setItem(self.name,'crc_mtime',mtime)
 
     def writeNew(self,masters=[],mtime=0):
         """Creates a new file with the given name, masters and mtime."""
