@@ -31002,11 +31002,52 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = self.getConfigChecked()
         self.listTypes = ('LVLC','LVLI','LVSP')
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
         self.mastersScanned = set()
         self.levelers = None #--Will initialize later
+        self.empties = set()
+        FransOOOandUOP = False
+        if "Unofficial Oblivion Patch.esp" in self.srcMods:
+            for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
+                        "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
+                if mod in self.srcMods:
+                    FransOOOandUOP = True
+                    break
+        if FransOOOandUOP:
+            self.FransOOOandUOPSkips = set([
+                (GPath('Oblivion.esm'),x) for x in [
+                    0x03AB5D,   # VendorWeaponBlunt
+                    0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
+                    0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
+                    0x03C7F3,   # LL0LootWeapon0Magic5Elven100
+                    0x03C7F4,   # LL0LootWeapon0Magic6Glass100
+                    0x03C7F5,   # LL0LootWeapon0Magic3Silver100
+                    0x03C7F7,   # LL0LootWeapon0Magic2Steel100
+                    0x03E4D2,   # LL0NPCWeapon0MagicClaymore100
+                    0x03E4D3,   # LL0NPCWeapon0MagicClaymoreLvl100
+                    0x03E4DA,   # LL0NPCWeapon0MagicWaraxe100
+                    0x03E4DB,   # LL0NPCWeapon0MagicWaraxeLvl100
+                    0x03E4DC,   # LL0NPCWeapon0MagicWarhammer100
+                    0x03E4DD,   # LL0NPCWeapon0MagicWarhammerLvl100
+                    0x0733EA,   # ArenaLeveledHeavyShield,
+                    0x0C7615,   # FGNPCWeapon0MagicClaymoreLvl100
+                    0x181C66,   # SQ02LL0NPCWeapon0MagicClaymoreLvl100
+                    0x053877,   # LL0NPCArmor0MagicLightGauntlets100
+                    0x053878,   # LL0NPCArmor0MagicLightBoots100
+                    0x05387A,   # LL0NPCArmor0MagicLightCuirass100
+                    0x053892,   # LL0NPCArmor0MagicLightBootsLvl100
+                    0x053893,   # LL0NPCArmor0MagicLightCuirassLvl100
+                    0x053894,   # LL0NPCArmor0MagicLightGauntletsLvl100
+                    0x053D82,   # LL0LootArmor0MagicLight5Elven100
+                    0x053D83,   # LL0LootArmor0MagicLight6Glass100
+                    0x052D89,   # LL0LootArmor0MagicLight4Mithril100
+                    ]
+                ])
+        else:
+            self.FransOOOandUOPSkips = set()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -31045,6 +31086,9 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             newLevLists = getattr(modFile,type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
+                if listId in self.FransOOOandUOPSkips and modName == 'Unofficial Oblivion Patch.esp':
+                    levLists[listId].mergeOverLast = True
+                    continue
                 isListOwner = (listId[0] == modName)
                 #--Items, delevs and relevs sets
                 newLevList.items = items = set([entry.listId for entry in newLevList.entries])
