@@ -12382,14 +12382,17 @@ class Mod_ScanDirty(Link):
                 return sorted(fids)
         for i,modInfo in enumerate(modInfos):
             udr,itm,fog = ret[i]
-            if udr or (itm and modInfo.header.author not in ('BASHED PATCH','BASHED LISTS')):
+            if modInfo.name == GPath('Unofficial Oblivion Patch.esp'):
+                # Record for non-SI users, shows up as ITM if SI is installed (OK)
+                itm.discard((GPath('Oblivion.esm'),0x00AA3C))
+            if modInfo.header.author in ('BASHED PATCH','BASHED LISTS'): itm = set()
+            if udr or itm:
                 log('* __'+modInfo.name.s+'__:')
                 log(_('  * UDR: %i') % len(udr))
                 for fid in sortedFidList(udr): # Sorted by master, then id
                     log(_('    * %s') % strFid(fid))
                 if not settings['bash.CBashEnabled']: continue
-                if modInfo.header.author not in ('BASHED PATCH','BASHED LISTS'):
-                    # Bashed Patched are supposed to have ITM records
+                if itm:
                     log(_('  * ITM: %i') % len(itm))
                 for fid in sortedFidList(itm):
                     log(_('    * %s') % strFid(fid))
