@@ -31002,7 +31002,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = self.getConfigChecked()
+        self.srcMods = set(self.getConfigChecked()) & set(loadMods)
         self.listTypes = ('LVLC','LVLI','LVSP')
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
@@ -31010,10 +31010,10 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         self.levelers = None #--Will initialize later
         self.empties = set()
         FransOOOandUOP = False
-        if "Unofficial Oblivion Patch.esp" in self.srcMods:
+        if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
             for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
                         "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
-                if mod in self.srcMods:
+                if GPath(mod) in self.srcMods:
                     FransOOOandUOP = True
                     break
         if FransOOOandUOP:
@@ -31239,10 +31239,11 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
         self.empties = set()
         FransOOOandUOP = False
-        if "Unofficial Oblivion Patch.esp" in self.srcs:
+        importMods = set(self.srcs) & set(loadMods)
+        if GPath("Unofficial Oblivion Patch.esp") in importMods:
             for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
                         "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
-                if mod in self.srcs:
+                if GPath(mod) in importMods:
                     FransOOOandUOP = True
                     break
         if FransOOOandUOP:
