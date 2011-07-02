@@ -30672,6 +30672,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         id_ingred = self.id_ingred
         for (num,objectId,full,value) in bush.ingred_alchem:
             subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
+            pstate += 1
             book = getBook(patchFile, objectId)
             if not book: continue
             buff = stringBuffer()
@@ -30702,7 +30703,6 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     buff.write('  '+effectName+'\r\n')
                 buff.write('\r\n')
             book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
-            pstate += 1
         #--Get Ingredients by Effect
         effect_ingred = self.effect_ingred = {}
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
@@ -31194,6 +31194,45 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.id_attrs = {}
         self.mod_count = {}
         self.empties = set()
+        FransOOOandUOP = False
+        if "Unofficial Oblivion Patch.esp" in self.srcs:
+            for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
+                        "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
+                if mod in self.srcs:
+                    FransOOOandUOP = True
+                    break
+        if FransOOOandUOP:
+            self.FransOOOandUOPSkips = set([
+                (GPath('Oblivion.esm'),x) for x in [
+                    0x03AB5D,   # VendorWeaponBlunt
+                    0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
+                    0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
+                    0x03C7F3,   # LL0LootWeapon0Magic5Elven100
+                    0x03C7F4,   # LL0LootWeapon0Magic6Glass100
+                    0x03C7F5,   # LL0LootWeapon0Magic3Silver100
+                    0x03C7F7,   # LL0LootWeapon0Magic2Steel100
+                    0x03E4D2,   # LL0NPCWeapon0MagicClaymore100
+                    0x03E4D3,   # LL0NPCWeapon0MagicClaymoreLvl100
+                    0x03E4DA,   # LL0NPCWeapon0MagicWaraxe100
+                    0x03E4DB,   # LL0NPCWeapon0MagicWaraxeLvl100
+                    0x03E4DC,   # LL0NPCWeapon0MagicWarhammer100
+                    0x03E4DD,   # LL0NPCWeapon0MagicWarhammerLvl100
+                    0x0733EA,   # ArenaLeveledHeavyShield,
+                    0x0C7615,   # FGNPCWeapon0MagicClaymoreLvl100
+                    0x181C66,   # SQ02LL0NPCWeapon0MagicClaymoreLvl100
+                    0x053877,   # LL0NPCArmor0MagicLightGauntlets100
+                    0x053878,   # LL0NPCArmor0MagicLightBoots100
+                    0x05387A,   # LL0NPCArmor0MagicLightCuirass100
+                    0x053892,   # LL0NPCArmor0MagicLightBootsLvl100
+                    0x053893,   # LL0NPCArmor0MagicLightCuirassLvl100
+                    0x053894,   # LL0NPCArmor0MagicLightGauntletsLvl100
+                    0x053D82,   # LL0LootArmor0MagicLight5Elven100
+                    0x053D83,   # LL0LootArmor0MagicLight6Glass100
+                    0x052D89,   # LL0LootArmor0MagicLight4Mithril100
+                    ]
+                ])
+        else:
+            self.FransOOOandUOPSkips = set()
 
     def getTypes(self):
         return ['LVLC','LVLI','LVSP']
@@ -31201,6 +31240,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         recordId = record.fid
+        if recordId in self.FransOOOandUOPSkips and modFile.GName == GPath('Unofficial Oblivion Patch.esp'):
+            return
         if recordId not in self.id_list:
             #['level', 'listId', 'count']
             self.id_list[recordId] = record.entries_list #[(entry.listId, entry.level, entry.count) for entry in record.entries]
