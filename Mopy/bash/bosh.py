@@ -31010,15 +31010,20 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         self.mastersScanned = set()
         self.levelers = None #--Will initialize later
         self.empties = set()
-        FransOOOandUOP = False
+        OverhaulCompat = False
+        OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
+        FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
+        TIEMods = set([GPath("TIE.esp")])
         if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
-            for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
-                        "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
-                if GPath(mod) in self.srcMods:
-                    FransOOOandUOP = True
-                    break
-        if FransOOOandUOP:
-            self.FransOOOandUOPSkips = set([
+            if OOOMods & self.srcMods:
+                OverhaulCompat = True
+            elif FransMods & self.srcMods:
+                if TIEMods & self.srcMods:
+                    pass
+                else:
+                    OverhaulCompat = True
+        if OverhaulCompat:
+            self.OverhaulUOPSkips = set([
                 (GPath('Oblivion.esm'),x) for x in [
                     0x03AB5D,   # VendorWeaponBlunt
                     0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
@@ -31048,7 +31053,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                     ]
                 ])
         else:
-            self.FransOOOandUOPSkips = set()
+            self.OverhaulUOPSkips = set()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -31087,7 +31092,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             newLevLists = getattr(modFile,type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
-                if listId in self.FransOOOandUOPSkips and modName == 'Unofficial Oblivion Patch.esp':
+                if listId in self.OverhaulUOPSkips and modName == 'Unofficial Oblivion Patch.esp':
                     levLists[listId].mergeOverLast = True
                     continue
                 isListOwner = (listId[0] == modName)
@@ -31239,16 +31244,21 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.id_attrs = {}
         self.mod_count = {}
         self.empties = set()
-        FransOOOandUOP = False
         importMods = set(self.srcs) & set(loadMods)
+        OverhaulCompat = False
+        OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
+        FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
+        TIEMods = set([GPath("TIE.esp")])
         if GPath("Unofficial Oblivion Patch.esp") in importMods:
-            for mod in ("Oscuro's_Oblivion_Overhaul.esm","Oscuro's_Oblivion_Overhaul.esp",
-                        "Francesco's Leveled Creatures-Items Mod.esm","Francesco.esp",):
-                if GPath(mod) in importMods:
-                    FransOOOandUOP = True
-                    break
-        if FransOOOandUOP:
-            self.FransOOOandUOPSkips = set([
+            if OOOMods & importMods:
+                OverhaulCompat = True
+            elif FransMods & importMods:
+                if TIEMods & importMods:
+                    pass
+                else:
+                    OverhaulCompat = True
+        if OverhaulCompat:
+            self.OverhaulUOPSkips = set([
                 (GPath('Oblivion.esm'),x) for x in [
                     0x03AB5D,   # VendorWeaponBlunt
                     0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
@@ -31278,7 +31288,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                     ]
                 ])
         else:
-            self.FransOOOandUOPSkips = set()
+            self.OverhaulUOPSkips = set()
 
     def getTypes(self):
         return ['LVLC','LVLI','LVSP']
@@ -31286,7 +31296,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         recordId = record.fid
-        if recordId in self.FransOOOandUOPSkips and modFile.GName == GPath('Unofficial Oblivion Patch.esp'):
+        if recordId in self.OverhaulUOPSkips and modFile.GName == GPath('Unofficial Oblivion Patch.esp'):
             return
         if recordId not in self.id_list:
             #['level', 'listId', 'count']
