@@ -54,7 +54,7 @@ This document explains what all the bashed patch options mean and gives some gui
 * When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
   * Actor animations you need to tag the mod with 'Actors.Anims'.
 
-Import Actors: Death Items
+== Import Actors: Death Items
 * Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
 * What does it do? Some mods make changes to NPCs and Creatures death items (items that are added to the NPC / Creature only when it dies) and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.
 * When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
