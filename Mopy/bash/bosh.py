@@ -18759,8 +18759,11 @@ class MultiTweakItem:
         self.float = float
         self.choiceLabels = []
         self.choiceValues = []
+        self.default = 0
         for choice in choices:
             self.choiceLabels.append(choice[0])
+            if choice[0][0] == '[':
+                self.default = choices.index(choice)
             self.choiceValues.append(choice[1:])
         #--Config
         self.isEnabled = False
@@ -18779,6 +18782,9 @@ class MultiTweakItem:
                     if label.startswith('Custom'):
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
+        else:
+            if self.default:
+                self.chosen = self.default
 
     def getListLabel(self):
         """Returns label to be used in list"""
@@ -18807,8 +18813,11 @@ class CBash_MultiTweakItem:
         self.float = float
         self.choiceLabels = []
         self.choiceValues = []
+        self.default = 0
         for choice in choices:
             self.choiceLabels.append(choice[0])
+            if choice[0][0] == '[':
+                self.default = choices.index(choice)
             self.choiceValues.append(choice[1:])
         #--Config
         self.isEnabled = False
@@ -18827,6 +18836,9 @@ class CBash_MultiTweakItem:
                     if label.startswith('Custom'):
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
+        else:
+            if self.default:
+                self.chosen = self.default
 
     def getListLabel(self):
         """Returns label to be used in list"""
