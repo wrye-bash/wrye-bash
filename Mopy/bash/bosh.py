@@ -20880,13 +20880,12 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         self.previousPackages[recordId][modFile.GName] = newPackages
 
         if modFile.GName in self.srcs:
-            oldPackages = self.previousPackages[recordId][modFile.GName]
+            masterPackages = self.previousPackages[recordId].get(recordId[0],None)
+            if masterPackages and not masterPackages ^ newPackages: return
             if recordId not in self.mergedPackageList:
                 self.mergedPackageList[recordId] = newPackages
             mergedPackages = self.mergedPackageList[recordId]
             if newPackages == mergedPackages: return #same as the current list, just skip.
-            #if not recordId in self.id_Deleted: self.id_Deleted[recordId] = []
-            #deletedPackages = self.id_Deleted[recordId]
             for master in reversed(modFile.TES4.masters):
                 masterPath = GPath(master)
                 masterPackages = self.previousPackages[recordId].get(masterPath,None)
