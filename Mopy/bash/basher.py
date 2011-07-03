@@ -4805,6 +4805,7 @@ class BashFrame(wx.Frame):
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
+        self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
         bosh.bsaInfos = bosh.BSAInfos()
@@ -4926,6 +4927,12 @@ class BashFrame(wx.Frame):
             message += _("The following save files have corrupted headers: ")
             message += listFiles(sorted(corruptSaves))
             self.knownCorrupted |= corruptSaves
+        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.8,1.0)])
+        if not invalidVersions <= self.knownInvalidVerions:
+            if message: message += '\n'
+            message += _("The following mods have unrecognized TES4 header versions: ")
+            message += listFiles(sorted(invalidVersions))
+            self.knownInvalidVerions |= invalidVersions
         if message: balt.showWarning(self,message)
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
