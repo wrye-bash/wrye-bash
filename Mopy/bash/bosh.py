@@ -2736,6 +2736,8 @@ class MreGmst(MelRecord):
                 bolt.deprintOn = old
                 print
                 print 'Manually testing if file exitsts:', dirs['db'].join('Oblivion_ids.pkl').exists()
+                print 'Current working directory:', os.getcwd()
+                print "dirs['db']:", dirs['db']
                 print
                 raise
         return (modInfos.masterName, myClass.oblivionIds[self.eid])
