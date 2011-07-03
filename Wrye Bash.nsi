@@ -1023,26 +1023,26 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
-                SetOutPath $Path_OB\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\mopy\Wrye Bash Launcher.pyw" "" "$PATH_OB\mopy\Wrye Bash Launcher.pyw" 0
+                SetOutPath $Path_OB\Mopy'
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\mopy\Wrye Bash Launcher.pyw" "" "$PATH_OB\Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" 0
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" 0
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" 0
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         SectionEnd
