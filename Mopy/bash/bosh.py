@@ -2725,7 +2725,19 @@ class MreGmst(MelRecord):
         """Returns Oblivion.esm fid in long format for specified eid."""
         myClass = self.__class__
         if not myClass.oblivionIds:
-            myClass.oblivionIds = cPickle.load(dirs['db'].join('Oblivion_ids.pkl').open())['GMST']
+            try:
+                myClass.oblivionIds = cPickle.load(dirs['db'].join('Oblivion_ids.pkl').open())['GMST']
+            except:
+                old = bolt.deprintOn
+                bolt.deprintOn = True
+                print
+                print 'Error loading Oblivion_ids.pkl:'
+                deprint(' ',traceback=True)
+                bolt.deprintOn = old
+                print
+                print 'Manually testing if file exitsts:', dirs['db'].join('Oblivion_ids.pkl').exists()
+                print
+                raise
         return (modInfos.masterName, myClass.oblivionIds[self.eid])
 
 #------------------------------------------------------------------------------
