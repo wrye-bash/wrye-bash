@@ -33173,7 +33173,10 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
             if entryId in knownGood:
                 goodAppend(entry)
             else:
-                entryRecords = ObCollection.LookupRecords(entryId)
+                if entryId[0] is not None:
+                    entryRecords = ObCollection.LookupRecords(entryId)
+                else:
+                    entryRecords = None
                 if not entryRecords:
                     badAdd((_('NONE'),entryId,None,_('NONE')))
                 else:
