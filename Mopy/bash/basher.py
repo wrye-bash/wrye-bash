@@ -14053,7 +14053,7 @@ class Obse_Button(Link):
         """Sets state related info. If newState != none, sets to new state first.
         For convenience, returns state when done."""
         if state == None: #--Default
-            state = settings.get('bash.obse.on',False)
+            state = settings.get('bash.obse.on',True)
         elif state == -1: #--Invert
             state = not settings.get('bash.obse.on',False)
         settings['bash.obse.on'] = state
@@ -14064,6 +14064,7 @@ class Obse_Button(Link):
         tipAttr = ('tip','obseTip')[state]
         for button in App_Button.obseButtons:
             button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,'')))
+        return state
 
     def GetBitmapButton(self,window,style=0):
         exeObse = bosh.dirs['app'].join('obse_loader.exe')
