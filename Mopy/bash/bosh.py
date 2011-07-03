@@ -9791,6 +9791,8 @@ class ConfigHelpers:
         shouldDeactivateA = [x for x in active if 'Deactivate' in modInfos[x].getBashTags()]
         shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags()]
         shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
+        #--Mods with invalid TES4 version
+        invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in (0.8,1.0)]
         if True:
             #--Look for dirty edits
             shouldClean = {}
@@ -9852,6 +9854,11 @@ class ConfigHelpers:
             log.setHeader(_("=== Mods with special cleaning instructions"))
             log(_("Following mods have special instructions for cleaning with TES4Edit"))
             for mod in sorted(shouldCleanMaybe):
+                log('* __'+mod[0].s+':__  '+mod[1])
+        if invalidVersion:
+            log.setHeader(_("=== Mods with non standard TES4 versions"))
+            log(_("Following mods have a TES4 version that isn't recognized as one of the standard versions (0.8 and 1.0).  It is untested what effect this can have on the game, but presumably Oblivion will refuse to load anything above 1.0"))
+            for mod in sorted(invalidVersion):
                 log('* __'+mod[0].s+':__  '+mod[1])
         #--Missing/Delinquent Masters
         if showModList:
@@ -17834,7 +17841,8 @@ class PatchFile(ModFile):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,_("%s\n%s") % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
-                self.tes4.version = max(modFile.tes4.version, self.tes4.version)
+                # Clip max version at 1.0.  See explanation in the CBash version as to why.
+                self.tes4.version = min(max(modFile.tes4.version, self.tes4.version),1.0)
             except bolt.CancelError:
                 raise
             except:
@@ -18348,7 +18356,10 @@ class CBash_PatchFile(ObModFile):
 ##                progress(index,_("%s\nMerging...") % modFile.ModName)
 ##                self.forceMergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
-        self.TES4.version = maxVersion
+        # Force 1.0 as max TES4 version for now, as we don't expext any new esp format changes,
+        # and if they do come about, we can always change this.  Plus this will solve issues where
+        # Mod files mistakenly get have the header version set > 1.0
+        self.TES4.version = min(maxVersion,1.0)
         #Finish the patch
         modFile = self
         progress(len(self.completeMods))
