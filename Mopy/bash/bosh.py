@@ -21349,6 +21349,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
+        if modFile.GName == record.fid[0]: return
         factions = record.ConflictDetails(('factions_list',))
         if factions:
             masterRecord = [x for x in self.patchFile.ObCollection.LookupRecords(record.fid)][-1]
