@@ -11295,12 +11295,12 @@ class Mod_Patch_Update(Link):
         enable = (len(self.data) == 1 and
             bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
         check = False
+        # Detect if the patch was build with Python or CBash
+        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
+        self.CBashMismatch = bool(thisIsCBash != self.doCBash)
         if enable and settings['bash.CBashEnabled']:
             menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
-            # Detect if the patch was build with Python or CBash
-            config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
-            thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
-            self.CBashMismatch = bool(thisIsCBash != self.doCBash)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
