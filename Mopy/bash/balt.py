@@ -706,6 +706,15 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     else:
         window.Show()
 
+def playSound(parent,sound):
+    if not sound: return
+    sound = wx.Sound(sound)
+    if sound.IsOk():
+        sound.Play(wx.SOUND_ASYNC)
+        print 'played sound'
+    else:
+        showError(parent,_("Invalid sound file %s.") % sound)
+
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ListEditorData:
