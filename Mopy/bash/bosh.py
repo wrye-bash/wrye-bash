@@ -33614,6 +33614,7 @@ def initDefaultSettings():
     inisettings['AutoItemCheck'] = False
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
+    inisettings['AutoSizeListColumns'] = 0
     #inisettings['show?toollaunchers'] = True
 
 def initOptions(bashIni):

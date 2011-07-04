@@ -549,6 +549,9 @@ class NotebookPanel(wx.Panel):
     def OnShow(self):
         """To be called when particular panel is changed to and/or shown for first time.
         Default version does nothing, but derived versions might update data."""
+        if bosh.inisettings['AutoSizeListColumns']:
+            for i in range(0,self.list.list.GetColumnCount()):
+                self.list.list.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         self.SetStatusCount()
 
     def OnCloseWindow(self):
@@ -607,6 +610,9 @@ class SashTankPanel(NotebookPanel):
         """Panel is shown. Update self.data."""
         if self.gList.data.refresh():
             self.gList.RefreshUI()
+        if bosh.inisettings['AutoSizeListColumns']:
+            for i in range(0,self.gList.gList.GetColumnCount()):
+                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         self.SetStatusCount()
 
     def OnSashDrag(self,event):
@@ -2117,6 +2123,7 @@ class INIPanel(SashPanel):
         self.SetBaseIni(self.GetChoice())
         global iniList
         iniList = INIList(left)
+        self.list = iniList
         self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
@@ -2313,6 +2320,7 @@ class ModPanel(NotebookPanel):
         wx.Panel.__init__(self, parent, -1)
         global modList
         modList = ModList(self)
+        self.list = modList
         self.modDetails = ModDetails(self)
         modList.details = self.modDetails
         #--Events
@@ -2727,6 +2735,7 @@ class SavePanel(NotebookPanel):
         wx.Panel.__init__(self, parent, -1)
         global saveList
         saveList = SaveList(self)
+        self.list = saveList
         self.saveDetails = SaveDetails(self)
         saveList.details = self.saveDetails
         #--Events
@@ -3283,6 +3292,9 @@ class InstallersPanel(SashTankPanel):
                 self.refreshing = False
             finally:
                 if progress != None: progress.Destroy()
+        if bosh.inisettings['AutoSizeListColumns']:
+            for i in range(0,self.gList.gList.GetColumnCount()):
+                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         self.SetStatusCount()
 
     def OnShowInfoPage(self,event):
@@ -3948,6 +3960,7 @@ class ScreensPanel(NotebookPanel):
         screensList = ScreensList(left)
         screensList.SetSizeHints(100,100)
         screensList.picture = balt.Picture(right,256,192)
+        self.list = screensList
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
@@ -4441,6 +4454,7 @@ class MessagePanel(NotebookPanel):
         gMessageList = MessageList(gTop)
         gMessageList.SetSizeHints(100,100)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom, -1, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+        self.list = gMessageList
         #--Search
         gSearchBox = self.gSearchBox = wx.TextCtrl(gBottom,-1,"",style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_("Search"),onClick=self.DoSearch)
@@ -6425,7 +6439,7 @@ class TweakPatcher(Patcher):
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,-1)
+        gConfigPanel = self.gConfigPanel = wx.Window(parent,-1,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
         self.gList = wx.CheckListBox(gConfigPanel,-1)
