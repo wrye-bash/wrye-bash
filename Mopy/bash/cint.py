@@ -5412,6 +5412,11 @@ class ObModFile(object):
                         formMaster = aipack[0]
                         if formMaster != self.GName:
                             masters.add(formMaster)
+                elif type == 'DIAL':
+                    for quest in record.quests:
+                        formMaster = quest[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
         remove = [x for x in self.TES4.masters if GPath(x) not in masters]
         numMasters = len(remove)
         if (numMasters > 0):
