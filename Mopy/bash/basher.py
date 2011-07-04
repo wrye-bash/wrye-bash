@@ -5858,6 +5858,7 @@ class PatchDialog(wx.Dialog):
                 #--Convert log/readme to wtxt and show log
                 docsDir = bosh.modInfos.dir.join('Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
+                balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+'.html',patchName.s,icons=bashBlue)
                 #--Select?
                 message = _("Activate %s?") % (patchName.s,)
@@ -5873,9 +5874,13 @@ class PatchDialog(wx.Dialog):
                             % (fileName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
                 pass
+            except:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+                raise
             finally:
                 progress.Destroy()
         else:
@@ -5935,6 +5940,7 @@ class PatchDialog(wx.Dialog):
                 #--Convert log/readme to wtxt and show log
                 docsDir = bosh.modInfos.dir.join('Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
+                balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+'.html',patchName.s,icons=bashBlue)
                 #--Select?
                 message = _("Activate %s?") % (patchName.s,)
@@ -5951,9 +5957,13 @@ class PatchDialog(wx.Dialog):
                     modList.RefreshUI()
                 del patchFile
             except bosh.FileEditError, error:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
                 del patchFile
+            except:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+                raise
             finally:
                 progress.Destroy()
 
@@ -11447,7 +11457,7 @@ class Mod_ListPatchConfig(Link):
         clip.write('[spoiler][xml]')
         # CBash/Python patch?
         log.setHeader('== '+_('Patch Mode'))
-        clip.write('== '+_('Patch Mode')+'\n')
+        clip.write('== '+_('Patch Mode')+'\n'),
         if doCBash:
             if settings['bash.CBashEnabled']:
                 msg = 'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
