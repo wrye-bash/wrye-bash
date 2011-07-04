@@ -34,7 +34,7 @@ except:
     def GPath(obj):
         return obj
 
-_CBashRequiredVersion = (0,5,2)
+_CBashRequiredVersion = (0,5,3)
 
 CBash = None
 CBashdll = None
@@ -78,6 +78,7 @@ if CBashdll:
         _CLoadMod = CBash.LoadMod
         _CUnloadMod = CBash.UnloadMod
         _CCleanModMasters = CBash.CleanModMasters
+        _CRemoveModMasters = CBash.RemoveModMasters
         _CSaveMod = CBash.SaveMod
         _CGetAllNumMods = CBash.GetAllNumMods
         _CGetAllModIDs = CBash.GetAllModIDs
@@ -123,6 +124,7 @@ if CBashdll:
         _CLoadMod.restype = c_long
         _CUnloadMod.restype = c_long
         _CCleanModMasters.restype = c_long
+        _CRemoveModMasters.restype = c_long
         _CGetAllNumMods.restype = c_long
         _CGetAllModIDs.restype = c_long
         _CGetLoadOrderNumMods.restype = c_long
@@ -5371,6 +5373,29 @@ class ObModFile(object):
 
     def CleanMasters(self):
         return _CCleanModMasters(self._CollectionID, self._ModID)
+
+    def CleanMasters2(self):
+        """Python based master cleaning, as the CBash one doesn't seem to work 100%.
+           This is just a holdover until I can figure out the CBash code enough to make
+           it work right."""
+        masters = set()
+        for type,block in self.aggregates.iteritems():
+            for record in block:
+                recordMaster = record.fid[0]
+                if recordMaster != self.GName:
+                    masters.add(recordMaster)
+                if type in FORMIDAttrs:
+                    for attr in FORMIDAttrs[type]:
+                        formId = getattr(record,attr)
+                        if not formId: continue
+                        if formId[0] != self.GName:
+                            masters.add(formId[0])
+        remove = [x for x in self.TES4.masters if GPath(x) not in masters]
+        numMasters = len(remove)
+        if (numMasters > 0):
+            cMasterNames = (c_char_p * numMasters)(*remove)
+            return _CRemoveModMasters(self._CollectionID, self._ModID, cMasterNames, numMasters)
+        return 0
 
     def Unload(self):
         _CUnloadMod(self._CollectionID, self._ModID)

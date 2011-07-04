@@ -5881,6 +5881,7 @@ class PatchDialog(wx.Dialog):
                 patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
                 #patchFile.CleanMasters()
+                patchFile.CleanMasters2()
                 progress.setCancel(False)
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.save()
