@@ -2580,7 +2580,7 @@ class WryeText:
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            anchor = urllib.quote(reWd.sub('',text))
+            anchor = urllib.quote(Encode(reWd.sub('',text)))
             count = 0
             if re.match(r'\d', anchor):
                 anchor = '_' + anchor
@@ -2625,7 +2625,7 @@ class WryeText:
             address = text = match.group(1).strip()
             if '|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split('|',1)]
-                if address == '#': address += urllib.quote(reWd.sub('',text))
+                if address == '#': address += urllib.quote(Encode(reWd.sub('',text)))
             if address.startswith('!'):
                 newWindow = ' target="_blank"'
                 address = address[1:]
@@ -2740,7 +2740,7 @@ class WryeText:
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(' *=*#?$','',text.strip())
-                anchor = urllib.quote(reWd.sub('',text))
+                anchor = urllib.quote(Encode(reWd.sub('',text)))
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(r'\d', anchor):
@@ -2806,7 +2806,12 @@ class WryeText:
             if '<' in css:
                 raise "Non css tag in "+cssPath.s
         #--Write Output ------------------------------------------------------
-        out.write(WryeText.htmlHead % (title,css))
+        def toutf8(line):
+            if not (bUseUnicode or isinstance(line, unicode)):
+                return line.decode('mbcs').encode('UTF8')
+            else:
+                return Encode(line,'UTF8')
+        out.write(WryeText.htmlHead % (toutf8(title),css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -2815,10 +2820,10 @@ class WryeText:
                     for (level,name,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            out.write('<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            out.write('<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,toutf8(text)))
                     didContents = True
             else:
-                out.write(Encode(line,'UTF8'))
+                out.write(toutf8(line))
         out.write('</body>\n</html>\n')
         #--Close files?
         if srcPath:

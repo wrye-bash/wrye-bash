@@ -1589,18 +1589,21 @@ class ModList(List):
         elif fileName in bosh.modInfos.mergeable:
             if 'NoMerge' in bosh.modInfos[fileName].getBashTags():
                 item.SetTextColour(colors['bash.mods.isSemiMergeable'])
-                mouseText += _("Technically mergeable but has NoMerge tag. ")
+                mouseText += _("Technically mergeable but has NoMerge tag.  ")
             else:
                 item.SetTextColour(colors['bash.mods.isMergeable'])
-                mouseText += _("Can be merged into Bashed Patch. ")
+                if checkMark == 2:
+                    mouseText += _("Merged into Bashed Patch.  ")
+                else:
+                    mouseText += _("Can be merged into Bashed Patch.  ")
         else:
             item.SetTextColour(wx.BLACK)
         #--Image messages
-        if status == 30:     mouseText += _("One or more masters are missing. ")
-        elif checkMark == 1: mouseText += _("Active in load list. ")
-        elif checkMark == 2: mouseText = _("Merged into Bashed Patch. ")
-        elif checkMark == 3: mouseText += _("Imported into Bashed Patch. ")
-        elif status == 20:   mouseText += _("Masters have been re-ordered. ")
+        if status == 30:     mouseText += _("One or more masters are missing.  ")
+        elif status == 20:   mouseText += _("Masters have been re-ordered.  ")
+        if checkMark == 1: mouseText += _("Active in load list.  ")
+        elif checkMark == 3: mouseText += _("Imported into Bashed Patch.  ")
+
         #should mod be deactivated
         try:
             if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
@@ -1615,22 +1618,22 @@ class ModList(List):
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['bash.doubleTime.load'])
-            mouseText += _("WARNING: Has same load order as another mod. ")
+            mouseText += _("WARNING: Has same load order as another mod.  ")
         elif 'Deactivate' in bosh.modInfos[fileName].getBashTags() and checkMark == 1:
             item.SetBackgroundColour(colors['bash.doubleTime.load'])
-            mouseText += _("Mod should be imported and deactivated. ")
+            mouseText += _("Mod should be imported and deactivated.  ")
         elif fileInfo.isExOverLoaded():
             item.SetBackgroundColour(colors['bash.exOverLoaded'])
-            mouseText += _("WARNING: Exclusion group is overloaded. ")
+            mouseText += _("WARNING: Exclusion group is overloaded.  ")
         elif fileInfo.hasTimeConflict():
             item.SetBackgroundColour(colors['bash.doubleTime.exists'])
-            mouseText += _("Has same time as another (unloaded) mod. ")
+            mouseText += _("Has same time as another (unloaded) mod.  ")
         elif fileName.s[0] in '.+=':
             item.SetBackgroundColour(colors['bash.mods.groupHeader'])
-            mouseText += _("Group header. ")
+            mouseText += _("Group header.  ")
         elif fileInfo.isGhost:
             item.SetBackgroundColour(colors['bash.mods.isGhost'])
-            mouseText += _("File is ghosted. ")
+            mouseText += _("File is ghosted.  ")
         else:
             item.SetBackgroundColour(colors['bash.doubleTime.not'])
         if settings['bash.mods.scanDirty']:
