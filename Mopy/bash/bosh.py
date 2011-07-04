@@ -33615,7 +33615,8 @@ def initDefaultSettings():
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
     inisettings['AutoSizeListColumns'] = 0
-    #inisettings['show?toollaunchers'] = True
+    inisettings['SoundSuccess'] = GPath('')
+    inisettings['SoundError'] = GPath('')
 
 def initOptions(bashIni):
     initDefaultTools()
@@ -33642,6 +33643,7 @@ def initOptions(bashIni):
                 defaultValue = usedSettings.get(usedKey,'')
                 settingType = type(defaultValue)
                 if settingType in (bolt.Path,list):
+                    if value == '.': continue
                     value = GPath(value)
                     if not value.isabs():
                         value = dirs['app'].join(value)
