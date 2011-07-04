@@ -20457,6 +20457,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
+        if modFile.GName == record.fid[0]: return
         for bashKey in bashTags & self.autoKey:
             attrs = self.class_tag_attrs[record._Type].get(bashKey, None)
             if attrs:
