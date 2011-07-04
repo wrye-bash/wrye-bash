@@ -5390,6 +5390,28 @@ class ObModFile(object):
                         if not formId: continue
                         if formId[0] != self.GName:
                             masters.add(formId[0])
+                if type in ('LVLI','LVSP','LVLC'):
+                    for entry in record.entries:
+                        formMaster = entry.listId[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                elif type in ('NPC_','CREA'):
+                    for spell in record.spells:
+                        formMaster = spell[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for faction in record.factions:
+                        formMaster = faction.faction[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for item in record.items:
+                        formMaster = item.item[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for aipack in record.aiPackages:
+                        formMaster = aipack[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
         remove = [x for x in self.TES4.masters if GPath(x) not in masters]
         numMasters = len(remove)
         if (numMasters > 0):
