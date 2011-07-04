@@ -18388,14 +18388,15 @@ class CBash_PatchFile(ObModFile):
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
         #--Fix UDR's
-        progress(0,_('Cleaning...'))
-        records = self.ACRES + self.ACHRS + self.REFRS
-        progress.setFull(max(len(records),1))
-        for i,record in enumerate(records):
-            progress(i)
-            if record.IsDeleted:
-                record.IsDeleted = False
-                record.IsIgnored = True
+        ## Skip this for now, since we aren't restoring any relevant data, just swapping flags (aka, use TES4Edit instead)
+        ##progress(0,_('Cleaning...'))
+        ##records = self.ACRES + self.ACHRS + self.REFRS
+        ##progress.setFull(max(len(records),1))
+        ##for i,record in enumerate(records):
+        ##    progress(i)
+        ##    if record.IsDeleted:
+        ##        record.IsDeleted = False
+        ##        record.IsIgnored = True
         #--Done
         progress(progress.full,_('Patchers applied.'))
         self.ScanCollection = None
