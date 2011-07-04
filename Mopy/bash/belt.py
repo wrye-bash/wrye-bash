@@ -232,46 +232,6 @@ class PageError(PageInstaller):
 #  associated image and description for each option, shown when
 #  that item is selected
 #-------------------------------------------------------------
-class ImagePanel(wx.Panel):
-    def __init__(self, parent, id=wx.ID_ANY, bmp=None):
-        wx.Panel.__init__(self, parent, id)
-        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
-        self.bmp = bmp
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        self.OnSize()
-
-    def SetBitmap(self, bmp=None):
-        self.bmp = bmp
-        self.SetCursor(wx.StockCursor([wx.CURSOR_ARROW,wx.CURSOR_MAGNIFIER][bmp is not None]))
-        self.OnSize()
-
-    def OnSize(self, event=None):
-        x, y = self.GetSize()
-        if x <= 0 or y <= 0: return
-        self.buffer = wx.EmptyBitmap(x,y)
-        dc = wx.MemoryDC()
-        dc.SelectObject(self.buffer)
-        # Draw
-        dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
-        dc.Clear()
-        if self.bmp:
-            old_x,old_y = self.bmp.GetSize()
-            scale = min(float(x)/old_x, float(y)/old_y)
-            new_x = old_x * scale
-            new_y = old_y * scale
-            pos_x = max(0,x-new_x)/2
-            pos_y = max(0,y-new_y)/2
-            image = self.bmp.ConvertToImage()
-            image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
-        del dc
-        self.Refresh()
-        self.Update()
-
-    def OnPaint(self, event):
-        dc = wx.BufferedPaintDC(self, self.buffer)
-
 class PageSelect(PageInstaller):
     def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
         PageInstaller.__init__(self, parent)
@@ -293,7 +253,7 @@ class PageSelect(PageInstaller):
 
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
         self.textItem = wx.TextCtrl(self, wx.ID_ANY, '', style=wx.TE_READONLY|wx.TE_MULTILINE)
-        self.bmpItem = ImagePanel(self, wx.ID_ANY)
+        self.bmpItem = balt.Picture(self,0,0,background=None)
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
@@ -343,12 +303,17 @@ class PageSelect(PageInstaller):
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
         self.index = index
         self.textItem.SetValue(self.descs[index])
+        # Don't want the bitmap to resize until we call self.Layout()
+        self.bmpItem.Freeze()
         file = self.images[index]
         if file.exists() and not file.isdir():
             image = wx.Bitmap(file.s)
             self.bmpItem.SetBitmap(image)
+            self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
         else:
             self.bmpItem.SetBitmap(None)
+            self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        self.bmpItem.Thaw()
         self.Layout()
 
     def OnNext(self):

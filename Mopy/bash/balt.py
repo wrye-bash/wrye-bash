@@ -966,58 +966,51 @@ class ListEditor(wx.Dialog):
 #------------------------------------------------------------------------------
 class Picture(wx.Window):
     """Picture panel."""
-    def __init__(self, parent,width,height,scaling=1,style=0):
+    def __init__(self, parent,width,height,scaling=1,style=0,background=wx.MEDIUM_GREY_BRUSH):
         """Initialize."""
         wx.Window.__init__(self, parent, defId,size=(width,height),style=style)
-        self.scaling=scaling
+        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
-        self.scaled = None
-        self.oldSize = (0,0)
-        self.SetSizeHints(width,height,width,height)
+        if background is not None:
+            self.background = background
+        else:
+            self.background = wx.Brush(self.GetBackgroundColour())
+        #self.SetSizeHints(width,height,width,height)
         #--Events
         self.Bind(wx.EVT_PAINT,self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.OnSize()
 
     def SetBitmap(self,bitmap):
         """Set bitmap."""
         self.bitmap = bitmap
-        self.Rescale()
+        self.OnSize()
+
+    def OnSize(self,event=None):
+        x, y = self.GetSize()
+        if x <= 0 or y <= 0: return
+        self.buffer = wx.EmptyBitmap(x,y)
+        dc = wx.MemoryDC()
+        dc.SelectObject(self.buffer)
+        # Draw
+        dc.SetBackground(self.background)
+        dc.Clear()
+        if self.bitmap:
+            old_x,old_y = self.bitmap.GetSize()
+            scale = min(float(x)/old_x, float(y)/old_y)
+            new_x = old_x * scale
+            new_y = old_y * scale
+            pos_x = max(0,x-new_x)/2
+            pos_y = max(0,y-new_y)/2
+            image = self.bitmap.ConvertToImage()
+            image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
+            dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
+        del dc
         self.Refresh()
+        self.Update()
 
-    def Rescale(self):
-        """Updates scaled version of bitmap."""
-        picWidth,picHeight = self.oldSize = self.GetSizeTuple()
-        bitmap = self.scaled = self.bitmap
-        if not bitmap: return
-        imgWidth,imgHeight = bitmap.GetWidth(),bitmap.GetHeight()
-        if self.scaling == 2 or (self.scaling == 1 and (imgWidth > picWidth or imgHeight > picHeight)):
-            image = bitmap.ConvertToImage()
-            factor = min(1.0*picWidth/imgWidth,1.0*picHeight/imgHeight)
-            newWidth,newHeight = int(factor*imgWidth),int(factor*imgHeight)
-            self.scaled = image.Scale(newWidth,newHeight).ConvertToBitmap()
-            #self.scaled = image.Scale(newWidth,newHeight,wx.IMAGE_QUALITY_HIGH ).ConvertToBitmap()
-
-    def OnPaint(self, event=None):
-        """Draw bitmap or clear drawing area."""
-        dc = wx.PaintDC(self)
-        dc.SetBackground(wx.MEDIUM_GREY_BRUSH)
-        if self.scaled:
-            if self.GetSizeTuple() != self.oldSize:
-                self.Rescale()
-            panelWidth,panelHeight = self.GetSizeTuple()
-            xPos = max(0,(panelWidth - self.scaled.GetWidth())/2)
-            yPos = max(0,(panelHeight - self.scaled.GetHeight())/2)
-            dc.Clear()
-            dc.DrawBitmap(self.scaled,xPos,yPos,False)
-        else:
-            dc.Clear()
-        #dc.SetPen(wx.Pen("BLACK", 1))
-        #dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        #(width,height) = self.GetSize()
-        #dc.DrawRectangle(0,0,width,height)
-
-    def OnSize(self,event):
-        self.Refresh()
+    def OnPaint(self, event):
+        dc = wx.BufferedPaintDC(self, self.buffer)
 
 #------------------------------------------------------------------------------
 class BusyCursor(object):
