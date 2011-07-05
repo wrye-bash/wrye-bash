@@ -110,12 +110,19 @@ def data_fetcher_test_multi_threaded():
     _data_fetcher_test(20)
 
 def data_fetcher_test_fast_shutdown():
-    stateChangeQueue = Queue.Queue()
+    class SlowQueue(Queue.Queue):
+        """Ensures 'put'ting thread is as interrupted as possible"""
+        def put(self, item):
+            Queue.Queue.put(self, item)
+            time.sleep(0)
+
+    stateChangeQueue = SlowQueue()
     df = data_fetcher.DataFetcher(_DummyModel())
     df.start()
     update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
     for n in xrange(100):
         df.async_fetch(*update)
+    # shutdown before the data fetcher thread has enough time to process the queue
     df.shutdown()
-    stateChangeQueue.put(None)
+    assert df._fetchQueue.empty()
     assert 100 > stateChangeQueue.qsize()
