@@ -39,7 +39,7 @@ NODE_ID_IDX = 1
 _logger = logging.getLogger(__name__)
 
 _IS_VISIBLE_IDX = 0
-_MATCHES_SEARCH = 1
+_MATCHES_SEARCH_IDX = 1
 _PRED_NODE_ID_IDX = 2
 _ATTRIBUTES_IDX = 3
 _CHILDREN_IDX = 4
@@ -239,8 +239,19 @@ class _AddToSetAndMarkNoMatchVisitor:
     def __init__(self, nodeSet):
         self._nodeSet = nodeSet
     def visit(self, nodeId, nodeData):
-        nodeData[_MATCHES_SEARCH] = False
+        nodeData[_MATCHES_SEARCH_IDX] = False
         self._nodeSet.add(nodeId)
+        return True
+
+class _FindMatchesSearchNodeVisitor:
+    def __init__(self):
+        self._isFound = False
+    def is_not_found(self):
+        return not self._isFound
+    def visit(self, nodeId, nodeData):
+        if nodeData[_MATCHES_SEARCH_IDX]:
+            self._isFound = True
+            return False
         return True
 
 class _SearchVisitor:
@@ -261,7 +272,7 @@ class _SearchVisitor:
         nodeAttributes = nodeData[_ATTRIBUTES_IDX]
         # if this node matches, add its parentage and downstream tree
         if self._expression.search(nodeAttributes.label):
-            nodeData[_MATCHES_SEARCH] = True
+            nodeData[_MATCHES_SEARCH_IDX] = True
             # get parentage
             parentNodeId = nodeAttributes.parentNodeId
             while parentNodeId is not self._rootNodeId:
@@ -278,7 +289,7 @@ class _SearchVisitor:
             self.matchedNodeIds.add(nodeId)
             # we've already processed the children; no need to recurse
             return False
-        nodeData[_MATCHES_SEARCH] = False
+        nodeData[_MATCHES_SEARCH_IDX] = False
         # keep searching: one of its children might still match
         return True
 
@@ -382,9 +393,24 @@ class PackagesTreeDiffEngine(_DiffEngine):
             nodeData.append(None)
         nodeData[_ATTRIBUTES_IDX] = nodeAttributes
         matchesSearch = self._matches_search_expression(nodeAttributes)
-        nodeData[_MATCHES_SEARCH] = matchesSearch
+        nodeData[_MATCHES_SEARCH_IDX] = matchesSearch
+        lineageMatchesSearch = matchesSearch
+        if not lineageMatchesSearch:
+            # check up the tree to see if any ancestor matches the search
+            parentNodeId = nodeAttributes.parentNodeId
+            while parentNodeId is not self._rootNodeId:
+                parentNodeData = self._tree[parentNodeId]
+                if parentNodeData[_MATCHES_SEARCH_IDX]:
+                    lineageMatchesSearch = True
+                    break
+                parentNodeId = parentNodeData[_ATTRIBUTES_IDX].parentNodeId
+        if not lineageMatchesSearch:
+            # check down the tree to see if any descendant matches the search
+            fmsnv = _FindMatchesSearchNodeVisitor()
+            _visit_tree(nodeId, self._tree, fmsnv.is_not_found, fmsnv)
+            lineageMatchesSearch = not fmsnv.is_not_found()
         isVisible = self._filter.process_and_get_visibility(nodeId, nodeAttributes,
-                                                            matchesSearch)
+                                                            lineageMatchesSearch)
         if isVisible == nodeData[_IS_VISIBLE_IDX]:
             if isVisible:
                 _add_node(nodeId, nodeData, self._tree, self._viewCommandQueue, True)
@@ -500,6 +526,9 @@ class PackagesTreeDiffEngine(_DiffEngine):
         _logger.debug("updating search string to '%s'", searchString)
         def is_search_string_current():
             return searchString == self._pendingSearchString
+        if not is_search_string_current():
+            _logger.debug("search string stale; not processing")
+            return
         if searchString is None or len(searchString) == 0:
             expression = None
             self._filter.apply_search(None)

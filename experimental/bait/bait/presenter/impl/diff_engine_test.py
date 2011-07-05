@@ -81,23 +81,27 @@ def _assert_remove_node_view_command(viewCommandQueue, nodeId):
     assert viewCommandQueue.empty()
 
 def _assert_view_commands(viewCommandQueue, commands):
-    """commands is a dict of filterId -> (current, total) or
-    nodeId -> (style, parentNodeId, predNodeId).  they are accepted in any order"""
+    """commands is a dict of ("f", filterId) -> (current, total) or
+    ("n", nodeId) -> (style, parentNodeId, predNodeId).  they are accepted in any order"""
     def check_view_command(command, itemDict):
         if command.commandId == view_commands.CommandIds.SET_FILTER_STATS:
             filterId = command.filterId
-            expectedUpdate = itemDict[filterId]
+            expectedUpdate = itemDict[("f", filterId)]
             assert expectedUpdate[0] == command.current
             assert expectedUpdate[1] == command.total
-            del itemDict[filterId]
+            del itemDict[("f", filterId)]
         elif command.commandId == view_commands.CommandIds.ADD_PACKAGE or \
              command.commandId == view_commands.CommandIds.ADD_GROUP:
             nodeId = command.nodeId
-            expectedUpdate = itemDict[nodeId]
+            expectedUpdate = itemDict[("n", nodeId)]
             assert cmp(expectedUpdate[0], command.style)
             assert expectedUpdate[1] == command.parentNodeId
             assert expectedUpdate[2] == command.predecessorNodeId
-            del itemDict[nodeId]
+            del itemDict[("n", nodeId)]
+        elif command.commandId == view_commands.CommandIds.REMOVE_PACKAGES_TREE_NODE:
+            nodeId = command.nodeId
+            expectedUpdate = itemDict[("n", nodeId)]
+            del itemDict[("n", nodeId)]
         else:
             # unhandled case
             assert False
@@ -177,8 +181,8 @@ def test_packages_tree_diff_engine():
     assert de.loadRequestQueue.empty()
     _assert_view_commands(
         viewCommandQueue,
-        {presenter.FilterIds.PACKAGES_INSTALLED:(1,1),
-         1:(view_commands.Style(
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(1,1),
+         ("n", 1):(view_commands.Style(
              fontStyleMask=view_commands.FontStyleIds.BOLD,
              foregroundColorId=view_commands.ForegroundColorIds.HAS_SUBPACKAGES,
              checkboxState=True,
@@ -202,7 +206,7 @@ def test_packages_tree_diff_engine():
     installedGroup = node_attributes.GroupNodeAttributes()
     installedGroup.isInstalled = True
     installedGroup.isDirty = True
-    installedGroup.label = "installedGroup"
+    installedGroup.label = "instGroup"
     installedGroup.parentNodeId = model.ROOT_NODE_ID
     de.update_attributes(2, installedGroup)
     assert viewCommandQueue.empty()
@@ -271,24 +275,24 @@ def test_packages_tree_diff_engine():
     de.update_attributes(9, uninstPkg3)
     _assert_view_commands(
         viewCommandQueue,
-        {presenter.FilterIds.PACKAGES_NOT_INSTALLED:(1,1),
-         9:(view_commands.Style(
+        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
+         ("n", 9):(view_commands.Style(
              iconId=view_commands.IconIds.PROJECT_MISSING,
              checkboxState=False),6,None),
-         6:(view_commands.Style(),model.ROOT_NODE_ID,1)})
+         ("n", 6):(view_commands.Style(),model.ROOT_NODE_ID,1)})
     de.update_attributes(8, uninstPkg2)
     _assert_view_commands(
         viewCommandQueue,
-        {presenter.FilterIds.PACKAGES_NOT_INSTALLED:(2,2),
-         8:(view_commands.Style(
+        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(2,2),
+         ("n", 8):(view_commands.Style(
              foregroundColorId=view_commands.ForegroundColorIds.HAS_SUBPACKAGES,
              iconId=view_commands.IconIds.PROJECT_EMPTY,
              checkboxState=False),6,None)})
     de.update_attributes(7, uninstPkg1)
     _assert_view_commands(
         viewCommandQueue,
-        {presenter.FilterIds.PACKAGES_NOT_INSTALLED:(3,3),
-         7:(view_commands.Style(
+        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(3,3),
+         ("n", 7):(view_commands.Style(
              iconId=view_commands.IconIds.PROJECT_MISSING,
              checkboxState=False),6,None)})
     assert de.loadRequestQueue.empty()
@@ -358,6 +362,114 @@ def test_packages_tree_diff_engine():
     _assert_filter_view_command(
         viewCommandQueue, presenter.FilterIds.PACKAGES_INSTALLED, 3, 4)
 
+    # add a non-matching package to a matching group while the filter is active
+    updatedHiddenNodeChildren = node_children.NodeChildren([11, 12, 13, 14])
+    updatedHiddenNodeChildren.version = 1
+    de.update_children(10, updatedHiddenNodeChildren)
+    assert viewCommandQueue.empty()
+    _assert_load_request(de.loadRequestQueue, _ATTRIBUTES|_CHILDREN, 14)
+    hiddenPkg4 = node_attributes.PackageNodeAttributes()
+    hiddenPkg4.isHidden = True
+    hiddenPkg4.label = "hiddenPkg4"
+    hiddenPkg4.parentNodeId = 10
+    de.update_attributes(14, hiddenPkg4)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_HIDDEN):(4,4),
+         ("n", 14):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY),10,13)})
+    assert de.loadRequestQueue.empty()
+
+    # add a matching package while the filter is active
+    nodeChildren = node_children.NodeChildren([1,2,6,10,15])
+    nodeChildren.version = 3
+    de.update_children(model.ROOT_NODE_ID, nodeChildren)
+    _assert_load_request(de.loadRequestQueue, _ATTRIBUTES|_CHILDREN, 15)
+    hiddenPkg5 = node_attributes.PackageNodeAttributes()
+    hiddenPkg5.isHidden = True
+    hiddenPkg5.label = "hiddenPkg5NotInAGroup"
+    hiddenPkg5.parentNodeId = model.ROOT_NODE_ID
+    de.update_attributes(15, hiddenPkg5)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_HIDDEN):(5,5),
+         ("n", 15):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY),model.ROOT_NODE_ID,10)})
+    assert de.loadRequestQueue.empty()
+
+    # single out a particular package
+    de.set_pending_search_string("hiddenPkg3")
+    de.update_search_string("hiddenPkg3")
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,4),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,3),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,5),
+         ("n", 6):None, ("n", 11):None, ("n", 12):None, ("n", 14):None, ("n", 15):None})
+
+    # single out a particular group
+    de.set_pending_search_string("instGroup")
+    de.update_search_string("instGroup")
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(3,4),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,3),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,5),
+         ("n", 10):None})
+    filterMask = presenter.FilterIds.PACKAGES_INSTALLED|\
+               presenter.FilterIds.PACKAGES_HIDDEN
+    de.set_pending_filter_mask(filterMask)
+    de.update_filter(filterMask)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("n", 2):(view_commands.Style(
+            highlightColorId=view_commands.HighlightColorIds.DIRTY,
+            fontStyleMask=view_commands.FontStyleIds.ITALICS),
+                   model.ROOT_NODE_ID,None),
+         ("n", 3):(view_commands.Style(
+             iconId=view_commands.IconIds.PROJECT_MISMATCHED,
+             checkboxState=True),2,None),
+         ("n", 4):(view_commands.Style(
+             iconId=view_commands.IconIds.PROJECT_MISMATCHED,
+             fontStyleMask=view_commands.FontStyleIds.ITALICS,
+             highlightColorId=view_commands.HighlightColorIds.DIRTY,
+             checkboxState=True),2,3),
+         ("n", 5):(view_commands.Style(
+             iconId=view_commands.IconIds.PROJECT_MATCHES,
+             checkboxState=True),2,4)})
+
+    # ensure stale search strings are not evaluated
+    de.set_pending_search_string("hiddenPkg2")
+    de.set_pending_search_string("hiddenPkg3")
+    de.update_search_string("hiddenPkg2")
+    assert viewCommandQueue.empty()
+    de.update_search_string("hiddenPkg3")
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,4),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,5),
+         ("n", 2):None,
+         ("n", 10):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED),
+             model.ROOT_NODE_ID, None),
+         ("n", 13):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY), 10, None)})
+    de.set_pending_search_string("hiddenPkg2")
+    de.set_pending_search_string("hiddenPkg3")
+    de.update_search_string("hiddenPkg2")
+    assert viewCommandQueue.empty()
+    de.update_search_string("hiddenPkg3")
+    assert viewCommandQueue.empty()
+
+    # ensure stale filters are not evaluated
+    de.set_pending_filter_mask(presenter.FilterIds.PACKAGES_HIDDEN)
+    de.set_pending_filter_mask(filterMask)
+    de.update_filter(presenter.FilterIds.PACKAGES_HIDDEN)
+    de.update_filter(filterMask)
+    assert viewCommandQueue.empty()
 
     import logging
     logger = logging.getLogger(__name__)
@@ -367,15 +479,3 @@ def test_packages_tree_diff_engine():
     logger.info("loadRequestQueue size: %d", de.loadRequestQueue.qsize())
     for itemNum in xrange(de.loadRequestQueue.qsize()):
         logger.info("  %s", str(de.loadRequestQueue.get()))
-
-    #de.could_use_update(updateType, nodeId, version)
-    #de.loadRequestQueue
-    #de.set_node_expansion(nodeId, isExpanded)
-    #de.set_pending_filter_mask(filterMask)
-    #de.set_pending_search_string(searchString)
-    #de.set_selected_nodes(nodeIds)
-    #de.update_attributes(nodeId, nodeAttributes)
-    #de.update_children(nodeId, nodeChildren)
-    #de.update_filter(filterMask)
-    #de.update_is_in_scope(updateType, nodeType)
-    #de.update_search_string(searchString)
