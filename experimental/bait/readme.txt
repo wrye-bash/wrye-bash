@@ -9,12 +9,13 @@ document just goes over dependency requirements and testing.
 Dependencies
 ============
 The following components are required to be installed to run BAIT:
-  Python-2.7.2 or later (although >=3.0 is not guaranteed to work)
-  wxPython-2.8.12 or later
+  Python-2.7.2 or later (>=3.0 will not work until wxPython supports it)
+  wxPython-2.8.12 or later (http://www.wxpython.org/)
 
 The following packages are required to run the unit tests:
   nose-1.0.0 or later
-  mock-0.7.1 or later
+        (http://somethingaboutorange.com/mrl/projects/nose/1.0.0/)
+  mock-0.7.1 or later (http://pypi.python.org/pypi/mock)
 
 
 Unit Testing
