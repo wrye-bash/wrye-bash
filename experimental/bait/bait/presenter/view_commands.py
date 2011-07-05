@@ -186,15 +186,20 @@ class RemovePackagesTreeNode(_RemoveNode):
     def __init__(self, nodeId):
         _RemoveNode.__init__(self, CommandIds.REMOVE_PACKAGES_TREE_NODE, nodeId)
 
-class ExpandGroup(ViewCommand):
-    def __init__(self, nodeId):
+class _ExpandCommand(ViewCommand):
+    '''Controls expansion and collapse of tree nodes'''
+    def __init__(self, commandId, nodeId, isExpanded):
         ViewCommand.__init__(self, CommandIds.EXPAND_GROUP)
         self.nodeId = nodeId
+        self.isExpanded = isExpanded
 
-class ExpandDir(ViewCommand):
-    def __init__(self, nodeId):
-        ViewCommand.__init__(self, CommandIds.EXPAND_DIR)
-        self.nodeId = nodeId
+class ExpandGroup(_ExpandCommand):
+    def __init__(self, nodeId, isExpanded):
+        _ExpandCommand.__init__(self, CommandIds.EXPAND_GROUP, nodeId, isExpanded)
+
+class ExpandDir(_ExpandCommand):
+    def __init__(self, nodeId, isExpanded):
+        _ExpandCommand.__init__(self, CommandIds.EXPAND_DIR, nodeId, isExpanded)
 
 class ClearPackages(ViewCommand):
     def __init__(self):
