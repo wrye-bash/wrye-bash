@@ -261,11 +261,14 @@ class _FilterGroup:
         _logger.debug("modifying active mask for %s: %s", self.__class__.__name__, idMask)
         # apply mask to filters so they can update their visible nodes
         if self._filter.set_active_mask(idMask) == 0:
+            _logger.debug("no relevant changes to activeMask")
             return False
         # set top level visibleNodeIds
         self.visibleNodeIds = self._get_visible_node_ids()
         # update view button labels
         self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        _logger.debug("%s visibleNodeIds now: %s",
+                      self.__class__.__name__, self.visibleNodeIds)
         return True
     def process_and_get_visibility(self, nodeId, nodeAttributes):
         """adds/updates node and returns whether the node should be visible"""

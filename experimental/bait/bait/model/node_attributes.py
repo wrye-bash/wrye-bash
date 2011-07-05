@@ -55,9 +55,9 @@ class StatusUnstableData(debug_utils.Dumpable):
         self.operations = [] # tuples of (operationId, nodeId)
 
 class RootNodeAttributes(model._VersionedData):
-    def __init__(self, statusData):
+    def __init__(self, statusData=None):
         model._VersionedData.__init__(self)
-        self.nodeType = self, model.NodeTypes.ROOT
+        self.nodeType = model.NodeTypes.ROOT
         self.statusData = statusData
 
 class _TreeNodeAttributes(model._VersionedData):

@@ -111,13 +111,19 @@ class Status(model.Status):
     pass
 
 class Style(debug_utils.Dumpable):
-    def __init__(self, fontStyleMask=None, foregroundColorId=None, highlightColorId=None,
-                 checkboxState=None, iconId=None):
+    def __init__(self, fontStyleMask=FontStyleIds.NONE, foregroundColorId=None,
+                 highlightColorId=None, checkboxState=None, iconId=None):
         self.fontStyleMask = fontStyleMask
         self.foregroundColorId = foregroundColorId
         self.highlightColorId = highlightColorId
         self.checkboxState = checkboxState
         self.iconId = iconId
+    def __cmp__(self, other):
+        return self.fontStyleMask == other.fontStyleMask and \
+               self.foregroundColorId == other.foregroundColorId and \
+               self.highlightColorId == other.highlightColorId and \
+               self.checkboxState == other.checkboxState and \
+               self.iconId == other.iconId
 
 class IoOperation(debug_utils.Dumpable):
     def __init__(self, type, target):
