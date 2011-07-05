@@ -138,6 +138,7 @@ def _assert_view_commands(viewCommandQueue, commands):
             # unhandled case
             assert False
     _assert_group(viewCommandQueue, commands, check_view_command)
+    assert len(commands) == 0
 
 def _assert_load_request(loadRequestQueue, updateMask, nodeId):
     assert not loadRequestQueue.empty()
@@ -310,8 +311,7 @@ def test_packages_tree_diff_engine():
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
          ("n", 9):(view_commands.Style(
              iconId=view_commands.IconIds.PROJECT_MISSING,
-             checkboxState=False),6,None),
-         ("n", 6):(view_commands.Style(),model.ROOT_NODE_ID,1)})
+             checkboxState=False),6,None)})
     de.update_attributes(8, uninstPkg2)
     _assert_load_request(de.loadRequestQueue, _CHILDREN, 8)
     _assert_view_commands(
@@ -463,7 +463,6 @@ def test_packages_tree_diff_engine():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_INSTALLED):(3,4),
-         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,3),
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,5),
          ("n", 10):None})
     filterMask = presenter.FilterIds.PACKAGES_INSTALLED|\
@@ -1042,12 +1041,41 @@ def test_packages_tree_diff_engine_node_updates():
             iconId=view_commands.IconIds.PROJECT_EMPTY),
                    12,None)})
 
+    # apply a search to single out uninstalled packages
+    de.set_pending_search_string("uninst")
+    de.update_search_string("uninst")
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,2),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,2),
+         ("n", 2):None, ("n", 6):None, ("n", 8):None, ("n", 12):None})
+
+    # toggle filters with search active
+    de.set_pending_filter_mask(presenter.FilterIds.NONE)
+    de.update_filter(presenter.FilterIds.NONE)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("n", 1):None, ("n", 10):None})
+    de.set_pending_filter_mask(filterMask)
+    de.update_filter(filterMask)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None),
+         ("n", 4):(view_commands.Style(),1,None),
+         ("n", 5):(view_commands.Style(
+             checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   4,None),
+         ("n", 10):(view_commands.Style(),model.ROOT_NODE_ID,1),
+         ("n", 11):(view_commands.Style(
+             checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   10,None)})
+
     # hide hidden stuff
     filterMask = presenter.FilterIds.PACKAGES_INSTALLED|\
                presenter.FilterIds.PACKAGES_NOT_INSTALLED
     de.set_pending_filter_mask(filterMask)
     de.update_filter(filterMask)
-    _assert_view_commands(viewCommandQueue, {("n", 6):None, ("n", 12):None})
+    assert viewCommandQueue.empty()
 
     # update one of the uninstalled packages to hidden and back to uninstalled (package
     # first, then group)
@@ -1061,14 +1089,14 @@ def test_packages_tree_diff_engine_node_updates():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(3,3),
-         ("n", 4):None})
-    hiddenUninstGroup2 = node_attributes.GroupNodeAttributes()
-    hiddenUninstGroup2.isHidden = True
-    hiddenUninstGroup2.label = "hiddenUninstGroup2"
-    hiddenUninstGroup2.parentNodeId = model.ROOT_NODE_ID
-    hiddenUninstGroup2.version = 1
-    de.update_attributes(4, hiddenUninstGroup2)
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,3),
+         ("n", 1):None})
+    hiddenUninstGroup1 = node_attributes.GroupNodeAttributes()
+    hiddenUninstGroup1.isHidden = True
+    hiddenUninstGroup1.label = "hiddenUninstGroup1"
+    hiddenUninstGroup1.parentNodeId = 1
+    hiddenUninstGroup1.version = 1
+    de.update_attributes(4, hiddenUninstGroup1)
     assert de.loadRequestQueue.empty()
     assert viewCommandQueue.empty()
 
@@ -1082,23 +1110,24 @@ def test_packages_tree_diff_engine_node_updates():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(2,2),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(2,2),
-         ("n", 4):(view_commands.Style(),model.ROOT_NODE_ID,2),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,2),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None),
+         ("n", 4):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED),1,None),
          ("n", 5):(view_commands.Style(
              checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    4,None)})
-    revertedUninstGroup2 = node_attributes.GroupNodeAttributes()
-    revertedUninstGroup2.isNotInstalled = True
-    revertedUninstGroup2.label = "revertedUninstGroup2"
-    revertedUninstGroup2.parentNodeId = model.ROOT_NODE_ID
-    revertedUninstGroup2.version = 2
-    de.update_attributes(4, revertedUninstGroup2)
+    revertedUninstGroup1 = node_attributes.GroupNodeAttributes()
+    revertedUninstGroup1.isNotInstalled = True
+    revertedUninstGroup1.label = "revertedUninstGroup1"
+    revertedUninstGroup1.parentNodeId = 1
+    revertedUninstGroup1.version = 2
+    de.update_attributes(4, revertedUninstGroup1)
     assert de.loadRequestQueue.empty()
-    _assert_add_node_view_command(viewCommandQueue, 4, view_commands.Style(),
-                                  model.ROOT_NODE_ID, 2)
+    _assert_add_node_view_command(viewCommandQueue, 4, view_commands.Style(), 1, None)
 
     # update one of the uninstalled packages to hidden and back to uninstalled (group
-    # first, then package)
+    # first, then package, simulating out-of-order processing due to multithreading)
     hiddenUninstGroup2 = node_attributes.GroupNodeAttributes()
     hiddenUninstGroup2.isHidden = True
     hiddenUninstGroup2.label = "hiddenUninstGroup2"
@@ -1117,7 +1146,7 @@ def test_packages_tree_diff_engine_node_updates():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(3,3),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,3),
          ("n", 10):None})
 
     revertedUninstGroup2 = node_attributes.GroupNodeAttributes()
@@ -1128,7 +1157,12 @@ def test_packages_tree_diff_engine_node_updates():
     de.update_attributes(10, revertedUninstGroup2)
     assert de.loadRequestQueue.empty()
     _assert_add_node_view_command(viewCommandQueue, 10, view_commands.Style(),
-                                  model.ROOT_NODE_ID, 8)
+                                  model.ROOT_NODE_ID, 1, False)
+    # this is expected here since we are processing the updates out of order
+    _assert_add_node_view_command(viewCommandQueue, 11, view_commands.Style(
+        foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+        iconId=view_commands.IconIds.PROJECT_EMPTY),
+                                  10, None)
     revertedUninstPkg2 = node_attributes.PackageNodeAttributes()
     revertedUninstPkg2.isNotInstalled = True
     revertedUninstPkg2.label = "revertedUninstPkg2"
@@ -1139,31 +1173,30 @@ def test_packages_tree_diff_engine_node_updates():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(2,2),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(2,2),
-         ("n", 10):(view_commands.Style(),model.ROOT_NODE_ID,8),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,2),
          ("n", 11):(view_commands.Style(
              checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    10,None)})
 
-    # change the label of an installed package
-    renamedInstPkg1 = node_attributes.PackageNodeAttributes()
-    renamedInstPkg1.isInstalled = True
-    renamedInstPkg1.label = "renamedInstPkg1"
-    renamedInstPkg1.parentNodeId = 2
-    renamedInstPkg1.version = 1
-    de.update_attributes(3, renamedInstPkg1)
+    # change the label of an uninstalled package and its group so they no longer match
+    # the search
+    renamedUninstPkg1 = node_attributes.PackageNodeAttributes()
+    renamedUninstPkg1.isNotInstalled = True
+    renamedUninstPkg1.label = "renamedU instPkg1"
+    renamedUninstPkg1.parentNodeId = 4
+    renamedUninstPkg1.version = 3
+    de.update_attributes(5, renamedUninstPkg1)
+    _assert_add_node_view_command(viewCommandQueue, 5, view_commands.Style(
+        checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY), 4, None)
+    renamedUninstGroup1 = node_attributes.GroupNodeAttributes()
+    renamedUninstGroup1.isNotInstalled = True
+    renamedUninstGroup1.label = "renamedU instGroup1"
+    renamedUninstGroup1.parentNodeId = 1
+    renamedUninstGroup1.version = 3
+    de.update_attributes(4, renamedUninstGroup1)
     assert de.loadRequestQueue.empty()
-    _assert_add_node_view_command(viewCommandQueue, 3, view_commands.Style(
-        checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY), 2, None)
-
-    # apply a search to single out uninstalled packages
-    #de.set_pending_search_string("uninst")
-    #de.update_search_string("uninst")
-    #_assert_view_commands(
-        #viewCommandQueue,
-        #{("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,2),
-         #("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,2),
-         #("n", 2):None, ("n", 8):None})
+    _dump_queue(viewCommandQueue)
+    _assert_view_commands(viewCommandQueue, {("n", 1):None})
 
     # remove allGroup tree
     rootChildren = node_children.NodeChildren([8,10,12])
@@ -1172,7 +1205,7 @@ def test_packages_tree_diff_engine_node_updates():
     assert de.loadRequestQueue.empty()
     _assert_view_commands(
         viewCommandQueue,
-        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(1,1),
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,1),
          ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,1),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,1),
          ("n", 1):None})

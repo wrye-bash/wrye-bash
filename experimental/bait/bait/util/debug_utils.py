@@ -38,7 +38,13 @@ class Dumpable:
                     outStr.write("; ")
                 outStr.write(varName)
                 outStr.write("=")
-                outStr.write(str(self.__dict__[varName]))
+                varVal = self.__dict__[varName]
+                if isinstance(varVal, (str, unicode)):
+                    outStr.write("'")
+                    outStr.write(varVal)
+                    outStr.write("'")
+                else:
+                    outStr.write(str(varVal))
                 isFirst = False
         outStr.write("]")
         return outStr.getvalue()

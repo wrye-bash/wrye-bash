@@ -230,6 +230,8 @@ class _MakeTreeVisibleVisitor:
         self._viewCommandQueue = viewCommandQueue
     def visit(self, nodeId, nodeData):
         if not nodeData[_IS_VISIBLE_IDX]:
+            _logger.debug("node %d visible due to being downstream from a matched node",
+                          nodeId)
             _add_node(nodeId, nodeData, self._tree, self._expandedNodeIds,
                       self._viewCommandQueue)
             nodeData[_IS_VISIBLE_IDX] = True
@@ -411,6 +413,10 @@ class PackagesTreeDiffEngine(_DiffEngine):
             nodeData.append(None)
         nodeData[_ATTRIBUTES_IDX] = nodeAttributes
         matchesSearch = self._matches_search_expression(nodeAttributes)
+        if matchesSearch:
+            _logger.debug("node %d matches search", nodeId)
+        else:
+            _logger.debug("node %d does not match search", nodeId)
         nodeData[_MATCHES_SEARCH_IDX] = matchesSearch
         lineageMatchesSearch = matchesSearch
         if not lineageMatchesSearch:
@@ -419,6 +425,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
             while parentNodeId is not self._rootNodeId:
                 parentNodeData = self._tree[parentNodeId]
                 if parentNodeData[_MATCHES_SEARCH_IDX]:
+                    _logger.debug("ancestor of node %d matches search", nodeId)
                     lineageMatchesSearch = True
                     break
                 parentNodeId = parentNodeData[_ATTRIBUTES_IDX].parentNodeId
@@ -427,10 +434,13 @@ class PackagesTreeDiffEngine(_DiffEngine):
             fmsnv = _FindMatchesSearchNodeVisitor()
             _visit_tree(nodeId, self._tree, fmsnv.is_not_found, fmsnv)
             lineageMatchesSearch = not fmsnv.is_not_found()
+            if lineageMatchesSearch:
+                _logger.debug("descendant of node %d matches search", nodeId)
         isVisible = self._filter.process_and_get_visibility(nodeId, nodeAttributes,
                                                             lineageMatchesSearch)
         if isVisible == nodeData[_IS_VISIBLE_IDX]:
             if isVisible:
+                _logger.debug("updating visible node %d", nodeId)
                 _add_node(nodeId, nodeData, self._tree, self._expandedNodeIds,
                           self._viewCommandQueue, True)
         else:
@@ -447,8 +457,13 @@ class PackagesTreeDiffEngine(_DiffEngine):
                 while len(parentNodeIds) > 0:
                     parentNodeId = parentNodeIds.pop()
                     parentNodeData = self._tree[parentNodeId]
+                    _logger.debug(
+                        "showing node %d due to it being upstream from a visible node",
+                        parentNodeId)
                     _add_node(parentNodeId, parentNodeData, self._tree,
-                              self._expandedNodeIds, self._viewCommandQueue, False)
+                              self._expandedNodeIds, self._viewCommandQueue)
+                    parentNodeData[_IS_VISIBLE_IDX] = True
+                _logger.debug("node %d now visible", nodeId)
                 _add_node(nodeId, nodeData, self._tree, self._expandedNodeIds,
                           self._viewCommandQueue)
                 nodeData[_IS_VISIBLE_IDX] = True
@@ -463,6 +478,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                 # have 0 visible children
                 if len(nodeData) <= _CHILDREN_IDX or \
                    len(nodeData[_CHILDREN_IDX].children) == 0:
+                    _logger.debug("removing leaf node")
                     branchRootNodeIdToRemove = nodeId
                     nodeData[_IS_VISIBLE_IDX] = False
                     parentNodeId = nodeAttributes.parentNodeId
@@ -472,9 +488,13 @@ class PackagesTreeDiffEngine(_DiffEngine):
                         # is upstream from us, so must have children
                         for childNodeId in parentNodeData[_CHILDREN_IDX].children:
                             if self._tree[childNodeId][_IS_VISIBLE_IDX]:
+                                _logger.debug(
+                                    "found visible child (%d); not culling parent %d",
+                                    childNodeId, parentNodeId)
                                 hasVisibleChildren = True
                                 break
                         if not hasVisibleChildren:
+                            parentNodeData[_IS_VISIBLE_IDX] = False
                             branchRootNodeIdToRemove = parentNodeId
                         else: break
                         parentNodeId = parentNodeData[_ATTRIBUTES_IDX].parentNodeId
@@ -482,7 +502,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                         view_commands.RemovePackagesTreeNode(branchRootNodeIdToRemove))
                 else:
                     # otherwise, check its extended family to see if it should be visible
-                    pass
+                    raise NotImplementedError()
 
     def update_children(self, nodeId, nodeChildren):
         nodeData = self._tree[nodeId]
