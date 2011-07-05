@@ -261,7 +261,8 @@ class PackagesTree(_FilteredTree):
 
 class FilesTree(_FilteredTree):
     def __init__(self, parent, filterIds, filterLabelFormatPatterns, presenter):
-        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns, presenter)
+        _FilteredTree.__init__(self, parent, filterIds, filterLabelFormatPatterns,
+                               presenter)
         self.Bind(wx.EVT_CONTEXT_MENU, self._on_context_menu)
         self.Bind(wx.EVT_LEFT_DCLICK, self._on_double_click)
 

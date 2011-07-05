@@ -23,15 +23,10 @@
 # =============================================================================
 
 import Queue
-import logging
-import threading
 import time
 
 from . import update_dispatcher
 from ... import model
-
-
-_logger = logging.getLogger(__name__)
 
 
 class _DummyWidgetManager:
@@ -39,85 +34,65 @@ class _DummyWidgetManager:
         self._name = name
         self._nodeType = nodeType
     def handle(self, updateType, nodeType, nodeId, version):
-        _logger.debug("DummyWidgetManager%s received update: %d %d %d %d",
-                      self._name, updateType.value, nodeType.value, nodeId, version)
-        if nodeType is self._nodeType:
-            _logger.debug("DummyWidgetManager%s handling update", self._name)
-            return True
-        else:
-            _logger.debug("DummyWidgetManager%s not handling update", self._name)
-            return False
+        return nodeType is self._nodeType
 
 
-def _view_command_queue_reader(viewCommandQueue):
-    while True:
-        viewCommand = viewCommandQueue.get()
-        if viewCommand is None:
-            _logger.debug(
-                "received sentinel value; view command reader thread exiting")
-            break
-        _logger.debug("received view command: %s", str(viewCommand))
+def _assert_view_command(viewCommandQueue, errorCode, resourceName):
+    assert(not viewCommandQueue.empty())
+    displayErrorUpdate = viewCommandQueue.get()
+    assert(errorCode == displayErrorUpdate.errorCode)
+    assert(resourceName == displayErrorUpdate.resourceName)
+
 
 def update_dispatcher_test():
     modelUpdateQueue = Queue.Queue()
     viewCommandQueue = Queue.Queue()
-    widgetManagers = [_DummyWidgetManager("1", model.NodeTypes.ROOT),
-                      _DummyWidgetManager("2", model.NodeTypes.PACKAGE)]
-    viewCommandQueueReaderThread = threading.Thread(name="ViewCommandReader",
-                                                    target=_view_command_queue_reader,
-                                                    args=(viewCommandQueue,))
-    viewCommandQueueReaderThread.start()
-    ud = update_dispatcher.UpdateDispatcher(modelUpdateQueue, viewCommandQueue,
-                                            widgetManagers)
 
-    _logger.debug("starting UpdateDispatcher")
+    dwm1 = _DummyWidgetManager("1", model.NodeTypes.ROOT)
+    dwm2 = _DummyWidgetManager("2", model.NodeTypes.PACKAGE)
+
+    widgetManagers = [dwm1, dwm2]
+    ud = update_dispatcher.UpdateDispatcher(
+        modelUpdateQueue, viewCommandQueue, widgetManagers)
+
     ud.start()
     try:
-        _logger.debug("starting UpdateDispatcher again; should throw")
         ud.start()
-        _logger.warn("should not get here")
+        assert False
     except RuntimeError as e:
-        _logger.debug("correctly threw: %s", e)
+        pass
 
-    update = (model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1)
-    _logger.debug("should be handled by DummyWidgetManager1: %s", str(update))
-    modelUpdateQueue.put(update)
+    # handled by dwm1
+    modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
 
-    update = (model.UpdateTypes.CHILDREN, model.NodeTypes.PACKAGE, 110, 1)
-    _logger.debug("should be handled by DummyWidgetManager2: %s", str(update))
-    modelUpdateQueue.put(update)
+    # handled by dwm2
+    modelUpdateQueue.put((model.UpdateTypes.CHILDREN, model.NodeTypes.PACKAGE, 110, 1))
 
-    update = (model.UpdateTypes.DETAILS, model.NodeTypes.FILE, 120, 1)
-    _logger.debug("should not be handled by any DummyWidgetManager")
-    modelUpdateQueue.put(update)
+    # not handled by any DummyWidgetManager
+    modelUpdateQueue.put((model.UpdateTypes.DETAILS, model.NodeTypes.FILE, 120, 1))
 
-    update = (model.UpdateTypes.ERROR, model.Errors.DISK_FULL, "filename.esp")
-    _logger.debug("should be sent to the view command queue: %s", str(update))
-    modelUpdateQueue.put(update)
+    # sent to the view command queue (can't check until the ud processes it, though)
+    modelUpdateQueue.put(
+        (model.UpdateTypes.ERROR, model.Errors.DISK_FULL, "filename.esp"))
 
-    update = (0, "garbage")
-    _logger.debug("should be detected as garbage: %s", str(update))
-    modelUpdateQueue.put(update)
+    # should be detected as garbage
+    modelUpdateQueue.put((0, "garbage"))
+    modelUpdateQueue.put(())
 
-    update = ()
-    _logger.debug("should be detected as garbage: %s", str(update))
-    modelUpdateQueue.put(update)
-
-    _logger.debug("waiting for updates to be processed")
+    # wait for updates to be processed
     while not modelUpdateQueue.empty():
         time.sleep(0)
+    _assert_view_command(viewCommandQueue, model.Errors.DISK_FULL, "filename.esp")
 
-    _logger.debug("shutting down UpdateDispatcher output")
+    # shut down UpdateDispatcher output
     ud.shutdown_output()
 
-    update = (model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1)
-    _logger.debug("should be skipped: %s", str(update))
-    modelUpdateQueue.put(update)
+    # should be skipped
+    modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
 
-    _logger.debug("shutting down UpdateDispatcher input")
+    # shut down UpdateDispatcher input
     modelUpdateQueue.put(None)
     ud.shutdown_input()
 
-    _logger.debug("shutting down viewCommand reader thread")
-    viewCommandQueue.put(None)
-    viewCommandQueueReaderThread.join()
+    assert modelUpdateQueue.empty()
+    assert viewCommandQueue.empty()

@@ -23,7 +23,6 @@
 # =============================================================================
 
 import Queue
-import logging
 
 from . import filters
 from ... import model
@@ -31,15 +30,23 @@ from ... import presenter
 from ...model import node_attributes
 
 
-_logger = logging.getLogger(__name__)
-
-
-def assert_stats_update(viewUpdateQueue, filterId, current, total):
-    assert(not viewUpdateQueue.empty())
+def _assert_stats_update(viewUpdateQueue, filterId, current, total):
+    assert not viewUpdateQueue.empty()
     setFilterStatsUpdate = viewUpdateQueue.get()
-    assert(filterId == setFilterStatsUpdate.filterId)
-    assert(current == setFilterStatsUpdate.current)
-    assert(total == setFilterStatsUpdate.total)
+    assert filterId == setFilterStatsUpdate.filterId
+    assert current == setFilterStatsUpdate.current
+    assert total == setFilterStatsUpdate.total
+    assert viewUpdateQueue.empty()
+
+def _assert_stats_updates(viewUpdateQueue, updates):
+    """updates is a dict of filterId -> (current, total)"""
+    for updateNum in xrange(len(updates)):
+        assert not viewUpdateQueue.empty()
+        setFilterStatsUpdate = viewUpdateQueue.get()
+        current, total = updates[setFilterStatsUpdate.filterId]
+        assert current == setFilterStatsUpdate.current
+        assert total == setFilterStatsUpdate.total
+    assert viewUpdateQueue.empty()
 
 
 def incomplete_subclasses_test():
@@ -51,23 +58,23 @@ def incomplete_subclasses_test():
     f = BadFilter()
     try:
         f.process_and_get_visibility(0, None)
-        assert(False)
+        assert False
     except NotImplementedError: pass
     try:
         f.get_visible_node_ids(None)
-        assert(False)
+        assert False
     except NotImplementedError: pass
     try:
         f.remove(None)
-        assert(False)
+        assert False
     except NotImplementedError: pass
     try:
         f.refresh_view(None)
-        assert(False)
+        assert False
     except NotImplementedError: pass
     try:
         f.update_view(None, None)
-        assert(False)
+        assert False
     except NotImplementedError: pass
 
     class BadFilterButton(filters._FilterButton):
@@ -76,12 +83,12 @@ def incomplete_subclasses_test():
     f = BadFilterButton()
     try:
         f._match(None, None)
-        assert(False)
+        assert False
     except NotImplementedError: False
 
     try:
         f = filters._AggregateFilter([filters._DirtyAddFilter(viewUpdateQueue)])
-        assert(False)
+        assert False
     except RuntimeError: pass
 
 
@@ -113,71 +120,62 @@ def package_contents_tree_filter_test():
     data[4] = fileAttributes4
 
     # test initial conditions
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
     # test setting active filter mask with no data
-    assert(not f.set_active_mask(presenter.FilterIds.NONE))
-    assert(not f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN))
-    assert(f.set_active_mask(presenter.FilterIds.FILES_RESOURCES))
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert not f.set_active_mask(presenter.FilterIds.NONE)
+    assert not f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN)
+    assert f.set_active_mask(presenter.FilterIds.FILES_RESOURCES)
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
     # test adding data
-    assert(not f.process_and_get_visibility(0, data[0]))
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(0, data[0])
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 1, 1)
 
-    assert(f.process_and_get_visibility(1, data[1]))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(1 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert f.process_and_get_visibility(1, data[1])
+    assert len(f.visibleNodeIds) == 1
+    assert 1 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 1, 1)
 
-    assert(not f.process_and_get_visibility(2, data[2]))
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2])
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
 
-    assert(not f.process_and_get_visibility(3, data[3]))
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(3, data[3])
+    assert viewUpdateQueue.empty()
 
-    assert(not f.process_and_get_visibility(4, data[4]))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(1 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 2, 2)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(4, data[4])
+    assert len(f.visibleNodeIds) == 1
+    assert 1 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 2, 2)
 
     # test adjusting active filters while we have data
     assert(f.set_active_mask(
         presenter.FilterIds.FILES_OTHER|presenter.FilterIds.PACKAGES_HIDDEN))
-    assert(viewUpdateQueue.empty())
-    assert(len(f.visibleNodeIds) == 3)
-    assert(2 in f.visibleNodeIds)
-    assert(3 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
+    assert viewUpdateQueue.empty()
+    assert len(f.visibleNodeIds) == 3
+    assert 2 in f.visibleNodeIds
+    assert 3 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
 
     # test removals
     f.remove([2])
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
-    assert(viewUpdateQueue.empty())
-    assert(len(f.visibleNodeIds) == 2)
-    assert(3 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
+    assert len(f.visibleNodeIds) == 2
+    assert 3 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
     f.remove([3, 4])
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 0, 0)
-    assert(viewUpdateQueue.empty())
-    assert(len(f.visibleNodeIds) == 0)
-    assert(f.set_active_mask(presenter.FilterIds.FILES_PLUGINS))
-    assert(viewUpdateQueue.empty())
-    assert(len(f.visibleNodeIds) == 1)
-    assert(0 in f.visibleNodeIds)
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 0, 0)
+    assert len(f.visibleNodeIds) == 0
+    assert f.set_active_mask(presenter.FilterIds.FILES_PLUGINS)
+    assert len(f.visibleNodeIds) == 1
+    assert 0 in f.visibleNodeIds
     f.remove([0, 1])
-    # order of following two lines is not set in stone
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 0, 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 0, 0)
-    assert(viewUpdateQueue.empty())
-    assert(len(f.visibleNodeIds) == 0)
+    _assert_stats_updates(viewUpdateQueue, {presenter.FilterIds.FILES_RESOURCES:(0,0),
+                                            presenter.FilterIds.FILES_PLUGINS:(0,0)})
+    assert len(f.visibleNodeIds) == 0
 
 
 def packages_tree_filter_test():
@@ -210,96 +208,91 @@ def packages_tree_filter_test():
     data[4] = packageAttributes3
 
     # test initial conditions
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
     # set active filters and add some data without an active search
     f.set_active_mask(
         presenter.FilterIds.PACKAGES_INSTALLED|presenter.FilterIds.PACKAGES_NOT_INSTALLED)
-    assert(f.process_and_get_visibility(0, data[0], True))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(0 in f.visibleNodeIds)
-    assert(viewUpdateQueue.empty())
+    assert f.process_and_get_visibility(0, data[0], True)
+    assert len(f.visibleNodeIds) == 1
+    assert 0 in f.visibleNodeIds
+    assert viewUpdateQueue.empty()
 
-    assert(not f.process_and_get_visibility(1, data[1], True))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(0 in f.visibleNodeIds)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(1, data[1], True)
+    assert len(f.visibleNodeIds) == 1
+    assert 0 in f.visibleNodeIds
+    assert viewUpdateQueue.empty()
 
-    assert(not f.process_and_get_visibility(2, data[2], True))
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2], True)
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 1, 1)
 
     # apply the search "notIns"
     f.apply_search([])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 0, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 0, 1)
 
     # add some more data, one that doesn't match the search and one that does
     # both match the active filters
-    assert(not f.process_and_get_visibility(3, data[3], False))
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(3, data[3], False)
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 1)
 
-    assert(f.process_and_get_visibility(0, data[0], True))
-    assert(f.process_and_get_visibility(4, data[4], True))
-    assert(len(f.visibleNodeIds) == 2)
-    assert(0 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert f.process_and_get_visibility(0, data[0], True)
+    assert f.process_and_get_visibility(4, data[4], True)
+    assert len(f.visibleNodeIds) == 2
+    assert 0 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
 
     # change the active mask to hidden
     f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN)
-    assert(len(f.visibleNodeIds) == 1)
-    assert(0 in f.visibleNodeIds)
+    assert len(f.visibleNodeIds) == 1
+    assert 0 in f.visibleNodeIds
     # reapply search
     f.apply_search([])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 1)
 
     # change the active mask to everything
     f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN | \
                         presenter.FilterIds.PACKAGES_INSTALLED | \
                         presenter.FilterIds.PACKAGES_NOT_INSTALLED)
-    assert(len(f.visibleNodeIds) == 0)
+    assert len(f.visibleNodeIds) == 0
     # change the search string to "installed"
     f.apply_search([0, 3, 4])
-    assert(len(f.visibleNodeIds) == 3)
-    assert(0 in f.visibleNodeIds)
-    assert(3 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 3
+    assert 0 in f.visibleNodeIds
+    assert 3 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.PACKAGES_INSTALLED:(1,1),
+                           presenter.FilterIds.PACKAGES_NOT_INSTALLED:(1,1)})
 
     # remove some data, including the installed package
     f.remove([1, 2, 3])
-    assert(len(f.visibleNodeIds) == 2)
-    assert(0 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_HIDDEN, 0, 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 2
+    assert 0 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.PACKAGES_INSTALLED:(0,0),
+                           presenter.FilterIds.PACKAGES_HIDDEN:(0,0)})
 
     # update the not installed package so that it is now installed
-    assert(f.process_and_get_visibility(4, data[3], True))
-    assert(len(f.visibleNodeIds) == 2)
-    assert(0 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 0)
-    assert(viewUpdateQueue.empty())
+    assert f.process_and_get_visibility(4, data[3], True)
+    assert len(f.visibleNodeIds) == 2
+    assert 0 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.PACKAGES_INSTALLED:(1,1),
+                           presenter.FilterIds.PACKAGES_NOT_INSTALLED:(0,0)})
 
     # remove the search restriction; check that nothing changes
     f.apply_search(None)
-    assert(len(f.visibleNodeIds) == 2)
-    assert(0 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 2
+    assert 0 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    assert viewUpdateQueue.empty()
 
 
 def dirty_list_filter_test():
@@ -332,49 +325,45 @@ def dirty_list_filter_test():
     data[4] = fileAttributes4
 
     # test initial conditions
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
     # add some data with no active filters
-    assert(not f.process_and_get_visibility(0, data[0]))
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(0, data[0])
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
-    assert(not f.process_and_get_visibility(1, data[1]))
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_ADD, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(1, data[1])
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_ADD, 1, 1)
 
     # set the filter
-    assert(f.set_active_mask(
-        presenter.FilterIds.DIRTY_ADD|presenter.FilterIds.DIRTY_DELETE))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(1 in f.visibleNodeIds)
+    assert f.set_active_mask(
+        presenter.FilterIds.DIRTY_ADD|presenter.FilterIds.DIRTY_DELETE)
+    assert len(f.visibleNodeIds) == 1
+    assert 1 in f.visibleNodeIds
 
-    assert(not f.process_and_get_visibility(2, data[2]))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(1 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_UPDATE, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(2, data[2])
+    assert len(f.visibleNodeIds) == 1
+    assert 1 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_UPDATE, 1, 1)
 
-    assert(not f.process_and_get_visibility(3, data[3]))
-    assert(len(f.visibleNodeIds) == 1)
-    assert(1 in f.visibleNodeIds)
-    assert(viewUpdateQueue.empty())
+    assert not f.process_and_get_visibility(3, data[3])
+    assert len(f.visibleNodeIds) == 1
+    assert 1 in f.visibleNodeIds
+    assert viewUpdateQueue.empty()
 
-    assert(f.process_and_get_visibility(4, data[4]))
-    assert(len(f.visibleNodeIds) == 2)
-    assert(1 in f.visibleNodeIds)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_DELETE, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert f.process_and_get_visibility(4, data[4])
+    assert len(f.visibleNodeIds) == 2
+    assert 1 in f.visibleNodeIds
+    assert 4 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_DELETE, 1, 1)
 
     # try removing the DIRTY_ADD node
     f.remove([1])
-    assert(len(f.visibleNodeIds) == 1)
-    assert(4 in f.visibleNodeIds)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_ADD, 0, 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 1
+    assert 4 in f.visibleNodeIds
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.DIRTY_ADD, 0, 0)
 
 
 def conflict_list_filter_test():
@@ -403,8 +392,8 @@ def conflict_list_filter_test():
     data[2] = fileAttributes3
 
     # test initial conditions
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
 
     # set active filters
     f.set_active_mask(presenter.FilterIds.CONFLICTS_SELECTED| \
@@ -416,18 +405,18 @@ def conflict_list_filter_test():
     assert f.process_and_get_visibility(0, data[0], data[1], 2)
     assert len(f.visibleNodeIds) == 1
     assert (101, 0) in f.visibleNodeIds
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_SELECTED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_ACTIVE, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_HIGHER, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_MISMATCHED, 1, 1)
-    assert(viewUpdateQueue.empty())
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.CONFLICTS_SELECTED:(1,1),
+                           presenter.FilterIds.CONFLICTS_ACTIVE:(1,1),
+                           presenter.FilterIds.CONFLICTS_HIGHER:(1,1),
+                           presenter.FilterIds.CONFLICTS_MISMATCHED:(1,1)})
 
     assert not f.process_and_get_visibility(0, data[0], data[2], 3)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_SELECTED, 1, 2)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_INACTIVE, 0, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_HIGHER, 1, 2)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.CONFLICTS_MATCHED, 0, 1)
-    assert(viewUpdateQueue.empty())
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.CONFLICTS_SELECTED:(1,2),
+                           presenter.FilterIds.CONFLICTS_INACTIVE:(0,1),
+                           presenter.FilterIds.CONFLICTS_HIGHER:(1,2),
+                           presenter.FilterIds.CONFLICTS_MATCHED:(0,1)})
 
 
 def selected_list_filter_test():
@@ -459,23 +448,23 @@ def selected_list_filter_test():
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
     assert not f.process_and_get_visibility(1, data[1])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MISMATCHED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_NO_CONFLICTS, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.SELECTED_MISMATCHED:(1,1),
+                           presenter.FilterIds.SELECTED_NO_CONFLICTS:(1,1)})
     assert not f.process_and_get_visibility(2, data[2])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MISSING, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_NO_CONFLICTS, 2, 2)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.SELECTED_MISSING:(1,1),
+                           presenter.FilterIds.SELECTED_NO_CONFLICTS:(2,2)})
     assert not f.process_and_get_visibility(3, data[3])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_MATCHED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SELECTED_HAS_CONFLICTS, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.SELECTED_MATCHED:(1,1),
+                           presenter.FilterIds.SELECTED_HAS_CONFLICTS:(1,1)})
 
 
 def unselected_list_filter_test():
@@ -508,23 +497,23 @@ def unselected_list_filter_test():
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
     assert not f.process_and_get_visibility(1, data[1])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MISMATCHED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_NO_CONFLICTS, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.UNSELECTED_MISMATCHED:(1,1),
+                           presenter.FilterIds.UNSELECTED_NO_CONFLICTS:(1,1)})
     assert not f.process_and_get_visibility(2, data[2])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MISSING, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_NO_CONFLICTS, 2, 2)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.UNSELECTED_MISSING:(1,1),
+                           presenter.FilterIds.UNSELECTED_NO_CONFLICTS:(2,2)})
     assert not f.process_and_get_visibility(3, data[3])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_MATCHED, 1, 1)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.UNSELECTED_HAS_CONFLICTS, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_updates(viewUpdateQueue,
+                          {presenter.FilterIds.UNSELECTED_MATCHED:(1,1),
+                           presenter.FilterIds.UNSELECTED_HAS_CONFLICTS:(1,1)})
 
 
 def skipped_list_filter_test():
@@ -547,16 +536,14 @@ def skipped_list_filter_test():
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
-    assert(len(f.visibleNodeIds) == 0)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
     assert not f.process_and_get_visibility(1, data[1])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_MASKED, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_MASKED, 1, 1)
     assert not f.process_and_get_visibility(2, data[2])
-    assert(len(f.visibleNodeIds) == 0)
-    assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_NONGAME, 1, 1)
-    assert(viewUpdateQueue.empty())
+    assert len(f.visibleNodeIds) == 0
+    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.SKIPPED_NONGAME, 1, 1)
 
 
 def last_bits_test():

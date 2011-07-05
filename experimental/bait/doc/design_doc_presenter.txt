@@ -133,7 +133,7 @@ Filters
 This design is approximate.  I suspect we will use a hierarchy of filter 
 classes.  One filter class for each filter defined in the UI, then aggregate 
 filters that combine them in proper AND and OR groups, then top-level filters 
-that represent all filters that affect a particular widget.
+that represent all filters that affect a particular widget.  Filters keep their related UI button labels up to date.
 
 API:
   __init__(self, viewUpdateQueue)
@@ -172,9 +172,7 @@ engine thread.  There will be at least two different diff engines (for the
 packages tree and for the package contents), so this design is approximate.
 
 API:
-  __init__(self, stateChangeQueue)
-  start(self)
-  shutdown(self)
+  __init__(self, viewCommandQueue)
   set_filter_mask(self, filterMask)
   set_selected_node_ids(self, nodeIds)
   other methods that describe the different state changes for the diff engine
@@ -186,7 +184,6 @@ Algorithm:
   When nodes are added, updated, or removed, the diff engine informs the 
 filters so they can keep their sets and statistics up to date.  When items are 
 added/removed from the visible set, the diff engine sends the appropriate 
-updates to the view.  After every major operation, the diff engine calls on the 
-filters to update the filter buttons.  When user selections change, or when 
+updates to the view.  When user selections change, or when 
 filter changes change the number of visible selected items, the diff engine 
 informs any interested widget managers so they can set their foci.

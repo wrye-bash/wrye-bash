@@ -268,6 +268,8 @@ class _DiffEngine:
     Implementation notes:
     ensure attributres exist before children to satisfy algorithm invariants when tracing
     parentage
+    ensure a node can be asynchronously updated from a model update before we fetch it
+    explicitly.  this will avoid a potential race condition where we might miss an update.
     """
 
     def __init__(self, generalTabManager, viewCommandQueue):
@@ -302,7 +304,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                  nodeType is model.NodeTypes.GROUP))
 
     def could_use_update(self, updateType, nodeId, version):
-        # assumes update is in scope
+        """Assumes update is in scope.  Returns boolean"""
         # the following algorithm is thread safe in the sense that it does not mess up
         # other algorithms, being read-only.  These conditions will be checked again, of
         # course, by the thread that actually modifies the data structures

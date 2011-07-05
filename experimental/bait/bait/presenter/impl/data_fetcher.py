@@ -29,6 +29,10 @@ import threading
 from ... import model
 
 
+UPDATE_TYPE_IDX = 0
+NODE_ID_IDX = 1
+DATA_IDX = 2
+
 _logger = logging.getLogger(__name__)
 
 
