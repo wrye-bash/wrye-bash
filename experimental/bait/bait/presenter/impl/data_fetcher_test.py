@@ -83,7 +83,7 @@ def _data_fetcher_test(numThreads):
     df.async_fetch(1, "garbage", None)
 
     # wait for items to be processed
-    while not df._fetchQueue.empty():
+    while df._fetchQueue.unfinished_tasks != 0:
         time.sleep(0)
 
     # assert output

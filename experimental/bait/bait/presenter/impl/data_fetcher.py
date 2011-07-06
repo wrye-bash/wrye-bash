@@ -68,6 +68,7 @@ class DataFetcher:
                 self._fetchQueue.put(None)
         for t in self._fetchThreads:
             t.join()
+        self._fetchQueue.join()
         self._fetchThreads = []
 
     def async_fetch(self, nodeId, updateTypeMask, stateChangeQueue):
@@ -85,16 +86,19 @@ class DataFetcher:
             if fetchRequest is None:
                 _logger.debug(
                     "received sentinel value; data fetcher thread exiting")
+                self._fetchQueue.task_done()
                 break
             with self._shutdownLock:
                 # if we are shutting down, eat all updates
                 if self._shutdown:
+                    self._fetchQueue.task_done()
                     continue
                 try:
                     nodeId, updateTypeMask, stateChangeQueue = fetchRequest
                     _logger.debug("fetching %s for nodeId %d", updateTypeMask, nodeId)
                     if 0 == updateTypeMask:
                         _logger.warn("zero updateTypeMask in data fetcher")
+                        self._fetchQueue.task_done()
                         continue
                     for updateType, updateFn, updateName in self._updateInfo:
                         if 0 != updateTypeMask & updateType:
@@ -112,3 +116,4 @@ class DataFetcher:
                                      updateTypeMask.value)
                 except Exception as e:
                     _logger.warn("invalid fetch reqeuest: %s: %s", str(fetchRequest), e)
+                self._fetchQueue.task_done()
