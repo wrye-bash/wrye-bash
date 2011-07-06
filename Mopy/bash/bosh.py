@@ -7083,7 +7083,7 @@ class OBSEIniFile(IniFile):
             elif maSetGS:
                 section = ini_settings.setdefault(bolt.LString(']setGS['),{})
                 if LString(maSetGS.group(1)) in section:
-                    key = LString(maSet.group(1))
+                    key = LString(maSetGS.group(1))
                     value = section[key]
                     if isinstance(value,str) and value[-1] == '\n':
                         line = value

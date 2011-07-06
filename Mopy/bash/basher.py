@@ -11457,7 +11457,7 @@ class Mod_ListPatchConfig(Link):
         clip.write('[spoiler][xml]')
         # CBash/Python patch?
         log.setHeader('== '+_('Patch Mode'))
-        clip.write('== '+_('Patch Mode')+'\n'),
+        clip.write('== '+_('Patch Mode')+'\n')
         if doCBash:
             if settings['bash.CBashEnabled']:
                 msg = 'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
