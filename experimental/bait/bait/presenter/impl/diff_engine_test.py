@@ -118,7 +118,8 @@ def _assert_view_commands(viewCommandQueue, commands):
             assert expectedUpdate[1] == command.total
             del itemDict[("f", filterId)]
         elif command.commandId == view_commands.CommandIds.ADD_PACKAGE or \
-             command.commandId == view_commands.CommandIds.ADD_GROUP:
+             command.commandId == view_commands.CommandIds.ADD_GROUP or \
+             command.commandId == view_commands.CommandIds.UPDATE_PACKAGE:
             nodeId = command.nodeId
             expectedUpdate = itemDict[("n", nodeId)]
             assert cmp(expectedUpdate[0], command.style)
@@ -1085,12 +1086,6 @@ def test_packages_tree_diff_engine_node_updates():
     hiddenUninstPkg1.parentNodeId = 4
     hiddenUninstPkg1.version = 1
     de.update_attributes(5, hiddenUninstPkg1)
-    assert de.loadRequestQueue.empty()
-    _assert_view_commands(
-        viewCommandQueue,
-        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,3),
-         ("n", 1):None})
     hiddenUninstGroup1 = node_attributes.GroupNodeAttributes()
     hiddenUninstGroup1.isHidden = True
     hiddenUninstGroup1.label = "hiddenUninstGroup1"
@@ -1098,7 +1093,11 @@ def test_packages_tree_diff_engine_node_updates():
     hiddenUninstGroup1.version = 1
     de.update_attributes(4, hiddenUninstGroup1)
     assert de.loadRequestQueue.empty()
-    assert viewCommandQueue.empty()
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,3),
+         ("n", 1):None})
 
     revertedUninstPkg1 = node_attributes.PackageNodeAttributes()
     revertedUninstPkg1.isNotInstalled = True
@@ -1134,8 +1133,6 @@ def test_packages_tree_diff_engine_node_updates():
     hiddenUninstGroup2.parentNodeId = model.ROOT_NODE_ID
     hiddenUninstGroup2.version = 1
     de.update_attributes(10, hiddenUninstGroup2)
-    assert de.loadRequestQueue.empty()
-    assert viewCommandQueue.empty()
     hiddenUninstPkg2 = node_attributes.PackageNodeAttributes()
     hiddenUninstPkg2.isHidden = True
     hiddenUninstPkg2.label = "hiddenUninstPkg2"
@@ -1195,7 +1192,6 @@ def test_packages_tree_diff_engine_node_updates():
     renamedUninstGroup1.version = 3
     de.update_attributes(4, renamedUninstGroup1)
     assert de.loadRequestQueue.empty()
-    _dump_queue(viewCommandQueue)
     _assert_view_commands(viewCommandQueue, {("n", 1):None})
 
     # remove allGroup tree
@@ -1207,5 +1203,4 @@ def test_packages_tree_diff_engine_node_updates():
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,1),
          ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
-         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,1),
-         ("n", 1):None})
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,1)})
