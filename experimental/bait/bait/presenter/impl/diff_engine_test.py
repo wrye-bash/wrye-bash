@@ -50,14 +50,16 @@ class _DummyManager:
     def __init__(self):
         self.enabled = False
         self.targetPackage = None
+        self.isMultiple = False
     def enable_set_target_package(self, isEnabled):
         self.enabled = isEnabled
-    def set_target_package(self, targetPackage):
+    def set_target_package(self, nodeId, isMultiple):
         assert self.enabled
-        self.targetPackage = targetPackage
+        self.targetPackage = nodeId
+        self.isMultiple = isMultiple
 
 
-def _assert_group(inQueue, itemDict, checkFn):
+def _assert_group(inQueue, checkFn):
     assert not inQueue.empty()
     for itemNum in xrange(inQueue.qsize()):
         item = inQueue.get(block=False)
@@ -67,7 +69,7 @@ def _assert_group(inQueue, itemDict, checkFn):
         logger = logging.getLogger(__name__)
         logger.info("asserting %s", str(item))
 
-        checkFn(item, itemDict)
+        checkFn(item)
     assert inQueue.empty()
 
 def _assert_filter_view_command(viewCommandQueue, filterId, current, total,
@@ -105,40 +107,44 @@ def _assert_expand_view_command(viewCommandQueue, nodeId, isExpanded, isLastComm
     if isLastCommand:
         assert viewCommandQueue.empty()
 
-def _assert_view_commands(viewCommandQueue, commands):
+def _assert_view_commands(viewCommandQueue, commands, optionalCommands=None):
     """commands is a dict of ("f", filterId) -> (current, total) or
     ("n", nodeId) -> (style, parentNodeId, predNodeId) or ("e", nodeId) -> isExpanded.
     they are accepted in any order.  the letter prefixes in the tuples are required to
-    avoid hash collisions"""
-    def check_view_command(command, itemDict):
+    avoid hash collisions.  the second dictionary is for commands that may be issues,
+    but are not required to be."""
+    def pop(key):
+        if key in commands:
+            return commands.pop(key)
+        if optionalCommands is None:
+            raise KeyError(key)
+        return optionalCommands.pop(key)
+    def check_view_command(command):
         if command.commandId == view_commands.CommandIds.SET_FILTER_STATS:
             filterId = command.filterId
-            expectedUpdate = itemDict[("f", filterId)]
+            expectedUpdate = pop(("f", filterId))
             assert expectedUpdate[0] == command.current
             assert expectedUpdate[1] == command.total
-            del itemDict[("f", filterId)]
         elif command.commandId == view_commands.CommandIds.ADD_PACKAGE or \
              command.commandId == view_commands.CommandIds.ADD_GROUP or \
-             command.commandId == view_commands.CommandIds.UPDATE_PACKAGE:
+             command.commandId == view_commands.CommandIds.UPDATE_PACKAGE or \
+             command.commandId == view_commands.CommandIds.UPDATE_GROUP:
             nodeId = command.nodeId
-            expectedUpdate = itemDict[("n", nodeId)]
+            expectedUpdate = pop(("n", nodeId))
             assert cmp(expectedUpdate[0], command.style)
             assert expectedUpdate[1] == command.parentNodeId
             assert expectedUpdate[2] == command.predecessorNodeId
-            del itemDict[("n", nodeId)]
         elif command.commandId == view_commands.CommandIds.REMOVE_PACKAGES_TREE_NODE:
             nodeId = command.nodeId
-            expectedUpdate = itemDict[("n", nodeId)]
-            del itemDict[("n", nodeId)]
+            expectedUpdate = pop(("n", nodeId))
         elif command.commandId == view_commands.CommandIds.EXPAND_GROUP:
             nodeId = command.nodeId
-            expectedUpdate = itemDict[("e", nodeId)]
+            expectedUpdate = pop(("e", nodeId))
             assert expectedUpdate == command.isExpanded
-            del itemDict[("e", nodeId)]
         else:
             # unhandled case
-            assert False
-    _assert_group(viewCommandQueue, commands, check_view_command)
+            raise NotImplementedError("unchecked viewCommand type")
+    _assert_group(viewCommandQueue, check_view_command)
     assert len(commands) == 0
 
 def _assert_load_request(loadRequestQueue, updateMask, nodeId):
@@ -150,11 +156,11 @@ def _assert_load_request(loadRequestQueue, updateMask, nodeId):
 
 def _assert_load_requests(loadRequestQueue, updates):
     """updates is a dict of nodeId -> updateMask.  updates are accepted in any order"""
-    def check_load_request(loadRequest, itemDict):
+    def check_load_request(loadRequest):
         nodeId = loadRequest[diff_engine.NODE_ID_IDX]
-        assert itemDict[nodeId] == loadRequest[diff_engine.UPDATE_TYPE_MASK_IDX]
-        del itemDict[nodeId]
-    _assert_group(loadRequestQueue, updates, check_load_request)
+        assert updates.pop(nodeId) == loadRequest[diff_engine.UPDATE_TYPE_MASK_IDX]
+    _assert_group(loadRequestQueue, check_load_request)
+    assert len(updates) == 0
 
 
 def test_packages_tree_diff_engine():
@@ -168,7 +174,11 @@ def test_packages_tree_diff_engine():
     # set and verify initial state
     assert viewCommandQueue.empty()
     _assert_load_request(de.loadRequestQueue, _CHILDREN, model.ROOT_NODE_ID)
+    dummyGeneralTabManager.enable_set_target_package(True)
+    dummyPackageContentsManager.enable_set_target_package(True)
     de.set_selected_nodes(None)
+    dummyGeneralTabManager.enable_set_target_package(False)
+    dummyPackageContentsManager.enable_set_target_package(False)
     de.set_pending_search_string(None)
     de.update_search_string(None)
     filterMask = presenter.FilterIds.PACKAGES_INSTALLED|\
@@ -283,7 +293,6 @@ def test_packages_tree_diff_engine():
     uninstalledGroup.label = "uninstalledGroup"
     uninstalledGroup.parentNodeId = model.ROOT_NODE_ID
     de.update_attributes(6, uninstalledGroup)
-    _assert_add_node_view_command(viewCommandQueue, 6, view_commands.Style(), 0, None)
     _assert_load_request(de.loadRequestQueue, _CHILDREN, 6)
     de.update_children(6, node_children.NodeChildren([7, 8, 9]))
     assert viewCommandQueue.empty()
@@ -310,6 +319,7 @@ def test_packages_tree_diff_engine():
     _assert_view_commands(
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
+         ("n", 6):(view_commands.Style(),0,None),
          ("n", 9):(view_commands.Style(
              iconId=view_commands.IconIds.PROJECT_MISSING,
              checkboxState=False),6,None)})
@@ -456,7 +466,8 @@ def test_packages_tree_diff_engine():
         {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,4),
          ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,3),
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,5),
-         ("n", 6):None, ("n", 11):None, ("n", 12):None, ("n", 14):None, ("n", 15):None})
+         ("n", 6):None, ("n", 11):None, ("n", 12):None, ("n", 14):None, ("n", 15):None},
+        {("n", 8):None, ("n", 9):None})
 
     # single out a particular group
     de.set_pending_search_string("instGroup")
@@ -495,27 +506,25 @@ def test_packages_tree_diff_engine():
     updatedHiddenGroup.parentNodeId = model.ROOT_NODE_ID
     updatedHiddenGroup.version = 1
     de.update_attributes(10, updatedHiddenGroup)
-    _assert_add_node_view_command(
-        viewCommandQueue, 10, view_commands.Style(
-            foregroundColorId=view_commands.ForegroundColorIds.DISABLED),
-        model.ROOT_NODE_ID, 2, False)
-    _assert_expand_view_command(viewCommandQueue, 10, True, False)
-    _assert_add_node_view_command(
-        viewCommandQueue, 11, view_commands.Style(
-            foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
-            iconId=view_commands.IconIds.PROJECT_EMPTY), 10, None, False)
-    _assert_add_node_view_command(
-        viewCommandQueue, 12, view_commands.Style(
-            foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
-            iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 11, False)
-    _assert_add_node_view_command(
-        viewCommandQueue, 13, view_commands.Style(
-            foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
-            iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 12, False)
-    _assert_add_node_view_command(
-        viewCommandQueue, 14, view_commands.Style(
-            foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
-            iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 13)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_HIDDEN):(4,5),
+         ("n", 10):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED),
+                    model.ROOT_NODE_ID, 2, False),
+         ("e", 10):True,
+         ("n", 11):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY), 10, None),
+         ("n", 12):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 11),
+         ("n", 13):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 12),
+         ("n", 14):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+            iconId=view_commands.IconIds.PROJECT_EMPTY), 10, 13)})
 
     # ensure stale search strings are not evaluated
     de.set_pending_search_string("hiddenPkg2")
@@ -527,7 +536,8 @@ def test_packages_tree_diff_engine():
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,4),
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,5),
-         ("n", 2):None, ("n", 11):None, ("n", 12):None, ("n", 14):None})
+         ("n", 2):None, ("n", 11):None, ("n", 12):None, ("n", 14):None},
+        {("n", 4):None, ("n", 5):None})
     de.set_pending_search_string("hiddenPkg2")
     de.set_pending_search_string("hiddenPkg3")
     de.update_search_string("hiddenPkg2")
@@ -1026,7 +1036,7 @@ def test_packages_tree_diff_engine_node_updates():
             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
             iconId=view_commands.IconIds.PROJECT_EMPTY),
                    6,None),
-         ("n", 8):(view_commands.Style(),model.ROOT_NODE_ID,1),
+         ("n", 8):(view_commands.Style(),model.ROOT_NODE_ID,None),
          ("n", 9):(view_commands.Style(
              checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    8,None),
@@ -1066,7 +1076,7 @@ def test_packages_tree_diff_engine_node_updates():
          ("n", 5):(view_commands.Style(
              checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    4,None),
-         ("n", 10):(view_commands.Style(),model.ROOT_NODE_ID,1),
+         ("n", 10):(view_commands.Style(),model.ROOT_NODE_ID,None),
          ("n", 11):(view_commands.Style(
              checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    10,None)})
@@ -1133,6 +1143,8 @@ def test_packages_tree_diff_engine_node_updates():
     hiddenUninstGroup2.parentNodeId = model.ROOT_NODE_ID
     hiddenUninstGroup2.version = 1
     de.update_attributes(10, hiddenUninstGroup2)
+    _assert_add_node_view_command(viewCommandQueue, 10, view_commands.Style(
+        foregroundColorId=view_commands.ForegroundColorIds.DISABLED), 0, 1)
     hiddenUninstPkg2 = node_attributes.PackageNodeAttributes()
     hiddenUninstPkg2.isHidden = True
     hiddenUninstPkg2.label = "hiddenUninstPkg2"
@@ -1153,13 +1165,6 @@ def test_packages_tree_diff_engine_node_updates():
     revertedUninstGroup2.version = 2
     de.update_attributes(10, revertedUninstGroup2)
     assert de.loadRequestQueue.empty()
-    _assert_add_node_view_command(viewCommandQueue, 10, view_commands.Style(),
-                                  model.ROOT_NODE_ID, 1, False)
-    # this is expected here since we are processing the updates out of order
-    _assert_add_node_view_command(viewCommandQueue, 11, view_commands.Style(
-        foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
-        iconId=view_commands.IconIds.PROJECT_EMPTY),
-                                  10, None)
     revertedUninstPkg2 = node_attributes.PackageNodeAttributes()
     revertedUninstPkg2.isNotInstalled = True
     revertedUninstPkg2.label = "revertedUninstPkg2"
@@ -1171,6 +1176,7 @@ def test_packages_tree_diff_engine_node_updates():
         viewCommandQueue,
         {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(2,2),
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,2),
+         ("n", 10):(view_commands.Style(), model.ROOT_NODE_ID, 1),
          ("n", 11):(view_commands.Style(
              checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    10,None)})
@@ -1183,8 +1189,12 @@ def test_packages_tree_diff_engine_node_updates():
     renamedUninstPkg1.parentNodeId = 4
     renamedUninstPkg1.version = 3
     de.update_attributes(5, renamedUninstPkg1)
-    _assert_add_node_view_command(viewCommandQueue, 5, view_commands.Style(
-        checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY), 4, None)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,2),
+         ("n", 5):(view_commands.Style(
+             checkboxState=False, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   4,None)})
     renamedUninstGroup1 = node_attributes.GroupNodeAttributes()
     renamedUninstGroup1.isNotInstalled = True
     renamedUninstGroup1.label = "renamedU instGroup1"
@@ -1204,3 +1214,157 @@ def test_packages_tree_diff_engine_node_updates():
         {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,1),
          ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,1)})
+
+
+def test_packages_tree_diff_engine_deep_hierarchy():
+    viewCommandQueue = Queue.Queue()
+    dummyGeneralTabManager = _DummyManager()
+    dummyPackageContentsManager = _DummyManager()
+
+    de = diff_engine.PackagesTreeDiffEngine(
+        dummyGeneralTabManager, dummyPackageContentsManager, viewCommandQueue)
+    _assert_load_request(de.loadRequestQueue, _CHILDREN, model.ROOT_NODE_ID)
+
+    de.set_pending_filter_mask(presenter.FilterIds.PACKAGES_INSTALLED)
+    de.update_filter(presenter.FilterIds.PACKAGES_INSTALLED)
+
+    # define data
+    de.update_children(model.ROOT_NODE_ID, node_children.NodeChildren([1]))
+    _assert_load_requests(de.loadRequestQueue, {1:_ATTRIBUTES})
+
+    instGroup = node_attributes.GroupNodeAttributes()
+    instGroup.isInstalled = True
+    instGroup.isHidden = True
+    instGroup.label = "instGroup"
+    instGroup.parentNodeId = model.ROOT_NODE_ID
+    de.update_attributes(1, instGroup)
+    de.update_children(1, node_children.NodeChildren([2, 3]))
+    _assert_load_requests(de.loadRequestQueue, {1:_CHILDREN,
+                                                2:_ATTRIBUTES, 3:_ATTRIBUTES})
+
+    hiddenGroup = node_attributes.GroupNodeAttributes()
+    hiddenGroup.isHidden = True
+    hiddenGroup.label = "hiddenGroup"
+    hiddenGroup.parentNodeId = 1
+    de.update_attributes(2, hiddenGroup)
+    de.update_children(2, node_children.NodeChildren([4]))
+    _assert_load_requests(de.loadRequestQueue, {2:_CHILDREN, 4:_ATTRIBUTES})
+
+    instPkg = node_attributes.PackageNodeAttributes()
+    instPkg.isInstalled = True
+    instPkg.label = "instPkg"
+    instPkg.parentNodeId = 1
+    de.update_attributes(3, instPkg)
+    _assert_load_requests(de.loadRequestQueue, {3:_CHILDREN})
+
+    hiddenPkg = node_attributes.PackageNodeAttributes()
+    hiddenPkg.isHidden = True
+    hiddenPkg.label = "hiddenPkg"
+    hiddenPkg.parentNodeId = 2
+    de.update_attributes(4, hiddenPkg)
+    _assert_load_requests(de.loadRequestQueue, {4:_CHILDREN})
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(1,1),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,1),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None),
+         ("n", 3):(view_commands.Style(
+             checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   1,None)})
+
+    # update nodes 1 and 3 so that they no longer match the filter
+    updatedInstGroup = node_attributes.GroupNodeAttributes()
+    updatedInstGroup.isNotInstalled = True
+    updatedInstGroup.isHidden = True
+    updatedInstGroup.label = "updatedInstGroup"
+    updatedInstGroup.parentNodeId = model.ROOT_NODE_ID
+    updatedInstGroup.version = 1
+    de.update_attributes(1, updatedInstGroup)
+    _assert_add_node_view_command(viewCommandQueue, 1, view_commands.Style(),
+                                  model.ROOT_NODE_ID, None)
+    updatedInstPkg = node_attributes.PackageNodeAttributes()
+    updatedInstPkg.isNotInstalled = True
+    updatedInstPkg.label = "updatedInstPkg"
+    updatedInstPkg.parentNodeId = 1
+    updatedInstPkg.version = 1
+    de.update_attributes(3, updatedInstPkg)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,0),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
+         ("n", 1):None})
+
+    # change them back
+    revertedInstPkg = node_attributes.PackageNodeAttributes()
+    revertedInstPkg.isInstalled = True
+    revertedInstPkg.label = "instPkg"
+    revertedInstPkg.parentNodeId = 1
+    revertedInstPkg.version = 2
+    de.update_attributes(3, revertedInstPkg)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(1,1),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,0),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None),
+         ("n", 3):(view_commands.Style(
+             checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   1,None)})
+    revertedInstGroup = node_attributes.GroupNodeAttributes()
+    revertedInstGroup.isInstalled = True
+    revertedInstGroup.isHidden = True
+    revertedInstGroup.label = "instGroup"
+    revertedInstGroup.parentNodeId = model.ROOT_NODE_ID
+    revertedInstGroup.version = 2
+    de.update_attributes(1, revertedInstGroup)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None)})
+
+    # add in a search that matches installed packages and do the same thing
+    de.set_pending_search_string("inst")
+    de.update_search_string("inst")
+
+    # make nodes 1 and 3 no longer match the filter but still match the search
+    updatedInstGroup2 = node_attributes.GroupNodeAttributes()
+    updatedInstGroup2.isNotInstalled = True
+    updatedInstGroup2.isHidden = True
+    updatedInstGroup2.label = "updatedInstGroup"
+    updatedInstGroup2.parentNodeId = model.ROOT_NODE_ID
+    updatedInstGroup2.version = 3
+    de.update_attributes(1, updatedInstGroup2)
+    _assert_add_node_view_command(viewCommandQueue, 1, view_commands.Style(),
+                                  model.ROOT_NODE_ID, None)
+    updatedInstPkg2 = node_attributes.PackageNodeAttributes()
+    updatedInstPkg2.isNotInstalled = True
+    updatedInstPkg2.label = "updatedInstPkg"
+    updatedInstPkg2.parentNodeId = 1
+    updatedInstPkg2.version = 3
+    de.update_attributes(3, updatedInstPkg2)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,0),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(1,1),
+         ("n", 1):None})
+
+    # change them back
+    revertedInstGroup2 = node_attributes.GroupNodeAttributes()
+    revertedInstGroup2.isInstalled = True
+    revertedInstGroup2.isHidden = True
+    revertedInstGroup2.label = "instGroup"
+    revertedInstGroup2.parentNodeId = model.ROOT_NODE_ID
+    revertedInstGroup2.version = 4
+    de.update_attributes(1, revertedInstGroup2)
+    revertedInstPkg2 = node_attributes.PackageNodeAttributes()
+    revertedInstPkg2.isInstalled = True
+    revertedInstPkg2.label = "instPkg"
+    revertedInstPkg2.parentNodeId = 1
+    revertedInstPkg2.version = 4
+    de.update_attributes(3, revertedInstPkg2)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(1,1),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,0),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None),
+         ("n", 3):(view_commands.Style(
+             checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
+                   1,None)})

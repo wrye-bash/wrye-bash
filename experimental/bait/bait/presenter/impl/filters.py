@@ -114,11 +114,13 @@ class _FilterButton(_Filter):
         self._sync_to_view(matchedNodeIds)
     def update_view(self, nodeId, getHypotheticalVisibilityFn):
         matchedNodeIds = self._get_matched_node_ids_for_stats()
-        if nodeId in matchedNodeIds and getHypotheticalVisibilityFn(nodeId, self._idMask):
+        if nodeId in matchedNodeIds and \
+           getHypotheticalVisibilityFn(nodeId, self._idMask) and \
+           nodeId not in self._hypotheticallyVisibleNodeIds:
             _logger.debug("adding node %s to filter %s's hypothetically visible list",
                           nodeId, self._idMask)
             self._hypotheticallyVisibleNodeIds.add(nodeId)
-        else:
+        elif nodeId in self._hypotheticallyVisibleNodeIds:
             _logger.debug("removing node %s from filter %s's hypothetically visible list",
                           nodeId, self._idMask)
             self._hypotheticallyVisibleNodeIds.discard(nodeId)
@@ -256,6 +258,7 @@ class _FilterGroup:
     def __init__(self, wrappedFilter):
         self._filter = wrappedFilter
         self.visibleNodeIds = self._get_visible_node_ids()
+        self._automatic_updates_enabled = True
     def set_active_mask(self, idMask):
         """sets active filters and returns whether state has changed"""
         _logger.debug("modifying active mask for %s: %s", self.__class__.__name__, idMask)
@@ -265,11 +268,19 @@ class _FilterGroup:
             return False
         # set top level visibleNodeIds
         self.visibleNodeIds = self._get_visible_node_ids()
-        # update view button labels
-        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        if self._automatic_updates_enabled:
+            # update view button labels
+            self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
         _logger.debug("%s visibleNodeIds now: %s",
                       self.__class__.__name__, self.visibleNodeIds)
         return True
+    def enable_automatic_updates(self, enabled):
+        self._automatic_updates_enabled = enabled
+        if enabled:
+            _logger.debug("automatic updates enabled")
+            self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        else:
+            _logger.debug("automatic updates disabled")
     def process_and_get_visibility(self, nodeId, nodeAttributes):
         """adds/updates node and returns whether the node should be visible"""
         return self._process_and_get_visibility(nodeId, nodeAttributes, None)
@@ -278,16 +289,18 @@ class _FilterGroup:
         # remove references to nodes from all data structures
         self._filter.remove(nodeIds)
         self._update_visible_node_ids(nodeIds, False, None)
-        # update view button labels
-        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        if self._automatic_updates_enabled:
+            # update view button labels
+            self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
     def _process_and_get_visibility(self, nodeId, nodeAttributes, arg):
         """adds/updates node and returns whether the node should be visible"""
         _logger.debug("processing node for %s: %s", self.__class__.__name__, nodeId)
         # process and incrementally update state
         retVal = self._filter.process_and_get_visibility(nodeId, nodeAttributes)
         self._update_visible_node_ids(nodeId, retVal, arg)
-        # update view button labels
-        self._filter.update_view(nodeId, self._get_hypothetical_visibility)
+        if self._automatic_updates_enabled:
+            # update view button labels
+            self._filter.update_view(nodeId, self._get_hypothetical_visibility)
         return retVal
     def _get_visible_node_ids(self):
         """subclass may override; default implementation returns a reference to the
@@ -596,7 +609,8 @@ class PackagesTreeFilter(_FilterGroup):
         self.visibleNodeIds = self._get_visible_node_ids()
         _logger.debug("%s visibleNodeIds now: %s",
                       self.__class__.__name__, self.visibleNodeIds)
-        self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
+        if self._automatic_updates_enabled:
+            self._filter.refresh_view(self._get_hypothetical_visible_node_ids)
     def process_and_get_visibility(self, nodeId, nodeAttributes, matchesSearch):
         if self._matchesSearchNodeIds is not None:
             if matchesSearch:
