@@ -1038,10 +1038,20 @@ class Path(object):
             except ValueError:
                 return 0
         else:
-            return os.path.getsize(self._s)
+            try:
+                return os.path.getsize(self._s)
+            except WindowsError, werr:
+                    if werr.winerror != 123: raise
+                    deprint(_("Unable to determine size of %s - probably a unicode error") % self._s)
+                    return 0
     @property
     def atime(self):
-        return os.path.getatime(self._s)
+        try:
+            return os.path.getatime(self._s)
+        except WindowsError, werr:
+            if werr.winerror != 123: raise
+            deprint(_("Unable to determine atime of %s - probably a unicode error") % self._s)
+            return 1309853942.895 #timestamp of oblivion.exe (also known as any random time may work).
     @property
     def ctime(self):
         return os.path.getctime(self._s)
@@ -1056,12 +1066,20 @@ class Path(object):
             cExtend = c.extend
             join = os.path.join
             getM = os.path.getmtime
-            [cExtend([getM(join(root,dir)) for dir in dirs] + [getM(join(root,file)) for file in files]) for root,dirs,files in os.walk(self._s)]
+            try:
+                [cExtend([getM(join(root,dir)) for dir in dirs] + [getM(join(root,file)) for file in files]) for root,dirs,files in os.walk(self._s)]
+            except: #slower but won't fail (fatally) on funky unicode files when Bash in ANSI Mode.
+                [cExtend([GPath(join(root,dir)).mtime for dir in dirs] + [GPath(join(root,file)).mtime for file in files]) for root,dirs,files in os.walk(self._s)]
             try:
                 return max(c)
             except ValueError:
                 return 0
-        mtime = int(os.path.getmtime(self._s))
+        try:        
+            mtime = int(os.path.getmtime(self._s))
+        except WindowsError, werr:
+                if werr.winerror != 123: raise
+                deprint(_("Unable to determine modified time of %s - probably a unicode error") % self._s)
+                mtime = 1146007898.0 #0blivion.exe's time... random basically.
         #--Y2038 bug? (os.path.getmtime() can't handle years over unix epoch)
         if mtime <= 0:
             import random
@@ -1072,7 +1090,11 @@ class Path(object):
             Path.mtimeResets.append(self)
         return mtime
     def setmtime(self,mtime):
-        os.utime(self._s,(self.atime,int(mtime)))
+        try:
+            os.utime(self._s,(self.atime,int(mtime)))
+        except WindowsError, werr:
+            if werr.winerror != 123: raise
+            deprint(_("Unable to set modified time of %s - probably a unicode error") % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
     #--crc
@@ -1094,11 +1116,15 @@ class Path(object):
         size = self.size
         progress.setFull(max(size,1))
         crc = 0L
-        with self.open('rb') as ins:
-            insRead = ins.read
-            while ins.tell() < size:
-                crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
-                progress(ins.tell())
+        try:
+            with self.open('rb') as ins:
+                insRead = ins.read
+                while ins.tell() < size:
+                    crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
+                    progress(ins.tell())
+        except IOError, ierr:
+           # if werr.winerror != 123: raise
+            deprint(_("Unable to get crc of %s - probably a unicode error") % self._s)
         return crc & 0xFFFFFFFF
 
     #--Path stuff -------------------------------------------------------
