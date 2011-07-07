@@ -31,8 +31,8 @@ class CommandIds(enum.Enum):
                        'UPDATE_PACKAGE', 'REMOVE_PACKAGES_TREE_NODE', 'EXPAND_GROUP',
                        'CLEAR_PACKAGES', 'SET_FILTER_STATS', 'SET_STATUS',
                        'SET_PACKAGE_LABEL', 'ADD_FILE', 'CLEAR_FILES', 'SET_FILE_DETAILS',
-                       'SELECT_PACKAGES', 'EXPAND_DIR', 'SELECT_FILES', 'SET_STYLE_MAPS',
-                       'SET_PACKAGE_INFO', 'DISPLAY_ERROR', 'SET_SUMMARY')
+                       'EXPAND_DIR', 'SELECT_FILES', 'SET_STYLE_MAPS', 'SET_PACKAGE_INFO',
+                       'DISPLAY_ERROR', 'SET_SUMMARY')
     # for autocomplete
     ADD_GROUP = None
     UPDATE_GROUP = None
@@ -47,7 +47,6 @@ class CommandIds(enum.Enum):
     ADD_FILE = None
     CLEAR_FILES = None
     SET_FILE_DETAILS = None
-    SELECT_PACKAGES = None
     EXPAND_DIR = None
     SELECT_FILES = None
     SET_STYLE_MAPS = None
@@ -143,35 +142,40 @@ class _AddNode(ViewCommand):
        meaning top-level.  The predecessor node will either have been previously
        sent or be None, meaning "first child of parent"'''
     def __init__(self, commandId, label, nodeId, parentNodeId, predecessorNodeId,
-                 style=None):
+                 style, isSelected=False):
         ViewCommand.__init__(self, commandId)
         self.label = label
         self.nodeId = nodeId
         self.parentNodeId = parentNodeId
         self.predecessorNodeId = predecessorNodeId
         self.style = style
+        self.isSelected = isSelected
 
 class AddGroup(_AddNode):
     '''Adds a group node to the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None,
+                 isSelected=False):
         _AddNode.__init__(self, CommandIds.ADD_GROUP, label, nodeId, parentNodeId,
-                          predecessorNodeId, style)
+                          predecessorNodeId, style, isSelected)
 
 class UpdateGroup(_AddNode):
     '''Updates a group node in the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None,
+                 isSelected=False):
         _AddNode.__init__(self, CommandIds.UPDATE_GROUP, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
 
 class AddPackage(_AddNode):
     '''Adds a package node to the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None,
+                 isSelected=False):
         _AddNode.__init__(self, CommandIds.ADD_PACKAGE, label, nodeId, parentNodeId,
-                          predecessorNodeId, style)
+                          predecessorNodeId, style, isSelected)
 
 class UpdatePackage(_AddNode):
     '''Updates a package node in the packages tree'''
-    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None):
+    def __init__(self, label, nodeId, parentNodeId, predecessorNodeId, style=None,
+                 isSelected=False):
         _AddNode.__init__(self, CommandIds.UPDATE_PACKAGE, label, nodeId, parentNodeId,
                           predecessorNodeId, style)
 
@@ -204,12 +208,6 @@ class ExpandDir(_ExpandCommand):
 class ClearPackages(ViewCommand):
     def __init__(self):
         ViewCommand.__init__(self, CommandIds.CLEAR_PACKAGES)
-
-class SelectPackages(ViewCommand):
-    '''nodeIds will be a list of node Ids to select'''
-    def __init__(self, nodeIds):
-        ViewCommand.__init__(self, CommandIds.SELECT_PACKAGES)
-        self.nodeIds = nodeIds
 
 class SelectFiles(ViewCommand):
     '''nodeIds will be a list of node Ids to select'''

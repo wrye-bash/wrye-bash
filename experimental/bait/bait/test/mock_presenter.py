@@ -317,7 +317,7 @@ class MockPresenter:
         # persist selections for the packages that are still visible
         addedSet &= set(self._selectedPackages)
         addedSetList = list(addedSet)
-        self.viewCommandQueue.put(view_commands.SelectPackages(addedSetList))
+        #self.viewCommandQueue.put(view_commands.SelectPackages(addedSetList))
         self.set_packages_tree_selections(addedSetList, False)
 
     def _rebuild_files_tree(self, nodes=None):

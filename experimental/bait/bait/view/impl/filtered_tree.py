@@ -93,7 +93,7 @@ class _FilteredTree(wx.Panel):
             self._tree.SetImageListCheck(width, height, imageList)
 
     def add_item(self, nodeId, label, parentNodeId, predNodeId, isBold, isItalics,
-                 textColor, hilightColor, checkboxState, iconId):
+                 textColor, hilightColor, checkboxState, iconId, isSelected):
         _logger.debug("adding node %d: '%s'", nodeId, label)
         if parentNodeId is None:
             parent = self._tree.GetRootItem()
@@ -137,12 +137,11 @@ class _FilteredTree(wx.Panel):
         item.AssignAttributes(attr)
         self._nodeIdToItem[nodeId] = item
 
-
-    def select_items(self, nodeIds):
-        _logger.debug("selecting nodes: %s", nodeIds)
-        for nodeId in nodeIds:
+        if isSelected:
+            _logger.debug("selecting node %d", nodeId)
             # don't use self.SelectItem since that will send a spurious selchanged event
-            self._nodeIdToItem[nodeId].SetHilight()
+            item.SetHilight()
+
 
     def expand_item(self, nodeId):
         _logger.debug("expanding node %d", nodeId)

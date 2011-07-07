@@ -48,7 +48,7 @@ def _dump_queue(inQueue):
 
 class _DummyManager:
     def __init__(self):
-        self.enabled = False
+        self.enabled = True
         self.targetPackage = None
         self.isMultiple = False
     def enable_set_target_package(self, isEnabled):
@@ -63,12 +63,6 @@ def _assert_group(inQueue, checkFn):
     assert not inQueue.empty()
     for itemNum in xrange(inQueue.qsize()):
         item = inQueue.get(block=False)
-
-        # TODO: remove
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info("asserting %s", str(item))
-
         checkFn(item)
     assert inQueue.empty()
 
@@ -177,6 +171,10 @@ def test_packages_tree_diff_engine():
     dummyGeneralTabManager.enable_set_target_package(True)
     dummyPackageContentsManager.enable_set_target_package(True)
     de.set_selected_nodes(None)
+    assert dummyGeneralTabManager.targetPackage is None
+    assert not dummyGeneralTabManager.isMultiple
+    assert dummyPackageContentsManager.targetPackage is None
+    assert not dummyPackageContentsManager.isMultiple
     dummyGeneralTabManager.enable_set_target_package(False)
     dummyPackageContentsManager.enable_set_target_package(False)
     de.set_pending_search_string(None)
@@ -187,6 +185,9 @@ def test_packages_tree_diff_engine():
     de.update_filter(filterMask)
     assert viewCommandQueue.empty()
     assert de.loadRequestQueue.empty()
+
+    assert not de.could_use_update(_ATTRIBUTES, 100, 0)
+    assert not de.could_use_update(_ATTRIBUTES, model.ROOT_NODE_ID, 0)
 
     # test empty insert
     emptyRootNodeChildren = node_children.NodeChildren()
@@ -458,6 +459,14 @@ def test_packages_tree_diff_engine():
              iconId=view_commands.IconIds.PROJECT_EMPTY),model.ROOT_NODE_ID,10)})
     assert de.loadRequestQueue.empty()
 
+    dummyGeneralTabManager.enable_set_target_package(True)
+    dummyPackageContentsManager.enable_set_target_package(True)
+    de.set_selected_nodes([13,15])
+    assert dummyGeneralTabManager.targetPackage is None
+    assert dummyGeneralTabManager.isMultiple
+    assert dummyPackageContentsManager.targetPackage is None
+    assert dummyPackageContentsManager.isMultiple
+
     # single out a particular package
     de.set_pending_search_string("hiddenPkg3")
     de.update_search_string("hiddenPkg3")
@@ -468,6 +477,21 @@ def test_packages_tree_diff_engine():
          ("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,5),
          ("n", 6):None, ("n", 11):None, ("n", 12):None, ("n", 14):None, ("n", 15):None},
         {("n", 8):None, ("n", 9):None})
+
+    # ensure managers were updated properly
+    assert dummyGeneralTabManager.targetPackage is 13
+    assert not dummyGeneralTabManager.isMultiple
+    assert dummyPackageContentsManager.targetPackage is 13
+    assert not dummyPackageContentsManager.isMultiple
+
+    # stop testing managers so it doesn't get in the way
+    de.set_selected_nodes(None)
+    assert dummyGeneralTabManager.targetPackage is None
+    assert dummyGeneralTabManager.isMultiple is False
+    assert dummyPackageContentsManager.targetPackage is None
+    assert dummyPackageContentsManager.isMultiple is False
+    dummyGeneralTabManager.enable_set_target_package(False)
+    dummyPackageContentsManager.enable_set_target_package(False)
 
     # single out a particular group
     de.set_pending_search_string("instGroup")
@@ -1229,8 +1253,19 @@ def test_packages_tree_diff_engine_deep_hierarchy():
     de.update_filter(presenter.FilterIds.PACKAGES_INSTALLED)
 
     # define data
+    # 1      instGroup - isInstalled, isHidden
+    #   2    hiddenGroup - isHidden
+    #     4  hiddenPkg - isHidden
+    #     .. uninitialized
+    #   3    instPkg - isInstalled
     de.update_children(model.ROOT_NODE_ID, node_children.NodeChildren([1]))
     _assert_load_requests(de.loadRequestQueue, {1:_ATTRIBUTES})
+
+    # test searching on an uninitialized first node
+    de.set_pending_search_string("inst")
+    de.update_search_string("inst")
+    de.set_pending_search_string(None)
+    de.update_search_string(None)
 
     instGroup = node_attributes.GroupNodeAttributes()
     instGroup.isInstalled = True
@@ -1247,8 +1282,17 @@ def test_packages_tree_diff_engine_deep_hierarchy():
     hiddenGroup.label = "hiddenGroup"
     hiddenGroup.parentNodeId = 1
     de.update_attributes(2, hiddenGroup)
-    de.update_children(2, node_children.NodeChildren([4]))
-    _assert_load_requests(de.loadRequestQueue, {2:_CHILDREN, 4:_ATTRIBUTES})
+    de.update_children(2, node_children.NodeChildren([4,5,6,7]))
+    _assert_load_requests(de.loadRequestQueue, {2:_CHILDREN, 4:_ATTRIBUTES, 5:_ATTRIBUTES,
+                                                6:_ATTRIBUTES, 7:_ATTRIBUTES})
+
+    uninitGroup = node_attributes.GroupNodeAttributes()
+    uninitGroup.label = "uninitGroup"
+    uninitGroup.parentNodeId = 2
+    de.update_attributes(6, hiddenGroup)
+    de.update_children(6, node_children.NodeChildren([9,10]))
+    _assert_load_requests(de.loadRequestQueue, {6:_CHILDREN,
+                                                9:_ATTRIBUTES, 10:_ATTRIBUTES})
 
     instPkg = node_attributes.PackageNodeAttributes()
     instPkg.isInstalled = True
@@ -1271,6 +1315,13 @@ def test_packages_tree_diff_engine_deep_hierarchy():
          ("n", 3):(view_commands.Style(
              checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    1,None)})
+
+    # remove some uninitialized nodes
+    updatedChildren = node_children.NodeChildren([4,5,7])
+    updatedChildren.version = 1
+    de.update_children(2, updatedChildren)
+    assert de.loadRequestQueue.empty()
+    assert viewCommandQueue.empty()
 
     # update nodes 1 and 3 so that they no longer match the filter
     updatedInstGroup = node_attributes.GroupNodeAttributes()
@@ -1320,7 +1371,7 @@ def test_packages_tree_diff_engine_deep_hierarchy():
         viewCommandQueue,
         {("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None)})
 
-    # add in a search that matches installed packages and do the same thing
+    # add in a search that matches installed packages and test again
     de.set_pending_search_string("inst")
     de.update_search_string("inst")
 
@@ -1368,3 +1419,58 @@ def test_packages_tree_diff_engine_deep_hierarchy():
          ("n", 3):(view_commands.Style(
              checkboxState=True, iconId=view_commands.IconIds.PROJECT_EMPTY),
                    1,None)})
+
+    # make node 1 no longer match the search
+    updatedInstGroup3 = node_attributes.GroupNodeAttributes()
+    updatedInstGroup3.isInstalled = True
+    updatedInstGroup3.isHidden = True
+    updatedInstGroup3.label = "In tGroup"
+    updatedInstGroup3.parentNodeId = model.ROOT_NODE_ID
+    updatedInstGroup3.version = 5
+    de.update_attributes(1, updatedInstGroup3)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,1),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None)})
+
+    # change it back
+    revertedInstGroup3 = node_attributes.GroupNodeAttributes()
+    revertedInstGroup3.isInstalled = True
+    revertedInstGroup3.isHidden = True
+    revertedInstGroup3.label = "instGroup"
+    revertedInstGroup3.parentNodeId = model.ROOT_NODE_ID
+    revertedInstGroup3.version = 6
+    de.update_attributes(1, revertedInstGroup3)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_HIDDEN):(1,1),
+         ("n", 1):(view_commands.Style(),model.ROOT_NODE_ID,None)})
+
+    # match two subtrees independently (nothing should change externally)
+    de.set_pending_search_string("instPkg|hiddenPkg")
+    de.update_search_string("instPkg|hiddenPkg")
+    assert viewCommandQueue.empty()
+
+
+def test_diff_engine_internals():
+    # test things that can only happen non-deterministically in a multithreaded env
+    class DummyVisitor(diff_engine._Visitor):
+        def __init__(self, n):
+            self._n = n
+        def visit(self, nodeId, nodeData):
+            return True
+        def false_after_n(self):
+            if self._n < 0: return False
+            self._n = self._n - 1
+            return True
+    tree = {}
+    tree[0] = [False, None, None, node_children.NodeChildren([1,2,3])]
+    tree[1] = [False, None, None, node_children.NodeChildren([4])]
+    tree[2] = [False, None, None, node_children.NodeChildren([5,6])]
+    tree[3] = [False, None, None]
+    tree[4] = [False, None, None]
+    tree[5] = [False, None, None]
+    tree[6] = [False, None, None]
+
+    visitor = DummyVisitor(3)
+    diff_engine._visit_tree(0, tree, visitor.false_after_n, visitor)

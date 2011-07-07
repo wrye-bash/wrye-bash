@@ -87,7 +87,6 @@ class CommandThread(threading.Thread):
         self._handlers[view_commands.CommandIds.CLEAR_FILES] = self._clear_files
         self._handlers[
             view_commands.CommandIds.SET_FILE_DETAILS] = self._update_file_details
-        self._handlers[view_commands.CommandIds.SELECT_PACKAGES] = self._select_packages
         self._handlers[view_commands.CommandIds.SELECT_FILES] = self._select_files
         self._handlers[view_commands.CommandIds.SET_STYLE_MAPS] = self._set_style_maps
         self._handlers[view_commands.CommandIds.SET_PACKAGE_INFO] = self._set_package_info
@@ -167,7 +166,8 @@ class CommandThread(threading.Thread):
                             textColor,
                             highlightColor,
                             checkboxState,
-                            iconId)
+                            iconId,
+                            addNodeCommand.isSelected)
 
     def _add_package(self, addPackageCommand):
         _logger.debug("adding package %d: '%s'",
@@ -185,10 +185,6 @@ class CommandThread(threading.Thread):
     def _clear_files(self, clearFilesCommand):
         _logger.debug("clearing files")
         self._fileTree.clear()
-
-    def _select_packages(self, selectPackagesCommand):
-        _logger.debug("selecting packages: %s", selectPackagesCommand.nodeIds)
-        self._packageTree.select_items(selectPackagesCommand.nodeIds)
 
     def _select_files(self, selectFilesCommand):
         _logger.debug("selecting files: %s", selectFilesCommand.nodeIds)
