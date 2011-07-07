@@ -57,42 +57,44 @@ def update_dispatcher_test():
 
     ud.start()
     try:
-        ud.start()
-        assert False
-    except RuntimeError as e:
-        pass
+        try:
+            ud.start()
+            assert False
+        except RuntimeError as e:
+            pass
 
-    # handled by dwm1
-    modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
+        # handled by dwm1
+        modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
 
-    # handled by dwm2
-    modelUpdateQueue.put((model.UpdateTypes.CHILDREN, model.NodeTypes.PACKAGE, 110, 1))
+        # handled by dwm2
+        modelUpdateQueue.put((model.UpdateTypes.CHILDREN, model.NodeTypes.PACKAGE, 110, 1))
 
-    # not handled by any DummyWidgetManager
-    modelUpdateQueue.put((model.UpdateTypes.DETAILS, model.NodeTypes.FILE, 120, 1))
+        # not handled by any DummyWidgetManager
+        modelUpdateQueue.put((model.UpdateTypes.DETAILS, model.NodeTypes.FILE, 120, 1))
 
-    # sent to the view command queue (can't check until the ud processes it, though)
-    modelUpdateQueue.put(
-        (model.UpdateTypes.ERROR, model.Errors.DISK_FULL, "filename.esp"))
+        # sent to the view command queue (can't check until the ud processes it, though)
+        modelUpdateQueue.put(
+            (model.UpdateTypes.ERROR, model.Errors.DISK_FULL, "filename.esp"))
 
-    # should be detected as garbage
-    modelUpdateQueue.put((0, "garbage"))
-    modelUpdateQueue.put(())
+        # should be detected as garbage
+        modelUpdateQueue.put((0, "garbage"))
+        modelUpdateQueue.put(())
 
-    # wait for updates to be processed
-    while not modelUpdateQueue.empty():
-        time.sleep(0)
-    _assert_view_command(viewCommandQueue, model.Errors.DISK_FULL, "filename.esp")
+        # wait for updates to be processed
+        while not modelUpdateQueue.empty():
+            time.sleep(0)
+        _assert_view_command(viewCommandQueue, model.Errors.DISK_FULL, "filename.esp")
 
-    # shut down UpdateDispatcher output
-    ud.shutdown_output()
+    finally:
+        # shut down UpdateDispatcher output
+        ud.shutdown_output()
 
-    # should be skipped
-    modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
+        # should be skipped
+        modelUpdateQueue.put((model.UpdateTypes.ATTRIBUTES, model.NodeTypes.ROOT, 100, 1))
 
-    # shut down UpdateDispatcher input
-    modelUpdateQueue.put(None)
-    ud.shutdown_input()
+        # shut down UpdateDispatcher input
+        modelUpdateQueue.put(None)
+        ud.shutdown_input()
 
     assert modelUpdateQueue.empty()
     assert viewCommandQueue.empty()

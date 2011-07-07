@@ -101,8 +101,8 @@ class DataFetcher:
                         self._fetchQueue.task_done()
                         continue
                     for updateType, updateFn, updateName in self._updateInfo:
-                        if 0 != updateTypeMask & updateType:
-                            updateTypeMask = updateTypeMask ^ updateType
+                        if updateType in updateTypeMask:
+                            updateTypeMask ^= updateType
                             data = updateFn(nodeId)
                             if data is None:
                                 _logger.debug("%s for nodeId %d not found",

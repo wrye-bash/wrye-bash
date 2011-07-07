@@ -53,48 +53,49 @@ def _data_fetcher_test(numThreads):
 
     df.start()
     try:
-        df.start()
-        assert False
-    except RuntimeError as e:
-        pass
+        try:
+            df.start()
+            assert False
+        except RuntimeError as e:
+            pass
 
-    # successfully fetch attributes
-    df.async_fetch(1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
+        # successfully fetch attributes
+        df.async_fetch(1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
 
-    # successfully fetch children
-    df.async_fetch(1, model.UpdateTypes.CHILDREN, stateChangeQueue)
+        # successfully fetch children
+        df.async_fetch(1, model.UpdateTypes.CHILDREN, stateChangeQueue)
 
-    # successfully fetch details
-    df.async_fetch(1, model.UpdateTypes.DETAILS, stateChangeQueue)
+        # successfully fetch details
+        df.async_fetch(1, model.UpdateTypes.DETAILS, stateChangeQueue)
 
-    # fail to fetch details
-    df.async_fetch(0, model.UpdateTypes.DETAILS, stateChangeQueue)
+        # fail to fetch details
+        df.async_fetch(0, model.UpdateTypes.DETAILS, stateChangeQueue)
 
-    # warn about empty updateTypeMask
-    df.async_fetch(1, model.UpdateTypes.parse_value(0), stateChangeQueue)
+        # warn about empty updateTypeMask
+        df.async_fetch(1, model.UpdateTypes.parse_value(0), stateChangeQueue)
 
-    # fetch children and details, then warn about unhandled part
-    df.async_fetch(
-        1,
-        model.UpdateTypes.CHILDREN|model.UpdateTypes.DETAILS|model.UpdateTypes.ERROR,
-        stateChangeQueue)
+        # fetch children and details, then warn about unhandled part
+        df.async_fetch(
+            1,
+            model.UpdateTypes.CHILDREN|model.UpdateTypes.DETAILS|model.UpdateTypes.ERROR,
+            stateChangeQueue)
 
-    # detect as garbage
-    df.async_fetch(1, "garbage", None)
+        # detect as garbage
+        df.async_fetch(1, "garbage", None)
 
-    # wait for items to be processed
-    while df._fetchQueue.unfinished_tasks != 0:
-        time.sleep(0)
+        # wait for items to be processed
+        while df._fetchQueue.unfinished_tasks != 0:
+            time.sleep(0)
 
-    # assert output
-    _assert_state_change(stateChangeQueue, model.UpdateTypes.ATTRIBUTES, 1, True)
-    _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
-    _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
-    _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
-    _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
+        # assert output
+        _assert_state_change(stateChangeQueue, model.UpdateTypes.ATTRIBUTES, 1, True)
+        _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
+        _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
+        _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
+        _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
 
-    # shut down DataFetcher output
-    df.shutdown()
+    finally:
+        df.shutdown()
 
     # skip post-shutdown update
     df.async_fetch(1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
@@ -119,10 +120,12 @@ def data_fetcher_test_fast_shutdown():
     stateChangeQueue = SlowQueue()
     df = data_fetcher.DataFetcher(_DummyModel())
     df.start()
-    update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
-    for n in xrange(100):
-        df.async_fetch(*update)
-    # shutdown before the data fetcher thread has enough time to process the queue
-    df.shutdown()
+    try:
+        update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
+        for n in xrange(100):
+            df.async_fetch(*update)
+    finally:
+        # shutdown before the data fetcher thread has enough time to process the queue
+        df.shutdown()
     assert df._fetchQueue.empty()
     assert 100 > stateChangeQueue.qsize()
