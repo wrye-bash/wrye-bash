@@ -26,8 +26,14 @@ import Queue
 import logging
 import threading
 
+from . import data_fetcher, diff_engine
 from .. import model
+from ...util import enum
 
+
+_STATE_CHANGE_TYPE_IDX = 0
+_STATE_CHANGE_FILTER_MASK_IDX = 1
+_STATE_CHANGE_SEARCH_STRING_IDX = 1
 
 _logger = logging.getLogger(__name__)
 
@@ -38,33 +44,40 @@ class _StateChange(enum.Enum):
     SEARCH = None
 
 class _WidgetManagerBase:
-    def __init__(self, name, dataFetcher, diffEngine):
+    def __init__(self, name, dataFetcher):
         self._name = name
         self._dataFetcher = dataFetcher
-        self._diffEngine = diffEngine
+        self._started = False
+        self._isShutdown = False
         self._stateChangeQueue = Queue.Queue()
         self._processingThread = threading.Thread(
-            target=self._process_updates, name=name+"WidgetManager")
+            target=self._process_state_changes, name=name+"WidgetManager")
 
     def start(self):
+        if self._started:
+            raise RuntimeError("WidgetManager already started")
         _logger.debug("starting %sWidgetManager", self._name)
         self._processingThread.start()
+        self._started = True
 
     def shutdown(self):
         """assumes that the data fetcher has been shut down by this point and that nothing
         else can be enqueued into the stateChangeQueue"""
-        _logger.debug("shutting %sWidgetManager down", self._name)
-        self._stateChangeQueue.put(None)
-        self._processingThread.join()
+        if self._started:
+            _logger.debug("shutting %sWidgetManager down", self._name)
+            self._isShutdown = True
+            self._stateChangeQueue.put(None)
+            self._processingThread.join()
+            self._started = False
 
-    def handle_update(self, modelUpdateNotification):
+    def handle_model_update(self, modelUpdateNotification):
         if not self._is_in_scope(modelUpdateNotification):
             _logger.debug("%s not in scope for %sWidgetManager",
-                          str(modelUpdateNotification), self._name)
+                          modelUpdateNotification, self._name)
             return False
-        if self._is_relevant(modelUpdateNotification):
+        if self._want_update(modelUpdateNotification):
             _logger.debug("%sWidgetManager interested in update %s",
-                          self._name, str(modelUpdateNotification))
+                          self._name, modelUpdateNotification)
             self._dataFetcher.async_fetch(
                 modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
                 modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE],
@@ -73,68 +86,101 @@ class _WidgetManagerBase:
 
     def _is_in_scope(self, modelUpdateNotification):
         """returns whether the subclass handles this type of update"""
+        _logger.error("_is_in_scope not overridden by subclass as required")
         raise NotImplementedError("subclass must implement")
 
-    def _is_relevant(self, modelUpdateNotification):
+    def _want_update(self, modelUpdateNotification):
         """may be overridden by subclass to return whether the proposed update should be
-        persued further"""
+        persued further.  the default result is True."""
         return True
 
-    def _process_updates(self):
-        """sends loaded data to the diff engine"""
+    def _process_state_changes(self):
+        """applies state changes to data objects"""
         while True:
-            updatedData = self._stateChangeQueue.get()
-            if updatedData is None:
+            stateChange = self._stateChangeQueue.get()
+            if stateChange is None:
                 break
-            self._diffEngine.apply_update(updatedData)
+            if self._isShutdown:
+                self._stateChangeQueue.task_done()
+                continue
+            try:
+                self._process_state_change(stateChange)
+            except:
+                _logger.exception("caught exception processing state changes:")
+            self._stateChangeQueue.task_done()
+
+    def _process_state_change(self, stateChange):
+        _logger.error("_process_state_change not overridden by subclass as required")
+        raise NotImplementedError("subclass must implement")
+
 
 class PackagesTreeWidgetManager(_WidgetManagerBase):
-    def __init__(self):
-        pass
+    def __init__(self, dataFetcher, diffEngine):
+        _WidgetManagerBase.__init__(self, "PackagesTree", dataFetcher)
+        self._diffEngine = diffEngine
 
-    def apply_update(self, update):
-        # handles the following types of updates:
-        # (model.UpdateType, nodeType, nodeId, nodeData)
-        # (StateChange.FILTER, filterMask)
-        # (StateChange.SEARCH, searchString)
-        updateType = update[0]
-        if updateType is model.UpdateTypes.ATTRIBUTES:
-            nodeType = update[1]
-            nodeId = update[2]
-            nodeAttributes = update[3]
-            assert nodeType == nodeAttributes.nodeType
-            if nodeType is model.NodeTypes.PACKAGE:
-                _logger.debug("updating attributes for package node %d (%s)",
-                              nodeId, nodeAttributes.label)
-                self._update_package_attributes(nodeId, nodeAttributes)
-            elif nodeType is model.NodeTypes.GROUP:
-                _logger.debug("updating attributes for group node %d (%s)",
-                              nodeId, nodeAttributes.label)
-                self._update_group_attributes(nodeId, nodeAttributes)
-            else:
-                _logger.error("unexpected diff engine update: %s", str(updateType))
-                assert False
-        elif updateType is model.UpdateTypes.CHILDREN:
-            nodeType = update[1]
-            nodeId = update[2]
-            nodeChildren = update[3]
-            if nodeType is model.NodeTypes.ROOT:
-                _logger.debug("updating children for root node")
-                self._update_root_children(nodeChildren)
-            elif nodeType is model.NodeTypes.GROUP:
-                _logger.debug("updating children for group node %d", nodeId)
-                self._update_group_children(nodeId, nodeChildren)
-            else:
-                _logger.error("unexpected diff engine update: %s", str(updateType))
-                assert False
-        elif updateType is StateChange.FILTER:
-            filterMask = update[1]
+    def handle_filter_update(self, filterMask):
+        _logger.debug("setting pending filterMask and enqueuing state change: %s",
+                      filterMask)
+        self._diffEngine.set_pending_filter_mask(filterMask)
+        self._stateChangeQueue.put((_StateChange.FILTER, filterMask))
+
+    def handle_search_update(self, searchString):
+        _logger.debug("setting pending search string and enqueuing state change: '%s'",
+                      searchString)
+        self._diffEngine.set_pending_search_string(searchString)
+        self._stateChangeQueue.put((_StateChange.SEARCH, searchString))
+
+    def handle_expansion_update(self, nodeId, isExpanded):
+        _logger.debug("notifying diff engine that node %d now has expansion state: %s",
+                      nodeId, isExpanded)
+        self._diffEngine.set_node_expansion(nodeId, isExpanded)
+
+    def handle_selection_update(self, nodeIds):
+        _logger.debug("notifying diff engine the following nodes are now selected: %s",
+                      nodeIds)
+        self._diffEngine.set_selected_nodes(nodeIds)
+
+    # override
+    def _is_in_scope(self, modelUpdateNotification):
+        return self._diffEngine.is_in_scope(
+            modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE],
+            modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE])
+
+    # override
+    def _want_update(self, modelUpdateNotification):
+        return self._diffEngine.could_use_update(
+            modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE],
+            modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
+            modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION])
+
+    def _handle_pending_load_requests(self):
+        while not self._diffEngine.loadRequestQueue.empty():
+            loadRequest = self._diffEngine.loadRequestQueue.get()
+            self._dataFetcher.async_fetch(
+                loadRequest[diff_engine.NODE_ID_IDX],
+                loadRequest[diff_engine.UPDATE_TYPE_MASK_IDX], self._stateChangeQueue)
+
+    # override
+    def _process_state_change(self, stateChange):
+        stateChangeType = stateChange[_STATE_CHANGE_TYPE_IDX]
+        if stateChangeType is model.UpdateTypes.ATTRIBUTES:
+            nodeId = stateChange[data_fetcher.NODE_ID_IDX]
+            _logger.debug("updating attributes for node %d", nodeId)
+            self._diffEngine.update_attributes(nodeId, stateChange[data_fetcher.DATA_IDX])
+            self._handle_pending_load_requests()
+        elif stateChangeType is model.UpdateTypes.CHILDREN:
+            nodeId = stateChange[data_fetcher.NODE_ID_IDX]
+            _logger.debug("updating children for node %d", nodeId)
+            self._diffEngine.update_children(nodeId, stateChange[data_fetcher.DATA_IDX])
+            self._handle_pending_load_requests()
+        elif stateChangeType is _StateChange.FILTER:
+            filterMask = stateChange[_STATE_CHANGE_FILTER_MASK_IDX]
             _logger.debug("updating filter mask to %s", filterMask)
-            self._update_filter_mask(filterMask)
-        elif updateType is StateChange.SEARCH:
-            searchString = update[1]
-            _logger.debug("updating search string to %s", searchString)
-            self._update_search_string(searchString)
+            self._diffEngine.update_filter(filterMask)
+        elif stateChangeType is _StateChange.SEARCH:
+            searchString = stateChange[_STATE_CHANGE_SEARCH_STRING_IDX]
+            _logger.debug("updating search string to '%s'", searchString)
+            self._diffEngine.update_search_string(searchString)
         else:
-            _logger.error("unexpected diff engine update: %s", str(updateType))
-            assert False
+            raise RuntimeError("unexpected state change: %s", stateChange)

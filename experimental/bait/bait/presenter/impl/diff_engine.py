@@ -413,6 +413,14 @@ class _DiffEngine:
     def set_pending_filter_mask(self, filterMask):
         self._pendingFilterMask = filterMask
 
+    def is_in_scope(self, updateType, nodeType):
+        """subclass will return whether the specified class of update is in its scope"""
+        raise NotImplementedError("subclass must implement")
+
+    def could_use_update(self, updateType, nodeId, version):
+        """Assumes update is in scope.  Returns boolean."""
+        raise NotImplementedError("subclass must implement")
+
 
 class PackagesTreeDiffEngine(_DiffEngine):
     def __init__(self, generalTabManager, packageContentsManager, viewCommandQueue):
@@ -423,7 +431,8 @@ class PackagesTreeDiffEngine(_DiffEngine):
         self._pendingSearchString = None
         self._searchExpression = None
 
-    def update_is_in_scope(self, updateType, nodeType):
+    # override
+    def is_in_scope(self, updateType, nodeType):
         # called to determine if model updates are in scope for this diff engine
         return (updateType is model.UpdateTypes.ATTRIBUTES and \
                 (nodeType is model.NodeTypes.PACKAGE or \
@@ -432,6 +441,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                 (nodeType is model.NodeTypes.ROOT or \
                  nodeType is model.NodeTypes.GROUP))
 
+    # override
     def could_use_update(self, updateType, nodeId, version):
         """Assumes update is in scope.  Returns boolean"""
         # the following algorithm is thread safe in the sense that it does not mess up

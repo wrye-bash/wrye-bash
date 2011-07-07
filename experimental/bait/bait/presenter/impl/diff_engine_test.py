@@ -191,7 +191,7 @@ def test_packages_tree_diff_engine():
 
     # test empty insert
     emptyRootNodeChildren = node_children.NodeChildren()
-    assert de.update_is_in_scope(_CHILDREN, model.NodeTypes.ROOT)
+    assert de.is_in_scope(_CHILDREN, model.NodeTypes.ROOT)
     assert de.could_use_update(_CHILDREN, model.ROOT_NODE_ID,
                                emptyRootNodeChildren.version)
     de.update_children(model.ROOT_NODE_ID, emptyRootNodeChildren)
@@ -201,7 +201,7 @@ def test_packages_tree_diff_engine():
     # test non-empty insert
     nonemptyRootNodeChildren = node_children.NodeChildren([1])
     nonemptyRootNodeChildren.version = emptyRootNodeChildren.version + 1
-    assert de.update_is_in_scope(_CHILDREN, model.NodeTypes.ROOT)
+    assert de.is_in_scope(_CHILDREN, model.NodeTypes.ROOT)
     assert not de.could_use_update(_CHILDREN, model.ROOT_NODE_ID,
                                    emptyRootNodeChildren.version)
     assert de.could_use_update(_CHILDREN, model.ROOT_NODE_ID,
@@ -220,7 +220,7 @@ def test_packages_tree_diff_engine():
     packageNode.isNew = True
     packageNode.label = "testPackage"
     packageNode.parentNodeId = model.ROOT_NODE_ID
-    assert de.update_is_in_scope(_ATTRIBUTES, packageNode.nodeType)
+    assert de.is_in_scope(_ATTRIBUTES, packageNode.nodeType)
     assert de.could_use_update(_ATTRIBUTES, 1, packageNode.version)
     de.update_attributes(1, packageNode)
     _assert_load_request(de.loadRequestQueue, _CHILDREN, 1)
