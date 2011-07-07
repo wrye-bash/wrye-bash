@@ -37,7 +37,7 @@ _CHILDREN = model.UpdateTypes.CHILDREN
 _DETAILS = model.UpdateTypes.DETAILS
 
 
-# TODO: remove when done designing tests
+# useful when debugging tests
 def _dump_queue(inQueue):
     import logging
     logger = logging.getLogger(__name__)
@@ -199,8 +199,7 @@ def test_packages_tree_diff_engine():
     assert de.loadRequestQueue.empty()
 
     # test non-empty insert
-    nonemptyRootNodeChildren = node_children.NodeChildren()
-    nonemptyRootNodeChildren.children.append(1)
+    nonemptyRootNodeChildren = node_children.NodeChildren([1])
     nonemptyRootNodeChildren.version = emptyRootNodeChildren.version + 1
     assert de.update_is_in_scope(_CHILDREN, model.NodeTypes.ROOT)
     assert not de.could_use_update(_CHILDREN, model.ROOT_NODE_ID,
@@ -210,6 +209,7 @@ def test_packages_tree_diff_engine():
     de.update_children(model.ROOT_NODE_ID, nonemptyRootNodeChildren)
     assert viewCommandQueue.empty()
     _assert_load_request(de.loadRequestQueue, _ATTRIBUTES, 1)
+
     # service load request
     packageNode = node_attributes.PackageNodeAttributes()
     packageNode.hasMatched = True
@@ -233,6 +233,12 @@ def test_packages_tree_diff_engine():
              checkboxState=True,
              iconId=view_commands.IconIds.INSTALLER_MATCHES_WIZ),0,None)})
 
+    # ensure we can't go backwards
+    de.update_children(model.ROOT_NODE_ID, emptyRootNodeChildren)
+    de.update_attributes(1, packageNode)
+    assert viewCommandQueue.empty()
+    assert de.loadRequestQueue.empty()
+
     # update filters to hide node 1
     filterMask = presenter.FilterIds.PACKAGES_NOT_INSTALLED
     de.set_pending_filter_mask(filterMask)
@@ -246,6 +252,13 @@ def test_packages_tree_diff_engine():
     de.update_children(model.ROOT_NODE_ID, nodeChildren)
     _assert_load_requests(de.loadRequestQueue, {2:_ATTRIBUTES, 6:_ATTRIBUTES,
                                                 10:_ATTRIBUTES})
+
+    # check ordering rules
+    try:
+        de.update_children(2, node_children.NodeChildren())
+        assert False
+    except RuntimeError:
+        pass
 
     installedGroup = node_attributes.GroupNodeAttributes()
     installedGroup.isInstalled = True
@@ -575,6 +588,18 @@ def test_packages_tree_diff_engine():
     de.update_filter(presenter.FilterIds.PACKAGES_HIDDEN)
     de.update_filter(filterMask)
     assert viewCommandQueue.empty()
+
+    # delete everything
+    finalRootNodeChildren = node_children.NodeChildren([])
+    finalRootNodeChildren.version = 100
+    de.update_children(model.ROOT_NODE_ID, finalRootNodeChildren)
+    assert de.loadRequestQueue.empty()
+    _assert_view_commands(
+        viewCommandQueue,
+        {("f", presenter.FilterIds.PACKAGES_INSTALLED):(0,0),
+         ("f", presenter.FilterIds.PACKAGES_NOT_INSTALLED):(0,0),
+         ("f", presenter.FilterIds.PACKAGES_HIDDEN):(0,0),
+         ("n", 10):None})
 
 
 def test_packages_tree_diff_engine_style():
@@ -1451,6 +1476,70 @@ def test_packages_tree_diff_engine_deep_hierarchy():
     de.update_search_string("instPkg|hiddenPkg")
     assert viewCommandQueue.empty()
 
+    # test what happens when a new search string comes in while we're still searching
+    class UnstableString:
+        def __init__(self, val, val2, n):
+            self._val = val
+            self._val2 = val2
+            self._n = n
+        def __get_val(self):
+            if self._n <= 0: return self._val2
+            self._n = self._n - 1
+            return self._val
+        def __cmp__(self, other):
+            return cmp(self.__get_val(), other)
+        def __str__(self):
+            return self.__get_val()
+        def __len__(self):
+            return len(self.__get_val())
+        def __hash__(self):
+            return hash(self.__get_val())
+
+    s = UnstableString("s1", "s2", 1)
+    de.set_pending_search_string(s)
+    de.update_search_string("s1")
+    assert viewCommandQueue.empty()
+
+    # ensure nothing happens when an ancestor and descendant group both match the search,
+    # but then the descendant is updated to not match the search.  The children of the
+    # descendant should still be shown
+    filterMask = presenter.FilterIds.PACKAGES_INSTALLED|\
+               presenter.FilterIds.PACKAGES_NOT_INSTALLED|\
+               presenter.FilterIds.PACKAGES_HIDDEN
+    de.set_pending_filter_mask(filterMask)
+    de.update_filter(filterMask)
+    _assert_view_commands(
+        viewCommandQueue,
+        {("n", 2):(view_commands.Style(
+            foregroundColorId=view_commands.ForegroundColorIds.DISABLED),1,None),
+         ("n", 4):(view_commands.Style(
+             foregroundColorId=view_commands.ForegroundColorIds.DISABLED,
+             iconId=view_commands.IconIds.PROJECT_EMPTY),2,None)})
+    de.set_pending_search_string("group")
+    de.update_search_string("group")
+
+    # make node 2 no longer match the search
+    updatedHiddenGroup = node_attributes.GroupNodeAttributes()
+    updatedHiddenGroup.isHidden = True
+    updatedHiddenGroup.label = "hiddenGr up"
+    updatedHiddenGroup.parentNodeId = 1
+    updatedHiddenGroup.version = 2
+    de.update_attributes(2, updatedHiddenGroup)
+    _assert_add_node_view_command(viewCommandQueue, 2, view_commands.Style(
+        foregroundColorId=view_commands.ForegroundColorIds.DISABLED), 1, None)
+    assert de.loadRequestQueue.empty()
+
+    # change it back
+    revertedHiddenGroup = node_attributes.GroupNodeAttributes()
+    revertedHiddenGroup.isHidden = True
+    revertedHiddenGroup.label = "hiddenGroup"
+    revertedHiddenGroup.parentNodeId = 1
+    revertedHiddenGroup.version = 3
+    de.update_attributes(2, revertedHiddenGroup)
+    _assert_add_node_view_command(viewCommandQueue, 2, view_commands.Style(
+        foregroundColorId=view_commands.ForegroundColorIds.DISABLED), 1, None)
+    assert de.loadRequestQueue.empty()
+
 
 def test_diff_engine_internals():
     # test things that can only happen non-deterministically in a multithreaded env
@@ -1460,7 +1549,7 @@ def test_diff_engine_internals():
         def visit(self, nodeId, nodeData):
             return True
         def false_after_n(self):
-            if self._n < 0: return False
+            if self._n <= 0: return False
             self._n = self._n - 1
             return True
     tree = {}

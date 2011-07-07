@@ -541,6 +541,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
             newChildrenSet = set(newChildren)
             curChildrenSet = set(curNodeChildren.children)
             # remove newly deleted node trees
+            self._filter.enable_automatic_updates(False)
             for childNodeId in curChildrenSet.difference(newChildrenSet):
                 nodesToRemove = set()
                 _visit_tree(childNodeId, self._tree, None,
@@ -554,6 +555,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                                    self._filter.visibleNodeIds,
                                    self._visibleBranchNodeIds, self._rootNodeId,
                                    self._viewCommandQueue)
+            self._filter.enable_automatic_updates(True)
             for childNodeId in newChildrenSet.difference(curChildrenSet):
                 # initialize new node data
                 assert childNodeId not in self._tree
