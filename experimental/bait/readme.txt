@@ -9,13 +9,28 @@ document just goes over dependency requirements and testing.
 Dependencies
 ============
 The following components are required to be installed to run BAIT:
-  Python-2.7.2 or later (>=3.0 will not work until wxPython supports it)
-  wxPython-2.8.12 or later (http://www.wxpython.org/)
+  1) Python-2.7.2 or later
+       http://www.python.org/getit/
+       >=3.0 will not work until wxPython supports it
+  2) wxPython-2.8.12 or later
+       http://www.wxpython.org/
+       GUI library and framework
+
+The following components are not required, but are used if installed:
+  1) psutil-0.2.1 or later
+       http://code.google.com/p/psutil/
+       used for memory and CPU utilization profiling and for determining when
+         we should reduce our cache sizes to avoid OOM errors
 
 The following packages are required to run the unit tests:
-  nose-1.0.0 or later
-        (http://somethingaboutorange.com/mrl/projects/nose/1.0.0/)
-  mock-0.7.1 or later (http://pypi.python.org/pypi/mock)
+  1) nose-1.0.0 or later
+       http://somethingaboutorange.com/mrl/projects/nose/1.0.0/
+       provides automatic test detection and execution and manages coverage
+         reporting and performance profiling
+  2) mock-0.7.1 or later
+       http://pypi.python.org/pypi/mock
+       ensures dummy objects used for unit tests accurately clone the APIs of
+         the classes they are representing
 
 
 Unit Testing
