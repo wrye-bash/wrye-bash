@@ -13915,23 +13915,24 @@ class App_Button(Link):
                     cwd.setcwd()
             else:
                 try:
-                    os.startfile(self.exePath.s, (str(self.exeArgs))[2:-3])
+                    args = ' '.join(self.exeArgs)
+                    os.startfile(self.exePath.s, args)
                 except WindowsError, werr:
                     if werr.winerror != 740:
-                        print _("Used Path: %s") % exePath.s
+                        print _("Used Path: %s") % self.exePath.s
                         print _("Used Arguments: "), self.exeArgs
                         raise
                     try:
                         import win32api
                         win32api.ShellExecute(0,"open",exePath.s,str(self.exeArgs),bosh.dirs['app'].s,1)
                     except:
-                        print _("Used Path: %s") % exePath.s
-                        print _("Used Arguments: "), exeArgs
+                        print _("Used Path: %s") % self.exePath.s
+                        print _("Used Arguments: "), self.exeArgs
                         raise WindowsError(werr)
                 except Exception, error:
                     print error
-                    print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), exeArgs
+                    print _("Used Path: %s") % self.exePath.s
+                    print _("Used Arguments: "), self.exeArgs
                     print
                     raise
         else:
