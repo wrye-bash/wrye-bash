@@ -184,3 +184,21 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
             self._diffEngine.update_search_string(searchString)
         else:
             raise RuntimeError("unexpected state change: %s", stateChange)
+
+
+class PackageContentsTreeWidgetManager(_WidgetManagerBase):
+    def __init__(self):
+        self.targetPackage = None
+        self.isMultiple = False
+    def set_target_package(self, nodeId, isMultiple):
+        self.targetPackage = nodeId
+        self.isMultiple = isMultiple
+
+
+class GeneralTabWidgetManager(_WidgetManagerBase):
+    def __init__(self):
+        self.targetPackage = None
+        self.isMultiple = False
+    def set_target_package(self, nodeId, isMultiple):
+        self.targetPackage = nodeId
+        self.isMultiple = isMultiple

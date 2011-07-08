@@ -43,7 +43,7 @@ class DataFetcher:
         self._fetchQueue = Queue.Queue() # (nodeId, updateTypeMask, stateChangeQueue)
         self._fetchThreads = []
         self._shutdownLock = threading.Lock()
-        self._shutdown = False
+        self._isShutdown = False
         self._updateInfo = zip(
             (model.UpdateTypes.ATTRIBUTES,
              model.UpdateTypes.CHILDREN,
@@ -56,25 +56,23 @@ class DataFetcher:
     def start(self):
         if len(self._fetchThreads) is not 0:
             raise RuntimeError("DataFetcher instance already started")
-        for threadIdx in xrange(self._numThreads):
-            t = threading.Thread(name="DataFetcher"+str(threadIdx), target=self._run)
-            t.start()
-            self._fetchThreads.append(t)
+        try:
+            for threadIdx in xrange(self._numThreads):
+                t = threading.Thread(name="DataFetcher"+str(threadIdx), target=self._run)
+                t.start()
+                self._fetchThreads.append(t)
+        except:
+            self._shutdown()
+            raise
 
     def shutdown(self):
-        with self._shutdownLock:
-            self._shutdown = True
-            for threadNum in xrange(self._numThreads):
-                self._fetchQueue.put(None)
-        for t in self._fetchThreads:
-            t.join()
+        self._shutdown()
         self._fetchQueue.join()
-        self._fetchThreads = []
 
     def async_fetch(self, nodeId, updateTypeMask, stateChangeQueue):
         fetchRequest = (nodeId, updateTypeMask, stateChangeQueue)
         with self._shutdownLock:
-            if self._shutdown:
+            if self._isShutdown:
                 return
             self._fetchQueue.put(fetchRequest)
 
@@ -90,7 +88,7 @@ class DataFetcher:
                 break
             with self._shutdownLock:
                 # if we are shutting down, eat all updates
-                if self._shutdown:
+                if self._isShutdown:
                     self._fetchQueue.task_done()
                     continue
                 try:
@@ -117,3 +115,12 @@ class DataFetcher:
                 except Exception as e:
                     _logger.warn("invalid fetch reqeuest: %s: %s", str(fetchRequest), e)
                 self._fetchQueue.task_done()
+
+    def _shutdown(self):
+        with self._shutdownLock:
+            self._isShutdown = True
+            for threadNum in xrange(len(self._fetchThreads)):
+                self._fetchQueue.put(None)
+        while 0 < len(self._fetchThreads):
+            t = self._fetchThreads.pop()
+            t.join()

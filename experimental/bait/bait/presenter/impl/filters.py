@@ -41,16 +41,16 @@ class _Filter:
     """This class and all subclasses are intended only for single-threaded access"""
     def __init__(self, idMask):
         assert(idMask != presenter.FilterIds.NONE)
-        self._idMask = idMask
+        self.idMask = idMask
         self._activeMask = presenter.FilterIds.NONE
         self.visibleNodeIds = None
     def set_active_mask(self, idMask):
         """returns the bitwise xor between the relevant bits of the old mask and the new
         one"""
-        activeMask = self._idMask & idMask
+        activeMask = self.idMask & idMask
         diff = self._activeMask ^ activeMask
         _logger.debug("changing activemask for %s(%s) from %s to %s (diff: %s)",
-                      self.__class__.__name__, self._idMask,
+                      self.__class__.__name__, self.idMask,
                       self._activeMask, activeMask, diff)
         self._activeMask = activeMask
         return diff
@@ -96,33 +96,33 @@ class _FilterButton(_Filter):
             self._discard_node_id(nodeId)
             return False
         self._matchedNodeIds.add(nodeId)
-        _logger.debug("filter %s matched node %s", self._idMask, nodeId)
+        _logger.debug("filter %s matched node %s", self.idMask, nodeId)
         return self.is_active()
     def get_visible_node_ids(self, filterId):
-        if filterId & self._idMask != 0:
+        if filterId & self.idMask != 0:
             _logger.debug("contributing %d nodes from filter %s",
-                          len(self._matchedNodeIds), self._idMask)
+                          len(self._matchedNodeIds), self.idMask)
             return self._matchedNodeIds
         return None
     def remove(self, nodeIds):
-        _logger.debug("removing nodes %s from filter %s", nodeIds, self._idMask)
+        _logger.debug("removing nodes %s from filter %s", nodeIds, self.idMask)
         self._discard_node_ids(nodeIds)
     def refresh_view(self, getHypotheticalVisibleNodeIdsFn):
-        visibleNodeIds = getHypotheticalVisibleNodeIdsFn(self._idMask)
+        visibleNodeIds = getHypotheticalVisibleNodeIdsFn(self.idMask)
         matchedNodeIds = self._get_matched_node_ids_for_stats()
         self._hypotheticallyVisibleNodeIds = matchedNodeIds.intersection(visibleNodeIds)
         self._sync_to_view(matchedNodeIds)
     def update_view(self, nodeId, getHypotheticalVisibilityFn):
         matchedNodeIds = self._get_matched_node_ids_for_stats()
         if nodeId in matchedNodeIds and \
-           getHypotheticalVisibilityFn(nodeId, self._idMask) and \
+           getHypotheticalVisibilityFn(nodeId, self.idMask) and \
            nodeId not in self._hypotheticallyVisibleNodeIds:
             _logger.debug("adding node %s to filter %s's hypothetically visible list",
-                          nodeId, self._idMask)
+                          nodeId, self.idMask)
             self._hypotheticallyVisibleNodeIds.add(nodeId)
         elif nodeId in self._hypotheticallyVisibleNodeIds:
             _logger.debug("removing node %s from filter %s's hypothetically visible list",
-                          nodeId, self._idMask)
+                          nodeId, self.idMask)
             self._hypotheticallyVisibleNodeIds.discard(nodeId)
         self._sync_to_view(matchedNodeIds)
     def _sync_to_view(self, matchedNodeIds):
@@ -131,14 +131,14 @@ class _FilterButton(_Filter):
         if numCurrentNodes != self._prevNumCurrentNodes or \
            totalNodes != self._prevTotalNodes:
             _logger.debug("syncing state to view: filter %s: %d/%d",
-                          self._idMask, numCurrentNodes, totalNodes)
+                          self.idMask, numCurrentNodes, totalNodes)
             self._viewUpdateQueue.put(view_commands.SetFilterStats(
-                self._idMask, numCurrentNodes, totalNodes))
+                self.idMask, numCurrentNodes, totalNodes))
             self._prevNumCurrentNodes = numCurrentNodes
             self._prevTotalNodes = totalNodes
         else:
             _logger.debug("not syncing identical state to view: %s: %d/%d",
-              self._idMask, numCurrentNodes, totalNodes)
+              self.idMask, numCurrentNodes, totalNodes)
     def _discard_node_id(self, nodeId):
         self._matchedNodeIds.discard(nodeId)
     def _discard_node_ids(self, nodeIds):
@@ -199,7 +199,7 @@ class _AggregateFilter(_Filter):
         """ORs together the IDs of all aggregated filters"""
         filterId = presenter.FilterIds.NONE
         for f in filters:
-            filterId |= f._idMask
+            filterId |= f.idMask
         return filterId
 
 class _OrFilter(_AggregateFilter):
@@ -215,7 +215,7 @@ class _OrFilter(_AggregateFilter):
                 self.visibleNodeIds = set.union(*visibleNodeIdSets)
         return diff
     def get_visible_node_ids(self, filterId):
-        if filterId & self._idMask != 0:
+        if filterId in self.idMask:
             visibleNodeIdSets = [f.get_visible_node_ids(filterId) for f in self._filters]
             return set.union(*[v for v in visibleNodeIdSets if v is not None])
         return None
@@ -241,7 +241,7 @@ class _AndFilter(_AggregateFilter):
                 self.visibleNodeIds = set.intersection(*visibleNodeIdSets)
         return diff
     def get_visible_node_ids(self, filterId):
-        if filterId & self._idMask != 0:
+        if filterId in self.idMask:
             visibleNodeIdSets = [f.get_visible_node_ids(filterId) for f in self._filters]
             return set.intersection(*[v for v in visibleNodeIdSets if v is not None])
         return None
@@ -256,6 +256,7 @@ class _AndFilter(_AggregateFilter):
 
 class _FilterGroup:
     def __init__(self, wrappedFilter):
+        self.idMask = wrappedFilter.idMask
         self._filter = wrappedFilter
         self.visibleNodeIds = self._get_visible_node_ids()
         self._automatic_updates_enabled = True

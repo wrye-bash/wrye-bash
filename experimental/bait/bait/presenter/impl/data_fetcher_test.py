@@ -39,12 +39,25 @@ class _DummyModel:
     def get_node_children(self, nodeId): return _data.get(nodeId)
     def get_node_details(self, nodeId): return _data.get(nodeId)
 
+def _assert_state_changes(stateChangeQueue, expectedStateChanges):
+    """expectedStateChanges is a dictionary of (updateType,nodeId,data) -> count"""
+    assert not stateChangeQueue.empty()
+    while not stateChangeQueue.empty():
+        stateChange = stateChangeQueue.get()
+        count = expectedStateChanges[stateChange]
+        if count == 1:
+            del expectedStateChanges[stateChange]
+        else:
+            expectedStateChanges[stateChange] = count - 1
+    assert stateChangeQueue.empty()
+    assert len(expectedStateChanges) == 0
+
 def _assert_state_change(stateChangeQueue, updateType, nodeId, data):
-    assert(not stateChangeQueue.empty())
+    assert not stateChangeQueue.empty()
     stateChange = stateChangeQueue.get()
-    assert(updateType == stateChange[data_fetcher.UPDATE_TYPE_IDX])
-    assert(nodeId == stateChange[data_fetcher.NODE_ID_IDX])
-    assert(data == stateChange[data_fetcher.DATA_IDX])
+    assert updateType == stateChange[data_fetcher.UPDATE_TYPE_IDX]
+    assert nodeId == stateChange[data_fetcher.NODE_ID_IDX]
+    assert data == stateChange[data_fetcher.DATA_IDX]
 
 
 def _data_fetcher_test(numThreads):
@@ -87,12 +100,11 @@ def _data_fetcher_test(numThreads):
         while df._fetchQueue.unfinished_tasks != 0:
             time.sleep(0)
 
-        # assert output
-        _assert_state_change(stateChangeQueue, model.UpdateTypes.ATTRIBUTES, 1, True)
-        _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
-        _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
-        _assert_state_change(stateChangeQueue, model.UpdateTypes.CHILDREN, 1, True)
-        _assert_state_change(stateChangeQueue, model.UpdateTypes.DETAILS, 1, True)
+        # assert output (order of events is not deterministic due to multithreading)
+        _assert_state_changes(stateChangeQueue, {
+            (model.UpdateTypes.ATTRIBUTES, 1, True):1,
+            (model.UpdateTypes.CHILDREN, 1, True):2,
+            (model.UpdateTypes.DETAILS, 1, True):2})
 
     finally:
         df.shutdown()
@@ -129,3 +141,17 @@ def data_fetcher_test_fast_shutdown():
         df.shutdown()
     assert df._fetchQueue.empty()
     assert 100 > stateChangeQueue.qsize()
+
+def data_fetcher_test_failed_start():
+    class UnstableList(list):
+        def append(self, object):
+            list.append(self, object)
+            raise RuntimeError("testing")
+
+    df = data_fetcher.DataFetcher(_DummyModel())
+    df._fetchThreads = UnstableList()
+    try:
+        df.start()
+        assert False
+    except:
+        pass

@@ -26,15 +26,30 @@ import Queue
 
 from .. import presenter
 from . import bait_presenter
-from ..test import mock_model
 
 
-def presenter_test():
-    presenterOutputQueue = Queue.Queue()
-    _model = mock_model.MockModel()
-    _presenter = bait_presenter.BaitPresenter(_model, presenterOutputQueue)
-    _presenter.start(presenter.DetailsTabIds.GENERAL, {})
+class _DummyModel:
+    def __init__(self):
+        self.updateNotificationQueue = Queue.Queue()
+    def start(self):
+        pass
+    def pause(self):
+        pass
+    def resume(self):
+        pass
+    def shutdown(self):
+        self.updateNotificationQueue.put(None)
+    def get_node_attributes(self, nodeId):
+        return None
+    def get_node_children(self, nodeId):
+        return None
+    def get_node_details(self, nodeId):
+        return None
 
-    # TODO: test
 
-    _presenter.shutdown()
+def presenter_lifecycle_test():
+    viewCommandQueue = Queue.Queue()
+    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+
+    p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
+    p.shutdown()

@@ -50,7 +50,7 @@ class MockModel(bait_model.BaitModel):
 
     def shutdown(self):
         _logger.debug("mock model shutting down")
-        self.updateQueue.put(None)
+        self.updateNotificationQueue.put(None)
 
     def get_status(self):
         # TODO: if there are writes going on, return IO

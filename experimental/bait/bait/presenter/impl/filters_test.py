@@ -130,18 +130,25 @@ def package_contents_tree_filter_test():
     assert len(f.visibleNodeIds) == 0
     assert viewUpdateQueue.empty()
 
-    # test adding data
+    # test adding data with automatic updates turned off
+    f.enable_automatic_updates(False)
     assert not f.process_and_get_visibility(0, data[0])
     assert len(f.visibleNodeIds) == 0
+    assert viewUpdateQueue.empty()
+    f.enable_automatic_updates(True)
     _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_PLUGINS, 1, 1)
 
+    f.enable_automatic_updates(False)
     assert f.process_and_get_visibility(1, data[1])
     assert len(f.visibleNodeIds) == 1
     assert 1 in f.visibleNodeIds
-    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_RESOURCES, 1, 1)
+    assert viewUpdateQueue.empty()
 
     assert not f.process_and_get_visibility(2, data[2])
-    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
+    assert viewUpdateQueue.empty()
+    f.enable_automatic_updates(True)
+    _assert_stats_updates(viewUpdateQueue, {presenter.FilterIds.FILES_RESOURCES:(1,1),
+                                            presenter.FilterIds.FILES_OTHER:(1,1)})
 
     assert not f.process_and_get_visibility(3, data[3])
     assert viewUpdateQueue.empty()

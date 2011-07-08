@@ -411,7 +411,7 @@ class _DiffEngine:
         self.loadRequestQueue.put((model.UpdateTypes.CHILDREN, rootNodeId))
 
     def set_pending_filter_mask(self, filterMask):
-        self._pendingFilterMask = filterMask
+        self._pendingFilterMask = self._filter.idMask & filterMask
 
     def is_in_scope(self, updateType, nodeType):
         """subclass will return whether the specified class of update is in its scope"""
@@ -580,6 +580,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
         self._update_managers()
 
     def update_filter(self, filterMask):
+        filterMask &= self._filter.idMask
         _logger.debug("updating filter mask to %s", filterMask)
         if filterMask != self._pendingFilterMask:
             _logger.debug("filter mask stale; not processing")
