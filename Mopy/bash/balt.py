@@ -121,7 +121,7 @@ class Image:
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
-        if not GPath(self.file).exists():
+        if not GPath(self.file.s.split(';')[0]).exists():
             raise ArgumentError(_("Missing resource file: %s.") % (self.file,))
 
     def GetBitmap(self):

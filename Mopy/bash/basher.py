@@ -14716,18 +14716,42 @@ def InitStatusBar():
         if path.exists():
             icon,idex = icon.split(',')
             if icon == '':
-                icon = path
-            else:
-                icon = GPath(icon)
+                if path.cext == '.exe':
+                    # Use the icon embedded in the exe
+                    icon = path
+                else:
+                    # Use the default icon for that file type
+                    try:
+                        import win32api
+                        import win32con
+                        icon_path = win32api.RegQueryValue(
+                            win32con.HKEY_CLASSES_ROOT,
+                            path.cext
+                            )
+                        filedata = win32api.RegQueryValue(
+                            win32con.HKEY_CLASSES_ROOT,
+                            '%s\\DefaultIcon' % icon_path
+                            )
+                        icon,idex = filedata.split(',')
+                        if not os.path.isabs(icon):
+                            # Get the correct path to the dll
+                            for dir in os.environ['PATH'].split(';'):
+                                test = GPath(dir).join(icon)
+                                if test.exists():
+                                    icon = test
+                                    break
+                    except:
+                        deprint('Error finding icon for %s:' % path.s,traceback=True)
+                        icon = 'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon
-            customIcon = bosh.dirs['mopy'].join('Apps',icon.body+bosh.inisettings['IconSize']+'.png')
+            customIcon = bosh.dirs['mopy'].join('Apps',path.body+bosh.inisettings['IconSize']+'.png')
             if customIcon.exists():
                 icon = Image(customIcon)
             # Next try the shortcut specified icon
             else:
                 if icon.exists():
-                    icon = Image(icon,wx.BITMAP_TYPE_ICO,int(bosh.inisettings['IconSize']))
+                    icon = Image(icon.s+';'+idex,wx.BITMAP_TYPE_ICO,int(bosh.inisettings['IconSize']))
             # Last, use the 'x' icon
                 else:
                     icon = Image(GPath(bosh.dirs['images'].join('x.png')))
