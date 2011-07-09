@@ -46,10 +46,65 @@ class _DummyModel:
     def get_node_details(self, nodeId):
         return None
 
+class _ThrowOnShutdown:
+    def __init__(self, obj, throwOnShutdownInput=True, throwOnShutdown=True,
+                 throwOnShutdownOutput=True):
+        self._obj = obj
+        self._throwOnShutdownInput = throwOnShutdownInput
+        self._throwOnShutdown = throwOnShutdown
+        self._throwOnShutdownOutput = throwOnShutdownOutput
+    def shutdown_input(self):
+        self._obj.shutdown_input()
+        if self._throwOnShutdownInput: self._throw()
+    def shutdown(self):
+        self._obj.shutdown()
+        if self._throwOnShutdown: self._throw()
+    def shutdown_output(self):
+        self._obj.shutdown_output()
+        if self._throwOnShutdownOutput: self._throw()
+    def _throw(self):
+        raise RuntimeError("dummy error")
+
 
 def presenter_lifecycle_test():
     viewCommandQueue = Queue.Queue()
-    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
 
+    # normal
+    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
     p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
     p.shutdown()
+
+    # double-start, double-shutdown (failed start calls shutdown the first time)
+    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+    p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
+    try:
+        p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
+        assert False
+    except RuntimeError:
+        pass
+    p.shutdown()
+
+    # pause-resume cycle
+    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+    p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
+    p.pause()
+    p.resume()
+    p.pause()
+    p.pause()
+    p.resume()
+    p.resume()
+    p.shutdown()
+
+    # test shutdown errors
+    for failTuple in [("_updateDispatcher", True),
+                      ("_dataFetcher", True),
+                      ("_packagesTreeManager", True),
+                      ("_model", True),
+                      ("_updateDispatcher", False)]:
+        p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+        p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
+        # call the shutdown ourselves to make sure we don't get any leftover threads
+        throwObj = _ThrowOnShutdown(getattr(p, failTuple[0]),
+                                    throwOnShutdownOutput=failTuple[1])
+        setattr(p, failTuple[0], throwObj)
+        p.shutdown()

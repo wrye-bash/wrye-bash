@@ -55,8 +55,9 @@ class UpdateDispatcher:
 
     def shutdown_input(self):
         # wait for None to be sent from the model
-        self._monitorThread.join()
-        self._monitorThread = None
+        if self._monitorThread is not None:
+            self._monitorThread.join()
+            self._monitorThread = None
 
     def _run(self):
         _logger.debug("model update dispatcher thread starting")

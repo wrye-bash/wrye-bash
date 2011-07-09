@@ -69,7 +69,7 @@ class BaitPresenter:
             for manager in self._filteringManagers:
                 manager.handle_filter_update(initialFilterMask)
         except:
-            shutdown()
+            self.shutdown()
             raise
         #self.viewCommandQueue.put(self._colorsAndIcons.get_set_style_maps_command())
         #self.viewCommandQueue.put(view_commands.SetStatus(
@@ -92,15 +92,15 @@ class BaitPresenter:
     def shutdown(self):
         _logger.debug("presenter shutting down")
         try: self._updateDispatcher.shutdown_output()
-        except: _logger.exception("caught exception shutting down dispatcher output")
+        except: _logger.exception("exception while shutting down dispatcher output")
         try: self._dataFetcher.shutdown()
-        except:  _logger.exception("caught exception shutting down data fetcher")
+        except:  _logger.exception("exception while shutting down data fetcher")
         try: self._packagesTreeManager.shutdown()
-        except:  _logger.exception("caught exception shutting down packages tree manager")
+        except:  _logger.exception("exception while shutting down packages tree manager")
         try: self._model.shutdown()
-        except:  _logger.exception("caught exception shutting down model")
+        except:  _logger.exception("exception while shutting down model")
         try: self._updateDispatcher.shutdown_input()
-        except:  _logger.exception("caught exception shutting down dispatcher input")
+        except:  _logger.exception("exception while shutting down dispatcher input")
         self.viewCommandQueue.put(None)
 
     def set_filter_state(self, filterId, value):
