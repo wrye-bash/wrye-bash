@@ -14039,6 +14039,8 @@ class App_BOSS(App_Button):
                         exeArgs += ('-r 1',) # Revert level 1 - BOSS version 1.6+
                     if wx.GetKeyState(83):
                         exeArgs += ('-s',) # Silent Mode - BOSS version 1.6+
+                    if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+                        exeArgs += ('-c',)
                 if version in [1, 393217]:
                     if wx.GetKeyState(86):
                         exeArgs += ('-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
