@@ -14984,6 +14984,7 @@ def InitModLinks():
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1'))
         versionsMenu.links.append(Mods_OblivionVersion('1.2'))
+        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI'))
         versionsMenu.links.append(Mods_OblivionVersion('SI'))
         ModList.mainMenu.append(versionsMenu)
     #--Columns ----------------------------------
