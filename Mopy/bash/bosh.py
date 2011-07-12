@@ -8552,6 +8552,7 @@ class ModInfos(FileInfos):
         #--Oblivion version
         self.version_voSize = {
             '1.1':int(_("247388848")),  #--247388848
+            'GOTY non-SI':int(_("247388812")),
             '1.0.7.5':int(_("108369128")), #Nehrim
             'SI': int(_("277504985"))}
         self.size_voVersion = bolt.invertDict(self.version_voSize)
@@ -9247,7 +9248,7 @@ class ModInfos(FileInfos):
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def getOblivionVersions(self):
         """Returns tuple of Oblivion versions."""
-        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.2|_1.0.7.5).esm$')
+        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.2|_1.0.7.5|_GOTY non-SI).esm$')
         self.voAvailable.clear()
         for name,info in self.data.iteritems():
             maOblivion = reOblivion.match(name.s)
