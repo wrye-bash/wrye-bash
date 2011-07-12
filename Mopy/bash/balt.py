@@ -711,7 +711,6 @@ def playSound(parent,sound):
     sound = wx.Sound(sound)
     if sound.IsOk():
         sound.Play(wx.SOUND_ASYNC)
-        print 'played sound'
     else:
         showError(parent,_("Invalid sound file %s.") % sound)
 
