@@ -1653,7 +1653,11 @@ class ObBaseRecord(object):
             # 'touch' the flags2 objects to make sure they're loaded?
             a = self.flags2
             a = other.flags2
-            identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
+            try:
+                identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
+            except Exception,err: #trace down the stupid stack overflow?!?! - traced down in one instance and can't see anything wrong with the record but this'll handle it as well as possible.
+                deprint(_("Exception reading fid: %s from mod: %s %s" % (str(self.fid),self.ModName,err)))
+                identical = False
             if identical:
                 if self._Type == 'CELL':
                     # Check to make sure the CELLs are attached at the same spot
