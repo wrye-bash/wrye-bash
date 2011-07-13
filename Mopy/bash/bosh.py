@@ -9248,7 +9248,7 @@ class ModInfos(FileInfos):
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def getOblivionVersions(self):
         """Returns tuple of Oblivion versions."""
-        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.2|_1.0.7.5|_GOTY non-SI).esm$')
+        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.0.7.5|_GOTY non-SI).esm$')
         self.voAvailable.clear()
         for name,info in self.data.iteritems():
             maOblivion = reOblivion.match(name.s)
@@ -17718,7 +17718,7 @@ class PatchFile(ModFile):
             modFile.load(True)
         except ModError, error:
             if not verbose: return False
-            reasons += '\n.    ' + Unicode(error)+'.'
+            reasons += '\n.    ' + Unicode(str(error))+'.'
         #--Skipped over types?
         if modFile.topsSkipped:
             if not verbose: return False

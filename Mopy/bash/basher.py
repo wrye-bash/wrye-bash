@@ -10641,7 +10641,7 @@ class Mod_MarkMergeable(Link):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         for fileName in map(GPath,self.data):
-            if fileName in ('Oblivion.esm','Oblivion_1.1.esm'): continue
+            if fileName in ('Oblivion.esm','Oblivion_1.1.esm','Oblivion_GOTY non-SI.esm'): continue
             fileInfo = bosh.modInfos[fileName]
             if not self.doCBash:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
@@ -11119,7 +11119,7 @@ class Mod_DecompileAll(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Decompile All'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (self.data[0] != 'Oblivion.esm' and self.data[0] != 'Oblivion_1.1.esm'))
+        menuItem.Enable(len(self.data) != 1 or (self.data[0] not in('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm')))
 
 
     def Execute(self,event):
@@ -11128,7 +11128,7 @@ class Mod_DecompileAll(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if item == 'Oblivion.esm' or item == 'Oblivion_1.1.esm':
+            if item in ('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm'):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
@@ -11602,7 +11602,7 @@ class Mod_RemoveWorldOrphans(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Remove World Orphans'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (self.data[0] != 'Oblivion.esm' and self.data[0] != 'Oblivion_1.1.esm'))
+        menuItem.Enable(len(self.data) != 1 or (self.data[0] not in ('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm')))
 
     def Execute(self,event):
         message = _("In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
@@ -11610,7 +11610,7 @@ class Mod_RemoveWorldOrphans(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if item == 'Oblivion.esm' or item == 'Oblivion_1.1.esm':
+            if item in ('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm'):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Remove World Orphans'))
                 continue
             fileInfo = bosh.modInfos[fileName]
@@ -12346,7 +12346,7 @@ class Mod_UndeleteRefs(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Undelete Refs'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (self.data[0] != 'Oblivion.esm' and self.data[0] != 'Oblivion_1.1.esm'))
+        menuItem.Enable(len(self.data) != 1 or (self.data[0] not in ('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm')))
 
     def Execute(self,event):
         message = _("Changes deleted refs to ignored. This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
@@ -12358,7 +12358,7 @@ class Mod_UndeleteRefs(Link):
             hasFixed = False
             log = bolt.LogFile(stringBuffer())
             for index,fileName in enumerate(map(GPath,self.data)):
-                if fileName == 'Oblivion.esm'or fileName == 'Oblivion_1.1.esm':
+                if fileName.s in ('Oblivion.esm', 'Oblivion_1.1.esm', 'Oblivion_GOTY non-SI.esm'):
                     balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Undelete Refs'))
                     continue
                 progress(index,_("Scanning %s.") % (fileName.s,))
@@ -14983,7 +14983,6 @@ def InitModLinks():
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1'))
-        versionsMenu.links.append(Mods_OblivionVersion('1.2'))
         versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI'))
         versionsMenu.links.append(Mods_OblivionVersion('SI'))
         ModList.mainMenu.append(versionsMenu)
@@ -15134,7 +15133,7 @@ def InitSaveLinks():
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1',True))
-        versionsMenu.links.append(Mods_OblivionVersion('1.2',True))
+        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI',True))
         versionsMenu.links.append(Mods_OblivionVersion('SI',True))
         SaveList.mainMenu.append(versionsMenu)
     if True: #--Save Profiles
