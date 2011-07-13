@@ -8676,6 +8676,26 @@ class Installer_Espm_ResetAll(InstallerLink):
         installer = gInstallers.data[gInstallers.detailsItem]
         installer.resetAllEspmNames()
         gInstallers.refreshCurrent(installer)
+
+class Installer_Espm_List(InstallerLink):
+    """Lists all Esp/ms in installer for user information/w/e."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('List Esp/ms'))
+        menu.AppendItem(menuItem)
+        if len(gInstallers.espms) == 0:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle selection."""
+        subs = _('Esp/m List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
+        for index in range(gInstallers.gEspmList.GetCount()):
+            subs += gInstallers.gEspmList.GetString(index) + '\n'
+        subs += '[/spoiler]'
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(subs))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,subs,_("Esp/m List"),asDialog=False,fixedFont=False,icons=bashBlue)
 # InstallerDetails Subpackage Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -14908,6 +14928,7 @@ def InitInstallerLinks():
     #--espms Main Menu
     InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
     InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())
+    InstallersPanel.espmMenu.append(Installer_Espm_List())
     InstallersPanel.espmMenu.append(SeparatorLink())
     #--espms Item Menu
     InstallersPanel.espmMenu.append(Installer_Espm_Rename())
