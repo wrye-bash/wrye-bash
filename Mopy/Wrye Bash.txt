@@ -859,7 +859,7 @@ These are the commands found on context menu for mods...
 
 === Decompile All
 * This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.
-* It ignores/will not work on "Oblivion.esm" and "Oblivion_1.1.esm"
+* It ignores/will not work on "Oblivion.esm" and "Oblivion_1.1.esm" and "Oblivion_GOTY non-SI.esm".
 
 === Copy to Esp/Esm
 * Creates an esm copy of an esp or vice versa.
@@ -1198,6 +1198,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * __Import Patch Configuration:__ Restores your Bashed Patch's configuration by reading an external file saved using the __Export Patch Configuration__ command.
 * __Build the Patch__
   * Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel to quit without updating the patch mod.
+  * If specified in the bash.ini a sound will be played on succesfull completion/failure.
 
 === Patch Notes
 * __Load Order__
@@ -2242,15 +2243,15 @@ Perhaps these problems are not that horrendous, but it would be nice to be able 
 * If you have ~~not~~ done that, then you'll need to:
   * Reinstall Oblivion
   * Update it using the Oblivion 1.1 patch
-  * Copy Oblivion.esm to Oblivion_1.1.esm
+  * Copy Oblivion.esm to Oblivion_1.1.esm or if using the GOTY version copy to Oblivion_GOTY non-SI.esm.
   * Reinstall Shivering Isles.
 * If you have not yet installed Shivering Isles, then great! All you have to do is the last two steps above.
 
 === Version Indicators
 Bash now indicates the current version of Oblivion.esm in several places...
-* Mods tab: You'll see either a [1.1] or an [SI] after Oblivion.esm listing.
-* Masters tab: For both mods and savegames, you'll again see [1.1] or [SI] appended to Oblivion.esm. Note that this **does not** indicate the version used when the mod was built or the savegame was saved. Rather it just indicates the version of the currently loaded Oblivion.esm.
-* The title of the main Bash window. You'll see either [1.1] or [SI] at the end of the title.
+* Mods tab: You'll see either [1.1] or [GOTY non-SI] or [SI] after Oblivion.esm listing.
+* Masters tab: For both mods and savegames, you'll again see [1.1] or [GOTY non-SI] or [SI] appended to Oblivion.esm. Note that this **does not** indicate the version used when the mod was built or the savegame was saved. Rather it just indicates the version of the currently loaded Oblivion.esm.
+* The title of the main Bash window. You'll see either [1.1] or [GOTY non-SI] or [SI] at the end of the title.
 
 === Mod Tab Swapping
 * Two swap versions on the mod tab, right click anywhere on the column header and got to the Oblivion.esm __menu item__. The currently available and selected versions will pop up in a submenu where you can select them.
@@ -2292,22 +2293,33 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> -- this is the name of the Mods tab. And right under it is the name of the Saves tab.
   * To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.
   * Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)
-  * Spell checking: If you're using an office suite, you might want turn on dictionaries for both English and your language -- Abot mentions that Open Office allows you to do this.
+  * Spell checking: If you're using an office suite, you might want to turn on dictionaries for both English and your language -- Abot mentions that Open Office allows you to do this.
 
 == Versions ===================================================================
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 294 [12/12/2011] [PacificMorrowind,valda,Lojack]
-* Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
+=== 294 [12/12/2011] [PacificMorrowind,Metallicow,valda,Lojack]
+* [[#BashedPatches|Bashed Patch]]:
+  * Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
+  * All multitweakers with choices now autoselect the default value if not user selected.
 * Unicode Mode:
   * More bugfixes from valda
-* Bugs fixed (General):
-  * Fixed corrupted size saved when maximizing a Wizard.
-* [[#Custombuttons|Custom launcher buttons]] are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
+  * Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.
 * [[#|Saves Tab]]:
   * Added ability to export screenshot from savegame.
-* Improved detection of applications for the status bar launcher buttons.
+* [[#InstallersTab|BAIN]]:
+  * List Esp/ms command added to esp/m pane r-click menu.
+* Bugs fixed (General):
+  * Fixed corrupted size saved when maximizing a Wizard.
+  * Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
+  * Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).
+* Enhancements/New Features (General):
+  * [[#Custombuttons|Custom launcher buttons]] are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
+  * Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
+  * Improved detection of applications for the status bar launcher buttons.
+  * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
+  * Added the GOTY version of the non-SI esm to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1).  
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
@@ -2483,7 +2495,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)
     * TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)
   * Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
-* BAIN:
+* [[#InstallersTab|BAIN]]:
   * fix so that the end of the display of the number of packages does not get cut off.
   * Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
   * Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
