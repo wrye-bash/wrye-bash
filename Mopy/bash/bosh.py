@@ -142,10 +142,12 @@ allTags = sorted(('Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate',
                   'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
                   'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
                   'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'MustBeActiveIfImported')) ##, 'ForceMerge'
+                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Npc.HairOnly','Npc.EyesOnly')) ##, 'ForceMerge'
 allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
+
+reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$')
 
 undefinedPath = GPath(r'C:\not\a\valid\path.exe')
 undefinedPaths = set([GPath(r'C:\Path\exe.exe'),undefinedPath])
@@ -8551,10 +8553,11 @@ class ModInfos(FileInfos):
         self.group_header = {}
         #--Oblivion version
         self.version_voSize = {
-            '1.1':int(_("247388848")),  #--247388848
-            'GOTY non-SI':int(_("247388812")),
-            '1.0.7.5':int(_("108369128")), #Nehrim
-            'SI': int(_("277504985"))}
+            '1.1':        247388848, #--Standard
+            '1.1b':       247388894, # Arthmoor has this size.
+            'GOTY non-SI':247388812, # GOTY version
+            '1.0.7.5':    108369128, # Nehrim
+            'SI':         277504985} # Shivering Isles 1.2
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
@@ -8761,7 +8764,7 @@ class ModInfos(FileInfos):
         progress.setFull(len(names))
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
-            if fileName in ('Oblivion.esm','Oblivion_1.1.esm',): continue
+            if reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
             try:
                 if not doCBash:
@@ -9248,7 +9251,6 @@ class ModInfos(FileInfos):
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def getOblivionVersions(self):
         """Returns tuple of Oblivion versions."""
-        reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.0.7.5|_GOTY non-SI).esm$')
         self.voAvailable.clear()
         for name,info in self.data.iteritems():
             maOblivion = reOblivion.match(name.s)
@@ -22673,7 +22675,7 @@ class NpcFacePatcher(ImportPatcher):
     name = _('Import NPC Faces')
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = ('NpcFaces','NpcFacesForceFullImport')
+    autoKey = ('NpcFaces','NpcFacesForceFullImport','Npc.HairOnly','Npc.EyesOnly')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22696,11 +22698,20 @@ class NpcFacePatcher(ImportPatcher):
             faceInfo = modInfos[faceMod]
             faceFile = ModFile(faceInfo,loadFactory)
             masters = faceInfo.header.masters
+            bashTags = faceInfo.getBashTags()
             faceFile.load(True)
             faceFile.convertToLongFids(('NPC_',))
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] in self.patchFile.loadSet:
-                    attr_fidvalue = dict((attr,npc.__getattribute__(attr)) for attr in ('eye','hair'))
+                    attrs, fidattrs = [],[]
+                    if 'Npc.HairOnly' in bashTags: 
+                        fidattrs += ['hair']
+                        attrs = ['hairLength','hairRed','hairBlue','hairGreen']
+                    if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+                    if fidattrs:
+                        attr_fidvalue = dict((attr,npc.__getattribute__(attr)) for attr in fidattrs)
+                    else:
+                        attr_fidvalue = dict((attr,npc.__getattribute__(attr)) for attr in ('eye','hair'))
                     for fidvalue in attr_fidvalue.values():
                         if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
                             #Ignore the record. Another option would be to just ignore the attr_fidvalue result
@@ -22708,9 +22719,10 @@ class NpcFacePatcher(ImportPatcher):
                             mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
                             break
                     else:
-                        temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','unused3'))
+                        if not fidattrs: temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','unused3'))
+                        else: temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in attrs)
                         temp_faceData[npc.fid].update(attr_fidvalue)
-            if 'NpcFacesForceFullImport' in faceInfo.getBashTags():
+            if 'NpcFacesForceFullImport' in bashTags:
                 for fid in temp_faceData:
                     faceData[fid] = temp_faceData[fid]
             else:
@@ -22784,7 +22796,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     name = _('Import NPC Faces')
     text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = set(('NpcFaces','NpcFacesForceFullImport'))
+    autoKey = set(('NpcFaces','NpcFacesForceFullImport','Npc.HairOnly','Npc.EyesOnly'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22818,7 +22830,15 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                 face[attr] = getattr(record,attr)
             self.id_face[record.fid] = face
         else:
-            attr_fidvalue = record.ConflictDetails(self.faceFidData, False)
+            fidattrs, attrs = [], []
+            if 'Npc.HairOnly' in bashTags: 
+                fidattrs += ['hair']
+                attrs =['hairLength','hairRed','hairBlue','hairGreen']
+            if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+            if fidattrs:
+                attr_fidvalue = record.ConflictDetails(fidattrs, False)
+            else:
+                attr_fidvalue = record.ConflictDetails(self.faceFidData, False)
             for fidvalue in attr_fidvalue.values():
                 if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
                     #Ignore the record. Another option would be to just ignore the attr_fidvalue result
@@ -22833,14 +22853,17 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                     masterRecord = history[0]
                     if masterRecord.GName == record.fid[0]:
                         same = True
-                        for attr in (self.faceFidData + self.faceData):
+                        for attr in (attrs + fidattrs) or (self.faceFidData + self.faceData):
                             if getattr(masterRecord,attr) != getattr(record,attr):
                                 same = False
                                 break
                         if same:
                             return
             self.id_face.setdefault(fid,{}).update(attr_fidvalue)
-            self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
+            if fidattrs: 
+                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(attrs, False))
+            else:
+                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -27085,7 +27108,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 0.25'),3000),
             (_('x 0.50'),6000),
             (_('x 0.75'),9000),
-            (_('Custom (base 1200)'),1200),
+            (_('Custom (base 12000)'),12000),
             ),
         GmstTweak(False,_('Essential NPC Unconsciousness'),
             _("Time which essential NPCs stay unconscious."),
@@ -27604,7 +27627,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 0.25'),3000),
             (_('x 0.50'),6000),
             (_('x 0.75'),9000),
-            (_('Custom (base 1200)'),1200),
+            (_('Custom (base 12000)'),12000),
             ),
         CBash_GmstTweak(True,_('Essential NPC Unconsciousness'),
             _("Time which essential NPCs stay unconscious."),

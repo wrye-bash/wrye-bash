@@ -859,7 +859,7 @@ These are the commands found on context menu for mods...
 
 === Decompile All
 * This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.
-* It ignores/will not work on "Oblivion.esm" and "Oblivion_1.1.esm" and "Oblivion_GOTY non-SI.esm".
+* It ignores/will not work on "Oblivion.esm", "Oblivion_1.1.esm", "Oblivion_1.1b.esm" and "Oblivion_GOTY non-SI.esm".
 
 === Copy to Esp/Esm
 * Creates an esm copy of an esp or vice versa.
@@ -1261,6 +1261,8 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
   * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
   * NpcFacesForceFullImport: Mod modifies faces ([[#|Import NPC Faces]]).
+  * Npc.EyesOnly: Mod modifies npc eyes ([[#|Import NPC Faces]]).
+  * Npc.HairOnly: Mod modifies npc hair ([[#|Import NPC Faces]]).
   * R.AddSpells: mod adds racial spells. ([[#|Race Records]]).
   * R.Attributes-F mod changes race attributes for females ([[#|Race Records]]).
   * R.Attributes-M: mod changes race attributes for males ([[#|Race Records]]).
@@ -1434,9 +1436,11 @@ __Importers__ are components that import specific information from selected mods
 * __Overview__
 . This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://www.dreamingthepyramid.net/TNR-home.html|Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 * __Configuration__
-  * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> [[#BashTags|tag]] in the mod description.
+  * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> or <code>Npc.EyesOnly</code> or <code>Npc.HairOnly</code>[[#BashTags|tag]] in the mod description.
   * Note that since there is a now a [[http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip|TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
   * If tagged with NpcFaces only changed face subrecords will be imported into the patch; this will get changes from more esps at once - like hair from mod 1 and facial changes from mod 2 however depending on the exact changes the results may not __look__ good though.
+  * If tagged with Npc.EyesOnly will import only eye changes. (Can be used with Npc.HairOnly if desired).
+  * If tagged with Npc.HairOnly will import only hair changes. (Can be used with Npc.EyesOnly if desired).
   * If tagged with NpcFacesForceFullImport all the npc facial subrecords will be imported whether they are changed or not.
 * __Source Mods__
   * Since TNR contains ~~only~~ face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods -- but ~~do~~ keep them in your data directory, since Bash will need to find them when updating the patch.
@@ -2243,7 +2247,10 @@ Perhaps these problems are not that horrendous, but it would be nice to be able 
 * If you have ~~not~~ done that, then you'll need to:
   * Reinstall Oblivion
   * Update it using the Oblivion 1.1 patch
-  * Copy Oblivion.esm to Oblivion_1.1.esm or if using the GOTY version copy to Oblivion_GOTY non-SI.esm.
+  * Copy Oblivion.esm to one of the following:
+    * if 247388848 bytes to 'Oblivion_1.1.esm' (most common)
+    * or if 247388812 bytes to 'Oblivion_GOTY non-SI.esm' (GOTY version)
+    * or if 247388894 bytes to 'Oblivion_1.1b.esm' (an uncommon variant)
   * Reinstall Shivering Isles.
 * If you have not yet installed Shivering Isles, then great! All you have to do is the last two steps above.
 
@@ -2303,6 +2310,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * [[#BashedPatches|Bashed Patch]]:
   * Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
   * All multitweakers with choices now autoselect the default value if not user selected.
+  * added Npc.HairOnly, Npc.EyesOnly tags.
+  * typo fix for the custom option of Tweak Settings->Compass: POI Recognition 
 * Unicode Mode:
   * More bugfixes from valda
   * Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.
@@ -2319,7 +2328,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
   * Improved detection of applications for the status bar launcher buttons.
   * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
-  * Added the GOTY version of the non-SI esm to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1).  
+  * Added the GOTY version of the non-SI esm and an alterante 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).  
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
