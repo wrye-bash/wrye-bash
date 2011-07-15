@@ -6059,10 +6059,12 @@ class PatchDialog(wx.Dialog):
             if isinstance(patcher, ListPatcher):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
-                    patcher.gList.Check(index,patcher.configChecks[item])
+                    try: patcher.gList.Check(index,patcher.configChecks[item])
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
-                    patcher.gList.Check(index,item.isEnabled)
+                    try: patcher.gList.Check(index,item.isEnabled)
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
         self.SetOkEnable()
 
     def SelectAll(self,event=None):
@@ -7411,7 +7413,6 @@ class Installers_AnnealAll(Link):
             bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
-class Installers_AutoAnneal(BoolLink):
     def __init__(self):
         BoolLink.__init__(self,
                           _('Auto-Anneal'),
@@ -8393,7 +8394,7 @@ class Installer_OpenSearch(InstallerLink):
         """Handle selection."""
         message = _("Open a search for this on Google?")
         if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_('Open a search')):
-            os.startfile('http://www.google.com/search?hl=en&q='+bosh.reTesNexus.search(self.selected[0].s).group(1))
+            os.startfile('http://www.google.com/search?hl=en&q='+'+'.join(re.split(r'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
 
 class Installer_OpenTESA(InstallerLink):
     """Open selected file(s)."""
@@ -14846,6 +14847,8 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AnnealAll())
     InstallersPanel.mainMenu.append(Files_Unhide('installer'))
+    InstallersPanel.mainMenu.append(SeparatorLink())
+    InstallersPanel.mainMenu.append(Installers_UninstallAllPackages())
     #--Behavior
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
