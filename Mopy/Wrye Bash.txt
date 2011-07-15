@@ -658,6 +658,7 @@ The following commands are available by right clicking on the column header of t
   * __Full Refresh:__ This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
   * __Add Marker:__ Creates a marker for organizing your packages.  The "==" will be added for you.
   * __List Packages:__ Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help.
+  * __Uninstall All:__ Uninstalls all packages that are managed by BAIn (or at least in teh BAIN directory).
   * __Anneal All:__ This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
   * __Unhide:__ Unhides hidden packages.
     * The Unhide dialog now works like WinMerge's open dialog
@@ -2319,6 +2320,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added ability to export screenshot from savegame.
 * [[#InstallersTab|BAIN]]:
   * List Esp/ms command added to esp/m pane r-click menu.
+  * Open at Google regex improved so better automatic search terms.
+  * new __Uninstall All__ command. 
 * Bugs fixed (General):
   * Fixed corrupted size saved when maximizing a Wizard.
   * Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
@@ -2329,6 +2332,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Improved detection of applications for the status bar launcher buttons.
   * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
   * Added the GOTY version of the non-SI esm and an alterante 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).  
+  
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:

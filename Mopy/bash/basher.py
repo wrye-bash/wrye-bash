@@ -7413,6 +7413,26 @@ class Installers_AnnealAll(Link):
             bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
+class Installers_UninstallAllPackages(Link):
+    """Uninstall all packages."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Uninstall All Packages'),_('This will uninstall all packages.'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle selection."""
+        progress = balt.Progress(_("Uninstalling..."),'\n'+' '*60)
+        try:
+            self.data.uninstall(unArchives='ALL',progress=progress)
+        finally:
+            progress.Destroy()
+            self.data.refresh(what='NS')
+            gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
+
+#------------------------------------------------------------------------------
+class Installers_AutoAnneal(BoolLink):
     def __init__(self):
         BoolLink.__init__(self,
                           _('Auto-Anneal'),
