@@ -12474,6 +12474,7 @@ class InstallersData(bolt.TankData, DataDict):
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
+        if unArchives == 'ALL': unArchives = self.data
         unArchives = set(unArchives)
         data = self.data
         data_sizeCrcDate = self.data_sizeCrcDate
