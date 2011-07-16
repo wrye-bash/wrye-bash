@@ -366,7 +366,8 @@ def _coerce(value, newtype, base=None,AllowNone=False):
         if AllowNone and isinstance(retValue,basestring) and retValue.lower() == 'none':
             return None
         return retValue
-    except ValueError,TypeError:
+    except (ValueError,TypeError):
+        if newtype is int: return 0
         return None
 # .Net strings
 def netString(x):
