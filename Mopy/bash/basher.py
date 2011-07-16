@@ -7432,6 +7432,26 @@ class Installers_UninstallAllPackages(Link):
             bashFrame.RefreshData()
 
 #------------------------------------------------------------------------------
+class Installers_UninstallAllUnknownFiles(Link):
+    """Uninstall all files that do not come from a current package/bethesda files.
+       For safety just moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Clean Data'),_('This will move all non-bethesda files that are not linked to an active installer out of the data folder to "Oblivion Mods\uninstalled\<date>.'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle selection."""
+        progress = balt.Progress(_("Cleaning Data Files..."),'\n'+' '*60)
+        try:
+            self.data.clean(progress=progress)
+        finally:
+            progress.Destroy()
+            self.data.refresh(what='NS')
+            gInstallers.RefreshUIMods()
+            bashFrame.RefreshData()
+
+#------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
     def __init__(self):
         BoolLink.__init__(self,
@@ -12127,6 +12147,40 @@ class CBash_Mod_MapMarkers_Import(Link):
             balt.showLog(self.window,buff.getvalue(),_('Import Map Markers'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class CBash_Mod_CellBlockInfo(Link):
+    """Export Cell Block Info to text file.
+    (in the form of Cell, block, subblock"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Cell Block Info...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(bool(self.data) and bool(CBash))
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root+_('CellBlockInfo.csv')
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,_('Export Cell Block Info to:'),
+            textDir, textName, '*CellBlockInfo.csv')
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        with balt.Progress(_("Export Cell Block Info")) as progress:
+            cellblocks = bosh.CBash_CellBlockInfo()
+            readProgress = SubProgress(progress,0.1,0.8)
+            readProgress.setFull(len(self.data))
+            for index,fileName in enumerate(map(GPath,self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index,_("Reading %s.") % (fileName.s,))
+                cellblocks.readFromMod(fileInfo)
+            progress(0.8,_("Exporting to %s.") % (textName.s,))
+            cellblocks.writeToText(textPath)
+            progress(1.0,_("Done."))
+
+#------------------------------------------------------------------------------
 class Mod_SigilStoneDetails_Export(Link):
     """Export Sigil Stone details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14869,6 +14923,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Files_Unhide('installer'))
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_UninstallAllPackages())
+    InstallersPanel.mainMenu.append(Installers_UninstallAllUnknownFiles())
     #--Behavior
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
@@ -15108,6 +15163,7 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     if True: #--Export
         exportMenu = MenuLink(_("Export"))
+        exportMenu.links.append(CBash_Mod_CellBlockInfo())
         exportMenu.links.append(Mod_EditorIds_Export())
         exportMenu.links.append(Mod_Groups_Export())
 ##        exportMenu.links.append(Mod_ItemData_Export())

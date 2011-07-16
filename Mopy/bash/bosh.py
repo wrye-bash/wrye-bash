@@ -12598,6 +12598,34 @@ class InstallersData(bolt.TankData, DataDict):
                         SubProgress(progress,index,index+1))
                     InstallersData.updateTable(destFiles, package.s)
 
+    def clean(self,progress):
+        # installed_files = self.get_installed_files(
+        data = self.data
+        #print set(self.data_sizeCrcDate)
+        getArchiveOrder =  lambda x: data[x].order
+        installed = []
+        for package in sorted(data,key=getArchiveOrder,reverse=True):
+            installer = data[package]
+            if installer.isActive:
+                installed += installer.data_sizeCrc
+        bethFiles = [GPath(f) for f in bush.allBethFiles]
+        keepFiles = set(installed + bethFiles)
+        data_sizeCrcDate = self.data_sizeCrcDate
+        removes = set(data_sizeCrcDate) - keepFiles
+        destDir = dirs['bainData'].join('Data Folder Contents (%s)' %(datetime.datetime.now().strftime('%d-%m-%Y %H%M.%S')))
+        emptyDirs = set()
+        for file in removes:
+            path = dirs['mods'].join(file)
+            try:
+                path.moveTo(destDir.join(file))
+            except:
+                GPath(path.s+'.ghost').moveTo(destDir.join(file))
+            data_sizeCrcDate.pop(file,None)
+            emptyDirs.add(path.head)
+        for emptyDir in emptyDirs:
+            if emptyDir.isdir() and not emptyDir.list():
+                emptyDir.removedirs()
+                
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
         mode: O: Overrides; U: Underrides"""
@@ -14095,6 +14123,50 @@ class CBash_MapMarkers:
             eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fid_markerdata[longid]
             markerType = markerTypeNumber_Name.get(markerType,markerType)
             out.write(rowFormat % (longid[0].s,longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+        out.close()
+
+#------------------------------------------------------------------------------
+class CBash_CellBlockInfo:
+    """Map marker references, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.celldata = {}
+        self.aliases = aliases or {}
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        celldata = self.celldata
+
+        Current = ObCollection(ModsPath=dirs['mods'].s)
+        Current.addMod(modInfo.getPath().stail, Flags=0x000000028)
+        Current.load()
+        try:
+            modFile = Current.LookupModFile(modInfo.getPath().stail)
+        except KeyError, error:
+            print "CBash_CellBlockInfo:readFromMod"
+            print error[0]
+            return
+
+        for record in modFile.CELLS:
+            celldata[record.eid] = record.bsb
+            record.UnloadRecord()
+            
+        del Current
+
+    def writeToText(self,textPath):
+        """Exports markers to specified text file."""
+        celldata = self.celldata
+        textPath = GPath(textPath)
+        headFormat = '"%s","%s","%s",\n'
+        rowFormat  = '"%s","%s","%s",\n'
+        out = textPath.open('w')
+        out.write(headFormat % (_('Editor Id'),_('Block'),_('Sub-Block')))
+        eids = celldata.keys()
+        eids.sort()
+        for eid in eids:
+            block, subblock = celldata[eid]
+            out.write(rowFormat % (eid, block, subblock))
         out.close()
 
 #------------------------------------------------------------------------------
