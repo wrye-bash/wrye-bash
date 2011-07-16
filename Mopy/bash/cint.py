@@ -2741,6 +2741,22 @@ class ObCELLRecord(ObBaseRecord):
         retValue = _CGetField(self._CollectionID, self._ModID, self._RecordID, 40, 0, 0, 0, 0, 0, 0, 0)
         if(retValue): return retValue
         return 0
+        
+    @property
+    def bsb(self):
+        """Returns tesfile block and sub-block indices for cells in this group.
+        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell, bsb is
+        ((blockX,blockY),(subblockX,subblockY))."""
+        #--Interior cell
+        if self.IsInterior:
+            baseFid = self.fid[1] & 0x00FFFFFF
+            return (baseFid%10, baseFid%100//10)
+        #--Exterior cell
+        else:
+            x,y = self.posX,self.posY
+            if x is None: x = 0
+            if y is None: y = 0
+            return ((x//32, y//32), (x//8, y//8))
 
     full = CBashSTRING(5)
     flags = CBashGeneric(6, c_ubyte)
