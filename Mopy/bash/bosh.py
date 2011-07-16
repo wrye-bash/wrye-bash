@@ -33435,7 +33435,11 @@ def getOblivionPath(bashIni, path):
     if path: path = GPath(path)
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
         path = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else: path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
+    else: 
+        path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
+        #but for bashmon have to do a checky.
+        if path.s[-4:].lower() == 'mopy':
+            path = GPath(path.s[:-5])
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
