@@ -44,7 +44,7 @@ from bosh import PCFaces
 from bolt import _, GPath, intArg
 
 #--Debugging/Info
-bosh.deprintOn = True
+bolt.deprintOn = True
 if bolt.bUseUnicode:
     stringBuffer = StringIO.StringIO
 else:
