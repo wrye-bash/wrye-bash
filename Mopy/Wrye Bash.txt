@@ -2313,10 +2313,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
   * All multitweakers with choices now autoselect the default value if not user selected.
   * Race Patcher: 
-    * Added Npc.HairOnly, Npc.EyesOnly tags.3830096
+    * Added Npc.HairOnly, Npc.EyesOnly tags
     * Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
   * Typo fix for the custom option of Tweak Settings->Compass: POI Recognition 
   * Fixed revert to saved configs (CBash).
+  * Fixed Identical GMST records are not skipped by Python Tweak Settings patcher.
+  * Fixed Identical Global records are not skipped by Python Tweak Globals patcher
 * Unicode Mode:
   * More bugfixes from valda
   * Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.
@@ -2337,11 +2339,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
   * Improved detection of applications for the status bar launcher buttons.
   * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
-  * Added the GOTY version of the non-SI esm and an alterante 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
+  * Added the GOTY version of the non-SI esm and an altertate 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
   * Installer checks Python 2.7x first and foremost and if no python versions detected provides links/downloads python 2.7.2 and compatible extensions.
   * new mod->Export Cell Blocks Info command
-  
-  
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
