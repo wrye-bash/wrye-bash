@@ -12600,9 +12600,7 @@ class InstallersData(bolt.TankData, DataDict):
                     InstallersData.updateTable(destFiles, package.s)
 
     def clean(self,progress):
-        # installed_files = self.get_installed_files(
         data = self.data
-        #print set(self.data_sizeCrcDate)
         getArchiveOrder =  lambda x: data[x].order
         installed = []
         for package in sorted(data,key=getArchiveOrder,reverse=True):
@@ -27019,6 +27017,9 @@ class GmstTweak(MultiTweakItem):
         """Build patch."""
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
+            if value < 0:
+                    deprint("GMST float value can't be a negative number - currently %f - skipping settingGMST" % newValue)
+                    return
             gmst = MreGmst(('GMST',0,0,0,0))
             gmst.eid,gmst.value,gmst.longFids = eid,value,True
             fid = gmst.fid = keep(gmst.getGMSTFid())
@@ -27049,8 +27050,11 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 break
         else:
             return
-        self.eid_count[eid] = 1
         if record.value != newValue:
+            self.eid_count[eid] = 1
+            if newValue < 0:
+                deprint("GMST float value can't be a negative number - currently %f - skipping settingGMST" % newValue)
+                return
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.value = newValue
@@ -27591,7 +27595,7 @@ class GmstTweaker(MultiTweaker):
         GmstTweak(True,_('AI: Max Smile Distance'),
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
-            (_('No Smiles'),-30),
+            (_('No Smiles'),0.0),
             (_('Default (128)'),128),
             (_('Custom'),0.0),
             ),
@@ -28110,7 +28114,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
         CBash_GmstTweak(True,_('AI: Max Smile Distance'),
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
-            (_('No Smiles'),-30),
+            (_('No Smiles'),0.0),
             (_('Default (128)'),128),
             (_('Custom'),0.0),
             ),
@@ -32182,6 +32186,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         racesSorted = []
         racesFiltered = []
         mod_npcsFixed = {}
+        reProcess = re.compile(r'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I)
         #--Import race info
         for race in patchFile.RACE.records:
             #~~print 'Building',race.eid
@@ -32303,7 +32308,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 for mesh,eyes in mesh_eye.iteritems():
                     print mesh
                     for eye in eyes: print ' ',strFid(eye)
-            if len(mesh_eye) > 1 and race.flags.playable:
+            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (GPath('Oblivion.esm'), 0x038010)):
                 #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
                 if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
                     setRaceEyeMesh(race,*blueEyeMesh)
@@ -32334,7 +32339,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
         femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
         for race in patchFile.RACE.records:
-            if race.flags.playable and race.eyes:
+            if (race.flags.playable or race.fid == (GPath('Oblivion.esm'), 0x038010)) and race.eyes:
                 defaultEyes[race.fid] = [x for x in bush.defaultEyes.get(race.fid,[]) if x in race.eyes]
                 if not defaultEyes[race.fid]:
                     defaultEyes[race.fid] = [race.eyes[0]]
@@ -32346,6 +32351,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 keep(race.fid)
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.NPC_.records:
+            if npc.fid == (GPath('Oblivion.esm'), 0x000007): continue #skip player
+            if npc.race == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
             raceEyes = defaultEyes.get(npc.race)
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
@@ -32743,7 +32750,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eyeNames = self.eyeNames
         maleHairs = self.maleHairs
         femaleHairs = self.femaleHairs
-        playableRaces = set()
+        playableRaces = set([(GPath('Oblivion.esm'), 0x038010)]) #Dremora
 
         #--Eye Mesh filtering
         eye_meshes = self.eye_meshes
@@ -32780,6 +32787,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
             (GPath('Oblivion.esm'),0x54bba), #--Golden Saint
             (GPath('Oblivion.esm'),0x5fa43), #--Ordered
+            (GPath('Oblivion.esm'),0x038010), #--Dremora
             ):
             eye_meshes.setdefault(eye,blueEyeMeshes)
         def setRaceEyeMesh(race,rightPath,leftPath):
@@ -32814,7 +32822,6 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         rightEye, leftEye = eye_meshes[eye]
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
 
-                    #print race.eid, mesh_eye
                     try:
                         maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
                     except IndexError:
@@ -32826,7 +32833,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         currentEyes = meshes_eyes[maxEyesMeshes]
                         raceChanged = True
                     #--Multiple eye meshes (and playable)?
-                    elif meshesCount > 1 and race.IsPlayable:
+                    elif meshesCount > 1 and recordId in playableRaces:
                         #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
                         if blueEyeMeshes in meshes_eyes and currentMeshes != argonianEyeMeshes:
                             currentMeshes = blueEyeMeshes
@@ -32849,7 +32856,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         racesFiltered.append(race.eid)
 
                     #--Sort Eyes/Hair
-                    if race.IsPlayable:
+                    if recordId in playableRaces:
                         oldHairs = race.hairs
                         currentHairs = sorted(oldHairs,key=lambda x: hairNames.get(x))
                         if currentHairs != oldHairs:
@@ -32869,8 +32876,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         override = race.CopyAsOverride(patchFile)
                         if override:
                             override.eyes = currentEyes
-                            if race.IsPlayable:
-                                override.hairs = currentHairs
+                            override.hairs = currentHairs
                             override.rightEye.modPath, override.leftEye.modPath = currentMeshes
                 race.UnloadRecord()
             pstate += 1
@@ -32878,11 +32884,13 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             #--Npcs with unassigned eyes/hair
             #--Must run after all race records have been processed
             subProgress(pstate, _("Assigning random eyes and hairs to npcs missing them...\n"))
+            reProcess = re.compile(r'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I)
             for npc in modFile.NPC_:
                 recordId = npc.fid
                 if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
                 raceId = npc.race
                 if raceId not in playableRaces: continue
+                if raceId == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race. 
                 #IsNewest
                 if npc.IsWinning():
                     npcChanged = False
