@@ -26462,8 +26462,9 @@ class GlobalsTweak(MultiTweakItem):
         value = self.choiceValues[self.chosen][0]
         for record in patchFile.GLOB.records:
             if record.eid.lower() == self.key:
-                record.value = value
-                keep(record.fid)
+                if record.value != value:
+                    record.value = value
+                    keep(record.fid)
         log('* %s set to: %4.2f' % (self.label,value))
 class CBash_GlobalsTweak(CBash_MultiTweakItem):
     """Sets a global to specified value"""
