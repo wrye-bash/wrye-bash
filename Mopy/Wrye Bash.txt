@@ -658,7 +658,8 @@ The following commands are available by right clicking on the column header of t
   * __Full Refresh:__ This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
   * __Add Marker:__ Creates a marker for organizing your packages.  The "==" will be added for you.
   * __List Packages:__ Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help.
-  * __Uninstall All:__ Uninstalls all packages that are managed by BAIn (or at least in teh BAIN directory).
+  * __Uninstall All:__ Uninstalls all packages that are managed by BAIN (or at least in the BAIN directory).
+  * __Clean Data:__ cleans any files from the oblivion data dir that are not from active installers or Bethesda files or Wrye Bash Files. (ie it'll basically give you a clean install state of Oblivion/Data). For safety's sake the files are moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\
   * __Anneal All:__ This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
   * __Unhide:__ Unhides hidden packages.
     * The Unhide dialog now works like WinMerge's open dialog
@@ -738,7 +739,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
   * <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.
   * <img src="bash/images/checkbox_green_inc.png" width="16" height="16" style="border: 0;" alt="Merged" /> Plus sign checkmark: mod is merged into an active [[#BashedPatches|Bashed Patch]] mod.
   * <img src="bash/images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Imported" /> Dot checkmark: mod is imported into an active [[#BashedPatches|Bashed Patch]] mod.
-  * <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: Mod is not active, imported or merged.
+  * <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: mod is not active, imported or merged.
 * __Checkbox Colors__
   * <img src="bash/images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="bash/images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="bash/images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" />
   * Checkbox colors indicate the "health" of the mod file's master files.
@@ -2311,8 +2312,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * [[#BashedPatches|Bashed Patch]]:
   * Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
   * All multitweakers with choices now autoselect the default value if not user selected.
-  * added Npc.HairOnly, Npc.EyesOnly tags.
-  * typo fix for the custom option of Tweak Settings->Compass: POI Recognition 
+  * Race Patcher: 
+    * Added Npc.HairOnly, Npc.EyesOnly tags.3830096
+    * Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
+  * Typo fix for the custom option of Tweak Settings->Compass: POI Recognition 
+  * Fixed revert to saved configs (CBash).
 * Unicode Mode:
   * More bugfixes from valda
   * Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.
@@ -2321,17 +2325,22 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * [[#InstallersTab|BAIN]]:
   * List Esp/ms command added to esp/m pane r-click menu.
   * Open at Google regex improved so better automatic search terms.
-  * new __Uninstall All__ command. 
+  * new [[#PackageHeaderCommands|Uninstall All]] command. 
+  * new [[#PackageHeaderCommands|Clean Data]] command
 * Bugs fixed (General):
   * Fixed corrupted size saved when maximizing a Wizard.
   * Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
   * Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).
+  * Export Stats (CBash)
 * Enhancements/New Features (General):
   * [[#Custombuttons|Custom launcher buttons]] are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
   * Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
   * Improved detection of applications for the status bar launcher buttons.
   * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
-  * Added the GOTY version of the non-SI esm and an alterante 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).  
+  * Added the GOTY version of the non-SI esm and an alterante 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
+  * Installer checks Python 2.7x first and foremost and if no python versions detected provides links/downloads python 2.7.2 and compatible extensions.
+  * new mod->Export Cell Blocks Info command
+  
   
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
