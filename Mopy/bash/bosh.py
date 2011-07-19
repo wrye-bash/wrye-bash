@@ -2738,7 +2738,7 @@ class MreGmst(MelRecord):
                 deprint(' ',traceback=True)
                 bolt.deprintOn = old
                 print
-                print 'Manually testing if file exitsts:', dirs['db'].join('Oblivion_ids.pkl').exists()
+                print 'Manually testing if file exists:', dirs['db'].join('Oblivion_ids.pkl').exists()
                 print 'Current working directory:', os.getcwd()
                 print "dirs['db']:", dirs['db']
                 print
@@ -27019,12 +27019,19 @@ class GmstTweak(MultiTweakItem):
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if value < 0:
-                    deprint("GMST float value can't be a negative number - currently %f - skipping settingGMST" % newValue)
-                    return
-            gmst = MreGmst(('GMST',0,0,0,0))
-            gmst.eid,gmst.value,gmst.longFids = eid,value,True
-            fid = gmst.fid = keep(gmst.getGMSTFid())
-            patchFile.GMST.setRecord(gmst)
+                deprint("GMST float value can't be a negative number - currently %f - skipping setting GMST." % newValue)
+                return
+            for record in patchFile.GMST.records:
+                if record.eid.lower() == eid.lower():
+                    if record.value != value:
+                        record.value = value
+                        keep(record.fid)
+                    break
+            else:
+                gmst = MreGmst(('GMST',0,0,0,0))
+                gmst.eid,gmst.value,gmst.longFids = eid,value,True
+                fid = gmst.fid = keep(gmst.getGMSTFid())
+                patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith('Custom'):
                 log('* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
@@ -27602,10 +27609,26 @@ class GmstTweaker(MultiTweaker):
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (None,(MreGmst,))[self.isActive]
+        
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         return (None,(MreGmst,))[self.isActive]
-
+        
+    def scanModFile(self,modFile,progress):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        if not self.isActive or 'GMST' not in modFile.tops: return
+        mapper = modFile.getLongMapper()
+        patchRecords = self.patchFile.GMST
+        id_records = patchRecords.id_records
+        for record in modFile.GMST.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            record = record.getTypeCopy(mapper)
+            patchRecords.setRecord(record)
+            
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
