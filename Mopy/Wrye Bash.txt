@@ -2315,9 +2315,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Race Patcher: 
     * Added Npc.HairOnly, Npc.EyesOnly tags
     * Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
-  * Typo fix for the custom option of Tweak Settings->Compass: POI Recognition 
   * Fixed revert to saved configs (CBash).
-  * Fixed Identical GMST records are not skipped by Python Tweak Settings patcher.
+  * Tweak settings Patcher:
+    * Added Drag: Max Moveable Weight tweak.
+    * Typo fix for the custom option of Compass: POI Recognition 
+    * Fixed Identical GMST records are not skipped by Python patcher.
   * Fixed Identical Global records are not skipped by Python Tweak Globals patcher
 * Unicode Mode:
   * More bugfixes from valda
