@@ -709,12 +709,12 @@ def getIds(fileName=None):
 #------------------------------------------------------------------------------
 @mainfunc
 def gmstIds(fileName=None):
-    """Updates map of GMST eids to fids in Data\Oblivion_ids.pkl, based either
+    """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
     on a list of new eids or the gmsts in the specified mod file. Updated pkl file
     is dropped in Mopy directory."""
     #--Data base
     import cPickle
-    fids = cPickle.load(GPath(r'Data\Oblivion_ids.pkl').open('r'))['GMST']
+    fids = cPickle.load(GPath(r'bash\db\Oblivion_ids.pkl').open('r'))['GMST']
     maxId = max(fids.values())
     maxId = max(maxId,0xf12345)
     maxOld = maxId
@@ -727,7 +727,8 @@ def gmstIds(fileName=None):
                 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
                 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket',
                 'iCrimeGoldTresspass','sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2','sBloodParticleDefault',
-                'sBloodParticleExtra1','sBloodParticleExtra2','iAllyHitAllowed']:
+                'sBloodParticleExtra1','sBloodParticleExtra2','iAllyHitAllowed','sAutoSaving','sFloraFailureMessage',
+                'sFloraSuccesssMessage','sQuickSaving','sFastTravelHorseatGate','sLoadingArea','sQuickLoading','sNoCharge']:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
