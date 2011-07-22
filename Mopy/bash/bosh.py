@@ -18854,12 +18854,11 @@ class CBash_ListPatcher(CBash_Patcher):
 #------------------------------------------------------------------------------
 class MultiTweakItem:
     """A tweak item, optionally with configuration choices."""
-    def __init__(self,float,label,tip,key,*choices):
+    def __init__(self,label,tip,key,*choices):
         """Initialize."""
         self.label = label
         self.tip = tip
         self.key = key
-        self.float = float
         self.choiceLabels = []
         self.choiceValues = []
         self.default = 0
@@ -18908,12 +18907,11 @@ class CBash_MultiTweakItem:
     scanRequiresChecked = False
     applyRequiresChecked = False
 
-    def __init__(self,float,label,tip,key,*choices):
+    def __init__(self,label,tip,key,*choices):
         """Initialize."""
         self.label = label
         self.tip = tip
         self.key = key
-        self.float = float
         self.choiceLabels = []
         self.choiceValues = []
         self.default = 0
@@ -23775,8 +23773,8 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     """Fix armor to show amulets/rings."""
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key):
-        MultiTweakItem.__init__(self,float,label,tip,key)
+    def __init__(self,label,tip,key):
+        MultiTweakItem.__init__(self,label,tip,key)
         self.hidesBit = {'armorShowsRings':16,'armorShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
@@ -23823,8 +23821,8 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     name = _('Armor Tweaks')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key):
-        CBash_MultiTweakItem.__init__(self,float,label,tip,key)
+    def __init__(self,label,tip,key):
+        CBash_MultiTweakItem.__init__(self,label,tip,key)
         self.hideFlag = {'armorShowsRings':'IsHideRings','armorShowsAmulets':'IsHideAmulets'}[key]
         self.mod_count = {}
 
@@ -23859,8 +23857,8 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key):
-        MultiTweakItem.__init__(self,float,label,tip,key)
+    def __init__(self,label,tip,key):
+        MultiTweakItem.__init__(self,label,tip,key)
         self.hidesBit = {'ClothingShowsRings':16,'ClothingShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
@@ -23907,8 +23905,8 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     name = _('Clothing Tweaks')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key):
-        CBash_MultiTweakItem.__init__(self,float,label,tip,key)
+    def __init__(self,label,tip,key):
+        CBash_MultiTweakItem.__init__(self,label,tip,key)
         self.hideFlag = {'ClothingShowsRings':'IsHideRings','ClothingShowsAmulets':'IsHideAmulets'}[key]
         self.mod_count = {}
 
@@ -23944,7 +23942,7 @@ class AssortedTweak_BowReach(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Bow Reach Fix"),
+        MultiTweakItem.__init__(self,_("Bow Reach Fix"),
             _('Fix bows with zero reach. (Zero reach causes CTDs.)'),
             'BowReach',
             ('1.0',  '1.0'),
@@ -23993,7 +23991,7 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Bow Reach Fix"),
+        CBash_MultiTweakItem.__init__(self,_("Bow Reach Fix"),
             _('Fix bows with zero reach. (Zero reach causes CTDs.)'),
             'BowReach',
             ('1.0',  '1.0'),
@@ -24031,7 +24029,7 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Right Hand Rings"),
+        MultiTweakItem.__init__(self,_("Right Hand Rings"),
             _('Fixes rings to unequip consistently by making them prefer the right hand.'),
             'ConsistentRings',
             ('1.0',  '1.0'),
@@ -24080,7 +24078,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Right Hand Rings"),
+        CBash_MultiTweakItem.__init__(self,_("Right Hand Rings"),
             _('Fixes rings to unequip consistently by making them prefer the right hand.'),
             'ConsistentRings',
             ('1.0',  '1.0'),
@@ -24119,7 +24117,7 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("All Clothing Playable"),
+        MultiTweakItem.__init__(self,_("All Clothing Playable"),
             _('Sets all clothing to be playable.'),
             'PlayableClothing',
             ('1.0',  '1.0'),
@@ -24176,7 +24174,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("All Clothing Playable"),
+        CBash_MultiTweakItem.__init__(self,_("All Clothing Playable"),
             _('Sets all clothing to be playable.'),
             'PlayableClothing',
             ('1.0',  '1.0'),
@@ -24220,7 +24218,7 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("All Armor Playable"),
+        MultiTweakItem.__init__(self,_("All Armor Playable"),
             _('Sets all armor to be playable.'),
             'PlayableArmor',
             ('1.0',  '1.0'),
@@ -24275,7 +24273,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("All Armor Playable"),
+        CBash_MultiTweakItem.__init__(self,_("All Armor Playable"),
             _('Sets all armor to be playable.'),
             'PlayableArmor',
             ('1.0',  '1.0'),
@@ -24321,7 +24319,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("DarNified Books"),
+        MultiTweakItem.__init__(self,_("DarNified Books"),
             _('Books will be reformatted for DarN UI.'),
             'DarnBooks',
             ('default',  'default'),
@@ -24414,7 +24412,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("DarNified Books"),
+        CBash_MultiTweakItem.__init__(self,_("DarNified Books"),
             _('Books will be reformatted for DarN UI.'),
             'DarnBooks',
             ('default',  'default'),
@@ -24494,7 +24492,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Nvidia Fog Fix"),
+        MultiTweakItem.__init__(self,_("Nvidia Fog Fix"),
             _('Fix fog related Nvidia black screen problems.'),
             'FogFix',
             ('0.0001',  '0.0001'),
@@ -24544,7 +24542,7 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Nvidia Fog Fix"),
+        CBash_MultiTweakItem.__init__(self,_("Nvidia Fog Fix"),
             _('Fix fog related Nvidia black screen problems.'),
             'FogFix',
             ('0.0001',  '0.0001'),
@@ -24581,7 +24579,7 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("No Light Flicker"),
+        MultiTweakItem.__init__(self,_("No Light Flicker"),
             _('Remove flickering from lights. For use on low-end machines.'),
             'NoLightFlicker',
             ('1.0',  '1.0'),
@@ -24635,7 +24633,7 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("No Light Flicker"),
+        CBash_MultiTweakItem.__init__(self,_("No Light Flicker"),
             _('Remove flickering from lights. For use on low-end machines.'),
             'NoLightFlicker',
             ('1.0',  '1.0'),
@@ -24677,7 +24675,7 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Reweigh: Potions (Maximum)"),
+        MultiTweakItem.__init__(self,_("Reweigh: Potions (Maximum)"),
             _('Potion weight will be capped.'),
             'MaximumPotionWeight',
             (_('0.1'),  0.1),
@@ -24735,7 +24733,7 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Potions (Maximum)"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Potions (Maximum)"),
             _('Potion weight will be capped.'),
             'MaximumPotionWeight',
             (_('0.1'),  0.1),
@@ -24783,7 +24781,7 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Reweigh: Ingredients"),
+        MultiTweakItem.__init__(self,_("Reweigh: Ingredients"),
             _('Ingredient weight will be capped.'),
             'MaximumIngredientWeight',
             (_('0.1'),  0.1),
@@ -24841,7 +24839,7 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Ingredients"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Ingredients"),
             _('Ingredient weight will be capped.'),
             'MaximumIngredientWeight',
             (_('0.1'),  0.1),
@@ -24890,7 +24888,7 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Reweigh: Potions (Minimum)"),
+        MultiTweakItem.__init__(self,_("Reweigh: Potions (Minimum)"),
             _('Potion weight will be floored.'),
             'MinimumPotionWeight',
             (_('1'),  1),
@@ -24948,7 +24946,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Potions (Minimum)"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Potions (Minimum)"),
             _('Potion weight will be floored.'),
             'MinimumPotionWeight',
             (_('1'),  1),
@@ -24992,7 +24990,7 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Reweigh: Staffs"),
+        MultiTweakItem.__init__(self,_("Reweigh: Staffs"),
             _('Staff weight will be capped.'),
             'StaffWeight',
             (_('1'),  1),
@@ -25054,7 +25052,7 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Staffs"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Staffs"),
             _('Staff weight will be capped.'),
             'StaffWeight',
             (_('1'),  1.0),
@@ -25103,7 +25101,7 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,True,_("Reweigh: Arrows"),
+        MultiTweakItem.__init__(self,_("Reweigh: Arrows"),
             _('Arrow weights will be capped.'),
             'MaximumArrowWeight',
             (_('0'),    0),
@@ -25111,7 +25109,7 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
             (_('0.2'),  0.2),
             (_('0.4'),  0.4),
             (_('0.6'),  0.6),
-            (_('Custom'),0),
+            (_('Custom'),0.0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25162,7 +25160,7 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Reweigh: Arrows"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Arrows"),
             _('Arrow weights will be capped.'),
             'MaximumArrowWeight',
             (_('0'), 0.0),
@@ -25207,7 +25205,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Magic: Script Effect Silencer"),
+        MultiTweakItem.__init__(self,_("Magic: Script Effect Silencer"),
             _('Script Effect will be silenced and have no graphics.'),
             'SilentScriptEffect',
             (_('0'),    0),
@@ -25268,7 +25266,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,True,_("Magic: Script Effect Silencer"),
+        CBash_MultiTweakItem.__init__(self,_("Magic: Script Effect Silencer"),
              _('Script Effect will be silenced and have no graphics.'),
             'SilentScriptEffect',
             (_('0'),    0),
@@ -25306,7 +25304,7 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Harvest Chance"),
+        MultiTweakItem.__init__(self,_("Harvest Chance"),
             _('Harvest chances on all plants will be set to the chosen percentage.'),
             'HarvestChance',
             (_('10%'),  10),
@@ -25370,7 +25368,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Harvest Chance"),
+        CBash_MultiTweakItem.__init__(self,_("Harvest Chance"),
             _('Harvest chances on all plants will be set to the chosen percentage.'),
             'HarvestChance',
             (_('10%'),  10),
@@ -25420,7 +25418,7 @@ class AssortedTweak_WindSpeed(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Disable Wind"),
+        MultiTweakItem.__init__(self,_("Disable Wind"),
             _('Disables the wind on all weathers.'),
             'windSpeed',
             (_('Disable'),  0),
@@ -25471,7 +25469,7 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Disable Wind"),
+        CBash_MultiTweakItem.__init__(self,_("Disable Wind"),
             _('Disables the wind on all weathers.'),
             'windSpeed',
             (_('Disable'),  0),
@@ -25509,7 +25507,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Number of uses for pre-enchanted weapons and staffs"),
+        MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and staffs"),
             _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
@@ -25577,7 +25575,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Number of uses for pre-enchanted weapons and staffs"),
+        CBash_MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and staffs"),
             _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
@@ -25636,7 +25634,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                             'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
                             'MISC','QUST','SGST','SLGM','WEAP']
-        MultiTweakItem.__init__(self,False,_("Default Icons"),
+        MultiTweakItem.__init__(self,_("Default Icons"),
             _("Sets a default icon for any records that don't have any icon assigned"),
             'icons',
             (_('1'), 1),
@@ -25847,7 +25845,7 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Default Icons"),
+        CBash_MultiTweakItem.__init__(self,_("Default Icons"),
             _("Sets a default icon for any records that don't have any icon assigned"),
             'icons',
             (_('1'), 1),
@@ -25948,7 +25946,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels"),
+        MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
             'Attenuation%:',
             (_('0%'), 0),
@@ -26005,7 +26003,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels"),
+        CBash_MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
             'Attenuation%:',
             (_('0%'), 0),
@@ -26048,7 +26046,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels: Nirnroots Only"),
+        MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels: Nirnroots Only"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
             'Nirnroot Attenuation%:',
             (_('0%'), 0),
@@ -26105,7 +26103,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Set Sound Attenuation Levels: Nirnroots Only"),
+        CBash_MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels: Nirnroots Only"),
             _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
             'Nirnroot Attenuation%:',
             (_('0%'), 0),
@@ -26149,7 +26147,7 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Faction crime Gold Multiplier Fix"),
+        MultiTweakItem.__init__(self,_("Faction crime Gold Multiplier Fix"),
             _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
             'FactioncrimeGoldMultiplier',
             ('1.0',  '1.0'),
@@ -26198,7 +26196,7 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Faction crime Gold Multiplier Fix"),
+        CBash_MultiTweakItem.__init__(self,_("Faction crime Gold Multiplier Fix"),
             _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
             'FactioncrimeGoldMultiplier',
             ('1.0',  '1.0'),
@@ -26236,7 +26234,7 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("No Light Fade Value Fix"),
+        MultiTweakItem.__init__(self,_("No Light Fade Value Fix"),
             _("Sets Light's Fade values to default of 1.0 if not set."),
             'NoLightFadeValueFix',
             ('1.0',  '1.0'),
@@ -26285,7 +26283,7 @@ class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("No Light Fade Value Fix"),
+        CBash_MultiTweakItem.__init__(self,_("No Light Fade Value Fix"),
             _("Sets Light's Fade values to default of 1.0 if not set."),
             'NoLightFadeValueFix',
             ('1.0',  '1.0'),
@@ -26326,19 +26324,19 @@ class AssortedTweaker(MultiTweaker):
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
     tweaks = sorted([
-        AssortedTweak_ArmorShows(False,_("Armor Shows Amulets"),
+        AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
             _("Prevents armor from hiding amulets."),
             'armorShowsAmulets',
             ),
-        AssortedTweak_ArmorShows(False,_("Armor Shows Rings"),
+        AssortedTweak_ArmorShows(_("Armor Shows Rings"),
             _("Prevents armor from hiding rings."),
             'armorShowsRings',
             ),
-        AssortedTweak_ClothingShows(False,_("Clothing Shows Amulets"),
+        AssortedTweak_ClothingShows(_("Clothing Shows Amulets"),
             _("Prevents Clothing from hiding amulets."),
             'ClothingShowsAmulets',
             ),
-        AssortedTweak_ClothingShows(False,_("Clothing Shows Rings"),
+        AssortedTweak_ClothingShows(_("Clothing Shows Rings"),
             _("Prevents Clothing from hiding rings."),
             'ClothingShowsRings',
             ),
@@ -26399,19 +26397,19 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
     tweaks = sorted([
-        CBash_AssortedTweak_ArmorShows(False,_("Armor Shows Amulets"),
+        CBash_AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
             _("Prevents armor from hiding amulets."),
             'armorShowsAmulets',
             ),
-        CBash_AssortedTweak_ArmorShows(False,_("Armor Shows Rings"),
+        CBash_AssortedTweak_ArmorShows(_("Armor Shows Rings"),
             _("Prevents armor from hiding rings."),
             'armorShowsRings',
             ),
-        CBash_AssortedTweak_ClothingShows(False,_("Clothing Shows Amulets"),
+        CBash_AssortedTweak_ClothingShows(_("Clothing Shows Amulets"),
             _("Prevents Clothing from hiding amulets."),
             'ClothingShowsAmulets',
             ),
-        CBash_AssortedTweak_ClothingShows(False,_("Clothing Shows Rings"),
+        CBash_AssortedTweak_ClothingShows(_("Clothing Shows Rings"),
             _("Prevents Clothing from hiding rings."),
             'ClothingShowsRings',
             ),
@@ -26501,7 +26499,7 @@ class GlobalsTweaker(MultiTweaker):
     name = _('Globals')
     text = _("Set globals to various values")
     tweaks = sorted([
-        GlobalsTweak(False,_("Timescale"),
+        GlobalsTweak(_("Timescale"),
             _("Timescale will be set to:"),
             'timescale',
             (_('1'),1),
@@ -26514,7 +26512,7 @@ class GlobalsTweaker(MultiTweaker):
             (_('40'),40),
             (_('Custom'),0),
             ),
-        GlobalsTweak(False,_("Thieves Guild: Quest Stealing Penalty"),
+        GlobalsTweak(_("Thieves Guild: Quest Stealing Penalty"),
             _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
             'tgpricesteal',
             (_('100'),100),
@@ -26524,7 +26522,7 @@ class GlobalsTweaker(MultiTweaker):
             (_('400'),400),
             (_('Custom'),0),
             ),
-        GlobalsTweak(False,_("Thieves Guild: Quest Killing Penalty"),
+        GlobalsTweak(_("Thieves Guild: Quest Killing Penalty"),
             _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
             'tgpriceperkill',
             (_('250'),250),
@@ -26534,7 +26532,7 @@ class GlobalsTweaker(MultiTweaker):
             (_('2000'),2000),
             (_('Custom'),0),
             ),
-        GlobalsTweak(False,_("Thieves Guild: Quest Attacking Penalty"),
+        GlobalsTweak(_("Thieves Guild: Quest Attacking Penalty"),
             _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
             'tgpriceattack',
             (_('100'),100),
@@ -26544,7 +26542,7 @@ class GlobalsTweaker(MultiTweaker):
             (_('1000'),1000),
             (_('Custom'),0),
             ),
-        GlobalsTweak(False,_("Crime: Force Jail"),
+        GlobalsTweak(_("Crime: Force Jail"),
             _("The amount of Bounty at which a jail sentence is mandatory"),
             'crimeforcejail',
             (_('1000'),1000),
@@ -26597,7 +26595,7 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
     name = _('Globals')
     text = _("Set globals to various values")
     tweaks = sorted([
-        CBash_GlobalsTweak(False,_("Timescale"),
+        CBash_GlobalsTweak(_("Timescale"),
             _("Timescale will be set to:"),
             'timescale',
             (_('1'),1),
@@ -26610,7 +26608,7 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
             (_('40'),40),
             (_('Custom'),0),
             ),
-        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Stealing Penalty"),
+        CBash_GlobalsTweak(_("Thieves Guild: Quest Stealing Penalty"),
             _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
             'tgpricesteal',
             (_('100'),100),
@@ -26620,7 +26618,7 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
             (_('400'),400),
             (_('Custom'),0),
             ),
-        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Killing Penalty"),
+        CBash_GlobalsTweak(_("Thieves Guild: Quest Killing Penalty"),
             _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
             'tgpriceperkill',
             (_('250'),250),
@@ -26630,7 +26628,7 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
             (_('2000'),2000),
             (_('Custom'),0),
             ),
-        CBash_GlobalsTweak(False,_("Thieves Guild: Quest Attacking Penalty"),
+        CBash_GlobalsTweak(_("Thieves Guild: Quest Attacking Penalty"),
             _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
             'tgpriceattack',
             (_('100'),100),
@@ -26640,7 +26638,7 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
             (_('1000'),1000),
             (_('Custom'),0),
             ),
-        CBash_GlobalsTweak(False,_("Crime: Force Jail"),
+        CBash_GlobalsTweak(_("Crime: Force Jail"),
             _("The amount of Bounty at which a jail sentence is mandatory"),
             'crimeforcejail',
             (_('1000'),1000),
@@ -26685,8 +26683,8 @@ class ClothesTweak(MultiTweakItem):
         }
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key,*choices):
-        MultiTweakItem.__init__(self,float,label,tip,key,*choices)
+    def __init__(self,label,tip,key,*choices):
+        MultiTweakItem.__init__(self,label,tip,key,*choices)
         typeKey = key[:key.find('.')]
         self.orTypeFlags = typeKey == 'rings'
         self.typeFlags = self.__class__.flags[typeKey]
@@ -26715,8 +26713,8 @@ class CBash_ClothesTweak(CBash_MultiTweakItem):
         }
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key,*choices):
-        CBash_MultiTweakItem.__init__(self,float,label,tip,key,*choices)
+    def __init__(self,label,tip,key,*choices):
+        CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
         typeKey = key[:key.find('.')]
         self.orTypeFlags = typeKey == 'rings'
         self.typeFlags = self.__class__.flags[typeKey]
@@ -26752,8 +26750,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     name = _('Reweigh Clothes')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key,*choices):
-        CBash_ClothesTweak.__init__(self,float,label,tip,key,*choices)
+    def __init__(self,label,tip,key,*choices):
+        CBash_ClothesTweak.__init__(self,label,tip,key,*choices)
         self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
@@ -26800,8 +26798,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
 class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key,*choices):
-        ClothesTweak.__init__(self,float,label,tip,key,*choices)
+    def __init__(self,label,tip,key,*choices):
+        ClothesTweak.__init__(self,label,tip,key,*choices)
         self.unblockFlags = self.__class__.flags[key[key.rfind('.')+1:]]
 
     #--Patch Phase ------------------------------------------------------------
@@ -26820,8 +26818,8 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     editOrder = 31
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key):
-        CBash_ClothesTweak.__init__(self,float,label,tip,key)
+    def __init__(self,label,tip,key):
+        CBash_ClothesTweak.__init__(self,label,tip,key)
         self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
                          'robes.show.amulets2':('IsHideAmulets',),
                          'rings.unblock.rings':('IsRightRing','IsLeftRing'),
@@ -26871,22 +26869,22 @@ class ClothesTweaker(MultiTweaker):
     name = _('Tweak Clothes')
     text = _("Tweak clothing weight and blocking.")
     tweaks = sorted([
-        ClothesTweak_Unblock(False,_("Unlimited Amulets"),
+        ClothesTweak_Unblock(_("Unlimited Amulets"),
             _("Wear unlimited number of amulets - but they won't display."),
             'amulets.unblock.amulets'),
-        ClothesTweak_Unblock(False,_("Unlimited Rings"),
+        ClothesTweak_Unblock(_("Unlimited Rings"),
             _("Wear unlimited number of rings - but they won't display."),
             'rings.unblock.rings'),
-        ClothesTweak_Unblock(False,_("Gloves Show Rings"),
+        ClothesTweak_Unblock(_("Gloves Show Rings"),
             _("Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
             'gloves.unblock.rings2'),
-        ClothesTweak_Unblock(False,_("Robes Show Pants"),
+        ClothesTweak_Unblock(_("Robes Show Pants"),
             _("Robes will allow pants, greaves, skirts - but they'll clip."),
             'robes.unblock.pants'),
-        ClothesTweak_Unblock(False,_("Robes Show Amulets"),
+        ClothesTweak_Unblock(_("Robes Show Amulets"),
             _("Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
             'robes.show.amulets2'),
-        ClothesTweak_MaxWeight(True,_("Max Weight Amulets"),
+        ClothesTweak_MaxWeight(_("Max Weight Amulets"),
             _("Amulet weight will be capped."),
             'amulets.maxWeight',
             (_('0.0'),0),
@@ -26895,7 +26893,7 @@ class ClothesTweaker(MultiTweaker):
             (_('0.5'),0.5),
             (_('Custom'),0),
             ),
-        ClothesTweak_MaxWeight(True,_("Max Weight Rings"),
+        ClothesTweak_MaxWeight(_("Max Weight Rings"),
             _('Ring weight will be capped.'),
             'rings.maxWeight',
             (_('0.0'),0),
@@ -26904,7 +26902,7 @@ class ClothesTweaker(MultiTweaker):
             (_('0.5'),0.5),
             (_('Custom'),0),
             ),
-        ClothesTweak_MaxWeight(True,_("Max Weight Hoods"),
+        ClothesTweak_MaxWeight(_("Max Weight Hoods"),
             _('Hood weight will be capped.'),
             'hoods.maxWeight',
             (_('0.2'),0.2),
@@ -26952,22 +26950,22 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
     name = _('Tweak Clothes')
     text = _("Tweak clothing weight and blocking.")
     tweaks = sorted([
-        CBash_ClothesTweak_Unblock(False,_("Unlimited Amulets"),
+        CBash_ClothesTweak_Unblock(_("Unlimited Amulets"),
             _("Wear unlimited number of amulets - but they won't display."),
             'amulets.unblock.amulets'),
-        CBash_ClothesTweak_Unblock(False,_("Unlimited Rings"),
+        CBash_ClothesTweak_Unblock(_("Unlimited Rings"),
             _("Wear unlimited number of rings - but they won't display."),
             'rings.unblock.rings'),
-        CBash_ClothesTweak_Unblock(False,_("Gloves Show Rings"),
+        CBash_ClothesTweak_Unblock(_("Gloves Show Rings"),
             _("Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
             'gloves.unblock.rings2'),
-        CBash_ClothesTweak_Unblock(False,_("Robes Show Pants"),
+        CBash_ClothesTweak_Unblock(_("Robes Show Pants"),
             _("Robes will allow pants, greaves, skirts - but they'll clip."),
             'robes.unblock.pants'),
-        CBash_ClothesTweak_Unblock(False,_("Robes Show Amulets"),
+        CBash_ClothesTweak_Unblock(_("Robes Show Amulets"),
             _("Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
             'robes.show.amulets2'),
-        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Amulets"),
+        CBash_ClothesTweak_MaxWeight(_("Max Weight Amulets"),
             _("Amulet weight will be capped."),
             'amulets.maxWeight',
             (_('0.0'),0.0),
@@ -26976,7 +26974,7 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
             (_('0.5'),0.5),
             (_('Custom'),0.0),
             ),
-        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Rings"),
+        CBash_ClothesTweak_MaxWeight(_("Max Weight Rings"),
             _('Ring weight will be capped.'),
             'rings.maxWeight',
             (_('0.0'),0.0),
@@ -26985,7 +26983,7 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
             (_('0.5'),0.5),
             (_('Custom'),0.0),
             ),
-        CBash_ClothesTweak_MaxWeight(True,_("Max Weight Hoods"),
+        CBash_ClothesTweak_MaxWeight(_("Max Weight Hoods"),
             _('Hood weight will be capped.'),
             'hoods.maxWeight',
             (_('0.2'),0.2),
@@ -27034,7 +27032,10 @@ class GmstTweak(MultiTweakItem):
                 patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith('Custom'):
-                log('* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
+                if isinstance(self.choiceValues[self.chosen][0],(str,unicode)):
+                    log('* %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
+                else:
+                    log('* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
             else: log('* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
         else:
             log('* ' + self.label)
@@ -27094,7 +27095,10 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         #--Log
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith('Custom'):
-                log('  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
+                if isinstance(self.values[0],(str,unicode)):
+                    log('  * %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
+                else:
+                    log('  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
             else: log('  * %s: %s' % (self.label,self.choiceLabels[self.chosen]))
         else:
             log('  * ' + self.label)
@@ -27107,20 +27111,20 @@ class GmstTweaker(MultiTweaker):
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
     tweaks = sorted([
-        GmstTweak(False,_('Arrow: Litter Count'),
+        GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
-            'iArrowMaxRefCount',
+            ('iArrowMaxRefCount',),
             ('[15]',15),
             ('25',25),
             ('35',35),
             ('50',50),
             ('100',100),
             ('500',500),
-            (_('Custom'),0),
+            (_('Custom'),15),
             ),
-        GmstTweak(False,_('Arrow: Litter Time'),
+        GmstTweak(_('Arrow: Litter Time'),
             _("Time before spent arrows fade away from cells and actors."),
-            'fArrowAgeMax',
+            ('fArrowAgeMax',),
             (_('1 Minute'),60.0),
             (_('[1.5 Minutes]'),90.0),
             (_('2 Minutes'),120.0),
@@ -27129,22 +27133,22 @@ class GmstTweaker(MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),0.0),
+            (_('Custom (in seconds)'),90),
             ),
-        GmstTweak(True,_('Arrow: Recovery from Actor'),
+        GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
-            'iArrowInventoryChance',
+            ('iArrowInventoryChance',),
             ('[50%]',50),
             ('60%',60),
             ('70%',70),
             ('80%',80),
             ('90%',90),
             ('100%',100),
-            (_('Custom'),0),
+            (_('Custom'),50),
             ),
-        GmstTweak(True,_('Arrow: Speed'),
+        GmstTweak(_('Arrow: Speed'),
             _("Speed of full power arrow."),
-            'fArrowSpeedMult',
+            ('fArrowSpeedMult',),
             (_('x 1.2'),1500.0*1.2),
             (_('x 1.4'),1500.0*1.4),
             (_('x 1.6'),1500.0*1.6),
@@ -27155,9 +27159,9 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500.0),
+            (_('Custom (base is 1500)'),1500),
             ),
-        GmstTweak(True,_('Camera: Chase Tightness'),
+        GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
             ('fChase3rdPersonVanityXYMult','fChase3rdPersonXYMult'),
             (_('x 1.5'),6.0,6.0),
@@ -27165,41 +27169,44 @@ class GmstTweaker(MultiTweaker):
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
             (_('ChaseCameraMod.esp (x 24.75)'),99,99),
+            (_('Custom'),4,4),
             ),
-        GmstTweak(True,_('Camera: Chase Distance'),
+        GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
             ('fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond','fVanityModeWheelMult'),
-            (_('x 1.5'),600.0*1.5, 300.0*1.5,0.15),
-            (_('x 2'),  600.0*2,   300.0*2, 0.2),
-            (_('x 3'),  600.0*3,   300.0*3, 0.3),
-            (_('x 5'),  600.0*5,   1000.0,  0.3),
-            (_('x 10'), 600.0*10,  2000.0,  0.3),
+            (_('x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
+            (_('x 2'),  600.0*2.0, 300.0*2.0, 0.2),
+            (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
+            (_('x 5'),  600.0*5.0, 1000.0,    0.3),
+            (_('x 10'), 600.0*10,  2000.0,    0.3),
+            (_('Custom'),600,      300,       0.15),
             ),
-        GmstTweak(True,_('Magic: Chameleon Refraction'),
+        GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
             ('fChameleonMinRefraction','fChameleonMaxRefraction'),
-            (_('Zero'),0,0),
-            (_('[Normal]'),0.01,1),
-            (_('Full'),1,1),
+            (_('Zero'),0.0,0.0),
+            (_('[Normal]'),0.01,1.0),
+            (_('Full'),1.0,1.0),
+            (_('Custom'),0.01,1.0),
             ),
-        GmstTweak(False,_('Compass: Disable'),
+        GmstTweak(_('Compass: Disable'),
             _("No quest and/or points of interest markers on compass."),
-            'iMapMarkerRevealDistance',
+            ('iMapMarkerRevealDistance',),
             (_('Quests'),1803),
             (_('POIs'),1802),
             (_('Quests and POIs'),1801),
             ),
-        GmstTweak(False,_('Compass: POI Recognition'),
+        GmstTweak(_('Compass: POI Recognition'),
             _("Distance at which POI markers begin to show on compass."),
-            'iMapMarkerVisibleDistance',
+            ('iMapMarkerVisibleDistance',),
             (_('x 0.25'),3000),
             (_('x 0.50'),6000),
             (_('x 0.75'),9000),
             (_('Custom (base 12000)'),12000),
             ),
-        GmstTweak(False,_('Essential NPC Unconsciousness'),
+        GmstTweak(_('Essential NPC Unconsciousness'),
             _("Time which essential NPCs stay unconscious."),
-            'fEssentialDeathTime',
+            ('fEssentialDeathTime',),
             (_('[10 Seconds]'),10.0),
             (_('20 Seconds'),20.0),
             (_('30 Seconds'),30.0),
@@ -27208,49 +27215,50 @@ class GmstTweaker(MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),0.0),
+            (_('Custom (in seconds)'),10),
             ),
-        GmstTweak(False,_('Fatigue from Running/Encumbrance'),
+        GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
             ('fFatigueRunBase','fFatigueRunMult'),
-            ('x 1.5',12.0,6.0),
-            ('x 2',16.0,8.0),
-            ('x 3',24.0,12.0),
-            ('x 4',32.0,16.0),
-            ('x 5',40.0,20.0),
+            (_('x 1.5'),12.0,6.0),
+            (_('x 2'),16.0,8.0),
+            (_('x 3'),24.0,12.0),
+            (_('x 4'),32.0,16.0),
+            (_('x 5'),40.0,20.0),
+            (_('Custom'),8,4),
             ),
-        GmstTweak(False,_('Horse Turning Speed'),
+        GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
-            'iHorseTurnDegreesPerSecond',
+            ('iHorseTurnDegreesPerSecond',),
             (_('x 1.5'),68),
             (_('x 2.0'),90),
-            (_('Custom (base is 45)'),0),
+            (_('Custom (base is 45)'),45),
             ),
-        GmstTweak(True,_('Jump Higher'),
+        GmstTweak(_('Jump Higher'),
             _("Maximum height player can jump to."),
-            'fJumpHeightMax',
+            ('fJumpHeightMax',),
             (_('x 1.1'),164.0*1.1),
             (_('x 1.2'),164.0*1.2),
             (_('x 1.4'),164.0*1.4),
             (_('x 1.6'),164.0*1.6),
             (_('x 1.8'),164.0*1.8),
-            (_('x 2.0'),164.0*2),
-            (_('x 3.0'),164.0*3),
-            (_('Custom (base 164)'),0),
+            (_('x 2.0'),164.0*2.0),
+            (_('x 3.0'),164.0*3.0),
+            (_('Custom (base 164)'),164),
             ),
-        GmstTweak(False,_('Camera: PC Death Time'),
+        GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
-            'fPlayerDeathReloadTime',
+            ('fPlayerDeathReloadTime',),
             (_('15 Seconds'),15.0),
             (_('30 Seconds'),30.0),
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),0.0),
+            (_('Custom'),15),
             ),
-        GmstTweak(False,_('Cell Respawn Time'),
+        GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
-            'iHoursToRespawnCell',
+            ('iHoursToRespawnCell',),
             (_('1 Day'),24*1),
             (_('[3 Days]'),24*3),
             (_('5 Days'),24*5),
@@ -27259,17 +27267,17 @@ class GmstTweaker(MultiTweaker):
             (_('1 Month'),24*30),
             (_('6 Months'),24*182),
             (_('1 Year'),24*365),
-            (_('Custom (in hours)'),0),
+            (_('Custom (in hours)'),72),
             ),
-        GmstTweak(False,_('Combat: Recharge Weapons'),
+        GmstTweak(_('Combat: Recharge Weapons'),
             _("Allow recharging weapons during combat."),
-            ('iAllowRechargeDuringCombat'),
+            ('iAllowRechargeDuringCombat',),
             (_('[Allow]'),1),
             (_('Disallow'),0),
             ),
-        GmstTweak(True,_('Magic: Bolt Speed'),
+        GmstTweak(_('Magic: Bolt Speed'),
             _("Speed of magic bolt/projectile."),
-            'fMagicProjectileBaseSpeed',
+            ('fMagicProjectileBaseSpeed',),
             (_('x 1.2'),1000.0*1.2),
             (_('x 1.4'),1000.0*1.4),
             (_('x 1.6'),1000.0*1.6),
@@ -27280,18 +27288,19 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),0.0),
+            (_('Custom (base 1000)'),1000),
             ),
-        GmstTweak(False,_('Msg: Equip Misc. Item'),
+        GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
-            ('sCantEquipGeneric'),
+            ('sCantEquipGeneric',),
             (_('[None]'),' '),
-            (_('.'),'.'),
+            ('.','.'),
             (_('Hmm...'),_('Hmm...')),
+            (_('Custom'),_(' ')),
             ),
-        GmstTweak(True,_('Cost Multiplier: Repair'),
+        GmstTweak(_('Cost Multiplier: Repair'),
             _("Cost factor for repairing items."),
-            ('fRepairCostMult'),
+            ('fRepairCostMult',),
             ('0.1',0.1),
             ('0.2',0.2),
             ('0.3',0.3),
@@ -27302,19 +27311,19 @@ class GmstTweaker(MultiTweaker):
             ('0.8',0.8),
             ('[0.9]',0.9),
             ('1.0',1.0),
-            (_('Custom'),0.0),
+            (_('Custom'),0.9),
             ),
-        GmstTweak(False,_('Greeting Distance'),
+        GmstTweak(_('Greeting Distance'),
             _("Distance at which NPCs will greet the player. Default: 150"),
-            ('fAIMinGreetingDistance'),
+            ('fAIMinGreetingDistance',),
             ('100',100.0),
             ('125',125.0),
             ('[150]',150.0),
-            (_('Custom'),0.0),
+            (_('Custom'),150.0),
             ),
-        GmstTweak(True,_('Cost Multiplier: Recharge'),
+        GmstTweak(_('Cost Multiplier: Recharge'),
             _("Cost factor for recharging items."),
-            ('fRechargeGoldMult'),
+            ('fRechargeGoldMult',),
             ('0.1',0.1),
             ('0.2',0.2),
             ('0.3',0.3),
@@ -27323,22 +27332,22 @@ class GmstTweaker(MultiTweaker):
             ('1.0',1.0),
             ('1.5',1.5),
             ('[2.0]',2.0),
-            (_('Custom'),0.0),
+            (_('Custom'),2.0),
             ),
-        GmstTweak(False,_('Master of Mercantile extra gold amount'),
+        GmstTweak(_('Master of Mercantile extra gold amount'),
             _("How much more barter gold all merchants have for a master of mercantile."),
-            'iPerkExtraBarterGoldMaster',
+            ('iPerkExtraBarterGoldMaster',),
             ('300',300),
             ('400',400),
             ('[500]',500),
             ('600',600),
             ('800',800),
             ('1000',1000),
-            (_('Custom'),0),
+            (_('Custom'),500),
             ),
-        GmstTweak(False,_('Combat: Max Actors'),
+        GmstTweak(_('Combat: Max Actors'),
             _("Maximum number of actors that can actively be in combat with the player."),
-            'iNumberActorsInCombatPlayer',
+            ('iNumberActorsInCombatPlayer',),
             ('[10]',10),
             ('15',15),
             ('20',20),
@@ -27346,22 +27355,22 @@ class GmstTweaker(MultiTweaker):
             ('40',40),
             ('50',50),
             ('80',80),
-            (_('Custom'),0),
+            (_('Custom'),10),
             ),
-        GmstTweak(False,_('Crime Alarm Distance'),
+        GmstTweak(_('Crime Alarm Distance'),
             _("Distance from player that NPCs(guards) will be alerted of a crime."),
-            'iCrimeAlarmRecDistance',
+            ('iCrimeAlarmRecDistance',),
             ('6000',6000),
             ('[4000]',4000),
             ('3000',3000),
             ('2000',2000),
             ('1000',1000),
             ('500',500),
-            (_('Custom'),0),
+            (_('Custom'),4000),
             ),
-        GmstTweak(True,_('Cost Multiplier: Enchantment'),
+        GmstTweak(_('Cost Multiplier: Enchantment'),
             _("Cost factor for enchanting items, OOO default is 120, vanilla 10."),
-            'fEnchantmentGoldMult',
+            ('fEnchantmentGoldMult',),
             ('[10]',10.0),
             ('20',20.0),
             ('30',30.0),
@@ -27370,21 +27379,21 @@ class GmstTweaker(MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),0.0),
+            (_('Custom'),10),
             ),
-        GmstTweak(True,_('Cost Multiplier: Spell Making'),
+        GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
-            'fSpellmakingGoldMult',
+            ('fSpellmakingGoldMult',),
             ('[3]',3.0),
             ('5',5.0),
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),0.0),
+            (_('Custom'),3),
             ),
-        GmstTweak(False,_('AI: Max Active Actors'),
+        GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
-            'iAINumberActorsComplexScene',
+            ('iAINumberActorsComplexScene',),
             ('20',20),
             ('[25]',25),
             ('30',30),
@@ -27393,114 +27402,114 @@ class GmstTweaker(MultiTweaker):
             ('50',50),
             ('60',60),
             ('100',100),
-            (_('Custom'),0),
+            (_('Custom'),25),
             ),
-        GmstTweak(False,_('Magic: Max Player Summons'),
+        GmstTweak(_('Magic: Max Player Summons'),
             _("Maximum number of creatures the player can summon."),
-            'iMaxPlayerSummonedCreatures',
+            ('iMaxPlayerSummonedCreatures',),
             ('[1]',1),
             ('3',3),
             ('5',5),
             ('8',8),
             ('10',10),
-            (_('Custom'),0),
+            (_('Custom'),1),
             ),
-        GmstTweak(False,_('Combat: Max Ally Hits'),
+        GmstTweak(_('Combat: Max Ally Hits'),
             _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
-            'iAllyHitAllowed',
+            ('iAllyHitAllowed',),
             ('3',3),
             ('[5]',5),
             ('8',8),
             ('10',10),
             ('15',15),
-            (_('Custom'),0),
+            (_('Custom'),5),
             ),
-        GmstTweak(False,_('Magic: Max NPC Summons'),
+        GmstTweak(_('Magic: Max NPC Summons'),
             _("Maximum number of creatures that each NPC can summon"),
-            'iAICombatMaxAllySummonCount',
+            ('iAICombatMaxAllySummonCount',),
             ('1',1),
             ('[3]',3),
             ('5',5),
             ('8',8),
             ('10',10),
             ('15',15),
-            (_('Custom'),0),
+            (_('Custom'),3),
             ),
-        GmstTweak(False,_('Bounty: Attack'),
+        GmstTweak(_('Bounty: Attack'),
             _("Bounty for attacking a 'good' npc."),
-            'iCrimeGoldAttackMin',
+            ('iCrimeGoldAttackMin',),
             ('300',300),
             ('400',400),
             ('[500]',500),
             ('650',650),
             ('800',800),
-            (_('Custom'),0),
+            (_('Custom'),500),
             ),
-        GmstTweak(False,_('Bounty: Horse Theft'),
+        GmstTweak(_('Bounty: Horse Theft'),
             _("Bounty for horse theft"),
-            'iCrimeGoldStealHorse',
+            ('iCrimeGoldStealHorse',),
             ('100',100),
             ('200',200),
             ('[250]',250),
             ('300',300),
             ('450',450),
-            (_('Custom'),0),
+            (_('Custom'),250),
             ),
-        GmstTweak(True,_('Bounty: Theft'),
+        GmstTweak(_('Bounty: Theft'),
             _("Bounty for stealing, as fraction of item value."),
-            'fCrimeGoldSteal',
+            ('fCrimeGoldSteal',),
             ('1/4',0.25),
             ('[1/2]',0.5),
             ('3/4',0.75),
             ('1',1.0),
-            (_('Custom'),0.0),
+            (_('Custom'),0.5),
             ),
-        GmstTweak(False,_('Combat: Alchemy'),
+        GmstTweak(_('Combat: Alchemy'),
             _("Allow alchemy during combat."),
-            'iAllowAlchemyDuringCombat',
+            ('iAllowAlchemyDuringCombat',),
             (_('Allow'),1),
             (_('[Disallow]'),0),
             ),
-        GmstTweak(False,_('Combat: Repair'),
+        GmstTweak(_('Combat: Repair'),
             _("Allow repairing armor/weapons during combat."),
-            'iAllowRepairDuringCombat',
+            ('iAllowRepairDuringCombat',),
             (_('Allow'),1),
             (_('[Disallow]'),0),
             ),
-        GmstTweak(False,_('Companions: Max Number'),
+        GmstTweak(_('Companions: Max Number'),
             _("Maximum number of actors following the player"),
-            'iNumberActorsAllowedToFollowPlayer',
+            ('iNumberActorsAllowedToFollowPlayer',),
             ('2',2),
             ('4',4),
             ('[6]',6),
             ('8',8),
             ('10',10),
-            (_('Custom'),0),
+            (_('Custom'),6),
             ),
-        GmstTweak(False,_('Training Max'),
+        GmstTweak(_('Training Max'),
             _("Maximum number of Training allowed by trainers."),
-            'iTrainingSkills',
+            ('iTrainingSkills',),
             ('1',1),
             ('[5]',5),
             ('8',8),
             ('10',10),
             ('20',20),
-            ('unlimited',9999),
+            (_('Unlimited'),9999),
             (_('Custom'),0),
             ),
-        GmstTweak(False,_('Combat: Maximum Armor Rating'),
+        GmstTweak(_('Combat: Maximum Armor Rating'),
             _("The Maximun amount of protection you will get from armor."),
-            'fMaxArmorRating',
+            ('fMaxArmorRating',),
             ('50',50.0),
             ('75',75.0),
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),0.0),
+            (_('Custom'),85),
             ),
-        GmstTweak(True,_('Warning: Interior Distance to Hostiles'),
+        GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
-            'fHostileActorInteriorDistance',
+            ('fHostileActorInteriorDistance',),
             ('10',10.0),
             ('100',100.0),
             ('500',500.0),
@@ -27508,11 +27517,11 @@ class GmstTweaker(MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),0.0),
+            (_('Custom'),2000),
             ),
-        GmstTweak(True,_('Warning: Exterior Distance to Hostiles'),
+        GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
-            'fHostileActorExteriorDistance',
+            ('fHostileActorExteriorDistance',),
             ('10',10.0),
             ('100',100.0),
             ('500',500.0),
@@ -27522,14 +27531,14 @@ class GmstTweaker(MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),0.0),
+            (_('Custom'),3000),
             ),
-        GmstTweak(False,_('UOP Vampire Aging and Face Fix.esp'),
+        GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
-            'iVampirismAgeOffset',
+            ('iVampirismAgeOffset',),
             ('Fix it!',0),
             ),
-        GmstTweak(True,_('AI: Max Dead Actors'),
+        GmstTweak(_('AI: Max Dead Actors'),
             _("Maximum number of dead actors allowed before they're removed."),
             ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
              'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
@@ -27540,8 +27549,9 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            (_('Custom'),15,20,20,3,10,2.5),
             ),
-        GmstTweak(False,_('Inventory Quantity Prompt'),
+        GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
             ('iInventoryAskQuantityAt',),
             ('1',1),
@@ -27550,9 +27560,9 @@ class GmstTweaker(MultiTweaker):
             ('4',4),
             ('10',10),
             (_('No Prompt'),99999),
-            (_('Custom'),0),
+            (_('Custom'),3),
             ),
-        GmstTweak(False,_('Crime: Trespass Fine'),
+        GmstTweak(_('Crime: Trespass Fine'),
             _("Fine in septims for trespassing."),
             ('iCrimeGoldTresspass',),
             ('1',1),
@@ -27560,10 +27570,10 @@ class GmstTweaker(MultiTweaker):
             ('8',8),
             ('10',10),
             ('20',20),
-            (_('Custom'),0),
+            (_('Custom'),5),
             ),
-        GmstTweak(False,_('Crime: Pickpocketing Fine'),
-            _("Fine in septims for pickpocketing."),
+        GmstTweak(_('Crime: Pickpocketing Fine'),
+            _("Fine in septims for trespassing."),
             ('iCrimeGoldPickpocket',),
             ('5',5),
             ('8',8),
@@ -27571,9 +27581,9 @@ class GmstTweaker(MultiTweaker):
             ('[25]',25),
             ('50',50),
             ('100',100),
-            (_('Custom'),0),
+            (_('Custom'),25),
             ),
-        GmstTweak(False,_('Leveled Item Max level difference'),
+        GmstTweak(_('Leveled Item Max level difference'),
             _("Maximum difference to player level for leveled items."),
             ('iLevItemLevelDifferenceMax',),
             ('1',1),
@@ -27582,9 +27592,9 @@ class GmstTweaker(MultiTweaker):
             ('10',10),
             ('20',20),
             (_('Unlimited'),9999),
-            (_('Custom'),0),
+            (_('Custom'),8),
             ),
-        GmstTweak(True,_('Actor Strength Encumbrance Multiplier'),
+        GmstTweak(_('Actor Strength Encumbrance Multiplier'),
             _("Actor's Strength X this = Actor's Encumbrance capacity."),
             ('fActorStrengthEncumbranceMult',),
             ('1',1.0),
@@ -27594,26 +27604,27 @@ class GmstTweaker(MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),0.0),
+            (_('Custom'),5),
             ),
-        GmstTweak(False,_('No NPC Blood'),
-            _("Disables NPC Blood Splatters."),
+        GmstTweak(_('NPC Blood'),
+            _("NPC Blood Splatter Textures."),
             ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
             (_('No Blood'),'','','','','',''),
+            (_('Custom'),'','','','','',''),
             ),
-        GmstTweak(True,_('AI: Max Smile Distance'),
+        GmstTweak(_('AI: Max Smile Distance'),
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
             (_('Default (128)'),128),
-            (_('Custom'),0.0),
+            (_('Custom'),128),
             ),
-        GmstTweak(True,_('Drag: Max Moveable Weight'),
+        GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp'),1500.0),
             (_('[Default (150)]'),150),
-            (_('Custom'),0.0),
+            (_('Custom'),150),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -27650,7 +27661,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
     tweaks = sorted([
-        CBash_GmstTweak(False,_('Arrow: Litter Count'),
+        CBash_GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
             ('iArrowMaxRefCount',),
             ('[15]',15),
@@ -27659,9 +27670,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('50',50),
             ('100',100),
             ('500',500),
-            (_('Custom'),0),
+            (_('Custom'),15),
             ),
-        CBash_GmstTweak(True,_('Arrow: Litter Time'),
+        CBash_GmstTweak(_('Arrow: Litter Time'),
             _("Time before spent arrows fade away from cells and actors."),
             ('fArrowAgeMax',),
             (_('1 Minute'),60.0),
@@ -27672,9 +27683,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),0.0),
+            (_('Custom (in seconds)'),90),
             ),
-        CBash_GmstTweak(False,_('Arrow: Recovery from Actor'),
+        CBash_GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
             ('iArrowInventoryChance',),
             ('[50%]',50),
@@ -27683,9 +27694,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('80%',80),
             ('90%',90),
             ('100%',100),
-            (_('Custom'),0),
+            (_('Custom'),50),
             ),
-        CBash_GmstTweak(True,_('Arrow: Speed'),
+        CBash_GmstTweak(_('Arrow: Speed'),
             _("Speed of full power arrow."),
             ('fArrowSpeedMult',),
             (_('x 1.2'),1500.0*1.2),
@@ -27698,9 +27709,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500.0),
+            (_('Custom (base is 1500)'),1500),
             ),
-        CBash_GmstTweak(True,_('Camera: Chase Tightness'),
+        CBash_GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
             ('fChase3rdPersonVanityXYMult','fChase3rdPersonXYMult'),
             (_('x 1.5'),6.0,6.0),
@@ -27708,8 +27719,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
             (_('ChaseCameraMod.esp (x 24.75)'),99,99),
+            (_('Custom'),4,4),
             ),
-        CBash_GmstTweak(True,_('Camera: Chase Distance'),
+        CBash_GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
             ('fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond','fVanityModeWheelMult'),
             (_('x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
@@ -27717,22 +27729,24 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
             (_('x 5'),  600.0*5.0, 1000.0,    0.3),
             (_('x 10'), 600.0*10,  2000.0,    0.3),
+            (_('Custom'),600,      300,       0.15),
             ),
-        CBash_GmstTweak(True,_('Magic: Chameleon Refraction'),
+        CBash_GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
             ('fChameleonMinRefraction','fChameleonMaxRefraction'),
             (_('Zero'),0.0,0.0),
             (_('[Normal]'),0.01,1.0),
             (_('Full'),1.0,1.0),
+            (_('Custom'),0.01,1.0),
             ),
-        CBash_GmstTweak(False,_('Compass: Disable'),
+        CBash_GmstTweak(_('Compass: Disable'),
             _("No quest and/or points of interest markers on compass."),
             ('iMapMarkerRevealDistance',),
             (_('Quests'),1803),
             (_('POIs'),1802),
             (_('Quests and POIs'),1801),
             ),
-        CBash_GmstTweak(False,_('Compass: POI Recognition'),
+        CBash_GmstTweak(_('Compass: POI Recognition'),
             _("Distance at which POI markers begin to show on compass."),
             ('iMapMarkerVisibleDistance',),
             (_('x 0.25'),3000),
@@ -27740,7 +27754,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 0.75'),9000),
             (_('Custom (base 12000)'),12000),
             ),
-        CBash_GmstTweak(True,_('Essential NPC Unconsciousness'),
+        CBash_GmstTweak(_('Essential NPC Unconsciousness'),
             _("Time which essential NPCs stay unconscious."),
             ('fEssentialDeathTime',),
             (_('[10 Seconds]'),10.0),
@@ -27751,9 +27765,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),0.0),
+            (_('Custom (in seconds)'),10),
             ),
-        CBash_GmstTweak(True,_('Fatigue from Running/Encumbrance'),
+        CBash_GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
             ('fFatigueRunBase','fFatigueRunMult'),
             (_('x 1.5'),12.0,6.0),
@@ -27761,15 +27775,16 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),24.0,12.0),
             (_('x 4'),32.0,16.0),
             (_('x 5'),40.0,20.0),
+            (_('Custom'),8,4),
             ),
-        CBash_GmstTweak(False,_('Horse Turning Speed'),
+        CBash_GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
             ('iHorseTurnDegreesPerSecond',),
             (_('x 1.5'),68),
             (_('x 2.0'),90),
-            (_('Custom (base is 45)'),0),
+            (_('Custom (base is 45)'),45),
             ),
-        CBash_GmstTweak(True,_('Jump Higher'),
+        CBash_GmstTweak(_('Jump Higher'),
             _("Maximum height player can jump to."),
             ('fJumpHeightMax',),
             (_('x 1.1'),164.0*1.1),
@@ -27779,9 +27794,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 1.8'),164.0*1.8),
             (_('x 2.0'),164.0*2.0),
             (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),0.0),
+            (_('Custom (base 164)'),164),
             ),
-        CBash_GmstTweak(True,_('Camera: PC Death Time'),
+        CBash_GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
             ('fPlayerDeathReloadTime',),
             (_('15 Seconds'),15.0),
@@ -27789,9 +27804,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),0.0),
+            (_('Custom'),15),
             ),
-        CBash_GmstTweak(False,_('Cell Respawn Time'),
+        CBash_GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
             ('iHoursToRespawnCell',),
             (_('1 Day'),24*1),
@@ -27802,15 +27817,15 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('1 Month'),24*30),
             (_('6 Months'),24*182),
             (_('1 Year'),24*365),
-            (_('Custom (in hours)'),0),
+            (_('Custom (in hours)'),72),
             ),
-        CBash_GmstTweak(False,_('Combat: Recharge Weapons'),
+        CBash_GmstTweak(_('Combat: Recharge Weapons'),
             _("Allow recharging weapons during combat."),
             ('iAllowRechargeDuringCombat',),
             (_('[Allow]'),1),
             (_('Disallow'),0),
             ),
-        CBash_GmstTweak(True,_('Magic: Bolt Speed'),
+        CBash_GmstTweak(_('Magic: Bolt Speed'),
             _("Speed of magic bolt/projectile."),
             ('fMagicProjectileBaseSpeed',),
             (_('x 1.2'),1000.0*1.2),
@@ -27823,16 +27838,17 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),0.0),
+            (_('Custom (base 1000)'),1000),
             ),
-        CBash_GmstTweak(False,_('Msg: Equip Misc. Item'),
+        CBash_GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
             ('sCantEquipGeneric',),
             (_('[None]'),' '),
             ('.','.'),
             (_('Hmm...'),_('Hmm...')),
+            (_('Custom'),_(' ')),
             ),
-        CBash_GmstTweak(True,_('Cost Multiplier: Repair'),
+        CBash_GmstTweak(_('Cost Multiplier: Repair'),
             _("Cost factor for repairing items."),
             ('fRepairCostMult',),
             ('0.1',0.1),
@@ -27845,17 +27861,17 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('0.8',0.8),
             ('[0.9]',0.9),
             ('1.0',1.0),
-            (_('Custom'),0.0),
+            (_('Custom'),0.9),
             ),
-        CBash_GmstTweak(True,_('Greeting Distance'),
+        CBash_GmstTweak(_('Greeting Distance'),
             _("Distance at which NPCs will greet the player. Default: 150"),
             ('fAIMinGreetingDistance',),
             ('100',100.0),
             ('125',125.0),
             ('[150]',150.0),
-            (_('Custom'),0.0),
+            (_('Custom'),150.0),
             ),
-        CBash_GmstTweak(True,_('Cost Multiplier: Recharge'),
+        CBash_GmstTweak(_('Cost Multiplier: Recharge'),
             _("Cost factor for recharging items."),
             ('fRechargeGoldMult',),
             ('0.1',0.1),
@@ -27866,9 +27882,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('1.0',1.0),
             ('1.5',1.5),
             ('[2.0]',2.0),
-            (_('Custom'),0.0),
+            (_('Custom'),2.0),
             ),
-        CBash_GmstTweak(False,_('Master of Mercantile extra gold amount'),
+        CBash_GmstTweak(_('Master of Mercantile extra gold amount'),
             _("How much more barter gold all merchants have for a master of mercantile."),
             ('iPerkExtraBarterGoldMaster',),
             ('300',300),
@@ -27877,9 +27893,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('600',600),
             ('800',800),
             ('1000',1000),
-            (_('Custom'),0),
+            (_('Custom'),500),
             ),
-        CBash_GmstTweak(False,_('Combat: Max Actors'),
+        CBash_GmstTweak(_('Combat: Max Actors'),
             _("Maximum number of actors that can actively be in combat with the player."),
             ('iNumberActorsInCombatPlayer',),
             ('[10]',10),
@@ -27889,9 +27905,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('40',40),
             ('50',50),
             ('80',80),
-            (_('Custom'),0),
+            (_('Custom'),10),
             ),
-        CBash_GmstTweak(False,_('Crime Alarm Distance'),
+        CBash_GmstTweak(_('Crime Alarm Distance'),
             _("Distance from player that NPCs(guards) will be alerted of a crime."),
             ('iCrimeAlarmRecDistance',),
             ('6000',6000),
@@ -27900,9 +27916,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('2000',2000),
             ('1000',1000),
             ('500',500),
-            (_('Custom'),0),
+            (_('Custom'),4000),
             ),
-        CBash_GmstTweak(True,_('Cost Multiplier: Enchantment'),
+        CBash_GmstTweak(_('Cost Multiplier: Enchantment'),
             _("Cost factor for enchanting items, OOO default is 120, vanilla 10."),
             ('fEnchantmentGoldMult',),
             ('[10]',10.0),
@@ -27913,9 +27929,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),0.0),
+            (_('Custom'),10),
             ),
-        CBash_GmstTweak(True,_('Cost Multiplier: Spell Making'),
+        CBash_GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
             ('fSpellmakingGoldMult',),
             ('[3]',3.0),
@@ -27923,9 +27939,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),0.0),
+            (_('Custom'),3),
             ),
-        CBash_GmstTweak(False,_('AI: Max Active Actors'),
+        CBash_GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
             ('iAINumberActorsComplexScene',),
             ('20',20),
@@ -27936,9 +27952,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('50',50),
             ('60',60),
             ('100',100),
-            (_('Custom'),0),
+            (_('Custom'),25),
             ),
-        CBash_GmstTweak(False,_('Magic: Max Player Summons'),
+        CBash_GmstTweak(_('Magic: Max Player Summons'),
             _("Maximum number of creatures the player can summon."),
             ('iMaxPlayerSummonedCreatures',),
             ('[1]',1),
@@ -27946,9 +27962,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('5',5),
             ('8',8),
             ('10',10),
-            (_('Custom'),0),
+            (_('Custom'),1),
             ),
-        CBash_GmstTweak(False,_('Combat: Max Ally Hits'),
+        CBash_GmstTweak(_('Combat: Max Ally Hits'),
             _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
             ('iAllyHitAllowed',),
             ('3',3),
@@ -27956,9 +27972,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8),
             ('10',10),
             ('15',15),
-            (_('Custom'),0),
+            (_('Custom'),5),
             ),
-        CBash_GmstTweak(False,_('Magic: Max NPC Summons'),
+        CBash_GmstTweak(_('Magic: Max NPC Summons'),
             _("Maximum number of creatures that each NPC can summon"),
             ('iAICombatMaxAllySummonCount',),
             ('1',1),
@@ -27967,9 +27983,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8),
             ('10',10),
             ('15',15),
-            (_('Custom'),0),
+            (_('Custom'),3),
             ),
-        CBash_GmstTweak(False,_('Bounty: Attack'),
+        CBash_GmstTweak(_('Bounty: Attack'),
             _("Bounty for attacking a 'good' npc."),
             ('iCrimeGoldAttackMin',),
             ('300',300),
@@ -27977,9 +27993,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[500]',500),
             ('650',650),
             ('800',800),
-            (_('Custom'),0),
+            (_('Custom'),500),
             ),
-        CBash_GmstTweak(False,_('Bounty: Horse Theft'),
+        CBash_GmstTweak(_('Bounty: Horse Theft'),
             _("Bounty for horse theft"),
             ('iCrimeGoldStealHorse',),
             ('100',100),
@@ -27987,30 +28003,30 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[250]',250),
             ('300',300),
             ('450',450),
-            (_('Custom'),0),
+            (_('Custom'),250),
             ),
-        CBash_GmstTweak(True,_('Bounty: Theft'),
+        CBash_GmstTweak(_('Bounty: Theft'),
             _("Bounty for stealing, as fraction of item value."),
             ('fCrimeGoldSteal',),
             ('1/4',0.25),
             ('[1/2]',0.5),
             ('3/4',0.75),
             ('1',1.0),
-            (_('Custom'),0.0),
+            (_('Custom'),0.5),
             ),
-        CBash_GmstTweak(False,_('Combat: Alchemy'),
+        CBash_GmstTweak(_('Combat: Alchemy'),
             _("Allow alchemy during combat."),
             ('iAllowAlchemyDuringCombat',),
             (_('Allow'),1),
             (_('[Disallow]'),0),
             ),
-        CBash_GmstTweak(False,_('Combat: Repair'),
+        CBash_GmstTweak(_('Combat: Repair'),
             _("Allow repairing armor/weapons during combat."),
             ('iAllowRepairDuringCombat',),
             (_('Allow'),1),
             (_('[Disallow]'),0),
             ),
-        CBash_GmstTweak(False,_('Companions: Max Number'),
+        CBash_GmstTweak(_('Companions: Max Number'),
             _("Maximum number of actors following the player"),
             ('iNumberActorsAllowedToFollowPlayer',),
             ('2',2),
@@ -28018,9 +28034,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[6]',6),
             ('8',8),
             ('10',10),
-            (_('Custom'),0),
+            (_('Custom'),6),
             ),
-        CBash_GmstTweak(False,_('Training Max'),
+        CBash_GmstTweak(_('Training Max'),
             _("Maximum number of Training allowed by trainers."),
             ('iTrainingSkills',),
             ('1',1),
@@ -28031,7 +28047,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('Unlimited'),9999),
             (_('Custom'),0),
             ),
-        CBash_GmstTweak(True,_('Combat: Maximum Armor Rating'),
+        CBash_GmstTweak(_('Combat: Maximum Armor Rating'),
             _("The Maximun amount of protection you will get from armor."),
             ('fMaxArmorRating',),
             ('50',50.0),
@@ -28039,9 +28055,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),0.0),
+            (_('Custom'),85),
             ),
-        CBash_GmstTweak(True,_('Warning: Interior Distance to Hostiles'),
+        CBash_GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
             ('fHostileActorInteriorDistance',),
             ('10',10.0),
@@ -28051,9 +28067,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),0.0),
+            (_('Custom'),2000),
             ),
-        CBash_GmstTweak(True,_('Warning: Exterior Distance to Hostiles'),
+        CBash_GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
             ('fHostileActorExteriorDistance',),
             ('10',10.0),
@@ -28065,14 +28081,14 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),0.0),
+            (_('Custom'),3000),
             ),
-        CBash_GmstTweak(False,_('UOP Vampire Aging and Face Fix.esp'),
+        CBash_GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
             ('iVampirismAgeOffset',),
             ('Fix it!',0),
             ),
-        CBash_GmstTweak(True,_('AI: Max Dead Actors'),
+        CBash_GmstTweak(_('AI: Max Dead Actors'),
             _("Maximum number of dead actors allowed before they're removed."),
             ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
              'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
@@ -28083,8 +28099,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            (_('Custom'),15,20,20,3,10,2.5),
             ),
-        CBash_GmstTweak(False,_('Inventory Quantity Prompt'),
+        CBash_GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
             ('iInventoryAskQuantityAt',),
             ('1',1),
@@ -28093,9 +28110,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('4',4),
             ('10',10),
             (_('No Prompt'),99999),
-            (_('Custom'),0),
+            (_('Custom'),3),
             ),
-        CBash_GmstTweak(False,_('Crime: Trespass Fine'),
+        CBash_GmstTweak(_('Crime: Trespass Fine'),
             _("Fine in septims for trespassing."),
             ('iCrimeGoldTresspass',),
             ('1',1),
@@ -28103,9 +28120,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8),
             ('10',10),
             ('20',20),
-            (_('Custom'),0),
+            (_('Custom'),5),
             ),
-        CBash_GmstTweak(False,_('Crime: Pickpocketing Fine'),
+        CBash_GmstTweak(_('Crime: Pickpocketing Fine'),
             _("Fine in septims for trespassing."),
             ('iCrimeGoldPickpocket',),
             ('5',5),
@@ -28114,9 +28131,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[25]',25),
             ('50',50),
             ('100',100),
-            (_('Custom'),0),
+            (_('Custom'),25),
             ),
-        CBash_GmstTweak(False,_('Leveled Item Max level difference'),
+        CBash_GmstTweak(_('Leveled Item Max level difference'),
             _("Maximum difference to player level for leveled items."),
             ('iLevItemLevelDifferenceMax',),
             ('1',1),
@@ -28125,9 +28142,9 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10),
             ('20',20),
             (_('Unlimited'),9999),
-            (_('Custom'),0),
+            (_('Custom'),8),
             ),
-        CBash_GmstTweak(True,_('Actor Strength Encumbrance Multiplier'),
+        CBash_GmstTweak(_('Actor Strength Encumbrance Multiplier'),
             _("Actor's Strength X this = Actor's Encumbrance capacity."),
             ('fActorStrengthEncumbranceMult',),
             ('1',1.0),
@@ -28137,26 +28154,27 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),0.0),
+            (_('Custom'),5),
             ),
-        CBash_GmstTweak(False,_('No NPC Blood'),
-            _("Disables NPC Blood Splatters."),
+        CBash_GmstTweak(_('NPC Blood'),
+            _("NPC Blood Splatter Textures."),
             ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
             (_('No Blood'),'','','','','',''),
+            (_('Custom'),'','','','','',''),
             ),
-        CBash_GmstTweak(True,_('AI: Max Smile Distance'),
+        CBash_GmstTweak(_('AI: Max Smile Distance'),
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
             (_('Default (128)'),128),
-            (_('Custom'),0.0),
+            (_('Custom'),128),
             ),
-        CBash_GmstTweak(True,_('Drag: Max Moveable Weight'),
+        CBash_GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp'),1500.0),
             (_('[Default (150)]'),150),
-            (_('Custom'),0.0),
+            (_('Custom'),150),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -28178,7 +28196,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
 class NamesTweak_BodyTags(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Body Part Codes"),
+        MultiTweakItem.__init__(self,_("Body Part Codes"),
             _('Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
             'bodyTags',
             ('ARGHTCCPBS','ARGHTCCPBS'),
@@ -28206,7 +28224,7 @@ class CBash_NamesTweak_BodyTags(CBash_MultiTweakItem):
     editOrder = 32
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Body Part Codes"),
+        CBash_MultiTweakItem.__init__(self,_("Body Part Codes"),
             _('Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
             'bodyTags',
             ('ARGHTCCPBS','ARGHTCCPBS'),
@@ -28285,8 +28303,8 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     scanOrder = 32
     editOrder = 32
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,float,label,tip,key,*choices):
-        CBash_MultiTweakItem.__init__(self,float,label,tip,key,*choices)
+    def __init__(self,label,tip,key,*choices):
+        CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
         self.mod_count = {}
 
     def getTypes(self):
@@ -28337,7 +28355,7 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
 class NamesTweak_Potions(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Potions"),
+        MultiTweakItem.__init__(self,_("Potions"),
             _('Label potions to sort by type and effect.'),
             'ALCH',
             (_('XD Illness'),  '%s '),
@@ -28419,7 +28437,7 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
     reOldEnd = re.compile(' -$')
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Potions"),
+        CBash_MultiTweakItem.__init__(self,_("Potions"),
             _('Label potions to sort by type and effect.'),
             'ALCH',
             (_('XD Illness'),  '%s '),
@@ -28488,7 +28506,7 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
 class NamesTweak_Scrolls(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Notes and Scrolls"),
+        MultiTweakItem.__init__(self,_("Notes and Scrolls"),
             _('Mark notes and scrolls to sort separately from books'),
             'scrolls',
             (_('~Fire Ball'),  '~'),
@@ -28585,7 +28603,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Notes and Scrolls"),
+        CBash_MultiTweakItem.__init__(self,_("Notes and Scrolls"),
             _('Mark notes and scrolls to sort separately from books'),
             'scrolls',
             (_('~Fire Ball'),  '~'),
@@ -28664,7 +28682,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
 class NamesTweak_Spells(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Spells"),
+        MultiTweakItem.__init__(self,_("Spells"),
             _('Label spells to sort by school and level.'),
             'SPEL',
             (_('Fire Ball'),  'NOTAGS'),
@@ -28744,7 +28762,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Spells"),
+        CBash_MultiTweakItem.__init__(self,_("Spells"),
             _('Label spells to sort by school and level.'),
             'SPEL',
             (_('Fire Ball'),  'NOTAGS'),
@@ -28815,7 +28833,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
 class NamesTweak_Weapons(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Weapons"),
+        MultiTweakItem.__init__(self,_("Weapons"),
             _('Label ammo and weapons to sort by type and damage.'),
             'WEAP',
             (_('B Iron Bow'),  '%s '),
@@ -28888,7 +28906,7 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Weapons"),
+        CBash_MultiTweakItem.__init__(self,_("Weapons"),
             _('Label ammo and weapons to sort by type and damage.'),
             'WEAP',
             (_('B Iron Bow'),  '%s '),
@@ -28956,7 +28974,7 @@ class NamesTweak_Dwarven(MultiTweakItem):
                             'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                             'MISC','NPC_','QUST','RACE','SCPT','SGST',
                             'SKIL','SLGM','SPEL','WEAP']
-        MultiTweakItem.__init__(self,False,_("Lore Friendly Names: Dwarven -> Dwemer"),
+        MultiTweakItem.__init__(self,_("Lore Friendly Names: Dwarven -> Dwemer"),
             _('Rename any thing that is named X Dwarven or Dwarven X to Dwemer X/X Dwemer to follow lore better.'),
             'Dwemer',
             (('Lore Friendly Names: Dwarven -> Dwemer'),  'Dwemer'),
@@ -29103,7 +29121,7 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Lore Friendly Names: Dwarven -> Dwemer"),
+        CBash_MultiTweakItem.__init__(self,_("Lore Friendly Names: Dwarven -> Dwemer"),
             _('Rename anything that is named X Dwarven or Dwarven X to Dwemer X/X Dwemer to follow lore better.'),
             'Dwemer',
             (('Lore Friendly Names: Dwarven -> Dwemer'),  'Dwemer'),
@@ -29276,7 +29294,7 @@ class NamesTweaker(MultiTweaker):
     name = _('Tweak Names')
     text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
-        NamesTweak_Body(False,_("Armor"),_("Rename armor to sort by type."),'ARMO',
+        NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
             (_('BL Leather Boots'),  '%s '),
             (_('BL. Leather Boots'), '%s. '),
             (_('BL - Leather Boots'),'%s - '),
@@ -29287,7 +29305,7 @@ class NamesTweaker(MultiTweaker):
             (_('BL02 - Leather Boots'),'%s%02d - '),
             (_('(BL02) Leather Boots'),'(%s%02d) '),
             ),
-        NamesTweak_Body(False,_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
+        NamesTweak_Body(_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
             (_('P Grey Trousers'),  '%s '),
             (_('P. Grey Trousers'), '%s. '),
             (_('P - Grey Trousers'),'%s - '),
@@ -29335,7 +29353,7 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
     name = _('Tweak Names')
     text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
-        CBash_NamesTweak_Body(False,_("Armor"),_("Rename armor to sort by type."),'ARMO',
+        CBash_NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
             (_('BL Leather Boots'),  '%s '),
             (_('BL. Leather Boots'), '%s. '),
             (_('BL - Leather Boots'),'%s - '),
@@ -29346,7 +29364,7 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
             (_('BL02 - Leather Boots'),'%s%02d - '),
             (_('(BL02) Leather Boots'),'(%s%02d) '),
             ),
-        CBash_NamesTweak_Body(False,_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
+        CBash_NamesTweak_Body(_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
             (_('P Grey Trousers'),  '%s '),
             (_('P. Grey Trousers'), '%s. '),
             (_('P - Grey Trousers'),'%s - '),
@@ -29396,7 +29414,7 @@ class BasalNPCTweaker(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # Override this segment with real info.
-        MultiTweakItem.__init__(self,False,_("Title"),
+        MultiTweakItem.__init__(self,_("Title"),
             _('Description'),
             'Ignored',
             ('1.0',  '1.0'),
@@ -29439,7 +29457,7 @@ class BasalCreatureTweaker(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # Override this segment with real info.
-        MultiTweakItem.__init__(self,False,_("Title"),
+        MultiTweakItem.__init__(self,_("Title"),
             _('Description'),
             'Ignored',
             ('1.0',  '1.0'),
@@ -29481,7 +29499,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
+        MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'), 0),
@@ -29526,7 +29544,7 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Mayu's Animation Overhaul Skeleton Tweaker"),
+        CBash_MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
             _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
             'MAO Skeleton',
             (_('All NPCs'),  0),
@@ -29575,7 +29593,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the diverse skeleton for different look."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+        MultiTweakItem.__init__(self,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
             _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
             'VORB',
             (_('All NPCs'), 0),
@@ -29642,7 +29660,7 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+        CBash_MultiTweakItem.__init__(self,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
             _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
             'VORB',
             (_('All NPCs'),  0),
@@ -29717,7 +29735,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Vanilla Beast Skeleton Tweaker"),
+        MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
             _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
@@ -29778,7 +29796,7 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Vanilla Beast Skeleton Tweaker"),
+        CBash_MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
             _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
@@ -29822,7 +29840,7 @@ class RedguardNPCPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Redguard FGTS Nuller"),
+        MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
             _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
             'RedguardFGTSPatcher',
             ('1.0',  '1.0'),
@@ -29853,7 +29871,7 @@ class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Redguard FGTS Nuller"),
+        CBash_MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
             _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
             'RedguardFGTSPatcher',
             ('1.0',  '1.0'),
@@ -29894,7 +29912,7 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("No Bloody Creatures"),
+        MultiTweakItem.__init__(self,_("No Bloody Creatures"),
             _("Set all creatures to have no blood records."),
             'No bloody creatures',
             ('1.0',  '1.0'),
@@ -29926,7 +29944,7 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("No Bloody Creatures"),
+        CBash_MultiTweakItem.__init__(self,_("No Bloody Creatures"),
             _("Set all creatures to have no blood records."),
             'No bloody creatures',
             ('1.0',  '1.0'),
@@ -29968,7 +29986,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_('As Intended: Imps'),
+        MultiTweakItem.__init__(self,_('As Intended: Imps'),
             _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious imps!',
             (_('All imps'), 'all'),
@@ -30020,7 +30038,7 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_('As Intended: Imps'),
+        CBash_MultiTweakItem.__init__(self,_('As Intended: Imps'),
             _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious imps!',
             (_('All imps'), 'all'),
@@ -30078,7 +30096,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_('As Intended: Boars'),
+        MultiTweakItem.__init__(self,_('As Intended: Boars'),
             _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious boars!',
             ('1.0',  '1.0'),
@@ -30124,7 +30142,7 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_('As Intended: Boars'),
+        CBash_MultiTweakItem.__init__(self,_('As Intended: Boars'),
             _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
             'vicious boars!',
             ('1.0',  '1.0'),
@@ -30174,7 +30192,7 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Sexy Walk for female NPCs"),
+        MultiTweakItem.__init__(self,_("Sexy Walk for female NPCs"),
             _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
             'Mur Zuk SWalk',
             ('1.0',  '1.0'),
@@ -30203,7 +30221,7 @@ class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Sexy Walk for female NPCs"),
+        CBash_MultiTweakItem.__init__(self,_("Sexy Walk for female NPCs"),
             _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
             'Mur Zuk SWalk',
             ('1.0',  '1.0'),
@@ -30242,7 +30260,7 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Real Walk for female NPCs"),
+        MultiTweakItem.__init__(self,_("Real Walk for female NPCs"),
             _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
             'Mur Zuk RWalk',
             ('1.0',  '1.0'),
@@ -30271,7 +30289,7 @@ class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Real Walk for female NPCs"),
+        CBash_MultiTweakItem.__init__(self,_("Real Walk for female NPCs"),
             _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
             'Mur Zuk RWalk',
             ('1.0',  '1.0'),
@@ -30310,7 +30328,7 @@ class QuietFeetPatcher(BasalCreatureTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_('Quiet Feet'),
+        MultiTweakItem.__init__(self,_('Quiet Feet'),
             _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
             'silent n sneaky!',
             (_('All Creature Foot Sounds'), 'all'),
@@ -30353,7 +30371,7 @@ class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_('Quiet Feet'),
+        CBash_MultiTweakItem.__init__(self,_('Quiet Feet'),
             _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
             'silent n sneaky!',
             (_('All Creature Foot Sounds'), 'all'),
@@ -30406,7 +30424,7 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_('Irresponsible Creatures'),
+        MultiTweakItem.__init__(self,_('Irresponsible Creatures'),
             _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
             'whatbadguarddogs',
             (_('All Creatures'), 'all'),
@@ -30444,7 +30462,7 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_('Irresponsible Creatures'),
+        CBash_MultiTweakItem.__init__(self,_('Irresponsible Creatures'),
             _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
             'whatbadguarddogs',
             (_('All Creatures'), 'all'),
@@ -30483,7 +30501,7 @@ class BiggerOrcsandNords(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,False,_("Bigger Nords and Orcs"),
+        MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
             _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
             'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
@@ -30544,7 +30562,7 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,False,_("Bigger Nords and Orcs"),
+        CBash_MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
             _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
             'BiggerOrcsand Nords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))

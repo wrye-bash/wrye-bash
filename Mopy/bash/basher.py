@@ -6492,7 +6492,10 @@ class TweakPatcher(Patcher):
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith('Custom'):
-                label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
+                if isinstance(tweak.choiceValues[tweak.chosen][0],(str,unicode)):
+                    label += ' %s' % tweak.choiceValues[tweak.chosen][0]
+                else:
+                    label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
             self.gList.Insert(label,index)
             self.gList.Check(index,tweak.isEnabled)
 
@@ -6555,7 +6558,10 @@ class TweakPatcher(Patcher):
             if label == '----':
                 menu.AppendSeparator()
             elif label.startswith(_('Custom')):
-                menulabel = label + ' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
+                if isinstance(tweaks[tweakIndex].choiceValues[index][0],(str,unicode)):
+                    menulabel = label + ' %s' % tweaks[tweakIndex].choiceValues[index][0]
+                else:
+                    menulabel = label + ' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
                 menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
@@ -6581,13 +6587,27 @@ class TweakPatcher(Patcher):
         index = event.GetId()
         tweak = self.tweaks[tweakIndex]
         tweak.chosen = index
-        if tweak.float: label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
-        else: label = _('Enter the desired custom tweak value.')
-        value = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][0],min=-10000,max=10000)
-        if not value: value = self.tweaks[tweakIndex].choiceValues[index][0]
-        if tweak.float: value = float(value) / 10
-        self.tweaks[tweakIndex].choiceValues[index] = (value,)
-        self.gList.SetString(tweakIndex,(self.tweaks[tweakIndex].getListLabel()+' %4.2f ' % (value)))
+        value = []
+        for i, v in enumerate(tweak.choiceValues[index]):
+            subtweaktype = type(v)
+            if subtweaktype == float: 
+                label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
+                value.append(float(balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000) or 0)/10)
+            elif subtweaktype == int: 
+                label = _('Enter the desired custom tweak value.')
+                value.append(balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000) or 0)
+            elif subtweaktype in (str,unicode):
+                label = _('Enter the desired custom tweak text.')
+                value.append(balt.askText(self.gConfigPanel,label,title=_('Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i]))
+       
+        if not value: value = tweak.choiceValues[index]
+        #if tweak.float: value = float(value) / 10
+        tweak.choiceValues[index] = tuple(value)
+        if isinstance(tweak.choiceValues[index][0],(str,unicode)):
+            menulabel = tweak.getListLabel() + ' %s' % tweak.choiceValues[index][0]
+        else:
+            menulabel = tweak.getListLabel() + ' %4.2f ' % tweak.choiceValues[index][0]
+        self.gList.SetString(tweakIndex,(menulabel))
 
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
