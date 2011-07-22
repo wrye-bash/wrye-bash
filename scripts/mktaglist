@@ -1,6 +1,10 @@
 #!/usr/bin/awk -f
+#
 # usage: ./mktaglist <masterlist >taglist
-# this is more accurate than the algorithm in bish, but we need to ensure we can parse the FCOM-conditional output
+#
+# this is more accurate than the algorithm in bish (it gets lines that bish
+# misses), and it keeps all lines in their original order, but I need to
+# confirm with PM that we can parse the FCOM-conditional lines properly
 
 function printHeader(revision, dateStr)
 {
