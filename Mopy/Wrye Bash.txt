@@ -377,7 +377,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
     * If you want a custom icon, just put a PNG with the same name as the shortcut, ending in the icon size, in the same folder.
     . For example:
       . Notepadpp.lnk
-      . Notepadpp24.png  <- custom 24x24 icon to use
+      . Notepadpp24.png  &lt;- custom 24x24 icon to use
 
 === Bash Option Buttons
 * OBSE 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
@@ -2397,7 +2397,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
-  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&module=forums&section=findpost&pid=17975809|here]]
+  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809|here]]
   * Fixed the launching of OBSE when a Steam install is detected.
 * Updated NSIS installer.
 * Unicode Mode:
