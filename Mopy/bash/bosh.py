@@ -9068,7 +9068,7 @@ class ModInfos(FileInfos):
             if version:
                 log(_('%s  %s  [Version %s] [CRC: %08X]') % (prefix,name.s,version,self[name].cachedCrc()))
             else:
-                log('%s  %s' % (prefix,name.s))
+                log('%s  %s [CRC: %08X]' % (prefix,name.s,self[name].cachedCrc()))
             if name in masters:
                 for master2 in self[name].header.masters:
                     if master2 not in self:
