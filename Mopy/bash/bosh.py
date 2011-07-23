@@ -25336,7 +25336,9 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.FLOR
         id_records = patchBlock.id_records
+        nirnroot = re.compile(r'nirnroot',re.I)
         for record in modFile.FLOR.getActiveRecords():
+            if nirnroot.search(record.eid): continue #skip Nirnroots
             if mapper(record.fid) in id_records: continue
             for attr in ['spring','summer','fall','winter']:
                 if getattr(record,attr) != chance:
@@ -25384,6 +25386,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
             (_('Custom'),0),
             )
         self.mod_count = {}
+        nirnroot = re.compile(r'nirnroot',re.I)
 
     def getTypes(self):
         return ['FLOR']
@@ -25392,6 +25395,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chance = self.choiceValues[self.chosen][0]
+        if self.nirnroot.search(record.eid): continue #skip Nirnroots
         for attr in ['spring','summer','fall','winter']:
             if getattr(record,attr) != chance:
                 override = record.CopyAsOverride(self.patchFile)
@@ -25401,6 +25405,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._ModID, record._RecordID = override._ModID, override._RecordID
+                break
 
     def buildPatchLog(self,log):
         """Will write to log."""

@@ -2336,8 +2336,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Msg: No Fast Travel.
       * Msg: Not Enough Charge.
       * Msg: Quick Load.
-    * Typo fix for the custom option of Compass: POI Recognition 
+    * Typo fix for the custom option of Compass: POI Recognition.
     * Fixed Identical GMST records are not skipped by Python patcher.
+  * Fixed Harvest Chance tweaker adjusts nirnroots when it shouldn't (since they are a quest plant).
   * Fixed Identical Global records are not skipped by Python Tweak Globals patcher
 * Unicode Mode:
   * More bugfixes from valda
