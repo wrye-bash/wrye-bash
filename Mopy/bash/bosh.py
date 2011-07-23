@@ -25395,7 +25395,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chance = self.choiceValues[self.chosen][0]
-        if self.nirnroot.search(record.eid): continue #skip Nirnroots
+        if self.nirnroot.search(record.eid): return #skip Nirnroots
         for attr in ['spring','summer','fall','winter']:
             if getattr(record,attr) != chance:
                 override = record.CopyAsOverride(self.patchFile)
