@@ -147,7 +147,7 @@ allTagsSet = set(allTags)
 oldTags = sorted(('Merge',))
 oldTagsSet = set(oldTags)
 
-reOblivion = re.compile('^Oblivion|Nehrim(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$')
+reOblivion = re.compile('^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$')
 
 undefinedPath = GPath(r'C:\not\a\valid\path.exe')
 undefinedPaths = set([GPath(r'C:\Path\exe.exe'),undefinedPath])
