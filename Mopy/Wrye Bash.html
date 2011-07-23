@@ -888,6 +888,8 @@
   <p class="list-2">&bull;&nbsp;  <b>Full Refresh:</b> This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.</p>
   <p class="list-2">&bull;&nbsp;  <b>Add Marker:</b> Creates a marker for organizing your packages.  The "==" will be added for you.</p>
   <p class="list-2">&bull;&nbsp;  <b>List Packages:</b> Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Uninstall All:</b> Uninstalls all packages that are managed by BAIN (or at least in the BAIN directory).</p>
+  <p class="list-2">&bull;&nbsp;  <b>Clean Data:</b> cleans any files from the oblivion data dir that are not from active installers or Bethesda files or Wrye Bash Files. (ie it'll basically give you a clean install state of Oblivion/Data). For safety's sake the files are moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\</p>
   <p class="list-2">&bull;&nbsp;  <b>Anneal All:</b> This will install any missing files (for active installers) and correct all install order and reconfiguration errors.</p>
   <p class="list-2">&bull;&nbsp;  <b>Unhide:</b> Unhides hidden packages.</p>
     <p class="list-3">&bull;&nbsp;  The Unhide dialog now works like WinMerge's open dialog</p>
@@ -972,7 +974,7 @@
   <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Active" /> Regular checkmark: mod is active.</p>
   <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_green_inc.png" width="16" height="16" style="border: 0;" alt="Merged" /> Plus sign checkmark: mod is merged into an active <a href="#BashedPatches">Bashed Patch</a> mod.</p>
   <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_green_imp.png" width="16" height="16" style="border: 0;" alt="Imported" /> Dot checkmark: mod is imported into an active <a href="#BashedPatches">Bashed Patch</a> mod.</p>
-  <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: Mod is not active, imported or merged.</p>
+  <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;" alt="Inactive" /> No checkmark: mod is not active, imported or merged.</p>
 <p class="list-1">&bull;&nbsp;  <b>Checkbox Colors</b></p>
   <p class="list-2">&bull;&nbsp;  <img src="bash/images/checkbox_blue_on.png" width="16" height="16" style="border: 0;" alt="Blue" /> <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;" alt="Green" /> <img src="bash/images/checkbox_orange_on.png" width="16" height="16" style="border: 0;" alt="Orange" /> <img src="bash/images/checkbox_red_on.png" width="16" height="16" style="border: 0;" alt="Red" /></p>
   <p class="list-2">&bull;&nbsp;  Checkbox colors indicate the "health" of the mod file's master files.</p>
@@ -1096,7 +1098,7 @@
 <p class="empty">&nbsp;</p>
 <h3><a id='DecompileAll'>Decompile All</a></h3>
 <p class="list-1">&bull;&nbsp;  This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.</p>
-<p class="list-1">&bull;&nbsp;  It ignores/will not work on "Oblivion.esm" and "Oblivion_1.1.esm"</p>
+<p class="list-1">&bull;&nbsp;  It ignores/will not work on "Oblivion.esm", "Oblivion_1.1.esm", "Oblivion_1.1b.esm" and "Oblivion_GOTY non-SI.esm".</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='CopytoEspEsm'>Copy to Esp/Esm</a></h3>
 <p class="list-1">&bull;&nbsp;  Creates an esm copy of an esp or vice versa.</p>
@@ -1442,6 +1444,7 @@
   <p class="list-2">&bull;&nbsp;  <b>Import Patch Configuration:</b> Restores your Bashed Patch's configuration by reading an external file saved using the <b>Export Patch Configuration</b> command.</p>
 <p class="list-1">&bull;&nbsp;  <b>Build the Patch</b></p>
   <p class="list-2">&bull;&nbsp;  Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel to quit without updating the patch mod.</p>
+  <p class="list-2">&bull;&nbsp;  If specified in the bash.ini a sound will be played on succesfull completion/failure.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='PatchNotes'>Patch Notes</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Load Order</b></p>
@@ -1504,6 +1507,8 @@
   <p class="list-2">&bull;&nbsp;  NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).</p>
   <p class="list-2">&bull;&nbsp;  NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
   <p class="list-2">&bull;&nbsp;  NpcFacesForceFullImport: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  Npc.EyesOnly: Mod modifies npc eyes (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  Npc.HairOnly: Mod modifies npc hair (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
   <p class="list-2">&bull;&nbsp;  R.AddSpells: mod adds racial spells. (<a href="#RaceRecords">Race Records</a>).</p>
   <p class="list-2">&bull;&nbsp;  R.Attributes-F mod changes race attributes for females (<a href="#RaceRecords">Race Records</a>).</p>
   <p class="list-2">&bull;&nbsp;  R.Attributes-M: mod changes race attributes for males (<a href="#RaceRecords">Race Records</a>).</p>
@@ -1679,9 +1684,11 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Overview</b></p>
 <p class="list-1">&nbsp;&nbsp;  This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the <a href="http://www.dreamingthepyramid.net/TNR-home.html">Tamriel NPCs Revamped mods</a>), and add it to the patch, merging it over any changes to those same NPCs from other mods.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configuration</b></p>
-  <p class="list-2">&bull;&nbsp;  Source mods are automatically recognized if their mod name starts with <b>TNR </b> or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> <a href="#BashTags">tag</a> in the mod description.</p>
+  <p class="list-2">&bull;&nbsp;  Source mods are automatically recognized if their mod name starts with <b>TNR </b> or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> or <code>Npc.EyesOnly</code> or <code>Npc.HairOnly</code><a href="#BashTags">tag</a> in the mod description.</p>
   <p class="list-2">&bull;&nbsp;  Note that since there is a now a <a href="http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip">TNR All Races</a> mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.</p>
   <p class="list-2">&bull;&nbsp;  If tagged with NpcFaces only changed face subrecords will be imported into the patch; this will get changes from more esps at once - like hair from mod 1 and facial changes from mod 2 however depending on the exact changes the results may not <b>look</b> good though.</p>
+  <p class="list-2">&bull;&nbsp;  If tagged with Npc.EyesOnly will import only eye changes. (Can be used with Npc.HairOnly if desired).</p>
+  <p class="list-2">&bull;&nbsp;  If tagged with Npc.HairOnly will import only hair changes. (Can be used with Npc.EyesOnly if desired).</p>
   <p class="list-2">&bull;&nbsp;  If tagged with NpcFacesForceFullImport all the npc facial subrecords will be imported whether they are changed or not.</p>
 <p class="list-1">&bull;&nbsp;  <b>Source Mods</b></p>
   <p class="list-2">&bull;&nbsp;  Since TNR contains <i>only</i> face patches, and since the faces are entirely copied to the patch file, you can unload the source TNR mods &#150; but <i>do</i> keep them in your data directory, since Bash will need to find them when updating the patch.</p>
@@ -1950,7 +1957,15 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Max NPC Summons:</b> Sets the number of summons a NPC may have active at one time.</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Max Player Summons:</b> Sets the number of summons the player may have active at one time. Normally less than Max NPC Summons.</p>
 <p class="list-1">&bull;&nbsp;  <b>Master of Mercantile Extra Gold Amount:</b> The extra barter gold all vendor's have for a master of mercantile.</p>
-<p class="list-1">&bull;&nbsp;  <b>Msg: Equip Misc. Item:</b> sets the message on equipping a misc item to blank or either "." or "Hmm..."</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Auto Saving:</b> sets the message on autosaving to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Equip Misc. Item:</b> sets the message on equipping a misc item to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Harvest Failure:</b> sets the message on flora harvest failure to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Harvest Success:</b> sets the message on flora harvest success to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Horse Stabled:</b> sets the message on stabling a horse on fast travel to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Loading Area:</b> sets the message when background loading area to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: No Fast Travel:</b> sets the message when attempting to fast travel when it is prohibited to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Not Enough Charge:</b> sets the message on attempting to use an enchanted item with insufficient charge to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Quick Load:</b> sets the message on quick loading to blank or either "." or "Hmm..." or a custom value entered by user.</p>
 <p class="list-1">&bull;&nbsp;  <b>Training Max:</b> Sets the training limit per level allowed by trainers.</p>
 <p class="list-1">&bull;&nbsp;  <b>UOP Vampire Aging and Face Fix.esp:</b> Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging &amp; Face Fix.esp' to save an esp slot.</p>
 <p class="list-1">&bull;&nbsp;  <b>Warning: Exterior Distance to Hostiles:</b> For Exteriors: sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc.</p>
@@ -2518,16 +2533,19 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  If you have <i>not</i> done that, then you'll need to:</p>
   <p class="list-2">&bull;&nbsp;  Reinstall Oblivion</p>
   <p class="list-2">&bull;&nbsp;  Update it using the Oblivion 1.1 patch</p>
-  <p class="list-2">&bull;&nbsp;  Copy Oblivion.esm to Oblivion_1.1.esm</p>
+  <p class="list-2">&bull;&nbsp;  Copy Oblivion.esm to one of the following:</p>
+    <p class="list-3">&bull;&nbsp;  if 247388848 bytes to 'Oblivion_1.1.esm' (most common)</p>
+    <p class="list-3">&bull;&nbsp;  or if 247388812 bytes to 'Oblivion_GOTY non-SI.esm' (GOTY version)</p>
+    <p class="list-3">&bull;&nbsp;  or if 247388894 bytes to 'Oblivion_1.1b.esm' (an uncommon variant)</p>
   <p class="list-2">&bull;&nbsp;  Reinstall Shivering Isles.</p>
 <p class="list-1">&bull;&nbsp;  If you have not yet installed Shivering Isles, then great! All you have to do is the last two steps above.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='VersionIndicators'>Version Indicators</a></h3>
 <p>Bash now indicates the current version of Oblivion.esm in several places...
 </p>
-<p class="list-1">&bull;&nbsp;  Mods tab: You'll see either a [1.1] or an [SI] after Oblivion.esm listing.</p>
-<p class="list-1">&bull;&nbsp;  Masters tab: For both mods and savegames, you'll again see [1.1] or [SI] appended to Oblivion.esm. Note that this <i><b>does not</b></i> indicate the version used when the mod was built or the savegame was saved. Rather it just indicates the version of the currently loaded Oblivion.esm.</p>
-<p class="list-1">&bull;&nbsp;  The title of the main Bash window. You'll see either [1.1] or [SI] at the end of the title.</p>
+<p class="list-1">&bull;&nbsp;  Mods tab: You'll see either [1.1] or [GOTY non-SI] or [SI] after Oblivion.esm listing.</p>
+<p class="list-1">&bull;&nbsp;  Masters tab: For both mods and savegames, you'll again see [1.1] or [GOTY non-SI] or [SI] appended to Oblivion.esm. Note that this <i><b>does not</b></i> indicate the version used when the mod was built or the savegame was saved. Rather it just indicates the version of the currently loaded Oblivion.esm.</p>
+<p class="list-1">&bull;&nbsp;  The title of the main Bash window. You'll see either [1.1] or [GOTY non-SI] or [SI] at the end of the title.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='ModTabSwapping'>Mod Tab Swapping</a></h3>
 <p class="list-1">&bull;&nbsp;  Two swap versions on the mod tab, right click anywhere on the column header and got to the Oblivion.esm <b>menu item</b>. The currently available and selected versions will pop up in a submenu where you can select them.</p>
@@ -2570,23 +2588,71 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> &#150; this is the name of the Mods tab. And right under it is the name of the Saves tab.</p>
   <p class="list-2">&bull;&nbsp;  To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.</p>
   <p class="list-2">&bull;&nbsp;  Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)</p>
-  <p class="list-2">&bull;&nbsp;  Spell checking: If you're using an office suite, you might want turn on dictionaries for both English and your language &#150; Abot mentions that Open Office allows you to do this.</p>
+  <p class="list-2">&bull;&nbsp;  Spell checking: If you're using an office suite, you might want to turn on dictionaries for both English and your language &#150; Abot mentions that Open Office allows you to do this.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='Versions'>Versions</a></h2>
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_29412122011PacificMorrowindvaldaLojack'>294 [12/12/2011] [PacificMorrowind,valda,Lojack]</a></h3>
-<p class="list-1">&bull;&nbsp;  Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.</p>
+<h3><a id='_29412122011PacificMorrowindMetallicowvaldaLojackmyk002'>294 [12/12/2011] [PacificMorrowind,Metallicow,valda,Lojack,myk002]</a></h3>
+<p class="list-1">&bull;&nbsp;  Program-wide Changes:</p>
+  <p class="list-2">&bull;&nbsp;  Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.</p>
+  <p class="list-2">&bull;&nbsp;  If manually updating, please delete the old Mopy directory before copying the new one in to get rid of the old files</p>
+  <p class="list-2">&bull;&nbsp;  Your configuration will get converted to a new format on first load which will not be readable by older versions of Wrye Bash, so be sure to back up your settings when you upgrade so they will be available if you ever need to downgrade again</p>
+  <p class="list-2">&bull;&nbsp;  Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.</p>
+  <p class="list-2">&bull;&nbsp;  Installer checks Python 2.7x first and foremost and if no python versions detected provides links/downloads python 2.7.2 and compatible extensions.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
+  <p class="list-2">&bull;&nbsp;  Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)</p>
+  <p class="list-2">&bull;&nbsp;  All multitweakers with choices now autoselect the default value if not user selected.</p>
+  <p class="list-2">&bull;&nbsp;  Race Patcher: </p>
+    <p class="list-3">&bull;&nbsp;  Added Npc.HairOnly, Npc.EyesOnly tags</p>
+    <p class="list-3">&bull;&nbsp;  Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).</p>
+  <p class="list-2">&bull;&nbsp;  Fixed revert to saved configs (CBash).</p>
+  <p class="list-2">&bull;&nbsp;  All multitweakers modified to accept custom arguments (if not a on or off type thing).</p>
+  <p class="list-2">&bull;&nbsp;  Tweak settings Patcher:</p>
+    <p class="list-3">&bull;&nbsp;  Added a whole bunch of tweaks:</p>
+      <p class="list-4">&bull;&nbsp;  Drag: Max Moveable Weight tweak.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Auto Saving.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Harvest Failure.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Harvest Success.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Horse Stabled.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Loading Area.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: No Fast Travel.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Not Enough Charge.</p>
+      <p class="list-4">&bull;&nbsp;  Msg: Quick Load.</p>
+    <p class="list-3">&bull;&nbsp;  Typo fix for the custom option of Compass: POI Recognition.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed Harvest Chance tweaker adjusts nirnroots when it shouldn't (since they are a quest plant).</p>
+  <p class="list-2">&bull;&nbsp;  Fixed Factions, AI, Global, and GMST patchers not ignoring unchanged records</p>
+  <p class="list-2">&bull;&nbsp;  Fixed Actors.ACBS merging flags when it shouldn't be</p>
+  <p class="list-2">&bull;&nbsp;  Fixed CBash patcher not cleaning unused masters</p>
+  <p class="list-2">&bull;&nbsp;  CBash no longer gives GMSTs and MGEFs new FormIDs</p>
 <p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
   <p class="list-2">&bull;&nbsp;  More bugfixes from valda</p>
-<p class="list-1">&bull;&nbsp;  Bugs fixed (General):</p>
-  <p class="list-2">&bull;&nbsp;  Fixed corrupted size saved when maximizing a Wizard.</p>
-<p class="list-1">&bull;&nbsp;  <a href="#Custombuttons">Custom launcher buttons</a> are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.</p>
+  <p class="list-2">&bull;&nbsp;  Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.</p>
 <p class="list-1">&bull;&nbsp;  <a href="#SavesTab">Saves Tab</a>:</p>
   <p class="list-2">&bull;&nbsp;  Added ability to export screenshot from savegame.</p>
-<p class="list-1">&bull;&nbsp;  Improved detection of applications for the status bar launcher buttons.</p>
-<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
+  <p class="list-2">&bull;&nbsp;  List Esp/ms command added to esp/m pane r-click menu.</p>
+  <p class="list-2">&bull;&nbsp;  Open at Google regex improved so better automatic search terms.</p>
+  <p class="list-2">&bull;&nbsp;  New <a href="#PackageHeaderCommands">Uninstall All</a> command. </p>
+  <p class="list-2">&bull;&nbsp;  New <a href="#PackageHeaderCommands">Clean Data</a> command</p>
+  <p class="list-2">&bull;&nbsp;  Fixed markers disappearing on edit</p>
+  <p class="list-2">&bull;&nbsp;  Fixed a processing error when subpackages have ampersands in their names</p>
+<p class="list-1">&bull;&nbsp;  Bugs fixed (General):</p>
+  <p class="list-2">&bull;&nbsp;  Fixed corrupted size saved when maximizing a Wizard.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).</p>
+  <p class="list-2">&bull;&nbsp;  Export Stats (CBash)</p>
+  <p class="list-2">&bull;&nbsp;  Fixed compatiblity with BOSS 1.8</p>
+<p class="list-1">&bull;&nbsp;  Enhancements/New Features (General):</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#Custombuttons">Custom launcher buttons</a> are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.</p>
+  <p class="list-2">&bull;&nbsp;  Calling external programs that require administrator privileges is now supported</p>
+  <p class="list-2">&bull;&nbsp;  Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.</p>
+  <p class="list-2">&bull;&nbsp;  Added the GOTY version of the non-SI esm and an altertate 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).</p>
+  <p class="list-2">&bull;&nbsp;  New mod->Export Cell Blocks Info command</p>
+  <p class="list-2">&bull;&nbsp;  New start menu icon</p>
+  <p class="list-2">&bull;&nbsp;  OBSE is now enabled by default if detected</p>
+  <p class="empty">&nbsp;</p>
 <h3><a id='_2932762011PacificMorrowindLojackmyk002valdarev1280'>293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]</a></h3>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
   <p class="list-2">&bull;&nbsp;  Bugs fixed (CBash):</p>
@@ -2761,7 +2827,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)</p>
     <p class="list-3">&bull;&nbsp;  TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)</p>
   <p class="list-2">&bull;&nbsp;  Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).</p>
-<p class="list-1">&bull;&nbsp;  BAIN:</p>
+<p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
   <p class="list-2">&bull;&nbsp;  fix so that the end of the display of the number of packages does not get cut off.</p>
   <p class="list-2">&bull;&nbsp;  Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).</p>
   <p class="list-2">&bull;&nbsp;  Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).</p>
