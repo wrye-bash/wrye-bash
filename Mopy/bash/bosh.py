@@ -33061,8 +33061,9 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         racesFiltered.append(race.eid)
 
                     #--Sort Eyes/Hair
+                    oldHairs = race.hairs
+                    currentHairs = oldHairs
                     if recordId in playableRaces:
-                        oldHairs = race.hairs
                         currentHairs = sorted(oldHairs,key=lambda x: hairNames.get(x))
                         if currentHairs != oldHairs:
                             racesSorted.add(race.eid)
