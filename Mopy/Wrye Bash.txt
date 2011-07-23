@@ -1709,7 +1709,15 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Magic: Max NPC Summons:__ Sets the number of summons a NPC may have active at one time.
 * __Magic: Max Player Summons:__ Sets the number of summons the player may have active at one time. Normally less than Max NPC Summons.
 * __Master of Mercantile Extra Gold Amount:__ The extra barter gold all vendor's have for a master of mercantile.
-* __Msg: Equip Misc. Item:__ sets the message on equipping a misc item to blank or either "." or "Hmm..."
+* __Msg: Auto Saving:__ sets the message on autosaving to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Equip Misc. Item:__ sets the message on equipping a misc item to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Harvest Failure:__ sets the message on flora harvest failure to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Harvest Success:__ sets the message on flora harvest success to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Horse Stabled:__ sets the message on stabling a horse on fast travel to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Loading Area:__ sets the message when background loading area to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: No Fast Travel:__ sets the message when attempting to fast travel when it is prohibited to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Not Enough Charge:__ sets the message on attempting to use an enchanted item with insufficient charge to blank or either "." or "Hmm..." or a custom value entered by user.
+* __Msg: Quick Load:__ sets the message on quick loading to blank or either "." or "Hmm..." or a custom value entered by user.
 * __Training Max:__ Sets the training limit per level allowed by trainers.
 * __UOP Vampire Aging and Face Fix.esp:__ Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging &amp; Face Fix.esp' to save an esp slot.
 * __Warning: Exterior Distance to Hostiles:__ For Exteriors: sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc.
@@ -2316,8 +2324,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Added Npc.HairOnly, Npc.EyesOnly tags
     * Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
   * Fixed revert to saved configs (CBash).
+  * All multitweakers modified to accept custom arguments (if not a on or off type thing).
   * Tweak settings Patcher:
-    * Added Drag: Max Moveable Weight tweak.
+    * Added a whole bunch of tweaks:
+      * Drag: Max Moveable Weight tweak.
+      * Msg: Auto Saving.
+      * Msg: Harvest Failure.
+      * Msg: Harvest Success.
+      * Msg: Horse Stabled.
+      * Msg: Loading Area.
+      * Msg: No Fast Travel.
+      * Msg: Not Enough Charge.
+      * Msg: Quick Load.
     * Typo fix for the custom option of Compass: POI Recognition 
     * Fixed Identical GMST records are not skipped by Python patcher.
   * Fixed Identical Global records are not skipped by Python Tweak Globals patcher
