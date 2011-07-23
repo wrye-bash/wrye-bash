@@ -159,6 +159,7 @@ settingDefaults = {
     'bash.colNames': {
         'Author': _('Author'),
         'Cell': _('Cell'),
+        'CRC':_('CRC'),
         'Current Order': _('Current LO'),
         'Date': _('Date'),
         'Day': _('Day'),
@@ -261,7 +262,7 @@ settingDefaults = {
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
     #--Wrye Bash: Mods
-    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author'],
+    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'File',
@@ -275,6 +276,7 @@ settingDefaults = {
         'Modified':150,
         'Rating':20,
         'Size':75,
+        'CRC':100,
         },
     'bash.mods.colAligns': {
         'Size':1,
@@ -1570,6 +1572,8 @@ class ModList(List):
                     value = '%02X' % (list(ordered).index(fileName),)
                 else:
                     value = ''
+            elif col == 'CRC':
+                value = '%08X' % fileInfo.cachedCrc()
             else:
                 value = '-'
             #--Insert/SetString
