@@ -9066,7 +9066,7 @@ class ModInfos(FileInfos):
                 log(header)
                 header = None
             if version:
-                log(_('%s  %s  [Version %s]') % (prefix,name.s,version))
+                log(_('%s  %s  [Version %s] [CRC: %08X]') % (prefix,name.s,version,self[name].cachedCrc()))
             else:
                 log('%s  %s' % (prefix,name.s))
             if name in masters:
