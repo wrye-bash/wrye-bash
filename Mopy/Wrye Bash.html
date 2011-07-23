@@ -3,7 +3,7 @@
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <title>Wrye Bash</title>
+    <title>Wrye Bash How To's and FAQs</title>
     <style type="text/css">
     h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
     h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
@@ -27,7 +27,7 @@
     </style>
     </head>
     <body>
-    <h1><a id='WryeBash'>Wrye Bash</a></h1>
+    ï»¿= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <p><a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 </p>
@@ -367,9 +367,13 @@
 <p class="list-1">&bull;&nbsp;  <b>Generating the Bugdump</b></p>
   <p class="list-2">&bull;&nbsp;  Open a command shell (Start: Programs: Accessories: Command Prompt).</p>
   <p class="list-2">&bull;&nbsp;  <b>chdir</b> to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code></p>
-  <p class="list-2">&bull;&nbsp;  <b>Type:</b> <code>c:\python27\python.exe bash.py -d</code></p>
-    <p class="list-3">&bull;&nbsp;  If you have a different version/location of python, adapt the first argument accordingly.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Type:</b> <code>"Wrye Bash Debug.py" -d</code></p>
+    <p class="list-3">&bull;&nbsp;  This requires that the file associations for .pyw files is set in windows.  If it is not, you can try the old way:</p>
+    <p class="list-3">&nbsp;&nbsp;  <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code></p>
+    <p class="list-3">&nbsp;&nbsp;  Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe</p>
   <p class="list-2">&bull;&nbsp;  Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.</p>
+  <p class="list-2">&bull;&nbsp;  If there is too much text printed to the console, you can direct it to a text file like this:</p>
+  <p class="list-2">&nbsp;&nbsp;  <code>"Wrye Bash Debug.py" -d > bugdump.txt</code></p>
 <p class="list-1">&bull;&nbsp;  <b>Dealing with Bugdump</b></p>
   <p class="list-2">&bull;&nbsp;  First, <i><b>look at it!</b></i> &#150; especially the last several lines &#150; this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own.</p>
   <p class="list-2">&bull;&nbsp;  Second, see following section for common problems and their solution.</p>
@@ -403,7 +407,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Components:</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Python 2.7</b></p>
     <p class="list-3">&bull;&nbsp;  This is the main install for <a href="http://www.python.org/">Python</a>. It provides the base interpreter/compiler and the basic libraries.</p>
-    <p class="list-3">&bull;&nbsp;  Download link: <b>Python [ <a href="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi">Python 2.7.1</a> ]</b></p>
+    <p class="list-3">&bull;&nbsp;  Download link: <b>Python [ <a href="http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi">Python 2.7.2</a> ]</b></p>
   <p class="list-2">&bull;&nbsp;  <b>wxPython 2.8.12.0 ANSI</b></p>
     <p class="list-3">&bull;&nbsp;  Python supports several different GUI libraries. Wrye Bash uses <a href="http://www.wxpython.org/">wxPython</a>.</p>
     <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe">wxPython 2.8.12.0 ansi for Python 2.7</a> ]</b></p>
@@ -697,7 +701,7 @@
 <p>Bain recognizes three package structures:
 </p>
 <p class="list-1">&bull;&nbsp;  <b>Simple</b></p>
-  <p class="list-2">&bull;&nbsp;  If the package has esps, esms or bsas at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejón, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.</p>
+  <p class="list-2">&bull;&nbsp;  If the package has esps, esms or bsas at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejÃ³n, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.</p>
 <p class="list-1">&bull;&nbsp;  <b>Complex</b></p>
   <p class="list-2">&bull;&nbsp;  If a package is not simple, but has subdirectories which appear simple (have esps/esms/bsas and/or have standard sub-directories), then it will be categorized as complex.</p>
   <p class="list-2">&bull;&nbsp;  In this case, each top level subdirectory (that appears simple), will be treated as a sub-package, and you'll be able to activate or deactivate it as desired before installing.</p>
@@ -714,7 +718,7 @@
   <p class="list-2">&bull;&nbsp;  This is for modders who want to keep files related to the project in the project directory, but not have it be considered for syncing with is useful for project directories and files for modders</p>
   <p class="list-2">&bull;&nbsp;  It's also useful for including material in a package archive that is there for background info, but should not be installed. E.g. screenshots, copies of resource readmes, etc.</p>
 <p class="list-1">&bull;&nbsp;  <b>Directory Skipping</b></p>
-<p class="list-1">&nbsp;&nbsp;  Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejón' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.</p>
+<p class="list-1">&nbsp;&nbsp;  Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejÃ³n' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.</p>
 <p class="list-1">&bull;&nbsp;  <b>Extension Skipping</b></p>
 <p class="list-1">&nbsp;&nbsp;  Bain will skip files with certain extensions - mostly executables (exe, dll/dlx (unless in the OBSE/plugins directory and then only with a large warning)) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Other Skips</b></p>
@@ -2792,7 +2796,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini</p>
   <p class="list-2">&bull;&nbsp;  In cases where the <b>bUseMyGameDirectory</b> is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.</p>
   <p class="list-2">&bull;&nbsp;  Unicode improvements: (all only applicable in unicode mode)</p>
-    <p class="list-3">&bull;&nbsp;  Fixed viewing/saving modfiles with tejón and other non-ascii author names.</p>
+    <p class="list-3">&bull;&nbsp;  Fixed viewing/saving modfiles with tejÃ³n and other non-ascii author names.</p>
     <p class="list-3">&bull;&nbsp;  Fixed project view/scanning for projects containing non-ascii filenames.</p>
     <p class="list-3">&bull;&nbsp;  Fixed project->archive packaging for projects that contain files with non-ascii names.</p>
     <p class="list-3">&bull;&nbsp;  Warning added if using Unicode Wrye Bash but using non-unicode wxPython.</p>
