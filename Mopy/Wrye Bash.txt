@@ -155,9 +155,13 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * __Generating the Bugdump__
   * Open a command shell (Start: Programs: Accessories: Command Prompt).
   * __chdir__ to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
-  * __Type:__ <code>c:\python27\python.exe bash.py -d</code>
-    * If you have a different version/location of python, adapt the first argument accordingly.
+  * __Type:__ <code>"Wrye Bash Debug.py" -d</code>
+    * This requires that the file associations for .pyw files is set in windows.  If it is not, you can try the old way:
+    . <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>
+    . Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe
   * Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.
+  * If there is too much text printed to the console, you can direct it to a text file like this:
+  . <code>"Wrye Bash Debug.py" -d > bugdump.txt</code>
 * __Dealing with Bugdump__
   * First, **look at it!** -- especially the last several lines -- this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own.
   * Second, see following section for common problems and their solution.
@@ -191,7 +195,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * __Components:__
   * __Python 2.7__
     * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries.
-    * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi|Python 2.7.1]] ]__
+    * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi|Python 2.7.2]] ]__
   * __wxPython 2.8.12.0 ANSI__
     * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
     * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe|wxPython 2.8.12.0 ansi for Python 2.7]] ]__
