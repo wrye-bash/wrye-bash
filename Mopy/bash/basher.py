@@ -11409,7 +11409,7 @@ class Mod_Patch_Update(Link):
         """Append link to a menu."""
         Link.AppendToMenu(self,menu,window,data)
         if self.doCBash:
-            title = _('Rebuild Patch (CBash)...')
+            title = _('Rebuild Patch (CBash *BETA*)...')
         else:
             title = _('Rebuild Patch...')
         enable = (len(self.data) == 1 and
@@ -11436,7 +11436,11 @@ class Mod_Patch_Update(Link):
             balt.showWarning(self.window,_("That which does not exist cannot be patched.\nLoad some mods and try again."),_("Existential Error"))
             return
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
-        if self.CBashMismatch:
+        if self.doCBash and not balt.askContinue(self.window,
+            _("Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function."),
+            'bash.patch.ReallyUseCBash.294'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
+            return
+        if self.CBashMismatch: 
             if not balt.askContinue(self.window,
                     _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
                         % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),
