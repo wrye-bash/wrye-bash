@@ -27020,7 +27020,7 @@ class GmstTweak(MultiTweakItem):
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if value < 0:
-                deprint("GMST float value can't be a negative number - currently %f - skipping setting GMST." % newValue)
+                deprint("GMST float value can't be a negative number - currently %f - skipping setting GMST." % value)
                 return
             for record in patchFile.GMST.records:
                 if record.eid.lower() == eid.lower():
