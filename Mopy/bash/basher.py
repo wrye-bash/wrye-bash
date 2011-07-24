@@ -6596,16 +6596,23 @@ class TweakPatcher(Patcher):
             subtweaktype = type(v)
             if subtweaktype == float: 
                 label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
-                value.append(float(balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000) or 0)/10)
+                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                if new == None: #user hit cancel
+                    return    
+                value.append(float(new)/10)
             elif subtweaktype == int: 
                 label = _('Enter the desired custom tweak value.')
-                value.append(balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000) or 0)
+                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                if new == None: #user hit cancel
+                    return
+                value.append(new)
             elif subtweaktype in (str,unicode):
                 label = _('Enter the desired custom tweak text.')
-                value.append(balt.askText(self.gConfigPanel,label,title=_('Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i]))
-       
+                new = balt.askText(self.gConfigPanel,label,title=_('Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i])
+                if new == None: #user hit cancel
+                    return
+                value.append(new)
         if not value: value = tweak.choiceValues[index]
-        #if tweak.float: value = float(value) / 10
         tweak.choiceValues[index] = tuple(value)
         if isinstance(tweak.choiceValues[index][0],(str,unicode)):
             menulabel = tweak.getListLabel() + ' %s' % tweak.choiceValues[index][0]
