@@ -31,7 +31,7 @@ CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp
 [*]If you're using the Standalone version, which has the Python dependencies embedded, the only thing you need to install is the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url].
 [*]If you are using the Installer or manual version, it's easiest just to install the WryePython04a package: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url].  However, if you want or need to do things manually:[spoiler][list]
   [*]Included in Wrye Python 04a:[list]
-    [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
+    [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url] (Python 2.7.2 is fine as well, it's just not in Wrye Python yet)
     [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe"]wxPython 2.8.12.0 ansi for Python 2.7[/url]
     [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
     [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Other setups _may_work_, but this is the only officially supported setup.
