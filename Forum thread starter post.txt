@@ -1,4 +1,4 @@
-﻿Continuing from the [topic=1207538]previous thread[/topic]...
+﻿Continuing from the [topic=1209199]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
@@ -12,7 +12,7 @@ CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp
 [*] in the future, more interesting kinds of tweaks will be practical to implement
 [/list]There are some technical differences from the python-based parser in how it makes the parsed data available, and this is why there are currently a few bugs. There's nothing wrong with CBash, per se, it's just that the merging and importing logic in python needs to be rethought in order to use the CBash framework.  [b]At this stage CBash is in BETA.[/b]
 
-[b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url]
+[b]Download[/b]: [url="http://tesnexus.com/downloads/file.php?id=22368"]TESNexus[/url] (mirrored at: [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url])
 
 [b]Documentation[/b]:
 [list]
@@ -27,16 +27,17 @@ CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp
   [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab.png"]Installers tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab_conflicts.png"]2[/url]
   [*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/mods_tab.png"]Mods tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/saves_tab.png"]Saves tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/ini_edits_tab.png"]INI Edits tab[/url] [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/screenshots_tab.png"]Screenshots tab[/url]
 [/list]
-[b]Requirements and Installation[/b]:[spoiler][list]
-[*] If you're using the Standalone version, which has the Python dependencies embedded, the only thing you need to install is the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url].
-[*] If you are using the Installer or manual version, it's easiest just to install the WryePython04a package: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url].  However, if you want or need to do things manually:[spoiler][list]
+[b]Requirements and Installation[/b]: Remember! In Windows Vista and up, don't install Oblivion in the Program Files folder due to UAC![spoiler][list]
+[*]If you're using the Standalone version, which has the Python dependencies embedded, the only thing you need to install is the [url=http://www.microsoft.com/downloads/en/confirmation.aspx?familyid=ba9257ca-337f-4b40-8c14-157cfdffee4e&displaylang=en"]MSVC++ 2008 Redistributable[/url].
+[*]If you are using the Installer or manual version, it's easiest just to install the WryePython04a package: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] | [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url].  However, if you want or need to do things manually:[spoiler][list]
   [*]Included in Wrye Python 04a:[list]
     [*][url="http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi"]Python 2.7.1[/url]
     [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe"]wxPython 2.8.12.0 ansi for Python 2.7[/url]
     [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2 for Python[/url]
     [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url][/list][*]Other setups _may_work_, but this is the only officially supported setup.
   [*]Python 3.x: [b][u]NOT Supported[/u][/b]
-[/list][/spoiler][/list]
+[/list][/spoiler]
+[*]Note that the 32-bit versions are required even if you are on a 64-bit operating system[/list]
 [list]
   [*]If you are installing for the first time, make sure you have installed [url=http://tesnexus.com/downloads/file.php?id=22368]WryePython04a[/url] (unless you plan on using the Standalone version).
   [*]Download and run the installer for the most recent release.  You can upgrade this way too.
@@ -44,7 +45,32 @@ CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp
   [*]For WBSA (Wrye Bash StandAlone) versions, no Python components are required, but remember it is a beta and there are currently issues (see the section under [b]Reporting Bugs[/b].)
 [/list][/spoiler]
 [b]Development[/b]:
-The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature? Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Found a bug?  Report it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901"]here[/url]!  Want to be in the know for bleeding-edge code?  Subscribe to the list  [url="https://lists.sourceforge.net/lists/listinfo/oblivionworks-committers"]here[/url]!  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, download the latest SVN [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=tar]here[/url]!  You don't need a SourceForge account to create or add data to bug reports and feature requests -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).
+The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature?  Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Found a bug?  Report it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901"]here[/url]!  You don't need a SourceForge account to create or add data to bug reports and feature requests -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
+[spoiler]
+Read all of this [b]before taking any action[/b] (what you do will depend upon which Wrye Bash you have (Standalone or Python) - the most important part being if you have Wrye Bash 293 Python version installed (or previous versions of Wrye Bash before 293), then see NB further down concerning the directory structure change)
+
+If going from Standalone version to Python version, you are going to need to install Wrye Python 04a (from TESNexus) (if you already have it installed, there is no need to install it again)
+
+The latest svn is always here >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/]Click and Bookmark it[/url]<< - Then just click "Download GNU Tarball" at the bottom.  Note: If you have been told to try a specific revision number instead of the latest, type the revision number in the sticky revision box and press return, the Download GNU Tarball will now grab that revision's set of files.
+
+Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/?view=log]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong ...
+
+[color="#FF8C00"]NB[/color] - For people using 293 Python version (or an earlier version of Wrye Bash) installed (including Standalone users who have just installed 293 Python version), there is one further step you need to take BEFORE copying Mopy\ and Data\ from the svn into Oblivion\ (see screenshot 4 and a Half below) .... The svn has a new directory structure since the release of 293 Python version - delete your existing Mopy\ folder in ~path to game installation~\Oblivion\, then copy the new svn Data\ and Mopy\ folders into ~path to game installation~\Oblivion\.  Once you have changed to the svn, you can just copy Mopy\ and Data\ from newer revisions of the svn and overwrite the previous revision you had, saying yes to all (currently this procedure should overwrite 491 files).
+
+[color="#FF8C00"]A screenshot walkthrough:[/color]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg]Screenshot 1[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg]Screenshot 2[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg]Screenshot 3[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg]Screenshot 4[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.5.jpg]Screenshot 4 (and a Half)[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5.jpg]Screenshot 5[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg]Screenshot 6[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg]Screenshot 7[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8.jpg]Screenshot 8[/url]
+
+Rinse and repeat when a new svn comes out (minus Screenshot 4 and a Half).
+
+[color="#FF8C00"]Beware:[/color] Its a good idea to rename and keep the tarball (the one I downloaded above immediately got renamed svn 1405). Keep a few weeks worth of them, so if there is a problem found later with a particular set of committed files in the Tarball you can go back to a last known good revision, extract it and copy over mopy\ and data\ as usual - Putting you back to a working copy of Wrye Bash, there's no need to go back this far but note svn revision 1309 was the directory structure change. Keep an eye on these Wrye Bash threads for developments.[/spoiler]
 
 [b]Reporting Bugs[/b]: Try to give us enough information to diagnose your problem.  The following is useful information for us:[spoiler][list]
 [*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpful), what you expected, and what happened.
