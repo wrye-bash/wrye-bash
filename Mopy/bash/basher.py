@@ -6595,20 +6595,20 @@ class TweakPatcher(Patcher):
         for i, v in enumerate(tweak.choiceValues[index]):
             subtweaktype = type(v)
             if subtweaktype == float: 
-                label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
-                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.\n%s') % (tweak.key[i]) 
+                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('%s ~ Custom Tweak Value') % (tweak.label),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return    
                 value.append(float(new)/10)
             elif subtweaktype == int: 
-                label = _('Enter the desired custom tweak value.')
-                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                label = _('Enter the desired custom tweak value.\n%s') % (tweak.key[i]) 
+                new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('%s ~ Custom Tweak Value') % (tweak.label),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(new)
             elif subtweaktype in (str,unicode):
-                label = _('Enter the desired custom tweak text.')
-                new = balt.askText(self.gConfigPanel,label,title=_('Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i])
+                label = _('Enter the desired custom tweak text.\n%s') % (tweak.key[i]) 
+                new = balt.askText(self.gConfigPanel,label,title=_('%s ~ Custom Tweak Text') % (tweak.label),default=self.tweaks[tweakIndex].choiceValues[index][i])
                 if new == None: #user hit cancel
                     return
                 value.append(new)
