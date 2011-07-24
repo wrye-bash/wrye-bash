@@ -6590,7 +6590,6 @@ class TweakPatcher(Patcher):
         tweakIndex = self.rightClickTweakIndex
         index = event.GetId()
         tweak = self.tweaks[tweakIndex]
-        tweak.chosen = index
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
             subtweaktype = type(v)
@@ -6618,6 +6617,7 @@ class TweakPatcher(Patcher):
             menulabel = tweak.getListLabel() + ' %s' % tweak.choiceValues[index][0]
         else:
             menulabel = tweak.getListLabel() + ' %4.2f ' % tweak.choiceValues[index][0]
+        tweak.chosen = index
         self.gList.SetString(tweakIndex,(menulabel))
 
 # Patchers 10 ------------------------------------------------------------------
