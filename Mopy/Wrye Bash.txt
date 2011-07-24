@@ -502,6 +502,18 @@ Bain will skip over (never install) certain types of files in the package.
 * __Other Skips__
 . There are a few options in package/header menus to skip certain file types; voices, distandLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
 
+=== OBSE Plugin Installation
+Due to the (theoretical but potentially significant) dangers of installing executable files the only type that can be installed are OBSE plugin dll/x files. 
+* __Enabling OBSE dll/x plugin installation__
+  * Format archive with OBSE dlls so that the dll(s) are located in <optional subpackage>\obse\plugins\ or a subfolder therein.
+  * In BAIN deselect __Skip OBSE Plugins__ in the package header menu.
+  * Select install on the package and confirm or block each dll/x - you only have to do it once per dll/version.
+* __Saving/Editing allowed/disallowed OBSE plugin dlls list__
+  * BAIN stores a list of allowed/disallowed OBSE plugin dlls internally, however if desired you can export, manually edit and import or import to a different copy of Wrye Bash if you desire.
+  * To Export: select __Export list of allowed/disallowed OBSE plugin dlls__ from the header menu->setting submenu and save somewhere you will be able to find it later.
+  * To edit: just edit that txt file as desired (In case you want to change your mind, accidentally clicked no/yes or just for the fun of it).
+  * To Import: select __Import list of allowed/disallowed OBSE plugin dlls__ from the header menu->setting submenu and select a previously exported allowed/disallowed OBSE plugin dlls list.
+
 === Doc File Sweeping
 In order to prevent clutter and centralize doc file storage, Bain will sweep files that appear to be doc files into Oblivion\Data\Docs. Also, files named simply readme.txt (or readme.doc, etc.) will be renamed according to the package name before being swept into the Docs directory.
 
@@ -1561,7 +1573,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Mayu's Animation Overhaul Skeleton Tweaker__
   * Sets NPC skeletons paths to match that required for MAO to work. REQUIRES Mayu's Animation Overhaul or it will almost certainly cause CTDs.
 * __No Bloody Creatures__
-  * Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal.
+  * Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except universal and doesn't work with MMM (MMM uses a different system - won't cause any harm if used with MMM just will have pretty much no effect).
 * __Quiet Feet__
   * Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.
 * __Real Walk for female NPCs__
