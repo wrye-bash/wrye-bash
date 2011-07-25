@@ -12799,7 +12799,7 @@ class ActorFactions:
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')))
+        out.write(Encode(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')),'mbcs'))
         for type in sorted(type_id_factions):
             id_factions = type_id_factions[type]
             for id in sorted(id_factions,key = lambda x: id_eid.get(x)):
@@ -12917,7 +12917,7 @@ class CBash_ActorFactions:
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')))
+        out.write(Encode(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')), 'mbcs'))
         for group in sorted(group_fid_factions):
             fid_factions = group_fid_factions[group]
             for fid in sorted(fid_factions,key = lambda x: fid_eid.get(x)):
@@ -13028,7 +13028,7 @@ class ActorLevels:
         extendedRowFormat = ',"%d","%d","%d","%d"\n'
         blankExtendedRow = ',,,,\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Source Mod'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Offset'),_('CalcMin'),_('CalcMax'),_('Old IsPCLevelOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax')))
+        out.write(Encode(headFormat % (_('Source Mod'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Offset'),_('CalcMin'),_('CalcMax'),_('Old IsPCLevelOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax')),'mbcs'))
         #Sorted based on mod, then editor ID
         obId_levels = mod_id_levels[GPath('Oblivion.esm')]
         for mod in sorted(mod_id_levels):
@@ -13144,7 +13144,7 @@ class CBash_ActorLevels:
         extendedRowFormat = ',"%d","%d","%d","%d"\n'
         blankExtendedRow = ',,,,\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Source Mod'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Offset'),_('CalcMin'),_('CalcMax'),_('Old IsPCLevelOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax')))
+        out.write(Encode(headFormat % (_('Source Mod'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Offset'),_('CalcMin'),_('CalcMax'),_('Old IsPCLevelOffset'),_('Old Offset'),_('Old CalcMin'),_('Old CalcMax')),'mbcs'))
         #Sorted based on mod, then editor ID
         obfid_levels = mod_fid_levels[GPath('Oblivion.esm')]
         for mod in sorted(mod_fid_levels):
@@ -13292,7 +13292,7 @@ class EditorIds:
         headFormat = '"%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')))
+        out.write(Encode(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')),'mbcs'))
         for type in sorted(type_id_eid):
             id_eid = type_id_eid[type]
             for id in sorted(id_eid,key = lambda a: id_eid[a]):
@@ -13428,7 +13428,7 @@ class CBash_EditorIds:
         headFormat = '"%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')))
+        out.write(Encode(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')),'mbcs'))
         for group in sorted(group_fid_eid):
             fid_eid = group_fid_eid[group]
             for fid in sorted(fid_eid,key = lambda a: fid_eid[a]):
@@ -13540,7 +13540,7 @@ class FactionRelations:
         headFormat = '%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')))
+        out.write(Encode(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')),'mbcs'))
         for main in sorted(id_relations,key = lambda x: id_eid.get(x)):
             mainEid = id_eid.get(main,'Unknown')
             for other, disp in sorted(id_relations[main],key=lambda x: id_eid.get(x[0])):
@@ -13649,7 +13649,7 @@ class CBash_FactionRelations:
         headFormat = '"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')))
+        out.write(Encode(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')),'mbcs'))
         for main in sorted(fid_faction_mod,key = lambda x: fid_eid.get(x)):
             mainEid = fid_eid.get(main,'Unknown')
             faction_mod = fid_faction_mod[main]
@@ -13877,7 +13877,7 @@ class FullNames:
         headFormat = '"%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')))
+        out.write(Encode(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')), 'mbcs'))
         for type in sorted(type_id_name):
             id_name = type_id_name[type]
             longids = id_name.keys()
@@ -13885,7 +13885,7 @@ class FullNames:
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,name = id_name[longid]
-                out.write(rowFormat % (type,longid[0].s,longid[1],eid,name.replace('"', '""')))
+                out.write(rowFormat % (type,Encode(longid[0].s,'mbcs'),longid[1],eid,name.replace('"', '""')))
         out.close()
 
 class CBash_FullNames:
@@ -13977,7 +13977,7 @@ class CBash_FullNames:
         headFormat = '"%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')))
+        out.write(Encode(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name')), 'mbcs'))
         for group in sorted(group_fid_name):
             fid_name = group_fid_name[group]
             longids = fid_name.keys()
@@ -13985,7 +13985,7 @@ class CBash_FullNames:
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,name = fid_name[longid]
-                out.write(rowFormat % (group,longid[0].s,longid[1],eid,name.replace('"', '""')))
+                out.write(rowFormat % (group,Encode(longid[0].s,'mbcs'),longid[1],eid,name.replace('"', '""')))
         out.close()
 
 #------------------------------------------------------------------------------
@@ -14115,7 +14115,7 @@ class CBash_MapMarkers:
         headFormat = '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name'),_('Type'),_('IsVisible'),_('IsCanTravelTo'),_('posX'),_('posY'),_('posZ'),_('rotX'),_('rotY'),_('rotZ')))
+        out.write(Encode(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),_('Name'),_('Type'),_('IsVisible'),_('IsCanTravelTo'),_('posX'),_('posY'),_('posZ'),_('rotX'),_('rotY'),_('rotZ')),'mbcs'))
         longids = fid_markerdata.keys()
         longids.sort(key=lambda a: fid_markerdata[a][0])
         longids.sort(key=itemgetter(0))
@@ -14161,7 +14161,7 @@ class CBash_CellBlockInfo:
         headFormat = '"%s","%s","%s",\n'
         rowFormat  = '"%s","%s","%s",\n'
         out = textPath.open('w')
-        out.write(headFormat % (_('Editor Id'),_('Block'),_('Sub-Block')))
+        out.write(Encode(headFormat % (_('Editor Id'),_('Block'),_('Sub-Block')),'mbcs'))
         eids = celldata.keys()
         eids.sort()
         for eid in eids:
@@ -14306,7 +14306,7 @@ class SigilStoneDetails:
         scriptEffectFormat = ',"%s","0x%06X","%d","%s","%s","%s"'
         noscriptEffectFiller = ',"None","None","None","None","None","None"'
         out = textPath.open('w')
-        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+        out.write(Encode(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
                                 _('Name'),_('Model Path'),_('Bound Radius'),
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Uses'),_('Value'),_('Weight'),
@@ -14314,7 +14314,7 @@ class SigilStoneDetails:
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
-                                ))
+                                ),'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
             scriptfid = scriptfid or (GPath('None'), None)
@@ -14460,7 +14460,7 @@ class CBash_SigilStoneDetails:
         scriptEffectFormat = ',"%s","0x%06X","%d","%d","%d","%s"'
         noscriptEffectFiller = ',"None","None","None","None","None","None"'
         out = textPath.open('w')
-        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+        out.write(Encode(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
                                 _('Name'),_('Model Path'),_('Bound Radius'),
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Uses'),_('Value'),_('Weight'),
@@ -14468,7 +14468,7 @@ class CBash_SigilStoneDetails:
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
-                                ))
+                                ),'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
             scriptfid = scriptfid or (GPath('None'), None)
@@ -14683,9 +14683,9 @@ class ItemStats:
             fid_attr_value = class_fid_attr_value[group]
             if not fid_attr_value: continue
             attrs = self.class_attrs[group]
-            out.write(header)
+            out.write(Encode(header,'mbcs'))
             for longid in getSortedIds(fid_attr_value):
-                out.write('"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                out.write('"%s","%s","0x%06X",' % (group,Encode(longid[0].s,'mbcs'),longid[1]))
                 attr_value = fid_attr_value[longid]
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
@@ -14892,9 +14892,9 @@ class CBash_ItemStats:
             fid_attr_value = class_fid_attr_value[group]
             if not fid_attr_value: continue
             attrs = self.class_attrs[group]
-            out.write(header)
+            out.write(Encode(header,'mbcs'))
             for longid in getSortedIds(fid_attr_value):
-                out.write('"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                out.write('"%s","%s","0x%06X",' % (group,Encode(longid[0].s,'mbcs'),longid[1]))
                 attr_value = fid_attr_value[longid]
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
@@ -14971,9 +14971,9 @@ class ItemPrices:
         format,header = bolt.csvFormat('iss'),('"' + '","'.join((_('Mod Name'),_('ObjectIndex'), _('Value'),_('Editor Id'),_('Name'),_('Type'))) + '"\n')
         for group, fid_stats in sorted(class_fid_stats.iteritems()):
             if not fid_stats: continue
-            out.write(header)
+            out.write(Encode(header,'mbcs'))
             for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
-                out.write('"%s","0x%06X",' % (fid[0].s,fid[1]))
+                out.write(Encode('"%s","0x%06X",' % (fid[0].s,fid[1]),'mbcs'))
                 out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
         out.close()
 class CBash_ItemPrices:
@@ -15058,9 +15058,9 @@ class CBash_ItemPrices:
         format,header = bolt.csvFormat('iss'),('"' + '","'.join((_('Mod Name'),_('ObjectIndex'), _('Value'),_('Editor Id'),_('Name'),_('Type'))) + '"\n')
         for group, fid_stats in sorted(class_fid_stats.iteritems()):
             if not fid_stats: continue
-            out.write(header)
+            out.write(Encode(header,'mbcs'))
             for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
-                out.write('"%s","0x%06X",' % (fid[0].s,fid[1]))
+                out.write(Encode('"%s","0x%06X",' % (fid[0].s,fid[1]),'mbcs'))
                 out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
         out.close()
 #------------------------------------------------------------------------------
@@ -15765,7 +15765,7 @@ class ScriptText:
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
                     with outpath.open('wb') as out:
                         formid = '0x%06X' %(longid[1])
-                        out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                        out.write(';'+Encode(longid[0].s,'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
                     exportedScripts.append(eid)
         return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
 
@@ -15890,7 +15890,7 @@ class CBash_ScriptText:
                     with outpath.open('wb') as out:
                         formid = '0x%06X' %(longid[1])
                         try:
-                            out.write(';'+longid[0].s+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                            out.write(';'+Encode(longid[0].s,'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
                         except UnicodeDecodeError:
                             try:
                                 out.write((';'.decode('cp1252')+longid[0].s.decode('cp1252')+'\r\n;'.decode('cp1252')+formid.decode('cp1252')+'\r\n;'.decode('cp1252')+eid.decode('cp1252')+'\r\n'+text.decode('cp1252')).encode('cp1252'))
@@ -16106,31 +16106,31 @@ class SpellRecords:
         headFormat = headFormat[:-1] + '\n' #chop trailing comma
 
         out = textPath.open('w')
-        out.write(headFormat % header)
+        out.write(Encode(headFormat % header,'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
             if detailed:
                 eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
                 for effect in effects:
                     efname,magnitude,area,duration,range,actorvalue = effect[:-1]
                     range = recipientTypeNumber_Name.get(range,range)
                     actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                     scripteffect = effect[-1]
-                    output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                    output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
                     if len(scripteffect):
                         longid,seschool,sevisual,seflags,sename = scripteffect
                         if sevisual == '\x00\x00\x00\x00':
                             sevisual = ''
-                        output += scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename)
+                        output += scriptEffectFormat % (Encode(longid[0].s,'mbcs'),longid[1],seschool,sevisual,seflags,sename)
                     else:
                         output += noscriptEffectFiller
             else:
                 eid,name,cost,levelType,spellType = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType)
             output += '\n'
             out.write(output)
         out.close()
@@ -16313,32 +16313,32 @@ class CBash_SpellRecords:
         headFormat = headFormat[:-1] + '\n' #chop trailing comma
 
         out = textPath.open('w')
-        out.write(headFormat % header)
+        out.write(Encode(headFormat % header,'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
             if detailed:
                 eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
                 for effect in effects:
                     efname,magnitude,area,duration,range,actorvalue = effect[:6]
                     efname = c_ulong(efname)
                     efname = cast(byref(efname), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
                     range = recipientTypeNumber_Name.get(range,range)
                     actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
-                    output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                    output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
                     longid,seschool,sevisual,seflags,sename = effect[6:]
                     if None not in (longid,seschool,sevisual,seflags,sename):
                         sevisual = c_ulong(sevisual)
                         sevisual = cast(byref(sevisual), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
-                        output += scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename)
+                        output += scriptEffectFormat % (Encode(longid[0].s,'mbcs'),longid[1],seschool,sevisual,seflags,sename)
                     else:
                         output += noscriptEffectFiller
             else:
                 eid,name,cost,levelType,spellType = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType)
             output += '\n'
             out.write(output)
         out.close()
@@ -16478,7 +16478,7 @@ class IngredientDetails:
         scriptEffectFormat = ',"%s","0x%06X","%d","%s","%s","%s"'
         noscriptEffectFiller = ',"None","None","None","None","None","None"'
         out = textPath.open('w')
-        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+        out.write(Encode(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
                                 _('Name'),_('Model Path'),_('Bound Radius'),
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Value'),_('Weight'),
@@ -16486,20 +16486,20 @@ class IngredientDetails:
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
-                                ))
+                                ),'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
             scriptfid = scriptfid or (GPath('None'), None)
             try:
-                output = rowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                output = rowFormat % (Encode(fid[0].s,'mbcs'),fid[1],eid,name,modpath,modb,iconpath,Encode(scriptfid[0].s,'mbcs'),scriptfid[1],value,weight)
             except TypeError:
-                output = altrowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                output = altrowFormat % (Encode(fid[0].s,'mbcs'),fid[1],eid,name,modpath,modb,iconpath,Encode(scriptfid[0].s,'mbcs'),scriptfid[1],value,weight)
             for effect in effects:
                 efname,magnitude,area,duration,range,actorvalue = effect[:-1]
                 range = recipientTypeNumber_Name.get(range,range)
                 actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                 scripteffect = effect[-1]
-                output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
                 if len(scripteffect):
                     longid,seschool,sevisual,seflags,sename = scripteffect
                     if sevisual == '\x00\x00\x00\x00':
@@ -16631,7 +16631,7 @@ class CBash_IngredientDetails:
         scriptEffectFormat = ',"%s","0x%06X","%d","%d","%d","%s"'
         noscriptEffectFiller = ',"None","None","None","None","None","None"'
         out = textPath.open('w')
-        out.write(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
+        out.write(Encode(headFormat % (_('Mod Name'),_('ObjectIndex'),_('Editor Id'),
                                 _('Name'),_('Model Path'),_('Bound Radius'),
                                 _('Icon Path'),_('Script Mod Name'),_('Script ObjectIndex'),
                                 _('Value'),_('Weight'),
@@ -16639,14 +16639,14 @@ class CBash_IngredientDetails:
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),
                                 _('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
                                 _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'),_('Additional Effects (Same format)')
-                                ))
+                                ),'mbcs'))
         for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
             eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
             scriptfid = scriptfid or (GPath('None'), None)
             try:
-                output = rowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                output = rowFormat % (Encode(fid[0].s,'mbcs'),fid[1],eid,name,modpath,modb,iconpath,Encode(scriptfid[0].s,'mbcs'),scriptfid[1],value,weight)
             except TypeError:
-                output = altrowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                output = altrowFormat % (Encode(fid[0].s,'mbcs'),fid[1],eid,name,modpath,modb,iconpath,Encode(scriptfid[0].s,'mbcs'),scriptfid[1],value,weight)
             for effect in effects:
                 efname,magnitude,area,duration,range,actorvalue = effect[:6]
                 efname = c_ulong(efname)
@@ -16654,7 +16654,7 @@ class CBash_IngredientDetails:
                 range = recipientTypeNumber_Name.get(range,range)
                 actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                 scripteffect = effect[6:]
-                output += effectFormat % (efname,magnitude,area,duration,range,actorvalue)
+                output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
                 if None not in scripteffect:
                     output += scriptEffectFormat % tuple(scripteffect)
                 else:
@@ -16758,7 +16758,7 @@ class ModGroups:
         mod_group = self.mod_group
         rowFormat = '"%s","%s"\n'
         out = textPath.open('w')
-        out.write(rowFormat % (_("Mod"),_("Group")))
+        out.write(Encode(rowFormat % (_("Mod"),_("Group")),'mbcs'))
         for mod in sorted(mod_group):
             out.write(rowFormat % (mod.s,mod_group[mod]))
         out.close()
