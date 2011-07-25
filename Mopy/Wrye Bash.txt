@@ -2332,6 +2332,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+
+=== 295 [12/12/2011] [valda]
+* Unicode Mode:
+  * More bugfixes from valda
+  
 === 294 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
 * Program-wide Changes:
   * Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.
