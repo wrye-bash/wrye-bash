@@ -1964,7 +1964,7 @@ class MreLeveledList(MelRecord):
                 newItemsAdd(entry.listId)
         if newItems:
             self.items |= newItems
-            self.entries.sort(key=attrgetter('level'))
+            self.entries.sort(key=attrgetter('listId','level','count'))
         #--Is merged list different from other? (And thus written to patch.)
         if (self.chanceNone != other.chanceNone or
             self.script != other.script or
@@ -1974,7 +1974,9 @@ class MreLeveledList(MelRecord):
             ):
             self.mergeOverLast = True
         else:
-            for selfEntry,otherEntry in zip(self.entries,other.entries):
+            otherlist = other.entries
+            otherlist.sort(key=attrgetter('listId','level','count'))
+            for selfEntry,otherEntry in zip(self.entries,otherlist):
                 if (selfEntry.listId != otherEntry.listId or
                     selfEntry.level != otherEntry.level or
                     selfEntry.count != otherEntry.count):
@@ -1987,8 +1989,7 @@ class MreLeveledList(MelRecord):
         else:
             self.mergeSources = [otherMod]
         #--Done
-        self.setChanged()
-
+        self.setChanged(self.mergeOverLast)
 #------------------------------------------------------------------------------
 class MreHasEffects:
     """Mixin class for magic items."""
@@ -30060,7 +30061,7 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_("No Bloody Creatures"),
-            _("Set all creatures to have no blood records."),
+            _("Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
             'No bloody creatures',
             ('1.0',  '1.0'),
             )
@@ -30092,7 +30093,7 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("No Bloody Creatures"),
-            _("Set all creatures to have no blood records."),
+            _("Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
             'No bloody creatures',
             ('1.0',  '1.0'),
             )
