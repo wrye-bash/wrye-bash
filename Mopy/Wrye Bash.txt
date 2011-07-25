@@ -2360,7 +2360,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
       * Msg: Quick Load.
     * Typo fix for the custom option of Compass: POI Recognition.
   * Fixed Harvest Chance tweaker adjusts nirnroots when it shouldn't (since they are a quest plant).
-  * Fixed Factions, AI, Global, and GMST patchers not ignoring unchanged records
+  * Fixed Factions, AI, Global, GMST and LL patchers not ignoring unchanged records.
   * Fixed Actors.ACBS merging flags when it shouldn't be
   * Fixed CBash patcher not cleaning unused masters
   * CBash no longer gives GMSTs and MGEFs new FormIDs
