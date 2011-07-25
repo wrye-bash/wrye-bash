@@ -1689,6 +1689,8 @@ class ModList(List):
             self.items.sort(key=lambda a: data[a].size)
         elif col == 'Status':
             self.items.sort(key=lambda a: data[a].getStatus())
+        elif col == 'CRC':
+            self.items.sort(key=lambda a: data[a].cachedCrc())
         else:
             raise BashError(_('Unrecognized sort key: ')+col)
         #--Ascending
@@ -15113,6 +15115,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('Rating'))
         sortMenu.links.append(Files_SortBy('Size'))
         sortMenu.links.append(Files_SortBy('Status'))
+        sortMenu.links.append(Files_SortBy('CRC'))
         ModList.mainMenu.append(sortMenu)
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
