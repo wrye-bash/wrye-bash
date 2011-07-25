@@ -1,4 +1,4 @@
-﻿Continuing from the [topic=1209199]previous thread[/topic]...
+﻿Continuing from the [topic=1212490]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
@@ -46,31 +46,27 @@ CBash is basically an elder scrolls master (.esm) and elder scrolls plugin (.esp
 [/list][/spoiler]
 [b]Development[/b]:
 The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  Want a feature?  Request it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904"]here[/url]!  Found a bug?  Report it [url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901"]here[/url]!  You don't need a SourceForge account to create or add data to bug reports and feature requests -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
-[spoiler]
-Read all of this [b]before taking any action[/b] (what you do will depend upon which Wrye Bash you have (Standalone or Python) - the most important part being if you have Wrye Bash 293 Python version installed (or previous versions of Wrye Bash before 293), then see NB further down concerning the directory structure change)
+[spoiler]Read all of this [b]before taking any action[/b] (what you do will depend upon which Wrye Bash you have (Standalone or Python)
 
 If going from Standalone version to Python version, you are going to need to install Wrye Python 04a (from TESNexus) (if you already have it installed, there is no need to install it again)
 
 The latest svn is always here >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/]Click and Bookmark it[/url]<< - Then just click "Download GNU Tarball" at the bottom.  Note: If you have been told to try a specific revision number instead of the latest, type the revision number in the sticky revision box and press return, the Download GNU Tarball will now grab that revision's set of files.
 
-Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong ...
-
-[color="#FF8C00"]NB[/color] - For people using 293 Python version (or an earlier version of Wrye Bash) installed (including Standalone users who have just installed 293 Python version), there is one further step you need to take BEFORE copying Mopy\ and Data\ from the svn into Oblivion\ (see screenshot 4 and a Half below) .... The svn has a new directory structure since the release of 293 Python version - delete your existing Mopy\ folder in ~path to game installation~\Oblivion\, then copy the new svn Data\ and Mopy\ folders into ~path to game installation~\Oblivion\.  Once you have changed to the svn, you can just copy Mopy\ and Data\ from newer revisions of the svn and overwrite the previous revision you had, saying yes to all (currently this procedure should overwrite 491 files).
+Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong...
 
 [color="#FF8C00"]A screenshot walkthrough:[/color]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg]Screenshot 1[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg]Screenshot 2[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg]Screenshot 3[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg]Screenshot 4[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.5.jpg]Screenshot 4 (and a Half)[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5.jpg]Screenshot 5[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg]Screenshot 6[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg]Screenshot 7[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8.jpg]Screenshot 8[/url]
 
-Rinse and repeat when a new svn comes out (minus Screenshot 4 and a Half).
+Rinse and repeat when a new svn comes out.
 
-[color="#FF8C00"]Beware:[/color] Its a good idea to rename and keep the tarball (the one I downloaded above immediately got renamed svn 1405). Keep a few weeks worth of them, so if there is a problem found later with a particular set of committed files in the Tarball you can go back to a last known good revision, extract it and copy over mopy\ and data\ as usual - Putting you back to a working copy of Wrye Bash, there's no need to go back this far but note svn revision 1309 was the directory structure change. Keep an eye on these Wrye Bash threads for developments.[/spoiler]
+[color="#FF8C00"]Beware:[/color] Its a good idea to rename the tarball according to the revision number and keep it around.  Keep a few weeks worth of them so if there is a problem found later with a particular set of committed files in the tarball you can go back to a previous known good revision.  There's no need to go back this far but note svn revision 1309 was the directory structure change, and if you go back to a revision earlier than that you will probably have to follow [url=http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/page__view__findpost__p__18000658]this post[/url] to get WB running again.[/spoiler]
 
 [b]Reporting Bugs[/b]: Try to give us enough information to diagnose your problem.  The following is useful information for us:[spoiler][list]
 [*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpful), what you expected, and what happened.
