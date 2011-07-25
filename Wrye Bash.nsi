@@ -323,7 +323,7 @@
                 Pop $R0
                 ${If} $R0 == "success"
                     Exec '"$TEMP\Python-2.7.2.msi" /quiet'
-                    StrCpy $PythonVer "27"
+                    StrCpy $Python_Ver "27"
                 ${Else}
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                 ${EndIf}
