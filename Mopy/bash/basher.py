@@ -1423,9 +1423,9 @@ class INILineCtrl(wx.ListCtrl):
             self.EnsureVisible(0)
         for i,line in enumerate(lines):
             if i >= num:
-                self.InsertStringItem(i, line)
+                self.InsertStringItem(i, line.rstrip())
             else:
-                self.SetStringItem(i, 0, line)
+                self.SetStringItem(i, 0, line.rstrip())
         for i in range(len(lines), num):
             self.DeleteItem(len(lines))
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
