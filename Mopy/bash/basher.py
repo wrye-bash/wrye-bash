@@ -5877,7 +5877,7 @@ class PatchDialog(wx.Dialog):
                             statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
                     except bosh.PluginsFullError:
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
-                            % (fileName.s,))
+                            % (patchName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
