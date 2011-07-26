@@ -30,7 +30,7 @@ Users who have reported bugs and are updating from svn - please check the follow
     </xsl:for-each>
 [/list]
 
-[b][https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207901&amp;status=1]Additional known bugs[/url][/b]:[spoiler][list]<xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=1 and group_id!=2061786]">
+[b][url=https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207901&amp;status=1]Additional known bugs[/url][/b]:[spoiler][list]<xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=1 and group_id!=2061786]">
         <xsl:sort select="id" order="descending"/>
 [*] [b][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207901]Bug <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
     </xsl:for-each>
