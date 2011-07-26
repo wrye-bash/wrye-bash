@@ -33969,6 +33969,7 @@ def initOptions(bashIni):
                     if not value.isabs():
                         value = dirs['app'].join(value)
                 elif settingType is bool:
+                    if value == '.': continue
                     value = bashIni.getboolean(section,key)
                 else:
                     value = settingType(value)
