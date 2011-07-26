@@ -8349,7 +8349,7 @@ class ResourceReplacer:
     #--Class data
     dirExts = {
         'distantlod': ['.cmp', '.lod'],
-        'docs':['.txt','.html','.htm','.rtf','.doc','.gif','.jpg'],
+        'docs':['.txt','.html','.htm','.rtf','.doc','.gif','.jpg','.ods','.odp','.png'],
         'facegen': ['.ctl'],
         'fonts': ['.fnt', '.tex'],
         'menus': ['.bat', '.html', '.scc', '.txt', '.xml'],
@@ -10388,9 +10388,9 @@ class Installer(object):
     dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
-    skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.tar.gz','.omod'))
+    skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.gz','.bz2','.omod','.tb2','.lzma'))
     skipExts.update(set(readExts))
-    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls'))
+    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.ods','.odp','.ppt'))
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
     #--Temp Files/Dirs
