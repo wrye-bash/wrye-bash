@@ -33913,7 +33913,7 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['EnableUnicode'] = False
-    if 'steam' in dirs['app'].s:
+    if 'steam' in dirs['app'].cs:
         inisettings['SteamInstall'] = True
     else:
         inisettings['SteamInstall'] = False
