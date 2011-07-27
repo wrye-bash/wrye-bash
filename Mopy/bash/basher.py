@@ -11222,7 +11222,7 @@ class Mod_DecompileAll(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if bosh.reOblivion.match(item):
+            if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
@@ -11708,7 +11708,7 @@ class Mod_RemoveWorldOrphans(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if bosh.reOblivion.match(item):
+            if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Remove World Orphans'))
                 continue
             fileInfo = bosh.modInfos[fileName]
