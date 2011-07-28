@@ -2336,6 +2336,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 295 [12/12/2011] [valda]
 * Unicode Mode:
   * More bugfixes from valda
+* Added activation status as a new mods column/sort option.
   
 === 294 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
 * Program-wide Changes:
