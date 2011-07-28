@@ -7812,6 +7812,12 @@ class ModInfo(FileInfo):
             crc = modInfos.table.getItem(self.name,'crc')
         return crc
 
+    def txt_status(self):
+        if self.name in modInfos.ordered: return 'Active'
+        elif self.name in modInfos.merged: return 'Merged'
+        elif self.name in modInfos.imported: return 'Imported'
+        else: return 'Non-Active'
+        
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
         return modInfos.hasTimeConflict(self.name)
