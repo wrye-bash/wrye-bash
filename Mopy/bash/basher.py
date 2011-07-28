@@ -157,6 +157,7 @@ settingDefaults = {
     'bash.balo.full': False,
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {
+        'Activation Status': _('Activation Status'),
         'Author': _('Author'),
         'Cell': _('Cell'),
         'CRC':_('CRC'),
@@ -262,7 +263,7 @@ settingDefaults = {
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
     #--Wrye Bash: Mods
-    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC'],
+    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Activation Status'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'File',
@@ -276,7 +277,8 @@ settingDefaults = {
         'Modified':150,
         'Rating':20,
         'Size':75,
-        'CRC':100,
+        'CRC':200,
+        'Activation Status': 100,
         },
     'bash.mods.colAligns': {
         'Size':1,
@@ -1574,6 +1576,8 @@ class ModList(List):
                     value = ''
             elif col == 'CRC':
                 value = '%08X' % fileInfo.cachedCrc()
+            elif col == 'Activation Status':
+                value = fileInfo.txt_status()
             else:
                 value = '-'
             #--Insert/SetString
@@ -1689,6 +1693,8 @@ class ModList(List):
             self.items.sort(key=lambda a: data[a].size)
         elif col == 'Status':
             self.items.sort(key=lambda a: data[a].getStatus())
+        elif col == 'Activation Status':
+            self.items.sort(key=lambda a: data[a].txt_status())
         elif col == 'CRC':
             self.items.sort(key=lambda a: data[a].cachedCrc())
         else:
@@ -15116,6 +15122,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('Size'))
         sortMenu.links.append(Files_SortBy('Status'))
         sortMenu.links.append(Files_SortBy('CRC'))
+        sortMenu.links.append(Files_SortBy('Activation Status'))
         ModList.mainMenu.append(sortMenu)
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
