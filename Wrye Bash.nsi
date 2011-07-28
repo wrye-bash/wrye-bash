@@ -144,6 +144,9 @@
         StrCpy $MinVersion_Comtypes '0.6.2'
         StrCpy $MinVersion_wx '2.8.10'
         StrCpy $MinVersion_pywin32 '213'
+        StrCpy $Python_Comtypes "1"
+        StrCpy $Python_wx "1"
+        StrCpy $Python_pywin32 "1"
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
         ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
@@ -209,7 +212,6 @@
             ${EndIf}
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
-                StrCpy $Python_Comtypes "1"
                 ;Detect Comtypes:
                 IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" 0 +10
                     FileOpen $0 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
@@ -222,6 +224,7 @@
                     FileClose $0
                     StrCpy $Python_Comtypes $1 5 -8
                     ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
+                    ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
                 ${If} $Python_Ver == "25"
                     ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
                     ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
@@ -318,11 +321,11 @@
             ${NSD_GetState} $Check_pywin32 $CheckState_pywin32
 
             ${If} $CheckState_Python == ${BST_CHECKED}
-                SetOutPath "$TEMP"
-                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$TEMP\Python-2.7.2.msi"
+                SetOutPath "$EXEDIR\PythonInstallers"
+                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$EXEDIR\PythonInstallers\Python-2.7.2.msi"
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\Python-2.7.2.msi" /quiet'
+                    ExecWait '"msiexec" /i PythonInstallers\Python-2.7.2.msi'
                     StrCpy $Python_Ver "27"
                 ${Else}
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
@@ -330,39 +333,39 @@
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976102&use_mirror=cdnetworks-us-2 "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976102&use_mirror=cdnetworks-us-2 "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${ElseIf} $Python_Ver == "25" ;last version of wxPython to suport py2.5x is 2.8.11 so download that version if you're using Python 2.5x
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976086&use_mirror=surfnet "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976086&use_mirror=surfnet "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\wxPython.msi" /VERYSILENT'
+                    ExecWait '"$EXEDIR\PythonInstallers\wxPython.exe"'; /VERYSILENT'
                 ${Else}
                     MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\comtypes-0.6.2.win32.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$EXEDIR\PythonInstallers\comtypes.exe"
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\comtypes-0.6.2.win32.exe"'
+                    ExecWait  '"$EXEDIR\PythonInstallers\comtypes.exe"'
                 ${Else}
-                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading."
+                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$EXEDIR\PythonInstallers\pywin32.exe"
                 ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$EXEDIR\PythonInstallers\pywin32.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$EXEDIR\PythonInstallers\pywin32-216.win32.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\pywin32-216.win32.exe"'
+                    ExecWait  '"$EXEDIR\PythonInstallers\pywin32.exe"'
                 ${Else}
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
                 ${EndIf}
