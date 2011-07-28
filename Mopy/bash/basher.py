@@ -12849,6 +12849,7 @@ class Save_ExportScreenshot(Link):
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
         imagePath = balt.askSave(bashFrame,_('Save Screenshot as:'), bosh.dirs['patches'].s,'Screenshot %s.jpg' % self.data[0].s,'*.jpg')
+        if not imagePath: return
         width,height,data = saveInfo.header.image
         image = wx.EmptyImage(width,height)
         image.SetData(data)
