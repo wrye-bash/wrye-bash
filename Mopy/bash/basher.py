@@ -1423,9 +1423,9 @@ class INILineCtrl(wx.ListCtrl):
             self.EnsureVisible(0)
         for i,line in enumerate(lines):
             if i >= num:
-                self.InsertStringItem(i, line)
+                self.InsertStringItem(i, line.rstrip())
             else:
-                self.SetStringItem(i, 0, line)
+                self.SetStringItem(i, 0, line.rstrip())
         for i in range(len(lines), num):
             self.DeleteItem(len(lines))
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
@@ -5877,7 +5877,7 @@ class PatchDialog(wx.Dialog):
                             statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
                     except bosh.PluginsFullError:
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
-                            % (fileName.s,))
+                            % (patchName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
@@ -11222,7 +11222,7 @@ class Mod_DecompileAll(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if bosh.reOblivion.match(item):
+            if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
@@ -11708,7 +11708,7 @@ class Mod_RemoveWorldOrphans(Link):
             return
         for item in self.data:
             fileName = GPath(item)
-            if bosh.reOblivion.match(item):
+            if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_("Skipping %s") % fileName.s,_('Remove World Orphans'))
                 continue
             fileInfo = bosh.modInfos[fileName]
@@ -12843,6 +12843,7 @@ class Save_ExportScreenshot(Link):
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
         imagePath = balt.askSave(bashFrame,_('Save Screenshot as:'), bosh.dirs['patches'].s,'Screenshot %s.jpg' % self.data[0].s,'*.jpg')
+        if not imagePath: return
         width,height,data = saveInfo.header.image
         image = wx.EmptyImage(width,height)
         image.SetData(data)

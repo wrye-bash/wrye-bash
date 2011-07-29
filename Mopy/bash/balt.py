@@ -138,6 +138,11 @@ class Image:
         if not self.icon:
             if self.type == wx.BITMAP_TYPE_ICO:
                 self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
+                w,h = self.icon.GetWidth(),self.icon.GetHeight()
+                if (w > self.iconSize or w == 0 or
+                    h > self.iconSize or h == 0):
+                    self.iconSize = 16
+                    self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
             else:
                 self.icon = wx.EmptyIcon()
                 self.icon.CopyFromBitmap(self.GetBitmap())

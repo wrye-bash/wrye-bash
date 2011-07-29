@@ -32843,6 +32843,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     autoKey = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
     blueEye = (GPath('Oblivion.esm'),0x27308)
     argonianEye = (GPath('Oblivion.esm'),0x3e91e)
+    dremoraRace = (GPath('Oblivion.esm'),0x038010)
 ##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
     reX117 = re.compile('^117[a-z]',re.I)
     iiMode = False
@@ -32956,7 +32957,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eyeNames = self.eyeNames
         maleHairs = self.maleHairs
         femaleHairs = self.femaleHairs
-        playableRaces = set([(GPath('Oblivion.esm'), 0x038010)]) #Dremora
+        playableRaces = set([self.dremoraRace])
 
         #--Eye Mesh filtering
         eye_meshes = self.eye_meshes
@@ -32993,7 +32994,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
             (GPath('Oblivion.esm'),0x54bba), #--Golden Saint
             (GPath('Oblivion.esm'),0x5fa43), #--Ordered
-            (GPath('Oblivion.esm'),0x038010), #--Dremora
+            self.dremoraRace,
             ):
             eye_meshes.setdefault(eye,blueEyeMeshes)
         def setRaceEyeMesh(race,rightPath,leftPath):
@@ -33097,7 +33098,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
                 raceId = npc.race
                 if raceId not in playableRaces: continue
-                if raceId == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race. 
+                if npc.full is not None and raceId == self.dremoraRace and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race. 
                 #IsNewest
                 if npc.IsWinning():
                     npcChanged = False
@@ -33913,7 +33914,7 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['EnableUnicode'] = False
-    if 'steam' in dirs['app'].s:
+    if 'steam' in dirs['app'].cs:
         inisettings['SteamInstall'] = True
     else:
         inisettings['SteamInstall'] = False
