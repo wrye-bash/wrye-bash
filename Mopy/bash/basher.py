@@ -10338,6 +10338,76 @@ class Mod_AllowAllGhosting(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
+class Mod_CreateBOSSReport(Link):
+    """Copies appropriate information for makeing a report in the BOSS thread."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Create BOSS Report..."))
+        menu.AppendItem(menuItem)
+        if len(data) == 1 and data[0] == 'Oblivion.esm': menuItem.Enable(False)
+
+    def Execute(self,event):
+        text = ''
+        if len(self.data) > 5:
+            spoiler = True
+            text += '[spoiler]\n'
+        else:
+            spoiler = False
+        # Scan for ITM and UDR's
+        if settings['bash.CBashEnabled']:
+            modInfos = [bosh.modInfos[x] for x in self.data]
+            try:
+                with balt.Progress(_("Dirty Edits"),'\n'+' '*60,abort=True) as progress:
+                    udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+            except bolt.CancelError:
+                return
+        else:
+            udr_itm_fog = []
+        # Create the report
+        for i,fileName in enumerate(self.data):
+            if fileName == 'Oblivion.esm': continue
+            fileInfo = bosh.modInfos[fileName]
+            #-- Name of file, plus a link if we can figure it out
+            installer = bosh.modInfos.table.getItem(fileName,'installer','')
+            if not installer:
+                text += fileName.s
+            else:
+                # Try to get the url of the file
+                # Order of priority will be:
+                #  TESNexus
+                #  TESAlliance
+                url = None
+                ma = bosh.reTesNexus.search(installer)
+                if ma and ma.group(2):
+                    url = 'http://tesnexus.com/downloads/file.php?id='+ma.group(2)
+                if not url:
+                    ma = bosh.reTESA.search(installer)
+                    if ma and ma.group(2):
+                        url = 'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                if url:
+                    text += '[url=%s]%s[/url]' % (url, fileName.s)
+                else:
+                    text += fileName.s
+            #-- Version, if it exists
+            version = bosh.modInfos.getVersion(fileName)
+            if version:
+                text += '\nVersion: %s' % version
+            #-- CRC
+            text += '\nCRC: %08X' % fileInfo.cachedCrc()
+            #-- Dirty edits
+            udrs,itms,fogs = udr_itm_fog[i]
+            if udrs or itms:
+                text += '\nUDR: %i, ITM: %i (via Wrye Bash)' % (len(udrs),len(itms))
+            text += '\n\n'
+        if spoiler: text += '[/spoiler]'
+
+        # Show results + copy to clipboard
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_("BOSS Report"),asDialog=False,fixedFont=False,icons=bashBlue)
+
+#------------------------------------------------------------------------------
 class Mod_ListBashTags(Link):
     """Copies list of bash tags to clipboard."""
     def AppendToMenu(self,menu,window,data):
@@ -15194,6 +15264,7 @@ def InitModLinks():
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
     ModList.itemMenu.append(Mod_ListBashTags())
+    ModList.itemMenu.append(Mod_CreateBOSSReport())
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
