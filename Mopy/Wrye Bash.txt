@@ -1,4 +1,4 @@
-= Wrye Bash ====================================================================#
+﻿= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -2332,7 +2332,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 294 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
+=== 294.1 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
 * Program-wide Changes:
   * Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.
   * If manually updating, please delete the old Mopy directory before copying the new one in to get rid of the old files
@@ -2391,6 +2391,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * New start menu icon.
   * OBSE is now enabled by default if detected.
   * Updated Russian Translation (contributed by DJ_Kovrik).
+* Additional bugfixes in 294.1:
+  * Fixed a bug in the Race Patcher that would fail on some Dremora records.
+  * Fixed a bug when selecting 'Cancel' after trying to export a screenshot from a saved game.
+  * More Unicode fixes from valda.
+  * If custom icon extraction fails for a Cutsom Launcher button, Wrye Bash will attempt to fall back to the 16x16 one.
+  * Fixed a bug where line endings weren't correctly stripped in the INI Edits Tab, resulting in 'boxes' showing in the UI.
+  * Fixed a bug when Wrye Bash tries to activate a newly built Bashed Patch, and 255 mods are active.
 
 === 293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]
 * [[#BashedPatches|Bashed Patch]]:
