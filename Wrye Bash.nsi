@@ -165,44 +165,57 @@
             ${If} $Path_OB == $Empty
                 ReadRegStr $Path_OB HKLM "SOFTWARE\Wow6432Node\Bethesda Softworks\Oblivion" "Installed Path"
             ${EndIf}
-        ${Else}
+        ${EndIf}
+        ${If} $Path_OB != $Empty
             StrCpy $CheckState_OB ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Path_Nehrim == $Empty
             ReadRegStr $Path_Nehrim HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Nehrim - At Fate's Edge_is1" "InstallLocation"
-        ${Else}
+        ${EndIf}
+        ${If} $Path_Nehrim != $Empty
             StrCpy $CheckState_Nehrim ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Path_Ex1 != $Empty
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex1 ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Path_Ex2 != $Empty
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_OB_Py == $True
             StrCpy $CheckState_OB_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_OB_Exe == $True
+        ${ElseIf} $Reg_Value_OB_Exe != $True
+            StrCpy $CheckState_OB_Py ${BST_CHECKED}
+        ${Else}
             StrCpy $CheckState_OB_Exe ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_Nehrim_Py == $True
             StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Nehrim_Exe == $True
+        ${ElseIf} $Reg_Value_Nehrim_Exe != $True
+            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
+        ${Else}
             StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_Ex1_Py == $True
             StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex1_Exe == $True
+        ${ElseIf} $Reg_Value_Ex1_Exe != $True
+            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
+        ${Else}
             StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_Ex2_Py == $True
             StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex2_Exe == $True
+        ${ElseIf} $Reg_Value_Ex2_Exe != $True
+            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
+        ${Else}
             StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
         ${EndIf}
         FunctionEnd
@@ -353,7 +366,7 @@
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
-                    ExecWait '"msiexec" /i PythonInstallers\Python-2.7.2.msi'
+                    ExecWait '"msiexec" /i "$EXEDIR\PythonInstallers\Python-2.7.2.msi"'
                     StrCpy $Python_Ver "27"
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
@@ -377,7 +390,7 @@
                     ExecWait '"$EXEDIR\PythonInstallers\wxPython.exe"'; /VERYSILENT'
                     ${NSD_SetText} $Check_wx "$0 - Installed."
                 ${Else}
-                    ${NSD_SetText} $Check_wx "$0 - Download Failed!]"
+                    ${NSD_SetText} $Check_wx "$0 - Download Failed!"
                     MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
@@ -391,7 +404,7 @@
                     ExecWait  '"$EXEDIR\PythonInstallers\comtypes.exe"'
                     ${NSD_SetText} $Check_Comtypes "$0 - Installed."
                 ${Else}
-                    ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!]"
+                    ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!"
                     MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
                 ${EndIf}
             ${EndIf}
@@ -411,7 +424,7 @@
                     ExecWait  '"$EXEDIR\PythonInstallers\pywin32.exe"'
                     ${NSD_SetText} $Check_pywin32 "$0 - Installed."
                 ${Else}
-                    ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!]"
+                    ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
