@@ -144,6 +144,9 @@
         StrCpy $MinVersion_Comtypes '0.6.2'
         StrCpy $MinVersion_wx '2.8.10'
         StrCpy $MinVersion_pywin32 '213'
+        StrCpy $Python_Comtypes "1"
+        StrCpy $Python_wx "1"
+        StrCpy $Python_pywin32 "1"
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
         ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
@@ -178,6 +181,30 @@
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
+        ${If} $Reg_Value_OB_Py == $True
+            StrCpy $CheckState_OB_Py ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_OB_Exe == $True
+            StrCpy $CheckState_OB_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Nehrim_Py == $True
+            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Nehrim_Exe == $True
+            StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex1_Py == $True
+            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex1_Exe == $True
+            StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex2_Py == $True
+            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex2_Exe == $True
+            StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
+        ${EndIf}
         FunctionEnd
 ;-------------------------------- Custom Installation Pages and their Functions:
     Function PAGE_REQUIREMENTS
@@ -191,7 +218,8 @@
 
         IntOp $0 0 + 0
         ${NSD_CreateLabel} 0 $0u 100% 32u "Checking for requirements (Python && some Python addons for Python version of Wrye Bash, MS Visual C ++ redist for Standalone Executable Wrye Bash Version). This can quite easily give a false detection that you need some of those since if they aren't installed with the exact same version(s)/location(s) that this is guessing it may not find it."
-        IntOp $0 $0 + 34
+            Pop $3
+        IntOp $0 $0 + 42
         ${If} $PythonVersionInstall == $True
             ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${If} $Python_Path != $Empty
@@ -209,19 +237,19 @@
             ${EndIf}
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
-                StrCpy $Python_Comtypes "1"
                 ;Detect Comtypes:
                 IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" 0 +10
-                    FileOpen $0 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
-                    FileRead $0 $1
-                    FileRead $0 $1
-                    FileRead $0 $1
-                    FileRead $0 $1
-                    FileRead $0 $1
-                    FileRead $0 $1
-                    FileClose $0
+                    FileOpen $2 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileClose $2
                     StrCpy $Python_Comtypes $1 5 -8
                     ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
+                    ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
                 ${If} $Python_Ver == "25"
                     ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
                     ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
@@ -245,48 +273,48 @@
             ${AndIf} $Python_wx != "1"
                 StrCpy $Requirements "Met"
                ${NSD_CreateLabel} 0 $0u 100% 16u "Congratulations the installer detects that you have a full install of all the Python prerequisites already! Please click 'Next' to continue."
-                Pop $Label
+                    Pop $Label
                 IntOp $0 $0 + 16
             ${Else}
                 ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or that you let this installer download them for you and execute them so that you have to do the minimum work. Please check the component(s) that you are fine with this installer downloading and installing; or use the provided links to manually download and install."
                     Pop $Label
                 IntOp $0 $0 + 41
                 ${If} $Python_Path == $Empty
-                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python 2.7.2"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python 2.7.2"
                         Pop $Check_Python
                         ${NSD_SetState} $Check_Python $CheckState_Python
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 40% $0u 60% 8u  "Python.org 2.7.2 Download Page" ;http://www.python.org/download/releases/2.7.2/
+                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python 2.7.2 webpage" ;http://www.python.org/download/releases/2.7.2/
                         Pop $Link_Python
                         ${NSD_OnClick} $Link_Python onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_wx == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "wxPython 2.8.12.0-ansi"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "wxPython 2.8.12.1-ansi"
                         Pop $Check_wx
                         ${NSD_SetState} $Check_wx $CheckState_wx
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 40% $0u 60% 8u  "wxPython.org Download Page" ;http://www.wxpython.org/download.php#stable
+                    ${NSD_CreateLink} 60% $0u 40% 8u  "wxPython webpage" ;http://www.wxpython.org/download.php#stable
                         Pop $Link_wx
                         ${NSD_OnClick} $Link_wx onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_Comtypes == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python Comtypes 0.6.2"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python Comtypes 0.6.2"
                         Pop $Check_Comtypes
                         ${NSD_SetState} $Check_Comtypes $CheckState_Comtypes
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 40% $0u 60% 8u "Comtypes' Sourceforge Download Page" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
+                    ${NSD_CreateLink} 60% $0u 40% 8u "Comtypes' SF webpage" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
                         Pop $Link_Comtypes
                         ${NSD_OnClick} $Link_Comtypes onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_pywin32 == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 40% 13u "Python Extensions for Windows (PyWin32)"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 216"
                         Pop $Check_pywin32
                         ${NSD_SetState} $Check_pywin32 $CheckState_pywin32
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 40% $0u 60% 8u  "PyWin32 216 Sourceforge Download Page" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
+                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 SF webpage" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
                         Pop $Link_pywin32
                         ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
@@ -298,10 +326,10 @@
             IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
                 StrCpy $9 "Installed"
             ${If} $9 == $Empty
-                ${NSD_CreateLabel} 0 $0u 40% 17u "MSVC Redistributable 2008 (Must Manually Download && Install)"
+                ${NSD_CreateLabel} 0 $0u 60% 17u "MSVC Redistributable 2008 (Must Manually Download && Install)"
                     Pop $Check_msvc
                 IntOp $0 $0 + 2
-                ${NSD_CreateLink} 40% $0u 60% 8u  "MSVC 2008 Redist Download Page" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
+                ${NSD_CreateLink} 60% $0u 40% 8u  "MSVC 2008 Redist webpage" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
                     Pop $Link_vcredist
                     ${NSD_OnClick} $Link_vcredist onClick_Link
                 IntOp $0 $0 + 11
@@ -318,52 +346,72 @@
             ${NSD_GetState} $Check_pywin32 $CheckState_pywin32
 
             ${If} $CheckState_Python == ${BST_CHECKED}
-                SetOutPath "$TEMP"
-                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$TEMP\Python-2.7.2.msi"
+                SetOutPath "$EXEDIR\PythonInstallers"
+                ${NSD_GetText} $Check_Python $0
+                ${NSD_SetText} $Check_Python "$0 - Downloading..."
+                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$EXEDIR\PythonInstallers\Python-2.7.2.msi"
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\Python-2.7.2.msi" /quiet'
+                    ${NSD_SetText} $Check_Python "$0 - Installing..."
+                    ExecWait '"msiexec" /i PythonInstallers\Python-2.7.2.msi'
                     StrCpy $Python_Ver "27"
+                    ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
+                    ${NSD_SetText} $Check_Python "$0 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
+                ${NSD_GetText} $Check_wx $0
+                ${NSD_SetText} $Check_wx "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976102&use_mirror=cdnetworks-us-2 "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py27.exe "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${ElseIf} $Python_Ver == "25" ;last version of wxPython to suport py2.5x is 2.8.11 so download that version if you're using Python 2.5x
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py26.exe?r=http%3A%2F%2Fwww.wxpython.org%2Fdownload.php&ts=1307976086&use_mirror=surfnet "$TEMP\wxPython.msi"
+                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py26.exe "$EXEDIR\PythonInstallers\wxPython.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\wxPython.msi" /VERYSILENT'
+                    ${NSD_SetText} $Check_wx "$0 - Installing..."
+                    ExecWait '"$EXEDIR\PythonInstallers\wxPython.exe"'; /VERYSILENT'
+                    ${NSD_SetText} $Check_wx "$0 - Installed."
                 ${Else}
+                    ${NSD_SetText} $Check_wx "$0 - Download Failed!]"
                     MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\comtypes-0.6.2.win32.exe"
+                ${NSD_GetText} $Check_Comtypes $0
+                ${NSD_SetText} $Check_Comtypes "$0 - Downloading..."
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$EXEDIR\PythonInstallers\comtypes.exe"
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\comtypes-0.6.2.win32.exe"'
+                    ${NSD_SetText} $Check_Comtypes "$0 - Installing..."
+                    ExecWait  '"$EXEDIR\PythonInstallers\comtypes.exe"'
+                    ${NSD_SetText} $Check_Comtypes "$0 - Installed."
                 ${Else}
-                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading."
+                    ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!]"
+                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
+                ${NSD_GetText} $Check_pywin32 $0
+                ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$EXEDIR\PythonInstallers\pywin32.exe"
                 ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$EXEDIR\PythonInstallers\pywin32.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$TEMP\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$EXEDIR\PythonInstallers\pywin32-216.win32.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
-                    Exec '"$TEMP\pywin32-216.win32.exe"'
+                    ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
+                    ExecWait  '"$EXEDIR\PythonInstallers\pywin32.exe"'
+                    ${NSD_SetText} $Check_pywin32 "$0 - Installed."
                 ${Else}
+                    ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!]"
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
                 ${EndIf}
             ${EndIf}
@@ -387,16 +435,12 @@
             ${NSD_CreateCheckBox} 0 $0u 33% 13u "Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
                 Pop $Check_OB_Py
-                ${If} $Reg_Value_OB_Py == $True
-                    ${NSD_SetState} $Check_OB_Py  ${BST_CHECKED}
-                ${EndIf}
-            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
                 Pop $Check_OB_Exe
-                ${If} $Reg_Value_OB_Exe == $True
-                    ${NSD_SetState} $Check_OB_Exe  ${BST_CHECKED}
-                ${EndIf}
+                ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
@@ -409,16 +453,12 @@
             ${NSD_CreateCheckBox} 0 $0u 33% 13u "Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
                 Pop $Check_Nehrim_Py
-                ${If} $Reg_Value_Nehrim_Py == $True
-                    ${NSD_SetState} $Check_Nehrim_Py  ${BST_CHECKED}
-                ${EndIf}
-            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Nehrim_Exe
-                ${If} $Reg_Value_Nehrim_Exe == $True
-                    ${NSD_SetState} $Check_Nehrim_Exe  ${BST_CHECKED}
-                ${EndIf}
+                ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
@@ -435,16 +475,12 @@
             ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex1_Py
-                    ${If} $Reg_Value_Ex1_Py == $True
-                        ${NSD_SetState} $Check_Ex1_Py  ${BST_CHECKED}
-                    ${EndIf}
-                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex1_Exe
-                    ${If} $Reg_Value_Ex1_Exe == $True
-                        ${NSD_SetState} $Check_Ex1_Exe  ${BST_CHECKED}
-                    ${EndIf}
+                    ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
@@ -455,16 +491,12 @@
             ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Python"
+                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex2_Py
-                    ${If} $Reg_Value_Ex2_Py == $True
-                        ${NSD_SetState} $Check_Ex2_Py  ${BST_CHECKED}
-                    ${EndIf}
-                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Standalone Executable"
+                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex2_Exe
-                    ${If} $Reg_Value_Ex2_Exe == $True
-                        ${NSD_SetState} $Check_Ex2_Exe  ${BST_CHECKED}
-                    ${EndIf}
+                    ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
@@ -1019,7 +1051,7 @@
             ; Install resources:
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
@@ -1048,7 +1080,7 @@
             ; Install resources:
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
@@ -1077,7 +1109,7 @@
             ; Install resources:
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
@@ -1106,7 +1138,7 @@
             ; Install resources:
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
-                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "mopy\w9xpopen.exe" /x "Mopy\Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
