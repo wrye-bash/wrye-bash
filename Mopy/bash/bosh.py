@@ -32564,7 +32564,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.NPC_.records:
             if npc.fid == (GPath('Oblivion.esm'), 0x000007): continue #skip player
-            if npc.race == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
+            if npc.full is not None and npc.race == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
             raceEyes = defaultEyes.get(npc.race)
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
