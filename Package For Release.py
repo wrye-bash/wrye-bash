@@ -48,11 +48,12 @@ def GetVersionInfo(readme=readme, padding=4):
         for line in file:
             maVersion = reVersion.match(line)
             if maVersion:
-                version = maVersion.group(1)
+                v = version = maVersion.group(1)
+                v = v.replace('.','')
                 if padding < 0:
-                    file_version = '.'.join(c for c in version.ljust(-padding,'0'))
+                    file_version = '.'.join(c for c in v.ljust(-padding,'0'))
                 else:
-                    file_version = '.'.join(c for c in version.rjust(padding,'0'))
+                    file_version = '.'.join(c for c in v.rjust(padding,'0'))
                 break
     return version,file_version
 
