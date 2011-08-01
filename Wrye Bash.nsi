@@ -195,6 +195,23 @@
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
+        ; If no previous Wrye Bash installation(s) for an install location preset them to default of Python version
+        ${If} $Reg_Value_OB_Py != $True
+            ${AndIf} $Reg_Value_OB_Exe != $True
+                StrCpy $Reg_Value_OB_Py $True
+        ${EndIf}
+        ${If} $Reg_Value_Nehrim_Py != $True
+            ${AndIf} $Reg_Value_Nehrim_Exe != $True
+                StrCpy $Reg_Value_Nehrim_Py $True
+        ${EndIf}
+        ${If} $Reg_Value_Ex1_Py == $True
+            ${AndIf} $Reg_Value_Ex1_Exe == $True
+                StrCpy $Reg_Value_Ex1_Py $True
+        ${EndIf}
+        ${If} $Reg_Value_Ex2_Py == $True
+            ${AndIf} $Reg_Value_Ex2_Exe == $True
+                StrCpy $Reg_Value_Ex2_Py $True
+        ${EndIf}
 
         ${If} $Reg_Value_OB_Py == $True
             StrCpy $CheckState_OB_Py ${BST_CHECKED}
@@ -476,7 +493,7 @@
             ${AndIf} $Python_pywin32 != "1"
             ${AndIf} $Python_wx != "1"
                 StrCpy $Requirements "Met"
-                ${NSD_CreateLabel} 0 $0u 100% 16u "Congratulations! the installer detected that you have a full install of all the Python prerequisites already!"
+                ${NSD_CreateLabel} 0 $0u 100% 16u "Python Version: Congratulations! the installer detected that you have a full install of all the Python prerequisites already!"
                     Pop $Label
                 IntOp $0 $0 + 24
             ${Else}
@@ -531,13 +548,16 @@
             IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
                 StrCpy $9 "Installed"
             ${If} $9 == $Empty
-                ${NSD_CreateLabel} 0 $0u 60% 17u "MSVC Redistributable 2008 (Must be downloaded and installed manually)"
+                ${NSD_CreateLabel} 0 $0u 60% 17u "Standalone Version: MSVC Redistributable 2008 (Must Manually Download && Install)"
                     Pop $Check_msvc
                 IntOp $0 $0 + 2
                 ${NSD_CreateLink} 60% $0u 40% 8u  "MSVC 2008 Redist webpage" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
                     Pop $Link_vcredist
                     ${NSD_OnClick} $Link_vcredist onClick_Link
                 IntOp $0 $0 + 11
+            ${Else}
+                ${NSD_CreateLabel} 0 $0u 100% 17u "Standalone Version: Congratulations MSVC requirement detected as installed."
+                    Pop $Check_msvc
             ${EndIf}
         ${EndIf}
         nsDialogs::Show
