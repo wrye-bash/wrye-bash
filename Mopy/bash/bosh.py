@@ -6865,7 +6865,7 @@ class IniFile:
             else:
                 if len(stripped) != 0:
                     status = -10
-            lines.append((line.strip(),section._s,setting,value._s,status,lineNo))
+            lines.append((line.rstrip(),section._s,setting,value._s,status,lineNo))
         iniFile.close()
         return lines
 
