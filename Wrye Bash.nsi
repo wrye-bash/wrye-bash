@@ -235,14 +235,23 @@
         IntOp $0 $0 + 42
         ${If} $PythonVersionInstall == $True
             ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
             ${If} $Python_Path != $Empty
                 StrCpy $Python_Ver "27"
             ${Else}
                 ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
+                ${If} $Python_Path == $Empty
+                    ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
+                ${EndIf}
                 ${If} $Python_Path != $Empty
                     StrCpy $Python_Ver "26"
                 ${Else}
                     ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
+                    ${If} $Python_Path == $Empty
+                        ReadRegStr $Python_Path HKCU "SOFTWARE\PYTHON\PythonCore\2.5\InstallPath" ""
+                    ${EndIf}
                     ${If} $Python_Path != $Empty
                         StrCpy $Python_Ver "25"
                     ${EndIf}
@@ -633,31 +642,31 @@
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
 
         ${If} $CheckState_OB == ${BST_CHECKED}
-            SetOutPath "$Path_OB\Mopy"
-            ExecShell "open" '"$Path_OB\Mopy\Wrye Bash Launcher.pyw"'
+            SetOutPath "$Path_OB/Mopy"
+            ExecShell "open" '"$Path_OB/Mopy\Wrye Bash Launcher.pyw"'
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
-            SetOutPath "$Path_Nehrim\Mopy"
-            ExecShell "open" '"$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw"'
+            SetOutPath "$Path_Nehrim/Mopy"
+            ExecShell "open" '"$Path_Nehrim/Mopy\Wrye Bash Launcher.pyw"'
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
-            SetOutPath "$Path_Ex1\Mopy"
-            ExecShell "open" '"$Path_Ex1\Mopy\Wrye Bash Launcher.pyw"'
+            SetOutPath "$Path_Ex1/Mopy"
+            ExecShell "open" '"$Path_Ex1/Mopy\Wrye Bash Launcher.pyw"'
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
-            SetOutPath "$Path_Ex2\Mopy"
-            ExecShell "open" '"$Path_Ex2\Mopy\Wrye Bash Launcher.pyw"'
+            SetOutPath "$Path_Ex2/Mopy"
+            ExecShell "open" '"$Path_Ex2/Mopy\Wrye Bash Launcher.pyw"'
         ${EndIf}
         ${NSD_GetState} $Check_Readme $0
         ${If} $0 == ${BST_CHECKED}
             ${If} $Path_OB != $Empty
-                ExecShell "open" "$Path_OB\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_OB/Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Nehrim != $Empty
-                ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Nehrim/Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex1 != $Empty
-                ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex1/Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex2 != $Empty
-                ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex2/Mopy\Wrye Bash.html"
             ${EndIf}
         ${EndIf}
         ${NSD_GetState} $Check_DeleteOldFiles $0
@@ -1197,26 +1206,26 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
-                SetOutPath $Path_OB\Mopy'
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\mopy\Wrye Bash Launcher.pyw" "" "$PATH_OB\Mopy\bash\images\bash_32.ico" 0
+                SetOutPath $Path_OB/Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB/mopy\Wrye Bash Launcher.pyw" "" "$Path_OB/Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
-                SetOutPath $Path_Nehrim\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
+                SetOutPath $Path_Nehrim/Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim/mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim/Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
-                SetOutPath $Path_Ex1\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
+                SetOutPath $Path_Ex1/Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1/mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1/Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
-                SetOutPath $Path_Ex2\Mopy
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\bash\images\bash_32.ico" 0
+                SetOutPath $Path_Ex2/Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2/mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2/Mopy\bash\images\bash_32.ico" 0
             ${EndIf}
         ${EndIf}
         SectionEnd
