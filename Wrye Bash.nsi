@@ -526,11 +526,14 @@ NoComTypes:
                     IntOp $0 $0 + 11
                 ${EndIf}
             ${EndIf}
+        IntOp $0 $0 + 10
         ${EndIf}
 
         ${If} $ExeVersionInstall == $True
             StrCpy $9 $Empty
             IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
+                StrCpy $9 "Installed"
+            IfFileExists "$COMMONFILES\Microsoft Shared\VC\msdia90.dll" 0 +2
                 StrCpy $9 "Installed"
             ${If} $9 == $Empty
                 ${NSD_CreateLabel} 0 $0u 60% 17u "Standalone Version: MSVC Redistributable 2008$\n(must manually download && install)"
