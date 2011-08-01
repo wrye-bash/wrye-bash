@@ -2341,6 +2341,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * More bugfixes from valda
 * Added activation status as a new mods column/sort option.
 * New mod command [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
+* BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
 
 === 294.1 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
 * Program-wide Changes:

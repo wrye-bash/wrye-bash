@@ -153,13 +153,14 @@ Tests the current status of an esp or espm in the Data directory.  This function
 Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer or Oblivion.ini, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
 
 * __Usage:__
-  [codebox]EditINI(file_name, section, setting, value)[/codebox]
+  [codebox]EditINI(file_name, section, setting, value [,comment])[/codebox]
 * __Arguments:__
   * **file_name:** The name of the ini file you wish to edit, relative to the Data directory.
   * **section:** The section in the ini where **setting** resides, or 'set' or 'setGS' (see examples below)
   * **setting:** The setting you wish to change.
   * **value:** The value to set the setting to.
-  
+  * **comment:** Optional comment to include with this tweak.
+
 * __Examples:__
   * **Setting an item in Oblivion.ini:**
   [codebox]EditINI('Oblivion.ini', 'General', 'bBorderRegionsEnabled', 0)[/codebox]
