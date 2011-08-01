@@ -482,7 +482,7 @@ NoComTypes:
                     Pop $Label
                 IntOp $0 $0 + 24
             ${Else}
-                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or that you let this installer download and install them for you.  Please check the component(s) that you would like this installer to download and install or use the provided links to manually download and install."
+                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. Please check the component(s) that you would like this installer to download and install or use the provided links to manually download and install.  The installer may become unresponsive while the requested files are downloading.  Please be patient."
                     Pop $Label
                 IntOp $0 $0 + 41
                 ${If} $Python_Path == $Empty
@@ -529,7 +529,7 @@ NoComTypes:
         ${EndIf}
 
         ${If} $ExeVersionInstall == $True
-            StrCpy $9 ''
+            StrCpy $9 $Empty
             IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
                 StrCpy $9 "Installed"
             ${If} $9 == $Empty
@@ -556,14 +556,14 @@ NoComTypes:
             ${NSD_GetState} $Check_pywin32 $CheckState_pywin32
 
             ${If} $CheckState_Python == ${BST_CHECKED}
-                SetOutPath "$EXEDIR\PythonInstallers"
+                SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_Python $0
                 ${NSD_SetText} $Check_Python "$0 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$EXEDIR\PythonInstallers\python-2.7.2.msi"
+                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$TEMP\PythonInstallers\python-2.7.2.msi"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
-                    ExecWait '"msiexec" /i "$EXEDIR\PythonInstallers\python-2.7.2.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.2.msi"'
                     StrCpy $Python_Ver "27"
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
@@ -573,20 +573,20 @@ NoComTypes:
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
-                SetOutPath "$EXEDIR\PythonInstallers"
+                SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_wx $0
                 ${NSD_SetText} $Check_wx "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py27.exe "$EXEDIR\PythonInstallers\wxPython.exe"
+                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
                 ${ElseIf} $Python_Ver == "25" ;last version of wxPython to suport py2.5x is 2.8.11 so download that version if you're using Python 2.5x
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$EXEDIR\PythonInstallers\wxPython.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$TEMP\PythonInstallers\wxPython.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py26.exe "$EXEDIR\PythonInstallers\wxPython.exe"
+                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py26.exe "$TEMP\PythonInstallers\wxPython.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_wx "$0 - Installing..."
-                    ExecWait '"$EXEDIR\PythonInstallers\wxPython.exe"'; /VERYSILENT'
+                    ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
                     ${NSD_SetText} $Check_wx "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_wx "$0 - Download Failed!"
@@ -595,14 +595,14 @@ NoComTypes:
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
-                SetOutPath "$EXEDIR\PythonInstallers"
+                SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_Comtypes $0
                 ${NSD_SetText} $Check_Comtypes "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$EXEDIR\PythonInstallers\comtypes.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\PythonInstallers\comtypes.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Comtypes "$0 - Installing..."
-                    ExecWait  '"$EXEDIR\PythonInstallers\comtypes.exe"'
+                    ExecWait  '"$TEMP\PythonInstallers\comtypes.exe"'
                     ${NSD_SetText} $Check_Comtypes "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!"
@@ -611,20 +611,20 @@ NoComTypes:
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
-                SetOutPath "$EXEDIR\PythonInstallers"
+                SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$EXEDIR\PythonInstallers\pywin32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\PythonInstallers\pywin32.exe"
                 ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$EXEDIR\PythonInstallers\pywin32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$TEMP\PythonInstallers\pywin32.exe"
                 ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$EXEDIR\PythonInstallers\pywin32-216.win32.exe"
+                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$TEMP\PythonInstallers\pywin32.exe"
                 ${EndIf}
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
-                    ExecWait  '"$EXEDIR\PythonInstallers\pywin32.exe"'
+                    ExecWait  '"$TEMP\PythonInstallers\pywin32.exe"'
                     ${NSD_SetText} $Check_pywin32 "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
