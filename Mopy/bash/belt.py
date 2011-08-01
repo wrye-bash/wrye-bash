@@ -1182,12 +1182,12 @@ class WryeParser(ScriptParser.Parser):
         return String.lower()
     def fnFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, basestring):
-            error("Function 'find' only operators on string types.")
+            error("Function 'find' only operates on string types.")
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
     def fnRFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, basestring):
-            error("Function 'rfind' only operators on string types.")
+            error("Function 'rfind' only operates on string types.")
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
     def fnGetFilename(self, String):
