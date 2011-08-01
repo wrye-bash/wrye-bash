@@ -459,7 +459,8 @@
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
                 ;Detect Comtypes:
-                IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" 0 +10
+                IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" +2 +1
+                    Goto NoComTypes
                     FileOpen $2 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
                     FileRead $2 $1
                     FileRead $2 $1
@@ -471,6 +472,7 @@
                     StrCpy $Python_Comtypes $1 5 -8
                     ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
                     ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
+NoComTypes:
                 ${If} $Python_Ver == "25"
                     ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
                     ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
@@ -503,7 +505,7 @@
                 ${If} $Python_Path == $Empty
                     ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python 2.7.2"
                         Pop $Check_Python
-                        ${NSD_SetState} $Check_Python $CheckState_Python
+                        ${NSD_SetState} $Check_Python ${BST_CHECKED}
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 60% $0u 65% 8u  "Python webpage" ;http://www.python.org/download/releases/2.7.2/
                         Pop $Link_Python
@@ -513,7 +515,7 @@
                 ${If} $Python_wx == "1"
                     ${NSD_CreateCheckBox} 0 $0u 60% 13u "wxPython 2.8.12.1-ansi"
                         Pop $Check_wx
-                        ${NSD_SetState} $Check_wx $CheckState_wx
+                        ${NSD_SetState} $Check_wx ${BST_CHECKED}
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 60% $0u 40% 8u  "wxPython webpage" ;http://www.wxpython.org/download.php#stable
                         Pop $Link_wx
@@ -523,7 +525,7 @@
                 ${If} $Python_Comtypes == "1"
                     ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python Comtypes 0.6.2"
                         Pop $Check_Comtypes
-                        ${NSD_SetState} $Check_Comtypes $CheckState_Comtypes
+                        ${NSD_SetState} $Check_Comtypes ${BST_CHECKED}
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 60% $0u 40% 8u "Comtypes webpage" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
                         Pop $Link_Comtypes
@@ -533,7 +535,7 @@
                 ${If} $Python_pywin32 == "1"
                     ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 216"
                         Pop $Check_pywin32
-                        ${NSD_SetState} $Check_pywin32 $CheckState_pywin32
+                        ${NSD_SetState} $Check_pywin32 ${BST_CHECKED}
                     IntOp $0 $0 + 2
                     ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
                         Pop $Link_pywin32
@@ -574,11 +576,11 @@
                 SetOutPath "$EXEDIR\PythonInstallers"
                 ${NSD_GetText} $Check_Python $0
                 ${NSD_SetText} $Check_Python "$0 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$EXEDIR\PythonInstallers\Python-2.7.2.msi"
+                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$EXEDIR\PythonInstallers\python-2.7.2.msi"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
-                    ExecWait '"msiexec" /i "$EXEDIR\PythonInstallers\Python-2.7.2.msi"'
+                    ExecWait '"msiexec" /i "$EXEDIR\PythonInstallers\python-2.7.2.msi"'
                     StrCpy $Python_Ver "27"
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
@@ -588,6 +590,7 @@
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
+                SetOutPath "$EXEDIR\PythonInstallers"
                 ${NSD_GetText} $Check_wx $0
                 ${NSD_SetText} $Check_wx "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
@@ -609,6 +612,7 @@
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
+                SetOutPath "$EXEDIR\PythonInstallers"
                 ${NSD_GetText} $Check_Comtypes $0
                 ${NSD_SetText} $Check_Comtypes "$0 - Downloading..."
                 NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$EXEDIR\PythonInstallers\comtypes.exe"
@@ -624,6 +628,7 @@
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
+                SetOutPath "$EXEDIR\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
                 ${If} $Python_Ver == "27"
@@ -1685,6 +1690,7 @@
                 RMDir  "$Path_OB\Mopy"
                 RMDir  "$Path_OB\Data\Docs"
                 RMDir  "$Path_OB\Data\Bash Patches"
+                RMDir  "$Path_OB\Data\Ini Tweaks"
                 Delete "$SMPROGRAMS\Wrye Bash\*oblivion*"
             ${EndIf}
         ${EndIf}
@@ -1891,6 +1897,7 @@
                 RMDir  "$Path_Nehrim\Mopy"
                 RMDir  "$Path_Nehrim\Data\Docs"
                 RMDir  "$Path_Nehrim\Data\Bash Patches"
+                RMDir  "$Path_Nehrim\Data\Ini Tweaks"
                 Delete "$SMPROGRAMS\Wrye Bash\*Nehrim*"
             ${EndIf}
         ${EndIf}
@@ -2097,6 +2104,7 @@
                 RMDir  "$Path_Ex1\Mopy"
                 RMDir  "$Path_Ex1\Data\Docs"
                 RMDir  "$Path_Ex1\Data\Bash Patches"
+                RMDir  "$Path_Ex1\Data\Ini Tweaks"
                 Delete "$SMPROGRAMS\Wrye Bash\*Extra 1*"
             ${EndIf}
         ${EndIf}
@@ -2303,6 +2311,7 @@
                 RMDir  "$Path_Ex2\Mopy"
                 RMDir  "$Path_Ex2\Data\Docs"
                 RMDir  "$Path_Ex2\Data\Bash Patches"
+                RMDir  "$Path_Ex2\Data\Ini Tweaks"
                 Delete "$SMPROGRAMS\Wrye Bash\*Extra 2*"
             ${EndIf}
         ${EndIf}
