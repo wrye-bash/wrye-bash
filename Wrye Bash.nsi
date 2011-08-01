@@ -1,17 +1,20 @@
 ; Wrye Bash.nsi
+
 ;-------------------------------- Includes:
     !include MUI2.nsh
     !include LogicLib.nsh
     !include nsDialogs.nsh
     !include WordFunc.nsh
 
-    ;--Information passed by the packaging script
+    ; Variables are defined by the packaging script; just define failsafe values
     !ifndef WB_NAME
-        !define WB_NAME "Wrye Bash 294"
+        !define WB_NAME "Wrye Bash (version unknown)"
     !endif
     !ifndef WB_FILEVERSION
-        !define WB_FILEVERSION "0.2.9.4"
+        !define WB_FILEVERSION "0.0.0.0"
     !endif
+
+
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
     OutFile "${WB_NAME} -- Installer.exe"
@@ -24,6 +27,8 @@
     VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Installer for ${WB_NAME}"
     VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WB_FILEVERSION}"
     SetCompressor /SOLID lzma
+
+
 ;-------------------------------- Variables:
     Var Dialog
     Var Label
@@ -69,8 +74,6 @@
     Var Reg_Value_Nehrim_Exe
     Var Reg_Value_Ex1_Exe
     Var Reg_Value_Ex2_Exe
-    ;Var CheckState_RemoveUserFiles
-    ;Var Check_RemoveUserFiles
     Var Check_Python
     Var Check_wx
     Var Check_pywin32
@@ -110,17 +113,21 @@
     Var MinVersion_Comtypes
     Var MinVersion_wx
     Var MinVersion_pywin32
-;-------------------------------- Page List:
-  !insertmacro MUI_PAGE_WELCOME
-  Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
-  Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
-  !insertmacro MUI_PAGE_COMPONENTS
-  !insertmacro MUI_PAGE_INSTFILES
-  Page custom PAGE_FINISH PAGE_FINISH_Leave
 
-  !insertmacro MUI_UNPAGE_WELCOME
-  UninstPage custom un.PAGE_SELECT_GAMES un.PAGE_SELECT_GAMES_Leave
-  !insertmacro MUI_UNPAGE_INSTFILES
+
+;-------------------------------- Page List:
+    !insertmacro MUI_PAGE_WELCOME
+    Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
+    Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
+    !insertmacro MUI_PAGE_COMPONENTS
+    !insertmacro MUI_PAGE_INSTFILES
+    Page custom PAGE_FINISH PAGE_FINISH_Leave
+
+    !insertmacro MUI_UNPAGE_WELCOME
+    UninstPage custom un.PAGE_SELECT_GAMES un.PAGE_SELECT_GAMES_Leave
+    !insertmacro MUI_UNPAGE_INSTFILES
+
+
 ;-------------------------------- Initialize Variables as required:
     Function un.onInit
         StrCpy $Empty ""
@@ -137,16 +144,11 @@
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
-        FunctionEnd
+    FunctionEnd
+
     Function .onInit
         StrCpy $Empty ""
         StrCpy $True "True"
-        StrCpy $MinVersion_Comtypes '0.6.2'
-        StrCpy $MinVersion_wx '2.8.10'
-        StrCpy $MinVersion_pywin32 '213'
-        StrCpy $Python_Comtypes "1"
-        StrCpy $Python_wx "1"
-        StrCpy $Python_pywin32 "1"
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
         ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
@@ -159,6 +161,13 @@
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
+
+        StrCpy $MinVersion_Comtypes '0.6.2'
+        StrCpy $MinVersion_wx '2.8.10'
+        StrCpy $MinVersion_pywin32 '213'
+        StrCpy $Python_Comtypes "1"
+        StrCpy $Python_wx "1"
+        StrCpy $Python_pywin32 "1"
 
         ${If} $Path_OB == $Empty
             ReadRegStr $Path_OB HKLM "Software\Bethesda Softworks\Oblivion" "Installed Path"
@@ -218,8 +227,180 @@
         ${Else}
             StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
         ${EndIf}
-        FunctionEnd
-;-------------------------------- Custom Installation Pages and their Functions:
+    FunctionEnd
+
+
+;-------------------------------- Install Locations Page
+    Function PAGE_INSTALLLOCATIONS
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
+        GetFunctionAddress $Function_Browse OnClick_Browse
+        GetFunctionAddress $Function_Extra OnClick_Extra
+        nsDialogs::Create 1018
+            Pop $Dialog
+
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 24u "Please select game(s)/extra location(s) for/in which you would like to install Wrye Bash.$\nAlso select which version(s) to install (python (default) and/or standalone executable version$\n(beta but doesn't require Python and Python addons))."
+            Pop $Label
+            IntOp $0 0 + 25
+        ${If} $Path_OB != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Oblivion"
+                Pop $Check_OB
+                ${NSD_SetState} $Check_OB $CheckState_OB
+            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_OB_Py
+                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_OB_Exe
+                ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
+                IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
+                Pop $PathDialogue_OB
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_OB
+                nsDialogs::OnClick $Browse_OB $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+        ${If} $Path_Nehrim != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Nehrim"
+                Pop $Check_Nehrim
+                ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
+            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_Nehrim_Py
+                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_Nehrim_Exe
+                ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
+                IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
+                Pop $PathDialogue_Nehrim
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Nehrim
+                nsDialogs::OnClick $Browse_Nehrim $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+        ${NSD_CreateCheckBox} 0 $0u 100% 13u "Install to extra locations"
+            Pop $Check_Extra
+            ${NSD_SetState} $Check_Extra $CheckState_Extra
+                nsDialogs::OnClick $Check_Extra $Function_Extra
+                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #1:"
+                Pop $Check_Ex1
+                ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
+                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex1_Py
+                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                    Pop $Check_Ex1_Exe
+                    ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
+                IntOp $0 $0 + 13
+                ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
+                    Pop $PathDialogue_Ex1
+                ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                    Pop $Browse_Ex1
+                    nsDialogs::OnClick $Browse_Ex1 $Function_Browse
+                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #2:"
+                Pop $Check_Ex2
+                ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
+                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex2_Py
+                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                    Pop $Check_Ex2_Exe
+                    ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
+                IntOp $0 $0 + 13
+                ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
+                    Pop $PathDialogue_Ex2
+                ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                    Pop $Browse_Ex2
+                    nsDialogs::OnClick $Browse_Ex2 $Function_Browse
+        ${If} $CheckState_Extra != ${BST_CHECKED}
+            ShowWindow $Check_Ex1 ${SW_HIDE}
+            ShowWindow $Check_Ex1_Py ${SW_HIDE}
+            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
+            ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
+            ShowWindow $Browse_Ex1 ${SW_HIDE}
+            ShowWindow $Check_Ex2 ${SW_HIDE}
+            ShowWindow $Check_Ex2_Py ${SW_HIDE}
+            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
+            ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
+            ShowWindow $Browse_Ex2 ${SW_HIDE}
+        ${EndIf}
+        nsDialogs::Show
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_Leave
+        # in case the user goes back to this page and changes selections
+        StrCpy $PythonVersionInstall $Empty
+        StrCpy $ExeVersionInstall $Empty
+
+        ; Game paths
+        ${NSD_GetText} $PathDialogue_OB $Path_OB
+        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
+        ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
+        ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
+
+        ; Game states
+        ${NSD_GetState} $Check_OB $CheckState_OB
+        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+        ${NSD_GetState} $Check_Extra $CheckState_Extra
+        ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
+        ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
+
+        ; Python states
+        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
+        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
+        ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
+        ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
+        ${If} $CheckState_OB_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_OB == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex2 == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${Endif}
+
+        ; Standalone states
+        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
+        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
+        ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
+        ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
+        ${If} $CheckState_OB_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_OB == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${Endif}
+        ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Extra == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex2 == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${Endif}
+    FunctionEnd
+
+
+;-------------------------------- Requirements Page
     Function PAGE_REQUIREMENTS
         !insertmacro MUI_HEADER_TEXT $(PAGE_REQUIREMENTS_TITLE) $(PAGE_REQUIREMENTS_SUBTITLE)
 
@@ -230,9 +411,9 @@
         ${EndIf}
 
         IntOp $0 0 + 0
-        ${NSD_CreateLabel} 0 $0u 100% 32u "Checking for requirements (Python && some Python addons for Python version of Wrye Bash, MS Visual C ++ redist for Standalone Executable Wrye Bash Version). This can quite easily give a false detection that you need some of those since if they aren't installed with the exact same version(s)/location(s) that this is guessing it may not find it."
+        ${NSD_CreateLabel} 0 $0u 100% 8u "Checking for requirements"
             Pop $3
-        IntOp $0 $0 + 42
+        IntOp $0 $0 + 18
         ${If} $PythonVersionInstall == $True
             ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${If} $Python_Path == $Empty
@@ -257,6 +438,7 @@
                     ${EndIf}
                 ${EndIf}
             ${EndIf}
+
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
                 ;Detect Comtypes:
@@ -294,11 +476,11 @@
             ${AndIf} $Python_pywin32 != "1"
             ${AndIf} $Python_wx != "1"
                 StrCpy $Requirements "Met"
-               ${NSD_CreateLabel} 0 $0u 100% 16u "Congratulations the installer detects that you have a full install of all the Python prerequisites already! Please click 'Next' to continue."
+                ${NSD_CreateLabel} 0 $0u 100% 16u "Congratulations! the installer detected that you have a full install of all the Python prerequisites already!"
                     Pop $Label
-                IntOp $0 $0 + 16
+                IntOp $0 $0 + 24
             ${Else}
-                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or that you let this installer download them for you and execute them so that you have to do the minimum work. Please check the component(s) that you are fine with this installer downloading and installing; or use the provided links to manually download and install."
+                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. It is recommended (as in Wrye Bash probably won't work otherwise) that you either manually download and install them or that you let this installer download and install them for you.  Please check the component(s) that you would like this installer to download and install or use the provided links to manually download and install."
                     Pop $Label
                 IntOp $0 $0 + 41
                 ${If} $Python_Path == $Empty
@@ -306,7 +488,7 @@
                         Pop $Check_Python
                         ${NSD_SetState} $Check_Python $CheckState_Python
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python 2.7.2 webpage" ;http://www.python.org/download/releases/2.7.2/
+                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python webpage" ;http://www.python.org/download/releases/2.7.2/
                         Pop $Link_Python
                         ${NSD_OnClick} $Link_Python onClick_Link
                     IntOp $0 $0 + 11
@@ -326,7 +508,7 @@
                         Pop $Check_Comtypes
                         ${NSD_SetState} $Check_Comtypes $CheckState_Comtypes
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u "Comtypes' SF webpage" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
+                    ${NSD_CreateLink} 60% $0u 40% 8u "Comtypes webpage" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
                         Pop $Link_Comtypes
                         ${NSD_OnClick} $Link_Comtypes onClick_Link
                     IntOp $0 $0 + 11
@@ -336,19 +518,20 @@
                         Pop $Check_pywin32
                         ${NSD_SetState} $Check_pywin32 $CheckState_pywin32
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 SF webpage" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
+                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
                         Pop $Link_pywin32
                         ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $ExeVersionInstall == $True
             StrCpy $9 ''
             IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
                 StrCpy $9 "Installed"
             ${If} $9 == $Empty
-                ${NSD_CreateLabel} 0 $0u 60% 17u "MSVC Redistributable 2008 (Must Manually Download && Install)"
+                ${NSD_CreateLabel} 0 $0u 60% 17u "MSVC Redistributable 2008 (Must be downloaded and installed manually)"
                     Pop $Check_msvc
                 IntOp $0 $0 + 2
                 ${NSD_CreateLink} 60% $0u 40% 8u  "MSVC 2008 Redist webpage" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
@@ -358,8 +541,8 @@
             ${EndIf}
         ${EndIf}
         nsDialogs::Show
+    FunctionEnd
 
-        FunctionEnd
     Function PAGE_REQUIREMENTS_Leave
         ${If} $Requirements != "Met"
             ${NSD_GetState} $Check_Python $CheckState_Python
@@ -381,6 +564,7 @@
                 ${Else}
                     ${NSD_SetText} $Check_Python "$0 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
+                    Abort
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_wx == ${BST_CHECKED}
@@ -401,6 +585,7 @@
                 ${Else}
                     ${NSD_SetText} $Check_wx "$0 - Download Failed!"
                     MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
+                    Abort
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_Comtypes == ${BST_CHECKED}
@@ -415,6 +600,7 @@
                 ${Else}
                     ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!"
                     MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
+                    Abort
                 ${EndIf}
             ${EndIf}
             ${If} $CheckState_pywin32 == ${BST_CHECKED}
@@ -435,157 +621,14 @@
                 ${Else}
                     ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
+                    Abort
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        FunctionEnd
-    Function PAGE_INSTALLLOCATIONS
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
-        GetFunctionAddress $Function_Browse OnClick_Browse
-        GetFunctionAddress $Function_Extra OnClick_Extra
-        nsDialogs::Create 1018
-            Pop $Dialog
+    FunctionEnd
 
-        ${If} $Dialog == error
-            Abort
-            ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 16u "Please select game(s)/extra location(s) to install Wrye Bash to.$\nAlso select which version(s) to install (python (default) and/or standalone executable version$\n(beta but doesn't require Python and Python addons))."
-            Pop $Label
-            IntOp $0 0 + 17
-        ${If} $Path_OB != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Oblivion"
-                Pop $Check_OB
-                ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
-                Pop $Check_OB_Py
-                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
-            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
-                Pop $Check_OB_Exe
-                ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
-                IntOp $0 $0 + 13
-            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
-                Pop $PathDialogue_OB
-            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
-                Pop $Browse_OB
-                nsDialogs::OnClick $Browse_OB $Function_Browse
-            IntOp $0 $0 + 13
-        ${EndIf}
-        ${If} $Path_Nehrim != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Nehrim"
-                Pop $Check_Nehrim
-                ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
-                Pop $Check_Nehrim_Py
-                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
-            ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
-                Pop $Check_Nehrim_Exe
-                ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
-                IntOp $0 $0 + 13
-            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
-                Pop $PathDialogue_Nehrim
-            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
-                Pop $Browse_Nehrim
-                nsDialogs::OnClick $Browse_Nehrim $Function_Browse
-            IntOp $0 $0 + 13
-        ${EndIf}
-        ${NSD_CreateCheckBox} 0 $0u 100% 13u "Install to extra locations"
-            Pop $Check_Extra
-            ${NSD_SetState} $Check_Extra $CheckState_Extra
-            nsDialogs::OnClick $Check_Extra $Function_Extra
-            IntOp $0 $0 + 13
-            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #1:"
-                Pop $Check_Ex1
-                ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex1_Py
-                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
-                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
-                    Pop $Check_Ex1_Exe
-                    ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
-                IntOp $0 $0 + 13
-                ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
-                    Pop $PathDialogue_Ex1
-                ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
-                    Pop $Browse_Ex1
-                    nsDialogs::OnClick $Browse_Ex1 $Function_Browse
-                IntOp $0 $0 + 13
-            ${NSD_CreateCheckBox} 0 $0u 33% 13u "Extra Location #2:"
-                Pop $Check_Ex2
-                ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateCheckBox} 33% $0u 33% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex2_Py
-                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
-                ${NSD_CreateCheckBox} 66% $0u 34% 13u "Wrye Bash [Standalone]"
-                    Pop $Check_Ex2_Exe
-                    ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
-                IntOp $0 $0 + 13
-                ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
-                    Pop $PathDialogue_Ex2
-                ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
-                    Pop $Browse_Ex2
-                    nsDialogs::OnClick $Browse_Ex2 $Function_Browse
-        ${If} $CheckState_Extra != ${BST_CHECKED}
-            ShowWindow $Check_Ex1 ${SW_HIDE}
-            ShowWindow $Check_Ex1_Py ${SW_HIDE}
-            ShowWindow $Check_Ex1_Exe ${SW_HIDE}
-            ShowWindow $PathDialogue_Ex1 ${SW_HIDE}
-            ShowWindow $Browse_Ex1 ${SW_HIDE}
-            ShowWindow $Check_Ex2 ${SW_HIDE}
-            ShowWindow $Check_Ex2_Py ${SW_HIDE}
-            ShowWindow $Check_Ex2_Exe ${SW_HIDE}
-            ShowWindow $PathDialogue_Ex2 ${SW_HIDE}
-            ShowWindow $Browse_Ex2 ${SW_HIDE}
-        ${EndIf}
-        nsDialogs::Show
-        FunctionEnd
-    Function PAGE_INSTALLLOCATIONS_Leave
-        ; Game paths
-        ${NSD_GetText} $PathDialogue_OB $Path_OB
-        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
-        ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
-        ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
-        ; Game states
-        ${NSD_GetState} $Check_OB $CheckState_OB
-        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
-        ${NSD_GetState} $Check_Extra $CheckState_Extra
-        ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
-        ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
-        ; Python states
-        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
-            ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                StrCpy $PythonVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
-            ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                StrCpy $PythonVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
-            ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                StrCpy $PythonVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
-            ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                StrCpy $PythonVersionInstall "True"
-            ${Endif}
-        ; Standalone states
-        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
-            ${If} $CheckState_OB_Exe == ${BST_CHECKED}
-                StrCpy $ExeVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
-            ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                StrCpy $ExeVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
-            ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                StrCpy $ExeVersionInstall "True"
-            ${Endif}
-        ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
-            ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                StrCpy $ExeVersionInstall "True"
-            ${Endif}
-        FunctionEnd
+;-------------------------------- Finish Page
     Function PAGE_FINISH
         !insertmacro MUI_HEADER_TEXT $(PAGE_FINISH_TITLE) $(PAGE_FINISH_SUBTITLE)
 
@@ -601,7 +644,7 @@
         ${EndIf}
 
         IntOp $0 0 + 0
-        ${NSD_CreateLabel} 0 0 100% 16u "Please select which Wrye Bash Version(s) and game(s)/extra location(s) that Wrye Bash$\nis installed to that you want to run Wrye Bash from right now:"
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which Wrye Bash installation(s), if any, you would like to run right now:"
             Pop $Label
         IntOp $0 0 + 17
         ${If} $Path_OB != $Empty
@@ -610,17 +653,17 @@
             IntOp $0 $0 + 9
         ${EndIf}
         ${If} $Path_Nehrim != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Nehrim:"
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Nehrim"
                 Pop $Check_Nehrim
             IntOp $0 $0 + 9
         ${EndIf}
         ${If} $Path_Ex1 != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Extra 1:"
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u $Path_Ex1
                 Pop $Check_Ex1
             IntOp $0 $0 + 9
         ${EndIf}
         ${If} $Path_Ex2 != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Extra 2:"
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u $Path_Ex2
                 Pop $Check_Ex2
             IntOp $0 $0 + 9
         ${EndIf}
@@ -634,7 +677,8 @@
             Pop $Check_DeleteOldFiles
             ${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
         nsDialogs::Show
-        FunctionEnd
+    FunctionEnd
+
     Function PAGE_FINISH_Leave
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
@@ -642,47 +686,47 @@
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
 
         ${If} $CheckState_OB == ${BST_CHECKED}
-            SetOutPath "$Path_OB/Mopy"
+            SetOutPath "$Path_OB\Mopy"
             ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_OB/Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_OB\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_OB_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_OB/Mopy\Wrye Bash.exe"
+                ExecShell "open" "$Path_OB\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
-            SetOutPath "$Path_Nehrim/Mopy"
+            SetOutPath "$Path_Nehrim\Mopy"
             ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Nehrim/Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Nehrim/Mopy\Wrye Bash.exe"
+                ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
-            SetOutPath "$Path_Ex1/Mopy"
+            SetOutPath "$Path_Ex1\Mopy"
             ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Ex1/Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_Ex1\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Ex1/Mopy\Wrye Bash.exe"
+                ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
-            SetOutPath "$Path_Ex2/Mopy"
+            SetOutPath "$Path_Ex2\Mopy"
             ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                ExecShell "open" '"$Path_Ex2/Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_Ex2\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                ExecShell "open" "$Path_Ex2/Mopy\Wrye Bash.exe"
+                ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
         ${NSD_GetState} $Check_Readme $0
         ${If} $0 == ${BST_CHECKED}
             ${If} $Path_OB != $Empty
-                ExecShell "open" "$Path_OB/Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_OB\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Nehrim != $Empty
-                ExecShell "open" "$Path_Nehrim/Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex1 != $Empty
-                ExecShell "open" "$Path_Ex1/Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex2 != $Empty
-                ExecShell "open" "$Path_Ex2/Mopy\Wrye Bash.html"
+                ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.html"
             ${EndIf}
         ${EndIf}
         ${NSD_GetState} $Check_DeleteOldFiles $0
@@ -1014,7 +1058,10 @@
                 Delete "$Path_Ex2\Mopy\lzma.exe"
             ${EndIf}
         ${EndIf}
-        FunctionEnd
+    FunctionEnd
+
+
+;-------------------------------- Auxilliary Functions
     Function OnClick_Browse
         Pop $0
         ${If} $0 == $Browse_OB
@@ -1035,7 +1082,8 @@
         ${EndIf}
 
         ${NSD_SetText} $1 $0
-        FunctionEnd
+    FunctionEnd
+
     Function OnClick_Extra
         Pop $0
         ${NSD_GetState} $0 $CheckState_Extra
@@ -1062,7 +1110,8 @@
             ShowWindow $PathDialogue_Ex2 ${SW_SHOW}
             ShowWindow $Browse_Ex2 ${SW_SHOW}
         ${EndIf}
-        FunctionEnd
+    FunctionEnd
+
     Function OnClick_Link
         Pop $0
         ${If} $0 == $Link_Comtypes
@@ -1080,7 +1129,9 @@
         ${If} $0 == error
             Abort
         ${EndIf}
-        FunctionEnd
+    FunctionEnd
+
+
 ;-------------------------------- The Installation Sections:
     Section "Wrye Bash (required)" Main
         SectionIn RO
@@ -1214,7 +1265,8 @@
         WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoRepair" 1
         CreateDirectory "$COMMONFILES\Wrye Bash"
         WriteUninstaller "$COMMONFILES\Wrye Bash\uninstall.exe"
-        SectionEnd
+    SectionEnd
+
     Section "Start Menu Shortcuts" Shortcuts_SM
 
         CreateDirectory "$SMPROGRAMS\Wrye Bash"
@@ -1222,57 +1274,58 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} Path_OB != $Empty
-                SetOutPath $Path_OB/Mopy
+                SetOutPath $Path_OB\Mopy
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB/mopy\Wrye Bash Launcher.pyw" "" "$Path_OB/Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash Launcher.pyw" "" "$Path_OB\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_OB_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Oblivion.lnk" "$Path_OB/mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash.exe"
                     ${EndIf}
                 ${ElseIf} $CheckState_OB_Exe == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB/mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash.exe"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
-                SetOutPath $Path_Nehrim/Mopy
+                SetOutPath $Path_Nehrim\Mopy
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim/mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim/Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash (Standalone) - Nehrim.lnk" "$Path_Nehrim/mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash (Standalone) - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
                     ${EndIf}
                 ${ElseIf} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim/mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
-                SetOutPath $Path_Ex1/Mopy
+                SetOutPath $Path_Ex1\Mopy
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1/mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1/Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone - Extra 1.lnk" "$Path_Ex1/mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
                     ${EndIf}
                 ${ElseIf} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1/mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
-                SetOutPath $Path_Ex2/Mopy
+                SetOutPath $Path_Ex2\Mopy
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2/mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2/Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Extra 2.lnk" "$Path_Ex2/mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash.exe"
                     ${EndIf}
                 ${ElseIf} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2/mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash.exe"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        SectionEnd
+    SectionEnd
+
     Section "Batch Files" Batch_Files
 
         ${If} $CheckState_OB == ${BST_CHECKED}
@@ -1300,6 +1353,8 @@
             ${EndIf}
         ${EndIf}
     SectionEnd
+
+
 ;-------------------------------- Custom Uninstallation Pages and their Functions:
     Function un.PAGE_SELECT_GAMES
         !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
@@ -1367,7 +1422,8 @@
         ;    Pop $Check_RemoveUserFiles
         ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
         nsDialogs::Show
-        FunctionEnd
+    FunctionEnd
+
     Function un.PAGE_SELECT_GAMES_Leave
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
@@ -1378,7 +1434,8 @@
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
-        FunctionEnd
+    FunctionEnd
+
     Function un.OnClick_Browse
         Pop $0
         ${If} $0 == $Browse_OB
@@ -1399,7 +1456,9 @@
         ${EndIf}
 
         ${NSD_SetText} $1 $0
-        FunctionEnd
+    FunctionEnd
+
+
 ;-------------------------------- The Uninstallation Code:
     Section "Uninstall"
         ; Remove files and Directories - Directories are only deleted if empty.
@@ -2257,16 +2316,17 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        SectionEnd
-;-------------------------------- Descriptions/Subtitles/Language Strins:
+    SectionEnd
 
+
+;-------------------------------- Descriptions/Subtitles/Language Strings:
   ;Language strings
   !insertmacro MUI_LANGUAGE "English"
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
   LangString DESC_Batch_Files ${LANG_ENGLISH} "Batch files to print debug output to a text file."
   LangString PAGE_INSTALLLOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location(s)"
-  LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and if desired extra locations to install Wrye Bash to."
+  LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and, if desired, extra locations in which to install Wrye Bash."
   LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
   LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Please rectify the following missing requirements"
   LangString unPAGE_SELECT_GAMES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
