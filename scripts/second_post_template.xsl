@@ -9,7 +9,7 @@ Here's a rundown of what the next release will contain, as well as a list of all
 
 [url=https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207904]Request a feature![/url] [url=https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207901]Report a bug![/url]
 
-Users who have reported bugs and are updating from svn - please check the following for any closed/fixed bugs (indicated with a [color="#FF8C00"][s]strikethrough[/s][/color]) - confirmation of the fix would be much appreciated.
+Users who have reported bugs and are updating from svn: please check the following for any closed/fixed bugs (indicated with a [color="#FF8C00"][s]strikethrough[/s][/color]).  Confirmation of the fix would be much appreciated.
 
 [b]Upcoming release <xsl:value-of select="$release_num"/>[/b]: <xsl:value-of select="$release_theme"/>
 [list]<xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=1 and group_id=2061786]">

@@ -1,4 +1,4 @@
-﻿Continuing from the [topic=1212490]previous thread[/topic]...
+Continuing from the [topic=1214100]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
@@ -139,7 +139,7 @@ here's the first little bit of it (not all translated to account for FO3 but it'
 [*] BAIN:[list]
   [*] List Esp/ms command added to esp/m pane r-click menu.
   [*] Open at Google regex improved so better automatic search terms.
-  [*] New Uninstall All command. 
+  [*] New Uninstall All command.
   [*] New Clean Data command
   [*] Fixed markers disappearing on edit
   [*] Fixed a processing error when subpackages have ampersands in their names[/list]
