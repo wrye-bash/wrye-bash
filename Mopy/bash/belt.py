@@ -1163,30 +1163,30 @@ class WryeParser(ScriptParser.Parser):
         except:
             return 0
     def fnEndsWith(self, String, *args):
-        if not isinstance(String, str):
+        if not isinstance(String, basestring):
             error("Function 'endswith' only operates on string types.")
         try:
             return String.endswith(args)
         except:
             return False
     def fnStartsWith(self, String, *args):
-        if not isinstance(String, str):
+        if not isinstance(String, basestring):
             error("Function 'startswith' only operates on string types.")
         try:
             return String.startswith(args)
         except:
             return False
     def fnLower(self, String):
-        if not isinstance(String, str):
+        if not isinstance(String, basestring):
             error("Function 'lower' only operates on string types.")
         return String.lower()
     def fnFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, str):
+        if not isinstance(String, basestring):
             error("Function 'find' only operators on string types.")
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
     def fnRFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, str):
+        if not isinstance(String, basestring):
             error("Function 'rfind' only operators on string types.")
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
