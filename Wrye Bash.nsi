@@ -195,23 +195,6 @@
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
-        ; If no previous Wrye Bash installation(s) for an install location preset them to default of Python version
-        ${If} $Reg_Value_OB_Py != $True
-            ${AndIf} $Reg_Value_OB_Exe != $True
-                StrCpy $Reg_Value_OB_Py $True
-        ${EndIf}
-        ${If} $Reg_Value_Nehrim_Py != $True
-            ${AndIf} $Reg_Value_Nehrim_Exe != $True
-                StrCpy $Reg_Value_Nehrim_Py $True
-        ${EndIf}
-        ${If} $Reg_Value_Ex1_Py == $True
-            ${AndIf} $Reg_Value_Ex1_Exe == $True
-                StrCpy $Reg_Value_Ex1_Py $True
-        ${EndIf}
-        ${If} $Reg_Value_Ex2_Py == $True
-            ${AndIf} $Reg_Value_Ex2_Exe == $True
-                StrCpy $Reg_Value_Ex2_Py $True
-        ${EndIf}
 
         ${If} $Reg_Value_OB_Py == $True
             StrCpy $CheckState_OB_Py ${BST_CHECKED}
@@ -1329,7 +1312,7 @@ NoComTypes:
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
                     ${EndIf}
                 ${ElseIf} $CheckState_Ex1_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
