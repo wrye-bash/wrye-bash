@@ -2332,6 +2332,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
+* Small fix to the Python race patcher for dremora records
+* Lots of installer fixes
+
 === 294.1 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]
 * Program-wide Changes:
   * Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.
