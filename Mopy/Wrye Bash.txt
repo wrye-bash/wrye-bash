@@ -1066,6 +1066,9 @@ These are the commands found on context menu for mods...
 === Create BOSS Report
 * Generates a report on the selected mods, for posting in the latest BOSS thread.  The report includes the plugin name, a link to the download (if it can be determined from the installer), the plugin version, plugin CRC, and ITM and UDR counts (as determined by Wrye Bash, so the ITM count may be less than what TES4Edit reports).
 
+=== Copy Mod Info
+* Generates a report on the selected mod(s) with the info from the currently displayed columns (ie size, author etc.).
+
 === Mark Levelers
 * Obsolete. Replaced by automatic tagging (see [[#|Bash Tags]]).
 
@@ -2335,12 +2338,13 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-
 === 295 [12/12/2011] [valda,Lojack]
 * Unicode Mode:
   * More bugfixes from valda
 * Added activation status as a new mods column/sort option.
-* New mod command [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
+* New mod commands:
+  * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
+  * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
 * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
