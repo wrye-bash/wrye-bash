@@ -10330,12 +10330,12 @@ class Mod_AllowAllGhosting(Link):
 
 #------------------------------------------------------------------------------
 class Mod_CreateBOSSReport(Link):
-    """Copies appropriate information for makeing a report in the BOSS thread."""
+    """Copies appropriate information for making a report in the BOSS thread."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Create BOSS Report..."))
         menu.AppendItem(menuItem)
-        if len(data) == 1 and data[0] == 'Oblivion.esm': menuItem.Enable(False)
+        menuItem.Enable(len(self.data) != 1 or (not bosh.reOblivion.match(self.data[0].s)))
 
     def Execute(self,event):
         text = ''
@@ -10397,6 +10397,82 @@ class Mod_CreateBOSSReport(Link):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
         balt.showLog(self.window,text,_("BOSS Report"),asDialog=False,fixedFont=False,icons=bashBlue)
+
+#------------------------------------------------------------------------------
+class Mod_CopyModInfo(Link):
+    """Copies the basic info about selected mod(s)."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Copy Mod Info..."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        text = ''
+        if len(self.data) > 5:
+            spoiler = True
+            text += '[spoiler]\n'
+        else:
+            spoiler = False
+        # Create the report
+        for i,fileName in enumerate(self.data):
+            fileInfo = bosh.modInfos[fileName]
+            #-- Name of file, plus a link if we can figure it out
+            installer = bosh.modInfos.table.getItem(fileName,'installer','')
+            if not installer:
+                text += fileName.s
+            else:
+                # Try to get the url of the file
+                # Order of priority will be:
+                #  TESNexus
+                #  TESAlliance
+                url = None
+                ma = bosh.reTesNexus.search(installer)
+                if ma and ma.group(2):
+                    url = 'http://tesnexus.com/downloads/file.php?id='+ma.group(2)
+                if not url:
+                    ma = bosh.reTESA.search(installer)
+                    if ma and ma.group(2):
+                        url = 'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                if url:
+                    text += '[url=%s]%s[/url]' % (url, fileName.s)
+                else:
+                    text += fileName.s
+            for col in settings['bash.mods.cols']:
+                if col == 'File': continue
+                elif col == 'Rating':
+                    value = bosh.modInfos.table.getItem(fileName,'rating','')
+                elif col == 'Group':
+                    value = bosh.modInfos.table.getItem(fileName,'group','')
+                elif col == 'Installer':
+                    value = bosh.modInfos.table.getItem(fileName,'installer', '')
+                elif col == 'Modified':
+                    value = formatDate(fileInfo.mtime)
+                elif col == 'Size':
+                    value = formatInteger(fileInfo.size/1024)+' KB'
+                elif col == 'Author' and fileInfo.header:
+                    value = Unicode(fileInfo.header.author,'mbcs')
+                elif col == 'Load Order':
+                    ordered = bosh.modInfos.ordered
+                    if fileName in ordered:
+                        value = '%02X' % (list(ordered).index(fileName),)
+                    else:
+                        value = ''
+                elif col == 'CRC':
+                    value = '%08X' % fileInfo.cachedCrc()
+                elif col == 'Activation Status':
+                    value = fileInfo.txt_status()
+                text += '\n%s: %s' % (col, value)
+            #-- Version, if it exists
+            version = bosh.modInfos.getVersion(fileName)
+            if version:
+                text += '\nVersion: %s' % version
+        if spoiler: text += '[/spoiler]'
+
+        # Show results + copy to clipboard
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_("Mod Info Report"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_ListBashTags(Link):
@@ -15256,6 +15332,7 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_ShowReadme())
     ModList.itemMenu.append(Mod_ListBashTags())
     ModList.itemMenu.append(Mod_CreateBOSSReport())
+    ModList.itemMenu.append(Mod_CopyModInfo())
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
