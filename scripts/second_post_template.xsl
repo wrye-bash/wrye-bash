@@ -14,31 +14,31 @@ Users who have reported bugs and are updating from svn: please check the followi
 [b]Upcoming release <xsl:value-of select="$release_num"/>[/b]: <xsl:value-of select="$release_theme"/>
 [list]<xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=1 and group_id=2061786]">
         <xsl:sort select="id" order="descending"/>
-[*] [b][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207901]Bug <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
+[*] [b][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Bug <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
     </xsl:for-each>
     <xsl:for-each select="//trackers/tracker[name='Enhancements']/tracker_items/tracker_item[status_id=1 and group_id=2061780]">
         <xsl:sort select="id" order="descending"/>
-[*] [b][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207904]Enhancement <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
+[*] [b][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Enhancement <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
     </xsl:for-each>
     <xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=2 and group_id=2061786]">
         <xsl:sort select="id" order="descending"/>
-[*] [color="#FF8C00"][s][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207901]Bug <xsl:value-of select="id"/>[/url][/s][/color] <xsl:value-of select="summary"/>
+[*] [color="#FF8C00"][s][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Bug <xsl:value-of select="id"/>[/url][/s][/color] <xsl:value-of select="summary"/>
     </xsl:for-each>
     <xsl:for-each select="//trackers/tracker[name='Enhancements']/tracker_items/tracker_item[status_id=2 and group_id=2061780]">
         <xsl:sort select="id" order="descending"/>
-[*] [color="#FF8C00"][s][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207904]Enhancement <xsl:value-of select="id"/>[/url][/s][/color] <xsl:value-of select="summary"/>
+[*] [color="#FF8C00"][s][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Enhancement <xsl:value-of select="id"/>[/url][/s][/color] <xsl:value-of select="summary"/>
     </xsl:for-each>
 [/list]
 
 [b][url=https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207901&amp;status=1]Additional known bugs[/url][/b]:[spoiler][list]<xsl:for-each select="//trackers/tracker[name='Bugs']/tracker_items/tracker_item[status_id=1 and group_id!=2061786]">
         <xsl:sort select="id" order="descending"/>
-[*] [b][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207901]Bug <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
+[*] [b][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Bug <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
     </xsl:for-each>
 [/list][/spoiler]
 
 [b][url=https://sourceforge.net/tracker/?group_id=284958&amp;atid=1207904&amp;status=1]Current enhancement requests[/url][/b]:[spoiler][list]<xsl:for-each select="//trackers/tracker[name='Enhancements']/tracker_items/tracker_item[status_id=1 and group_id!=2061780]">
         <xsl:sort select="id" order="descending"/>
-[*] [b][url=https://sourceforge.net/tracker/?func=detail&amp;aid=<xsl:value-of select="id"/>&amp;group_id=284958&amp;atid=1207904]Enhancement <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
+[*] [b][url=http://sourceforge.net/support/tracker.php?aid=<xsl:value-of select="id"/>]Enhancement <xsl:value-of select="id"/>[/url][/b] <xsl:value-of select="summary"/>
     </xsl:for-each>
 [/list][/spoiler]
 </xsl:template>
