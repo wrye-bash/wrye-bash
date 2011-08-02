@@ -1338,26 +1338,30 @@ NoComTypes:
     SectionEnd
 
     Section "Batch Files" Batch_Files
-
+        # only install batch files if the python version were installed -- they don't work with the standalone version
         ${If} $CheckState_OB == ${BST_CHECKED}
+        ${AndIf} $CheckState_OB_Py == ${BST_CHECKED}
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
                 File /r "*.bat"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
+        ${AndIf} $CheckState_Nehrim_Py == ${BST_CHECKED}
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
                 File /r "*.bat"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex1_Py == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
                 File /r "*.bat"
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
+        ${AndIf} $CheckState_Ex2_Py == ${BST_CHECKED}
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
                 File /r "*.bat"
