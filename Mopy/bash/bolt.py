@@ -1819,7 +1819,7 @@ class PickleDict:
                         self.data.update(header)
                     ins.close()
                     return 1 + (path == self.backup)
-                except EOFError:
+                except (EOFError, ValueError):
                     if ins: ins.close()
         #--No files and/or files are corrupt
         return 0
