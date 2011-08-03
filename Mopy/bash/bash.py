@@ -346,9 +346,9 @@ def main():
     if sys.version[0:3] < '2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
         if sys.version[0:3] == 2.5:
-            run = balt.askYes(None,"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur. Updating is recommended but not imperative. Do you still want to run Wrye Bash right now?","Warning OLD Python version detected")
+            run = balt.askYes(None,"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur. Updating to Python 2.7x is recommended but not imperative. Do you still want to run Wrye Bash right now?","Warning OLD Python version detected")
         else:
-            run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.6x or 2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
+            run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
         if not run:
             return
         
