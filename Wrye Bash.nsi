@@ -6,12 +6,11 @@
     !include nsDialogs.nsh
     !include WordFunc.nsh
 
-    ; Variables are defined by the packaging script; just define failsafe values
     !ifndef WB_NAME
-        !define WB_NAME "Wrye Bash (version unknown)"
+        !define WB_NAME "Wrye Bash 291.1"
     !endif
     !ifndef WB_FILEVERSION
-        !define WB_FILEVERSION "0.0.0.0"
+        !define WB_FILEVERSION "291.1.0.0"
     !endif
 
 
@@ -196,37 +195,11 @@
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
 
-        ${If} $Reg_Value_OB_Py == $True
-        ${OrIf} $Reg_Value_OB_Exe != $True
-            StrCpy $CheckState_OB_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_OB_Exe == $True
-            StrCpy $CheckState_OB_Exe ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Nehrim_Py == $True
-        ${OrIf} $Reg_Value_Nehrim_Exe != $True
-            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Nehrim_Exe == $True
-            StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Ex1_Py == $True
-        ${OrIf} $Reg_Value_Ex1_Exe != $True
-            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex1_Exe == $True
-            StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
-        ${EndIf}
-
-        ${If} $Reg_Value_Ex2_Py == $True
-        ${OrIf} $Reg_Value_Ex2_Exe != $True
-            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_Ex2_Exe == $True
-            StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
-        ${EndIf}
+        # all Python checkboxes checked, all standalone checkboxes unchecked
+        StrCpy $CheckState_OB_Py ${BST_CHECKED}
+        StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
+        StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
+        StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
     FunctionEnd
 
 
@@ -252,9 +225,11 @@
             ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_OB_Py
                 ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+                EnableWindow $Check_OB_Py 0
             ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_OB_Exe
                 ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
+                EnableWindow $Check_OB_Exe 0
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
@@ -270,9 +245,11 @@
             ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_Nehrim_Py
                 ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+                EnableWindow $Check_Nehrim_Py 0
             ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Nehrim_Exe
                 ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
+                EnableWindow $Check_Nehrim_Exe 0
                 IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
@@ -292,9 +269,11 @@
                 ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex1_Py
                     ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+                    EnableWindow $Check_Ex1_Py 0
                 ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex1_Exe
                     ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
+                    EnableWindow $Check_Ex1_Exe 0
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
@@ -308,9 +287,11 @@
                 ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex2_Py
                     ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+                    EnableWindow $Check_Ex2_Py 0
                 ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex2_Exe
                     ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
+                    EnableWindow $Check_Ex2_Exe 0
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
