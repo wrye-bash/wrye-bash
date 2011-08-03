@@ -880,7 +880,7 @@ class PickleDict:
                     else:
                         self.data.update(header)
                     return 1 + (path == self.backup)
-                except EOFError:
+                except (EOFError, ValueError):
                     pass
                 finally:
                     if ins: ins.close()
