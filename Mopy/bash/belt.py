@@ -1115,7 +1115,7 @@ class WryeParser(ScriptParser.Parser):
         iniPath = bolt.GPath(iniName)
         #--Section
         if section.strip().lower() == 'set':
-            realSection = LString(']set[')
+            realSection = bolt.LString(']set[')
         elif section.strip().lower() == 'setgs':
             realSection = bolt.LString(']setgs[')
         else:
