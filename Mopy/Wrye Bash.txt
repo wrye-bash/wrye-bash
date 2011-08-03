@@ -2242,6 +2242,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
+=== 291.1 [3/8/2011] [myk002]
+* Fix BOSS 1.8 compatibility
+* Handle unreadable settings files gracefully by reverting to defaults instead of crashing
+* Update installer to the one used by 294.2 (with unavailable options disabled)
+
 === 291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]
 * Bashed Patch:
   * typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
