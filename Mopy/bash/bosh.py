@@ -24031,6 +24031,101 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
         self.count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
+    """Sets all one handed weapons as blades, two handed weapons as blunt."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Skyrim-style Weapons"),
+            _('Sets all one handed weapons as blades, two handed weapons as blunt.'),
+            'skyrimweaponsstyle',
+            ('1.0',  '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreWeap,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreWeap,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.WEAP
+        for record in modFile.WEAP.getActiveRecords():
+            if record.weaponType in [1,2]:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.WEAP.records:
+            if record.weaponType == 1:
+                record.weaponType = 3
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+            elif record.weaponType == 2:
+                record.weaponType = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Skyrim Style Weapons'))
+        log(_('* Weapons adjusted: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
+    """Sets all one handed weapons as blades, two handed weapons as blunt."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Skyrim-style Weapons')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_("Skyrim-style Weapons"),
+            _('Sets all one handed weapons as blades, two handed weapons as blunt.'),
+            'skyrimweaponsstyle',
+            ('1.0',  '1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['WEAP']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if record.weaponType in [1,2]:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                if override.weaponType == 1:
+                    override.weaponType = 3
+                else: 
+                    override.weaponType = 0
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Skyrim Style Weapons'))
+        log(_('* Weapons Ajusted: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.count = {}
+
+#------------------------------------------------------------------------------
 class AssortedTweak_ConsistentRings(MultiTweakItem):
     """Sets rings to all work on same finger."""
 
@@ -26371,6 +26466,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
         AssortedTweak_FactioncrimeGoldMultiplier(),
         AssortedTweak_LightFadeValueFix(),
+        AssortedTweak_SkyrimStyleWeapons(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -26444,6 +26540,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
         CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
         CBash_AssortedTweak_LightFadeValueFix(),
+        CBash_AssortedTweak_SkyrimStyleWeapons(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
