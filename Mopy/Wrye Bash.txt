@@ -1658,7 +1658,9 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Set Sound Attenuation Levels:__
   * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
 * __Set Sound Attenuation Levels: Nirnroots Only__
-  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
+  * The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
+* __Skyrim-style Weapons:__
+  * Sets all one handed weapons as blades, two handed weapons as blunt.
 
 === Tweak Clothes
 * __Overview:__ This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated -- however your tastes may vary.
@@ -2339,6 +2341,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 295 [12/12/2011] [valda,Lojack]
+* [[#BashedPatches|Bashed Patch]]:
+  * New assorted tweak: Skyrim-style Weapons.
 * Unicode Mode:
   * More bugfixes from valda
 * Added activation status as a new mods column/sort option.
