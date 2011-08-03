@@ -233,7 +233,7 @@ class PickleDict(bolt.PickleDict):
                 self.data.update(cPickle.load(ins))
                 ins.close()
                 result = 1
-            except EOFError:
+            except (cPickle.UnpicklingError, ValueError, EOFError):
                 if ins: ins.close()
         #--Update paths
         def textDump(path):
@@ -7748,9 +7748,21 @@ class FileInfos(DataDict):
         self.factory=factory
         self.data = {}
         self.bashDir = self.getBashDir()
-        self.table = bolt.Table(PickleDict(
-            self.bashDir.join('Table.dat'),
-            self.bashDir.join('Table.pkl')))
+        try:
+            self.table = bolt.Table(PickleDict(
+                self.bashDir.join('Table.dat'),
+                self.bashDir.join('Table.pkl')))
+        except (cPickle.UnpicklingError, ValueError), err:
+            try:
+                self.table = bolt.Table(PickleDict(
+                    self.bashDir.join('Table.dat.bak'),
+                    self.bashDir.join('Table.pkl')))
+            except (cPickle.UnpicklingError, ValueError), err:
+                self.bashDir.join('Table.dat').remove()
+                self.bashDir.join('Table.dat.bak').remove()
+                self.table = bolt.Table(PickleDict(
+                    self.bashDir.join('Table.dat.bak'),
+                    self.bashDir.join('Table.pkl')))
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         #--Update table keys...
         tableData = self.table.data
@@ -31628,32 +31640,19 @@ def initSettings(readOnly=False):
             dirs['saveBase'].join('BashSettings.dat'),
             dirs['userApp'].join('bash config.pkl'),
             readOnly))
-    except cPickle.UnpicklingError, err:
-        usebck = balt.askYes(None,_("Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash." %(err)),_("Settings Load Error"))
-        if usebck:
-            try:
-                settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join('BashSettings.dat.bak'),
-                    dirs['userApp'].join('bash config.pkl'),
-                    readOnly))
-            except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_("Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)" %(err)),_("Settings Load Error"))
-                if delete:
-                    dirs['saveBase'].join('BashSettings.dat').remove()
-                    settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join('BashSettings.dat'),
-                    dirs['userApp'].join('bash config.pkl'),
-                    readOnly))
-                else:raise
-        else:
-            delete = balt.askYes(None,_("Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)"),_("Settings Load Error"))
-            if delete:
-                dirs['saveBase'].join('BashSettings.dat').remove()
-                settings = bolt.Settings(PickleDict(
+    except (cPickle.UnpicklingError, ValueError), err:
+        try:
+            settings = bolt.Settings(PickleDict(
+                dirs['saveBase'].join('BashSettings.dat.bak'),
+                dirs['userApp'].join('bash config.pkl'),
+                readOnly))
+        except (cPickle.UnpicklingError, ValueError), err:
+            dirs['saveBase'].join('BashSettings.dat').remove()
+            dirs['saveBase'].join('BashSettings.dat.bak').remove()
+            settings = bolt.Settings(PickleDict(
                 dirs['saveBase'].join('BashSettings.dat'),
                 dirs['userApp'].join('bash config.pkl'),
                 readOnly))
-            else:raise  
     settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------
