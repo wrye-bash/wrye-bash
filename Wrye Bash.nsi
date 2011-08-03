@@ -667,7 +667,8 @@ NoComTypes:
             IntOp $1 $1 + 25
         ${NSD_CreateCheckBox} $1% $0u 75% 8u "Delete files from old Bash versions"
             Pop $Check_DeleteOldFiles
-            ${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
+            #${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
+            EnableWindow $Check_DeleteOldFiles 0
         nsDialogs::Show
     FunctionEnd
 
@@ -1132,7 +1133,7 @@ NoComTypes:
             ; Install resources:
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
@@ -1147,7 +1148,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_OB_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_OB\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    #File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" "True"
                 ${Else}
@@ -1161,7 +1162,7 @@ NoComTypes:
             ; Install resources:
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
@@ -1176,7 +1177,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Nehrim\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    #File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" "True"
                 ${Else}
@@ -1190,7 +1191,7 @@ NoComTypes:
             ; Install resources:
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
@@ -1205,7 +1206,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Ex1\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    #File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" "True"
                 ${Else}
@@ -1219,7 +1220,7 @@ NoComTypes:
             ; Install resources:
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" "Data" "Mopy"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
@@ -1234,7 +1235,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Ex2\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    #File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" "True"
                 ${Else}
@@ -1268,7 +1269,7 @@ NoComTypes:
             ${If} Path_OB != $Empty
                 SetOutPath $Path_OB\Mopy
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash Launcher.pyw" "" "$Path_OB\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash Launcher.pyw" "" "$Path_OB\Mopy\images\bash_32.ico" 0
                     ${If} $CheckState_OB_Exe == ${BST_CHECKED}
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash.exe"
                     ${EndIf}
@@ -1281,7 +1282,7 @@ NoComTypes:
             ${If} Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim\Mopy
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\images\bash_32.ico" 0
                     ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
                         CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash (Standalone) - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
                     ${EndIf}
@@ -1294,7 +1295,7 @@ NoComTypes:
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\images\bash_32.ico" 0
                     ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
                     ${EndIf}
@@ -1307,7 +1308,7 @@ NoComTypes:
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\images\bash_32.ico" 0
                     ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash.exe"
                     ${EndIf}
