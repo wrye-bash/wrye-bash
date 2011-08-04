@@ -367,7 +367,7 @@ def generateTweakLines(wizardEdits, target):
             lines.append('[%s]' % wizardEdits[realSection][0])
             format = '%(setting)s=%(value)s%(comment)s'
         for realSetting in wizardEdits[realSection][1]:
-            lines.append(format % (dict(setting=wizardEdits[realSetting][1][realSetting],
+            lines.append(format % (dict(setting=wizardEdits[realSection][1][realSetting][0],
                                         value=wizardEdits[realSection][1][realSetting][1],
                                         comment=wizardEdits[realSection][1][realSetting][2],)))
     return lines
