@@ -8104,6 +8104,38 @@ class Installer_Wizard(InstallerLink):
             message += '\n'.join([' * ' + x[0].stail + '\n   TO: ' + x[1].s for x in manuallyApply])
             balt.showInfo(self.gTank,message)
 
+class Installer_OpenReadme(InstallerLink):
+    """Opens the installer's readme if BAIN can find one"""
+
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        menuItem = wx.MenuItem(menu,self.id,_('Open Readme'))
+        menu.AppendItem(menuItem)
+        if self.isSingle():
+            installer = self.data[self.selected[0]]
+            menuItem.Enable(bool(installer.hasReadme))
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self, event):
+        installer = self.selected[0]
+        if self.isSingleProject():
+            # Project, open for edit
+            dir = self.data.dir
+            dir.join(installer.s, self.data[installer].hasReadme).start()
+        else:
+            # Archive, open for viewing
+            archive = self.data[installer]
+            with balt.BusyCursor():
+                # This is going to leave junk temp files behind...
+                archive.unpackToTemp(installer, [archive.hasReadme])
+            archive.tempDir.join(archive.hasReadme).start()
+            try:
+                archive.tempDir.rmtree(archive.tempDir.stail)
+            except:
+                pass
+            
+
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
     """Anneal all packages."""
@@ -15164,6 +15196,7 @@ def InitInstallerLinks():
         InstallersPanel.itemMenu.append(Installer_Wizard(True))
         InstallersPanel.itemMenu.append(Installer_EditWizard())
         InstallersPanel.itemMenu.append(SeparatorLink())
+    InstallersPanel.itemMenu.append(Installer_OpenReadme())
     InstallersPanel.itemMenu.append(Installer_Anneal())
     InstallersPanel.itemMenu.append(Installer_Install())
     InstallersPanel.itemMenu.append(Installer_Install('LAST'))
