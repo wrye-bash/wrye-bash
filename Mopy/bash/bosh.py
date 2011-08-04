@@ -10384,7 +10384,7 @@ class Installer(object):
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
         'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps','skipRefresh')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap',)
+        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap','hasReadme')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
@@ -10709,6 +10709,7 @@ class Installer(object):
         #--Init to empty
         self.hasWizard = False
         self.readMe = self.packageDoc = self.packagePic = None
+        self.hasReadme = False
         for attr in ('skipExtFiles','skipDirFiles','espms'):
             object.__getattribute__(self,attr).clear()
         data_sizeCrc = {}
@@ -10789,8 +10790,12 @@ class Installer(object):
                 continue
             elif skipImages and fileExt in imageExts:
                 continue
-            elif skipDocs and fileExt in docExts:
-                continue
+            elif fileExt in docExts:
+                maReadMe = reReadMeMatch(file)
+                if maReadMe:
+                    self.hasReadme = full
+                if skipDocs:
+                    continue
             elif fileStartsWith('--'):
                 continue
             elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse\\'):
@@ -27784,17 +27789,6 @@ class GmstTweaker(MultiTweaker):
             ('20',20.0),
             (_('Unlimited'),999999.0),
             (_('Custom'),5),
-            ),
-        GmstTweak(_('AACrime: Pickpocketing Fine -- DEBUG'),
-            _("Debug, ignore this unless you have Hickory's bug."),
-            ('iCrimeGoldPickpocket',),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('[25]',25),
-            ('50',50),
-            ('100',100),
-            (_('Custom'),25),
             ),
         GmstTweak(_('NPC Blood'),
             _("NPC Blood Splatter Textures."),

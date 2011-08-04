@@ -635,6 +635,7 @@ The following commands are available from context menu of packages.
 * __Archive Info__
   * __Refresh:__ Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.
   * __Move To...__ Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.
+  * __Open readme:__ opens the readme if one is detected in the package.
 * __Configuration__
   * __Has Extra Directories:__ Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory -- and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
   * __Override Skips:__ If this is checked, Bain will not skip over files that would normally be skipped due to the __Skip XX__ options.
@@ -643,7 +644,7 @@ The following commands are available from context menu of packages.
 * __Wizard Install Options:__ Only Available if Wizard Install system is active (see the wizards [[wizards.html|documentation]] for more info on the wizard install system)
   * __Wizard:__ Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).
   * __Auto Wizard:__ Runs the wizard but selects the default options (only available if wizard.txt exists in the archive).
-  * __Edit Wizard:__ Opens the wizard.txt for editing (only available for projects and if wizard.txt exists in the project).
+  * __Edit/View Wizard:__ Opens the wizard.txt for viewing o  for projects with a wizard.txt opens it for editing.
 * __Install__
   * __Anneal:__ Will "anneal" the selected file(s). This will install any missing files and correct any install order errors (aka "underrides").
   * __Install:__ Will do an "in-order" install. I.e. it will fully install the package except for files that are masked by higher order packages.
@@ -2340,16 +2341,18 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [12/12/2011] [valda,Lojack]
+=== 295 [12/12/2011] [valda,Lojack,PacificMorrowind]
 * [[#BashedPatches|Bashed Patch]]:
   * New assorted tweak: Skyrim-style Weapons.
+* [[#InstallersTab|BAIN]]:
+  * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
+  * installer->open readme command added.
 * Unicode Mode:
   * More bugfixes from valda
 * Added activation status as a new mods column/sort option.
 * New mod commands:
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
-* BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
 * Fixed Settings backup files should have WB version in their names.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
