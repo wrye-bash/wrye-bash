@@ -1,0 +1,8 @@
+
+
+Title: Wrye Bash Installer Tab I/O Gateway Functional Specification
+Author: Myk Taylor (myk002)
+Status: unorganized notes
+
+
+

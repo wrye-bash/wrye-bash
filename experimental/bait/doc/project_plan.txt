@@ -108,13 +108,16 @@ Status: working draft
   - A back button on the BAIN wizard (from Psymon)
   - Resizable BAIN wizard elements and window (from Metallicow, Vargr, utumno)
   - Scale images correctly in wizard window (from Metallicow)
-  - Create silent voice files for people who don't want voice acting but don't have Elys silent voice
+  - Create silent voice files for people who don't want voice acting but don't
+      have Elys silent voice
+  - Merge/compile shaders on install (install like ini tweaks? shader basher?)
 
 
 ==================
   Execution Plan
 ==================
-Note that this is not a /schedule/; it is just a logical sequence of groups of tasks.  There are no specific dates attached to the phase deliverables.
+Note that this is not a /schedule/; it is just a logical sequence of groups of
+tasks.  There are no specific dates attached to the phase deliverables.
 
 Phase 0: Planning, design
 -------------------------
@@ -141,8 +144,11 @@ Acceptance criteria:
   The *{model,presenter} documents will likely not be fleshed out to the same
     degree as the *view.txt documents
 Retrospective:
-  Spent about 2 months in my spare time, researched patterns and created several prototypes before settling on the current proposed architecture
-  I feel optimistic about the architecture (it seems both practical and interesting) and am looking forward to feedback from other developers and getting things implemented!
+  Spent about 2 months in my spare time, researched patterns and created several
+prototypes before settling on the current proposed architecture
+  I feel optimistic about the architecture (it seems both practical and
+interesting) and am looking forward to feedback from other developers and
+getting things implemented!
 
 
 Phase 1: View basics, demo
@@ -172,6 +178,13 @@ Acceptance criteria:
   View behaves according to agreed-upon functional specification when
     communicating with a mock presenter
   Code is reviewed and tested with high coverage
+Retrospective:
+  It took several prototypes and an immense amount of research to design the UI.
+Usability guidelines, accessibility guidelines, menu organization
+considerations, etc., but I believe we finally have something much better than
+the original.  Code is now checked into the main Wrye Bash repository (SVN)
+under the 'experimental' tree.  It's still just me writing it, though, and
+feedback has been minimal.
 
 
 Phase 2: Presenter basics
@@ -194,6 +207,10 @@ Acceptance criteria:
   Presenter behaves according to func spec when communicating with a mock model
   Integration tests with view pass
   Code is reviewed and tested with high coverage
+Retrospective:
+  Presenter went very well.  Unit testing and coverage tools (nose with the
+coverage plugin) were invaluable.  Need to go back and update the view with
+some lessons learned, though.
 
 
 Phase 3: Model basics
@@ -277,13 +294,14 @@ Features:
 Additional tasks and notes:
   Incorporate public feedback
   Work with TomLong and alt3rn1ty regarding "HOWTO" guides
-  Bug fixes, refactoring of earlier code, modularize anything that has become too
-    complex to grok
+  Bug fixes, refactoring of earlier code, modularize anything that has become
+    too complex to grok
   Public poll to help determine priority of remaining planned features/tasks
 Acceptance criteria:
   Documentation updated
   Code is reviewed and tested with high coverage
-  Generally accepted by the community as ready to be used full-time (we may still
+  Generally accepted by the community as ready to be used full-time (we may
+still
     decide to keep old tab for a while, though)
 
 

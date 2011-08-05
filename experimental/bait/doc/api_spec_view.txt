@@ -5,8 +5,20 @@ Author: Myk Taylor (myk002)
 Status: working draft
 
 
-class View:
-  __init__(self, wxParent, presenter, stateManager=None)
+===========
+  Context
+===========
+  The View API will be used by external classes in the Wrye Bash code.  It is
+the main API for interacting with the BAIT stack.  BAIT is fairly
+self-contained, though, so the only methods required at this level relate to
+lifecycle management.
+
+
+=======
+  API
+=======
+class BaitView:
+  __init__(self, wxParent, presenter, viewIoGateway)
     Creates and configures bait widget hierarchies
 
   start(self)
@@ -20,7 +32,3 @@ class View:
 
   resume(self)
     Resumes from a pause
-
-
-
-The stateManager object is some abstraction of state-saving functionality.  It may need to be a multiprocess-aware entity if state from all three modules are being written to the same location.  It is mostly TBD.

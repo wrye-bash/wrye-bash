@@ -1,0 +1,72 @@
+
+
+Title: Wrye Bash Installer Tab I/O Gateway API Specification
+Author: Myk Taylor (myk002)
+Status: working draft (partially prototyped)
+
+
+===========
+  Context
+===========
+  Each I/O Gateway class is used by a different component.  The ViewIoGateway
+is only used by the View, the PresenterIoGateway is only used by the presenter,
+and the ModelIoGateway is only used by the Model.  Each IoGateway class
+implements operations that the respective component uses to access persisted
+data.  The APIs abstract the operations at a sufficiently high level so that
+mock objects can stub out the functionality with minimal effort.
+
+
+=======
+  API
+=======
+class ViewIoGateway:
+  __init__(self, statePathRoot, cachePathRoot)
+  display_file(self, wxParent, fileHandle)
+  get_sash_positions(self)
+  set_sash_positions(self, sashPositions)
+  get_filter_states(self)
+  set_filter_states(self, filterStates)
+
+
+class PresenterIoGateway:
+  __init__(self, statePathRoot, cachePathRoot)
+  get_wizard_script(self, fileHandle)
+  get_presenter_options(self)
+  set_presenter_options(self, presenterOptions)
+  get_colors(self)
+  set_colors(self, colors)
+  get_search_history(self)
+  set_search_history(self, searchHistory)
+  get_expanded_groups(self)
+  set_expanded_groups(self, expandedGroups)
+
+
+class ModelIoGateway:
+  __init__(self, statePathRoot, cachePathRoot)
+  get_model_options(self)
+  set_model_options(self, modelOptions)
+  get_package_hierarchy(self)
+  set_package_hierarchy(self, packageHierarchy)
+  get_package_metadata(self, packageName)
+  set_package_metadata(self, packageName, packageMetadata)
+  get_accepted_obse_plugins(self)
+  set_accepted_obse_plugins(self, acceptedObsePlugins)
+
+  # below here might need some work
+  cache_archived_files(self, archive, filespec)
+  make_cache_file_handle(self, crc, size)
+  make_raw_file_handle(self, pathRoot, relativePath)
+  walk_directory(self, directory)
+  walk_archive(self, archive)
+  walk_dependencies(self, fileHandle)
+  get_stats(self, fileHandle) # returns crc, mod date, size
+  copy(self, file, destRoot, destPath)
+  copy_tree()
+  extract_archive(filter)
+  move()
+  delete()
+  open_in_external_program()
+
+  # TODO:
+  # some mechanism for ensuring cached files aren't deleted for a period of time
+  # cache cleanup API? or automatic?

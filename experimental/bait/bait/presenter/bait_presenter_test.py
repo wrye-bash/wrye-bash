@@ -108,3 +108,5 @@ def presenter_lifecycle_test():
                                     throwOnShutdownOutput=failTuple[1])
         setattr(p, failTuple[0], throwObj)
         p.shutdown()
+
+# test not having attributes available on first request

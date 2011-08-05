@@ -1,0 +1,7 @@
+
+
+Title: Wrye Bash Installer Tab I/O Gateway Design Document
+Author: Myk Taylor (myk002)
+Status: unorganized notes
+
+

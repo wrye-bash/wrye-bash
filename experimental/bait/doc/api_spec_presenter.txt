@@ -2,92 +2,99 @@
 
 Title: Wrye Bash Installer Tab Presenter API Specification
 Author: Myk Taylor (myk002)
-Status: unorganized notes
+Status: working draft (partially implemented)
 
 
-Constants:
-  FILTER_ID_INSTALLERS_HIDDEN
-  FILTER_ID_INSTALLERS_INSTALLED
-  FILTER_ID_INSTALLERS_NOT_INSTALLED
-  FILTER_ID_INSTALLERS_FILES
-  FILTER_ID_DATA_ACTIVE
-  FILTER_ID_DATA_INACTIVE
-  FILTER_ID_DATA_ORIGIN_KNOWN
-  FILTER_ID_DATA_ORIGIN_UNKNOWN
-  FILTER_ID_DATA_FILES
+===========
+  Context
+===========
+  The Presenter API is used exclusively by the View module.  It is entirely
+concerned with taking in user actions and emitting ViewCommands containing
+atomic updates to the UI that will be applied by the View.  Please see the files
+under the presenter/ directory for the full specifications of the enums and
+classes listed below.
 
 
-class Presenter:
-  __init__(model, viewCommandQueue, presenterStateRootPath=None)
+=======
+  API
+=======
+Enum DetailsTabIds
+Enum FilterIds
+
+Enum AnnealOperations
+class IoOperation
+
+FlagEnum FontStyleIds
+Enum ForegroundColorIds
+Enum HighlightColorIds
+Enum IconIds
+Enum Status
+class Style
+
+Enum CommandIds
+class AddGroup
+class UpdateGroup
+class AddPackage
+class UpdatePackage
+class RemovePackagesTreeNode
+class ExpandGroup
+class ExpandDir
+class ClearPackages
+class SelectFiles
+class SetFilterStats
+class SetSummary
+class SetStatus
+class SetPackageLabel
+class AddFile
+class ClearFiles
+class SetFileDetails
+class SetStyleMaps
+class SetPackageInfo
+class DisplayError
+class SetMenuTemplates
+
+
+class BaitPresenter:
+  viewCommandQueue
+    Contains ViewCommand objects for the View to process
+
+  __init__(self, model, presenterIoGateway, viewCommandQueue)
+    records parameters, but does not start any threads or load any data
+
   start(self)
+    Loads saved state, starts threads and subcomponents (including model)
+
   shutdown(self)
+    Saves any dirty state, shuts down threads and subcomponents
 
-  pause(self, value)
-  force_save_state(self)
+  pause(self)
+    Suggests that bait suspend operations; may not take effect immediately
 
-  toggle_filter_state(filterId) returns requestId
-  set_search_filter(searchExpression) returns requestId
-  set_selected(list of nodeIds) returns requestId
-  set_expanded(nodeId, value) returns requestId
-  get_action_list() returns requestId
-  do_action(actionId)
+  resume(self)
+    Resumes from a pause
 
-  viewCommandQueue enqueues ViewCommand objects, tagged with associated requestIds, if applicable
+  set_filter_state(self, filterId, value)
+    Sets whether a filter toggle is on or off
 
+  set_packages_tree_selections(self, nodeIds)
+  set_files_tree_selections(self, nodeIds)
+    Sets which nodes are currently hilighted in the tree widgets
 
-class ViewCommand:
-  requestId (int)
-  isLastCommand (boolean)
+  set_details_tab_selection(self, detailsTabId)
+    Sets which details tab is currently visible
 
-class SetSearchString(ViewCommand):
-  oldStr (str)
-  newStr (str)
-  selStartPos (int)
-  selLen (int)
-  suggestions (list of str)
+  set_group_node_expanded(self, nodeId, value)
+  set_dir_node_expanded(self, nodeId, value)
+    Sets the expansion state of branch nodes in the tree widgets
 
-class SetToggleFilter(ViewCommand):
-  filterId (int)
-  state (boolean)
+  set_search_string(self, text)
+    Sets the current search string
 
-class RemoveNode(ViewCommand):
-  nodeId (int)
+  # not yet implemented
+  set_option(self, optionId, state)
+    Communicates choices the user makes in the settings menus
 
-class MoveNode(ViewCommand):
-  nodeId (int)
-  newParentNodeId (int)
-  newPredecessorNodeId (int)
+  move_package(self, nodeId, newParentNodeId, newPredecessorNodeId)
+    Communicates reorderings the user makes in the package tree
 
-class UpdateNode(ViewCommand):
-  nodeId (int)
-  style
-  label (str)
-  checkState (tristate)
-
-class AddNode(UpdateNode):
-  nodeId (int)
-  parentNodeId (int)
-  predecessorNodeId (int)
-
-class ShowStatus(ViewCommand):
-  msgMarkup (str)
-
-class ShowError(ViewCommand):
-  msg (str)
-
-class ShowDetails(ViewCommand):
-  msgMarkup (str)
-
-class ExpandNode(ViewCommand):
-  nodeId (int)
-
-class CollapseNode(ViewCommand):
-  nodeId (int)
-
-class SetSelected(ViewCommand):
-  nodeIds (list of int)
-  state (boolean)
-
-class ShowActionList(ViewCommand):
-  actionIds (list of int)
-  labels (list of str)
+  ...other actions

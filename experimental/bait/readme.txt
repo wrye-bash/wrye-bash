@@ -3,7 +3,7 @@ Bash Asynchronous Installer Tab (BAIT) README
 Myk Taylor
 
 Design and functional documentation is in the doc/ subdirectory.  This
-document just goes over dependency requirements and testing.
+document just goes over dependency requirements and testing procedures.
 
 
 Dependencies
@@ -36,11 +36,12 @@ The following packages are required to run the unit tests:
 Unit Testing
 ============
 Without testing, we can have no confidence in the quality of the code.  Each
-module in BAIT is individually addressed with a full-coverage unit test.  Since
-Python is not statically typed, unit tests also serve the function of ensuring
-the code is free from typos.  All unit tests should be run before every svn
-commit so that no regressions slip in, and if coverage ever falls below 100%,
-the unit tests should be augmented to bring the number back up.
+Python module (i.e. each .py file) in BAIT is individually addressed with a
+full-coverage unit test.  Since Python is not statically typed, unit tests also
+serve the function of ensuring the code is free from typos.  All unit tests
+should be run before every svn commit so that no regressions slip in, and if
+coverage ever falls below 100%, the unit tests should be augmented to bring the
+number back up.
 
 Nose reads its configuration from setup.cfg, which currently instructs nose to
 use logging.conf to configure logging, measure coverage, and display a report.

@@ -2,35 +2,83 @@
 
 Title: Wrye Bash Installer Tab Model API Specification
 Author: Myk Taylor (myk002)
-Status: unorganized notes
+Status: working draft (partially prototyped)
 
 
+===========
+  Context
+===========
+  The Model API is used exclusively by the Presenter module.  It takes in
+settings changes and operation requests and emits a stream of update
+notifications for nodes that have been changed.  Please see the files
+under the model/ directory for the full specifications of the enums and
+classes listed below.
 
-Constants:
-  INSTALLERS_ROOT_NODE_ID
-  TARGET_ROOT_NODE_ID
 
-  NODE_TYPE_GROUP
-  NODE_TYPE_PROJECT_ROOT
-  NODE_TYPE_SUBPROJECT
-  NODE_TYPE_ARCHIVE
-  NODE_TYPE_DIRECTORY
-  NODE_TYPE_FILE
+=======
+  API
+=======
+ROOT_NODE_ID
 
-  UPDATE_TYPE_ATTRIBUTES
-  UPDATE_TYPE_CHILDREN
-  UPDATE_TYPE_DETAILS
-  UPDATE_TYPE_STATUS
-  UPDATE_TYPE_ERROR
+FlagEnum NodeTypes
+Enum Errors
+Enum Status
+Enum Operations
+FlagEnum UpdateTypes
 
-class Model:
-  __init__(numWorkers, installersRootPath, targetRootPath, stateRootPath)
-  start()
-  shutdown()
+UPDATE_TUPLE_IDX_TYPE
+UPDATE_NODE_TUPLE_IDX_NODE_TYPE
+UPDATE_NODE_TUPLE_IDX_NODE_ID
+UPDATE_NODE_TUPLE_IDX_VERSION
+UPDATE_ERROR_TUPLE_IDX_CODE
+UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME
 
-  pause(value)
-  force_save_state()
+class StatusOkData
+class StatusLoadingData
+class StatusDirtyData
+class StatusUnstableData
 
+class RootNodeAttributes
+class PackageNodeAttributes
+class GroupNodeAttributes
+class SubPackageNodeAttributes
+class DirectoryNodeAttributes
+class FileNodeAttributes
+
+class NodeChildren
+
+class PackageNodeDetails
+class FileNodeDetails
+class EspFileNodeDetails
+class BsaFileNodeDetails
+class ResourceFileNodeDetails
+
+
+class BaitModel:
+  updateNotificationQueue
+    Contains errors and update notifications
+
+  __init__(self, modelIoGateway, updateNotificationQueue)
+
+  start(self)
+    Loads saved state, starts threads, starts loading data from disk
+
+  shutdown(self)
+    Saves any dirty state, shuts down threads
+
+  pause(self)
+    Suggests that bait suspend operations; may not take effect immediately
+
+  resume(self)
+    Resumes from a pause
+
+  # TODO: add "sinceVersion=0" parameter to only send diff?
+  get_node_attributes(self, nodeId)
+  get_node_children(self, nodeId)
+  get_node_details(self, nodeId)
+    Retrieve node metadata
+
+  # TODO: functions to implement menu commands
   sync(groupOrProjectNodeId)
   move_to(groupOrProjectNodeId, newParentNodeId, predecessorNodeId)
   convert_to_project(projectNodeId)
@@ -41,216 +89,3 @@ class Model:
   set_hidden(groupOrProjectNodeId, value)
   set_is_marked_for_install(nodeId, value)
   set_is_cruft(fileOrDirectoryNodeId, value)
-
-  get_node_attributes(nodeId, sinceVersion=0) returns current NodeAttributes data, or the diff from the specified version if available
-  get_node_children(nodeId, sinceVersion=0) returns current NodeChildren data, or the diff from the specified version if available
-  get_node_details(nodeId, sinceVersion=0) returns current NodeDetails data, or the diff from the specified version if available
-
-  updateQueue enqueues tuple (updateType, nodeId) or (updateType=UPDATE_TYPE_STATUS, label, percentComplete) or (updateType=UPDATE_TYPE_ERROR, msg)
-
-class NodeAttributes:
-  int           snapshotVersion
-  int           diffFromVersion
-  int           typeMask
-  string        label
-  boolean       selectedState
-  boolean       selectedStateIsPermanent
-  boolean       matchesInstalled
-  boolean       isConflictLoser
-  boolean       isCruft
-  boolean       isHidden
-  if typeMask & NODE_TYPE_FILE:
-    int         projectRootNodeId
-    int         crc
-
-class NodeChildren:
-  int          snapshotVersion
-  int          diffFromVersion
-  List<nodeId> directories
-  List<nodeId> files
-
-class NodeDetails:
-  int     snapshotVersion
-  int     diffFromVersion
-  string  userNotes
-  if typeMask & NODE_TYPE_FILE:
-    int   pathId
-  if typeMask & NODE_TYPE_PROJECT_ROOT:
-    int   numFiles
-    int   numSelected
-    int   numUnselected
-    int   numMatchesInstalled
-    int   numConflictLosers
-    int   numCruft
-    int   projectBytes
-    int   selectedBytes
-
-
-
-Model API
----------
-struct FileNodeMetadata
-{
-  string label
-  bool isCruft
-  bool isSelectedForInstall
-  bool matchesInstalled
-  bool isConflictLoser
-}
-
-struct FileNode
-{
-  string srcPath
-  int projectPriority
-  int subProjectPriority
-  bool isMetadataDone
-  FileNodeMetadata metadata
-}
-
-
-
-
-
-Model Internals
----------------
-
-struct Node
-{
-  int nodeGuid
-  int parentNodeGuid
-  int pathGuid
-  int sourceTreeRootNodeGuid
-  int nodeTypeMask (installer=1, sourceTreeRoot=2, directory=4, file=8)
-  boolean isDivulged  // notifications will only be sent if this is true
-  NodeChildren children
-  NodeMetadata metadata
-  List<nodeGuid> conflicts
-  List<pathGuid> dependencies
-}
-
-
-Queue    m_loadQueue
-Thread[] m_loaderThreads
-
-Array<nodeGuid, Node>                m_nodes
-HashMap<lcase(sourcepath), pathGuid> m_sourcePaths
-HashMap<pathGuid, targetPath)        m_targetPaths
-HashMap<pathGuid, List<nodeGuid>>    m_conflictLists
-HashMap<pathGuid, List<nodeGuid>>    m_activeConflictLists
-HashMap<pathGuid, int>               m_installedFileCrcs
-
-HashSet m_divulgedGuids
-ScheduledExcecutor<nodeGuid> m_dirtyNodes // attempts to coalesce notifications
-
-
-loadQueue jobs:
-  loadNodeChildren
-  updateNodeStats
-
-
-start worker threads
-queue elements: retrieve node children
-
-in background, add elements to tail of queue
-if 
-
-struct InstallerNode : Node
-{
-  list<espInfo> espfiles
-  list<directoryInfo> subProjectDirs
-  list<fileInfo> files
-}
-
-struct DirectoryNode : Node
-{
-  tristate isTaggedForInstall
-  bool hasCruft
-  list<directoryInfo> subdirs
-  list<fileInfo> files
-}
-
-struct fileInfo
-{
-  int parentProject
-  bool isTaggedForInstall
-  bool dirty
-  bool isInstalled
-  bool isConflictLoser
-  bool isConflictWinner
-  bool isCruft
-  bool isDoc
-  bool isResource
-  bool isReferenced
-}
-
-struct espInfo : fileInfo
-{
-  list<dependency> dependencies
-  bool areDependenciesSatisfied
-}
-
-
-
-
-
-Model API
----------
-Constants:
-  INSTALLERS_ROOT_NODE_ID
-  TARGET_ROOT_NODE_ID
-
-  NODE_TYPE_GROUP
-  NODE_TYPE_PROJECT_ROOT
-  NODE_TYPE_SUBPROJECT
-  NODE_TYPE_ARCHIVE
-  NODE_TYPE_DIRECTORY
-  NODE_TYPE_FILE
-
-  UPDATE_TYPE_METADATA
-  UPDATE_TYPE_CHILDREN
-  UPDATE_TYPE_DETAILS
-  UPDATE_TYPE_STATUS
-
-Model:
-  __init__(installerRootPath, targetRootPath, cacheRootPath)
-  shutdown()
-
-  get_node_metadata(nodeId) returns NodeMetadata
-  get_node_children(nodeId) returns NodeChildren
-  get_node_details(nodeId) returns NodeDetails
-  get_nodes_by_path(pathId) returns list of nodeIds
-  get_path(pathId) returns string
-
-  setIsCruft(nodeId, isCruft)
-  setTreeIsMarkedForInstall(nodeId, isMarkedForInstall)
-  setIsHidden(projectIdx, isHidden)
-  install(list of projectIdx)
-  uninstall(list of projectIdx)
-
-  updateQueue enqueues tuple (updateType, nodeId) or (updateType=UPDATE_TYPE_STATUS, label, percentComplete)
-
-NodeMetadata:
-  snapshotVersion (int)
-  nodeTypeMask (int)
-  pathId (int)
-  label (string)
-  isDirty (bool)
-  isCruft (bool)
-  isDeleted (bool)
-  isSelectedForInstall (bool)
-  matchesInstalled (bool)
-  isConflictLoser (bool)
-  projectIdx (int)
-  if (nodeTypeMask & NODE_TYPE_FILE):
-    crc (int)
-
-NodeChildren
-  snapshotVersion (int)
-  childrenList (list of nodeIds, in display order)
-
-NodeDetails
-  snapshotVersion (int)
-  userNotes (string)
-  conflicts (list of nodeIds, in order of precedence)
-  dependencies (list of pathIds)
-  sourcePath (string) (for use in generating previews)

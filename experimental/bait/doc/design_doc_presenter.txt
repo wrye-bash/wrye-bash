@@ -5,39 +5,40 @@ Author: Myk Taylor (myk002)
 Status: working draft
 
 
-See component_diagram_presenter.* for a visual representation of the following 
+See component_diagram_presenter.* for a visual representation of the following
 design.
 
 
-
-Design Goals
-------------
-1) Be super-responsive to UI events.  This means that events received from the 
+================
+  Design Goals
+================
+1) Be super-responsive to UI events.  This means that events received from the
 model are low priority
 2) Send minimal updates to the UI -- diffs instead of wipe/rebuild sequences
 
 
-Thread Model
-------------
-There are three types of input to the presenter.  The first is the group of 
-model-bound operations -- menu item selections, mostly -- that get sanity 
+================
+  Thread Model
+================
+There are three types of input to the presenter.  The first is the group of
+model-bound operations -- menu item selections, mostly -- that get sanity
 checked and passed on to the model, all within the calling thread.
 
-The second is the group of widget events that affect the state of the widget 
-managers.  These get enqueued as a "state change event" in the manager-specific 
-queue, so each manager's thread can modify its internal state safely.  Widget 
-events may also call the manager's "head's up" API directly to notify it that a 
-particular kind of state change event is in the pipe.  This lets the manager 
-know to skip certain kinds of processing that will be obsoleted soon by the 
+The second is the group of widget events that affect the state of the widget
+managers.  These get enqueued as a "state change event" in the manager-specific
+queue, so each manager's thread can modify its internal state safely.  Widget
+events may also call the manager's "head's up" API directly to notify it that a
+particular kind of state change event is in the pipe.  This lets the manager
+know to skip certain kinds of processing that will be obsoleted soon by the
 pending state change event.
 
-The third is the update notifications read from the model output queue.  These 
-are dispatched to the relevant widget manager, which checks it for relevence 
-and, if it is relevant, passes it to the data loading thread.  The data loading 
-thread will make an asynchronous call to the model and then enqueue the loaded 
+The third is the update notifications read from the model output queue.  These
+are dispatched to the relevant widget manager, which checks it for relevance
+and, if it is relevant, passes it to the data loading thread.  The data loading
+thread will make an asynchronous call to the model and then enqueue the loaded
 data as a state change event for the widget manager.
 
-The most complicated components are the widget managers, which must manage 
+The most complicated components are the widget managers, which must manage
 interactions among multiple threads:
 - the update dispatcher thread when it checks for relevance
 - the out-of-band "head's up" calls from widget events
@@ -45,7 +46,9 @@ interactions among multiple threads:
 - the internal processing thread that dequeues from the state change queue
 
 
-
+===========
+  Classes
+===========
 Update Dispatcher
 -----------------
 API:
@@ -66,7 +69,6 @@ Algorithm:
     if error, propagate to view
     send to each widget manager in turn until one handles it
     TODO: would it be faster if we map update types directly to managers?
-
 
 
 DataFetcher
@@ -103,7 +105,6 @@ Algorithm:
       enqueue results in stateChangeQueue
 
 
-
 Widget Manager Base
 -------------------
 API:
@@ -127,12 +128,11 @@ Algorithm:
     return True
 
 
-
 Filters
 -------
-This design is approximate.  I suspect we will use a hierarchy of filter 
-classes.  One filter class for each filter defined in the UI, then aggregate 
-filters that combine them in proper AND and OR groups, then top-level filters 
+This design is approximate.  I suspect we will use a hierarchy of filter
+classes.  One filter class for each filter defined in the UI, then aggregate
+filters that combine them in proper AND and OR groups, then top-level filters
 that represent all filters that affect a particular widget.  Filters keep their related UI button labels up to date.
 
 API:
@@ -160,15 +160,14 @@ Algorithm:
     re-evaluate _visibleSet and _enabled and return whether _visibleSet changed
 
 
-
 Diff Engine
 -----------
-Diff engine thread reads from state change queue.  This is the only thread that 
-can touch the tree state or send view commands.  Out-of-band calls may set 
-flags that are read by the diff engine thread during processing so the diff 
-engine knows when to ignore current filters (for example).  Out-of-band calls 
-should usually be accompanied by a state change object enqueued for the diff 
-engine thread.  There will be at least two different diff engines (for the 
+Diff engine thread reads from state change queue.  This is the only thread that
+can touch the tree state or send view commands.  Out-of-band calls may set
+flags that are read by the diff engine thread during processing so the diff
+engine knows when to ignore current filters (for example).  Out-of-band calls
+should usually be accompanied by a state change object enqueued for the diff
+engine thread.  There will be at least two different diff engines (for the
 packages tree and for the package contents), so this design is approximate.
 
 API:
@@ -181,9 +180,9 @@ Data:
   Filter _filters
 
 Algorithm:
-  When nodes are added, updated, or removed, the diff engine informs the 
-filters so they can keep their sets and statistics up to date.  When items are 
-added/removed from the visible set, the diff engine sends the appropriate 
-updates to the view.  When user selections change, or when 
-filter changes change the number of visible selected items, the diff engine 
-informs any interested widget managers so they can set their foci.
+  When nodes are added, updated, or removed, the diff engine informs the
+filters so they can keep their sets and statistics up to date.  When items are
+added/removed from the visible set, the diff engine sends the appropriate
+updates to the view.  When user selections change, or when filter changes change
+the number of visible selected items, the diff engine informs any interested
+widget managers so they can set their foci.
