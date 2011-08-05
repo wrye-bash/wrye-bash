@@ -7817,7 +7817,7 @@ class ModInfo(FileInfo):
         elif self.name in modInfos.merged: return 'Merged'
         elif self.name in modInfos.imported: return 'Imported'
         else: return 'Non-Active'
-        
+
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
         return modInfos.hasTimeConflict(self.name)
@@ -12636,7 +12636,7 @@ class InstallersData(bolt.TankData, DataDict):
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()
-                
+
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
         mode: O: Overrides; U: Underrides"""
@@ -14162,7 +14162,7 @@ class CBash_CellBlockInfo:
         for record in modFile.CELLS:
             celldata[record.eid] = record.bsb
             record.UnloadRecord()
-            
+
         del Current
 
     def writeToText(self,textPath):
@@ -17301,7 +17301,7 @@ class ModCleaner:
     ITM     = 0x02  # Identical to master records
     FOG     = 0x04  # Nvidia Fog Fix
     ALL = UDR|ITM|FOG
-    
+
     def __init__(self,modInfo):
         self.modInfo = modInfo
         self.itm = set()    # Fids for Identical To Master records
@@ -21401,7 +21401,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     text = _("Import factions from source mods/files.")
     defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
     autoKey = set(('Factions',))
-    
+
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -22528,7 +22528,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
                 if mod.GName in self.srcs:
                     tags = modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
-            else: break        
+            else: break
         recordId = record.fid
         mergedSpells = self.id_spells.get(recordId,None)
         if mergedSpells:
@@ -22786,7 +22786,7 @@ class NpcFacePatcher(ImportPatcher):
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] in self.patchFile.loadSet:
                     attrs, fidattrs = [],[]
-                    if 'Npc.HairOnly' in bashTags: 
+                    if 'Npc.HairOnly' in bashTags:
                         fidattrs += ['hair']
                         attrs = ['hairLength','hairRed','hairBlue','hairGreen']
                     if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
@@ -22913,7 +22913,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
             self.id_face[record.fid] = face
         else:
             fidattrs, attrs = [], []
-            if 'Npc.HairOnly' in bashTags: 
+            if 'Npc.HairOnly' in bashTags:
                 fidattrs += ['hair']
                 attrs =['hairLength','hairRed','hairBlue','hairGreen']
             if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
@@ -22942,7 +22942,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                         if same:
                             return
             self.id_face.setdefault(fid,{}).update(attr_fidvalue)
-            if fidattrs: 
+            if fidattrs:
                 self.id_face.setdefault(fid,{}).update(record.ConflictDetails(attrs, False))
             else:
                 self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData, False))
@@ -23349,7 +23349,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
                 if mod.GName in self.srcs:
                     tags = modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
-            else: break        
+            else: break
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -24113,7 +24113,7 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
             if override:
                 if override.weaponType == 1:
                     override.weaponType = 3
-                else: 
+                else:
                     override.weaponType = 0
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
@@ -27815,11 +27815,11 @@ class GmstTweaker(MultiTweaker):
     def getReadClasses(self):
         """Returns load factory classes needed for writing."""
         return (None,(MreGmst,))[self.isActive]
-        
+
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         return (None,(MreGmst,))[self.isActive]
-        
+
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
@@ -27831,7 +27831,7 @@ class GmstTweaker(MultiTweaker):
             if mapper(record.fid) in id_records: continue
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
-            
+
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
@@ -29871,7 +29871,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
             # skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
             # skeletonSetSpecial gets files that match "skel_special_*.nif"
             skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
-            skeletonSetSpecial = set((x for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
+            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
 
             if len(skeletonList) > 0:
                 femaleOnly = self.choiceValues[self.chosen][0] == 1
@@ -29940,7 +29940,7 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         skeletonDir = bosh.dirs['mods'].join('Meshes', 'Characters', '_male')
         if skeletonDir.exists():
             self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
-            self.skeletonSetSpecial = set((x for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
+            self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
 
     def getTypes(self):
         return ['NPC_']
@@ -32764,7 +32764,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
                 if mod.GName in self.srcs:
                     tags = modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
-            else: break        
+            else: break
         recordId = record.fid
         if(recordId in self.fid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[recordId].iteritems())
@@ -32932,7 +32932,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
                 if mod.GName in self.srcs:
                     tags = modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
-            else: break        
+            else: break
         recordId = record.fid
         if(recordId in self.id_spells):
             newSpells = self.id_spells[recordId]
@@ -33206,7 +33206,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
                 raceId = npc.race
                 if raceId not in playableRaces: continue
-                if npc.full is not None and raceId == self.dremoraRace and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race. 
+                if npc.full is not None and raceId == self.dremoraRace and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race.
                 #IsNewest
                 if npc.IsWinning():
                     npcChanged = False
@@ -33759,7 +33759,7 @@ def getOblivionPath(bashIni, path):
     if path: path = GPath(path)
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
         path = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else: 
+    else:
         path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
         #but for bashmon have to do a checky.
         if path.s[-4:].lower() == 'mopy':
@@ -34150,7 +34150,7 @@ def initSettings(readOnly=False):
                 dirs['saveBase'].join('BashSettings.dat'),
                 dirs['userApp'].join('bash config.pkl'),
                 readOnly))
-            else:raise  
+            else:raise
     settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------
