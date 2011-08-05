@@ -128,3 +128,63 @@ HashMap<pathGuid, targetPath)        m_targetPaths
 HashMap<pathGuid, List<nodeGuid>>    m_conflictLists
 HashMap<pathGuid, List<nodeGuid>>    m_activeConflictLists
 HashMap<pathGuid, int>               m_installedFileCrcs
+
+
+Scheduler algorithm:
+  if focus request:
+    if focusNodeId is None: continue # already handled
+    lock focusNodeId
+    n = focusNodeId
+    focusNodeId = None
+    focusPkgNodeId = n.package
+    unlock
+  elif i/o request:
+    acquire write lock on package and perform in this thread
+  elif free thread:
+    if len(dataLoadCrcSet) > 0:
+      if numDataThreads < maxThreads/2
+        process uninterruptibly
+    elif focusPkgNode is not None:
+      if numFocusThreads < maxThreads/3
+        process for 2 seconds (load CRCs first, then analyze deps)
+    else:
+      for unloadedPkgSet in (newPackages, installedPackages,
+                             uninstalledPackages, hiddenPackages:
+        if len(unloadedPkgSet) > 0
+          load package file lists
+      for needCrcPkgSet in (newPackages, installedPackages,
+                            uninstalledPackages, hiddenPackages:
+        if len(needCrcPkgSet) > 0
+          load package file CRCs for 2 secs
+      if len(dataLoadCrcSet) > 0
+        process for 2 secs
+      if focusPkg is not None:
+        process for 2 secs
+      all above again for deps and other analysis stages
+
+
+Data writer tasks
+-----------------
+update_crc(nodeId, crc)
+  Update CRC field, update attributes and conflict lists for this node and all
+conflicting nodes.  conflict list should include (nodeId, crc) so we know which
+are the same and which actually conflict
+
+init_node(nodeId, nodeAttributes, children, details)
+  update conflict lists if crc is included is is file node
+
+update_path(packageNodeId, path)
+  may need to update preview handles for non-archives
+
+update_install_order(nodeId, newPredNodeId)
+  must be package or group
+
+update_marked_for_install(nodeId, bool)
+
+reset_marked_for_install(packageNodeId, nodeIds)
+  used in wizards
+
+update_preview_handle(nodeId, fileHandle)
+
+mark_package_loaded(packageNodeId)
+  mark package as safe to save to persisted state.
