@@ -1657,7 +1657,7 @@ class ObBaseRecord(object):
                 identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
             except Exception,err: #trace down the stupid stack overflow?!?! - traced down in one instance and can't see anything wrong with the record but this'll handle it as well as possible.
                 deprint(_("Exception reading fid: %s from mod: %s %s" % (str(self.fid),self.ModName,err)))
-                identical = False
+                raise # Re-raise, because at this point it's dangerous to try to interract with CBash.dll again (stack corruption)
             if identical:
                 if self._Type == 'CELL':
                     # Check to make sure the CELLs are attached at the same spot
