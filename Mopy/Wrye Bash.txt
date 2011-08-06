@@ -2354,6 +2354,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
 * Fixed Settings backup files should have WB version in their names.
+* Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records

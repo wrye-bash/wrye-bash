@@ -1026,7 +1026,7 @@ class Path(object):
         "Backup file path."
         return self+'.bak'
 
-    #--size, atim, ctime
+    #--size, atime, ctime
     @property
     def size(self):
         "Size of file or directory."
@@ -1258,6 +1258,13 @@ class Path(object):
                 else:
                     os.remove(self._s)
             shutil.move(self.temp._s, self._s)
+    def editable(self):
+        """Safely check whether a file is editable."""
+        try:
+            with open(self._s,'ab') as f:
+                return True
+        except:
+            return False
 
     #--Hash/Compare
     def __hash__(self):
