@@ -7754,6 +7754,7 @@ class FileInfo:
         normal = self.dir.join(self.name)
         ghost = normal+'.ghost'
         try:
+            if not normal.editable() or not ghost.editable(): return self.isGhost
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
