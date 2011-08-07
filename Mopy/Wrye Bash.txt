@@ -843,7 +843,8 @@ These are the commands found on context menu for mods...
 
 === File Commands
 * __File Operations__
-  * **New Mod:**
+  * **New Mod:** Create an empty plugin.
+  * **{{A:Create Dummy Masters}}:** Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters.  These dummy plugins can later be removed using the [[#|Clean Dummy Masters]] command.
   * **{{A:Backup}}** Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.
     * If multiple files are selected, this is done without any user input.
   * **{{A:Duplicate}}** Creates a duplicate of the file in the mods directory.
@@ -1115,6 +1116,9 @@ These are the commands found on context menu for mods...
 === Version 0.8
 * Resets the file version number of a mod file back to an older version (0.8) so that the older construction set can edit it. The feature is somewhat dated now that the updated construction set is available, but is still useful for modders who prefer to work with the older CS. (Note that the newer CS has some bugs that the older CS does not.)
 * **Warning:** It's possible that using this command on mods built under newer versions of the CS may result in loss of some data. Use with caution.
+
+=== Clean Dummy Masters
+* Removes any empty plugin files that were generated via the [[#|Create Dummy Masters]] command.
 
 == Balo =======================================================================
 Bash Auto Load Ordering (aka Balo) will semi-automatically sort your mods into a few predefined groups. Currently it's still necessary to specify for each mod which group it belongs to, but future versions of Balo may provide additional automation in this area.
@@ -2353,6 +2357,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * New mod commands:
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
+  * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
+  * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Fixed Settings backup files should have WB version in their names.
 * Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
 

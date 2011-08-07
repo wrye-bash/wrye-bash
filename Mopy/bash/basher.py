@@ -10714,6 +10714,72 @@ class Mod_CreateBlank(Link):
         self.window.RefreshUI(detail=newName)
 
 #------------------------------------------------------------------------------
+class Mod_CreateDummyMasters(Link):
+    """TES4Edit tool, makes dummy plugins for each missing master, for use if looking at a 'Filter' patch."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Create Dummy Masters...'))
+        menu.AppendItem(menuItem)
+        if len(data) == 1 and bosh.modInfos[data[0]].getStatus() == 30: # Missing masters
+            menuItem.Enable(True)
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        """Handle execution."""
+        if not balt.askYes(self.window,
+                           _("This is an advanced feature for editing 'Filter' patches in TES4Edit.  It will create dummy plugins for each missing master.  Are you sure you want to continue?\n\nTo remove these files later, use 'Clean Dummy Masters...'"),
+                           _("Create Files")):
+            return
+        modInfo = bosh.modInfos[self.data[0]]
+        lastTime = modInfo.mtime - 1
+        refresh = []
+        for master in modInfo.header.masters:
+            if master in bosh.modInfos.ordered:
+                lastTime = bosh.modInfos[master].mtime
+                continue
+            # Missing master, create a dummy plugin for it
+            newInfo = bosh.ModInfo(modInfo.dir,master)
+            newTime = lastTime
+            newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
+            newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+            newFile.tes4.author = 'BASHED DUMMY'
+            newFile.safeSave()
+            #newInfo.writeAuthor('BASHED DUMMY')
+            bosh.modInfos.refresh()
+            refresh.append(master)
+        self.window.RefreshUI()
+
+class Mods_CleanDummyMasters(Link):
+    """Clean up after using a 'Create Dummy Masters...' command"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Remove Dummy Masters...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(False)
+        for fileName in bosh.modInfos.data:
+            fileInfo = bosh.modInfos[fileName]
+            if fileInfo.header.author == 'BASHED DUMMY':
+                menuItem.Enable(True)
+                break
+
+    def Execute(self,event):
+        """Handle execution."""
+        remove = []
+        for fileName in bosh.modInfos.data:
+            fileInfo = bosh.modInfos[fileName]
+            if fileInfo.header.author == 'BASHED DUMMY':
+                remove.append(fileName)
+        message = _(r'Delete these files? This operation cannot be undone.')
+        message += '\n* ' + '\n* '.join(sorted(x.s for x in remove))
+        if not balt.askYes(self.window,message,_('Delete Files')):
+            return
+        for fileName in remove:
+            self.window.data.delete(fileName)
+        bosh.modInfos.refresh()
+        self.window.RefreshUI()
+
+#------------------------------------------------------------------------------
 class Mod_FactionRelations_Export(Link):
     """Export faction relations from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15322,6 +15388,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_Deprint())
     ModList.mainMenu.append(Mods_DumpTranslator())
     ModList.mainMenu.append(Mods_Tes4ViewExpert())
+    ModList.mainMenu.append(Mods_CleanDummyMasters())
     #--BOSS options
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
@@ -15335,6 +15402,7 @@ def InitModLinks():
     if True: #--File
         fileMenu = MenuLink(_("File"))
         fileMenu.links.append(Mod_CreateBlank())
+        fileMenu.links.append(Mod_CreateDummyMasters())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_Backup())
         fileMenu.links.append(File_Duplicate())
