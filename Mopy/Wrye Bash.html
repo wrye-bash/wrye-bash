@@ -104,6 +104,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#Details">Details</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#ListMastersMod">List Masters (Mod)</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CreateBOSSReport">Create BOSS Report</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CopyModInfo">Copy Mod Info</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#MarkLevelers">Mark Levelers</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#MarkMergeable">Mark Mergeable</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#NvidiaFogFix">Nvidia Fog Fix</a></p>
@@ -112,6 +113,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#RemoveWorldOrphans">Remove World Orphans</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#UndeleteRefs">Undelete Refs</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#Version08">Version 0.8</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CleanDummyMasters">Clean Dummy Masters</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#Balo">Balo</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FullBalo">Full Balo</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#FullBaloUsage">Full Balo Usage</a></p>
@@ -867,6 +869,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Archive Info</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Refresh:</b> Refreshes all info for selected packages. Useful for updating info when package has been modified outside of Bash.</p>
   <p class="list-2">&bull;&nbsp;  <b>Move To...</b> Moves selected packages(s) to specified position. If multiple packages are active, they'll retain their relative order, but move as a block to the selected position.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Open readme:</b> opens the readme if one is detected in the package.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configuration</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Has Extra Directories:</b> Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory &#150; and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).</p>
   <p class="list-2">&bull;&nbsp;  <b>Override Skips:</b> If this is checked, Bain will not skip over files that would normally be skipped due to the <b>Skip XX</b> options.</p>
@@ -875,7 +878,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Wizard Install Options:</b> Only Available if Wizard Install system is active (see the wizards <a href="wizards.html">documentation</a> for more info on the wizard install system)</p>
   <p class="list-2">&bull;&nbsp;  <b>Wizard:</b> Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).</p>
   <p class="list-2">&bull;&nbsp;  <b>Auto Wizard:</b> Runs the wizard but selects the default options (only available if wizard.txt exists in the archive).</p>
-  <p class="list-2">&bull;&nbsp;  <b>Edit Wizard:</b> Opens the wizard.txt for editing (only available for projects and if wizard.txt exists in the project).</p>
+  <p class="list-2">&bull;&nbsp;  <b>Edit/View Wizard:</b> Opens the wizard.txt for viewing o  for projects with a wizard.txt opens it for editing.</p>
 <p class="list-1">&bull;&nbsp;  <b>Install</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Anneal:</b> Will "anneal" the selected file(s). This will install any missing files and correct any install order errors (aka "underrides").</p>
   <p class="list-2">&bull;&nbsp;  <b>Install:</b> Will do an "in-order" install. I.e. it will fully install the package except for files that are masked by higher order packages.</p>
@@ -1082,7 +1085,8 @@
 <p class="empty">&nbsp;</p>
 <h3><a id='FileCommands'>File Commands</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>File Operations</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>New Mod:</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>New Mod:</b></i> Create an empty plugin.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b><a id='CreateDummyMasters'>Create Dummy Masters</a>:</b></i> Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters.  These dummy plugins can later be removed using the <a href="#CleanDummyMasters">Clean Dummy Masters</a> command.</p>
   <p class="list-2">&bull;&nbsp;  <i><b><a id='Backup'>Backup</a></b></i> Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.</p>
     <p class="list-3">&bull;&nbsp;  If multiple files are selected, this is done without any user input.</p>
   <p class="list-2">&bull;&nbsp;  <i><b><a id='Duplicate'>Duplicate</a></b></i> Creates a duplicate of the file in the mods directory.</p>
@@ -1306,6 +1310,9 @@
 <h3><a id='CreateBOSSReport'>Create BOSS Report</a></h3>
 <p class="list-1">&bull;&nbsp;  Generates a report on the selected mods, for posting in the latest BOSS thread.  The report includes the plugin name, a link to the download (if it can be determined from the installer), the plugin version, plugin CRC, and ITM and UDR counts (as determined by Wrye Bash, so the ITM count may be less than what TES4Edit reports).</p>
 <p class="empty">&nbsp;</p>
+<h3><a id='CopyModInfo'>Copy Mod Info</a></h3>
+<p class="list-1">&bull;&nbsp;  Generates a report on the selected mod(s) with the info from the currently displayed columns (ie size, author etc.).</p>
+<p class="empty">&nbsp;</p>
 <h3><a id='MarkLevelers'>Mark Levelers</a></h3>
 <p class="list-1">&bull;&nbsp;  Obsolete. Replaced by automatic tagging (see <a href="#BashTags">Bash Tags</a>).</p>
 <p class="empty">&nbsp;</p>
@@ -1351,6 +1358,9 @@
 <h3><a id='Version08'>Version 0.8</a></h3>
 <p class="list-1">&bull;&nbsp;  Resets the file version number of a mod file back to an older version (0.8) so that the older construction set can edit it. The feature is somewhat dated now that the updated construction set is available, but is still useful for modders who prefer to work with the older CS. (Note that the newer CS has some bugs that the older CS does not.)</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Warning:</b></i> It's possible that using this command on mods built under newer versions of the CS may result in loss of some data. Use with caution.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='CleanDummyMasters'>Clean Dummy Masters</a></h3>
+<p class="list-1">&bull;&nbsp;  Removes any empty plugin files that were generated via the <a href="#CreateDummyMasters">Create Dummy Masters</a> command.</p>
 <p class="empty">&nbsp;</p>
 <h2><a id='Balo'>Balo</a></h2>
 <p>Bash Auto Load Ordering (aka Balo) will semi-automatically sort your mods into a few predefined groups. Currently it's still necessary to specify for each mod which group it belongs to, but future versions of Balo may provide additional automation in this area.
@@ -1906,7 +1916,9 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Set Sound Attenuation Levels:</b></p>
   <p class="list-2">&bull;&nbsp;  The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).</p>
 <p class="list-1">&bull;&nbsp;  <b>Set Sound Attenuation Levels: Nirnroots Only</b></p>
-  <p class="list-2">&bull;&nbsp;  The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.</p>
+  <p class="list-2">&bull;&nbsp;  The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.</p>
+<p class="list-1">&bull;&nbsp;  <b>Skyrim-style Weapons:</b></p>
+  <p class="list-2">&bull;&nbsp;  Sets all one handed weapons as blades, two handed weapons as blunt.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='TweakClothes'>Tweak Clothes</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150; however your tastes may vary.</p>
@@ -2616,13 +2628,26 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-  <p class="empty">&nbsp;</p>
-<h3><a id='_29512122011valdaLojack'>295 [12/12/2011] [valda,Lojack]</a></h3>
+<h3><a id='_29512122011valdaLojackPacificMorrowind'>295 [12/12/2011] [valda,Lojack,PacificMorrowind]</a></h3>
+<p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
+  <p class="list-2">&bull;&nbsp;  New assorted tweak: Skyrim-style Weapons.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
+  <p class="list-2">&bull;&nbsp;  BAIN Wizards: Updated the <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a> function to allow comments.</p>
+  <p class="list-2">&bull;&nbsp;  installer->open readme command added.</p>
 <p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
   <p class="list-2">&bull;&nbsp;  More bugfixes from valda</p>
 <p class="list-1">&bull;&nbsp;  Added activation status as a new mods column/sort option.</p>
-<p class="list-1">&bull;&nbsp;  New mod command <a href="#CreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.</p>
-<p class="list-1">&bull;&nbsp;  BAIN Wizards: Updated the <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a> function to allow comments.</p>
+<p class="list-1">&bull;&nbsp;  New mod commands:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#CreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#CopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.</p>
+  <p class="list-2">&bull;&nbsp;  File-><a href="#CreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.</p>
+  <p class="list-2">&bull;&nbsp;  Mods Tab-><a href="#CleanDummyMasters">Clean Dummy Masters</a> will delete any empty plugins created using the <a href="#CreateDummyMasters">Create Dummy Masters</a> command.</p>
+<p class="list-1">&bull;&nbsp;  Fixed Settings backup files should have WB version in their names.</p>
+<p class="list-1">&bull;&nbsp;  Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='_2942182011Lojackmyk002PacificMorrowind'>294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]</a></h3>
+<p class="list-1">&bull;&nbsp;  Small fix to the Python race patcher for dremora records</p>
+<p class="list-1">&bull;&nbsp;  Lots of installer fixes</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='_29412572011DJ_KovrikLojackMetallicowmyk002PacificMorrowindvalda'>294.1 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]</a></h3>
 <p class="list-1">&bull;&nbsp;  Program-wide Changes:</p>
