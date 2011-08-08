@@ -5043,6 +5043,46 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
+class ChecklistBoxes(wx.Dialog):
+    """A window with 1 or more checklists."""
+    def __init__(self,parent,title,message,checklists):
+        """checklists is in this format:
+        [title,tooltip,item1,item2,itemn],
+        [title,tooltip,....],
+        """
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=wx.DEFAULT_DIALOG_STYLE)
+        #self.SetBackgroundColour(wx.NullColour)
+        #self.SetSizeHints(400,600)
+        self.SetIcons(bashBlue)
+        sizer = wx.FlexGridSizer(len(checklists)+1,1)
+        self.ids = {}
+        for i,group in enumerate(checklists):
+            title = group[0]
+            tip = group[1]
+            items = [x.s for x in group[2:]]
+            if len(items) == 0: continue
+            box = wx.StaticBox(self,wx.ID_ANY,title)
+            subsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+            checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+            self.ids[title] = checks.GetId()
+            checks.SetToolTip(balt.tooltip(tip))
+            for i in xrange(len(items)):
+                checks.Check(i,True)
+            subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
+            sizer.Add(subsizer,1,wx.EXPAND|wx.ALL,5)
+            sizer.AddGrowableRow(i)
+        okButton = button(self,id=wx.ID_OK)
+        okButton.SetDefault()
+        sizer.Add(hSizer(
+            (balt.spacer),
+            (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
+            (button(self,id=wx.ID_CANCEL),0,wx.ALIGN_RIGHT),
+            ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        sizer.AddGrowableCol(0)
+        sizer.SetSizeHints(self)
+        self.SetSizer(sizer)
+
+#------------------------------------------------------------------------------
 class DocBrowser(wx.Frame):
     """Doc Browser frame."""
     def __init__(self,modName=None):
@@ -11702,35 +11742,71 @@ class Mod_Patch_Update(Link):
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
-            message = ""
-            ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
-            unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
-            merge = [x for x in ActivePriortoPatch if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-            noMerge = [x for x in ActivePriortoPatch if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable]
-            deactivate = [x for x in ActivePriortoPatch if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags()]
-            if deactivate: message += _("The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build.\n*%s") % ('\n* '.join(x.s for x in deactivate)) + '\n\n'
-            if unfiltered: message += _("The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build.\n*%s") % ('\n* '.join(x.s for x in unfiltered)) + '\n\n'
-            if merge: message += _("The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Oblivion maximum esp/m limit.\n*%s") % ('\n* '.join(x.s for x in merge)) + '\n\n'
-            if noMerge: message += _("The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences.\n*%s") % ('\n* '.join(x.s for x in noMerge)) + '\n\n'
-        if message:
-            message += 'Automatically deactivate those mods now?'
-            if balt.showLog(self.window,message,_('Deactivate Suggested Mods?'),icons=bashBlue,question=True):
+
+        #--Check if we should be deactivating some plugins
+        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
+        unfiltered = [x for x in ActivePriortoPatch if 'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in ActivePriortoPatch if 'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable and x not in unfiltered]
+        noMerge = [x for x in ActivePriortoPatch if 'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable and x not in unfiltered and x not in merge]
+        deactivate = [x for x in ActivePriortoPatch if 'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags() and x not in unfiltered and x not in merge and x not in noMerge]
+
+        checklists = []
+        unfilteredKey = _("Tagged 'Filter'")
+        mergeKey = _("Mergeable")
+        noMergeKey = _("Mergeable, but tagged 'NoMerge'")
+        deactivateKey = _("Tagged 'Deactivate'")
+        if unfiltered:
+            group = [unfilteredKey,
+                     _("These mods should be deactivated before building the patch, and then merged or imported into the Bashed Patch."),
+                     ]
+            group.extend(unfiltered)
+            checklists.append(group)
+        if merge:
+            group = [mergeKey,
+                     _("These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Ovlivion maximum esp/esm limit."),
+                     ]
+            group.extend(merge)
+            checklists.append(group)
+        if noMerge:
+            group = [noMergeKey,
+                     _("These mods are mergeable, but tagged 'NoMerge'.  They should be deactivated before building the patch and imported into the Bashed Patch."),
+                     ]
+            group.extend(noMerge)
+            checklists.append(group)
+        if deactivate:
+            group = [deactivateKey,
+                     _("These mods are tagged 'Deactivate'.  They should be deactivated before building the patch, and merged or imported into the Bashed Patch."),
+                     ]
+            group.extend(deactivate)
+            checklists.append(group)
+        if checklists:
+            dialog = ChecklistBoxes(bashFrame,_("Deactivate these mods prior to patching"),
+                _("The following mods should be deactivated prior to building the patch."),
+                checklists)
+            if dialog.ShowModal() == wx.ID_CANCEL:
+                return
+            deselect = set()
+            for (list,key) in [(unfiltered,unfilteredKey),
+                               (merge,mergeKey),
+                               (noMerge,noMergeKey),
+                               (deactivate,deactivateKey),
+                               ]:
+                if list:
+                    id = dialog.ids[key]
+                    checks = dialog.FindWindowById(id)
+                    if checks:
+                        for i,mod in enumerate(list):
+                            if checks.IsChecked(i):
+                                deselect.add(mod)
+            dialog.Destroy()
+            if deselect:
                 with balt.BusyCursor():
-                    if deactivate:
-                        for mod in deactivate:
-                            bosh.modInfos.unselect(mod,False)
-                    if unfiltered:
-                        for mod in unfiltered:
-                            bosh.modInfos.unselect(mod,False)
-                    if merge:
-                        for mod in merge:
-                            bosh.modInfos.unselect(mod,False)
-                    if noMerge:
-                        for mod in noMerge:
-                            bosh.modInfos.unselect(mod,False)
+                    for mod in deselect:
+                        bosh.modInfos.unselect(mod,False)
                     bosh.modInfos.refreshInfoLists()
                     bosh.modInfos.plugins.save()
                     self.window.RefreshUI(detail=fileName)
+
         previousMods = set()
         text = ''
         for mod in bosh.modInfos.ordered:
