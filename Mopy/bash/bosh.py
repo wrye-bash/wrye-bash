@@ -27807,7 +27807,7 @@ class GmstTweaker(MultiTweaker):
         GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
-            (_('MovableBodies.esp'),1500.0),
+            (_('MovableBodies.esp (1500)'),1500.0),
             (_('[Default (150)]'),150),
             (_('Custom'),150),
             ),
