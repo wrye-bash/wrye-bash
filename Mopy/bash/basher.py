@@ -8521,7 +8521,7 @@ class Installer_OpenTesNexus(InstallerLink):
         message = _("Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TES Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile('http://tesnexus.com/downloads/file.php?id='+id)
+            os.startfile('http://www.tesnexus.com/downloads/file.php?id='+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -10442,7 +10442,7 @@ class Mod_CreateBOSSReport(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = 'http://tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = 'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
@@ -10500,7 +10500,7 @@ class Mod_CopyModInfo(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = 'http://tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = 'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
