@@ -577,9 +577,9 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(wx.StaticText(self, -1, obgeHave))
         sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bOBGEOk]))
 
-        linkWB = wx.HyperlinkCtrl(self, -1, 'Wrye Bash', 'http://tesnexus.com/downloads/file.php?id=22368')
+        linkWB = wx.HyperlinkCtrl(self, -1, 'Wrye Bash', 'http://www.tesnexus.com/downloads/file.php?id=22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(wx.ToolTip('http://tesnexus.com/'))
+        linkWB.SetToolTip(wx.ToolTip('http://www.tesnexus.com/'))
         sizerVersions.Add(linkWB)
         sizerVersions.Add(wx.StaticText(self, -1, wbNeed))
         sizerVersions.Add(wx.StaticText(self, -1, wbHave))
