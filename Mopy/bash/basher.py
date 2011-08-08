@@ -10585,6 +10585,24 @@ class Mod_AllowNoGhosting(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
+class Mod_Ghost(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Ghost"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        files = []
+        for fileName in self.data:
+            fileInfo = bosh.modInfos[fileName]
+            allowGhosting = True
+            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
+            toGhost = fileName not in bosh.modInfos.ordered 
+            oldGhost = fileInfo.isGhost
+            if fileInfo.setGhost(toGhost) != oldGhost:
+                files.append(fileName)
+        self.window.RefreshUI(files)
+#------------------------------------------------------------------------------
 class Mod_AllowInvertGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
@@ -15513,6 +15531,7 @@ def InitModLinks():
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
+    ModList.itemMenu.append(Mod_Ghost())
     #ModList.itemMenu.append(Mod_MarkLevelers())
     ModList.itemMenu.append(Mod_MarkMergeable(False))
     if CBash:
