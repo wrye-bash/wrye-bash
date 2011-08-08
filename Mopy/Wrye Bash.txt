@@ -2357,6 +2357,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * New mod commands:
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
+  * Ghost will ghost just the selected mod(s) 
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Fixed Settings backup files should have WB version in their names.
