@@ -55,7 +55,7 @@ class Status(enum.Enum):
     DIRTY = None
     UNSTABLE = None
 
-class Operations(enum.Enum):
+class AnnealOperationIds(enum.Enum):
     __enumerables__ = ('NONE', 'COPY', 'OVERWRITE', 'DELETE')
     # for autocomplete
     NONE = None

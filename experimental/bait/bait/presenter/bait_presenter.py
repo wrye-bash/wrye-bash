@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 
 
 class BaitPresenter:
-    def __init__(self, model_, viewCommandQueue, stateManager=None):
+    def __init__(self, model_, presenterIoGateway, viewCommandQueue):
         """don't start threads here since we may be initialized in a different process
         from where we're started"""
         self.viewCommandQueue = viewCommandQueue
@@ -56,7 +56,7 @@ class BaitPresenter:
             model_.updateNotificationQueue, viewCommandQueue, self._managers)
         self._filterMask = presenter.FilterIds.NONE
 
-    def start(self, curDetailsTabId, initialFilterMask):
+    def start(self, initialDetailsTabId, initialFilterMask):
         _logger.debug("presenter starting; curDetailsTabId = %s; initialFilterMask = %s",
                       curDetailsTabId, initialFilterMask)
         self._filterMask = initialFilterMask

@@ -41,7 +41,7 @@ def _create_queue(isMultiprocess):
     else:
         return Queue.Queue()
 
-def CreateBaitView(parent, presenter=None, model=None, isMultiprocess=False):
+def CreateBaitView(parentNotebook, presenter=None, model=None, isMultiprocess=False):
     _logger.debug("creating BAIT components")
 
     if presenter is not None:
@@ -55,4 +55,4 @@ def CreateBaitView(parent, presenter=None, model=None, isMultiprocess=False):
         _logger.debug("instantiating default presenter")
         presenter = bait_presenter.BaitPresenter(model, _create_queue(isMultiprocess))
 
-    return bait_view.BaitView(parent, presenter)
+    return bait_view.BaitView(parentNotebook, presenter)

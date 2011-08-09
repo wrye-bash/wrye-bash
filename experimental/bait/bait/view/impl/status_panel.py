@@ -32,10 +32,24 @@ from ... import presenter
 
 _logger = logging.getLogger(__name__)
 _operationNames = {
-        presenter.AnnealOperations.COPY:"Adding",
-        presenter.AnnealOperations.DELETE:"Deleting",
-        presenter.AnnealOperations.OVERWRITE:"Updating"
+        presenter.AnnealOperationIds.COPY:"Adding",
+        presenter.AnnealOperationIds.DELETE:"Deleting",
+        presenter.AnnealOperationIds.OVERWRITE:"Updating"
     }
+
+
+def _node_label_generator(nodeIds, nodeIdToLabelMap):
+    for nodeId in nodeIds:
+        yield nodeIdToLabelMap[nodeId]
+
+def _make_str(strings, separator):
+    outStr = StringIO()
+    isFirst = True
+    for string in strings:
+        if not isFirst: outStr.write(separator)
+        outStr.write(string)
+        isFirst = False
+    return outStr.getvalue()
 
 def _make_iops_str(ioOperations, separator):
     outStr = StringIO()
@@ -50,21 +64,31 @@ def _make_iops_str(ioOperations, separator):
     return outStr.getvalue()
 
 
-class StatusPanel(wx.Panel):
-    def __init__(self, parent, presenter_,):
-        wx.Panel.__init__(self, parent, style=wx.SUNKEN_BORDER)
-        self._presenter = presenter_
+class StatusPanel:
+    def __init__(self, wxParent, sizer, presenter_,):
+        # MinSize not set for any panel since this panel should not restrict sizing
+        basePanel = wx.Panel(wxParent, style=wx.SUNKEN_BORDER)
+        self._wxParent = wxParent
 
         # "ok" panel
-        # Show "ok", installed statistics
-        okPanel = self._okPanel = wx.Panel(self)
+        okPanel = self._okPanel = wx.Panel(basePanel)
         dataStats = self._dataStats = wx.StaticText(okPanel)
         okSizer = wx.BoxSizer(wx.HORIZONTAL)
         okSizer.Add(dataStats, 0, wx.ALIGN_CENTER_VERTICAL)
         okPanel.SetSizer(okSizer)
 
+        # "dirty" panel
+        dirtyPanel = self._dirtyPanel = wx.Panel(basePanel)
+        annealAllButton = wx.Button(dirtyPanel, label="Anneal all now")
+        # TODO: attach anneal all action to button
+        dirtyText = self._dirtyText = wx.StaticText(dirtyPanel)
+        dirtySizer = wx.BoxSizer(wx.HORIZONTAL)
+        dirtySizer.Add(annealAllButton, 0, wx.ALIGN_CENTER_VERTICAL)
+        dirtySizer.Add(dirtyText, 0, wx.ALIGN_CENTER_VERTICAL)
+        dirtyPanel.SetSizer(dirtySizer)
+
         # "loading" panel
-        loadingPanel = self._loadingPanel = wx.Panel(self)
+        loadingPanel = self._loadingPanel = wx.Panel(basePanel)
         loadingText = wx.StaticText(loadingPanel, label="Loading packages: ")
         loadingPercent = self._loadingPercent = wx.Gauge(loadingPanel)
         loadingSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -72,19 +96,8 @@ class StatusPanel(wx.Panel):
         loadingSizer.Add(loadingPercent, 0, wx.ALIGN_CENTER_VERTICAL)
         loadingPanel.SetSizer(loadingSizer)
 
-        # "needs annealing" panel
-        dirtyPanel = self._dirtyPanel = wx.Panel(self)
-        annealAllButton = wx.Button(dirtyPanel, label="Anneal all now")
-        dirtyText = wx.StaticText(dirtyPanel, label="Data needs annealing")
-        dirtyPanel.SetToolTipString("Please see the highlighted packages below for details on what needs annealing, or click the button to anneal all.")
-        dirtySizer = wx.BoxSizer(wx.HORIZONTAL)
-        dirtySizer.Add(annealAllButton, 0, wx.ALIGN_CENTER_VERTICAL)
-        dirtySizer.Add(dirtyText, 0, wx.ALIGN_CENTER_VERTICAL)
-        dirtyPanel.SetSizer(dirtySizer)
-
-        # "doing IO" panel
-        # show cancel button, comma separated list of actions that trail off the right side of the panel
-        ioPanel = self._ioPanel = wx.Panel(self)
+        # "doing I/O" panel
+        ioPanel = self._ioPanel = wx.Panel(basePanel)
         iopsText = self._iopsText = wx.StaticText(ioPanel)
         ioSizer = wx.BoxSizer(wx.HORIZONTAL)
         ioSizer.Add(iopsText, 0, wx.ALIGN_CENTER_VERTICAL)
@@ -92,51 +105,76 @@ class StatusPanel(wx.Panel):
 
         statusSizer = wx.BoxSizer(wx.HORIZONTAL)
         statusSizer.Add(okPanel, 1, wx.ALIGN_CENTER_VERTICAL)
-        statusSizer.Add(loadingPanel, 1, wx.ALIGN_CENTER_VERTICAL)
         statusSizer.Add(dirtyPanel, 1, wx.ALIGN_CENTER_VERTICAL)
+        statusSizer.Add(loadingPanel, 1, wx.ALIGN_CENTER_VERTICAL)
         statusSizer.Add(ioPanel, 1, wx.ALIGN_CENTER_VERTICAL)
-        self.SetSizer(statusSizer)
+        basePanel.SetSizer(statusSizer)
+        sizer.Add(basePanel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 3)
 
         okPanel.Hide()
         loadingPanel.Hide()
         dirtyPanel.Hide()
+        # needed on Windows to ensure the panel doesn't disappear
+        basePanel.SetMinSize((0, basePanel.GetBestSize()[1]))
         ioPanel.Hide()
 
         self._curPanel = self._okPanel
+        self._presenter = presenter_
+
+        self.set_ok(None, *[0]*6)
 
 
-    def set_ok_status(self, hilightColor, activePlugins, totalPlugins, knownFiles, totalFiles):
-        label = "Plugins: %d/%d, Files: %d/%d" % (activePlugins, totalPlugins, knownFiles, totalFiles)
+    def set_ok(self, highlightColor, numInstalledFiles, numLibraryFiles, installedMb,
+               libraryMb, freeInstalledMb, freeLibraryMb):
+        if freeInstalledMb == freeLibraryMb:
+            label = "Library: %d (%d MB), Installed: %d (%d MB), Free: %d MB" % \
+                  (numLibraryFiles, libraryMb,
+                   numInstalledFiles, installedMb, freeLibraryMb)
+            tooltip = "%d files (%d MB) in packages managed by Wrye Bash, " \
+                    "%d files (%d MB) installed, %d MB free on hard drive" % \
+                    (numLibraryFiles, libraryMb,
+                     numInstalledFiles, installedMb, freeLibraryMb)
+        else:
+            label = "Library: %d (%d MB, %d Free), Installed: %d (%d MB, %d Free)" % \
+                  (numLibraryFiles, libraryMb, freeLibraryMb,
+                   numInstalledFiles, installedMb, freeInstalledMb)
+            tooltip = "%d files (%d MB) in packages managed by Wrye Bash, " \
+                    "%d MB free in package directory, " \
+                    "%d files (%d MB) installed, %d MB free in Data directory" % \
+                    (numLibraryFiles, libraryMb, freeLibraryMb,
+                     numInstalledFiles, installedMb, freeInstalledMb)
         _logger.debug("showing 'ok' panel; data stats: '%s'", label)
         self._dataStats.SetLabel(label)
-        tooltip = "%d of %d plugins active, %d of %d installed files managed by Wrye Bash" % (activePlugins, totalPlugins, knownFiles, totalFiles)
         self._okPanel.SetToolTipString(tooltip)
-        self._okPanel.SetBackgroundColour(hilightColor)
-        self._curPanel.Hide()
-        self._okPanel.Show()
-        self._curPanel = self._okPanel
+        self._switch_to_panel(self._okPanel, highlightColor)
 
-    def set_loading_status(self, hilightColor, current, total):
-        _logger.debug("showing 'loading' panel; num complete: %d/%d", current, total)
+    def set_dirty(self, highlightColor, dirtyPackageNodeIds, nodeIdToLabelMap):
+        _logger.debug("showing 'dirty' panel; dirty packages: %s", dirtyPackageNodeIds)
+        self._dirtyText.SetLabel(_make_str(
+            _node_label_generator(dirtyPackageNodeIds, nodeIdToLabelMap), ', '))
+        self._dirtyPanel.SetToolTipString(
+            "Please see the highlighted packages below for details on what needs"
+            "annealing, or click the 'Anneal all now' button to autofix.\n" +
+            _make_str(_node_label_generator(dirtyPackageNodeIds, nodeIdToLabelMap), '\n'))
+        self._switch_to_panel(self._dirtyPanel, highlightColor)
+
+    def set_loading(self, highlightColor, complete, total):
+        _logger.debug("showing 'loading' panel; num complete: %d/%d", complete, total)
         self._loadingPercent.SetRange(total)
-        self._loadingPercent.SetValue(current)
-        self._loadingPanel.SetBackgroundColour(hilightColor)
-        self._curPanel.Hide()
-        self._loadingPanel.Show()
-        self._curPanel = self._loadingPanel
+        self._loadingPercent.SetValue(complete)
+        self._switch_to_panel(self._loadingPanel, highlightColor)
 
-    def set_dirty_status(self, hilightColor):
-        _logger.debug("showing 'dirty' panel")
-        self._dirtyPanel.SetBackgroundColour(hilightColor)
-        self._curPanel.Hide()
-        self._dirtyPanel.Show()
-        self._curPanel = self._dirtyPanel
-
-    def set_io_status(self, hilightColor, ioOperations):
-        _logger.debug("showing 'io' panel; %d operations", len(ioOperations))
+    def set_doing_io(self, highlightColor, ioOperations):
+        _logger.debug("showing 'io' panel; operations: %s", ioOperations)
         self._iopsText.SetLabel(_make_iops_str(ioOperations, ", "))
         self._ioPanel.SetToolTipString(_make_iops_str(ioOperations, "\n"))
-        self._ioPanel.SetBackgroundColour(hilightColor)
-        self._curPanel.Hide()
-        self._ioPanel.Show()
-        self._curPanel = self._ioPanel
+        self._switch_to_panel(self._ioPanel, highlightColor)
+
+    def _switch_to_panel(self, targetPanel, highlightColor):
+        targetPanel.SetBackgroundColour(highlightColor)
+        if self._curPanel != targetPanel:
+            self._curPanel.Hide()
+            targetPanel.Show()
+            self._curPanel = targetPanel
+            # ensure panel is properly sized
+            self._wxParent.Layout()

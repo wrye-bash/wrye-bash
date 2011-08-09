@@ -48,7 +48,6 @@ class _MainWindow(wx.Frame):
         else:
             self._baitView = bait_factory.CreateBaitView(
                 notebook, isMultiprocess=options.multiprocess)
-        notebook.AddPage(self._baitView, "Installers")
         for tabName in ("Mods", "Saves", "INI Edits", "Screenshots", "People"):
             notebook.AddPage(wx.Panel(notebook), tabName)
         sizer = wx.BoxSizer()

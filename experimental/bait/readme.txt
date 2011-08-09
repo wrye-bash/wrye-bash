@@ -32,6 +32,16 @@ The following packages are required to run the unit tests:
        ensures dummy objects used for unit tests accurately clone the APIs of
          the classes they are representing
 
+The following packages are being considered for supporting possible future
+functionality:
+  1) PIL (Python Imaging Library)
+       http://www.pythonware.com/products/pil/index.htm
+       can be used for image manipulation for file previews
+  2) pymedia
+       http://pymedia.org/docs/pymedia.audio.sound.html#SpectrAnalyzer
+       can be used for spectral analysis of mp3 files so we can determine
+         which voice files are silent
+
 
 Unit Testing
 ============

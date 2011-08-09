@@ -94,9 +94,6 @@ expanded when the program is closed and restarted, useful for modders)
 
 The menu button also provides a place to set the following options (the options
 set here can be overridden per-package):
-- Allow OBSE plugins (users probably want this on, but it is an explicit option
-due to OBSE plugins being opaque binary blobs, and therefore a real security
-risk that users should acknowledge)
 - Skip DistantLOD by default (enable this if you have TES4LODGen and want to
 run it manually to generate correct DistantLOD files for your load order)
 - Skip LOD meshes by default (TODO: why would one want this?)
@@ -105,7 +102,7 @@ run it manually to generate correct DistantLOD files for your load order)
 - Skip all voices by default (enable this if you use Elys Silent voice and
 don't want the voice acting shipped with mods)
 - Skip silent voices by default (enable this if you use Elys Silent voice to
-save space taken up by silent mp3 files)
+save space taken up by silent mp3 files) (future feature)
 
 
 Search bar
@@ -153,9 +150,8 @@ rather, all conflicts in higher-precedence packages have been detected) and we
 know which files we need to "fix" to make the installation comply with package
 precedence (conflict list) rules.
 - [Green] All data is loaded and no inconsistencies have been detected.  Some
-statistics about installed data may be shown, such as active/installed plugin
-files and number of installed files.  It may also show other interesting
-statistics like remaining disk space.
+statistics about the library and installed data may be shown.  It may also show
+other interesting statistics like remaining disk space.
 
 
 Packages tree
@@ -323,13 +319,13 @@ displayed here.
 The Dirty tab shows how many files are scheduled to be added, updated, or
 deleted.  There are three filter buttons at the top of the tab to allow
 listings of each type of operation to be filtered independently.  In the list,
-names of added files are colored green, updated: blue, and deleted: red.
+names of added files are colored green, updated, blue, and deleted, red.
 
 The Conflicts tab shows which of the other packages have files that conflict
 with files in the current package.  If a group is marked as "ignore conflicts
 within group", then a conflict that would otherwise show may not show up here.
-However the conflicted file may still show up as a mismatched file in the next
-tab.  The Conflicts tab has eight filters: selected, unselected, active,
+However the conflicted file may still show up as a mismatched file in the other
+tabs.  The Conflicts tab has eight filters: selected, unselected, active,
 inactive, higher, lower, mismatched, and matched.  Selected/unselected refer to
 the file's status in the current package.  Active/inactive refer to the file's
 status in any conflicting package.  Higher/lower refer to the conflicting
@@ -510,8 +506,8 @@ tree
 =========
   Notes
 =========
-Warn on installing OBSE plugin
-stuff to look into:
-- auto-anneal/install wizards
-- bsa redirection
-- omod functionality
+Warn on installing OBSE plugin: "This package is trying to install an OBSE
+binary plugin.  Do not allow this unless you trust the reputation of the
+author.  OBSE plugins are opaque binary blobs, and unless you have examined,
+understood, and compiled the source code yourself, you cannot be sure of what it
+will or will not do to your computer."

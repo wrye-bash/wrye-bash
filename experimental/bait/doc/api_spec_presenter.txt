@@ -19,39 +19,44 @@ classes listed below.
   API
 =======
 Enum DetailsTabIds
-Enum FilterIds
+FlagEnum FilterIds
+Enum CommandIds
 
-Enum AnnealOperations
-class IoOperation
+class SetGlobalSettings
+class InitPackageContents
+class SetStatusOk
+class SetStatusDirty
+
+Enum PackageOperationIds
+class PackageOperationInfo
+class SetStatusIO
 
 FlagEnum FontStyleIds
 Enum ForegroundColorIds
 Enum HighlightColorIds
 Enum IconIds
-Enum Status
-class Style
-
-Enum CommandIds
-class AddGroup
-class UpdateGroup
-class AddPackage
-class UpdatePackage
-class RemovePackagesTreeNode
-class ExpandGroup
-class ExpandDir
-class ClearPackages
-class SelectFiles
-class SetFilterStats
-class SetSummary
-class SetStatus
-class SetPackageLabel
-class AddFile
-class ClearFiles
-class SetFileDetails
 class SetStyleMaps
-class SetPackageInfo
+class Style
+Enum NodeTreeIds
+class UpdateNode
+class AddNode
+
+class RemoveNode
+class ClearTree
+class SetFilterStats
+class SetGeneralTabInfo
+
+class AnnealOperationIds
+class SetDirtyTabInfo
+
+class SetConflictsTabInfo
+class SetFileListTabInfo
+
+class ErrorCodes
 class DisplayError
-class SetMenuTemplates
+
+Enum ConfirmationQuestionIds
+class AskConfirmation
 
 
 class BaitPresenter:

@@ -24,68 +24,164 @@
 
 import Queue
 import logging
-import re
+import time
 
-from .. import presenter, model
-from ..presenter import view_commands
-from mock_presenter_data import *
+from .. import presenter
+from ..util import monitored_thread
 
 
 _logger = logging.getLogger(__name__)
 _foregroundColorMap = {
-        view_commands.ForegroundColorIds.DISABLED:(142,139,138),
-        view_commands.ForegroundColorIds.HAS_INACTIVE_OVERRIDDE:(255,165,0)
+        presenter.ForegroundColorIds.DISABLED:(142,139,138),
+        presenter.ForegroundColorIds.HAS_INACTIVE_OVERRIDDE:(255,165,0)
     }
 _highlightColorMap = {
-        view_commands.HighlightColorIds.ERROR:(193,205,205),
-        view_commands.HighlightColorIds.MISSING_DEPENDENCY:(255,0,0),
-        view_commands.HighlightColorIds.DIRTY:(255,215,0),
-        view_commands.HighlightColorIds.LOADING:(255,255,0),
-        view_commands.HighlightColorIds.OK:(0,255,0)
+        presenter.HighlightColorIds.ERROR:(193,205,205),
+        presenter.HighlightColorIds.MISSING_DEPENDENCY:(255,0,0),
+        presenter.HighlightColorIds.DIRTY:(255,215,0),
+        presenter.HighlightColorIds.LOADING:(255,255,0),
+        presenter.HighlightColorIds.OK:(0,255,0)
     }
 _checkedIconMap = {
-        view_commands.IconIds.PROJECT_MATCHES:"images/diamond_green_inc.png",
-        view_commands.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_inc_wiz.png",
-        view_commands.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
-        view_commands.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_inc_wiz.png",
-        view_commands.IconIds.PROJECT_MISSING:"images/diamond_red_inc.png",
-        view_commands.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_inc_wiz.png",
-        view_commands.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
-        view_commands.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
-        view_commands.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
-        view_commands.IconIds.INSTALLER_MATCHES:"images/checkbox_green_inc.png",
-        view_commands.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_inc_wiz.png",
-        view_commands.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
-        view_commands.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_inc_wiz.png",
-        view_commands.IconIds.INSTALLER_MISSING:"images/checkbox_red_inc.png",
-        view_commands.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_inc_wiz.png",
-        view_commands.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
-        view_commands.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
-        view_commands.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
+        presenter.IconIds.PROJECT_MATCHES:"images/diamond_green_inc.png",
+        presenter.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_inc_wiz.png",
+        presenter.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_inc.png",
+        presenter.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_inc_wiz.png",
+        presenter.IconIds.PROJECT_MISSING:"images/diamond_red_inc.png",
+        presenter.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_inc_wiz.png",
+        presenter.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
+        presenter.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
+        presenter.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
+        presenter.IconIds.INSTALLER_MATCHES:"images/checkbox_green_inc.png",
+        presenter.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_inc_wiz.png",
+        presenter.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_inc.png",
+        presenter.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_inc_wiz.png",
+        presenter.IconIds.INSTALLER_MISSING:"images/checkbox_red_inc.png",
+        presenter.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_inc_wiz.png",
+        presenter.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        presenter.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
+        presenter.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 _uncheckedIconMap = {
-        view_commands.IconIds.PROJECT_MATCHES:"images/diamond_green_off.png",
-        view_commands.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_off_wiz.png",
-        view_commands.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_off.png",
-        view_commands.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_off_wiz.png",
-        view_commands.IconIds.PROJECT_MISSING:"images/diamond_red_off.png",
-        view_commands.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_off_wiz.png",
-        view_commands.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
-        view_commands.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
-        view_commands.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
-        view_commands.IconIds.INSTALLER_MATCHES:"images/checkbox_green_off.png",
-        view_commands.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_off_wiz.png",
-        view_commands.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
-        view_commands.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_off_wiz.png",
-        view_commands.IconIds.INSTALLER_MISSING:"images/checkbox_red_off.png",
-        view_commands.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_off_wiz.png",
-        view_commands.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
-        view_commands.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
-        view_commands.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
+        presenter.IconIds.PROJECT_MATCHES:"images/diamond_green_off.png",
+        presenter.IconIds.PROJECT_MATCHES_WIZ:"images/diamond_green_off_wiz.png",
+        presenter.IconIds.PROJECT_MISMATCHED:"images/diamond_orange_off.png",
+        presenter.IconIds.PROJECT_MISMATCHED_WIZ:"images/diamond_orange_off_wiz.png",
+        presenter.IconIds.PROJECT_MISSING:"images/diamond_red_off.png",
+        presenter.IconIds.PROJECT_MISSING_WIZ:"images/diamond_red_off_wiz.png",
+        presenter.IconIds.PROJECT_EMPTY:"images/diamond_white_off.png",
+        presenter.IconIds.PROJECT_EMPTY_WIZ:"images/diamond_white_off_wiz.png",
+        presenter.IconIds.PROJECT_UNINSTALLABLE:"images/diamond_grey_off.png",
+        presenter.IconIds.INSTALLER_MATCHES:"images/checkbox_green_off.png",
+        presenter.IconIds.INSTALLER_MATCHES_WIZ:"images/checkbox_green_off_wiz.png",
+        presenter.IconIds.INSTALLER_MISMATCHED:"images/checkbox_orange_off.png",
+        presenter.IconIds.INSTALLER_MISMATCHED_WIZ:"images/checkbox_orange_off_wiz.png",
+        presenter.IconIds.INSTALLER_MISSING:"images/checkbox_red_off.png",
+        presenter.IconIds.INSTALLER_MISSING_WIZ:"images/checkbox_red_off_wiz.png",
+        presenter.IconIds.INSTALLER_EMPTY:"images/checkbox_white_off.png",
+        presenter.IconIds.INSTALLER_EMPTY_WIZ:"images/checkbox_white_off_wiz.png",
+        presenter.IconIds.INSTALLER_UNINSTALLABLE:"images/checkbox_grey_off.png"
     }
 
+_commands = [
+    presenter.SetStyleMapsCommand(
+            _foregroundColorMap, _highlightColorMap, _checkedIconMap, _uncheckedIconMap),
+    presenter.SetStatusLoadingCommand(0, 6),
+    presenter.AddNodeCommand(1, "Installed Data", False, presenter.Style(),
+                             presenter.NodeTreeIds.PACKAGES, None, None,
+                             presenter.ContextMenuIds.INSTALLED_DATA, False),
+    presenter.SetStatusLoadingCommand(1, 6),
+    presenter.AddNodeCommand(5, "Uninstalled archive with wizard", False,
+                             presenter.Style(
+                                 checkboxState=False,
+                                 iconId=presenter.IconIds.PROJECT_MISSING_WIZ),
+                             presenter.NodeTreeIds.PACKAGES, None, 1,
+                             presenter.ContextMenuIds.ARCHIVE, False),
+    presenter.SetStatusLoadingCommand(2, 6),
+    presenter.AddNodeCommand(2, "Group of packages", True, presenter.Style(),
+                             presenter.NodeTreeIds.PACKAGES, None, 5,
+                             presenter.ContextMenuIds.GROUP, False),
+    presenter.SetStatusLoadingCommand(3, 6),
+    presenter.AddNodeCommand(3, "Installed, prehighlighted project", False,
+                             presenter.Style(checkboxState=True,
+                                             iconId=presenter.IconIds.PROJECT_MISMATCHED),
+                             presenter.NodeTreeIds.PACKAGES, 2, None,
+                             presenter.ContextMenuIds.PROJECT, True),
+    presenter.SetStatusLoadingCommand(4, 6),
+    presenter.AddNodeCommand(6, "Installed archive", False,
+                             presenter.Style(checkboxState=True,
+                                             iconId=presenter.IconIds.INSTALLER_MATCHES),
+                             presenter.NodeTreeIds.PACKAGES, None, 2,
+                             presenter.ContextMenuIds.ARCHIVE, False),
+    presenter.SetStatusLoadingCommand(5, 6),
+    presenter.SetPackageContentsInfoCommand("Dummy info", True),
+    presenter.SetGeneralTabInfoCommand(True, False, True, 123, 43, "2011 Aug 09", 21, 3,
+                                       5, 2, 14, 0, 5, 0, 19, 0, 0, 0, 0, 0, 14, 0, 5, 0,
+                                       19, None),
+    presenter.SetDirtyTabInfoCommand([
+        (presenter.AnnealOperationIds.COPY, 'Meshes/sampleMesh.nif'),
+        (presenter.AnnealOperationIds.DELETE, 'neatoburrito.esp'),
+        (presenter.AnnealOperationIds.OVERWRITE, 'Textures/sampleTex.dds')]),
+    presenter.SetConflictsTabInfoCommand([
+        (3, ['patchplugin.esp', 'Meshes/sampleMesh.nif']),
+        (6, ['Textures/tex1.dds', 'Textures/tex2.dds', 'Textures/tex3.dds'])
+        ]),
+    presenter.SetFileListTabInfoCommand(presenter.DetailsTabIds.SELECTED, [
+        ]),
+    presenter.SetFileListTabInfoCommand(presenter.DetailsTabIds.UNSELECTED, []),
+    presenter.SetFileListTabInfoCommand(presenter.DetailsTabIds.SKIPPED, ['readme.txt']),
+    presenter.AddNodeCommand(4, "Hidden archive", False,
+                             presenter.Style(
+                                 foregroundColorId=presenter.ForegroundColorIds.DISABLED,
+                                 checkboxState=False,
+                                 iconId=presenter.IconIds.INSTALLER_UNINSTALLABLE),
+                             presenter.NodeTreeIds.PACKAGES, 2, 3,
+                             presenter.ContextMenuIds.ARCHIVE, False),
+    presenter.SetStatusLoadingCommand(6, 6),
+    presenter.SetStatusOkCommand(100, 1023, 24000, 3423, 123, 24000)
+    ]
 
 class MockPresenter:
+    def __init__(self):
+        self.viewCommandQueue = Queue.Queue()
+        self._loaderThread = monitored_thread.MonitoredThread(name="MockPresenterLoader",
+                                                              target=self._load_data)
+    def start(self, initialDetailsTabId, initialFilterMask):
+        _logger.debug("presenter starting; curDetailsTabId = %s; initialFilterMask = %s",
+                      initialDetailsTabId, initialFilterMask)
+        self._loaderThread.start()
+    def pause(self):
+        _logger.debug("presenter pausing")
+    def resume(self):
+        _logger.debug("presenter resuming")
+    def shutdown(self):
+        _logger.debug("presenter shutting down")
+        self._loaderThread.join()
+        self.viewCommandQueue.put(None)
+
+    def set_filter_state(self, filterId, value):
+        _logger.debug("setting filter %s to %s", filterId, value)
+    def set_packages_tree_selections(self, nodeIds):
+        _logger.debug("setting packages tree selection to nodes: %s", nodeIds)
+    def set_files_tree_selections(self, nodeIds):
+        _logger.debug("setting files tree selection to nodes %s", nodeIds)
+    def set_details_tab_selection(self, detailsTabId):
+        _logger.debug("setting details tab selection to %s", detailsTabId)
+    def set_group_node_expanded(self, nodeId, value):
+        _logger.debug("setting group node %d expansion to %s", nodeId, value)
+    def set_dir_node_expanded(self, nodeId, value):
+        _logger.debug("setting directory node %d expansion to %s", nodeId, value)
+    def set_search_string(self, text):
+        _logger.debug("setting search string to '%s'", text)
+
+    def _load_data(self):
+        _logger.debug("loader thread starting")
+        for command in _commands:
+            self.viewCommandQueue.put(command)
+            time.sleep(0.5)
+
+
+class OldMockPresenter:
     def __init__(self):
         self.viewCommandQueue = Queue.Queue()
         self._filterMask = presenter.FilterIds.NONE
@@ -105,18 +201,18 @@ class MockPresenter:
                 self._filterMask = self._filterMask | filterId
             else:
                 self._filterMask = self._filterMask & ~filterId
-        self.viewCommandQueue.put(view_commands.SetStyleMaps(
+        self.viewCommandQueue.put(presenter.SetStyleMaps(
             _foregroundColorMap, _highlightColorMap, _checkedIconMap, _uncheckedIconMap))
-        self.viewCommandQueue.put(view_commands.SetStatus(
-            view_commands.Status.LOADING, view_commands.HighlightColorIds.LOADING,
+        self.viewCommandQueue.put(presenter.SetStatus(
+            presenter.Status.LOADING, presenter.HighlightColorIds.LOADING,
             loadingComplete=0, loadingTotal=100))
         self.set_packages_tree_selections([])
         self.set_files_tree_selections([])
         self._rebuild_packages_tree()
-        self.viewCommandQueue.put(view_commands.SetPackageInfo(
+        self.viewCommandQueue.put(presenter.SetPackageInfo(
             presenter.DetailsTabIds.GENERAL, None))
-        self.viewCommandQueue.put(view_commands.SetStatus(
-            view_commands.Status.OK, view_commands.HighlightColorIds.OK))
+        self.viewCommandQueue.put(presenter.SetStatus(
+            presenter.Status.OK, presenter.HighlightColorIds.OK))
 
     def pause(self):
         _logger.debug("mock presenter pausing")
@@ -142,26 +238,26 @@ class MockPresenter:
     def set_packages_tree_selections(self, nodeIds, saveSelections=True):
         _logger.debug("setting packages tree selection to node(s) %s, saveSelections=%s",
                       nodeIds, saveSelections)
-        self.viewCommandQueue.put(view_commands.ClearFiles())
+        self.viewCommandQueue.put(presenter.ClearFiles())
         if saveSelections:
             self._selectedPackages = nodeIds
         numNodeIds = len(nodeIds)
         if numNodeIds is 1:
             # update package details
             node = pkgNodes[nodeIds[0]]
-            self.viewCommandQueue.put(view_commands.SetPackageLabel(node[LABEL_IDX]))
+            self.viewCommandQueue.put(presenter.SetPackageLabel(node[LABEL_IDX]))
             if self._curDetailsTab is presenter.DetailsTabIds.GENERAL:
-                self.viewCommandQueue.put(view_commands.SetPackageInfo(
+                self.viewCommandQueue.put(presenter.SetPackageInfo(
                     self._curDetailsTab, get_general_map(nodeIds[0])))
             else:
-                self.viewCommandQueue.put(view_commands.SetPackageInfo(
+                self.viewCommandQueue.put(presenter.SetPackageInfo(
                     self._curDetailsTab,
                     node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab]))
             self._rebuild_files_tree(node[FILE_NODES_IDX])
         elif numNodeIds is 0:
-            self.viewCommandQueue.put(view_commands.SetPackageLabel(None))
+            self.viewCommandQueue.put(presenter.SetPackageLabel(None))
         else:
-            self.viewCommandQueue.put(view_commands.SetPackageLabel(""))
+            self.viewCommandQueue.put(presenter.SetPackageLabel(""))
 
     def set_files_tree_selections(self, nodeIds, saveSelections=True):
         _logger.debug("setting files tree selection to node(s) %s", nodeIds)
@@ -170,23 +266,23 @@ class MockPresenter:
         numNodeIds = len(nodeIds)
         if numNodeIds is 1:
             # update file details
-            self.viewCommandQueue.put(view_commands.SetFileDetails(
+            self.viewCommandQueue.put(presenter.SetFileDetails(
                 pkgNodes[self._selectedPackages[0]][FILE_NODES_IDX][nodeIds[0]][FILE_DETAILS_IDX]))
         else:
-            self.viewCommandQueue.put(view_commands.SetFileDetails(None))
+            self.viewCommandQueue.put(presenter.SetFileDetails(None))
 
     def set_details_tab_selection(self, detailsTabId):
         _logger.debug("setting details tab selection to %s", detailsTabId)
         self._curDetailsTab = detailsTabId
         numSelectedPackages = len(self._selectedPackages)
         if numSelectedPackages is 0:
-            self.viewCommandQueue.put(view_commands.SetPackageInfo(detailsTabId, None))
+            self.viewCommandQueue.put(presenter.SetPackageInfo(detailsTabId, None))
         elif numSelectedPackages is 1:
             if self._curDetailsTab is presenter.DetailsTabIds.GENERAL:
-                self.viewCommandQueue.put(view_commands.SetPackageInfo(
+                self.viewCommandQueue.put(presenter.SetPackageInfo(
                     detailsTabId, get_general_map(self._selectedPackages[0])))
             else:
-                self.viewCommandQueue.put(view_commands.SetPackageInfo(
+                self.viewCommandQueue.put(presenter.SetPackageInfo(
                     detailsTabId,
                     pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
 
@@ -237,17 +333,17 @@ class MockPresenter:
 
     def _add_packages_tree_node(self, node, nodeId, parentNodeId, predNodeId):
         if node[NODE_TYPE_IDX] is model.NodeTypes.GROUP:
-            addClass = view_commands.AddGroup
+            addClass = presenter.AddGroup
             expand = self._groupExpansionStates.get(nodeId)
             _logger.debug("adding group node %d (expanded: %s)", nodeId, expand)
         else:
-            addClass = view_commands.AddPackage
+            addClass = presenter.AddPackage
             expand = False
             _logger.debug("adding package node %d", nodeId)
         self.viewCommandQueue.put(addClass(("%.2d "%(nodeId+1))+node[LABEL_IDX], nodeId,
                                            parentNodeId, predNodeId, node[STYLE_IDX]))
         if expand:
-            self.viewCommandQueue.put(view_commands.ExpandGroup(nodeId))
+            self.viewCommandQueue.put(presenter.ExpandGroup(nodeId))
 
     def _add_files_tree_node(self, node, nodeId, parentNodeId, predNodeId):
         if node[NODE_TYPE_IDX] is model.NodeTypes.DIRECTORY:
@@ -256,15 +352,15 @@ class MockPresenter:
         else:
             expand = False
             _logger.debug("adding file node %d", nodeId)
-        self.viewCommandQueue.put(view_commands.AddFile(node[LABEL_IDX], nodeId,
+        self.viewCommandQueue.put(presenter.AddFile(node[LABEL_IDX], nodeId,
                                                         parentNodeId, predNodeId,
                                                         node[STYLE_IDX]))
         if expand:
-            self.viewCommandQueue.put(view_commands.ExpandDir(nodeId))
+            self.viewCommandQueue.put(presenter.ExpandDir(nodeId))
 
     def _rebuild_packages_tree(self, searchString=None):
         # clear tree
-        self.viewCommandQueue.put(view_commands.ClearPackages())
+        self.viewCommandQueue.put(presenter.ClearPackages())
 
         # keep total and search match counts
         totals = {}
@@ -301,15 +397,15 @@ class MockPresenter:
                 totals[node[FILTER_IDX]] += 1
 
         # update filter labels
-        self.viewCommandQueue.put(view_commands.SetFilterStats(
+        self.viewCommandQueue.put(presenter.SetFilterStats(
             presenter.FilterIds.PACKAGES_HIDDEN,
             matches[presenter.FilterIds.PACKAGES_HIDDEN],
             totals[presenter.FilterIds.PACKAGES_HIDDEN]))
-        self.viewCommandQueue.put(view_commands.SetFilterStats(
+        self.viewCommandQueue.put(presenter.SetFilterStats(
             presenter.FilterIds.PACKAGES_INSTALLED,
             matches[presenter.FilterIds.PACKAGES_INSTALLED],
             totals[presenter.FilterIds.PACKAGES_INSTALLED]))
-        self.viewCommandQueue.put(view_commands.SetFilterStats(
+        self.viewCommandQueue.put(presenter.SetFilterStats(
             presenter.FilterIds.PACKAGES_NOT_INSTALLED,
             matches[presenter.FilterIds.PACKAGES_NOT_INSTALLED],
             totals[presenter.FilterIds.PACKAGES_NOT_INSTALLED]))
@@ -317,12 +413,12 @@ class MockPresenter:
         # persist selections for the packages that are still visible
         addedSet &= set(self._selectedPackages)
         addedSetList = list(addedSet)
-        #self.viewCommandQueue.put(view_commands.SelectPackages(addedSetList))
+        #self.viewCommandQueue.put(presenter.SelectPackages(addedSetList))
         self.set_packages_tree_selections(addedSetList, False)
 
     def _rebuild_files_tree(self, nodes=None):
         # clear tree
-        self.viewCommandQueue.put(view_commands.ClearFiles())
+        self.viewCommandQueue.put(presenter.ClearFiles())
 
         # keep counts
         filterIds = (presenter.FilterIds.FILES_PLUGINS,
@@ -353,11 +449,11 @@ class MockPresenter:
 
         # update filter labels
         for filterId in filterIds:
-            self.viewCommandQueue.put(view_commands.SetFilterStats(
+            self.viewCommandQueue.put(presenter.SetFilterStats(
                 filterId, totals[filterId], totals[filterId]))
 
         # persist selections for the files that are still visible
         addedSet &= set(self._selectedFiles)
         addedSetList = list(addedSet)
-        self.viewCommandQueue.put(view_commands.SelectFiles(addedSetList))
+        self.viewCommandQueue.put(presenter.SelectFiles(addedSetList))
         self.set_files_tree_selections(addedSetList, False)
