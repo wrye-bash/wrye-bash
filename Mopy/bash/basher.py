@@ -319,17 +319,6 @@ settingDefaults = {
         'Size':75,
         },
     'bash.BSAs.sort': 'File',
-    #--Wrye Bash: Replacers
-    'bash.replacers.show':False,
-    'bash.replacers.cols': ['File'],
-    'bash.replacers.sort': 'File',
-    'bash.replacers.colReverse': {
-        },
-    'bash.replacers.colWidths': {
-        'File':150,
-        },
-    'bash.replacers.colAligns': {},
-    'bash.replacers.autoChecked':False,
     #--Wrye Bash: Screens
     'bash.screens.cols': ['File'],
     'bash.screens.sort': 'File',
@@ -3580,199 +3569,6 @@ class InstallersPanel(SashTankPanel):
             self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
-class ReplacersList(List):
-    #--Class Data
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
-
-    def __init__(self,parent):
-        #--Columns
-        self.cols = settings['bash.replacers.cols']
-        self.colAligns = settings['bash.replacers.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.replacers.colReverse')
-        self.colWidths = settings['bash.replacers.colWidths']
-        #--Data/Items
-        self.data = bosh.replacersData = bosh.ReplacersData()
-        self.sort = settings['bash.replacers.sort']
-        #--Links
-        self.mainMenu = ReplacersList.mainMenu
-        self.itemMenu = ReplacersList.itemMenu
-        #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
-        #--Image List
-        checkboxesIL = colorChecks.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--Events
-        #wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-
-    def RefreshUI(self,files='ALL',detail='SAME'):
-        """Refreshes UI for specified files."""
-        #--Details
-        if detail == 'SAME':
-            selected = set(self.GetSelected())
-        else:
-            selected = set([detail])
-        #--Populate
-        if files == 'ALL':
-            self.PopulateItems(selected=selected)
-        elif isinstance(files,bolt.Path):
-            self.PopulateItem(files,selected=selected)
-        else: #--Iterable
-            for file in files:
-                self.PopulateItem(file,selected=selected)
-
-    #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
-        fileInfo = self.data[fileName]
-        cols = self.cols
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            if col == 'File':
-                value = fileName.s
-            else:
-                value = '-'
-            if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
-            else:
-                self.list.SetStringItem(itemDex, colDex, value)
-        #--Image
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(0,fileInfo.isApplied()))
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.screens.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        else:
-            raise BashError(_('Unrecognized sort key: ')+col)
-        #--Ascending
-        if reverse: self.items.reverse()
-
-    #--Events ---------------------------------------------
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(ReplacersList,self).OnColumnResize(event)
-        settings.setChanged('bash.screens.colWidths')
-
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == 32:
-            item = GPath(self.items[hitItem])
-            replacer = self.data[item]
-            #--Unselect?
-            if replacer.isApplied():
-                with balt.BusyCursor():
-                    replacer.remove()
-            #--Select?
-            else:
-                with balt.Progress(item.s) as progress:
-                    replacer.apply(progress)
-            self.RefreshUI(item)
-            bosh.modInfos.refresh()
-            modList.RefreshUI()
-            return True
-        #--Pass Event onward
-        event.Skip()
-
-#------------------------------------------------------------------------------
-class ReplacersPanel(NotebookPanel):
-    """Replacers tab."""
-    def __init__(self,parent):
-        """Initialize."""
-        wx.Panel.__init__(self, parent, -1)
-        self.gList = ReplacersList(self)
-        #--Buttons
-        self.gAuto = checkBox(self,_("Automatic"),onCheck=self.OnAutomatic,
-            tip=_("Automatically update Textures BSA after adding/removing a replacer."))
-        self.gAuto.SetValue(settings['bash.replacers.autoChecked'])
-        self.gInvalidate = button(self,_("Update"),onClick=self.OnInvalidateTextures,
-            tip=_("Enable replacement textures by updating Textures archive."))
-        self.gReset = button(self,_("Restore"),onClick=self.OnResetTextures,
-            tip=_("Restore Textures archive to its original state."))
-        #--Layout
-        self.gTexturesBsa = vsbSizer((self,-1,_("Textures BSA")),
-            ((0,4),),
-            (self.gAuto,0,wx.ALL^wx.BOTTOM,4),
-            ((0,8),),
-            (self.gInvalidate,0,wx.ALL^wx.BOTTOM,4),
-            (self.gReset,0,wx.ALL,4),
-            )
-        sizer = hSizer(
-            (self.gTexturesBsa,0,wx.ALL|10),
-            (self.gList,1,wx.GROW|wx.LEFT,4))
-        self.SetSizer(sizer)
-
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        numUsed = len([info for info in self.gList.data.values() if info.isApplied()])
-        text = _('Reps: %d/%d') % (numUsed,len(self.gList.data.data))
-        statusBar.SetStatusText(text,2)
-
-    def OnShow(self):
-        """Panel is shown. Update self.data."""
-        if bosh.replacersData.refresh():
-            self.gList.RefreshUI()
-        #--vs. OBMM?
-        enableBsaEdits = not (
-            bosh.dirs['mods'].join('ConsoleBSAEditData2').exists() or
-            bosh.dirs['app'].join('OBMM','BSAedits').exists())
-        self.gAuto.Enable(enableBsaEdits)
-        self.gInvalidate.Enable(enableBsaEdits)
-        self.gReset.Enable(enableBsaEdits)
-        if enableBsaEdits:
-            self.gTexturesBsa.GetStaticBox().SetToolTip(None)
-            settings['bash.replacers.autoEditBSAs'] = settings['bash.replacers.autoChecked']
-        else:
-            self.gTexturesBsa.GetStaticBox().SetToolTip(tooltip(
-                _("BSA editing disabled becase OBMM or BSAPatch is in use.")))
-            settings['bash.replacers.autoEditBSAs'] = False
-        self.SetStatusCount()
-
-    def ContinueEdit(self):
-        """Continuation warning for Invalidate and Reset."""
-        message = _("Edit Textures BSA?\n\nThis command directly edits the Oblivion - Textures - Compressed.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Oblivion or restore it from another source.")
-        return balt.askContinue(self,message,'bash.replacers.editBSAs.continue',_('Textures BSA'))
-
-    def OnAutomatic(self,event=None):
-        """Automatic checkbox changed."""
-        isChecked = self.gAuto.IsChecked()
-        if isChecked and not self.ContinueEdit():
-            self.gAuto.SetValue(False)
-            return
-        settings['bash.replacers.autoChecked'] = isChecked
-        settings['bash.replacers.autoEditBSAs'] = isChecked
-
-    def OnInvalidateTextures(self,event):
-        """Invalid."""
-        if not self.ContinueEdit(): return
-        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
-        bsaFile = bosh.BsaFile(bsaPath)
-        bsaFile.scan()
-        result = bsaFile.invalidate()
-        balt.showOk(self,
-            _("BSA Hashes reset: %d\nBSA Hashes Invalidated: %d.\nAIText entries: %d.") %
-            tuple(map(len,result)))
-
-    def OnResetTextures(self,event):
-        """Invalid."""
-        if not self.ContinueEdit(): return
-        bsaPath = bosh.modInfos.dir.join('Oblivion - Textures - Compressed.bsa')
-        bsaFile = bosh.BsaFile(bsaPath)
-        bsaFile.scan()
-        resetCount = bsaFile.reset()
-        balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
-
-#------------------------------------------------------------------------------
 class ScreensList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
@@ -4734,8 +4530,6 @@ class BashNotebook(wx.Notebook):
         #--Pages
         self.AddPage(InstallersPanel(self),_("Installers"))
         iInstallers = self.GetPageCount()-1
-        if bosh.inisettings['EnableReplacers'] and (settings['bash.replacers.show'] or bosh.dirs['mods'].join("Replacers").list()):
-            self.AddPage(ReplacersPanel(self),_("Replacers"))
         self.AddPage(ModPanel(self),_("Mods"))
         iMods = self.GetPageCount()-1
         #self.AddPage(BSAPanel(self),_("BSAs"))
@@ -7700,20 +7494,6 @@ class Installers_RemoveEmptyDirs(BoolLink):
                                           )
 
 #------------------------------------------------------------------------------
-class Installers_ShowReplacers(BoolLink):
-    """Toggles option to show replacers menu."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _('Show Replacers Tab'),
-                                          'bash.replacers.show',
-                                          _("Show/Hide the Replacers tab.")
-                                          )
-
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        message = _("This option will take effect when Bash is restarted. Note that if any files are present in Data\\Replacers, then the Replacers tab will be shown regardless of this setting.")
-        balt.showOk(self.gTank,message,self.text)
-
-#------------------------------------------------------------------------------
 class Installers_Skip(BoolLink):
     """Toggle various skip settings and update."""
     def Execute(self,event):
@@ -9982,22 +9762,6 @@ class User_SaveSettings(Link):
 
     def Execute(self,event):
         BashFrame.SaveSettings(bashFrame)
-
-#------------------------------------------------------------------------------
-class Mods_UpdateInvalidator(Link):
-    """Mod Replacers dialog."""
-    def AppendToMenu(self,menu,window,data):
-        """Append ref replacer items to menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Update Archive Invalidator'))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        message = (_("Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating."))
-        if not balt.askContinue(self.window,message,'bash.updateAI.continue',_('ArchiveInvalidation.txt')):
-            return
-        bosh.ResourceReplacer.updateInvalidator()
-        balt.showOk(self.window,"ArchiveInvalidation.txt updated.")
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -15301,8 +15065,6 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AvoidOnStart())
     InstallersPanel.mainMenu.append(Installers_Enabled())
-    if bosh.inisettings['EnableReplacers']:
-        InstallersPanel.mainMenu.append(Installers_ShowReplacers())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_AutoAnneal())
     if bEnableWizard:
@@ -15394,16 +15156,6 @@ def InitInstallerLinks():
     InstallersPanel.subsMenu.append(Installer_Subs_ToggleSelection())
     InstallersPanel.subsMenu.append(SeparatorLink())
     InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
-
-def InitReplacerLinks():
-    """Initialize replacer tab menus."""
-    #--Header links
-    ReplacersList.mainMenu.append(Files_Open())
-    #--Settings
-    ReplacersList.mainMenu.append(SettingsMenu)
-
-    #--Item links
-    ReplacersList.itemMenu.append(File_Open())
 
 def InitINILinks():
     """Initialize INI Edits tab menus."""
@@ -15814,7 +15566,6 @@ def InitLinks():
     InitInstallerLinks()
     InitINILinks()
     InitModLinks()
-    InitReplacerLinks()
     InitSaveLinks()
     InitScreenLinks()
     InitMessageLinks()
