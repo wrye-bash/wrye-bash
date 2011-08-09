@@ -8351,166 +8351,6 @@ class FileInfos(DataDict):
         self.refresh()
 
 #------------------------------------------------------------------------------
-class ResourceReplacer:
-    """Resource Replacer. Used to apply and remove a set of resource (texture, etc.) replacement files."""
-    #--Class data
-    dirExts = {
-        'distantlod': ['.cmp', '.lod'],
-        'docs':['.txt','.html','.htm','.rtf','.doc','.gif','.jpg','.ods','.odp','.png'],
-        'facegen': ['.ctl'],
-        'fonts': ['.fnt', '.tex'],
-        'menus': ['.bat', '.html', '.scc', '.txt', '.xml'],
-        'meshes': ['.egm', '.egt', '.fim', '.kf', '.kfm', '.nif', '.tri', '.txt'],
-        'obse':['.dll','.dlx','.txt','.mp3'],
-        'shaders': ['.sdp','.fx'],
-        'sound': ['.lip', '.mp3', '.wav'],
-        'textures': ['.dds', '.ifl', '.psd', '.txt'],
-        'trees': ['.spt'],
-        }
-
-    def __init__(self,replacerDir,file):
-        """Initialize"""
-        self.replacerDir = replacerDir
-        self.file = file
-        self.rootDir = ''
-
-    def isApplied(self):
-        """Returns True if has been applied."""
-        return self.file in settings['bosh.resourceReplacer.applied']
-
-    def validate(self):
-        """Does archive invalidation according to settings."""
-        if settings.get('bash.replacers.autoEditBSAs',False):
-            bsaPath = dirs['mods'].join(inisettings['OblivionTexturesBSAName'])
-            bsaFile = BsaFile(bsaPath)
-            bsaFile.scan()
-            bsaFile.invalidate()
-
-    def apply(self,progress=None):
-        """Copy files to appropriate resource directories (Textures, etc.)."""
-        progress = progress or bolt.Progress()
-        progress.state,progress.full = 0,1
-        progress(0,_("Getting sizes."))
-        self.doRoot(self.countDir,progress) #--Updates progress.full
-        self.doRoot(self.applyDir,progress)
-        self.validate()
-        settings.getChanged('bosh.resourceReplacer.applied').append(self.file)
-
-    def remove(self,progress=None):
-        """Uncopy files from appropriate resource directories (Textures, etc.)."""
-        progress = progress or bolt.Progress()
-        self.doRoot(self.removeDir,progress)
-        self.validate()
-        settings.getChanged('bosh.resourceReplacer.applied').remove(self.file)
-
-    def doRoot(self,action,progress):
-        """Copy/uncopy files to/from appropriate resource directories."""
-        dirExts = ResourceReplacer.dirExts
-        srcDir = self.rootDir = self.replacerDir.join(self.file)
-        destDir = dirs['mods']
-        action(srcDir,destDir,['.esp','.esm','.bsa'],progress)
-        for srcFile in srcDir.list():
-            srcPath  = srcDir.join(srcFile)
-            if srcPath.isdir() and srcFile.cs in dirExts:
-                destPath = destDir.join(srcFile)
-                action(srcPath,destPath,dirExts[srcFile],progress)
-
-    def sizeDir(self,srcDir,destDir,exts,progress):
-        """Determine cumulative size of files to copy."""
-        for srcFile in srcDir.list():
-            srcExt = srcFile.cext
-            srcPath  = srcDir.join(srcFile)
-            destPath = destDir.join(srcFile)
-            if srcExt in exts:
-                progress.full += srcPath.size
-            elif srcPath.isdir():
-                self.sizeDir(srcPath,destPath,exts,progress)
-
-    def countDir(self,srcDir,destDir,exts,progress):
-        """Determine cumulative count of files to copy."""
-        rootDir = self.rootDir
-        for srcFile in srcDir.list():
-            srcExt = srcFile.cext
-            srcPath  = srcDir.join(srcFile)
-            destPath = destDir.join(srcFile)
-            if srcExt in exts:
-                progress.full += 1
-            elif srcDir != rootDir and srcPath.isdir():
-                self.countDir(srcPath,destPath,exts,progress)
-
-    def applyDir(self,srcDir,destDir,exts,progress):
-        """Copy files to appropriate resource directories (Textures, etc.)."""
-        rootDir = self.rootDir
-        progress(progress.state,srcDir.s[len(rootDir.s)+1:])
-        for srcFile in srcDir.list():
-            srcExt = srcFile.cext
-            srcPath  = srcDir.join(srcFile)
-            destPath = destDir.join(srcFile)
-            if srcExt in exts:
-                destDir.makedirs()
-                srcPath.copyTo(destPath)
-                progress.plus()
-            elif srcDir != rootDir and srcPath.isdir():
-                self.applyDir(srcPath,destPath,exts,progress)
-
-    def removeDir(self,srcDir,destDir,exts,progress):
-        """Uncopy files from appropriate resource directories (Textures, etc.)."""
-        rootDir = self.rootDir
-        for srcFile in srcDir.list():
-            srcExt = srcFile.cext
-            srcPath  = srcDir.join(srcFile)
-            destPath = destDir.join(srcFile)
-            if destPath.exists():
-                if srcExt in exts:
-                    destPath.remove()
-                elif srcDir != rootDir and srcPath.isdir():
-                    self.removeDir(srcPath,destPath,exts,progress)
-
-    @staticmethod
-    def updateInvalidator():
-        """Updates ArchiveInvalidator.txt file. Use this after adding/removing resources."""
-        reRepTexture = re.compile(r'(?<!_[gn])\.dds',re.I)
-        #--Get files to invalidate
-        fileNames = []
-        def addFiles(dirtuple):
-            dirPath = dirs['mods'].join(*dirtuple)
-            for fileName in dirPath.list():
-                filetuple = dirtuple+(fileName.s,)
-                if dirPath.join(fileName).isdir():
-                    addFiles(filetuple)
-                elif reRepTexture.search(fileName.s):
-                    fileNames.append('/'.join(filetuple))
-        if dirs['mods'].join('textures').exists():
-            addFiles(('textures',))
-        fileNames.sort(key=string.lower)
-        #--Update file
-        aiAppPath = dirs['app'].join('ArchiveInvalidation.txt')
-        #--Update file?
-        if fileNames:
-            out = aiAppPath.open('w')
-            for fileName in fileNames:
-                out.write(fileName+'\n')
-            out.close
-        #--No files to invalidate, but ArchiveInvalidation.txt exists?
-        elif aiAppPath.exists():
-            aiAppPath.remove()
-        #--Remove any duplicate AI.txt in the mod directory
-        aiModsPath = dirs['mods'].join('ArchiveInvalidation.txt')
-        aiModsPath.remove()
-        #--Fix the data of a few archive files
-        bsaTimes = (
-            ('Oblivion - Meshes.bsa',1138575220),
-            ('Oblivion - Misc.bsa',1139433736),
-            ('Oblivion - Sounds.bsa',1138660560),
-            (inisettings['OblivionTexturesBSAName'],1138162634),
-            ('Oblivion - Voices1.bsa',1138162934),
-            ('Oblivion - Voices2.bsa',1138166742),
-            )
-        for bsaFile,mtime in bsaTimes:
-            bsaPath = dirs['mods'].join(bsaFile)
-            bsaPath.mtime = mtime
-
-#------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'].join('INI Tweaks'),INIInfo)
@@ -9322,21 +9162,6 @@ class ModInfos(FileInfos):
             oldInfo.setGhost(True)
         self.voCurrent = newVersion
 
-    #--Resource Replacers -----------------------------------------------------
-    def getResourceReplacers(self):
-        """Returns list of ResourceReplacer objects for subdirectories of Replacers directory."""
-        replacers = {}
-        replacerDir = self.dir.join('Replacers')
-        if not replacerDir.exists():
-            return replacers
-        if 'bosh.resourceReplacer.applied' not in settings:
-            settings['bosh.resourceReplacer.applied'] = []
-        for name in replacerDir.list():
-            path = replacerDir.join(name)
-            if path.isdir():
-                replacers[name] = ResourceReplacer(replacerDir,name)
-        return replacers
-
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
@@ -9453,21 +9278,6 @@ class BSAInfos(FileInfos):
     def resetMTimes(self):
         for file in self.data:
             self[file].resetMTime()
-
-#------------------------------------------------------------------------------
-class ReplacersData(DataDict):
-    def __init__(self):
-        """Initialize."""
-        self.dir = dirs['mods'].join("Replacers")
-        self.data = {}
-
-    #--Refresh
-    def refresh(self):
-        """Refresh list of screenshots."""
-        newData = modInfos.getResourceReplacers()
-        changed = (set(self.data) != set(newData))
-        self.data = newData
-        return changed
 
 # Mod Config Help -------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -34030,7 +33840,6 @@ def initDefaultSettings():
     inisettings['ScriptFileExt']='.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
-    inisettings['EnableReplacers'] = False
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
     inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'

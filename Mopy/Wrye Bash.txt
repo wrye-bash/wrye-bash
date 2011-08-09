@@ -707,10 +707,8 @@ The following commands are available by right clicking on the column header of t
   * __Skip LOD Normals:__ If checked, landscape LOD normals will be skipped.
 
 == Replacers Tab ==============================================================
-**The Replacers Tab has now largely been replaced by the new [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
-__As of version 292:__ The Replacers tab is now only available if you enable it through bash.ini.  In future versions, the Replacers Tab may be removed entirely.
-
-__Note:__ By default, the Replacers tab will not appear if there are there are no files in the Replacers directory. You can get it to appear by using the "Show Replacers" option (see [[#|Package Header Commands]]).
+**The Replacers Tab has now  been replaced by the [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
+__As of version 295:__ The Replacers tab has been removed entirely.
 
 === Textures BSA
 If you're currently using the Textures BSA facility, you should switch to using the newer BSA Redirection method instead.
@@ -2362,6 +2360,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Fixed Settings backup files should have WB version in their names.
 * Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
+* Replacers tab and associated code totally removed.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
