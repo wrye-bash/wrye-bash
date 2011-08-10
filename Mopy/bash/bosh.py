@@ -10207,7 +10207,7 @@ class Installer(object):
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
     skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.gz','.bz2','.omod','.tb2','.lzma'))
     skipExts.update(set(readExts))
-    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.ods','.odp','.ppt'))
+    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.xlsx','.ods','.odp','.ppt','.pptx'))
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
     #--Temp Files/Dirs
