@@ -4845,8 +4845,6 @@ class ChecklistBoxes(wx.Dialog):
         [title,tooltip,....],
         """
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=wx.DEFAULT_DIALOG_STYLE)
-        #self.SetBackgroundColour(wx.NullColour)
-        #self.SetSizeHints(400,600)
         self.SetIcons(bashBlue)
         sizer = wx.FlexGridSizer(len(checklists)+1,1)
         self.ids = {}
@@ -14281,11 +14279,12 @@ class App_BOSS(App_Button):
                         exeArgs += ('-n',) # Disable version parsing - syntax BOSS version 1.6.2+
                 progress(0.05,_("Processing... launching BOSS."))
                 try:
-                    subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo)
-                    # Clear the saved times from before
-                    bosh.modInfos.mtimes.clear()
-                    # And refresh to get the new times so WB will keep the order that BOSS specifies
-                    bosh.modInfos.refresh(doInfos=False)
+                    subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo, close_fds=bolt.close_fds)
+                    if settings['BOSS.ClearLockTimes']:
+                        # Clear the saved times from before
+                        bosh.modInfos.mtimes.clear()
+                        # And refresh to get the new times so WB will keep the order that BOSS specifies
+                        bosh.modInfos.refresh(doInfos=False)
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % exePath.s
