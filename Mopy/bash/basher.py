@@ -10244,11 +10244,15 @@ class Mod_CopyModInfo(Link):
         text = ''
         if len(self.data) > 5:
             spoiler = True
-            text += '[spoiler]\n'
+            text += '[spoiler]'
         else:
             spoiler = False
         # Create the report
+        isFirst = True
         for i,fileName in enumerate(self.data):
+            # add a blank line in between mods
+            if isFirst: isFirst = False
+            else: text += '\n\n'
             fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer','')
