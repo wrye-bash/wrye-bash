@@ -6069,6 +6069,9 @@ class ObCollection:
         if(ModID == -1):
             raise KeyError("ModName(%s) not found in collection (%08X)\n" % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
         return ObModFile(self._CollectionID, ModID)
+        
+    def LookupModFileLoadOrder(self, ModName):
+        return _CGetModLoadOrderByName(self._CollectionID, str(ModName))
 
     def UpdateReferences(self, FormIDToReplace, ReplacementFormID):
         return sum([mod.UpdateReferences(FormIDToReplace, ReplacementFormID) for mod in self.LoadOrderMods])
