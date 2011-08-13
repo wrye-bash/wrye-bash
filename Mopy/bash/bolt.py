@@ -41,6 +41,7 @@ close_fds = True
 import types
 from binascii import crc32
 import ConfigParser
+import bass
 #-- To make commands executed with Popen hidden
 startupinfo = None
 if os.name == 'nt':
@@ -155,7 +156,7 @@ def compileTranslator(txtPath,pklPath):
 #--Do translator test and set
 if locale.getlocale() == (None,None):
     locale.setlocale(locale.LC_ALL,'')
-language = locale.getlocale()[0].split('_',1)[0]
+language = bass.language or locale.getlocale()[0].split('_',1)[0]
 if language.lower() == 'german': language = 'de' #--Hack for German speakers who aren't 'DE'.
 # TODO: use bosh.dirs['l10n'] once we solve the circular import
 languagePkl, languageTxt = (os.path.join('bash','l10n',language+ext) for ext in ('.pkl','.txt'))
