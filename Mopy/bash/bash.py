@@ -32,7 +32,6 @@ import sys
 if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
-#import optparse
 import re
 
 import bass
@@ -41,7 +40,6 @@ opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
 from bolt import _, GPath
-bolt.deprintOn = opts.debug
 basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -161,6 +159,7 @@ def exit():
 
 # Main ------------------------------------------------------------------------
 def main():
+    bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
     
