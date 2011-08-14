@@ -2349,6 +2349,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * New tweak: Skyrim-style Weapons.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
     * VORB tweak now assigns special skeletons correctly
+    * fix type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
 * [[#InstallersTab|BAIN]]:
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * installer->open readme command added.
