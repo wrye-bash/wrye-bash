@@ -9862,18 +9862,23 @@ class Mod_AddMaster(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         wildcard = _('Oblivion Masters')+' (*.esm;*.esp)|*.esm;*.esp'
-        masterPath = balt.askOpen(self.window,_('Add master:'),fileInfo.dir, '', wildcard,mustExist=True)
-        if not masterPath: return
-        (dir,name) = masterPath.headTail
-        if dir != fileInfo.dir:
-            return balt.showError(self.window,
-                _("File must be selected from Oblivion Data Files directory."))
-        if name in fileInfo.header.masters:
-            return balt.showError(self.window,_("%s is already a master!") % (name.s,))
-        if name in bosh.modInfos:
-            #--Avoid capitalization errors by getting the actual name from modinfos.
-            name = bosh.modInfos[name].name
-        fileInfo.header.masters.append(name)
+        masterPaths = balt.askOpenMulti(self.window,_('Add master:'),fileInfo.dir, '', wildcard)
+        if not masterPaths: return
+        names = []
+        for masterPath in masterPaths:
+            (dir,name) = masterPath.headTail
+            if dir != fileInfo.dir:
+                return balt.showError(self.window,
+                    _("File must be selected from Oblivion Data Files directory."))
+            if name in fileInfo.header.masters:
+                return balt.showError(self.window,_("%s is already a master!") % (name.s,))
+            names.append(name)
+        # actually do the modification
+        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+            if masterName in bosh.modInfos:
+                #--Avoid capitalization errors by getting the actual name from modinfos.
+                masterName = bosh.modInfos[masterName].name
+            fileInfo.header.masters.append(masterName)
         fileInfo.header.changed = True
         fileInfo.writeHeader()
         bosh.modInfos.refreshFile(fileInfo.name)
