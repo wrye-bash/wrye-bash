@@ -26949,7 +26949,7 @@ class GmstTweak(MultiTweakItem):
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if value < 0:
-                deprint("GMST float value can't be a negative number - currently %f - skipping setting GMST." % value)
+                deprint("GMST float value can't be a negative number - currently %s - skipping setting GMST." % value)
                 return
             for record in patchFile.GMST.records:
                 if record.eid.lower() == eid.lower():
@@ -26991,10 +26991,13 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 break
         else:
             return
+        if recEid.startswith("f") and type(newValue) != float:
+            deprint("converting custom value to float for GMST %s: %s" % (recEid, newValue))
+            newValue = float(newValue)
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint("GMST float value can't be a negative number - currently %f - skipping settingGMST" % newValue)
+                deprint("GMST float value can't be a negative number - currently %s - skipping setting GMST" % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -27019,6 +27022,9 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                     for conflict in patchFile.ObCollection.LookupRecords(eid, False):
                         print conflict.ModName
                     raise StateError(_("Tweak Settings: Unable to create GMST!"))
+                if eid.startswith("f") and type(value) != float:
+                    deprint("converting custom value to float for GMST %s: %s" % (eid, value))
+                    value = float(value)
                 record.value = value
             pstate += 1
 
