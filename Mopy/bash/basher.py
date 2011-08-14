@@ -6453,11 +6453,11 @@ class TweakPatcher(Patcher):
                 value.append(new)
         if not value: value = tweak.choiceValues[index]
         tweak.choiceValues[index] = tuple(value)
+        tweak.chosen = index
         if isinstance(tweak.choiceValues[index][0],(str,unicode)):
             menulabel = tweak.getListLabel() + ' %s' % tweak.choiceValues[index][0]
         else:
             menulabel = tweak.getListLabel() + ' %4.2f ' % tweak.choiceValues[index][0]
-        tweak.chosen = index
         self.gList.SetString(tweakIndex,(menulabel))
 
 # Patchers 10 ------------------------------------------------------------------
