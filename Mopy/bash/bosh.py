@@ -9105,7 +9105,8 @@ class ModInfos(FileInfos):
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.size in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.size])
-        self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
+        if self.masterName in self.data:
+            self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
 
     def setOblivionVersion(self,newVersion):
         """Swaps Oblivion.esm to to specified version."""
