@@ -6676,7 +6676,7 @@ class BsaFile:
             ('Oblivion - Meshes.bsa',1138575220),
             ('Oblivion - Misc.bsa',1139433736),
             ('Oblivion - Sounds.bsa',1138660560),
-            (inisettings['OblivionTexturesBSAName'],1138162634),
+            (inisettings['OblivionTexturesBSAName'].stail,1138162634),
             ('Oblivion - Voices1.bsa',1138162934),
             ('Oblivion - Voices2.bsa',1138166742),
             )
@@ -33857,7 +33857,7 @@ def initDefaultSettings():
     inisettings['LogFile'] = dirs['mopy'].join('bash.log')
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
-    inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'
+    inisettings['OblivionTexturesBSAName'] = GPath('Oblivion - Textures - Compressed.bsa')
     inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
