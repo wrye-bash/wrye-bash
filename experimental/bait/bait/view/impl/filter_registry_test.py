@@ -52,12 +52,10 @@ def filter_registry_test():
     uninstButton = _DummyToggleButton()
     hiddenButton = _DummyToggleButton()
 
-    filterStateMap = {presenter.FilterIds.PACKAGES_INSTALLED:True,
-                      presenter.FilterIds.PACKAGES_NOT_INSTALLED:False,
-                      presenter.FilterIds.PACKAGES_HIDDEN:False}
+    filterMask = presenter.FilterIds.PACKAGES_INSTALLED
 
     fr.init_filter_states({})
-    fr.init_filter_states(filterStateMap)
+    fr.init_filter_states(filterMask)
     fr.add_filter(presenter.FilterIds.PACKAGES_INSTALLED, "Installed", None)
     fr.add_filter(presenter.FilterIds.PACKAGES_INSTALLED, "Installed", instButton)
     fr.add_filter(presenter.FilterIds.PACKAGES_NOT_INSTALLED,
@@ -67,7 +65,7 @@ def filter_registry_test():
     assert instButton.value is None
     assert uninstButton.value is None
     assert hiddenButton.value is None
-    fr.init_filter_states(filterStateMap)
+    fr.init_filter_states(filterMask)
     assert instButton.value is True
     assert uninstButton.value is False
     assert hiddenButton.value is False

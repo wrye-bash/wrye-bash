@@ -48,6 +48,23 @@ def _assert_stats_updates(viewUpdateQueue, updates):
         assert total == setFilterStatsUpdate.total
     assert viewUpdateQueue.empty()
 
+def _make_file_attributes(label, isPlugin=False, isResource=False, isOther=False,
+                          isDirty=False, pendingOperation=None, packageNodeId=None,
+                          crc=None, isInstalled=False, isNotInstalled=False,
+                          isMatched=False, isMissing=False, isMismatched=False,
+                          hasConflicts=False, isMasked=False, isCruft=False):
+    return node_attributes.FileNodeAttributes(
+        label, 0, presenter.ContextMenuIds.SELECTABLEFILE,
+        isPlugin=isPlugin, isResource=isResource, isOther=isOther, isDirty=isDirty,
+        pendingOperation=pendingOperation, packageNodeId=packageNodeId, crc=crc,
+        isInstalled=isInstalled, isNotInstalled=isNotInstalled, isMatched=isMatched,
+        isMissing=isMissing, isMismatched=isMismatched, hasConflicts=hasConflicts,
+        isMasked=isMasked, isCruft=isCruft)
+
+def _make_dir_attributes(label):
+    return node_attributes.DirectoryNodeAttributes(
+        label, 0, presenter.ContextMenuIds.DIRECTORY)
+
 
 def incomplete_subclasses_test():
     # this is just to get some lines out of the "Missing" list of the coverage tool
@@ -98,26 +115,11 @@ def package_contents_tree_filter_test():
 
     # define initial data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "plugin1.esp"
-    fileAttributes1.isPlugin = True
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "resource.nif"
-    fileAttributes2.isResource = True
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "document.txt"
-    fileAttributes3.isOther = True
-    data[2] = fileAttributes3
-    dirAttributes1 = node_attributes.DirectoryNodeAttributes()
-    dirAttributes1.label = "screenshotsDir"
-    dirAttributes1.isOther = True
-    data[3] = dirAttributes1
-    fileAttributes4 = node_attributes.FileNodeAttributes()
-    fileAttributes4.label = "screenie.jpg"
-    fileAttributes4.isOther = True
-    data[4] = fileAttributes4
+    data[0] = _make_file_attributes("plugin1.esp", isPlugin=True)
+    data[1] = _make_file_attributes("resource.nif", isResource=True)
+    data[2] = _make_file_attributes("document.txt", isOther=True)
+    data[3] = _make_dir_attributes("screenshotsDir")
+    data[4] = _make_file_attributes("screenie.jpg", isOther=True)
 
     # test initial conditions
     assert len(f.visibleNodeIds) == 0
@@ -162,18 +164,16 @@ def package_contents_tree_filter_test():
     assert(f.set_active_mask(
         presenter.FilterIds.FILES_OTHER|presenter.FilterIds.PACKAGES_HIDDEN))
     assert viewUpdateQueue.empty()
-    assert len(f.visibleNodeIds) == 3
+    assert len(f.visibleNodeIds) == 2
     assert 2 in f.visibleNodeIds
-    assert 3 in f.visibleNodeIds
     assert 4 in f.visibleNodeIds
 
     # test removals
     f.remove([2])
     _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 1, 1)
-    assert len(f.visibleNodeIds) == 2
-    assert 3 in f.visibleNodeIds
+    assert len(f.visibleNodeIds) == 1
     assert 4 in f.visibleNodeIds
-    f.remove([3, 4])
+    f.remove([4])
     _assert_stats_update(viewUpdateQueue, presenter.FilterIds.FILES_OTHER, 0, 0)
     assert len(f.visibleNodeIds) == 0
     assert f.set_active_mask(presenter.FilterIds.FILES_PLUGINS)
@@ -191,28 +191,16 @@ def packages_tree_filter_test():
 
     # define data structure
     data = {}
-    groupAttributes1 = node_attributes.GroupNodeAttributes()
-    groupAttributes1.label = "groupAll"
-    groupAttributes1.isHidden = True
-    groupAttributes1.isInstalled = True
-    groupAttributes1.isNotInstalled = True
-    data[0] = groupAttributes1
-    groupAttributes2 = node_attributes.GroupNodeAttributes()
-    groupAttributes2.label = "groupHidden"
-    groupAttributes2.isHidden = True
-    data[1] = groupAttributes2
-    packageAttributes1 = node_attributes.PackageNodeAttributes()
-    packageAttributes1.label = "hiddenPackage"
-    packageAttributes1.isHidden = True
-    data[2] = packageAttributes1
-    packageAttributes2 = node_attributes.PackageNodeAttributes()
-    packageAttributes2.label = "installedPackage"
-    packageAttributes2.isInstalled = True
-    data[3] = packageAttributes2
-    packageAttributes3 = node_attributes.PackageNodeAttributes()
-    packageAttributes3.label = "notInstalledPackage"
-    packageAttributes3.isNotInstalled = True
-    data[4] = packageAttributes3
+    data[0] = node_attributes.GroupNodeAttributes(
+        "groupAll", 0, presenter.ContextMenuIds.GROUP)
+    data[1] = node_attributes.GroupNodeAttributes(
+        "groupHidden", 0, presenter.ContextMenuIds.GROUP)
+    data[2] = node_attributes.PackageNodeAttributes(
+        "hiddenPackage", 0, presenter.ContextMenuIds.PROJECT, isHidden=True)
+    data[3] = node_attributes.PackageNodeAttributes(
+        "installedPackage", 0, presenter.ContextMenuIds.PROJECT, isInstalled=True)
+    data[4] = node_attributes.PackageNodeAttributes(
+        "notInstalledPackage", 0, presenter.ContextMenuIds.PROJECT, isNotInstalled=True)
 
     # test initial conditions
     assert len(f.visibleNodeIds) == 0
@@ -221,14 +209,12 @@ def packages_tree_filter_test():
     # set active filters and add some data without an active search
     f.set_active_mask(
         presenter.FilterIds.PACKAGES_INSTALLED|presenter.FilterIds.PACKAGES_NOT_INSTALLED)
-    assert f.process_and_get_visibility(0, data[0], True)
-    assert len(f.visibleNodeIds) == 1
-    assert 0 in f.visibleNodeIds
+    assert not f.process_and_get_visibility(0, data[0], True)
+    assert len(f.visibleNodeIds) == 0
     assert viewUpdateQueue.empty()
 
     assert not f.process_and_get_visibility(1, data[1], True)
-    assert len(f.visibleNodeIds) == 1
-    assert 0 in f.visibleNodeIds
+    assert len(f.visibleNodeIds) == 0
     assert viewUpdateQueue.empty()
 
     assert not f.process_and_get_visibility(2, data[2], True)
@@ -244,42 +230,27 @@ def packages_tree_filter_test():
     assert not f.process_and_get_visibility(3, data[3], False)
     assert len(f.visibleNodeIds) == 0
     _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 0, 1)
-
-    assert f.process_and_get_visibility(0, data[0], True)
     assert f.process_and_get_visibility(4, data[4], True)
-    assert len(f.visibleNodeIds) == 2
-    assert 0 in f.visibleNodeIds
-    assert 4 in f.visibleNodeIds
-    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
-
-    # change the active mask to hidden
-    f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN)
     assert len(f.visibleNodeIds) == 1
-    assert 0 in f.visibleNodeIds
-    # reapply search
-    f.apply_search([])
-    assert len(f.visibleNodeIds) == 0
-    _assert_stats_update(viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 0, 1)
+    assert 4 in f.visibleNodeIds
+    _assert_stats_update(
+        viewUpdateQueue, presenter.FilterIds.PACKAGES_NOT_INSTALLED, 1, 1)
 
     # change the active mask to everything
     f.set_active_mask(presenter.FilterIds.PACKAGES_HIDDEN | \
                         presenter.FilterIds.PACKAGES_INSTALLED | \
                         presenter.FilterIds.PACKAGES_NOT_INSTALLED)
-    assert len(f.visibleNodeIds) == 0
     # change the search string to "installed"
-    f.apply_search([0, 3, 4])
-    assert len(f.visibleNodeIds) == 3
-    assert 0 in f.visibleNodeIds
+    f.apply_search([3, 4])
+    assert len(f.visibleNodeIds) == 2
     assert 3 in f.visibleNodeIds
     assert 4 in f.visibleNodeIds
-    _assert_stats_updates(viewUpdateQueue,
-                          {presenter.FilterIds.PACKAGES_INSTALLED:(1,1),
-                           presenter.FilterIds.PACKAGES_NOT_INSTALLED:(1,1)})
+    _assert_stats_update(
+        viewUpdateQueue, presenter.FilterIds.PACKAGES_INSTALLED, 1, 1)
 
     # remove some data, including the installed package
     f.remove([1, 2, 3])
-    assert len(f.visibleNodeIds) == 2
-    assert 0 in f.visibleNodeIds
+    assert len(f.visibleNodeIds) == 1
     assert 4 in f.visibleNodeIds
     _assert_stats_updates(viewUpdateQueue,
                           {presenter.FilterIds.PACKAGES_INSTALLED:(0,0),
@@ -287,8 +258,7 @@ def packages_tree_filter_test():
 
     # update the not installed package so that it is now installed
     assert f.process_and_get_visibility(4, data[3], True)
-    assert len(f.visibleNodeIds) == 2
-    assert 0 in f.visibleNodeIds
+    assert len(f.visibleNodeIds) == 1
     assert 4 in f.visibleNodeIds
     _assert_stats_updates(viewUpdateQueue,
                           {presenter.FilterIds.PACKAGES_INSTALLED:(1,1),
@@ -296,8 +266,7 @@ def packages_tree_filter_test():
 
     # remove the search restriction; check that nothing changes
     f.apply_search(None)
-    assert len(f.visibleNodeIds) == 2
-    assert 0 in f.visibleNodeIds
+    assert len(f.visibleNodeIds) == 1
     assert 4 in f.visibleNodeIds
     assert viewUpdateQueue.empty()
 
@@ -308,28 +277,14 @@ def dirty_list_filter_test():
 
     # define data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "cleanFile"
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "newFile"
-    fileAttributes2.isDirty = True
-    fileAttributes2.pendingOperation = model.Operations.COPY
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "updatedFile"
-    fileAttributes3.isDirty = True
-    fileAttributes3.pendingOperation = model.Operations.OVERWRITE
-    data[2] = fileAttributes3
-    dirAttributes1 = node_attributes.DirectoryNodeAttributes()
-    dirAttributes1.label = "aDir"
-    dirAttributes1.isDirty = True
-    data[3] = dirAttributes1
-    fileAttributes4 = node_attributes.FileNodeAttributes()
-    fileAttributes4.isDirty = True
-    fileAttributes4.label = "oldFile"
-    fileAttributes4.pendingOperation = model.Operations.DELETE
-    data[4] = fileAttributes4
+    data[0] = _make_file_attributes("cleanFile")
+    data[1] = _make_file_attributes("newFile", isDirty=True,
+                                    pendingOperation=model.AnnealOperationIds.COPY)
+    data[2] = _make_file_attributes("updatedFile", isDirty=True,
+                                    pendingOperation=model.AnnealOperationIds.OVERWRITE)
+    data[3] = _make_dir_attributes("aDir")
+    data[4] = _make_file_attributes("oldFile", isDirty=True,
+                                    pendingOperation=model.AnnealOperationIds.DELETE)
 
     # test initial conditions
     assert len(f.visibleNodeIds) == 0
@@ -379,24 +334,12 @@ def conflict_list_filter_test():
 
     # define data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "file1"
-    fileAttributes1.packageNodeId = 100
-    fileAttributes1.crc = 0x11111111
-    fileAttributes1.isInstalled = True
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "file1"
-    fileAttributes2.packageNodeId = 101
-    fileAttributes2.crc = 0x22222222
-    fileAttributes2.isInstalled = True
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "file1"
-    fileAttributes3.packageNodeId = 102
-    fileAttributes3.crc = 0x11111111
-    fileAttributes3.isInstalled = False
-    data[2] = fileAttributes3
+    data[0] = _make_file_attributes(
+        "file1", packageNodeId=100, crc=0x11111111, isInstalled=True)
+    data[1] = _make_file_attributes(
+        "file1", packageNodeId=101, crc=0x22222222, isInstalled=True)
+    data[2] = _make_file_attributes(
+        "file1", packageNodeId=102, crc=0x11111111)
 
     # test initial conditions
     assert len(f.visibleNodeIds) == 0
@@ -432,26 +375,11 @@ def selected_list_filter_test():
 
     # define data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "matchedFile"
-    fileAttributes1.isMatched = True
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "mismatchedFile"
-    fileAttributes2.isInstalled = True
-    fileAttributes2.isMismatched = True
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "missingFile"
-    fileAttributes3.isInstalled = True
-    fileAttributes3.isMissing = True
-    data[2] = fileAttributes3
-    fileAttributes4 = node_attributes.FileNodeAttributes()
-    fileAttributes4.label = "conflictingFile"
-    fileAttributes4.isInstalled = True
-    fileAttributes4.hasConflicts = True
-    fileAttributes4.isMatched = True
-    data[3] = fileAttributes4
+    data[0] = _make_file_attributes("matchedFile", isMatched=True)
+    data[1] = _make_file_attributes("mismatchedFile", isInstalled=True, isMismatched=True)
+    data[2] = _make_file_attributes("missingFile", isInstalled=True, isMissing=True)
+    data[3] = _make_file_attributes("conflictingFile", isInstalled=True, isMatched=True,
+                                    hasConflicts=True)
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
@@ -480,27 +408,12 @@ def unselected_list_filter_test():
 
     # define data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "matchedFile"
-    fileAttributes1.isInstalled = True
-    fileAttributes1.isMatched = True
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "mismatchedFile"
-    fileAttributes2.isNotInstalled = True
-    fileAttributes2.isMismatched = True
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "missingFile"
-    fileAttributes3.isNotInstalled = True
-    fileAttributes3.isMissing = True
-    data[2] = fileAttributes3
-    fileAttributes4 = node_attributes.FileNodeAttributes()
-    fileAttributes4.label = "conflictingFile"
-    fileAttributes4.isNotInstalled = True
-    fileAttributes4.hasConflicts = True
-    fileAttributes4.isMatched = True
-    data[3] = fileAttributes4
+    data[0] = _make_file_attributes("matchedFile", isInstalled = True, isMatched=True)
+    data[1] = _make_file_attributes("mismatchedFile", isNotInstalled=True,
+                                    isMismatched=True)
+    data[2] = _make_file_attributes("missingFile", isNotInstalled=True, isMissing=True)
+    data[3] = _make_file_attributes("conflictingFile", isNotInstalled=True,
+                                    isMatched=True, hasConflicts=True)
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
@@ -529,17 +442,9 @@ def skipped_list_filter_test():
 
     # define data structure
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "regularFile"
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "maskedFile"
-    fileAttributes2.isMasked= True
-    data[1] = fileAttributes2
-    fileAttributes3 = node_attributes.FileNodeAttributes()
-    fileAttributes3.label = "cruftFile"
-    fileAttributes3.isCruft = True
-    data[2] = fileAttributes3
+    data[0] = _make_file_attributes("regularFile")
+    data[1] = _make_file_attributes("maskedFile", isMasked=True)
+    data[2] = _make_file_attributes("cruftFile", isCruft=True)
 
     # add data
     assert not f.process_and_get_visibility(0, data[0])
@@ -578,16 +483,9 @@ def last_bits_test():
     f2 = DummyFilter2(viewUpdateQueue)
 
     data = {}
-    fileAttributes1 = node_attributes.FileNodeAttributes()
-    fileAttributes1.label = "testFile"
-    fileAttributes1.isMasked = True
-    fileAttributes1.pendingOperation = model.Operations.COPY
-    data[0] = fileAttributes1
-    fileAttributes2 = node_attributes.FileNodeAttributes()
-    fileAttributes2.label = "testFile2"
-    fileAttributes2.isMasked = True
-    fileAttributes2.isCruft = True
-    data[1] = fileAttributes2
+    data[0] = _make_file_attributes("testFile", isMasked=True,
+                                    pendingOperation=model.AnnealOperationIds.COPY)
+    data[1] = _make_file_attributes("testFile2", isMasked=True, isCruft=True)
 
     assert not f.process_and_get_visibility(0, data[0])
     assert not f2.process_and_get_visibility(1, data[1])

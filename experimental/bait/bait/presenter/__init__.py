@@ -23,6 +23,7 @@
 # =============================================================================
 
 from .. import model
+from ..model import node_attributes
 from ..util import debug_utils, enum
 
 
@@ -275,7 +276,8 @@ class Style(debug_utils.Dumpable):
         self.checkboxState = checkboxState
         self.iconId = iconId
     def __eq__(self, other):
-        return self.fontStyleMask == other.fontStyleMask and \
+        return other is not None and\
+               self.fontStyleMask == other.fontStyleMask and \
                self.foregroundColorId == other.foregroundColorId and \
                self.highlightColorId == other.highlightColorId and \
                self.checkboxState == other.checkboxState and \
@@ -291,7 +293,7 @@ class NodeTreeIds(enum.Enum):
 
 class _ModifyNodeCommand(_ViewCommand):
     '''Base class for UpdateNode and AddNode'''
-    def __init__(self, commandId, nodeId, label, isExpanded, style, nodeTreeId):
+    def __init__(self, commandId, nodeTreeId, nodeId, label, isExpanded, style):
         _ViewCommand.__init__(self, commandId)
         self.nodeId = nodeId
         self.label = label
@@ -302,33 +304,21 @@ class _ModifyNodeCommand(_ViewCommand):
 class UpdateNodeCommand(_ModifyNodeCommand):
     '''Updates a node already in a tree.  An attribute value of None means that the value
        is unchanged.'''
-    def __init__(self, nodeId, label, isExpanded, style, nodeTreeId):
+    def __init__(self, nodeTreeId, nodeId, label=None, isExpanded=None, style=None):
         _ModifyNodeCommand.__init__(
-            self, CommandIds.UPDATE_NODE, nodeId, label, isExpanded, style, nodeTreeId)
+            self, CommandIds.UPDATE_NODE, nodeTreeId, nodeId, label, isExpanded, style)
 
-class ContextMenuIds(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'PROJECT', 'ARCHIVE', 'GROUP', 'SUBPACKAGE',
-                       'DIRECTORY', 'SELECTABLEFILE', 'UNSELECTABLEFILE', 'BSAFILE',
-                       'INSTALLED_DATA')
-    # for autocomplete
-    PROJECT = None
-    ARCHIVE = None
-    GROUP = None
-    SUBPACKAGE = None
-    DIRECTORY = None
-    SELECTABLEFILE = None
-    UNSELECTABLEFILE = None
-    BSAFILE = None
-    INSTALLED_DATA = None
+class ContextMenuIds(node_attributes.ContextMenuIds):
+    pass
 
 class AddNodeCommand(_ModifyNodeCommand):
     '''Adds a node to a tree.  The parent node will either have been previously sent or
        will be None, meaning top-level.  The predecessor node will either have been
        previously sent or be None, meaning "first child of parent"'''
-    def __init__(self, nodeId, label, isExpanded, style, nodeTreeId, parentNodeId,
+    def __init__(self, nodeTreeId, nodeId, label, isExpanded, style, parentNodeId,
                  predecessorNodeId, contextMenuId, isSelected=False):
         _ModifyNodeCommand.__init__(
-            self, CommandIds.ADD_NODE, nodeId, label, isExpanded, style, nodeTreeId)
+            self, CommandIds.ADD_NODE, nodeTreeId, nodeId, label, isExpanded, style)
         self.parentNodeId = parentNodeId
         self.predecessorNodeId = predecessorNodeId
         self.contextMenuId = contextMenuId
@@ -336,10 +326,10 @@ class AddNodeCommand(_ModifyNodeCommand):
 
 class RemoveNodeCommand(_ViewCommand):
     '''Removes a node from a tree'''
-    def __init__(self, nodeId, nodeTreeId):
+    def __init__(self, nodeTreeId, nodeId):
         _ViewCommand.__init__(self, CommandIds.REMOVE_NODE)
-        self.nodeId = nodeId
         self.nodeTreeId = nodeTreeId
+        self.nodeId = nodeId
 
 class ClearTreeCommand(_ViewCommand):
     def __init__(self, nodeTreeId):

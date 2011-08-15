@@ -47,6 +47,7 @@ class CommandHandler:
         self._foregroundColorMap = {}
         self._highlightColorMap = {}
         self._curImageFileHandle = None
+        self._started = False
         self._commandThread = monitored_thread.MonitoredThread(name="CommandHandler",
                                                                target=self._run)
         self._handlers = {}
@@ -77,10 +78,13 @@ class CommandHandler:
 
     def start(self):
         self._commandThread.start()
+        self._started = True
 
     def shutdown(self):
         # wait for presenter to send sentinel flag
-        self._commandThread.join()
+        if self._started:
+            self._commandThread.join()
+            self._started = False
 
     def set_ignore_updates(self):
         self._ignoreUpdates = True;
@@ -96,23 +100,29 @@ class CommandHandler:
                 viewCommand = inQueue.get()
                 if viewCommand is None:
                     _logger.debug("received sentinel value; command handler exiting")
+                    inQueue.task_done()
                     break
                 if self._ignoreUpdates:
+                    inQueue.task_done()
                     continue
                 _logger.debug("received %s command", viewCommand.__class__)
                 if not isinstance(viewCommand, presenter._ViewCommand):
                     _logger.warn("non-command retrieved from command queue: %s",
                                  viewCommand)
+                    inQueue.task_done()
                     continue
                 handler = handlerMap.get(viewCommand.commandId)
                 if handler is None:
                     _logger.warn("unhandled %s command: %s",
                                  viewCommand.__class__, viewCommand)
+                    inQueue.task_done()
                     continue
                 # enqueue a callback from the GUI thread so we can safely modify widgets
                 callAfterFn(handler, viewCommand)
+                inQueue.task_done()
         except:
             _logger.error("error in command handler:", exc_info=True)
+            inQueue.task_done()
 
     def _set_global_settings(self, setGlobalSettingsCommand):
         _logger.debug("setting global settings: %s", setGlobalSettingsCommand)

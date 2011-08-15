@@ -96,18 +96,19 @@ def _data_fetcher_test(numThreads):
         # detect as garbage
         df.async_fetch(1, "garbage", None)
 
-        # wait for items to be processed
-        while df._fetchQueue.unfinished_tasks != 0:
+        # wait for items to be dequeued
+        while 0 < df._fetchQueue.qsize():
             time.sleep(0)
-
-        # assert output (order of events is not deterministic due to multithreading)
-        _assert_state_changes(stateChangeQueue, {
-            (model.UpdateTypes.ATTRIBUTES, 1, True):1,
-            (model.UpdateTypes.CHILDREN, 1, True):2,
-            (model.UpdateTypes.DETAILS, 1, True):2})
 
     finally:
         df.shutdown()
+
+
+    # assert output (order of events is not deterministic due to multithreading)
+    _assert_state_changes(stateChangeQueue, {
+        (model.UpdateTypes.ATTRIBUTES, 1, True):1,
+        (model.UpdateTypes.CHILDREN, 1, True):2,
+        (model.UpdateTypes.DETAILS, 1, True):2})
 
     # skip post-shutdown update
     df.async_fetch(1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
@@ -124,20 +125,31 @@ def data_fetcher_test_multi_threaded():
 
 def data_fetcher_test_fast_shutdown():
     class SlowQueue(Queue.Queue):
+        def __init__(self, lock):
+            Queue.Queue.__init__(self)
+            self._lock = lock
+            self._isFirstTime = True
         """Ensures 'put'ting thread is as interrupted as possible"""
         def put(self, item):
+            if self._isFirstTime:
+                self._lock.acquire()
+                time.sleep(0.1)
+                self._isFirstTime = False
             Queue.Queue.put(self, item)
             time.sleep(0)
 
-    stateChangeQueue = SlowQueue()
+    lock = threading.RLock()
+    stateChangeQueue = SlowQueue(lock)
     df = data_fetcher.DataFetcher(_DummyModel())
     df.start()
+    lock.acquire()
     try:
         update = (1, model.UpdateTypes.ATTRIBUTES, stateChangeQueue)
         for n in xrange(100):
             df.async_fetch(*update)
     finally:
         # shutdown before the data fetcher thread has enough time to process the queue
+        lock.release()
         df.shutdown()
     assert df._fetchQueue.empty()
     assert 100 > stateChangeQueue.qsize()

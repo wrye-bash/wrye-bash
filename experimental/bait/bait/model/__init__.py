@@ -84,5 +84,5 @@ UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME = 2
 class _VersionedData(debug_utils.Dumpable):
     """version gets incremented for every change to the data.  clients can check the
     version to ensure an update is for data newer than what it already has"""
-    def __init__(self, version=0):
+    def __init__(self, version):
         self.version = version

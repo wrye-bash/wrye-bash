@@ -48,7 +48,7 @@ def _call_after(fn, arg):
     assert gotException == _expectException
 
 def _wait_until_empty(queue):
-    while not queue.empty():
+    while 0 < queue.unfinished_tasks:
         # for some reason, sleep(0) here just spins indefinitely
         time.sleep(0.01)
 
@@ -155,12 +155,12 @@ def command_thread_test():
         _do_command(ch, presenter.SetStatusLoadingCommand(500, 1000))
         _do_command(ch, presenter.SetStatusIOCommand([]))
         _do_command(ch, presenter.SetStyleMapsCommand({}, {}, {}, {}))
-        _do_command(ch, presenter.UpdateNodeCommand(0, "", True, style1,
-                                                    presenter.NodeTreeIds.PACKAGES))
-        _do_command(ch, presenter.AddNodeCommand(1, "", False, style2,
-                                                 presenter.NodeTreeIds.CONTENTS, 0, None,
+        _do_command(ch, presenter.UpdateNodeCommand(presenter.NodeTreeIds.PACKAGES, 0, "",
+                                                    True, style1))
+        _do_command(ch, presenter.AddNodeCommand(presenter.NodeTreeIds.CONTENTS, 1, "",
+                                                 False, style2, 0, None,
                                                  presenter.ContextMenuIds.BSAFILE))
-        _do_command(ch, presenter.RemoveNodeCommand(0, presenter.NodeTreeIds.PACKAGES))
+        _do_command(ch, presenter.RemoveNodeCommand(presenter.NodeTreeIds.PACKAGES, 0))
         _do_command(ch, presenter.ClearTreeCommand(presenter.NodeTreeIds.CONTENTS))
         _do_command(ch, presenter.SetFilterStatsCommand(presenter.FilterIds.DIRTY_ADD,
                                                         10, 20))

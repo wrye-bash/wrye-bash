@@ -34,12 +34,14 @@ class FilterRegistry:
     def __init__(self):
         self._filters = {}
 
-    def init_filter_states(self, filterStateMap):
+    def init_filter_states(self, filterMask):
         # set initial filter states (presenter is notified in BaitView.start(), so no need
         # to do it here)
         filters = self._filters
         for filterId in filters:
-            filters[filterId][1].SetValue(filterStateMap[filterId])
+            value = filterId in filterMask
+            _logger.debug("initializing filter %s to %s", filterId, value)
+            filters[filterId][1].SetValue(value)
 
     def add_filter(self, filterId, label, filterButton):
         if self._filters.has_key(filterId):

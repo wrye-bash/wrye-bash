@@ -26,8 +26,8 @@ from .. import model
 
 
 class NodeChildren(model._VersionedData):
-    def __init__(self, children=None):
-        model._VersionedData.__init__(self)
+    def __init__(self, children=None, version=0):
+        model._VersionedData.__init__(self, version)
         self.children = children
         if self.children is None:
             self.children = []

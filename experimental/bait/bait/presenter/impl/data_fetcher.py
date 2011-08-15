@@ -40,10 +40,11 @@ class DataFetcher:
     def __init__(self, model_, numThreads=1):
         self._model = model_
         self._numThreads = numThreads
+        # fetchQueue is not absolutely guaranteed to be empty after shutdown is called
         self._fetchQueue = Queue.Queue() # (nodeId, updateTypeMask, stateChangeQueue)
         self._fetchThreads = []
-        self._shutdownLock = threading.Lock()
-        self._isShutdown = False
+        self._isShutdownLock = threading.RLock()
+        self._isShutdown = True
         self._updateInfo = zip(
             (model.UpdateTypes.ATTRIBUTES,
              model.UpdateTypes.CHILDREN,
@@ -54,27 +55,30 @@ class DataFetcher:
             ("attributes", "children", "details"))
 
     def start(self):
-        if len(self._fetchThreads) is not 0:
-            raise RuntimeError("DataFetcher instance already started")
-        try:
-            for threadIdx in xrange(self._numThreads):
-                t = threading.Thread(name="DataFetcher"+str(threadIdx), target=self._run)
-                t.start()
-                self._fetchThreads.append(t)
-        except:
-            self._shutdown()
-            raise
+        _logger.debug("starting data fetcher")
+        with self._isShutdownLock:
+            if not self._isShutdown:
+                raise RuntimeError("DataFetcher instance already started")
+            try:
+                for threadIdx in xrange(self._numThreads):
+                    t = threading.Thread(name="DataFetcher"+str(threadIdx),
+                                         target=self._run)
+                    t.start()
+                    self._fetchThreads.append(t)
+                self._isShutdown = False
+            except:
+                self._shutdown()
+                raise
 
     def shutdown(self):
         self._shutdown()
-        self._fetchQueue.join()
 
     def async_fetch(self, nodeId, updateTypeMask, stateChangeQueue):
+        _logger.debug("scheduling fetch of %s for nodeId %d", updateTypeMask, nodeId)
         fetchRequest = (nodeId, updateTypeMask, stateChangeQueue)
-        with self._shutdownLock:
-            if self._isShutdown:
-                return
-            self._fetchQueue.put(fetchRequest)
+        if self._isShutdown:
+            return
+        self._fetchQueue.put(fetchRequest)
 
     def _run(self):
         _logger.debug("data fetcher thread starting")
@@ -84,43 +88,40 @@ class DataFetcher:
             if fetchRequest is None:
                 _logger.debug(
                     "received sentinel value; data fetcher thread exiting")
-                self._fetchQueue.task_done()
                 break
-            with self._shutdownLock:
-                # if we are shutting down, eat all updates
-                if self._isShutdown:
-                    self._fetchQueue.task_done()
+            # if we are shutting down, eat all updates
+            if self._isShutdown:
+                continue
+            try:
+                nodeId, updateTypeMask, stateChangeQueue = fetchRequest
+                _logger.debug("fetching %s for nodeId %d", updateTypeMask, nodeId)
+                if 0 == updateTypeMask:
+                    _logger.warn("zero updateTypeMask in data fetcher")
                     continue
-                try:
-                    nodeId, updateTypeMask, stateChangeQueue = fetchRequest
-                    _logger.debug("fetching %s for nodeId %d", updateTypeMask, nodeId)
+                for updateType, updateFn, updateName in self._updateInfo:
+                    if updateType in updateTypeMask:
+                        updateTypeMask ^= updateType
+                        data = updateFn(nodeId)
+                        if data is None:
+                            _logger.debug("%s for nodeId %d not found",
+                                          updateName, nodeId)
+                        else:
+                            stateChangeQueue.put((updateType, nodeId, data))
                     if 0 == updateTypeMask:
-                        _logger.warn("zero updateTypeMask in data fetcher")
-                        self._fetchQueue.task_done()
-                        continue
-                    for updateType, updateFn, updateName in self._updateInfo:
-                        if updateType in updateTypeMask:
-                            updateTypeMask ^= updateType
-                            data = updateFn(nodeId)
-                            if data is None:
-                                _logger.debug("%s for nodeId %d not found",
-                                              updateName, nodeId)
-                            else:
-                                stateChangeQueue.put((updateType, nodeId, data))
-                        if 0 == updateTypeMask:
-                            break
-                    if 0 != updateTypeMask:
-                        _logger.warn("unhandled fetch request type: 0x%x",
+                        break
+                if 0 != updateTypeMask:
+                    _logger.warn("unhandled fetch request type: 0x%x",
                                      updateTypeMask.value)
-                except Exception as e:
-                    _logger.warn("invalid fetch reqeuest: %s: %s", str(fetchRequest), e)
-                self._fetchQueue.task_done()
+            except:
+                _logger.warn("invalid fetch reqeuest: %s", str(fetchRequest),
+                             exc_info=True)
 
     def _shutdown(self):
-        with self._shutdownLock:
+        _logger.debug("shutting down data fetcher")
+        with self._isShutdownLock:
             self._isShutdown = True
             for threadNum in xrange(len(self._fetchThreads)):
                 self._fetchQueue.put(None)
-        while 0 < len(self._fetchThreads):
-            t = self._fetchThreads.pop()
-            t.join()
+            while 0 < len(self._fetchThreads):
+                t = self._fetchThreads.pop()
+                t.join()

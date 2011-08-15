@@ -28,13 +28,13 @@ from .. import model
 # TODO: flesh this file out more
 
 class PackageNodeDetails(model._VersionedData):
-    def __init__(self):
-        model._VersionedData.__init__(self)
+    def __init__(self, version=0):
+        model._VersionedData.__init__(self, version)
         # TODO: general tab data
 
 class FileNodeDetails(model._VersionedData):
-    def __init__(self):
-        model._VersionedData.__init__(self)
+    def __init__(self, version=0):
+        model._VersionedData.__init__(self, version)
         self.size = 0
         self.crc = 0
         self.modDate = 0
@@ -42,8 +42,8 @@ class FileNodeDetails(model._VersionedData):
         self.conflictWinner = 0
 
 class EspFileNodeDetails(FileNodeDetails):
-    def __init__(self):
-        FileNodeDetails.__init__(self)
+    def __init__(self, version=0):
+        FileNodeDetails.__init__(self, version)
         self.records = 0
         self.masters = [] # esp file names
         self.deps = [] # node Ids
@@ -51,11 +51,11 @@ class EspFileNodeDetails(FileNodeDetails):
         self.missingDeps = [] # file names
 
 class BsaFileNodeDetails(FileNodeDetails):
-    def __init__(self):
-        FileNodeDetails.__init__(self)
+    def __init__(self, version=0):
+        FileNodeDetails.__init__(self, version)
         self.numFiles = 0
 
 class ResourceFileNodeDetails(FileNodeDetails):
-    def __init__(self):
-        FileNodeDetails.__init__(self)
+    def __init__(self, version=0):
+        FileNodeDetails.__init__(self, version)
         self.thumbnailFilePath = None

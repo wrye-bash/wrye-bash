@@ -64,6 +64,10 @@ Modules can be tested individually by specifying the test file name.  For
 example:
   nosetests bait/util/enum_test.py
 
+If you have renamed or deleted any .py files, be sure to remove the associated
+.pyc file before running the tests, or references to the deleted files may be
+erroneously valid.
+
 
 Integration Testing
 ===================

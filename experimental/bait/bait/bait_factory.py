@@ -36,7 +36,7 @@ _logger = logging.getLogger(__name__)
 
 def _create_queue(isMultiprocess):
     """Creates a communications queue"""
-    if (isMultiprocess is True):
+    if isMultiprocess:
         return multiprocessing.Queue()
     else:
         return Queue.Queue()
@@ -45,14 +45,16 @@ def CreateBaitView(parentNotebook, presenter=None, model=None, isMultiprocess=Fa
     _logger.debug("creating BAIT components")
 
     if presenter is not None:
-        _logger.debug("using custom presenter (class: %s)", presenter.__class__)
+        _logger.debug("using custom presenter (%s)", presenter.__class__)
     else:
         if model is not None:
-            _logger.debug("using custom model (class: %s)", model.__class__)
+            _logger.debug("using custom model (%s)", model.__class__)
         else:
             _logger.debug("instantiating default model")
             model = bait_model.BaitModel(_create_queue(isMultiprocess))
+            _logger.debug("default model instantiated")
         _logger.debug("instantiating default presenter")
-        presenter = bait_presenter.BaitPresenter(model, _create_queue(isMultiprocess))
+        presenter = bait_presenter.BaitPresenter(_create_queue(isMultiprocess), model)
+        _logger.debug("default presenter instantiated")
 
     return bait_view.BaitView(parentNotebook, presenter)

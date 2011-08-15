@@ -24,9 +24,7 @@
 
 import logging
 
-from ... import model
-from ... import presenter
-from ...presenter import view_commands
+from ... import model, presenter
 
 
 _logger = logging.getLogger(__name__)
@@ -132,7 +130,7 @@ class _FilterButton(_Filter):
            totalNodes != self._prevTotalNodes:
             _logger.debug("syncing state to view: filter %s: %d/%d",
                           self.idMask, numCurrentNodes, totalNodes)
-            self._viewUpdateQueue.put(view_commands.SetFilterStats(
+            self._viewUpdateQueue.put(presenter.SetFilterStatsCommand(
                 self.idMask, numCurrentNodes, totalNodes))
             self._prevNumCurrentNodes = numCurrentNodes
             self._prevTotalNodes = totalNodes
@@ -331,9 +329,8 @@ class _HiddenPackagesFilter(_TreeFilterButton):
         _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_HIDDEN,
                                    viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isHidden:
-            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.PACKAGE and nodeAttributes.isHidden:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -343,9 +340,9 @@ class _InstalledPackagesFilter(_TreeFilterButton):
         _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_INSTALLED,
                                    viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isInstalled:
-            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
+           nodeAttributes.isInstalled:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -355,9 +352,9 @@ class _NotInstalledPackagesFilter(_TreeFilterButton):
         _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_NOT_INSTALLED,
                                    viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isNotInstalled:
-            if nodeAttributes.nodeType is model.NodeTypes.PACKAGE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
+           nodeAttributes.isNotInstalled:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -367,9 +364,8 @@ class _ResourceFilesFilter(_TreeFilterButton):
         _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_RESOURCES,
                                    viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isResource:
-            if nodeAttributes.nodeType is model.NodeTypes.FILE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.FILE and nodeAttributes.isResource:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -379,9 +375,8 @@ class _PluginFilesFilter(_TreeFilterButton):
         _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_PLUGINS,
                                    viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isPlugin:
-            if nodeAttributes.nodeType is model.NodeTypes.FILE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.FILE and nodeAttributes.isPlugin:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -390,9 +385,8 @@ class _OtherFilesFilter(_TreeFilterButton):
     def __init__(self, viewUpdateQueue):
         _TreeFilterButton.__init__(self, presenter.FilterIds.FILES_OTHER, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
-        if nodeAttributes.isOther:
-            if nodeAttributes.nodeType is model.NodeTypes.FILE:
-                self._matchedLeafNodeIds.add(nodeId)
+        if nodeAttributes.nodeType is model.NodeTypes.FILE and nodeAttributes.isOther:
+            self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
 
@@ -402,7 +396,7 @@ class _DirtyAddFilter(_FilterButton):
         _FilterButton.__init__(self, presenter.FilterIds.DIRTY_ADD, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         return nodeAttributes.nodeType is model.NodeTypes.FILE and \
-               nodeAttributes.pendingOperation == model.Operations.COPY
+               nodeAttributes.pendingOperation == model.AnnealOperationIds.COPY
 
 class _DirtyUpdateFilter(_FilterButton):
     """Controls display of pending overwrites in the dirty list"""
@@ -410,7 +404,7 @@ class _DirtyUpdateFilter(_FilterButton):
         _FilterButton.__init__(self, presenter.FilterIds.DIRTY_UPDATE, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         return nodeAttributes.nodeType is model.NodeTypes.FILE and \
-               nodeAttributes.pendingOperation == model.Operations.OVERWRITE
+               nodeAttributes.pendingOperation == model.AnnealOperationIds.OVERWRITE
 
 class _DirtyDeleteFilter(_FilterButton):
     """Controls display of pending deletes in the dirty list"""
@@ -418,7 +412,7 @@ class _DirtyDeleteFilter(_FilterButton):
         _FilterButton.__init__(self, presenter.FilterIds.DIRTY_DELETE, viewUpdateQueue)
     def _match(self, nodeId, nodeAttributes):
         return nodeAttributes.nodeType is model.NodeTypes.FILE and \
-               nodeAttributes.pendingOperation == model.Operations.DELETE
+               nodeAttributes.pendingOperation == model.AnnealOperationIds.DELETE
 
 class _ConflictsSelectedFilter(_FilterButton):
     """Controls display of local selected files in the conflicts list"""

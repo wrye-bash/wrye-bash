@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 class BaitModel:
     def __init__(self, updateNotificationQueue, stateManager=None, ioProxy=None):
-        self.updateNotificationQueue = updateNotificationQueue;
+        self.updateNotificationQueue = updateNotificationQueue
 
     def start(self):
         _logger.debug("model starting")

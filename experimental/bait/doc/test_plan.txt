@@ -48,7 +48,7 @@ View Test
   This test requires that a simple mock Presenter be written that just logs the
 calls that the view makes.  The logs should be visually correlated with
 expectations.  Data in all widgets is static after the initial load.  No
-operations, such as filtering and searching are implemented in the mock
+operations, such as filtering and searching, are implemented in the mock
 Presenter and displayed data does not change in response to user input.  Data
 should be voluminous and varied sufficiently to exercise View module code paths.
 
@@ -72,12 +72,14 @@ capabilities:
     - ...
   - MovingGroup
     - Several packages that, when clicked on, change order within the group
+  - UpdateGroup
+    - Several packages that, when clicked on, change their attributes
   - Random package generator: edit comments field with desired no. of packages
     - initially empty, but will generate random empty packages on request
   - Random file generator: edit comments field with desired no. of files
     - initially empty, but will generate packages with files on request
 - All generated packages and files should have names that describe their
-attributes so that they can be visually verified to be behaving properly.
+    attributes so that they can be visually verified to be behaving properly.
 
 Model Test
 ----------
@@ -90,12 +92,12 @@ following capabilities:
 - Sample project with wizard
 - Sample archive with wizard
 - Group of projects that have conflicting files that can be installed, moved
-around, annealed
+    around, annealed
 - All file names should have their CRCs in them so conflict status can be
-visually verified.
+    visually verified.
 - Mock I/O Gateway should track "installations" and alter virtual file
-hierarchies accordingly
+    hierarchies accordingly
 - New content cannot be added (say via drag and drop of real archives), but
-maybe a reset project like in the Presenter Test could be added ("delete me to
-reset packages") that we could intercept in the mock I/O gateway and feed file
-system update notifications to the model to reset the package list.
+    maybe a reset project like in the Presenter Test could be added ("delete me
+    to reset packages") that we could intercept in the mock I/O gateway and feed
+    file system update notifications to the model to reset the package list.

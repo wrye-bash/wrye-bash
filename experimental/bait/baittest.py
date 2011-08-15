@@ -59,13 +59,12 @@ class _MainWindow(wx.Frame):
         try:
             self._baitView.start()
         except Exception as e:
-            _logger.error("caught exception while starting up")
-            _logger.exception(e)
+            _logger.error("caught exception while starting up", exc_info=True)
             self._baitView.shutdown()
             raise
         if not options.quiet:
-            # TODO: put up a dialog explaining the current mode and how to get to other modes
-            # TODO: list what is done and what is not done
+            # TODO: put up a dialog explaining the current mode and how to get to other
+            # TODO: modes and list what is done and what is not done
             pass
 
     def _on_close(self, event):
@@ -100,7 +99,7 @@ def _parse_commandline():
         ' dummy data.')
     testTargets = testTargetGroup.add_mutually_exclusive_group()
     # default to true for now until we get the other pieces working
-    testTargets.add_argument('-v', '--view', action='store_true', default=True,
+    testTargets.add_argument('-v', '--view', action='store_true',
                              help='test the view by mocking out the presenter')
     testTargets.add_argument('-p', '--presenter', action='store_true',
                              help='test the presenter by mocking out the model')

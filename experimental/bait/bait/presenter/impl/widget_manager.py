@@ -59,6 +59,7 @@ class _WidgetManagerBase:
         _logger.debug("starting %sWidgetManager", self._name)
         self._processingThread.start()
         self._started = True
+        self._handle_pending_load_requests()
 
     def shutdown(self):
         """assumes that the data fetcher has been shut down by this point and that nothing
@@ -80,7 +81,7 @@ class _WidgetManagerBase:
                           self._name, modelUpdateNotification)
             self._dataFetcher.async_fetch(
                 modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
-                modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE],
+                modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE],
                 self._stateChangeQueue)
         return True
 
@@ -93,6 +94,9 @@ class _WidgetManagerBase:
         """may be overridden by subclass to return whether the proposed update should be
         persued further.  the default result is True."""
         return True
+
+    def _handle_pending_load_requests(self):
+        pass
 
     def _process_state_changes(self):
         """applies state changes to data objects"""
@@ -154,6 +158,7 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
             modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
             modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION])
 
+    # override
     def _handle_pending_load_requests(self):
         while not self._diffEngine.loadRequestQueue.empty():
             loadRequest = self._diffEngine.loadRequestQueue.get()

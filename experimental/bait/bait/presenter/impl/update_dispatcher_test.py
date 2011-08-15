@@ -33,15 +33,16 @@ class _DummyWidgetManager:
     def __init__(self, name, nodeType):
         self._name = name
         self._nodeType = nodeType
-    def handle(self, updateType, nodeType, nodeId, version):
-        return nodeType is self._nodeType
+    def handle_model_update(self, modelUpdateNotification):
+        return modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE] is \
+               self._nodeType
 
 
 def _assert_view_command(viewCommandQueue, errorCode, resourceName):
-    assert(not viewCommandQueue.empty())
+    assert not viewCommandQueue.empty()
     displayErrorUpdate = viewCommandQueue.get()
-    assert(errorCode == displayErrorUpdate.errorCode)
-    assert(resourceName == displayErrorUpdate.resourceName)
+    assert errorCode == displayErrorUpdate.errorCode
+    assert resourceName == displayErrorUpdate.resourceName
 
 
 def update_dispatcher_test():
@@ -81,7 +82,7 @@ def update_dispatcher_test():
         modelUpdateQueue.put(())
 
         # wait for updates to be processed
-        while not modelUpdateQueue.empty():
+        while 0 < modelUpdateQueue.unfinished_tasks:
             time.sleep(0)
         _assert_view_command(viewCommandQueue, model.Errors.DISK_FULL, "filename.esp")
 

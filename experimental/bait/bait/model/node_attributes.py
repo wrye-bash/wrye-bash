@@ -29,19 +29,17 @@ from ..util import debug_utils, enum
 class StatusOkData(debug_utils.Dumpable):
     def __init__(self):
         self.status = model.Status.OK
-        self.numBainFiles = 0
+        self.numLibraryFiles = 0
         self.installedFiles = 0
-        self.bainMb = 0
+        self.libraryMb = 0
         self.installedMb = 0
-        self.freeBainMb = 0
+        self.freeLibraryMb = 0
         self.freeInstalledMb = 0
 
 class StatusLoadingData(debug_utils.Dumpable):
-    def __init__(self):
+    def __init__(self, numLoadedFiles, totalFiles):
         self.status = model.Status.LOADING
-        self.loadedPackages = 0
-        self.totalPackages = 0
-        self.loadedFiles = 0
+        self.numLoadedFiles = 0
         self.totalFiles = 0
 
 class StatusDirtyData(debug_utils.Dumpable):
@@ -55,69 +53,112 @@ class StatusUnstableData(debug_utils.Dumpable):
         self.operations = [] # tuples of (operationId, nodeId)
 
 class RootNodeAttributes(model._VersionedData):
-    def __init__(self, statusData=None):
-        model._VersionedData.__init__(self)
+    def __init__(self, statusData, version=0):
+        model._VersionedData.__init__(self, version)
         self.nodeType = model.NodeTypes.ROOT
         self.statusData = statusData
 
+class ContextMenuIds(enum.Enum):
+    __enumerables__ = ('UNKNOWN', 'PROJECT', 'ARCHIVE', 'GROUP', 'SUBPACKAGE',
+                       'DIRECTORY', 'SELECTABLEFILE', 'UNSELECTABLEFILE', 'BSAFILE',
+                       'INSTALLED_DATA')
+    # for autocomplete
+    PROJECT = None
+    ARCHIVE = None
+    GROUP = None
+    SUBPACKAGE = None
+    DIRECTORY = None
+    SELECTABLEFILE = None
+    UNSELECTABLEFILE = None
+    BSAFILE = None
+    INSTALLED_DATA = None
+
 class _TreeNodeAttributes(model._VersionedData):
-    def __init__(self, nodeType):
-        model._VersionedData.__init__(self)
+    def __init__(self, nodeType, label, parentNodeId, contextMenuId, isDirty, isInstalled,
+                 isNotInstalled, isHidden, isNew, hasMissingDeps, version):
+        model._VersionedData.__init__(self, version)
         self.nodeType = nodeType
-        self.parentNodeId = None
-        self.label = None
-        self.isDirty = False
-        self.isInstalled = False
-        self.isNotInstalled = False
-        self.isHidden = False
-        self.isNew = False
-        self.hasMissingDeps = False
+        self.label = label
+        self.parentNodeId = parentNodeId
+        self.contextMenuId = contextMenuId
+        self.isDirty = isDirty
+        self.isInstalled = isInstalled
+        self.isNotInstalled = isNotInstalled
+        self.isHidden = isHidden
+        self.isNew = isNew
+        self.hasMissingDeps = hasMissingDeps
 
 class _PackageTreeNodeAttributes(_TreeNodeAttributes):
-    def __init__(self, nodeType):
-        _TreeNodeAttributes.__init__(self, nodeType)
-        self.isUnrecognized = False
-        self.isCorrupt = False
-        self.updateAvailable = False
+    def __init__(self, nodeType, label, parentNodeId, contextMenuId, isDirty, isInstalled,
+                 isNotInstalled, isHidden, isNew, hasMissingDeps, isUnrecognized,
+                 isCorrupt, updateAvailable, version):
+        _TreeNodeAttributes.__init__(self, nodeType, label, parentNodeId, contextMenuId,
+                                     isDirty, isInstalled, isNotInstalled, isHidden,
+                                     isNew, hasMissingDeps, version)
+        self.isUnrecognized = isUnrecognized
+        self.isCorrupt = isCorrupt
+        self.updateAvailable = updateAvailable
 
 class PackageNodeAttributes(_PackageTreeNodeAttributes):
-    def __init__(self):
-        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE)
-        self.isArchive = False
-        self.hasWizard = False
-        self.hasMatched = False
-        self.hasMismatched = False
-        self.hasMissing = False
-        self.hasSubpackages = False
+    def __init__(self, label, parentNodeId, contextMenuId, isDirty=False,
+                 isInstalled=False, isNotInstalled=False, isHidden=False, isNew=False,
+                 hasMissingDeps=False, isUnrecognized=False, isCorrupt=False,
+                 updateAvailable=False, alwaysVisible=False, isArchive=False,
+                 hasWizard=False, hasMatched=False, hasMismatched=False, hasMissing=False,
+                 hasSubpackages=False, version=0):
+        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.PACKAGE, label,
+                                            parentNodeId, contextMenuId, isDirty,
+                                            isInstalled, isNotInstalled, isHidden, isNew,
+                                            hasMissingDeps, isUnrecognized, isCorrupt,
+                                            updateAvailable, version)
+        self.isArchive = isArchive
+        self.hasWizard = hasWizard
+        self.hasMatched = hasMatched
+        self.hasMismatched = hasMismatched
+        self.hasMissing = hasMissing
+        self.hasSubpackages = hasSubpackages
+        self.alwaysVisible = alwaysVisible
 
 class GroupNodeAttributes(_PackageTreeNodeAttributes):
-    def __init__(self):
-        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.GROUP)
+    def __init__(self, label, parentNodeId, contextMenuId, isDirty=False, isNew=False,
+                 hasMissingDeps=False, isUnrecognized=False, isCorrupt=False,
+                 updateAvailable=False, version=0):
+        _PackageTreeNodeAttributes.__init__(self, model.NodeTypes.GROUP, label,
+                                            parentNodeId, contextMenuId, isDirty, False,
+                                            False, False, isNew, hasMissingDeps,
+                                            isUnrecognized, isCorrupt, updateAvailable,
+                                            version)
 
 class SubPackageNodeAttributes(_TreeNodeAttributes):
     def __init__(self):
         _TreeNodeAttributes.__init__(self, model.NodeTypes.SUBPACKAGE)
 
-class _PackageContentsTreeNodeAttributes(_TreeNodeAttributes):
-    def __init__(self, nodeType):
-        _TreeNodeAttributes.__init__(self, nodeType)
-        self.isPlugin = False
-        self.isResource = False
-        self.isOther = False
+class DirectoryNodeAttributes(_TreeNodeAttributes):
+    def __init__(self, label, parentNodeId, contextMenuId, isNew=False, version=0):
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.DIRECTORY, label, parentNodeId,
+                                     contextMenuId, False, False, False, False, isNew,
+                                     False, version)
 
-class DirectoryNodeAttributes(_PackageContentsTreeNodeAttributes):
-    def __init__(self):
-        _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.DIRECTORY)
-
-class FileNodeAttributes(_PackageContentsTreeNodeAttributes):
-    def __init__(self):
-        _PackageContentsTreeNodeAttributes.__init__(self, model.NodeTypes.FILE)
-        self.crc = None
-        self.pendingOperation = model.Operations.NONE
-        self.packageNodeId = None
-        self.isMatched = False
-        self.isMismatched = False
-        self.isMissing = False
-        self.hasConflicts = False
-        self.isMasked = False
-        self.isCruft = False
+class FileNodeAttributes(_TreeNodeAttributes):
+    def __init__(self, label, parentNodeId, contextMenuId, isDirty=False,
+                 isInstalled=False, isNotInstalled=False, isNew=False,
+                 hasMissingDeps=False, crc=None,
+                 pendingOperation=model.AnnealOperationIds.NONE, packageNodeId=None,
+                 isMatched=False, isMismatched=False, isMissing=False, hasConflicts=False,
+                 isMasked=False, isCruft=False, isPlugin=False, isResource=False,
+                 isOther=False, version=0):
+        _TreeNodeAttributes.__init__(self, model.NodeTypes.FILE, label, parentNodeId,
+                                     contextMenuId, isDirty, isInstalled, isNotInstalled,
+                                     False, isNew, hasMissingDeps, version)
+        self.crc = crc
+        self.pendingOperation = pendingOperation
+        self.packageNodeId = packageNodeId
+        self.isMatched = isMatched
+        self.isMismatched = isMismatched
+        self.isMissing = isMissing
+        self.hasConflicts = hasConflicts
+        self.isMasked = isMasked
+        self.isCruft = isCruft
+        self.isPlugin = isPlugin
+        self.isResource = isResource
+        self.isOther = isOther

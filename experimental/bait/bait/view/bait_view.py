@@ -77,9 +77,13 @@ class BaitView:
             presenter.FilterIds.UNSELECTED_HAS_CONFLICTS:True,
             presenter.FilterIds.SKIPPED_NONGAME:True,
             presenter.FilterIds.SKIPPED_MASKED:False}
-        self._installerTab.load(filterStateMap)
+        filterMask = presenter.FilterIds.NONE
+        for filterId in filterStateMap:
+            if filterStateMap[filterId]:
+                filterMask |= filterId
+        self._installerTab.load(filterMask)
         _logger.debug("starting presenter")
-        self._presenter.start(presenter.DetailsTabIds.GENERAL, filterStateMap)
+        self._presenter.start(presenter.DetailsTabIds.GENERAL, filterMask)
         _logger.debug("starting processing threads")
         self._imageLoader.start()
         self._commandHandler.start()

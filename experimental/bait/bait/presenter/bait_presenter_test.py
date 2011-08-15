@@ -70,12 +70,12 @@ def presenter_lifecycle_test():
     viewCommandQueue = Queue.Queue()
 
     # normal
-    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+    p = bait_presenter.BaitPresenter(viewCommandQueue, _DummyModel())
     p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
     p.shutdown()
 
     # double-start, double-shutdown (failed start calls shutdown the first time)
-    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+    p = bait_presenter.BaitPresenter(viewCommandQueue, _DummyModel())
     p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
     try:
         p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
@@ -85,7 +85,7 @@ def presenter_lifecycle_test():
     p.shutdown()
 
     # pause-resume cycle
-    p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+    p = bait_presenter.BaitPresenter(viewCommandQueue, _DummyModel())
     p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
     p.pause()
     p.resume()
@@ -101,7 +101,7 @@ def presenter_lifecycle_test():
                       ("_packagesTreeManager", True),
                       ("_model", True),
                       ("_updateDispatcher", False)]:
-        p = bait_presenter.BaitPresenter(_DummyModel(), viewCommandQueue)
+        p = bait_presenter.BaitPresenter(viewCommandQueue, _DummyModel())
         p.start(presenter.DetailsTabIds.GENERAL, presenter.FilterIds.NONE)
         # call the shutdown ourselves to make sure we don't get any leftover threads
         throwObj = _ThrowOnShutdown(getattr(p, failTuple[0]),

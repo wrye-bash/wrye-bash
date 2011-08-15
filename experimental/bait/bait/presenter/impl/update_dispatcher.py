@@ -25,8 +25,7 @@
 import logging
 import threading
 
-from ... import model
-from .. import view_commands
+from ... import model, presenter
 
 
 _logger = logging.getLogger(__name__)
@@ -61,8 +60,9 @@ class UpdateDispatcher:
 
     def _run(self):
         _logger.debug("model update dispatcher thread starting")
+        modelUpdateQueue = self._modelUpdateQueue
         while True:
-            updateInfo = self._modelUpdateQueue.get()
+            updateInfo = modelUpdateQueue.get()
             # quit on None
             if updateInfo is None:
                 _logger.debug(
@@ -71,6 +71,7 @@ class UpdateDispatcher:
             with self._shutdownLock:
                 # if we are shutting down, eat all updates
                 if self._shutdown:
+                    modelUpdateQueue.task_done()
                     continue
                 try:
                     _logger.debug("received update: %s", str(updateInfo))
@@ -78,7 +79,7 @@ class UpdateDispatcher:
                     if updateType is model.UpdateTypes.ERROR:
                         # propagate errors to view
                         self._viewCommandQueue.put(
-                            view_commands.DisplayError(
+                            presenter.DisplayErrorCommand(
                                 updateInfo[model.UPDATE_ERROR_TUPLE_IDX_CODE],
                                 updateInfo[model.UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME]))
                     else:
@@ -86,13 +87,12 @@ class UpdateDispatcher:
                         # send to each widget manager in turn until one handles it
                         # TODO: would it be more efficient to use a map?
                         for widgetManager in self._widgetManagers:
-                            if widgetManager.handle(updateType,
-                                        updateInfo[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE],
-                                        updateInfo[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
-                                        updateInfo[model.UPDATE_NODE_TUPLE_IDX_VERSION]):
+                            if widgetManager.handle_model_update(updateInfo):
                                 handled = True
                                 break
                         if not handled:
                             _logger.warn("unhandled update: %s", str(updateInfo))
                 except Exception as e:
-                    _logger.warn("invalid model update: %s: %s", str(updateInfo), e)
+                    _logger.warn("invalid model update: %s: %s", str(updateInfo),
+                                 e.message)
+                modelUpdateQueue.task_done()

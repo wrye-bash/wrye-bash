@@ -30,7 +30,6 @@ from . import filters
 from ... import model
 from ...model import node_attributes
 from ... import presenter
-from ...presenter import view_commands
 
 
 UPDATE_TYPE_MASK_IDX = 0
@@ -73,83 +72,101 @@ def _visit_tree(rootNodeId, tree, quitEarlyIfFalseFn, visitor):
 def _get_package_icon_id(packageNodeAttributes):
     if packageNodeAttributes.isCorrupt:
         if packageNodeAttributes.isArchive:
-            return view_commands.IconIds.INSTALLER_UNINSTALLABLE
+            return presenter.IconIds.INSTALLER_UNINSTALLABLE
         else:
-            return view_commands.IconIds.PROJECT_UNINSTALLABLE
+            return presenter.IconIds.PROJECT_UNINSTALLABLE
     if packageNodeAttributes.hasMismatched:
         if packageNodeAttributes.isArchive:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.INSTALLER_MISMATCHED_WIZ
+                return presenter.IconIds.INSTALLER_MISMATCHED_WIZ
             else:
-                return view_commands.IconIds.INSTALLER_MISMATCHED
+                return presenter.IconIds.INSTALLER_MISMATCHED
         else:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.PROJECT_MISMATCHED_WIZ
+                return presenter.IconIds.PROJECT_MISMATCHED_WIZ
             else:
-                return view_commands.IconIds.PROJECT_MISMATCHED
+                return presenter.IconIds.PROJECT_MISMATCHED
     if packageNodeAttributes.hasMissing:
         if packageNodeAttributes.isArchive:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.INSTALLER_MISSING_WIZ
+                return presenter.IconIds.INSTALLER_MISSING_WIZ
             else:
-                return view_commands.IconIds.INSTALLER_MISSING
+                return presenter.IconIds.INSTALLER_MISSING
         else:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.PROJECT_MISSING_WIZ
+                return presenter.IconIds.PROJECT_MISSING_WIZ
             else:
-                return view_commands.IconIds.PROJECT_MISSING
+                return presenter.IconIds.PROJECT_MISSING
     if packageNodeAttributes.hasMatched:
         if packageNodeAttributes.isArchive:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.INSTALLER_MATCHES_WIZ
+                return presenter.IconIds.INSTALLER_MATCHES_WIZ
             else:
-                return view_commands.IconIds.INSTALLER_MATCHES
+                return presenter.IconIds.INSTALLER_MATCHES
         else:
             if packageNodeAttributes.hasWizard:
-                return view_commands.IconIds.PROJECT_MATCHES_WIZ
+                return presenter.IconIds.PROJECT_MATCHES_WIZ
             else:
-                return view_commands.IconIds.PROJECT_MATCHES
+                return presenter.IconIds.PROJECT_MATCHES
     # has no other attributes; must be empty
     if packageNodeAttributes.isArchive:
         if packageNodeAttributes.hasWizard:
-            return view_commands.IconIds.INSTALLER_EMPTY_WIZ
+            return presenter.IconIds.INSTALLER_EMPTY_WIZ
         else:
-            return view_commands.IconIds.INSTALLER_EMPTY
+            return presenter.IconIds.INSTALLER_EMPTY
     else:
         if packageNodeAttributes.hasWizard:
-            return view_commands.IconIds.PROJECT_EMPTY_WIZ
+            return presenter.IconIds.PROJECT_EMPTY_WIZ
         else:
-            return view_commands.IconIds.PROJECT_EMPTY
+            return presenter.IconIds.PROJECT_EMPTY
 
 def _get_font_style_mask(treeNodeAttributes):
-    fontStyleMask = view_commands.FontStyleIds.NONE
+    fontStyleMask = presenter.FontStyleIds.NONE
     if treeNodeAttributes.isNew:
-        fontStyleMask |= view_commands.FontStyleIds.BOLD
+        fontStyleMask |= presenter.FontStyleIds.BOLD
     if treeNodeAttributes.isCorrupt | treeNodeAttributes.isDirty | \
        treeNodeAttributes.isUnrecognized | treeNodeAttributes.hasMissingDeps | \
        treeNodeAttributes.updateAvailable:
-        fontStyleMask |= view_commands.FontStyleIds.ITALICS
+        fontStyleMask |= presenter.FontStyleIds.ITALICS
     return fontStyleMask
 
 def _get_foreground_color(treeNodeAttributes):
     if treeNodeAttributes.isHidden and \
        not treeNodeAttributes.isInstalled and not treeNodeAttributes.isNotInstalled:
-        return view_commands.ForegroundColorIds.DISABLED
+        return presenter.ForegroundColorIds.DISABLED
     if getattr(treeNodeAttributes, "hasSubpackages", False):
-        return view_commands.ForegroundColorIds.HAS_SUBPACKAGES
+        return presenter.ForegroundColorIds.HAS_SUBPACKAGES
     return None
 
 def _get_highlight_color(treeNodeAttributes):
     if treeNodeAttributes.isCorrupt | treeNodeAttributes.isUnrecognized:
-        return view_commands.HighlightColorIds.ERROR
+        return presenter.HighlightColorIds.ERROR
     if treeNodeAttributes.hasMissingDeps:
-        return view_commands.HighlightColorIds.MISSING_DEPENDENCY
+        return presenter.HighlightColorIds.MISSING_DEPENDENCY
     if treeNodeAttributes.isDirty:
-        return view_commands.HighlightColorIds.DIRTY
+        return presenter.HighlightColorIds.DIRTY
     return None
 
+def _get_style(nodeAttributes):
+    # craft visual style
+    style = presenter.Style(_get_font_style_mask(nodeAttributes),
+                            _get_foreground_color(nodeAttributes),
+                            _get_highlight_color(nodeAttributes))
+    if nodeAttributes.nodeType == model.NodeTypes.PACKAGE:
+        # craft package-specific style elements
+        if not nodeAttributes.isHidden:
+            style.checkboxState = nodeAttributes.isInstalled
+        style.iconId = _get_package_icon_id(nodeAttributes)
+    elif nodeAttributes.nodeType == model.NodeTypes.GROUP:
+        # no additional attributes
+        pass
+    # TODO: package contents tree nodes
+    else:
+        raise TypeError(
+            "unexpected node type: %s" % nodeAttributes.nodeType)
+
 def _add_node(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
-              expandedNodeIds, selectedNodeIds, viewCommandQueue, isUpdate=False):
+              expandedNodeIds, selectedNodeIds, viewCommandQueue, nodeTreeId, rootNodeId):
     """adds given node and any required ancestors"""
     # show parentage if not already visible
     nodeAttributes = nodeData[_ATTRIBUTES_IDX]
@@ -160,51 +177,34 @@ def _add_node(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
             parentNodeId, nodeId)
         _add_node(parentNodeId, tree[parentNodeId], tree, visibleLeafNodeIds,
                   visibleBranchNodeIds, expandedNodeIds, selectedNodeIds,
-                  viewCommandQueue)
+                  viewCommandQueue, nodeTreeId, rootNodeId)
         visibleBranchNodeIds.add(parentNodeId)
     # walk the tree backwards to find a visible predecessor
+    _logger.debug("enqueuing command to add node %d: '%s'", nodeId, nodeAttributes.label)
     predNodeId = nodeData[_PRED_NODE_ID_IDX]
     while predNodeId is not None:
         if predNodeId in visibleLeafNodeIds or predNodeId in visibleBranchNodeIds:
             break
         predNodeId = tree[predNodeId][_PRED_NODE_ID_IDX]
     # craft visual style
-    style = view_commands.Style(_get_font_style_mask(nodeAttributes),
-                                _get_foreground_color(nodeAttributes),
-                                _get_highlight_color(nodeAttributes),
-                                None, None)
-    # add node to view widget
-    if isUpdate:
-        _logger.debug("updating node %d: '%s'", nodeId, nodeAttributes.label)
-    else:
-        _logger.debug("adding node %d: '%s'", nodeId, nodeAttributes.label)
+    style = _get_style(nodeAttributes)
+    isExpanded = nodeId in expandedNodeIds
     isSelected = nodeId in selectedNodeIds
-    if nodeAttributes.nodeType == model.NodeTypes.PACKAGE:
-        # craft package-specific style elements
-        if not nodeAttributes.isHidden:
-            style.checkboxState = nodeAttributes.isInstalled
-        style.iconId = _get_package_icon_id(nodeAttributes)
-        if isUpdate:
-            viewCommand = view_commands.UpdatePackage
-        else:
-            viewCommand = view_commands.AddPackage
-        viewCommandQueue.put(viewCommand(nodeAttributes.label, nodeId,
-                                         nodeAttributes.parentNodeId, predNodeId, style,
-                                         isSelected))
-    elif nodeAttributes.nodeType == model.NodeTypes.GROUP:
-        if isUpdate:
-            viewCommand = view_commands.UpdateGroup
-        else:
-            viewCommand = view_commands.AddGroup
-        viewCommandQueue.put(viewCommand(nodeAttributes.label, nodeId,
-                                         nodeAttributes.parentNodeId, predNodeId, style,
-                                         isSelected))
-        if not isUpdate and nodeId in expandedNodeIds:
-            _logger.debug("expanding newly-visible node %d", nodeId)
-            viewCommandQueue.put(view_commands.ExpandGroup(nodeId, True))
-    else:
-        raise TypeError(
-            "unexpected node type: %s" % nodeAttributes.nodeType)
+    if parentNodeId == rootNodeId:
+        parentNodeId = None
+    viewCommandQueue.put(presenter.AddNodeCommand(
+        nodeTreeId, nodeId, nodeAttributes.label, isExpanded, style, parentNodeId,
+        predNodeId, nodeAttributes.contextMenuId, isSelected))
+
+def _update_node(nodeId, nodeData, viewCommandQueue, nodeTreeId):
+    """updates given node"""
+    nodeAttributes = nodeData[_ATTRIBUTES_IDX]
+    _logger.debug("updating node %d: '%s'", nodeId, nodeAttributes.label)
+    # craft visual style
+    style = _get_style(nodeAttributes)
+    # TODO: only send changed attributes
+    viewCommandQueue.put(presenter.UpdateNodeCommand(
+        nodeTreeId, nodeId, label=nodeAttributes.label, style=style))
 
 def _remove_branch(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
                    rootNodeId, viewCommandQueue):
@@ -229,24 +229,28 @@ def _remove_branch(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNode
             break
         parentNodeId = parentNodeData[_ATTRIBUTES_IDX].parentNodeId
     _logger.debug("removing tree rooted at node %d", branchRootNodeIdToRemove)
-    viewCommandQueue.put(view_commands.RemovePackagesTreeNode(branchRootNodeIdToRemove))
+    viewCommandQueue.put(presenter.RemoveNodeCommand(
+        presenter.NodeTreeIds.PACKAGES, branchRootNodeIdToRemove))
 
 def _filter_and_sync(nodeId, nodeData, tree, searchMatchesLineage, filter_,
                      visibleBranchNodeIds, expandedNodeIds, selectedNodeIds, rootNodeId,
-                     viewCommandQueue, updateIfNoVisibilityChange):
+                     viewCommandQueue, nodeTreeId, updateIfNoVisibilityChange):
+    attributes = nodeData[_ATTRIBUTES_IDX]
     wasVisible = nodeId in filter_.visibleNodeIds
     isVisible = filter_.process_and_get_visibility(
-        nodeId, nodeData[_ATTRIBUTES_IDX],
-        searchMatchesLineage or nodeData[_MATCHES_SEARCH_IDX])
+        nodeId, attributes, searchMatchesLineage or nodeData[_MATCHES_SEARCH_IDX]) or \
+              model.NodeTypes.PACKAGE == attributes.nodeType and attributes.alwaysVisible
     if isVisible:
         if wasVisible:
             if not updateIfNoVisibilityChange:
                 return
             _logger.debug("updating visible node %d", nodeId)
+            _update_node(nodeId, nodeData, viewCommandQueue, nodeTreeId)
         else:
             _logger.debug("adding newly visible node %d", nodeId)
-        _add_node(nodeId, nodeData, tree, filter_.visibleNodeIds, visibleBranchNodeIds,
-                  expandedNodeIds, selectedNodeIds, viewCommandQueue, wasVisible)
+            _add_node(nodeId, nodeData, tree, filter_.visibleNodeIds,
+                      visibleBranchNodeIds, expandedNodeIds, selectedNodeIds,
+                      viewCommandQueue, nodeTreeId, rootNodeId)
     elif wasVisible:
         _logger.debug("removing newly invisible node %d", nodeId)
         _remove_branch(nodeId, nodeData, tree, filter_.visibleNodeIds,
@@ -261,7 +265,8 @@ class _Visitor:
 
 class _RefilteringVisitor(_Visitor):
     def __init__(self, tree, searchMatchesLineage, filter_, visibleBranchNodeIds,
-                 expandedNodeIds, selectedNodeIds, rootNodeId, viewCommandQueue):
+                 expandedNodeIds, selectedNodeIds, rootNodeId, nodeTreeId,
+                 viewCommandQueue):
         self._tree = tree
         self._searchMatchesLineage = searchMatchesLineage
         self._filter = filter_
@@ -270,6 +275,7 @@ class _RefilteringVisitor(_Visitor):
         self._selectedNodeIds = selectedNodeIds
         self._rootNodeId = rootNodeId
         self._viewCommandQueue = viewCommandQueue
+        self._nodeTreeId = nodeTreeId
     def start_hook(self):
         self._filter.enable_automatic_updates(False)
     def visit(self, nodeId, nodeData):
@@ -282,7 +288,7 @@ class _RefilteringVisitor(_Visitor):
         _filter_and_sync(nodeId, nodeData, self._tree, self._searchMatchesLineage,
                          self._filter, self._visibleBranchNodeIds, self._expandedNodeIds,
                          self._selectedNodeIds, self._rootNodeId, self._viewCommandQueue,
-                         False)
+                         self._nodeTreeId, False)
     def end_hook(self):
         self._filter.enable_automatic_updates(True)
 
@@ -298,7 +304,8 @@ class _AddToSetVisitor(_Visitor):
 
 class _SyncVisibleNodesVisitor(_Visitor):
     def __init__(self, tree, previouslyVisibleNodeIds, filter_, visibleBranchNodeIds,
-                 expandedNodeIds, selectedNodeIds, rootNodeId, viewCommandQueue):
+                 expandedNodeIds, selectedNodeIds, rootNodeId, viewCommandQueue,
+                 nodeTreeId):
         self._tree = tree
         self._previouslyVisibleNodeIds = previouslyVisibleNodeIds
         self._filter = filter_
@@ -307,6 +314,7 @@ class _SyncVisibleNodesVisitor(_Visitor):
         self._selectedNodeIds = selectedNodeIds
         self._rootNodeId = rootNodeId
         self._viewCommandQueue = viewCommandQueue
+        self._nodeTreeId = nodeTreeId
     def visit(self, nodeId, nodeData):
         if len(nodeData) <= _ATTRIBUTES_IDX:
             _logger.debug("skipping branch since attributes not yet loaded")
@@ -322,7 +330,8 @@ class _SyncVisibleNodesVisitor(_Visitor):
             _logger.debug("adding newly visible node %d", nodeId)
             _add_node(nodeId, nodeData, self._tree, self._filter.visibleNodeIds,
                       self._visibleBranchNodeIds, self._expandedNodeIds,
-                      self._selectedNodeIds, self._viewCommandQueue, False)
+                      self._selectedNodeIds, self._viewCommandQueue, self._nodeTreeId,
+                      self._rootNodeId)
         else:
             _logger.debug("removing newly invisible node %d", nodeId)
             _remove_branch(nodeId, nodeData, self._tree, self._filter.visibleNodeIds,
@@ -405,7 +414,8 @@ class _DiffEngine:
         self._expandedNodeIds = set()
         # nodeId -> [matchesSearch, predNodeId, attributes, children]
         self._tree = {}
-        self._tree[self._rootNodeId] = [False, None, node_attributes.RootNodeAttributes()]
+        self._tree[self._rootNodeId] = [False, None,
+                                        node_attributes.RootNodeAttributes(None)]
         self._visibleBranchNodeIds.add(rootNodeId)
         # put initial load request
         self.loadRequestQueue.put((model.UpdateTypes.CHILDREN, rootNodeId))
@@ -464,22 +474,24 @@ class PackagesTreeDiffEngine(_DiffEngine):
         self._pendingSearchString = searchString
 
     def set_node_expansion(self, nodeId, isExpanded):
-        # TODO: ensure there aren't any significant race conditions where an
-        # TODO:   expand/collapse event gets lost in the midst of a filtering operation
         if isExpanded:
             if nodeId in self._expandedNodeIds:
                 _logger.warn("node already recorded as expanded: %d", nodeId)
             else:
                 _logger.debug("expanding node %d", nodeId)
                 self._expandedNodeIds.add(nodeId)
-                self._viewCommandQueue.put(view_commands.ExpandGroup(nodeId, True))
+                self._viewCommandQueue.put(
+                    presenter.UpdateNodeCommand(presenter.NodeTreeIds.PACKAGES, nodeId,
+                                                isExpanded=True))
         else:
             if nodeId not in self._expandedNodeIds:
                 _logger.warn("node already recorded as collapsed: %d", nodeId)
             else:
                 _logger.debug("collapsing node %d", nodeId)
                 self._expandedNodeIds.discard(nodeId)
-                self._viewCommandQueue.put(view_commands.ExpandGroup(nodeId, False))
+                self._viewCommandQueue.put(
+                    presenter.UpdateNodeCommand(presenter.NodeTreeIds.PACKAGES, nodeId,
+                                                isExpanded=False))
 
     def set_selected_nodes(self, nodeIds):
         if nodeIds is None:
@@ -509,14 +521,14 @@ class PackagesTreeDiffEngine(_DiffEngine):
         if nodeAttributes.nodeType == model.NodeTypes.GROUP:
             # only update if the group was already visible
             if nodeId in self._visibleBranchNodeIds and wasVisibleGroup:
-                _add_node(nodeId, nodeData, self._tree, self._filter.visibleNodeIds,
-                          self._visibleBranchNodeIds, self._expandedNodeIds,
-                          self._selectedNodeIds, self._viewCommandQueue, True)
+                _update_node(nodeId, nodeData, self._viewCommandQueue,
+                             presenter.NodeTreeIds.PACKAGES)
         else:
             _filter_and_sync(nodeId, nodeData, self._tree, searchMatchesLineage,
                              self._filter, self._visibleBranchNodeIds,
                              self._expandedNodeIds, self._selectedNodeIds,
-                             self._rootNodeId, self._viewCommandQueue, True)
+                             self._rootNodeId, self._viewCommandQueue,
+                             presenter.NodeTreeIds.PACKAGES, True)
         self._update_managers()
 
     def update_children(self, nodeId, nodeChildren):
@@ -593,7 +605,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                             self._tree, previouslyVisibleNodeIds, self._filter,
                             self._visibleBranchNodeIds, self._expandedNodeIds,
                             self._selectedNodeIds, self._rootNodeId,
-                            self._viewCommandQueue))
+                            self._viewCommandQueue, presenter.NodeTreeIds.PACKAGES))
         self._update_managers()
 
     def update_search_string(self, searchString):
@@ -623,7 +635,8 @@ class PackagesTreeDiffEngine(_DiffEngine):
                     _SyncVisibleNodesVisitor(
                         self._tree, previouslyVisibleNodeIds, self._filter,
                         self._visibleBranchNodeIds, self._expandedNodeIds,
-                        self._selectedNodeIds, self._rootNodeId, self._viewCommandQueue))
+                        self._selectedNodeIds, self._rootNodeId, self._viewCommandQueue,
+                        presenter.NodeTreeIds.PACKAGES))
         self._searchExpression = expression
         self._update_managers()
 
@@ -697,7 +710,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
             _visit_tree(nodeId, self._tree, None, _RefilteringVisitor(
                 self._tree, True, self._filter, self._visibleBranchNodeIds,
                 self._expandedNodeIds, self._selectedNodeIds, self._rootNodeId,
-                self._viewCommandQueue))
+                presenter.NodeTreeIds.PACKAGES, self._viewCommandQueue))
             return True
         ancestorMatchesSearch = self._does_ancestor_match_search(nodeId, nodeAttributes)
         if prevMatchesSearch:
@@ -710,7 +723,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
             _visit_tree(nodeId, self._tree, None, _RefilteringVisitor(
                 self._tree, False, self._filter, self._visibleBranchNodeIds,
                 self._expandedNodeIds, self._selectedNodeIds, self._rootNodeId,
-                self._viewCommandQueue))
+                presenter.NodeTreeIds.PACKAGES, self._viewCommandQueue))
             return False
         return ancestorMatchesSearch
 
