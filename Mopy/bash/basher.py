@@ -8854,11 +8854,11 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         """Handle save button."""
         config = self.config
         #--Text fields
-        config.name = self.gName.GetValue().strip()
-        config.website = self.gWebsite.GetValue().strip()
-        config.author = self.gAuthor.GetValue().strip()
-        config.email = self.gEmail.GetValue().strip()
-        config.abstract = self.gAbstract.GetValue().strip()
+        config.name = Unicode(self.gName.GetValue().strip())
+        config.website = Unicode(self.gWebsite.GetValue().strip())
+        config.author = Encode(self.gAuthor.GetValue().strip(),'mbcs')
+        config.email = Unicode(self.gEmail.GetValue().strip())
+        config.abstract = Unicode(self.gAbstract.GetValue().strip())
         #--Version
         maVersion = re.match(r'(\d+)\.(\d+)',self.gVersion.GetValue().strip())
         if maVersion:
