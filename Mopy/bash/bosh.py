@@ -7472,7 +7472,7 @@ class Plugins:
         out = self.path.open('w')
         out.write('# This file is used to tell Oblivion which data files to load.\n\n')
         for modName in self.selected:
-            out.write(modName.s+'\n')
+            out.write(Encode(modName.s+'\n'))
         out.close()
         self.mtime = self.path.mtime
         self.size = self.path.size
@@ -16999,7 +16999,7 @@ class PCFaces:
         if not tes4.author:
             tes4.author = '[wb]'
         if not tes4.description:
-            tes4.description = _('Face dump from save game.')
+            tes4.description = Encode(_('Face dump from save game.'),'mbcs')
         if modInfos.masterName not in tes4.masters:
             tes4.masters.append(modInfos.masterName)
         masterMap = MasterMap(face.masters,tes4.masters+[modInfo.name])
@@ -17607,7 +17607,7 @@ class PatchFile(ModFile):
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
-            reasons += "\n.    Has 'NoMerge' tag."
+            reasons += _("\n.    Has 'NoMerge' tag.")
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
@@ -17874,7 +17874,7 @@ class PatchFile(ModFile):
         progress(1.0,"Compiled.")
         #--Description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
-        self.tes4.description = _("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords)
+        self.tes4.description = Encode(_("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords),'mbcs')
 
 class CBash_PatchFile(ObModFile):
     """Defines and executes patcher configuration."""
@@ -33929,7 +33929,7 @@ def initLogFile():
             os.remove(inisettings['LogFile'].s)
     else:
         log = inisettings['LogFile'].open("a")
-        log.write(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['KeepLog']))
+        log.write(Encode(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['KeepLog']),'mbcs'))
         log.close()
 
 def initBosh(personal='',localAppData='',oblivionPath=''):

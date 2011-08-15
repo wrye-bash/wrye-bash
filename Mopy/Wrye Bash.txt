@@ -2343,7 +2343,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [12/12/2011] [valda,Lojack,PacificMorrowind,myk002]
+=== 295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
 * [[#BashedPatches|Bashed Patch]]:
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
@@ -2354,7 +2354,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * installer->open readme command added.
 * Unicode Mode:
-  * More bugfixes from valda
+  * More bugfixes from valda.
+  * bugfixes from bluesky404.
 * Added activation status as a new mods column/sort option.
 * New mod commands:
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
