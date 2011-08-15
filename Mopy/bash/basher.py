@@ -3259,25 +3259,24 @@ class InstallersPanel(SashTankPanel):
             self.refreshed = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
             self.refreshing = True
-            progress = balt.Progress(_("Refreshing Installers..."),'\n'+' '*60, abort=True)
-            try:
-                what = ('DISC','IC')[self.refreshed]
-                if data.refresh(progress,what,self.fullRefresh):
-                    self.gList.RefreshUI()
-                self.fullRefresh = False
-                self.frameActivated = False
-                self.refreshing = False
-                self.refreshed = True
-                if bosh.inisettings['ClearRO']:
-                    cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-                    cmd = Encode(cmd,'mbcs')
-                    ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
-            except CancelError:
-                # User canceled the refresh
-                self.refreshing = False
-                self.refreshed = True
-            finally:
-                if progress != None: progress.Destroy()
+            with balt.Progress(_("Refreshing Installers..."),'\n'+' '*60, abort=True) as progress:
+                try:
+                    if bosh.inisettings['ClearRO']:
+                        progress(0,_("Clearing 'Read Only' flags..."))
+                        cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+                        cmd = Encode(cmd,'mbcs')
+                        ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                    what = ('DISC','IC')[self.refreshed]
+                    if data.refresh(progress,what,self.fullRefresh):
+                        self.gList.RefreshUI()
+                    self.fullRefresh = False
+                    self.frameActivated = False
+                    self.refreshing = False
+                    self.refreshed = True
+                except CancelError:
+                    # User canceled the refresh
+                    self.refreshing = False
+                    self.refreshed = True
         elif self.frameActivated and data.refreshConvertersNeeded():
             self.refreshing = True
             progress = balt.Progress(_("Refreshing Converters..."),'\n'+' '*60)
