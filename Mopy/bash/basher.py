@@ -5570,6 +5570,7 @@ class PatchDialog(wx.Dialog):
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             if 'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
                 raise UncodedError('Name or group not defined for: '+patcher.__class__.__name__)
+            patcher.SetForceCheckCallbackFn(self._ForceCheck)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
@@ -5949,6 +5950,13 @@ class PatchDialog(wx.Dialog):
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
 
+    def _ForceCheck(self,patcher):
+        """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
+        index = self.patchers.index(patcher)
+        self.gPatchers.Check(index)
+        patcher.isEnabled = True
+        self.SetOkEnable()
+
     def OnCheck(self,event):
         """Toggle patcher activity state."""
         index = event.GetSelection()
@@ -5995,6 +6003,13 @@ class PatchDialog(wx.Dialog):
 
 #------------------------------------------------------------------------------
 class Patcher:
+    def SetForceCheckCallbackFn(self,forceCheckCallbackFn):
+        self._forceCheckCallbackFn = forceCheckCallbackFn
+
+    def _EnsureEnabled(self):
+        if hasattr(self, '_forceCheckCallbackFn'):
+            self._forceCheckCallbackFn(self)
+
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -6195,8 +6210,17 @@ class ListPatcher(Patcher):
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all configChecks states."""
+        ensureEnabled = False
         for index,item in enumerate(self.items):
-            self.configChecks[item] = self.gList.IsChecked(index)
+            checked = self.gList.IsChecked(index)
+            self.configChecks[item] = checked
+            if checked:
+                ensureEnabled = True
+        if event is not None:
+            if self.gList.IsChecked(event.GetSelection()):
+                self._EnsureEnabled()
+        elif ensureEnabled:
+            self._EnsureEnabled()
 
     def OnAutomatic(self,event=None):
         """Automatic checkbox changed."""
@@ -6345,8 +6369,18 @@ class TweakPatcher(Patcher):
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
+        self._EnsureEnabled()
+        ensureEnabled = False
         for index, tweak in enumerate(self.tweaks):
-            tweak.isEnabled = self.gList.IsChecked(index)
+            checked = self.gList.IsChecked(index)
+            tweak.isEnabled = checked
+            if checked:
+                ensureEnabled = True
+        if event is not None:
+            if self.gList.IsChecked(event.GetSelection()):
+                self._EnsureEnabled()
+        elif ensureEnabled:
+            self._EnsureEnabled()
 
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
