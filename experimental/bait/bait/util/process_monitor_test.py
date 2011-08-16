@@ -47,8 +47,11 @@ def process_monitor_test():
     at2 = monitored_thread.MonitoredThread(name="ActiveThread2",
                                           target=_active_thread_proc, args=(4,))
     at2.start()
-    pm = process_monitor.ProcessMonitor(1)
+    process_monitor.set_interval_seconds(1)
+
+    # check log to verify functionality
     time.sleep(10)
+
     st.join()
     at1.join()
     at2.join()

@@ -150,7 +150,7 @@ if __name__ == "__main__":
     options = _parse_commandline()
     _logger.info("options: %s", options)
     monitored_thread.tag_current_thread()
-    process_monitor.ProcessMonitor(options.statDumpTime)
+    process_monitor.set_interval_seconds(options.statDumpTime)
     app = wx.App(False)
     _MainWindow(options)
     app.MainLoop()

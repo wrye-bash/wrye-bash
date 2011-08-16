@@ -87,6 +87,8 @@ class CommandHandler:
     def shutdown(self):
         # wait for presenter to send sentinel flag
         if self._started:
+            # unblock thread if it is blocked
+            self._throttleSemaphore.release()
             self._commandThread.join()
             self._started = False
 
@@ -134,7 +136,9 @@ class CommandHandler:
                     # don't enqueue any more events until this call makes it all the way
                     # through the queue
                     callAfterFn(throttleSemaphore.release)
+                    _logger.debug("flushing wx event queue")
                     throttleSemaphore.acquire()
+                    _logger.debug("continuing")
         except:
             _logger.error("error in command handler:", exc_info=True)
             inQueue.task_done()
