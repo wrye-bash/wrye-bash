@@ -2371,7 +2371,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Fixed CBash crash while scanning for dirty edits on some plugins
 * Startup:
   * Fixed startup processing so you can in one startup both backup and restore settings.
-  * added -L/--Language as cmdline options to set Wrye Bash's language.
+  * Added -L/--Language as cmdline options to set Wrye Bash's language.
+* Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
