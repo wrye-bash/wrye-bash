@@ -4640,7 +4640,12 @@ class BashFrame(wx.Frame):
             deprint(wxver)
             if not 'unicode' in wxver.lower() and not '2.9' in wxver:
                 balt.showWarning(bashFrame,_("Warning you appear to be using a non-unicode version of wxPython (%s) but have set Wrye Bash to unicode mode, this may cause problems, it is reccomended you use a unicode version of wPython instead.") % wxver)
-
+        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
+            message = _("It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in Oblivion; see the readme under auto-ghost for more details and please enable auto-ghost.")
+            if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
+                message = _("It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in Oblivion; see the readme under auto-ghostt for more details. ")
+            balt.showWarning(bashFrame,message,_("Too many mod files."))
+                
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
         if not title:
