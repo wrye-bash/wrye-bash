@@ -26,6 +26,7 @@ import logging
 import threading
 
 from ... import model, presenter
+from ...util import monitored_thread
 
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +44,8 @@ class UpdateDispatcher:
     def start(self):
         if self._monitorThread is not None:
             raise RuntimeError("UpdateDispatcher instance already started")
-        self._monitorThread = threading.Thread(name="UpdateDispatcher", target=self._run)
+        self._monitorThread = monitored_thread.MonitoredThread(
+            name="UpdateDispatcher", target=self._run)
         self._monitorThread.start()
 
     def shutdown_output(self):

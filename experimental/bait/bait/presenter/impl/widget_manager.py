@@ -24,11 +24,10 @@
 
 import Queue
 import logging
-import threading
 
 from . import data_fetcher, diff_engine
 from .. import model
-from ...util import enum
+from ...util import enum, monitored_thread
 
 
 _STATE_CHANGE_TYPE_IDX = 0
@@ -50,7 +49,7 @@ class _WidgetManagerBase:
         self._started = False
         self._isShutdown = False
         self._stateChangeQueue = Queue.Queue()
-        self._processingThread = threading.Thread(
+        self._processingThread = monitored_thread.MonitoredThread(
             target=self._process_state_changes, name=name+"WidgetManager")
 
     def start(self):
@@ -110,7 +109,7 @@ class _WidgetManagerBase:
             try:
                 self._process_state_change(stateChange)
             except:
-                _logger.exception("caught exception processing state changes:")
+                _logger.warn("caught exception processing state changes:", exc_info=True)
             self._stateChangeQueue.task_done()
 
     def _process_state_change(self, stateChange):

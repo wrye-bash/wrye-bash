@@ -114,10 +114,13 @@ class _FilteredTree:
             _logger.debug("removing node %d from the tree", nodeId)
             del self._nodeIdToItem[nodeId]
             self._on_item_deleted(nodeId)
-        _logger.debug("removing subtree rooted at %d", nodeId)
-        self._tree.Bind(wx.EVT_TREE_DELETE_ITEM, on_item_deleted)
-        self._tree.Delete(self._nodeIdToItem[nodeId])
-        self._tree.Unbind(wx.EVT_TREE_DELETE_ITEM)
+        if nodeId in self._nodeIdToItem:
+            _logger.debug("removing subtree rooted at %d", nodeId)
+            self._tree.Bind(wx.EVT_TREE_DELETE_ITEM, on_item_deleted)
+            self._tree.Delete(self._nodeIdToItem[nodeId])
+            self._tree.Unbind(wx.EVT_TREE_DELETE_ITEM)
+        else:
+            _logger.debug("skipping removing already-pruned subtree rooted at %d", nodeId)
 
     def clear(self):
         _logger.debug("clearing tree")

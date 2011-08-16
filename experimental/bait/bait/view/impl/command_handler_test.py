@@ -114,7 +114,8 @@ def command_thread_failure_test():
     global _expectCall
     _expectCall = False
 
-    ch = command_handler.CommandHandler(commandQueue, None, None, None, None, _call_after)
+    ch = command_handler.CommandHandler(commandQueue, None, None, None,
+                                        messageManager=None, callAfterFn=_call_after)
     ch.start()
 
     try:
@@ -136,7 +137,8 @@ def command_thread_test():
 
     _expectCall = False
     ch = command_handler.CommandHandler(commandQueue, filterRegistry, installerTab,
-                                        imageLoader, messageManager, _call_after)
+                                        imageLoader, messageManager=messageManager,
+                                        callAfterFn=_call_after)
     ch.start()
 
     try:

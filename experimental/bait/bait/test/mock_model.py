@@ -23,6 +23,7 @@
 # =============================================================================
 
 import Queue
+import itertools
 import logging
 
 from .. import model
@@ -36,13 +37,34 @@ _CHILDREN_IDX = 1
 _DETAILS_IDX = 2
 
 
-#- Provide a package list that has the following groups and packages:
-#  - ResetGroup
-#    - Select me to reset package list
-#  - Packages with valid attribute combinations
-#    - ...
-#  - Packages with all attribute combinations
-#    - ...
+def _generate_packages_all_attributes(data, parentId, parentChildren):
+    nextId = parentId + 1
+    attributes = [
+        "isDirty", "isInstalled", "isNotInstalled", "isHidden", "isNew", "hasMissingDeps",
+        "isUnrecognized", "isCorrupt", "updateAvailable", "alwaysVisible", "isArchive",
+        "hasWizard", "hasMatched", "hasMismatched", "hasMissing", "hasSubpackages"]
+    for numTrue in xrange(len(attributes)+1):
+        for trueList in itertools.combinations(attributes, numTrue):
+            if "isArchive" in trueList:
+                contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
+            else:
+                contextMenuId = node_attributes.ContextMenuIds.PROJECT
+            attributeMap = {key:True for key in trueList}
+            label = "attributes:"
+            for attribute in attributes:
+                if attribute in trueList:
+                    label += " " + attribute
+            data[nextId] = (
+                node_attributes.PackageNodeAttributes(
+                    label, parentId, contextMenuId, **attributeMap),
+                None,
+                node_details.PackageNodeDetails())
+            parentChildren.append(nextId)
+            nextId += 1
+    return nextId
+
+
+
 #  - MovingGroup
 #    - Several packages that, when clicked on, change order within the group
 #  - UpdateGroup
@@ -58,17 +80,52 @@ class MockModel:
         self.updateNotificationQueue = Queue.Queue()
         self._data = {}
 
-        self._data[model.ROOT_NODE_ID] = (node_attributes.RootNodeAttributes(
-            node_attributes.StatusLoadingData(5, 1000)),
-                                          node_children.NodeChildren([1]), None)
+        rootChildren = []
+        self._data[model.ROOT_NODE_ID] = (
+            node_attributes.RootNodeAttributes(
+                node_attributes.StatusLoadingData(5, 1000)),
+            node_children.NodeChildren(rootChildren),
+            None)
+
+        # reset trigger
         self._data[1] = (
-            node_attributes.GroupNodeAttributes("ResetGroup", 0,
-                                                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren([2]), None)
-        self._data[2] = (node_attributes.PackageNodeAttributes(
-            "Select me to reset package list", 1, node_attributes.ContextMenuIds.PROJECT,
-            alwaysVisible=True), None,
-                         node_details.PackageNodeDetails())
+            node_attributes.GroupNodeAttributes(
+                "ResetGroup", 0, node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren([2]),
+            None)
+        rootChildren.append(1)
+        self._data[2] = (
+            node_attributes.PackageNodeAttributes(
+                "Select me to reset package list", 1,
+                node_attributes.ContextMenuIds.PROJECT, alwaysVisible=True),
+            None,
+            node_details.PackageNodeDetails())
+
+        # packages with valid attribute combinations
+        self._data[3] = (
+            node_attributes.GroupNodeAttributes(
+                "Packages with expected attribute combinations", 0,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren([4]),
+            None)
+        rootChildren.append(3)
+        self._data[4] = (
+            node_attributes.PackageNodeAttributes(
+                "Test", 3, node_attributes.ContextMenuIds.PROJECT, isInstalled=True),
+            None,
+            node_details.PackageNodeDetails())
+
+        # packages with all attribute combinations
+        allAttributesChildren = []
+        self._data[5] = (
+            node_attributes.GroupNodeAttributes(
+                "Packages with all attribute combinations", 0,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(allAttributesChildren),
+            None)
+        rootChildren.append(5)
+        nextId = _generate_packages_all_attributes(self._data, 5, allAttributesChildren)
+
 
     def start(self):
         _logger.debug("mock model starting")

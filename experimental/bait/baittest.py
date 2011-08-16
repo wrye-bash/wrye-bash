@@ -16,6 +16,7 @@ import wx
 
 from bait import bait_factory
 from bait.test import mock_presenter, mock_model
+from bait.util import monitored_thread, process_monitor
 
 
 _logger = None
@@ -84,11 +85,14 @@ def _parse_commandline():
 
     parser.add_argument(
         '-w', '--windowsize', metavar='DIMENSIONS', default='1050x600',
-        help='the dimensions of the GUI window;  defaults to "%(default)s"')
+        help='the width and height of the GUI window; defaults to "%(default)s"')
     parser.add_argument(
         '-x', '--multiprocess', action='store_true',
         help='test multiprocess operation; if this is not specified, all layers run in' \
         ' the same process')
+    parser.add_argument(
+        '-t', '--statDumpTime', metavar='SECONDS', type=int, default=30,
+        help='time between process statistics dumps; defaults to %(default)d')
     parser.add_argument(
         '-q', '--quiet', action='store_true',
         help='do not put up the explanitory window at program start')
@@ -145,6 +149,8 @@ if __name__ == "__main__":
     _dump_env()
     options = _parse_commandline()
     _logger.info("options: %s", options)
+    monitored_thread.tag_current_thread()
+    process_monitor.ProcessMonitor(options.statDumpTime)
     app = wx.App(False)
     _MainWindow(options)
     app.MainLoop()

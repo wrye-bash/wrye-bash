@@ -27,6 +27,7 @@ import logging
 import threading
 
 from ... import model
+from ...util import monitored_thread
 
 
 UPDATE_TYPE_IDX = 0
@@ -61,8 +62,8 @@ class DataFetcher:
                 raise RuntimeError("DataFetcher instance already started")
             try:
                 for threadIdx in xrange(self._numThreads):
-                    t = threading.Thread(name="DataFetcher"+str(threadIdx),
-                                         target=self._run)
+                    t = monitored_thread.MonitoredThread(
+                        name="DataFetcher"+str(threadIdx), target=self._run)
                     t.start()
                     self._fetchThreads.append(t)
                 self._isShutdown = False
@@ -82,21 +83,25 @@ class DataFetcher:
 
     def _run(self):
         _logger.debug("data fetcher thread starting")
+        fetchQueue = self._fetchQueue
         while True:
-            fetchRequest = self._fetchQueue.get()
+            fetchRequest = fetchQueue.get()
             # quit on None
             if fetchRequest is None:
                 _logger.debug(
                     "received sentinel value; data fetcher thread exiting")
+                fetchQueue.task_done()
                 break
             # if we are shutting down, eat all updates
             if self._isShutdown:
+                fetchQueue.task_done()
                 continue
             try:
                 nodeId, updateTypeMask, stateChangeQueue = fetchRequest
                 _logger.debug("fetching %s for nodeId %d", updateTypeMask, nodeId)
                 if 0 == updateTypeMask:
                     _logger.warn("zero updateTypeMask in data fetcher")
+                    fetchQueue.task_done()
                     continue
                 for updateType, updateFn, updateName in self._updateInfo:
                     if updateType in updateTypeMask:
@@ -115,6 +120,7 @@ class DataFetcher:
             except:
                 _logger.warn("invalid fetch reqeuest: %s", str(fetchRequest),
                              exc_info=True)
+            fetchQueue.task_done()
 
     def _shutdown(self):
         _logger.debug("shutting down data fetcher")

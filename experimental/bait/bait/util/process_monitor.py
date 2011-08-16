@@ -55,7 +55,7 @@ class ProcessMonitor:
             _logger.info("unable to load psutil; not starting process monitor")
         else:
             # ensure our own monitoring thread is included in the report
-            monitorThread = monitored_thread.MonitoredThread(name="Monitor",
+            monitorThread = monitored_thread.MonitoredThread(name="ProcessMonitor",
                                                              target=self._run)
             monitorThread.setDaemon(True)
             monitorThread.start()

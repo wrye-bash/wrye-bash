@@ -23,6 +23,7 @@
 # =============================================================================
 
 import logging
+import threading
 import wx
 
 from . import message_manager
@@ -35,14 +36,17 @@ _logger = logging.getLogger(__name__)
 
 class CommandHandler:
     def __init__(self, inCommandQueue, filterRegistry, installerTab,
-                 imageLoader, messageManager=message_manager.MesssageManager(),
+                 imageLoader, maxPendingEvents=50,
+                 messageManager=message_manager.MesssageManager(),
                  callAfterFn=wx.CallAfter):
         self._inCommandQueue = inCommandQueue
         self._filterRegistry = filterRegistry
         self._installerTab = installerTab
         self._imageLoader = imageLoader
+        self._maxPendingEvents = maxPendingEvents
         self._messageManager = messageManager
         self._callAfterFn = callAfterFn
+        self._throttleSemaphore = threading.Semaphore(0)
         self._ignoreUpdates = False
         self._foregroundColorMap = {}
         self._highlightColorMap = {}
@@ -94,7 +98,10 @@ class CommandHandler:
         # cache constant variables to avoid repetitive lookups
         inQueue = self._inCommandQueue
         handlerMap = self._handlers
+        maxPendingEvents = self._maxPendingEvents
         callAfterFn = self._callAfterFn
+        throttleSemaphore = self._throttleSemaphore
+        syncCountdown = maxPendingEvents
         try:
             while True:
                 viewCommand = inQueue.get()
@@ -120,6 +127,14 @@ class CommandHandler:
                 # enqueue a callback from the GUI thread so we can safely modify widgets
                 callAfterFn(handler, viewCommand)
                 inQueue.task_done()
+                # every maxPendingEvents, ensure we're not overloading the wx event queue
+                syncCountdown -= 1
+                if 0 >= syncCountdown:
+                    syncCountdown = maxPendingEvents
+                    # don't enqueue any more events until this call makes it all the way
+                    # through the queue
+                    callAfterFn(throttleSemaphore.release)
+                    throttleSemaphore.acquire()
         except:
             _logger.error("error in command handler:", exc_info=True)
             inQueue.task_done()
