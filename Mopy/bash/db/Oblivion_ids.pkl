@@ -821,7 +821,7 @@ I606278
 sS'fCombatSoundWeaponPct'
 p276
 I177016
-sS'sFloraSuccesssMessage'
+sS'sFloraSuccessMessage'
 p277
 I15803422
 sS'fSneakSkillMult'
