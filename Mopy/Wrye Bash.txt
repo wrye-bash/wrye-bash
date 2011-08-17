@@ -713,7 +713,7 @@ The following commands are available by right clicking on the column header of t
   * __Skip LOD Normals:__ If checked, landscape LOD normals will be skipped.
 
 == Replacers Tab ==============================================================
-**The Replacers Tab has now  been replaced by the [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
+**The Replacers Tab has now been replaced by the [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
 __As of version 295:__ The Replacers tab has been removed entirely.
 
 === Textures BSA
