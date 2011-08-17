@@ -6385,7 +6385,6 @@ class TweakPatcher(Patcher):
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
-        self._EnsureEnabled()
         ensureEnabled = False
         for index, tweak in enumerate(self.tweaks):
             checked = self.gList.IsChecked(index)
