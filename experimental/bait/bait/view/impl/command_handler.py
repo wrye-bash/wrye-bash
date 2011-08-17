@@ -23,12 +23,13 @@
 # =============================================================================
 
 import logging
+import operator
 import threading
 import wx
 
 from . import message_manager
 from ... import presenter
-from ...util import monitored_thread
+from ...util import monitored_thread, process_monitor
 
 
 _logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class CommandHandler:
         self._highlightColorMap = {}
         self._curImageFileHandle = None
         self._started = False
+        self._frequencyStats = {}
         self._commandThread = monitored_thread.MonitoredThread(name="CommandHandler",
                                                                target=self._run)
         self._handlers = {}
@@ -83,8 +85,10 @@ class CommandHandler:
     def start(self):
         self._commandThread.start()
         self._started = True
+        process_monitor.register_statistics_callback(self._dump_stats)
 
     def shutdown(self):
+        process_monitor.unregister_statistics_callback(self._dump_stats)
         # wait for presenter to send sentinel flag
         if self._started:
             # unblock thread if it is blocked
@@ -101,6 +105,7 @@ class CommandHandler:
         inQueue = self._inCommandQueue
         handlerMap = self._handlers
         maxPendingEvents = self._maxPendingEvents
+        frequencyStats = self._frequencyStats
         callAfterFn = self._callAfterFn
         throttleSemaphore = self._throttleSemaphore
         syncCountdown = maxPendingEvents
@@ -115,17 +120,24 @@ class CommandHandler:
                     inQueue.task_done()
                     continue
                 _logger.debug("received %s command", viewCommand.__class__)
-                if not isinstance(viewCommand, presenter._ViewCommand):
+                if not hasattr(viewCommand, "commandId"):
                     _logger.warn("non-command retrieved from command queue: %s",
                                  viewCommand)
                     inQueue.task_done()
                     continue
-                handler = handlerMap.get(viewCommand.commandId)
+                commandId = viewCommand.commandId
+                handler = handlerMap.get(commandId)
                 if handler is None:
                     _logger.warn("unhandled %s command: %s",
                                  viewCommand.__class__, viewCommand)
                     inQueue.task_done()
                     continue
+                # keep frequency statistics
+                commandName = commandId.name
+                if commandName in frequencyStats:
+                    frequencyStats[commandName] = frequencyStats[commandName] + 1
+                else:
+                    frequencyStats[commandName] = 1
                 # enqueue a callback from the GUI thread so we can safely modify widgets
                 callAfterFn(handler, viewCommand)
                 inQueue.task_done()
@@ -142,6 +154,12 @@ class CommandHandler:
         except:
             _logger.error("error in command handler:", exc_info=True)
             inQueue.task_done()
+
+    def _dump_stats(self, logFn):
+        logFn("viewCommand queue length: %d", self._inCommandQueue.qsize())
+        logFn("command frequencies: %s", sorted(self._frequencyStats.iteritems(),
+                                                key=operator.itemgetter(1),
+                                                reverse=True))
 
     def _set_global_settings(self, setGlobalSettingsCommand):
         _logger.debug("setting global settings: %s", setGlobalSettingsCommand)

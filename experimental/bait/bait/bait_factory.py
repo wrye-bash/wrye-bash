@@ -29,17 +29,19 @@ import multiprocessing
 from .view import bait_view
 from .presenter import bait_presenter
 from .model import bait_model
+from .util import proxy_tools
 
 
 _logger = logging.getLogger(__name__)
 
 
+
 def _create_queue(isMultiprocess):
     """Creates a communications queue"""
     if isMultiprocess:
-        return multiprocessing.Queue()
+        return multiprocessing.Queue(maxsize=100)
     else:
-        return Queue.Queue()
+        return Queue.Queue(maxsize=100)
 
 def CreateBaitView(parentNotebook, presenter=None, model=None, isMultiprocess=False):
     _logger.debug("creating BAIT components")
@@ -57,4 +59,5 @@ def CreateBaitView(parentNotebook, presenter=None, model=None, isMultiprocess=Fa
         presenter = bait_presenter.BaitPresenter(_create_queue(isMultiprocess), model)
         _logger.debug("default presenter instantiated")
 
-    return bait_view.BaitView(parentNotebook, presenter)
+    return bait_view.BaitView(parentNotebook,
+                              proxy_tools.AsyncProxy("presenter", presenter))

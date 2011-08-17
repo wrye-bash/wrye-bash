@@ -26,7 +26,8 @@ import Queue
 import logging
 
 from .. import presenter
-from impl import data_fetcher, diff_engine, widget_manager, update_dispatcher
+from impl import colors_and_icons, data_fetcher, diff_engine, widget_manager
+from impl import update_dispatcher
 
 
 _logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class BaitPresenter:
         self._model = model_
         self._presenterIoGateway = presenterIoGateway
         # TODO: is it better to initialize these in start()?
-        #self._colorsAndIcons = colors_and_icons.ColorsAndIcons(self._stateManager)
+        self._colorsAndIcons = colors_and_icons.ColorsAndIcons(presenterIoGateway)
         self._dataFetcher = data_fetcher.DataFetcher(model_)
         # TODO: add other widget managers as they are implemented
         self._generalTabManager = widget_manager.GeneralTabWidgetManager()
@@ -60,6 +61,7 @@ class BaitPresenter:
         _logger.debug("presenter starting; initialDetailsTabId = %s;"
                       " initialFilterMask = %s", initialDetailsTabId, initialFilterMask)
         self._filterMask = initialFilterMask
+        self.viewCommandQueue.put(self._colorsAndIcons.get_set_style_maps_command())
         _logger.debug("starting subcomponents")
         try:
             self._model.start()
@@ -71,15 +73,6 @@ class BaitPresenter:
         except:
             self.shutdown()
             raise
-        #self.viewCommandQueue.put(self._colorsAndIcons.get_set_style_maps_command())
-        #self.viewCommandQueue.put(view_commands.SetStatus(
-        #    view_commands.STATUS_LOADING, view_commands.HIGHLIGHT_LOADING,
-        #    loadingComplete=0, loadingTotal=100))
-        #self._curDetailsTab = curDetailsTabId
-        #self.set_packages_tree_selections([])
-        #self.set_files_tree_selections([])
-        #self.viewCommandQueue.put(view_commands.SetPackageInfo(
-        #    presenter.DETAILS_TAB_ID_GENERAL, None))
 
     def pause(self):
         _logger.debug("presenter pausing")

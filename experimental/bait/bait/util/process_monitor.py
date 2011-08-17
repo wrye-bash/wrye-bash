@@ -24,7 +24,6 @@
 
 from cStringIO import StringIO
 import logging
-import operator
 import os, os.path
 import sys
 import threading
@@ -53,6 +52,8 @@ _bytesPerMegabyte = 1024*1024
 class _ProcessMonitor:
     def __init__(self):
         self._intervalSecs = 60
+        self._dumpStatsCallbacksLock = threading.Lock()
+        self._dumpStatsCallbacks = set()
         if not _isPsutilLoaded:
             _logger.info("unable to load psutil; not starting process monitor")
         else:
@@ -64,6 +65,14 @@ class _ProcessMonitor:
 
     def set_interval_seconds(self, seconds):
         self._intervalSecs = seconds
+
+    def register_statistics_callback(self, cb):
+        with self._dumpStatsCallbacksLock:
+            self._dumpStatsCallbacks.add(cb)
+
+    def unregister_statistics_callback(self, cb):
+        with self._dumpStatsCallbacksLock:
+            self._dumpStatsCallbacks.discard(cb)
 
     def _get_host_time(self):
         hostTimes = psutil.cpu_times()
@@ -167,6 +176,14 @@ class _ProcessMonitor:
                     traceback.extract_stack(stack):
                     _statsLogger.info("    %s:%d(%s): %s", os.path.basename(filename),
                                  lineno, name, line.strip())
+
+        with self._dumpStatsCallbacksLock:
+            try:
+                for cb in self._dumpStatsCallbacks:
+                    cb(_statsLogger.info)
+            except:
+                _logger.warn("caught exception from stats callback:", exc_info=True)
+
         return cumulativeHostTime, cumulativeProcessTime, cumulativeThreadTimes
 
     def _run(self):
@@ -186,6 +203,7 @@ class _ProcessMonitor:
             while True:
                 prevHostTime, prevProcessTime, prevThreadTimes = self._dump_stats(
                     curProcess, prevHostTime, prevProcessTime, prevThreadTimes)
+
         except:
             _logger.warn("process monitoring thread exiting with exception:", exc_info=1)
             _statsLogger.warn("process monitoring thread exiting with exception:",
@@ -204,8 +222,17 @@ def set_interval_seconds(seconds):
 # view latency stats?
 # model dataset size?
 # operation counters?
-#def register_statistics_callback(cb):
-#    call all registered callbacks passing the statistics logger
+def register_statistics_callback(cb):
+    """callbacks are called with a single argument: the log function of the target logger.
+    Call it to log statistics.  For example:
+      def _dump_stats(self, logFn):
+          logFn("Fooclass queue length: %s", self._internalQueue.qsize())
+    To avoid a deadlock, do not attempt to register or unregister callbacks from within
+    the callback."""
+    _processMonitor.register_statistics_callback(cb)
+
+def unregister_statistics_callback(cb):
+    _processMonitor.unregister_statistics_callback(cb)
 
 #def register_low_memory_callback(cb):
 #    pass "pressure" rating so callbacks know how much to free?
