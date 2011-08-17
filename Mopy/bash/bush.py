@@ -35,6 +35,7 @@ from bolt import _,GPath
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
 wryeBashDataFiles = set((
+    r'Bashed Patch.esp',
     r'Bashed Patch, 0.esp',
     r'Bashed Patch, 1.esp',
     r'Bashed Patch, 2.esp',
@@ -45,6 +46,13 @@ wryeBashDataFiles = set((
     r'Bashed Patch, 7.esp',
     r'Bashed Patch, 8.esp',
     r'Bashed Patch, 9.esp',
+    r'Bashed Patch, CBash.esp',
+    r'Bashed Patch, Python.esp',
+    r'Bashed Patch, FCOM.esp',
+    r'Bashed Patch, Warrior.esp',
+    r'Bashed Patch, Thief.esp',
+    r'Bashed Patch, Mage.esp',
+    r'Bashed Patch, Test.esp',
     r'ArchiveInvalidationInvalidated!.bsa'
     ))
 wryeBashDataDirs = set((
