@@ -7357,7 +7357,7 @@ class Installers_UninstallAllUnknownFiles(Link):
        For safety just moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Clean Data'),_('This will move all non-bethesda files that are not linked to an active installer out of the data folder to "Oblivion Mods\uninstalled\<date>.'))
+        menuItem = wx.MenuItem(menu,self.id,_('Clean Data'),_(r'This will move all non-bethesda files that are not linked to an active installer out of the data folder to "Oblivion Mods\Bash Installers\Bash\Data Folder Contents (<date>).'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
