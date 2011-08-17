@@ -1217,6 +1217,18 @@ class INIList(List):
             elif status == 10: mismatch += 1
             elif status == 20: applied += 1
         return (applied,mismatch,not_applied,invalid)
+        
+    def ListTweaks(self):
+        """Returns text list of tweaks"""
+        tweaklist = _('Active Ini Tweaks:\n')
+        tweaklist += '[spoiler][xml]\n'
+        tweaks = self.data.keys()
+        tweaks.sort()
+        for tweak in tweaks:
+            if not self.data[tweak].status == 20: continue
+            tweaklist+= '%s\n' % tweak
+        tweaklist += '[/spoiler][/xml]\n'
+        return tweaklist 
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -9376,6 +9388,22 @@ class INI_SortValid(BoolLink):
         iniList.RefreshUI()
 
 #-------------------------------------------------------------------------------
+class INI_ListINIs(Link):
+    """List errors that make an INI Tweak invalid."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('List Active INIs...'),_('Lists any errors in the tweak file causing it to be invalid.'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(True)
+
+    def Execute(self,event):
+        """Handle printing out the errors."""
+        text = iniList.ListTweaks()
+        if (wx.TheClipboard.Open()):
+            wx.TheClipboard.SetData(wx.TextDataObject(text))
+            wx.TheClipboard.Close()
+        balt.showLog(self.window,text,_('INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
+#-------------------------------------------------------------------------------
 class INI_ListErrors(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
@@ -15222,6 +15250,8 @@ def InitINILinks():
     INIList.mainMenu.append(SettingsMenu)
 
     #--Item menu
+    INIList.itemMenu.append(INI_ListINIs())
+    INIList.itemMenu.append(SeparatorLink())
     INIList.itemMenu.append(INI_Apply())
     INIList.itemMenu.append(INI_CreateNew())
     INIList.itemMenu.append(INI_ListErrors())
