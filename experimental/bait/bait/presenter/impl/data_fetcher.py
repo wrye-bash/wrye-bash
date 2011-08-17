@@ -27,7 +27,7 @@ import logging
 import threading
 
 from ... import model
-from ...util import monitored_thread
+from ...util import monitored_thread, process_monitor
 
 
 UPDATE_TYPE_IDX = 0
@@ -42,7 +42,8 @@ class DataFetcher:
         self._model = model_
         self._numThreads = numThreads
         # fetchQueue is not absolutely guaranteed to be empty after shutdown is called
-        self._fetchQueue = Queue.Queue() # (nodeId, updateTypeMask, stateChangeQueue)
+        # (nodeId, updateTypeMask, stateChangeQueue)
+        self._fetchQueue = Queue.Queue(maxsize=100)
         self._fetchThreads = []
         self._isShutdownLock = threading.RLock()
         self._isShutdown = True
@@ -67,11 +68,13 @@ class DataFetcher:
                     t.start()
                     self._fetchThreads.append(t)
                 self._isShutdown = False
+                process_monitor.register_statistics_callback(self._dump_stats)
             except:
                 self._shutdown()
                 raise
 
     def shutdown(self):
+        process_monitor.unregister_statistics_callback(self._dump_stats)
         self._shutdown()
 
     def async_fetch(self, nodeId, updateTypeMask, stateChangeQueue):
@@ -80,6 +83,9 @@ class DataFetcher:
         if self._isShutdown:
             return
         self._fetchQueue.put(fetchRequest)
+
+    def _dump_stats(self, logFn):
+        logFn("fetchQueue length: %d", self._fetchQueue.qsize())
 
     def _run(self):
         _logger.debug("data fetcher thread starting")

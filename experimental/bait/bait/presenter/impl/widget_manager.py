@@ -27,7 +27,7 @@ import logging
 
 from . import data_fetcher, diff_engine
 from .. import model
-from ...util import enum, monitored_thread
+from ...util import enum, monitored_thread, process_monitor
 
 
 _STATE_CHANGE_TYPE_IDX = 0
@@ -48,7 +48,7 @@ class _WidgetManagerBase:
         self._dataFetcher = dataFetcher
         self._started = False
         self._isShutdown = False
-        self._stateChangeQueue = Queue.Queue()
+        self._stateChangeQueue = Queue.Queue(maxsize=100)
         self._processingThread = monitored_thread.MonitoredThread(
             target=self._process_state_changes, name=name+"WidgetManager")
 
@@ -58,12 +58,13 @@ class _WidgetManagerBase:
         _logger.debug("starting %sWidgetManager", self._name)
         self._processingThread.start()
         self._started = True
-        self._handle_pending_load_requests()
+        process_monitor.register_statistics_callback(self._dump_stats)
 
     def shutdown(self):
         """assumes that the data fetcher has been shut down by this point and that nothing
         else can be enqueued into the stateChangeQueue"""
         if self._started:
+            process_monitor.unregister_statistics_callback(self._dump_stats)
             _logger.debug("shutting %sWidgetManager down", self._name)
             self._isShutdown = True
             self._stateChangeQueue.put(None)
@@ -84,6 +85,10 @@ class _WidgetManagerBase:
                 self._stateChangeQueue)
         return True
 
+    def _dump_stats(self, logFn):
+        logFn("%s stateChangeQueue length: %d",
+              self.__class__.__name__, self._stateChangeQueue.qsize())
+
     def _is_in_scope(self, modelUpdateNotification):
         """returns whether the subclass handles this type of update"""
         _logger.error("_is_in_scope not overridden by subclass as required")
@@ -93,9 +98,6 @@ class _WidgetManagerBase:
         """may be overridden by subclass to return whether the proposed update should be
         persued further.  the default result is True."""
         return True
-
-    def _handle_pending_load_requests(self):
-        pass
 
     def _process_state_changes(self):
         """applies state changes to data objects"""
@@ -121,6 +123,16 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
     def __init__(self, dataFetcher, diffEngine):
         _WidgetManagerBase.__init__(self, "PackagesTree", dataFetcher)
         self._diffEngine = diffEngine
+        self._feedbackThread = monitored_thread.MonitoredThread(
+            target=self._handle_pending_load_requests, name="PackagesTreeFeedback")
+        # this process an internal queue (i.e. it is not an interprocess communications
+        # channel), so there is no need to manage it carefully
+        self._feedbackThread.setDaemon(True)
+
+    # override
+    def start(self):
+        _WidgetManagerBase.start(self)
+        self._feedbackThread.start()
 
     def handle_filter_update(self, filterMask):
         _logger.debug("setting pending filterMask and enqueuing state change: %s",
@@ -145,6 +157,12 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
         self._diffEngine.set_selected_nodes(nodeIds)
 
     # override
+    def _dump_stats(self, logFn):
+        _WidgetManagerBase._dump_stats(self, logFn)
+        logFn("%s loadRequestQueue length: %d",
+              self.__class__.__name__, self._diffEngine.loadRequestQueue.qsize())
+
+    # override
     def _is_in_scope(self, modelUpdateNotification):
         return self._diffEngine.is_in_scope(
             modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE],
@@ -157,13 +175,15 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
             modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
             modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION])
 
-    # override
     def _handle_pending_load_requests(self):
-        while not self._diffEngine.loadRequestQueue.empty():
-            loadRequest = self._diffEngine.loadRequestQueue.get()
+        loadRequestQueue = self._diffEngine.loadRequestQueue
+        stateChangeQueue = self._stateChangeQueue
+        while True:
+            loadRequest = loadRequestQueue.get()
             self._dataFetcher.async_fetch(
                 loadRequest[diff_engine.NODE_ID_IDX],
-                loadRequest[diff_engine.UPDATE_TYPE_MASK_IDX], self._stateChangeQueue)
+                loadRequest[diff_engine.UPDATE_TYPE_MASK_IDX], stateChangeQueue)
+            loadRequestQueue.task_done()
 
     # override
     def _process_state_change(self, stateChange):
@@ -172,12 +192,10 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
             nodeId = stateChange[data_fetcher.NODE_ID_IDX]
             _logger.debug("updating attributes for node %d", nodeId)
             self._diffEngine.update_attributes(nodeId, stateChange[data_fetcher.DATA_IDX])
-            self._handle_pending_load_requests()
         elif stateChangeType is model.UpdateTypes.CHILDREN:
             nodeId = stateChange[data_fetcher.NODE_ID_IDX]
             _logger.debug("updating children for node %d", nodeId)
             self._diffEngine.update_children(nodeId, stateChange[data_fetcher.DATA_IDX])
-            self._handle_pending_load_requests()
         elif stateChangeType is _StateChange.FILTER:
             filterMask = stateChange[_STATE_CHANGE_FILTER_MASK_IDX]
             _logger.debug("updating filter mask to %s", filterMask)

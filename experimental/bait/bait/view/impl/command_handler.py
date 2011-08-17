@@ -156,7 +156,6 @@ class CommandHandler:
             inQueue.task_done()
 
     def _dump_stats(self, logFn):
-        logFn("viewCommand queue length: %d", self._inCommandQueue.qsize())
         logFn("command frequencies: %s", sorted(self._frequencyStats.iteritems(),
                                                 key=operator.itemgetter(1),
                                                 reverse=True))

@@ -26,8 +26,9 @@ import Queue
 import logging
 
 from .. import presenter
-from impl import colors_and_icons, data_fetcher, diff_engine, widget_manager
-from impl import update_dispatcher
+from ..util import process_monitor
+from .impl import colors_and_icons, data_fetcher, diff_engine, widget_manager
+from .impl import update_dispatcher
 
 
 _logger = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ class BaitPresenter:
             self._updateDispatcher.start()
             for manager in self._filteringManagers:
                 manager.handle_filter_update(initialFilterMask)
+            process_monitor.register_statistics_callback(self._dump_stats)
         except:
             self.shutdown()
             raise
@@ -84,6 +86,7 @@ class BaitPresenter:
 
     def shutdown(self):
         _logger.debug("presenter shutting down")
+        process_monitor.unregister_statistics_callback(self._dump_stats)
         try: self._updateDispatcher.shutdown_output()
         except: _logger.exception("exception while shutting down dispatcher output")
         try: self._dataFetcher.shutdown()
@@ -153,3 +156,6 @@ class BaitPresenter:
     def set_search_string(self, text):
         _logger.debug("setting search string '%s'", text)
         self._packagesTreeManager.handle_search_update(text)
+
+    def _dump_stats(self, logFn):
+        logFn("viewCommandQueue length: %d", self.viewCommandQueue.qsize())

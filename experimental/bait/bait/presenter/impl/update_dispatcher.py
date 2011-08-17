@@ -26,7 +26,7 @@ import logging
 import threading
 
 from ... import model, presenter
-from ...util import monitored_thread
+from ...util import monitored_thread, process_monitor
 
 
 _logger = logging.getLogger(__name__)
@@ -47,6 +47,7 @@ class UpdateDispatcher:
         self._monitorThread = monitored_thread.MonitoredThread(
             name="UpdateDispatcher", target=self._run)
         self._monitorThread.start()
+        process_monitor.register_statistics_callback(self._dump_stats)
 
     def shutdown_output(self):
         # acquire lock to ensure that we will never call a widget manager after this
@@ -56,9 +57,14 @@ class UpdateDispatcher:
 
     def shutdown_input(self):
         # wait for None to be sent from the model
+        process_monitor.unregister_statistics_callback(self._dump_stats)
         if self._monitorThread is not None:
             self._monitorThread.join()
             self._monitorThread = None
+
+    # TODO: move this to the model once the model is written
+    def _dump_stats(self, logFn):
+        logFn("modelUpdateQueue length: %d", self._modelUpdateQueue.qsize())
 
     def _run(self):
         _logger.debug("model update dispatcher thread starting")
