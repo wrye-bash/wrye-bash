@@ -12425,19 +12425,28 @@ class InstallersData(bolt.TankData, DataDict):
 
     def clean(self,progress):
         data = self.data
-        getArchiveOrder =  lambda x: data[x].order
+        getArchiveOrder = lambda x: data[x].order
         installed = []
         for package in sorted(data,key=getArchiveOrder,reverse=True):
             installer = data[package]
             if installer.isActive:
                 installed += installer.data_sizeCrc
-        bethFiles = [GPath(f) for f in bush.allBethFiles]
-        keepFiles = set(installed + bethFiles)
+        keepFiles = set(installed)
+        keepFiles.update((GPath(f) for f in bush.allBethFiles))
+        keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
         removes = set(data_sizeCrcDate) - keepFiles
         destDir = dirs['bainData'].join('Data Folder Contents (%s)' %(datetime.datetime.now().strftime('%d-%m-%Y %H%M.%S')))
         emptyDirs = set()
+        wbDirs = [wbDir+os.sep for wbDir in bush.wryeBashDataDirs]
         for file in removes:
+            # don't remove files in Wyre Bash-related directories
+            skip = False
+            for wbDir in wbDirs:
+                if file.s.startswith(wbDir):
+                    skip = True
+                    break
+            if skip: continue
             path = dirs['mods'].join(file)
             try:
                 path.moveTo(destDir.join(file))
