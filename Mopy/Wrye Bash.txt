@@ -676,7 +676,13 @@ The following commands are available by right clicking on the column header of t
   * __Add Marker:__ Creates a marker for organizing your packages.  The "==" will be added for you.
   * __List Packages:__ Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help.
   * __Uninstall All:__ Uninstalls all packages that are managed by BAIN (or at least in the BAIN directory).
-  * __Clean Data:__ cleans any files from the oblivion data dir that are not from active installers or Bethesda files or Wrye Bash Files. (ie it'll basically give you a clean install state of Oblivion/Data). For safety's sake the files are moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\
+  * __Clean Data:__ Removes files from the Oblivion Data dir that are not from one of the following sources:
+    * Vanilla Bethesda content (Oblivion.esm, Oblivion - Meshes.bsa, etc.)
+    * DLC content (Knights.esp, DLCShiveringIsles.esp, etc.)
+    * Wrye Bash (Bashed Patch, 0.esp, INI Tweaks/, etc.)
+    * Active BAIN installers
+  * Note that this will remove manually installed files or files installed from other programs (like OBMM)
+  * For safety's sake the files are not deleted, but rather moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\
   * __Anneal All:__ This will install any missing files (for active installers) and correct all install order and reconfiguration errors.
   * __Unhide:__ Unhides hidden packages.
     * The Unhide dialog now works like WinMerge's open dialog
