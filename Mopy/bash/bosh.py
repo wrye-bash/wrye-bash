@@ -12434,16 +12434,18 @@ class InstallersData(bolt.TankData, DataDict):
         keepFiles = set(installed)
         keepFiles.update((GPath(f) for f in bush.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
+        keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
         removes = set(data_sizeCrcDate) - keepFiles
         destDir = dirs['bainData'].join('Data Folder Contents (%s)' %(datetime.datetime.now().strftime('%d-%m-%Y %H%M.%S')))
         emptyDirs = set()
-        wbDirs = [wbDir+os.sep for wbDir in bush.wryeBashDataDirs]
+        skipDirs = [skipDir+os.sep for skipDir in bush.wryeBashDataDirs]
+        skipDirs.extend([skipDir+os.sep for skipDir in bush.ignoreDataDirs])
         for file in removes:
             # don't remove files in Wyre Bash-related directories
             skip = False
-            for wbDir in wbDirs:
-                if file.s.startswith(wbDir):
+            for skipDir in skipDirs:
+                if file.s.startswith(skipDir):
                     skip = True
                     break
             if skip: continue

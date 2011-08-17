@@ -59,6 +59,14 @@ wryeBashDataDirs = set((
     r'Bash Patches',
     r'INI Tweaks'
     ))
+ignoreDataFiles = set((
+    r'OBSE\Plugins\Construction Set Extender.dll',
+    r'OBSE\Plugins\Construction Set Extender.ini'
+    ))
+ignoreDataDirs = set((
+    r'OBSE\Plugins\ComponentDLLs\CSE',
+    r'LSData'
+    ))
 bethDataFiles = set((
     #--Vanilla
     r'oblivion.esm',
