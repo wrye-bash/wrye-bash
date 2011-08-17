@@ -2352,7 +2352,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * fix type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
 * [[#InstallersTab|BAIN]]:
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
-  * installer->open readme command added.
+  * Installer->open readme command added.
+  * Modified [[#PackageHeaderCommands|Clean Data]] command so that it doesn't remove DLC content or Wrye Bash-related files
 * Unicode Mode:
   * More bugfixes from valda.
   * bugfixes from bluesky404.
