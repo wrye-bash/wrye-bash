@@ -911,7 +911,13 @@
   <p class="list-2">&bull;&nbsp;  <b>Add Marker:</b> Creates a marker for organizing your packages.  The "==" will be added for you.</p>
   <p class="list-2">&bull;&nbsp;  <b>List Packages:</b> Displays list of projects and archives and copies that same list to the clipboard. Useful for posting your package order to forums for install debugging help.</p>
   <p class="list-2">&bull;&nbsp;  <b>Uninstall All:</b> Uninstalls all packages that are managed by BAIN (or at least in the BAIN directory).</p>
-  <p class="list-2">&bull;&nbsp;  <b>Clean Data:</b> cleans any files from the oblivion data dir that are not from active installers or Bethesda files or Wrye Bash Files. (ie it'll basically give you a clean install state of Oblivion/Data). For safety's sake the files are moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\</p>
+  <p class="list-2">&bull;&nbsp;  <b>Clean Data:</b> Removes files from the Oblivion Data dir that are not from one of the following sources:</p>
+    <p class="list-3">&bull;&nbsp;  Vanilla Bethesda content (Oblivion.esm, Oblivion - Meshes.bsa, etc.)</p>
+    <p class="list-3">&bull;&nbsp;  DLC content (Knights.esp, DLCShiveringIsles.esp, etc.)</p>
+    <p class="list-3">&bull;&nbsp;  Wrye Bash (Bashed Patch, 0.esp, INI Tweaks/, etc.)</p>
+    <p class="list-3">&bull;&nbsp;  Active BAIN installers</p>
+  <p class="list-2">&bull;&nbsp;  Note that this will remove manually installed files or files installed from other programs (like OBMM)</p>
+  <p class="list-2">&bull;&nbsp;  For safety's sake the files are not deleted, but rather moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\</p>
   <p class="list-2">&bull;&nbsp;  <b>Anneal All:</b> This will install any missing files (for active installers) and correct all install order and reconfiguration errors.</p>
   <p class="list-2">&bull;&nbsp;  <b>Unhide:</b> Unhides hidden packages.</p>
     <p class="list-3">&bull;&nbsp;  The Unhide dialog now works like WinMerge's open dialog</p>
@@ -942,12 +948,9 @@
   <p class="list-2">&bull;&nbsp;  <b>Skip LOD Normals:</b> If checked, landscape LOD normals will be skipped.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='ReplacersTab'>Replacers Tab</a></h2>
-<p><i><b>The Replacers Tab has now largely been replaced by the new <a href="#InstallersTab">Installers Tab</a>.</b></i> If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
+<p><i><b>The Replacers Tab has now been replaced by the <a href="#InstallersTab">Installers Tab</a>.</b></i> If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
 </p>
-<p><b>As of version 292:</b> The Replacers tab is now only available if you enable it through bash.ini.  In future versions, the Replacers Tab may be removed entirely.
-</p>
-  <p class="empty">&nbsp;</p>
-<p><b>Note:</b> By default, the Replacers tab will not appear if there are there are no files in the Replacers directory. You can get it to appear by using the "Show Replacers" option (see <a href="#PackageHeaderCommands">Package Header Commands</a>).
+<p><b>As of version 295:</b> The Replacers tab has been removed entirely.
 </p>
   <p class="empty">&nbsp;</p>
 <h3><a id='TexturesBSA'>Textures BSA</a></h3>
@@ -2628,22 +2631,38 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_29512122011valdaLojackPacificMorrowind'>295 [12/12/2011] [valda,Lojack,PacificMorrowind]</a></h3>
+<h3><a id='_29512122011bluesky404Lojackmyk002PacificMorrowindvalda'>295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]</a></h3>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
-  <p class="list-2">&bull;&nbsp;  New assorted tweak: Skyrim-style Weapons.</p>
+  <p class="list-2">&bull;&nbsp;  Assorted tweakers:</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Skyrim-style Weapons.</p>
+    <p class="list-3">&bull;&nbsp;  CBash 'Magic: Script Effect Silencer' tweak fixed.</p>
+    <p class="list-3">&bull;&nbsp;  VORB tweak now assigns special skeletons correctly</p>
+    <p class="list-3">&bull;&nbsp;  fix type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash</p>
 <p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
   <p class="list-2">&bull;&nbsp;  BAIN Wizards: Updated the <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a> function to allow comments.</p>
-  <p class="list-2">&bull;&nbsp;  installer->open readme command added.</p>
+  <p class="list-2">&bull;&nbsp;  Installer->open readme command added.</p>
+  <p class="list-2">&bull;&nbsp;  Modified <a href="#PackageHeaderCommands">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files</p>
 <p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
-  <p class="list-2">&bull;&nbsp;  More bugfixes from valda</p>
+  <p class="list-2">&bull;&nbsp;  More bugfixes from valda.</p>
+  <p class="list-2">&bull;&nbsp;  bugfixes from bluesky404.</p>
 <p class="list-1">&bull;&nbsp;  Added activation status as a new mods column/sort option.</p>
 <p class="list-1">&bull;&nbsp;  New mod commands:</p>
   <p class="list-2">&bull;&nbsp;  <a href="#CreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.</p>
   <p class="list-2">&bull;&nbsp;  <a href="#CopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.</p>
+  <p class="list-2">&bull;&nbsp;  Ghost will ghost just the selected mod(s) </p>
   <p class="list-2">&bull;&nbsp;  File-><a href="#CreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.</p>
   <p class="list-2">&bull;&nbsp;  Mods Tab-><a href="#CleanDummyMasters">Clean Dummy Masters</a> will delete any empty plugins created using the <a href="#CreateDummyMasters">Create Dummy Masters</a> command.</p>
+<p class="list-1">&bull;&nbsp;  Add Master command can now add multiple masters in one go</p>
+<p class="list-1">&bull;&nbsp;  Select patcher when selecting a patcher option/tweak</p>
 <p class="list-1">&bull;&nbsp;  Fixed Settings backup files should have WB version in their names.</p>
 <p class="list-1">&bull;&nbsp;  Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.</p>
+<p class="list-1">&bull;&nbsp;  Replacers tab and associated code totally removed.</p>
+<p class="list-1">&bull;&nbsp;  Fixed CBash crash while scanning for dirty edits on some plugins</p>
+<p class="list-1">&bull;&nbsp;  Startup:</p>
+  <p class="list-2">&bull;&nbsp;  Fixed startup processing so you can in one startup both backup and restore settings.</p>
+  <p class="list-2">&bull;&nbsp;  Added -L/--Language as cmdline options to set Wrye Bash's language.</p>
+<p class="list-1">&bull;&nbsp;  Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).</p>
+<p class="list-1">&bull;&nbsp;  Ini Panel -> list active ini's command added.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='_2942182011Lojackmyk002PacificMorrowind'>294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]</a></h3>
 <p class="list-1">&bull;&nbsp;  Small fix to the Python race patcher for dremora records</p>
