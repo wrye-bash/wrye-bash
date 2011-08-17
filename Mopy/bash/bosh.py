@@ -27877,7 +27877,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ),
         CBash_GmstTweak(_('Msg: Harvest Success'),
             _("Message upon success at harvesting flora."),
-            ('sFloraSuccesssMessage',),
+            ('sFloraSuccessMessage',),
             (_('[None]'),' '),
             ('.','.'),
             (_('Hmm...'),_('Hmm...')),
