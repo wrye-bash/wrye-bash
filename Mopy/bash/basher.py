@@ -7355,13 +7355,20 @@ class Installers_UninstallAllPackages(Link):
 class Installers_UninstallAllUnknownFiles(Link):
     """Uninstall all files that do not come from a current package/bethesda files.
        For safety just moved to Oblivion Mods\Bash Installers\Bash\Data Folder Contents (date/time)\."""
+    def __init__(self):
+        Link.__init__(self)
+        self._helpMessage = _('This will remove all mod files that are not linked to an active installer out of the Data folder.')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Clean Data'),_(r'This will move all non-bethesda files that are not linked to an active installer out of the data folder to "Oblivion Mods\Bash Installers\Bash\Data Folder Contents (<date>).'))
+        menuItem = wx.MenuItem(menu,self.id,_('Clean Data'),self._helpMessage)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
         """Handle selection."""
+        fullMessage = _("Clean Data directory?") + "  " + self._helpMessage + "  " + _('This includes files that were installed manually or by another program.  Files will be moved to the "%s" directory instead of being deleted so you can retrieve them later if necessary.') % r'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
+        if not balt.askYes(self.gTank,fill(fullMessage,70),self.title):
+            return
         progress = balt.Progress(_("Cleaning Data Files..."),'\n'+' '*60)
         try:
             self.data.clean(progress=progress)
