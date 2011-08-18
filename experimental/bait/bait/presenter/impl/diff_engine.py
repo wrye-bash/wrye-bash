@@ -166,6 +166,15 @@ def _get_style(nodeAttributes):
             "unexpected node type: %s" % nodeAttributes.nodeType)
     return style
 
+def _get_visible_predecessor(nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds):
+    # walk the tree backwards to find a visible predecessor
+    predNodeId = nodeData[_PRED_NODE_ID_IDX]
+    while predNodeId is not None:
+        if predNodeId in visibleLeafNodeIds or predNodeId in visibleBranchNodeIds:
+            break
+        predNodeId = tree[predNodeId][_PRED_NODE_ID_IDX]
+    return predNodeId
+
 def _add_node(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
               expandedNodeIds, selectedNodeIds, viewCommandQueue, nodeTreeId, rootNodeId):
     """adds given node and any required ancestors"""
@@ -180,19 +189,15 @@ def _add_node(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
                   visibleBranchNodeIds, expandedNodeIds, selectedNodeIds,
                   viewCommandQueue, nodeTreeId, rootNodeId)
         visibleBranchNodeIds.add(parentNodeId)
-    # walk the tree backwards to find a visible predecessor
-    _logger.debug("enqueuing command to add node %d: '%s'", nodeId, nodeAttributes.label)
-    predNodeId = nodeData[_PRED_NODE_ID_IDX]
-    while predNodeId is not None:
-        if predNodeId in visibleLeafNodeIds or predNodeId in visibleBranchNodeIds:
-            break
-        predNodeId = tree[predNodeId][_PRED_NODE_ID_IDX]
+    predNodeId = _get_visible_predecessor(nodeData, tree, visibleLeafNodeIds,
+                                          visibleBranchNodeIds)
     # craft visual style
     style = _get_style(nodeAttributes)
     isExpanded = nodeId in expandedNodeIds
     isSelected = nodeId in selectedNodeIds
     if parentNodeId == rootNodeId:
         parentNodeId = None
+    _logger.debug("enqueuing command to add node %d: '%s'", nodeId, nodeAttributes.label)
     viewCommandQueue.put(presenter.AddNodeCommand(
         nodeTreeId, nodeId, nodeAttributes.label, isExpanded, style, parentNodeId,
         predNodeId, nodeAttributes.contextMenuId, isSelected))
@@ -459,15 +464,27 @@ class PackagesTreeDiffEngine(_DiffEngine):
         # course, by the thread that actually modifies the data structures
         nodeData = self._tree.get(nodeId)
         if nodeData is None:
+            _logger.debug("can't use update: node %d not in tree", nodeId)
             return False
-        if updateType is model.UpdateTypes.ATTRIBUTES and len(nodeData) > _ATTRIBUTES_IDX:
+        if model.UpdateTypes.ATTRIBUTES in updateType and len(nodeData) > _ATTRIBUTES_IDX:
             nodeAttributes = nodeData[_ATTRIBUTES_IDX]
             if nodeAttributes is not None:
-                return nodeAttributes.version < version
-        if updateType is model.UpdateTypes.CHILDREN and len(nodeData) > _CHILDREN_IDX:
+                if nodeAttributes.version < version:
+                    _logger.debug("can use update: node %d is out of date", nodeId)
+                    return True
+                else:
+                    _logger.debug("can't use update: node %d up to date", nodeId)
+                    return False
+        if model.UpdateTypes.CHILDREN in updateType and len(nodeData) > _CHILDREN_IDX:
             nodeChildren = nodeData[_CHILDREN_IDX]
             if nodeChildren is not None:
-                return nodeChildren.version < version
+                if nodeChildren.version < version:
+                    _logger.debug("can use update: node %d is out of date", nodeId)
+                    return True
+                else:
+                    _logger.debug("can't use update: node %d up to date", nodeId)
+                    return False
+        _logger.debug("can use update for node %d", nodeId)
         return True
 
     def set_pending_search_string(self, searchString):
@@ -587,7 +604,21 @@ class PackagesTreeDiffEngine(_DiffEngine):
             # fix up child graph
             predChildNodeId = None
             for childNodeId in newChildren:
-                self._tree[childNodeId][_PRED_NODE_ID_IDX] = predChildNodeId
+                childNode = self._tree[childNodeId]
+                if childNode[_PRED_NODE_ID_IDX] != predChildNodeId:
+                    _logger.debug("adjusting predecessor for child node %d to %s",
+                                  childNodeId, predChildNodeId)
+                    childNode[_PRED_NODE_ID_IDX] = predChildNodeId
+                    # if this node was already visible, adjust its position in the list
+                    # TODO: ensure actual predecessor has changed before updating
+                    isVisible = childNodeId in self._filter.visibleNodeIds or \
+                              childNodeId in self._visibleBranchNodeIds
+                    if isVisible:
+                        self._viewCommandQueue.put(presenter.MoveNodeCommand(
+                            presenter.NodeTreeIds.PACKAGES, childNodeId,
+                            _get_visible_predecessor(childNode, self._tree,
+                                                     self._filter.visibleNodeIds,
+                                                     self._visibleBranchNodeIds)))
                 predChildNodeId = childNodeId
         self._update_managers()
 

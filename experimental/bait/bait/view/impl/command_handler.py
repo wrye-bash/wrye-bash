@@ -68,6 +68,7 @@ class CommandHandler:
         self._handlers[presenter.CommandIds.SET_STYLE_MAPS] = self._set_style_maps
         self._handlers[presenter.CommandIds.UPDATE_NODE] = self._update_node
         self._handlers[presenter.CommandIds.ADD_NODE] = self._add_node
+        self._handlers[presenter.CommandIds.MOVE_NODE] = self._move_node
         self._handlers[presenter.CommandIds.REMOVE_NODE] = self._remove_node
         self._handlers[presenter.CommandIds.CLEAR_TREE] = self._clear_tree
         self._handlers[presenter.CommandIds.SET_FILTER_STATS] = self._set_filter_stats
@@ -266,6 +267,11 @@ class CommandHandler:
             addNodeCommand.parentNodeId, addNodeCommand.predecessorNodeId,
             addNodeCommand.contextMenuId, addNodeCommand.isSelected,
             *self._process_style(addNodeCommand.style))
+
+    def _move_node(self, moveNodeCommand):
+        _logger.debug("moving node: %s", moveNodeCommand)
+        self._get_tree(moveNodeCommand.nodeTreeId).move_node(
+            moveNodeCommand.nodeId, moveNodeCommand.predecessorNodeId)
 
     def _remove_node(self, removeNodeCommand):
         _logger.debug("removing node: %s", removeNodeCommand)

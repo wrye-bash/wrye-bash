@@ -88,7 +88,8 @@ class _FilteredTree:
         item.SetData((nodeId, contextMenuId))
 
         self._set_item_attributes(nodeId, item, isExpanded, isBold, isItalics, textColor,
-                                  highlightColor, checked, iconId)
+                                  highlightColor, checked)
+        self._set_icon(item, iconId)
 
         if isSelected:
             _logger.debug("highlighting node %d", nodeId)
@@ -106,7 +107,55 @@ class _FilteredTree:
             _logger.debug("updating node %d label to: '%s'", nodeId, label)
             item.SetText(label)
         self._set_item_attributes(nodeId, item, isExpanded, isBold, isItalics, textColor,
-                                  highlightColor, checkboxState, iconId)
+                                  highlightColor, checkboxState)
+        self._set_icon(item, iconId)
+
+    def _copy_branch(self, nodeId, item, destDict):
+        """dict tuples are (label, type, data, isExpanded, isBold, isItalics, textColor,
+                            highlightColor, checked, checkedIcon, uncheckedIcon,
+                            isSelected, [childrenNodeIds])"""
+        # copy branch rooted at nodeId
+        childrenNodeIds = []
+        attr = item.GetAttributes()
+        destDict[nodeId] = (item.GetText(), item.GetType(), item.GetData(),
+                            item.IsExpanded(), item.IsBold(), item.IsItalic(),
+                            attr.GetTextColour(), attr.GetBackgroundColour(),
+                            item.IsChecked(),
+                            item._checkedimages[CT.TreeItemIcon_Checked],
+                            item._checkedimages[CT.TreeItemIcon_NotChecked],
+                            item.IsSelected(), childrenNodeIds)
+        for childItem in item.GetChildren():
+            childNodeId = item.GetData()[0]
+            childrenNodeIds.append(childNodeId)
+            self._copy_branch(childNodeId, childItem, destDict)
+
+    def _paste_branch(self, nodeId, parentItem, predItem, srcDict):
+        itemData = srcDict[nodeId]
+        item = self._tree.InsertItemByItem(parentItem, predItem, itemData[0],
+                                           ct_type=itemData[1], data=itemData[2])
+        self._set_item_attributes(nodeId, item, itemData[3], itemData[4], itemData[5],
+                                  itemData[6], itemData[7], itemData[8])
+        item._checkedimages[CT.TreeItemIcon_Checked] = itemData[9]
+        item._checkedimages[CT.TreeItemIcon_NotChecked] = itemData[10]
+        item.SetHilight(itemData[11])
+        self._nodeIdToItem[nodeId] = item
+        for childNodeId in itemData[12]:
+            self._paste_branch(childNodeId, parentItem, item, srcDict)
+
+    def move_node(self, nodeId, predNodeId):
+        _logger.debug("moving node %d to below %s", nodeId, predNodeId)
+        item = self._nodeIdToItem[nodeId]
+        parentItem = item.GetParent()
+        predItem = self._nodeIdToItem[predNodeId] if predNodeId is not None else None
+        # copy branch
+        branchCopy = {}
+        self._copy_branch(nodeId, item, branchCopy)
+        # delete branch -- just do it directly, no need to bind to the events; we'll be
+        # overwriting the nodeIdToItem map elements anyway, and labels don't need to be
+        # updated for the packages tree subclass since they will not change
+        self._tree.Delete(item)
+        # paste copy below predecessorNodeId
+        self._paste_branch(nodeId, parentItem, predItem, branchCopy)
 
     def remove_node(self, nodeId):
         def on_item_deleted(event):
@@ -133,9 +182,7 @@ class _FilteredTree:
         pass
 
     def _set_item_attributes(self, nodeId, item, isExpanded, isBold, isItalics, textColor,
-                             highlightColor, checkboxState, iconId):
-        self._set_icon(item, iconId)
-
+                             highlightColor, checkboxState):
         if isExpanded is not None:
             if isExpanded:
                 _logger.debug("expanding node %d", nodeId)

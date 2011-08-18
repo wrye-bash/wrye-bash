@@ -83,6 +83,9 @@ class _WidgetManagerBase:
                 modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID],
                 modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE],
                 self._stateChangeQueue)
+        else:
+            _logger.debug("%sWidgetManager not interested in update %s",
+                          self._name, modelUpdateNotification)
         return True
 
     def _dump_stats(self, logFn):

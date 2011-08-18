@@ -89,7 +89,7 @@ class CommandIds(enum.Enum):
     __enumerables__ = ('UNKNOWN', 'SET_GLOBAL_SETTINGS', 'SET_PACKAGE_CONTENTS_INFO',
                        'SET_STATUS_OK', 'SET_STATUS_DIRTY', 'SET_STATUS_LOADING',
                        'SET_STATUS_IO', 'SET_STYLE_MAPS', 'UPDATE_NODE', 'ADD_NODE',
-                       'REMOVE_NODE', 'CLEAR_TREE', 'SET_FILTER_STATS',
+                       'MOVE_NODE', 'REMOVE_NODE', 'CLEAR_TREE', 'SET_FILTER_STATS',
                        'SET_GENERAL_TAB_INFO', 'SET_DIRTY_TAB_INFO',
                        'SET_CONFLICTS_TAB_INFO', 'SET_FILE_LIST_TAB_INFO',
                        'DISPLAY_ERROR', 'ASK_CONFIRMATION', 'EXTENDED')
@@ -103,6 +103,7 @@ class CommandIds(enum.Enum):
     SET_STYLE_MAPS = None
     UPDATE_NODE = None
     ADD_NODE = None
+    MOVE_NODE = None
     REMOVE_NODE = None
     CLEAR_TREE = None
     SET_FILTER_STATS = None
@@ -318,6 +319,16 @@ class AddNodeCommand(_ModifyNodeCommand):
         self.predecessorNodeId = predecessorNodeId
         self.contextMenuId = contextMenuId
         self.isSelected = isSelected
+
+class MoveNodeCommand(_ViewCommand):
+    '''Reorders a tree leaf or branch among its siblings.  The new predecessor node will
+       either have been previously sent or be None, meaning "first child of parent".
+       Selection status of any moved nodes should be maintained.'''
+    def __init__(self, nodeTreeId, nodeId, predecessorNodeId):
+        _ViewCommand.__init__(self, CommandIds.MOVE_NODE)
+        self.nodeTreeId = nodeTreeId
+        self.nodeId = nodeId
+        self.predecessorNodeId = predecessorNodeId
 
 class RemoveNodeCommand(_ViewCommand):
     '''Removes a node from a tree'''

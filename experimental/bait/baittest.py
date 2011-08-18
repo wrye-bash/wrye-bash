@@ -73,12 +73,17 @@ class _MainWindow(wx.Frame):
         event.Skip()
 
 
-def _dump_env():
-    _logger.info("Python version: %d.%d.%d",
-                 sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
-    _logger.info("wxPython version: %s", wx.version())
-    _logger.info("input encoding: %s; output encoding: %s; locale: %s",
-                 sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())
+def _log_startup_info(statsLogger):
+    # print startup messages
+    messages = [("starting baittest",),
+                ("Python version: %d.%d.%d",
+                 sys.version_info.major, sys.version_info.minor, sys.version_info.micro),
+                ("wxPython version: %s", wx.version()),
+                ("input encoding: %s; output encoding: %s; locale: %s",
+                 sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())]
+    for message in messages:
+        _logger.info(*message)
+        statsLogger.info(*message)
 
 def _parse_commandline():
     parser = argparse.ArgumentParser(description='The BAIT interactive GUI test driver.')
@@ -145,13 +150,15 @@ if __name__ == "__main__":
     threading.current_thread().name = "Main"
     logging.config.fileConfig("logging.conf")
     _logger = logging.getLogger("baittest")
-    _logger.info("starting baittest")
-    _dump_env()
+    statsLogger = logging.getLogger("STATISTICS")
+    _log_startup_info(statsLogger)
     options = _parse_commandline()
     _logger.info("options: %s", options)
+    statsLogger.info("options: %s", options)
     monitored_thread.tag_current_thread()
     process_monitor.set_interval_seconds(options.statDumpTime)
     app = wx.App(False)
     _MainWindow(options)
     app.MainLoop()
-    _logger.info("exiting baittest")
+    _logger.info("exiting baittest normally")
+    statsLogger.info("exiting baittest normally")

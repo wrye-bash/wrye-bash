@@ -25,9 +25,13 @@
 import Queue
 import itertools
 import logging
+import random
+import threading
+import time
 
 from .. import model
 from ..model import node_attributes, node_children, node_details
+from ..util import monitored_thread
 
 
 _logger = logging.getLogger(__name__)
@@ -37,7 +41,122 @@ _CHILDREN_IDX = 1
 _DETAILS_IDX = 2
 
 
-def _generate_packages_all_attributes(data, parentId, parentChildren):
+def _generate_moving_packages(data, parentId, movingChildren):
+    nextId = parentId + 1
+    attributeLists = [
+        ["alwaysVisible", "hasMatched"],
+        ["isInstalled", "hasMissingDeps", "isArchive", "hasWizard"],
+        ["isNotInstalled", "isDirty", "hasMismatched"],
+        ["isHidden",  "isArchive", "updateAvailable", "hasSubpackages"]]
+    for idx in xrange(4):
+        trueList = attributeLists[idx]
+        if "isArchive" in trueList:
+            contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
+        else:
+            contextMenuId = node_attributes.ContextMenuIds.PROJECT
+        attributeMap = {key:True for key in trueList}
+        label = "attributes:"
+        for attribute in trueList:
+            label += " " + attribute
+        data[nextId] = (
+            node_attributes.PackageNodeAttributes(
+                label, parentId, contextMenuId, **attributeMap),
+            None,
+            node_details.PackageNodeDetails())
+        movingChildren.append(nextId)
+        nextId += 1
+    return nextId
+
+def _expand_set(setChoices):
+    retlist = [[]]
+    for choice in setChoices:
+        newretlist = []
+        for expansion in _expand_choices(choice):
+            for oldlist in retlist:
+                newlist = list(oldlist)
+                newlist.extend(expansion)
+                newretlist.append(newlist)
+        retlist = newretlist
+    return retlist
+
+def _expand_and(andChoices):
+    retlist = []
+    for numChoices in xrange(len(andChoices)+1):
+        if numChoices == 0: continue
+        for choices in itertools.combinations(andChoices, numChoices):
+            retlist.extend(_expand_choices(choices, isSet=True))
+    return retlist
+
+def _expand_or(orChoices):
+    retlist = []
+    for choice in orChoices:
+        retlist.extend(_expand_choices(choice))
+    return retlist
+
+# returns list of lists of strings
+def _expand_choices(choices, isSet=False):
+    if isSet or type(choices) == set:
+        return _expand_set(choices)
+    elif type(choices) == list:
+        return _expand_and(choices)
+    elif type(choices) == tuple:
+        return _expand_or(choices)
+    else:
+        return [[choices]]
+
+def _generate_packages_expected_attributes(data, parentId, parentChildren):
+    nextId = parentId + 1
+    usedSets = set()
+    # tuples indicate "one of", lists indicate "all combinations of"
+    choiceSets = (
+        ["alwaysVisible",
+         ["isDirty", "isNew", "hasMissingDeps", "hasMatched", "hasMismatched",
+          "hasMissing"]],
+        ["isInstalled",
+         ["isDirty", "hasMissingDeps", "updateAvailable", "isArchive", "hasWizard",
+          "hasMatched", "hasMismatched", "hasMissing", "hasSubpackages"]],
+        ["isNotInstalled",
+         (["isDirty", "hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched",
+           "hasMissing", "hasSubpackages"],
+          ("isUnrecognized", "isCorrupt",
+           ["isNew", "hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched",
+            "hasMissing", "hasSubpackages"])),
+         "updateAvailable", "isArchive"],
+        ["isHidden",
+         ["isArchive", "updateAvailable",
+          ("isUnrecognized", "isCorrupt",
+           ["hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched", "hasMissing",
+            "hasSubpackages"])]])
+    for choiceSet in choiceSets:
+        groupChildren = []
+        data[nextId] = (
+            node_attributes.GroupNodeAttributes(
+                "%s Group"%choiceSet[0], parentId, node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(groupChildren),
+            None)
+        parentChildren.append(nextId)
+        groupId = nextId
+        nextId += 1
+        for trueList in _expand_choices(choiceSet, isSet=True):
+            if "isArchive" in trueList:
+                contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
+            else:
+                contextMenuId = node_attributes.ContextMenuIds.PROJECT
+            attributeMap = {key:True for key in trueList}
+            label = "attributes:"
+            for attribute in trueList:
+                label += " " + attribute
+            data[nextId] = [
+                node_attributes.PackageNodeAttributes(
+                    label, groupId, contextMenuId, **attributeMap),
+                None,
+                node_details.PackageNodeDetails()]
+            groupChildren.append(nextId)
+            usedSets.add(frozenset(trueList))
+            nextId += 1
+    return nextId, usedSets
+
+def _generate_packages_unexpected_attributes(data, parentId, parentChildren, skipSets):
     nextId = parentId + 1
     attributes = [
         "isDirty", "isInstalled", "isNotInstalled", "isHidden", "isNew", "hasMissingDeps",
@@ -55,6 +174,8 @@ def _generate_packages_all_attributes(data, parentId, parentChildren):
         groupId = nextId
         nextId += 1
         for trueList in itertools.combinations(attributes, numTrue):
+            if frozenset(trueList) in skipSets:
+                continue
             if "isArchive" in trueList:
                 contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
             else:
@@ -64,21 +185,18 @@ def _generate_packages_all_attributes(data, parentId, parentChildren):
             for attribute in attributes:
                 if attribute in trueList:
                     label += " " + attribute
-            data[nextId] = (
+            data[nextId] = [
                 node_attributes.PackageNodeAttributes(
                     label, groupId, contextMenuId, **attributeMap),
                 None,
-                node_details.PackageNodeDetails())
+                node_details.PackageNodeDetails()]
             groupChildren.append(nextId)
             nextId += 1
     return nextId
 
 
-
-#  - MovingGroup
-#    - Several packages that, when clicked on, change order within the group
-#  - UpdateGroup
-#    - Several packages that, when clicked on, change their attributes
+#  - BlinkerGroup
+#    - Several packages that change their attributes periodically
 #  - Random package generator: edit comments field with desired no. of packages
 #    - initially empty, but will generate random empty packages on request
 #  - Random file generator: edit comments field with desired no. of files
@@ -88,57 +206,76 @@ def _generate_packages_all_attributes(data, parentId, parentChildren):
 class MockModel:
     def __init__(self):
         self.updateNotificationQueue = Queue.Queue()
+        self._updateLock = threading.Lock()
+        self._shutdown = False
         self._data = {}
 
         rootChildren = []
-        self._data[model.ROOT_NODE_ID] = (
+        self._data[model.ROOT_NODE_ID] = [
             node_attributes.RootNodeAttributes(
                 node_attributes.StatusLoadingData(5, 1000)),
             node_children.NodeChildren(rootChildren),
-            None)
+            None]
 
         # reset trigger
-        self._data[1] = (
+        self._data[1] = [
             node_attributes.GroupNodeAttributes(
-                "ResetGroup", 0, node_attributes.ContextMenuIds.GROUP),
+                "ResetGroup", model.ROOT_NODE_ID, node_attributes.ContextMenuIds.GROUP),
             node_children.NodeChildren([2]),
-            None)
+            None]
         rootChildren.append(1)
-        self._data[2] = (
+        self._data[2] = [
             node_attributes.PackageNodeAttributes(
-                "Select me to reset package list", 1,
+                "Edit comments to reset package list", 1,
                 node_attributes.ContextMenuIds.PROJECT, alwaysVisible=True),
             None,
-            node_details.PackageNodeDetails())
+            node_details.PackageNodeDetails()]
 
-        # packages with valid attribute combinations
-        self._data[3] = (
-            node_attributes.GroupNodeAttributes(
-                "Packages with expected attribute combinations", 0,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren([4]),
-            None)
-        rootChildren.append(3)
-        self._data[4] = (
-            node_attributes.PackageNodeAttributes(
-                "Test", 3, node_attributes.ContextMenuIds.PROJECT, isInstalled=True),
-            None,
-            node_details.PackageNodeDetails())
+        nextId = 3
 
-        # packages with all attribute combinations
-        allAttributesChildren = []
-        self._data[5] = (
+        # group with moving packages
+        self._movingThread = monitored_thread.MonitoredThread(
+            target=self._moving_run, name="ModelMover", args=(nextId,))
+        movingChildren = []
+        self._data[nextId] = [
             node_attributes.GroupNodeAttributes(
-                "Packages with all attribute combinations", 0,
+                "Packages that change relative priority", model.ROOT_NODE_ID,
                 node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(allAttributesChildren),
-            None)
-        rootChildren.append(5)
-        nextId = _generate_packages_all_attributes(self._data, 5, allAttributesChildren)
+            node_children.NodeChildren(movingChildren),
+            None]
+        rootChildren.append(nextId)
+        nextId = _generate_moving_packages(self._data, nextId, movingChildren)
+
+        # packages with valid, expected attribute combinations
+        expectedAttributesChildren = []
+        self._data[nextId] = [
+            node_attributes.GroupNodeAttributes(
+                "Packages with expected attribute combinations", model.ROOT_NODE_ID,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(expectedAttributesChildren),
+            None]
+        rootChildren.append(nextId)
+        nextId, attributeCombinations = _generate_packages_expected_attributes(
+            self._data, nextId, expectedAttributesChildren)
+
+        # packages with all other attribute combinations
+        unexpectedAttributesChildren = []
+        self._data[nextId] = [
+            node_attributes.GroupNodeAttributes(
+                "Packages with unexpected attribute combinations", model.ROOT_NODE_ID,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(unexpectedAttributesChildren),
+            None]
+        rootChildren.append(nextId)
+        nextId = _generate_packages_unexpected_attributes(
+            self._data, nextId, unexpectedAttributesChildren, attributeCombinations)
+        del attributeCombinations
 
 
     def start(self):
         _logger.debug("mock model starting")
+        self._movingThread.setDaemon(True)
+        self._movingThread.start()
 
     def pause(self):
         _logger.debug("mock model pausing")
@@ -148,7 +285,9 @@ class MockModel:
 
     def shutdown(self):
         _logger.debug("mock model shutting down")
-        self.updateNotificationQueue.put(None)
+        with self._updateLock:
+            self._shutdown = True
+            self.updateNotificationQueue.put(None)
 
     def get_node_attributes(self, nodeId):
         return self._get_node_element(nodeId, "attributes", _ATTRIBUTES_IDX)
@@ -166,280 +305,19 @@ class MockModel:
         _logger.debug("no %s to retrieve for node %d", elementName, nodeId)
         return None
 
-
-class OldMockPresenter:
-    def __init__(self):
-        self.viewCommandQueue = Queue.Queue()
-        self._filterMask = presenter.FilterIds.NONE
-        self._groupExpansionStates = {}
-        self._dirExpansionStates = {}
-        self._curDetailsTab = presenter.DetailsTabIds.NONE
-        self._selectedPackages = []
-        self._selectedFiles = []
-        self._searchString = None
-
-    def start(self, curDetailsTabId, filterStateMap):
-        _logger.debug("mock presenter starting")
-        self._curDetailsTab = curDetailsTabId
-        for filterId, value in filterStateMap.iteritems():
-            _logger.debug("initializing filter %s to %s", filterId, value)
-            if value:
-                self._filterMask = self._filterMask | filterId
-            else:
-                self._filterMask = self._filterMask & ~filterId
-        self.viewCommandQueue.put(presenter.SetStyleMaps(
-            _foregroundColorMap, _highlightColorMap, _checkedIconMap, _uncheckedIconMap))
-        self.viewCommandQueue.put(presenter.SetStatus(
-            presenter.Status.LOADING, presenter.HighlightColorIds.LOADING,
-            loadingComplete=0, loadingTotal=100))
-        self.set_packages_tree_selections([])
-        self.set_files_tree_selections([])
-        self._rebuild_packages_tree()
-        self.viewCommandQueue.put(presenter.SetPackageInfo(
-            presenter.DetailsTabIds.GENERAL, None))
-        self.viewCommandQueue.put(presenter.SetStatus(
-            presenter.Status.OK, presenter.HighlightColorIds.OK))
-
-    def pause(self):
-        _logger.debug("mock presenter pausing")
-
-    def resume(self):
-        _logger.debug("mock presenter resuming")
-
-    def shutdown(self):
-        _logger.debug("mock presenter shutting down")
-        self.viewCommandQueue.put(None)
-
-    def set_filter_state(self, filterId, value):
-        _logger.debug("setting filter %s to %s", filterId, value)
-        if (not 0 is self._filterMask & filterId) is value:
-            _logger.debug("filter %s already set to %s; ignoring", filterId, value)
-            return
-        if value:
-            self._filterMask |= filterId
-        else:
-            self._filterMask &= ~filterId
-        self._rebuild_packages_tree(self._searchString)
-
-    def set_packages_tree_selections(self, nodeIds, saveSelections=True):
-        _logger.debug("setting packages tree selection to node(s) %s, saveSelections=%s",
-                      nodeIds, saveSelections)
-        self.viewCommandQueue.put(presenter.ClearFiles())
-        if saveSelections:
-            self._selectedPackages = nodeIds
-        numNodeIds = len(nodeIds)
-        if numNodeIds is 1:
-            # update package details
-            node = pkgNodes[nodeIds[0]]
-            self.viewCommandQueue.put(presenter.SetPackageLabel(node[LABEL_IDX]))
-            if self._curDetailsTab is presenter.DetailsTabIds.GENERAL:
-                self.viewCommandQueue.put(presenter.SetPackageInfo(
-                    self._curDetailsTab, get_general_map(nodeIds[0])))
-            else:
-                self.viewCommandQueue.put(presenter.SetPackageInfo(
-                    self._curDetailsTab,
-                    node[PACKAGE_DETAILS_MAP_IDX][self._curDetailsTab]))
-            self._rebuild_files_tree(node[FILE_NODES_IDX])
-        elif numNodeIds is 0:
-            self.viewCommandQueue.put(presenter.SetPackageLabel(None))
-        else:
-            self.viewCommandQueue.put(presenter.SetPackageLabel(""))
-
-    def set_files_tree_selections(self, nodeIds, saveSelections=True):
-        _logger.debug("setting files tree selection to node(s) %s", nodeIds)
-        if saveSelections:
-            self._selectedFiles = nodeIds
-        numNodeIds = len(nodeIds)
-        if numNodeIds is 1:
-            # update file details
-            self.viewCommandQueue.put(presenter.SetFileDetails(
-                pkgNodes[self._selectedPackages[0]][FILE_NODES_IDX][nodeIds[0]][FILE_DETAILS_IDX]))
-        else:
-            self.viewCommandQueue.put(presenter.SetFileDetails(None))
-
-    def set_details_tab_selection(self, detailsTabId):
-        _logger.debug("setting details tab selection to %s", detailsTabId)
-        self._curDetailsTab = detailsTabId
-        numSelectedPackages = len(self._selectedPackages)
-        if numSelectedPackages is 0:
-            self.viewCommandQueue.put(presenter.SetPackageInfo(detailsTabId, None))
-        elif numSelectedPackages is 1:
-            if self._curDetailsTab is presenter.DetailsTabIds.GENERAL:
-                self.viewCommandQueue.put(presenter.SetPackageInfo(
-                    detailsTabId, get_general_map(self._selectedPackages[0])))
-            else:
-                self.viewCommandQueue.put(presenter.SetPackageInfo(
-                    detailsTabId,
-                    pkgNodes[self._selectedPackages[0]][PACKAGE_DETAILS_MAP_IDX][detailsTabId]))
-
-    def set_group_node_expanded(self, nodeId, value):
-        _logger.debug("setting group node %d expansion to %s", nodeId, value)
-        self._groupExpansionStates[nodeId] = value
-
-    def set_dir_node_expanded(self, nodeId, value):
-        _logger.debug("setting directory node %d expansion to %s", nodeId, value)
-        self._dirExpansionStates[nodeId] = value
-
-    def set_search_string(self, text):
-        if text is "": text = None
-        if text is self._searchString:
-            _logger.debug("search string unchanged; skipping")
-            return
-        _logger.debug("running search: '%s'", text)
-        self._rebuild_packages_tree(text)
-        self._searchString = text
-
-    def _matches_search(self, nodeIds, searchString, parentMatches):
-        if searchString is None or parentMatches:
-            return True
-        if hasattr(nodeIds, "__iter__"):
-            for nodeId in nodeIds:
-                if re.search(searchString, pkgNodes[nodeId][LABEL_IDX]): return True
-        else:
-            return re.search(searchString, pkgNodes[nodeIds][LABEL_IDX])
-        return False
-
-    def _add_node(self, nodes, nodeId, addedSet, addNodeFn):
-        node = nodes[nodeId]
-        parentNodeId = node[PARENT_NODE_ID_IDX]
-        if not parentNodeId is None and not nodes[parentNodeId][IS_VISIBLE_IDX]:
-            # add parents if they're not already visible
-            _logger.debug("adding parent of node %d", nodeId)
-            self._add_node(nodes, parentNodeId, addedSet, addNodeFn)
-        # calculate predNodeId
-        predNodeId = node[PRED_NODE_ID_IDX]
-        while not predNodeId is None:
-            predNode = nodes[predNodeId]
-            # if we found a visible predecessor, stop iterating
-            if predNode[IS_VISIBLE_IDX]: break
-            predNodeId = predNode[PRED_NODE_ID_IDX]
-        addNodeFn(node, nodeId, parentNodeId, predNodeId)
-        node[IS_VISIBLE_IDX] = True
-        addedSet.add(nodeId)
-
-    def _add_packages_tree_node(self, node, nodeId, parentNodeId, predNodeId):
-        if node[NODE_TYPE_IDX] is model.NodeTypes.GROUP:
-            addClass = presenter.AddGroup
-            expand = self._groupExpansionStates.get(nodeId)
-            _logger.debug("adding group node %d (expanded: %s)", nodeId, expand)
-        else:
-            addClass = presenter.AddPackage
-            expand = False
-            _logger.debug("adding package node %d", nodeId)
-        self.viewCommandQueue.put(addClass(("%.2d "%(nodeId+1))+node[LABEL_IDX], nodeId,
-                                           parentNodeId, predNodeId, node[STYLE_IDX]))
-        if expand:
-            self.viewCommandQueue.put(presenter.ExpandGroup(nodeId))
-
-    def _add_files_tree_node(self, node, nodeId, parentNodeId, predNodeId):
-        if node[NODE_TYPE_IDX] is model.NodeTypes.DIRECTORY:
-            expand = self._dirExpansionStates.get(nodeId)
-            _logger.debug("adding dir node %d (expanded: %s)", nodeId, expand)
-        else:
-            expand = False
-            _logger.debug("adding file node %d", nodeId)
-        self.viewCommandQueue.put(presenter.AddFile(node[LABEL_IDX], nodeId,
-                                                        parentNodeId, predNodeId,
-                                                        node[STYLE_IDX]))
-        if expand:
-            self.viewCommandQueue.put(presenter.ExpandDir(nodeId))
-
-    def _rebuild_packages_tree(self, searchString=None):
-        # clear tree
-        self.viewCommandQueue.put(presenter.ClearPackages())
-
-        # keep total and search match counts
-        totals = {}
-        totals[presenter.FilterIds.PACKAGES_HIDDEN] = 0
-        totals[presenter.FilterIds.PACKAGES_INSTALLED] = 0
-        totals[presenter.FilterIds.PACKAGES_NOT_INSTALLED] = 0
-        matches = {}
-        matches[presenter.FilterIds.PACKAGES_HIDDEN] = 0
-        matches[presenter.FilterIds.PACKAGES_INSTALLED] = 0
-        matches[presenter.FilterIds.PACKAGES_NOT_INSTALLED] = 0
-        # track which elements have been added
-        addedSet = set()
-
-        # scan nodes
-        for nodeId in xrange(0, len(pkgNodes)):
-            _logger.debug("filtering node %d", nodeId)
-            node = pkgNodes[nodeId]
-            node[IS_VISIBLE_IDX] = False
-            if node[PARENT_NODE_ID_IDX] is None:
-                parentMatches = False
-            else:
-                parentMatches = pkgNodes[node[PARENT_NODE_ID_IDX]][MATCHES_SEARCH_IDX]
-            if self._matches_search(nodeId, searchString, parentMatches):
-                node[MATCHES_SEARCH_IDX] = True
-                if not node[NODE_TYPE_IDX] is model.NodeTypes.GROUP:
-                    matches[node[FILTER_IDX]] += 1
-                # apply filters
-                if node[FILTER_IDX] & self._filterMask != 0:
-                    self._add_node(pkgNodes, nodeId, addedSet,
-                                   self._add_packages_tree_node)
-            else:
-                node[MATCHES_SEARCH_IDX] = False
-            if not node[NODE_TYPE_IDX] is model.NodeTypes.GROUP:
-                totals[node[FILTER_IDX]] += 1
-
-        # update filter labels
-        self.viewCommandQueue.put(presenter.SetFilterStats(
-            presenter.FilterIds.PACKAGES_HIDDEN,
-            matches[presenter.FilterIds.PACKAGES_HIDDEN],
-            totals[presenter.FilterIds.PACKAGES_HIDDEN]))
-        self.viewCommandQueue.put(presenter.SetFilterStats(
-            presenter.FilterIds.PACKAGES_INSTALLED,
-            matches[presenter.FilterIds.PACKAGES_INSTALLED],
-            totals[presenter.FilterIds.PACKAGES_INSTALLED]))
-        self.viewCommandQueue.put(presenter.SetFilterStats(
-            presenter.FilterIds.PACKAGES_NOT_INSTALLED,
-            matches[presenter.FilterIds.PACKAGES_NOT_INSTALLED],
-            totals[presenter.FilterIds.PACKAGES_NOT_INSTALLED]))
-
-        # persist selections for the packages that are still visible
-        addedSet &= set(self._selectedPackages)
-        addedSetList = list(addedSet)
-        #self.viewCommandQueue.put(presenter.SelectPackages(addedSetList))
-        self.set_packages_tree_selections(addedSetList, False)
-
-    def _rebuild_files_tree(self, nodes=None):
-        # clear tree
-        self.viewCommandQueue.put(presenter.ClearFiles())
-
-        # keep counts
-        filterIds = (presenter.FilterIds.FILES_PLUGINS,
-                     presenter.FilterIds.FILES_RESOURCES,
-                     presenter.FilterIds.FILES_OTHER)
-        totals = {}
-        for filterId in filterIds:
-            totals[filterId] = 0
-
-        # track which elements have been added
-        addedSet = set()
-
-        # scan nodes
-        if nodes is None:
-            nodes = pkgNodes[self._selectedPackages[0]][FILE_NODES_IDX]
-        if not nodes is None:
-            numNodes = len(nodes)
-            for nodeId in xrange(0, numNodes):
-                node = nodes[nodeId]
-                node[IS_VISIBLE_IDX] = False
-                # apply filters
-                filter = node[FILTER_IDX]
-                if not filter & self._filterMask is 0:
-                    self._add_node(nodes, nodeId, addedSet, self._add_files_tree_node)
-                if not node[NODE_TYPE_IDX] is model.NodeTypes.DIRECTORY:
-                    totals[filter] += 1
-            _logger.debug("filtered %d file nodes", numNodes)
-
-        # update filter labels
-        for filterId in filterIds:
-            self.viewCommandQueue.put(presenter.SetFilterStats(
-                filterId, totals[filterId], totals[filterId]))
-
-        # persist selections for the files that are still visible
-        addedSet &= set(self._selectedFiles)
-        addedSetList = list(addedSet)
-        self.viewCommandQueue.put(presenter.SelectFiles(addedSetList))
-        self.set_files_tree_selections(addedSetList, False)
+    def _moving_run(self, movingGroupNodeId):
+        while True:
+            time.sleep(1)
+            groupNode = self._data[movingGroupNodeId]
+            prevGroupNodeChildren = groupNode[_CHILDREN_IDX]
+            childList = list(prevGroupNodeChildren.children)
+            random.shuffle(childList)
+            version = prevGroupNodeChildren.version + 1
+            groupNode[_CHILDREN_IDX] = node_children.NodeChildren(childList,
+                                                                  version=version)
+            with self._updateLock:
+                if self._shutdown: break
+                _logger.debug("updating moving group")
+                self.updateNotificationQueue.put((model.UpdateTypes.CHILDREN,
+                                                  model.NodeTypes.GROUP,
+                                                  movingGroupNodeId, version))

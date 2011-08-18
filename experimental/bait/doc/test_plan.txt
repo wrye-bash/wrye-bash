@@ -58,26 +58,28 @@ Presenter Test
 if it slow then the user will have to wait for common operations like filtering
 and searching.  The test should probe the limits of how much data we can handle
 before the UI starts to feel sluggish.
-  In this test, we can dynamically create nodes according to user input.  We can
-accept configuration parameters for how to create the nodes in package comments
-fields, or simply perform actions in response to users selecting a package.
+  In this test, if we need to, we can dynamically create nodes according to user
+input. We can accept configuration parameters for how to create the nodes in
+package comments fields, or simply perform actions in response to users
+selecting a tree item (intercepting the request for node details).
   This test requires that a mock Model be written with at least the following
 capabilities:
 - Provide a package list that has the following groups and packages:
   - ResetGroup
-    - Select me to reset package list
-  - Packages with valid attribute combinations
-    - ...
-  - Packages with all attribute combinations
-    - ...
+    - Edit comments to reset package list
   - MovingGroup
-    - Several packages that, when clicked on, change order within the group
-  - UpdateGroup
-    - Several packages that, when clicked on, change their attributes
-  - Random package generator: edit comments field with desired no. of packages
-    - initially empty, but will generate random empty packages on request
-  - Random file generator: edit comments field with desired no. of files
-    - initially empty, but will generate packages with files on request
+    - Several packages that change order within the group periodically
+  - BlinkerGroup
+    - Several packages that change their attributes periodically
+  - FileTestGroup
+    - Package with files with expected attribute combinations
+    - Package with files with all other attribute combinations
+  - ConflictGroup
+    - Several packages with mutually conflicting files and supporting metadata
+  - Packages with expected attribute combinations
+    - ...
+  - Packages with all other attribute combinations
+    - ...
 - All generated packages and files should have names that describe their
     attributes so that they can be visually verified to be behaving properly.
 
