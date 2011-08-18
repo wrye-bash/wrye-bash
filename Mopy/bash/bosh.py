@@ -8865,7 +8865,7 @@ class ModInfos(FileInfos):
         else:
             return None
 
-    def getModList(self,fileInfo=None,wtxt=False):
+    def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
@@ -8909,14 +8909,16 @@ class ModInfos(FileInfos):
                 prefix = bul+'++'
             else:
                 prefix = bul+sImported
-            version = self.getVersion(name)
             if header:
                 log(header)
                 header = None
-            if version:
-                log(_('%s  %s  [Version %s] [CRC: %08X]') % (prefix,name.s,version,self[name].cachedCrc()))
-            else:
-                log('%s  %s [CRC: %08X]' % (prefix,name.s,self[name].cachedCrc()))
+            text = '%s  %s' % (prefix,name.s,)
+            if showVersion:
+                version = self.getVersion(name)
+                if version: text += _('  [Version %s]' % (version))
+            if showCRC:
+                text +=_('  [CRC: %08X]' % (self[name].cachedCrc()))
+            log(text)
             if name in masters:
                 for master2 in self[name].header.masters:
                     if master2 not in self:
@@ -9611,7 +9613,7 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
-    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showWarn=True,scanDirty=None):
+    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showCRC=False,showVersion=True,showWarn=True,scanDirty=None):
         """Checks currently loaded mods against ruleset.
            scanDirty should be the instance of ModChecker, to scan."""
         active = set(modInfos.ordered)
@@ -9699,7 +9701,7 @@ class ConfigHelpers:
                 log('* __'+mod[0].s+':__  '+mod[1])
         #--Missing/Delinquent Masters
         if showModList:
-            log('\n'+modInfos.getModList(wtxt=True).strip())
+            log('\n'+modInfos.getModList(showCRC,showVersion,wtxt=True).strip())
         else:
             log.setHeader(warning+_('Missing/Delinquent Masters'))
             previousMods = set()
