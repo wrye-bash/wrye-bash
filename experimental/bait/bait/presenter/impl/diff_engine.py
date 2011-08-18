@@ -164,6 +164,7 @@ def _get_style(nodeAttributes):
     else:
         raise TypeError(
             "unexpected node type: %s" % nodeAttributes.nodeType)
+    return style
 
 def _add_node(nodeId, nodeData, tree, visibleLeafNodeIds, visibleBranchNodeIds,
               expandedNodeIds, selectedNodeIds, viewCommandQueue, nodeTreeId, rootNodeId):
@@ -238,8 +239,7 @@ def _filter_and_sync(nodeId, nodeData, tree, searchMatchesLineage, filter_,
     attributes = nodeData[_ATTRIBUTES_IDX]
     wasVisible = nodeId in filter_.visibleNodeIds
     isVisible = filter_.process_and_get_visibility(
-        nodeId, attributes, searchMatchesLineage or nodeData[_MATCHES_SEARCH_IDX]) or \
-              model.NodeTypes.PACKAGE == attributes.nodeType and attributes.alwaysVisible
+        nodeId, attributes, searchMatchesLineage or nodeData[_MATCHES_SEARCH_IDX])
     if isVisible:
         if wasVisible:
             if not updateIfNoVisibilityChange:

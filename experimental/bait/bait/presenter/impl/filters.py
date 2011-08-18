@@ -124,6 +124,8 @@ class _FilterButton(_Filter):
             self._hypotheticallyVisibleNodeIds.discard(nodeId)
         self._sync_to_view(matchedNodeIds)
     def _sync_to_view(self, matchedNodeIds):
+        # TODO: don't send more than one update per time quantum to avoid flooding the UI,
+        # TODO:   but make sure the most recent update doesn't get dropped
         numCurrentNodes = len(self._hypotheticallyVisibleNodeIds)
         totalNodes = len(matchedNodeIds)
         if numCurrentNodes != self._prevNumCurrentNodes or \
@@ -357,6 +359,22 @@ class _NotInstalledPackagesFilter(_TreeFilterButton):
             self._matchedLeafNodeIds.add(nodeId)
             return True
         return False
+
+class _AlwaysVisiblePackagesFilter(_TreeFilterButton):
+    """Ensures marked packages are always visible"""
+    def __init__(self, viewUpdateQueue):
+        _TreeFilterButton.__init__(self, presenter.FilterIds.PACKAGES_ALWAYS_VISIBLE,
+                                   viewUpdateQueue)
+    def _match(self, nodeId, nodeAttributes):
+        if nodeAttributes.nodeType is model.NodeTypes.PACKAGE and \
+           nodeAttributes.alwaysVisible:
+            self._matchedLeafNodeIds.add(nodeId)
+            return True
+        return False
+    # override
+    def _sync_to_view(self, matchedNodeIds):
+        # no GUI counterpart, so no need to update
+        pass
 
 class _ResourceFilesFilter(_TreeFilterButton):
     """Controls display of resource files in the package contents tree"""
@@ -594,7 +612,14 @@ class PackagesTreeFilter(_FilterGroup):
         _FilterGroup.__init__(self,
                               _OrFilter([_InstalledPackagesFilter(viewUpdateQueue),
                                          _HiddenPackagesFilter(viewUpdateQueue),
-                                         _NotInstalledPackagesFilter(viewUpdateQueue)]))
+                                         _NotInstalledPackagesFilter(viewUpdateQueue),
+                                         _AlwaysVisiblePackagesFilter(viewUpdateQueue)]))
+    # override
+    def set_active_mask(self, idMask):
+        """sets active filters and returns whether state has changed"""
+        # ensure the ALWAYS_VISIBLE filter is always active
+        return _FilterGroup.set_active_mask(
+            self, idMask|presenter.FilterIds.PACKAGES_ALWAYS_VISIBLE)
     def apply_search(self, matchesSearchNodeIds):
         _logger.debug("applying search; matched nodes: %s", matchesSearchNodeIds)
         if matchesSearchNodeIds is None:

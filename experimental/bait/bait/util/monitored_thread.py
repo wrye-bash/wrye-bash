@@ -39,7 +39,8 @@ try:
         _bitSize = 8 * struct.calcsize("P")
         _nativeBaitPath = os.path.join("native", "bait%d.so"%_bitSize)
         if not os.path.exists(_nativeBaitPath):
-            _logger.debug("native library not found: '%s'", _nativeBaitPath)
+            _logger.info("native library not found: '%s' (manual build may be required)",
+                         _nativeBaitPath)
         else:
             _logger.debug("loading: '%s'", _nativeBaitPath)
             _nativeBaitTmp = ctypes.CDLL(_nativeBaitPath)

@@ -125,8 +125,8 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
         self._diffEngine = diffEngine
         self._feedbackThread = monitored_thread.MonitoredThread(
             target=self._handle_pending_load_requests, name="PackagesTreeFeedback")
-        # this process an internal queue (i.e. it is not an interprocess communications
-        # channel), so there is no need to manage it carefully
+        # TODO: make this thread non-daemonic so we don't get errors on interpreter
+        # shutdown
         self._feedbackThread.setDaemon(True)
 
     # override

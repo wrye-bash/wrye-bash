@@ -30,7 +30,8 @@ from ... import presenter
 _logger = logging.getLogger(__name__)
 _foregroundColorMap = {
         presenter.ForegroundColorIds.DISABLED:(142,139,138),
-        presenter.ForegroundColorIds.HAS_INACTIVE_OVERRIDDE:(255,165,0)
+        presenter.ForegroundColorIds.HAS_INACTIVE_OVERRIDDE:(255,165,0),
+        presenter.ForegroundColorIds.HAS_SUBPACKAGES:(0,0,255)
     }
 _highlightColorMap = {
         presenter.HighlightColorIds.ERROR:(193,205,205),

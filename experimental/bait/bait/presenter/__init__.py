@@ -43,7 +43,7 @@ class FilterIds(enum.FlagEnum):
     __enumerables__ = (
         'NONE',
         'PACKAGES_HIDDEN', 'PACKAGES_INSTALLED', 'PACKAGES_NOT_INSTALLED',
-        'FILES_PLUGINS', 'FILES_RESOURCES', 'FILES_OTHER',
+        'PACKAGES_ALWAYS_VISIBLE', 'FILES_PLUGINS', 'FILES_RESOURCES', 'FILES_OTHER',
         'DIRTY_ADD', 'DIRTY_UPDATE', 'DIRTY_DELETE',
         'CONFLICTS_SELECTED', 'CONFLICTS_UNSELECTED', 'CONFLICTS_ACTIVE',
         'CONFLICTS_INACTIVE', 'CONFLICTS_HIGHER', 'CONFLICTS_LOWER', 'CONFLICTS_MATCHED',
@@ -57,6 +57,7 @@ class FilterIds(enum.FlagEnum):
     PACKAGES_HIDDEN = None
     PACKAGES_INSTALLED = None
     PACKAGES_NOT_INSTALLED = None
+    #PACKAGES_ALWAYS_VISIBLE = None # not intended to be used externally
     FILES_PLUGINS = None
     FILES_RESOURCES = None
     FILES_OTHER = None
@@ -206,19 +207,15 @@ class FontStyleIds(enum.FlagEnum):
     ITALICS = None
 
 class ForegroundColorIds(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'NORMAL', 'DISABLED', 'HAS_SUBPACKAGES',
-                       'HAS_INACTIVE_OVERRIDE')
+    __enumerables__ = ('UNKNOWN', 'DISABLED', 'HAS_SUBPACKAGES', 'HAS_INACTIVE_OVERRIDE')
     # for autocomplete
-    NORMAL = None
     DISABLED = None
     HAS_SUBPACKAGES = None
     HAS_INACTIVE_OVERRIDDE = None
 
 class HighlightColorIds(enum.Enum):
-    __enumerables__ = ('UNKNOWN', 'NONE', 'ERROR', 'MISSING_DEPENDENCY', 'DIRTY',
-                       'LOADING', 'OK')
+    __enumerables__ = ('UNKNOWN', 'ERROR', 'MISSING_DEPENDENCY', 'DIRTY', 'LOADING', 'OK')
     # for autocomplete
-    NONE = None
     ERROR = None
     MISSING_DEPENDENCY = None
     DIRTY = None
@@ -266,10 +263,8 @@ class SetStyleMapsCommand(_ViewCommand):
         self.uncheckedIconMap = uncheckedIconMap
 
 class Style(debug_utils.Dumpable):
-    def __init__(self, fontStyleMask=FontStyleIds.NORMAL,
-                 foregroundColorId=ForegroundColorIds.NORMAL,
-                 highlightColorId=HighlightColorIds.NONE,
-                 checkboxState=None, iconId=None):
+    def __init__(self, fontStyleMask=FontStyleIds.NORMAL, foregroundColorId=None,
+                 highlightColorId=None, checkboxState=None, iconId=None):
         self.fontStyleMask = fontStyleMask
         self.foregroundColorId = foregroundColorId
         self.highlightColorId = highlightColorId

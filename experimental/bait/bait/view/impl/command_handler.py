@@ -237,11 +237,11 @@ class CommandHandler:
                 textColor = self._foregroundColorMap.get(style.foregroundColorId)
                 if textColor is None:
                     _logger.warn("unhandled color id: %s", style.foregroundColorId)
-            if not style.highlightColorId is None:
+            if style.highlightColorId is not None:
                 highlightColor = self._highlightColorMap.get(style.highlightColorId)
                 if highlightColor is None:
                     _logger.warn("unhandled color id: %s", style.highlightColorId)
-            if not style.fontStyleMask is None:
+            if style.fontStyleMask is not None:
                 isBold = style.fontStyleMask & presenter.FontStyleIds.BOLD != 0
                 isItalics = style.fontStyleMask & presenter.FontStyleIds.ITALICS != 0
         return (isBold, isItalics, textColor, highlightColor, checkboxState, iconId)

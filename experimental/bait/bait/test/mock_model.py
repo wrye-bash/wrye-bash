@@ -44,6 +44,16 @@ def _generate_packages_all_attributes(data, parentId, parentChildren):
         "isUnrecognized", "isCorrupt", "updateAvailable", "alwaysVisible", "isArchive",
         "hasWizard", "hasMatched", "hasMismatched", "hasMissing", "hasSubpackages"]
     for numTrue in xrange(len(attributes)+1):
+        groupChildren = []
+        data[nextId] = (
+            node_attributes.GroupNodeAttributes(
+                "%d attribute(s)"%numTrue, parentId,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(groupChildren),
+            None)
+        parentChildren.append(nextId)
+        groupId = nextId
+        nextId += 1
         for trueList in itertools.combinations(attributes, numTrue):
             if "isArchive" in trueList:
                 contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
@@ -56,10 +66,10 @@ def _generate_packages_all_attributes(data, parentId, parentChildren):
                     label += " " + attribute
             data[nextId] = (
                 node_attributes.PackageNodeAttributes(
-                    label, parentId, contextMenuId, **attributeMap),
+                    label, groupId, contextMenuId, **attributeMap),
                 None,
                 node_details.PackageNodeDetails())
-            parentChildren.append(nextId)
+            groupChildren.append(nextId)
             nextId += 1
     return nextId
 

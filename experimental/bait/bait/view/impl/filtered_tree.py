@@ -112,8 +112,9 @@ class _FilteredTree:
         def on_item_deleted(event):
             nodeId = event.GetItem().GetData()[0]
             _logger.debug("removing node %d from the tree", nodeId)
-            del self._nodeIdToItem[nodeId]
-            self._on_item_deleted(nodeId)
+            if nodeId in self._nodeIdToItem:
+                del self._nodeIdToItem[nodeId]
+                self._on_item_deleted(nodeId)
         if nodeId in self._nodeIdToItem:
             _logger.debug("removing subtree rooted at %d", nodeId)
             self._tree.Bind(wx.EVT_TREE_DELETE_ITEM, on_item_deleted)
@@ -183,11 +184,13 @@ class _FilteredTree:
         '''tracks item expansion'''
         _logger.debug("handling tree item expansion event")
         self._nodeExpansionNotificationFn(event.GetItem().GetData()[0], True)
+        event.Skip()
 
     def _on_item_collapsed(self, event):
         '''tracks item collapse'''
         _logger.debug("handling tree item collapse event")
         self._nodeExpansionNotificationFn(event.GetItem().GetData()[0], False)
+        event.Skip()
 
     def _on_item_deleted(self, nodeId):
         # overridden by PackagesTree
