@@ -1692,6 +1692,8 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Lore Friendly Names: Dwarven->Dwemer:__ Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.
 * __Notes and Scrolls:__ Choose format and whether you want enchanted scrolls at top (~) or bottom (.) of list. (Note that "~" will not display in inventory.)
 * __Potions:__ Choose format.
+* __Proper English Names: Staffs -> Staves:__ renames any instances of staffs to staves.
+* __Proper English Names: Dwarfs -> Dwarves:__ renames any instances of dwaffs totaves
 * __Spells:__ Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
   * If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.
   * If you only want to remove existing labels, then use the No Label option ("Fire Ball").
@@ -2359,6 +2361,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
     * VORB tweak now assigns special skeletons correctly
     * Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
+  * Names tweaker:
+    * New tweak: Proper English Names: Staffs -> Staves
+    * New tweak: Proper English Names: Dwarfs -> Dwarves
 * [[#InstallersTab|BAIN]]:
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
