@@ -11816,6 +11816,33 @@ class Mod_ListPatchConfig(Link):
         balt.showWryeLog(self.window,log.out.getvalue(),_('Bashed Patch Configuration'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_ExportPatchConfig(Link):
+    """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
+    def AppendToMenu(self,menu,window,data):
+        """Append link to a menu."""
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Export Patch Config...'))
+        menu.AppendItem(menuItem)
+        enable = (len(self.data) == 1 and
+            bosh.modInfos[self.data[0]].header.author in ('BASHED PATCH','BASHED LISTS'))
+        menuItem.Enable(enable)
+
+    def Execute(self,event):
+        """Handle execution."""
+        #--Config
+        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        patchName = self.data[0].s + _('_Configuration.dat')
+        outDir = bosh.dirs['patches']
+        outDir.makedirs()
+        #--File dialog
+        outPath = balt.askSave(self.window,_('Export Bashed Patch configuration to:'),outDir,patchName, '*Configuration.dat')
+        if not outPath: return
+        pklPath = outPath+'.pkl'
+        table = bolt.Table(bosh.PickleDict(outPath, pklPath))
+        table.setItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['Python','CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.save()
+
+#------------------------------------------------------------------------------
 class Mod_Ratings(Mod_Labels):
     """Add mod rating links."""
     def __init__(self):
@@ -15378,7 +15405,7 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     ModList.itemMenu.append(Mod_Ghost())
-    #ModList.itemMenu.append(Mod_MarkLevelers())
+    ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_MarkMergeable(False))
     if CBash:
         ModList.itemMenu.append(Mod_MarkMergeable(True))
@@ -15386,6 +15413,7 @@ def InitModLinks():
     if CBash:
         ModList.itemMenu.append(Mod_Patch_Update(True))
     ModList.itemMenu.append(Mod_ListPatchConfig())
+    ModList.itemMenu.append(Mod_ExportPatchConfig())
     #--Advanced
     ModList.itemMenu.append(SeparatorLink())
     if True: #--Export

@@ -1101,6 +1101,9 @@ These are the commands found on context menu for mods...
 * Displays a summary of how you have configured your Bashed Patch.
 * This summary will also be copied to your clipboard, so all you have to do to post it on a forum for help is paste it into a post.
 
+=== Export Patch Config...
+* Exports the Wrye Bash readable patch configuration for your Bashed Patch to a file without loading mergeability and stuff that takes a bit of processing.
+
 === Remove World Orphans
 * This command is for modders and advanced players only. Less experienced players will generally **not** need to use this.
 * Techie Explanation
@@ -2376,6 +2379,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
   * Ghost will ghost just the selected mod(s) 
+  * [[#|Export Patch Config...]] exports the selcted patch's configuration to a file.
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Add Master command can now add multiple masters in one go
@@ -2393,7 +2397,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
-* [[|List Mods]]: crc dispaly is off by default and added code to enable crc display if 'c' is pressed.
+* [[#|List Mods]]: crc dispaly is off by default and added code to enable crc display if 'c' is pressed.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
