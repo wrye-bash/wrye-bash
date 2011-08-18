@@ -1931,6 +1931,8 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Notes:__ Toggles inclusion of mod group notes.
 * __Configuration:__ Toggles inclusion of mod group configuration info.
 * __Suggestions:__ Toggles inclusion of mod group suggestions.
+* __Version Numbers:__ Toggles inclusion of version numbers for the mods in the mod list.
+* __CRCs:__ Toggles inclusion of CRCs for the mods in the mod list.
 * __Scan for UDR's / Scan for Dirty Edits:__ Toggles scanning mod files for deleted references and Identical to Master records.  With CBash disabled, this can take quite some time.  ITM scanning will only occur if CBash is enabled, UDR scanning works in both CBash and non-CBash mode.
   * The number of ITM records reported by Wrye Bash will usually be a little less than when cleaned in TES4Edit, due to not checking GRUP records.
 * __Copy Text:__ Copies text of report to clipboard. (Useful for forum postings.)
@@ -2355,7 +2357,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * New tweak: Skyrim-style Weapons.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
     * VORB tweak now assigns special skeletons correctly
-    * fix type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
+    * Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
 * [[#InstallersTab|BAIN]]:
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
@@ -2381,6 +2383,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added -L/--Language as cmdline options to set Wrye Bash's language.
 * Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
 * Ini Panel -> list active ini's command added.
+* [[#ModChecker|ModChecker]]:
+  * Fixed default size to be wide enough to display all buttons.
+  * Added option to toggle display of CRCs for mods in the mod list.
+  * Added option to toggle display of version numbers for mods in the mod list.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records

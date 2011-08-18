@@ -5194,7 +5194,7 @@ class ModChecker(wx.Frame):
         modChecker = self
         #--Window
         pos = settings.get('bash.modChecker.pos',balt.defPos)
-        size = settings.get('bash.modChecker.size',(400,440))
+        size = settings.get('bash.modChecker.size',(475,500))
         wx.Frame.__init__(self, bashFrame, -1, _('Mod Checker'), pos, size,
             style=wx.DEFAULT_FRAME_STYLE)
         self.SetBackgroundColour(wx.NullColour)
@@ -5217,6 +5217,8 @@ class ModChecker(wx.Frame):
         self.gShowNotes = toggleButton(self,_("Notes"),onClick=self.CheckMods)
         self.gShowConfig = toggleButton(self,_("Configuration"),onClick=self.CheckMods)
         self.gShowSuggest = toggleButton(self,_("Suggestions"),onClick=self.CheckMods)
+        self.gShowCRC = toggleButton(self,_("CRCs"),onClick=self.CheckMods)
+        self.gShowVersion = toggleButton(self,_("Version Numbers"),onClick=self.CheckMods)
         if settings['bash.CBashEnabled']:
             self.gScanDirty = toggleButton(self,_("Scan for Dirty Edits"),onClick=self.CheckMods)
         else:
@@ -5226,6 +5228,8 @@ class ModChecker(wx.Frame):
         self.gShowNotes.SetValue(settings.get('bash.modChecker.showNotes',True))
         self.gShowConfig.SetValue(settings.get('bash.modChecker.showConfig',True))
         self.gShowSuggest.SetValue(settings.get('bash.modChecker.showSuggest',True))
+        self.gShowCRC.SetValue(settings.get('bash.modChecker.showCRC',False))
+        self.gShowVersion.SetValue(settings.get('bash.modChecker.showVersion',True))
         #--Events
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
@@ -5241,6 +5245,10 @@ class ModChecker(wx.Frame):
                     (self.gShowNotes,0,wx.LEFT,4),
                     (self.gShowConfig,0,wx.LEFT,4),
                     (self.gShowSuggest,0,wx.LEFT,4),
+                    ),0,wx.ALL|wx.EXPAND,4),
+                (hSizer(
+                    (self.gShowVersion,0,wx.LEFT,4),
+                    (self.gShowCRC,0,wx.LEFT,4),
                     (self.gScanDirty,0,wx.LEFT,4),
                     (self.gCopyText,0,wx.LEFT,4),
                     spacer,
@@ -5272,17 +5280,21 @@ class ModChecker(wx.Frame):
         settings['bash.modChecker.showNotes'] = self.gShowNotes.GetValue()
         settings['bash.modChecker.showConfig'] = self.gShowConfig.GetValue()
         settings['bash.modChecker.showSuggest'] = self.gShowSuggest.GetValue()
-        #--Cache info from modinfs to support auto-update.
+        settings['bash.modChecker.showCRC'] = self.gShowCRC.GetValue()
+        settings['bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
+        #--Cache info from modinfos to support auto-update.
         self.ordered = bosh.modInfos.ordered
         self.merged = bosh.modInfos.merged.copy()
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
         self.text = bosh.configHelpers.checkMods(
-            self.gShowModList.GetValue(),
-            self.gShowRuleSets.GetValue(),
+            settings['bash.modChecker.showModList'],
+            settings['bash.modChecker.showRuleSets'],
             settings['bash.modChecker.showNotes'],
             settings['bash.modChecker.showConfig'],
             settings['bash.modChecker.showSuggest'],
+            settings['bash.modChecker.showCRC'],
+            settings['bash.modChecker.showVersion'],
             scanDirty=(None,modChecker)[self.gScanDirty.GetValue()]
             )
         logPath = bosh.dirs['saveBase'].join('ModChecker.html')
