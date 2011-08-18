@@ -24931,7 +24931,7 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Staffs"),
+        MultiTweakItem.__init__(self,_("Reweigh: Staffs/Staves"),
             _('Staff weight will be capped.'),
             'StaffWeight',
             (_('1'),  1),
@@ -24979,9 +24979,9 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Staffs'))
-        log(_('Staffs set to maximum weight of %f') % maxWeight)
-        log(_('* Staffs Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(_('=== Reweigh: Staffs/Staves'))
+        log(_('Staffs/Staves set to maximum weight of %f') % maxWeight)
+        log(_('* Staffs/Staves Reweighed: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -24989,11 +24989,11 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     """Reweighs staffs."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh: Staffs')
+    name = _('Reweigh: Staffs/Staves')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Staffs"),
+        CBash_MultiTweakItem.__init__(self,_("Reweigh: Staffs/Staves"),
             _('Staff weight will be capped.'),
             'StaffWeight',
             (_('1'),  1.0),
@@ -25029,9 +25029,9 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Staffs'))
-        log(_('Staffs set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Staffs Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(_('=== Reweigh: Staffs/Staves'))
+        log(_('Staffs/Staves set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(_('* Staffs/Staves Reweighed: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25451,8 +25451,8 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and staffs"),
-            _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
+        MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and Staffs/Staves"),
+            _('The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
             (_('5'), 5),
@@ -25519,8 +25519,8 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and staffs"),
-            _('The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
+        CBash_MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and Staffs/Staves"),
+            _('The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             'Number of uses:',
             (_('1'), 1),
             (_('5'), 5),
