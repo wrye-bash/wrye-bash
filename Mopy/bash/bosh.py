@@ -29383,6 +29383,560 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class NamesTweak_Dwarfs(MultiTweakItem):
+    reDwarf  = re.compile(r'\b(d|D)(?:warfs)\b')
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                            'CLAS','CLOT','CONT','CREA','DOOR',
+                            'ENCH','EYES','FACT','FLOR','FURN','GMST',
+                            'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
+                            'MISC','NPC_','QUST','RACE','SCPT','SGST',
+                            'SKIL','SLGM','SPEL','WEAP']
+        MultiTweakItem.__init__(self,_("Proper English Names: Dwarfs -> Dwarves"),
+            _('Rename any thing that is named X Dwarfs or Dwarfs X to Dwarves X/X Dwarves to follow proper English better.'),
+            'Dwarfs',
+            (('Proper English Names: Dwarfs -> Dwarves'),  'Dwemer'),
+            )
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        for blockType in self.activeTypes:
+            if blockType not in modFile.tops: continue
+            modBlock = getattr(modFile,blockType)
+            patchBlock = getattr(patchFile,blockType)
+            id_records = patchBlock.id_records
+            for record in modBlock.getActiveRecords():
+                if mapper(record.fid) not in id_records:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        count = {}
+        keep = patchFile.getKeeper()
+        reDwarf = self.reDwarf
+        for type in self.activeTypes:
+            if type not in patchFile.tops: continue
+            for record in patchFile.tops[type].records:
+                changed = False
+                if hasattr(record, 'full'):
+                    changed = reDwarf.search(record.full or '')
+                if not changed:
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                changed = reDwarf.search(effect.scriptEffect.full or '')
+                            except AttributeError:
+                                continue
+                            if changed: break
+                if not changed:
+                    if hasattr(record, 'text'):
+                        changed = reDwarf.search(record.text or '')
+                if not changed:
+                    if hasattr(record, 'description'):
+                        changed = reDwarf.search(record.description or '')
+                if not changed:
+                    if type == 'GMST' and record.eid[0] == 's':
+                        changed = reDwarf.search(record.value or '')
+                if not changed:
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                changed = reDwarf.search(entry.text or '')
+                                if changed: break
+                if not changed:
+                    if type == 'SKIL':
+                        changed = reDwarf.search(record.apprentice or '')
+                        if not changed:
+                            changed = reDwarf.search(record.journeyman or '')
+                        if not changed:
+                            changed = reDwarf.search(record.expert or '')
+                        if not changed:
+                            changed = reDwarf.search(record.master or '')
+                if changed:
+                    if hasattr(record, 'full'):
+                        newString = record.full
+                        if record:
+                            record.full = reDwarf.sub(r'\1warves', newString)
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                newString = effect.scriptEffect.full
+                            except AttributeError:
+                                continue
+                            if newString:
+                                effect.scriptEffect.full = reDwarf.sub(r'\1warves', newString)
+                    if hasattr(record, 'text'):
+                        newString = record.text
+                        if newString:
+                            record.text = reDwarf.sub(r'\1warves', newString)
+                    if hasattr(record, 'description'):
+                        newString = record.description
+                        if newString:
+                            record.description = reDwarf.sub(r'\1warves', newString)
+                    if type == 'GMST' and record.eid[0] == 's':
+                        newString = record.value
+                        if newString:
+                            record.value = reDwarf.sub(r'\1warves', newString)
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                newString = entry.text
+                                if newString:
+                                    entry.text = reDwarf.sub(r'\1warves', newString)
+                    if type == 'SKIL':
+                        newString = record.apprentice
+                        if newString:
+                            record.apprentice = reDwarf.sub(r'\1warves', newString)
+                        newString = record.journeyman
+                        if newString:
+                            record.journeyman = reDwarf.sub(r'\1warves', newString)
+                        newString = record.expert
+                        if newString:
+                            record.expert = reDwarf.sub(r'\1warves', newString)
+                        newString = record.master
+                        if newString:
+                            record.master = reDwarf.sub(r'\1warves', newString)
+
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log(_('* %s: %d') % (self.label,sum(count.values())))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_NamesTweak_Dwarfs(CBash_MultiTweakItem):
+    """Names tweaker for dwarfs->dwarves."""
+    scanOrder = 32
+    editOrder = 32
+    reDwarf  = re.compile(r'\b(d|D)(?:warfs)\b')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_("Proper English Names: Dwarfs -> Dwarves"),
+            _('Rename any thing that is named X Dwarfs or Dwarfs X to Dwarves X/X Dwarves to follow proper English better.'),
+            'Dwarfs',
+            (('Proper English Names: Dwarfs -> Dwarves'),  'Dwemer'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'ENCH','EYES','FACT','FLOR','FURN','GMST',
+                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
+                'MISC','NPC_','QUST','RACE','SCPT','SGST',
+                'SKIL','SLGM','SPEL','WEAP']
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        CBash_MultiTweakItem.saveConfig(self,configs)
+        self.format = self.choiceValues[self.chosen][0]
+        self.showStat = '%02d' in self.format
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        changed = False
+        if hasattr(record, 'full'):
+            changed = self.reDwarf.search(record.full or '')
+        if not changed:
+            if hasattr(record, 'effects'):
+                Effects = record.effects
+                for effect in Effects:
+                    changed = self.reDwarf.search(effect.full or '')
+                    if changed: break
+        if not changed:
+            if hasattr(record, 'text'):
+                changed = self.reDwarf.search(record.text or '')
+        if not changed:
+            if hasattr(record, 'description'):
+                changed = self.reDwarf.search(record.description or '')
+        if not changed:
+            if record._Type == 'GMST' and record.eid[0] == 's':
+                changed = self.reDwarf.search(record.value or '')
+        if not changed:
+            if hasattr(record, 'stages'):
+                Stages = record.stages
+                for stage in Stages:
+                    for entry in stage.entries:
+                        changed = self.reDwarf.search(entry.text or '')
+                        if changed: break
+        if not changed:
+            if record._Type == 'SKIL':
+                changed = self.reDwarf.search(record.apprentice or '')
+                if not changed:
+                    changed = self.reDwarf.search(record.journeyman or '')
+                if not changed:
+                    changed = self.reDwarf.search(record.expert or '')
+                if not changed:
+                    changed = self.reDwarf.search(record.master or '')
+
+        if changed:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                if hasattr(override, 'full'):
+                    newString = override.full
+                    if newString:
+                        override.full = self.reDwarf.sub(r'\1warves', newString)
+                if hasattr(override, 'effects'):
+                    Effects = override.effects
+                    for effect in Effects:
+                        newString = effect.full
+                        if newString:
+                            effect.full = self.reDwarf.sub(r'\1warves', newString)
+                if hasattr(override, 'text'):
+                    newString = override.text
+                    if newString:
+                        override.text = self.reDwarf.sub(r'\1warves', newString)
+                if hasattr(override, 'description'):
+                    newString = override.description
+                    if newString:
+                        override.description = self.reDwarf.sub(r'\1warves', newString)
+                if override._Type == 'GMST' and override.eid[0] == 's':
+                    newString = override.value
+                    if newString:
+                        override.value = self.reDwarf.sub(r'\1warves', newString)
+                if hasattr(override, 'stages'):
+                    Stages = override.stages
+                    for stage in Stages:
+                        for entry in stage.entries:
+                            newString = entry.text
+                            if newString:
+                                entry.text = self.reDwarf.sub(r'\1warves', newString)
+                if override._Type == 'SKIL':
+                    newString = override.apprentice
+                    if newString:
+                        override.apprentice = self.reDwarf.sub(r'\1warves', newString)
+                    newString = override.journeyman
+                    if newString:
+                        override.journeyman = self.reDwarf.sub(r'\1warves', newString)
+                    newString = override.expert
+                    if newString:
+                        override.expert = self.reDwarf.sub(r'\1warves', newString)
+                    newString = override.master
+                    if newString:
+                        override.master = self.reDwarf.sub(r'\1warves', newString)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== %s' % self.label)
+        log(_('* Items Renamed: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class NamesTweak_staffs(MultiTweakItem):
+    reStaff  = re.compile(r'\b(s|S)(?:taffs)\b')
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                            'CLAS','CLOT','CONT','CREA','DOOR',
+                            'ENCH','EYES','FACT','FLOR','FURN','GMST',
+                            'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
+                            'MISC','NPC_','QUST','RACE','SCPT','SGST',
+                            'SKIL','SLGM','SPEL','WEAP']
+        MultiTweakItem.__init__(self,_("Proper English Names: Staffs -> Staves"),
+            _('Rename any thing that is named X Staffs or Staffs X to Staves X/X Staves to follow proper English better.'),
+            'Staffs',
+            (('Proper English Names: Staffs -> Staves'),  'Staves'),
+            )
+
+    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreBsgn,
+                MreClas,MreClot,MreCont,MreCrea,MreDoor,
+                MreEnch,MreEyes,MreFact,MreFlor,MreFurn,MreGmst,
+                MreHair,MreIngr,MreKeym,MreLigh,MreLscr,MreMgef,
+                MreMisc,MreNpc ,MreQust,MreRace,MreScpt,MreSgst,
+                MreSkil,MreSlgm,MreSpel,MreWeap)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        for blockType in self.activeTypes:
+            if blockType not in modFile.tops: continue
+            modBlock = getattr(modFile,blockType)
+            patchBlock = getattr(patchFile,blockType)
+            id_records = patchBlock.id_records
+            for record in modBlock.getActiveRecords():
+                if mapper(record.fid) not in id_records:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        count = {}
+        keep = patchFile.getKeeper()
+        reStaff = self.reStaff
+        for type in self.activeTypes:
+            if type not in patchFile.tops: continue
+            for record in patchFile.tops[type].records:
+                changed = False
+                if hasattr(record, 'full'):
+                    changed = reStaff.search(record.full or '')
+                if not changed:
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                changed = reStaff.search(effect.scriptEffect.full or '')
+                            except AttributeError:
+                                continue
+                            if changed: break
+                if not changed:
+                    if hasattr(record, 'text'):
+                        changed = reStaff.search(record.text or '')
+                if not changed:
+                    if hasattr(record, 'description'):
+                        changed = reStaff.search(record.description or '')
+                if not changed:
+                    if type == 'GMST' and record.eid[0] == 's':
+                        changed = reStaff.search(record.value or '')
+                if not changed:
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                changed = reStaff.search(entry.text or '')
+                                if changed: break
+                if not changed:
+                    if type == 'SKIL':
+                        changed = reStaff.search(record.apprentice or '')
+                        if not changed:
+                            changed = reStaff.search(record.journeyman or '')
+                        if not changed:
+                            changed = reStaff.search(record.expert or '')
+                        if not changed:
+                            changed = reStaff.search(record.master or '')
+                if changed:
+                    if hasattr(record, 'full'):
+                        newString = record.full
+                        if record:
+                            record.full = reStaff.sub(r'\1taves', newString)
+                    if hasattr(record, 'effects'):
+                        Effects = record.effects
+                        for effect in Effects:
+                            try:
+                                newString = effect.scriptEffect.full
+                            except AttributeError:
+                                continue
+                            if newString:
+                                effect.scriptEffect.full = reStaff.sub(r'\1taves', newString)
+                    if hasattr(record, 'text'):
+                        newString = record.text
+                        if newString:
+                            record.text = reStaff.sub(r'\1taves', newString)
+                    if hasattr(record, 'description'):
+                        newString = record.description
+                        if newString:
+                            record.description = reStaff.sub(r'\1taves', newString)
+                    if type == 'GMST' and record.eid[0] == 's':
+                        newString = record.value
+                        if newString:
+                            record.value = reStaff.sub(r'\1taves', newString)
+                    if hasattr(record, 'stages'):
+                        Stages = record.stages
+                        for stage in Stages:
+                            for entry in stage.entries:
+                                newString = entry.text
+                                if newString:
+                                    entry.text = reStaff.sub(r'\1taves', newString)
+                    if type == 'SKIL':
+                        newString = record.apprentice
+                        if newString:
+                            record.apprentice = reStaff.sub(r'\1taves', newString)
+                        newString = record.journeyman
+                        if newString:
+                            record.journeyman = reStaff.sub(r'\1taves', newString)
+                        newString = record.expert
+                        if newString:
+                            record.expert = reStaff.sub(r'\1taves', newString)
+                        newString = record.master
+                        if newString:
+                            record.master = reStaff.sub(r'\1taves', newString)
+
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log(_('* %s: %d') % (self.label,sum(count.values())))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_NamesTweak_staffs(CBash_MultiTweakItem):
+    """Names tweaker for Staffs->Staves."""
+    scanOrder = 32
+    editOrder = 32
+    reStaff  = re.compile(r'\b(s|S)(?:taffs)\b')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_("Proper English Names: Staffs -> Staves"),
+            _('Rename any thing that is named X Staffs or Staffs X to Staves X/X Staves to follow proper English better.'),
+            'Staffs',
+            (('Proper English Names: Staffs -> Staves'),  'Staves'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'ENCH','EYES','FACT','FLOR','FURN','GMST',
+                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
+                'MISC','NPC_','QUST','RACE','SCPT','SGST',
+                'SKIL','SLGM','SPEL','WEAP']
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        CBash_MultiTweakItem.saveConfig(self,configs)
+        self.format = self.choiceValues[self.chosen][0]
+        self.showStat = '%02d' in self.format
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        changed = False
+        if hasattr(record, 'full'):
+            changed = self.reStaff.search(record.full or '')
+        if not changed:
+            if hasattr(record, 'effects'):
+                Effects = record.effects
+                for effect in Effects:
+                    changed = self.reStaff.search(effect.full or '')
+                    if changed: break
+        if not changed:
+            if hasattr(record, 'text'):
+                changed = self.reStaff.search(record.text or '')
+        if not changed:
+            if hasattr(record, 'description'):
+                changed = self.reStaff.search(record.description or '')
+        if not changed:
+            if record._Type == 'GMST' and record.eid[0] == 's':
+                changed = self.reStaff.search(record.value or '')
+        if not changed:
+            if hasattr(record, 'stages'):
+                Stages = record.stages
+                for stage in Stages:
+                    for entry in stage.entries:
+                        changed = self.reStaff.search(entry.text or '')
+                        if changed: break
+        if not changed:
+            if record._Type == 'SKIL':
+                changed = self.reStaff.search(record.apprentice or '')
+                if not changed:
+                    changed = self.reStaff.search(record.journeyman or '')
+                if not changed:
+                    changed = self.reStaff.search(record.expert or '')
+                if not changed:
+                    changed = self.reStaff.search(record.master or '')
+
+        if changed:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                if hasattr(override, 'full'):
+                    newString = override.full
+                    if newString:
+                        override.full = self.reStaff.sub(r'\1taves', newString)
+                if hasattr(override, 'effects'):
+                    Effects = override.effects
+                    for effect in Effects:
+                        newString = effect.full
+                        if newString:
+                            effect.full = self.reStaff.sub(r'\1taves', newString)
+                if hasattr(override, 'text'):
+                    newString = override.text
+                    if newString:
+                        override.text = self.reStaff.sub(r'\1taves', newString)
+                if hasattr(override, 'description'):
+                    newString = override.description
+                    if newString:
+                        override.description = self.reStaff.sub(r'\1taves', newString)
+                if override._Type == 'GMST' and override.eid[0] == 's':
+                    newString = override.value
+                    if newString:
+                        override.value = self.reStaff.sub(r'\1taves', newString)
+                if hasattr(override, 'stages'):
+                    Stages = override.stages
+                    for stage in Stages:
+                        for entry in stage.entries:
+                            newString = entry.text
+                            if newString:
+                                entry.text = self.reStaff.sub(r'\1taves', newString)
+                if override._Type == 'SKIL':
+                    newString = override.apprentice
+                    if newString:
+                        override.apprentice = self.reStaff.sub(r'\1taves', newString)
+                    newString = override.journeyman
+                    if newString:
+                        override.journeyman = self.reStaff.sub(r'\1taves', newString)
+                    newString = override.expert
+                    if newString:
+                        override.expert = self.reStaff.sub(r'\1taves', newString)
+                    newString = override.master
+                    if newString:
+                        override.master = self.reStaff.sub(r'\1taves', newString)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader('=== %s' % self.label)
+        log(_('* Items Renamed: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
 class NamesTweaker(MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
@@ -29412,6 +29966,8 @@ class NamesTweaker(MultiTweaker):
         NamesTweak_Spells(),
         NamesTweak_Weapons(),
         NamesTweak_Dwarven(),
+        NamesTweak_Dwarfs(),
+        NamesTweak_staffs(),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,NamesTweak_BodyTags())
 
@@ -29471,6 +30027,8 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
         CBash_NamesTweak_Spells(),
         CBash_NamesTweak_Weapons(),
         CBash_NamesTweak_Dwarven(),
+        CBash_NamesTweak_Dwarfs(),
+        CBash_NamesTweak_staffs(),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
     #--Config Phase ------------------------------------------------------------
