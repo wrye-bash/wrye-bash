@@ -9673,7 +9673,7 @@ class Mods_ListMods(Link):
 
     def Execute(self,event):
         #--Get masters list
-        text = bosh.modInfos.getModList()
+        text = bosh.modInfos.getModList(showCRC=wx.GetKeyState(67))
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()

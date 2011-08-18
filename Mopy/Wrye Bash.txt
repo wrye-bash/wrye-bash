@@ -837,6 +837,7 @@ These are the commands for the context menu for the mods list. (You'll get this 
 === List Mods
 * Displays list of currently active mods and copies that same list to the clipboard. Useful for posting your list of mods to forums for load debugging help.
 * Note: Merged, imported and group header mods will also be shown.
+* Displays mod version and if 'c' is pressed displays mod crcs.
 
 === Debug Mode
 * This feature will activate debug printout. Note that there are few commands for which this will have an effect. (E.g. Update Save Levels... will be affected.)
@@ -2387,6 +2388,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
+* [[|List Mods]]: crc dispaly is off by default and added code to enable crc display if 'c' is pressed.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
