@@ -80,11 +80,11 @@ def _generate_blinking_packages(data, parentId, blinkingChildren):
         nextId += 1
     return nextId
 
-def _expand_set(setChoices):
+def _expand_list(oneEachOf):
     retlist = [[]]
-    for choice in setChoices:
+    for one in oneEachOf:
         newretlist = []
-        for expansion in _expand_choices(choice):
+        for expansion in _expand_choices(one):
             for oldlist in retlist:
                 newlist = list(oldlist)
                 newlist.extend(expansion)
@@ -92,65 +92,75 @@ def _expand_set(setChoices):
         retlist = newretlist
     return retlist
 
-def _expand_and(andChoices):
+def _expand_set(allCombinationsOf):
     retlist = []
-    for numChoices in xrange(len(andChoices)+1):
-        if numChoices == 0: continue
-        for choices in itertools.combinations(andChoices, numChoices):
-            retlist.extend(_expand_choices(choices, isSet=True))
+    skipZero = True
+    if None in allCombinationsOf:
+        allCombinationsOf = set(allCombinationsOf)
+        allCombinationsOf.discard(None)
+        skipZero = False
+    for numChoices in xrange(len(allCombinationsOf)+1):
+        if numChoices == 0 and skipZero:
+            continue
+        for choices in itertools.combinations(allCombinationsOf, numChoices):
+            retlist.extend(_expand_choices(list(choices)))
     return retlist
 
-def _expand_or(orChoices):
+def _expand_tuple(oneOf):
     retlist = []
-    for choice in orChoices:
-        retlist.extend(_expand_choices(choice))
+    for one in oneOf:
+        retlist.extend(_expand_choices(one))
     return retlist
 
-# returns list of lists of strings
-def _expand_choices(choices, isSet=False):
-    if isSet or type(choices) == set:
+# returns list of lists of strings.
+def _expand_choices(choices):
+    if type(choices) == set:
         return _expand_set(choices)
     elif type(choices) == list:
-        return _expand_and(choices)
+        return _expand_list(choices)
     elif type(choices) == tuple:
-        return _expand_or(choices)
+        return _expand_tuple(choices)
     else:
         return [[choices]]
 
 def _generate_packages_expected_attributes(data, parentId, parentChildren):
     nextId = parentId + 1
     usedSets = set()
-    # tuples indicate "one of", lists indicate "all combinations of"
-    choiceSets = (
-        ["alwaysVisible",
-         ["isDirty", "isNew", "hasMissingDeps", "hasMatched", "hasMismatched",
-          "hasMissing"]],
+    # tuples indicate "one of"
+    # sets indicate "all combinations of"
+    # lists indicate "one each of"
+    choices = (
+        # used for virtual "installed data" package
+        ["alwaysVisible", "isInstalled",
+         ("hasMatched", ["isDirty", "hasMismatched"]),
+         set((None, "hasMissingDeps"))],
+        # must have an attribute related to a file that should be installed
         ["isInstalled",
-         ["isDirty", "hasMissingDeps", "updateAvailable", "isArchive", "hasWizard",
-          "hasMatched", "hasMismatched", "hasMissing", "hasSubpackages"]],
+         ("hasMatched", ["isDirty", set(("hasMismatched", "hasMissing", "hasMatched"))]),
+         set((None, "isArchive", "hasWizard", "updateAvailable", "hasSubpackages",
+              "hasMissingDeps"))],
+        # can have a wider variety of attributes, including corruption
         ["isNotInstalled",
-         (["isDirty", "hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched",
-           "hasMissing", "hasSubpackages"],
-          ("isUnrecognized", "isCorrupt",
-           ["isNew", "hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched",
-            "hasMissing", "hasSubpackages"])),
-         "updateAvailable", "isArchive"],
+         set((None, "updateAvailable", "isArchive")),
+         (set((None, "isNew", "isDirty", "hasMissingDeps", "hasWizard", "hasMatched",
+               "hasMismatched", "hasMissing", "hasSubpackages")),
+          ("isUnrecognized", "isCorrupt"))],
         ["isHidden",
-         ["isArchive", "updateAvailable",
-          ("isUnrecognized", "isCorrupt",
-           ["hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched", "hasMissing",
-            "hasSubpackages"])]])
-    for choiceSet in choiceSets:
+         set((None, "updateAvailable", "isArchive")),
+         ("isUnrecognized", "isCorrupt",
+          set((None, "hasMissingDeps", "hasWizard", "hasMatched", "hasMismatched",
+               "hasMissing", "hasSubpackages")))])
+    for choice in choices:
         groupChildren = []
         data[nextId] = (
             node_attributes.GroupNodeAttributes(
-                "%s Group"%choiceSet[0], parentId, node_attributes.ContextMenuIds.GROUP),
+                "%s Group"%choice[0], parentId, node_attributes.ContextMenuIds.GROUP),
             node_children.NodeChildren(groupChildren),
             None)
         parentChildren.append(nextId)
         groupId = nextId
         nextId += 1
-        for trueList in _expand_choices(choiceSet, isSet=True):
+        for trueList in _expand_choices(choice):
             if "isArchive" in trueList:
                 contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
             else:
@@ -350,7 +360,9 @@ class MockModel:
                 self.updateNotificationQueue.put((model.UpdateTypes.ATTRIBUTES,
                                                   model.NodeTypes.ROOT,
                                                   model.ROOT_NODE_ID, cur))
+        statsLogger = logging.getLogger("STATISTICS")
         _logger.info("loaded %d packages in %d seconds", total, iterations)
+        statsLogger.info("loaded %d packages in %d seconds", total, iterations)
         rootNode[_ATTRIBUTES_IDX] = node_attributes.RootNodeAttributes(
             node_attributes.StatusOkData(12345, 3123, 250000, 123000, 22000, 250000),
             version=cur+1)

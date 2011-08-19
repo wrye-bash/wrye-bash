@@ -145,7 +145,7 @@ class _ProcessMonitor:
                 isFirst = False
             else:
                 threadCpuStr.write("; ")
-            threadCpuStr.write(threadInfo[1])
+            threadCpuStr.write(str(threadInfo[1]))
             threadCpuStr.write(": %d%%" % threadInfo[0])
         threadCpuStr.write("]")
 

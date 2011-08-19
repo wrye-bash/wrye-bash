@@ -154,8 +154,7 @@ def _get_style(nodeAttributes):
                             _get_highlight_color(nodeAttributes))
     if nodeAttributes.nodeType == model.NodeTypes.PACKAGE:
         # craft package-specific style elements
-        if not nodeAttributes.isHidden:
-            style.checkboxState = nodeAttributes.isInstalled
+        style.checkboxState = nodeAttributes.isInstalled
         style.iconId = _get_package_icon_id(nodeAttributes)
     elif nodeAttributes.nodeType == model.NodeTypes.GROUP:
         # no additional attributes

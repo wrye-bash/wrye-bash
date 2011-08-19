@@ -146,7 +146,7 @@ def _parse_commandline():
 
 
 if __name__ == "__main__":
-    multiprocessing.current_process().name = "Main"
+    multiprocessing.current_process().name = "baittest"
     threading.current_thread().name = "Main"
     logging.config.fileConfig("logging.conf")
     _logger = logging.getLogger("baittest")
