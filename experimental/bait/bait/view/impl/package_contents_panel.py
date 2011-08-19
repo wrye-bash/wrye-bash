@@ -65,6 +65,10 @@ class _PackageInfoTabs:
         notebook = wx.Notebook(panel)
         sizer.Add(notebook, 1, wx.EXPAND)
 
+        # work around color weirdness on windows
+        backgroundColor = panel.GetBackgroundColour()
+        notebook.SetBackgroundColour(backgroundColor)
+
         generalTabPanel = wx.lib.scrolledpanel.ScrolledPanel(notebook)
         generalTabSummary = self._generalTabSummary = wx.StaticText(generalTabPanel)
         generalTabChartPanel = self._generalTabChartPanel = wx.Panel(generalTabPanel)

@@ -38,6 +38,10 @@ class InstallerTab:
         topSizer = wx.BoxSizer(wx.VERTICAL)
         topPanel = self._topPanel = wx.Panel(wxParentNotebook)
 
+        # work around color weirdness on windows
+        backgroundColor = topPanel.GetBackgroundColour()
+        wxParentNotebook.SetBackgroundColour(backgroundColor)
+
         # assemble widget hierarchy
         # top-level splitter between left and right panels
         splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
