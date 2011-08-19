@@ -110,38 +110,6 @@ class _FilteredTree:
                                   highlightColor, checkboxState)
         self._set_icon(item, iconId)
 
-    def _copy_branch(self, nodeId, item, destDict):
-        """dict tuples are (label, type, data, isExpanded, isBold, isItalics, textColor,
-                            highlightColor, checked, checkedIcon, uncheckedIcon,
-                            isSelected, [childrenNodeIds])"""
-        # copy branch rooted at nodeId
-        childrenNodeIds = []
-        attr = item.GetAttributes()
-        destDict[nodeId] = (item.GetText(), item.GetType(), item.GetData(),
-                            item.IsExpanded(), item.IsBold(), item.IsItalic(),
-                            attr.GetTextColour(), attr.GetBackgroundColour(),
-                            item.IsChecked(),
-                            item._checkedimages[CT.TreeItemIcon_Checked],
-                            item._checkedimages[CT.TreeItemIcon_NotChecked],
-                            item.IsSelected(), childrenNodeIds)
-        for childItem in item.GetChildren():
-            childNodeId = item.GetData()[0]
-            childrenNodeIds.append(childNodeId)
-            self._copy_branch(childNodeId, childItem, destDict)
-
-    def _paste_branch(self, nodeId, parentItem, predItem, srcDict):
-        itemData = srcDict[nodeId]
-        item = self._tree.InsertItemByItem(parentItem, predItem, itemData[0],
-                                           ct_type=itemData[1], data=itemData[2])
-        self._set_item_attributes(nodeId, item, itemData[3], itemData[4], itemData[5],
-                                  itemData[6], itemData[7], itemData[8])
-        item._checkedimages[CT.TreeItemIcon_Checked] = itemData[9]
-        item._checkedimages[CT.TreeItemIcon_NotChecked] = itemData[10]
-        item.SetHilight(itemData[11])
-        self._nodeIdToItem[nodeId] = item
-        for childNodeId in itemData[12]:
-            self._paste_branch(childNodeId, parentItem, item, srcDict)
-
     def move_node(self, nodeId, predNodeId):
         _logger.debug("moving node %d to below %s", nodeId, predNodeId)
         item = self._nodeIdToItem[nodeId]
@@ -217,6 +185,38 @@ class _FilteredTree:
             item.Check(checkboxState)
         item.AssignAttributes(attr)
 
+
+    def _copy_branch(self, nodeId, item, destDict):
+        """dict tuples are (label, type, data, isExpanded, isBold, isItalics, textColor,
+                            highlightColor, checked, checkedIcon, uncheckedIcon,
+                            isSelected, [childrenNodeIds])"""
+        # copy branch rooted at nodeId
+        childrenNodeIds = []
+        attr = item.GetAttributes()
+        destDict[nodeId] = (item.GetText(), item.GetType(), item.GetData(),
+                            item.IsExpanded(), item.IsBold(), item.IsItalic(),
+                            attr.GetTextColour(), attr.GetBackgroundColour(),
+                            item.IsChecked(),
+                            item._checkedimages[CT.TreeItemIcon_Checked],
+                            item._checkedimages[CT.TreeItemIcon_NotChecked],
+                            item.IsSelected(), childrenNodeIds)
+        for childItem in item.GetChildren():
+            childNodeId = item.GetData()[0]
+            childrenNodeIds.append(childNodeId)
+            self._copy_branch(childNodeId, childItem, destDict)
+
+    def _paste_branch(self, nodeId, parentItem, predItem, srcDict):
+        itemData = srcDict[nodeId]
+        item = self._tree.InsertItemByItem(parentItem, predItem, itemData[0],
+                                           ct_type=itemData[1], data=itemData[2])
+        self._set_item_attributes(nodeId, item, itemData[3], itemData[4], itemData[5],
+                                  itemData[6], itemData[7], itemData[8])
+        item._checkedimages[CT.TreeItemIcon_Checked] = itemData[9]
+        item._checkedimages[CT.TreeItemIcon_NotChecked] = itemData[10]
+        item.SetHilight(itemData[11])
+        self._nodeIdToItem[nodeId] = item
+        for childNodeId in itemData[12]:
+            self._paste_branch(childNodeId, parentItem, item, srcDict)
 
     def _on_sel_changed(self, event):
         '''notifies the presenter that tree selection has changed'''

@@ -36,9 +36,11 @@ _logger = logging.getLogger(__name__)
 _statsChartElementKeys = [
     "numSelectedMatched", "numSelectedMismatched", "numSelectedOverridden",
     "numSelectedMissing", "numTotalSelected", "numUnselectedMatched",
-    "numUnselectedMismatched", "numUnselectedOverridden", "numUnselectelectedMissing",
+    "numUnselectedMismatched", "numUnselectedOverridden", "numUnselectedMissing",
     "numTotalUnselected", "numTotalMatched", "numTotalMismatched", "numTotalOverridden",
     "numTotalMissing", "numTotalSelectable"]
+
+_bytesPerKb = 1024
 
 
 def _add_tab(parentNotebook, tabName, filterIds, filterLabels,
@@ -197,16 +199,16 @@ class _PackageInfoTabs:
             textCtrl.Disable()
 
     def set_general_tab_info(self, isArchive, isHidden=None, isInstalled=None,
-            packageSize=None, selectedSize=None, lastModifiedTimestamp=None,
+            packageBytes=None, selectedBytes=None, lastModifiedTimestamp=None,
             numFiles=None, numDirty=None, numOverridden=None, numSkipped=None,
             numSelectedMatched=None, numSelectedMismatched=None,
             numSelectedOverridden=None, numSelectedMissing=None, numTotalSelected=None,
             numUnselectedMatched=None, numUnselectedMismatched=None,
-            numUnselectedOverridden=None, numUnselectelectedMissing=None,
+            numUnselectedOverridden=None, numUnselectedMissing=None,
             numTotalUnselected=None, numTotalMatched=None, numTotalMismatched=None,
             numTotalOverridden=None, numTotalMissing=None, numTotalSelectable=None):
         if isArchive is None:
-            self._generalTabSummary.SetLabel("No package selected")
+            self._generalTabSummary.SetLabel("Select a package to show details")
             self._generalTabSummary.Disable()
             self._generalTabChartPanel.Hide()
             return
@@ -220,14 +222,19 @@ class _PackageInfoTabs:
         elif isInstalled: status = "Installed"
         else: status = "Not Installed"
 
+        packageKb = packageBytes/_bytesPerKb
+        selectedKb = selectedBytes/_bytesPerKb
         self._generalTabSummary.SetLabel("""Package type: %s (%s)
-Package size: %s MB (%s MB selected for installation)
+Package size: %s KB (%s KB selected for installation)
 Last Modified: %s
 Files: %d
   Dirty: %d
   Overridden: %d
-  Skipped: %d""" % (packageType, status, packageSize, selectedSize, lastModifiedTimestamp,
-                    numFiles, numDirty, numOverridden, numSkipped))
+  Skipped: %d""" % (packageType, status,
+                    1 if packageKb == 0 and packageBytes > 0 else packageKb,
+                    1 if selectedKb == 0 and selectedBytes > 0 else selectedKb,
+                    lastModifiedTimestamp, numFiles, numDirty,
+                    numOverridden, numSkipped))
 
         generalTabStatsChart = self._generalTabStatsChart
         for key in _statsChartElementKeys:
@@ -310,7 +317,7 @@ Files: %d
         if data is None or len(data) is 0:
             textCtrl.SetForegroundColour(self._greyColor)
             textCtrl.Disable()
-            if data is None: textCtrl.SetValue("No package selected")
+            if data is None: textCtrl.SetValue("Select a package to show details")
             else: textCtrl.SetValue("No files pass the selected filters")
             return True
         textCtrl.Enable()

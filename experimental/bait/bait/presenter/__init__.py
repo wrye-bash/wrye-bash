@@ -351,20 +351,21 @@ class SetFilterStatsCommand(_ViewCommand):
 
 class SetGeneralTabInfoCommand(_ViewCommand):
     '''Sets the data for the package contents General tab'''
-    def __init__(self, isArchive, isHidden, isInstalled, packageSize, selectedSize,
-                 lastModifiedTimestamp, numFiles, numDirty, numOverridden, numSkipped,
-                 numSelectedMatched, numSelectedMismatched, numSelectedOverridden,
-                 numSelectedMissing, numTotalSelected, numUnselectedMatched,
-                 numUnselectedMismatched, numUnselectedOverridden,
-                 numUnselectelectedMissing, numTotalUnselected, numTotalMatched,
-                 numTotalMismatched, numTotalOverridden, numTotalMissing,
-                 numTotalSelectable, imageFileHandle):
+    def __init__(self, isArchive=None, isHidden=None, isInstalled=None, packageBytes=0,
+                 selectedBytes=0, lastModifiedTimestamp="", numFiles=0, numDirty=0,
+                 numOverridden=0, numSkipped=0, numSelectedMatched=0,
+                 numSelectedMismatched=0, numSelectedOverridden=0, numSelectedMissing=0,
+                 numTotalSelected=0, numUnselectedMatched=0, numUnselectedMismatched=0,
+                 numUnselectedOverridden=0, numUnselectedMissing=0,
+                 numTotalUnselected=0, numTotalMatched=0, numTotalMismatched=0,
+                 numTotalOverridden=0, numTotalMissing=0, numTotalSelectable=0,
+                 imageFileHandle=None):
         _ViewCommand.__init__(self, CommandIds.SET_GENERAL_TAB_INFO)
         self.isArchive = isArchive
         self.isHidden = isHidden
         self.isInstalled = isInstalled
-        self.packageSize = packageSize
-        self.selectedSize = selectedSize
+        self.packageBytes = packageBytes
+        self.selectedBytes = selectedBytes
         self.lastModifiedTimestamp = lastModifiedTimestamp
         self.numFiles = numFiles
         self.numDirty = numDirty
@@ -378,7 +379,7 @@ class SetGeneralTabInfoCommand(_ViewCommand):
         self.numUnselectedMatched = numUnselectedMatched
         self.numUnselectedMismatched = numUnselectedMismatched
         self.numUnselectedOverridden = numUnselectedOverridden
-        self.numUnselectelectedMissing = numUnselectelectedMissing
+        self.numUnselectedMissing = numUnselectedMissing
         self.numTotalUnselected = numTotalUnselected
         self.numTotalMatched = numTotalMatched
         self.numTotalMismatched = numTotalMismatched

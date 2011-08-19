@@ -28,9 +28,42 @@ from .. import model
 # TODO: flesh this file out more
 
 class PackageNodeDetails(model._VersionedData):
-    def __init__(self, version=0):
+    def __init__(self, isArchive=False, isHidden=False, isInstalled=False, packageBytes=0,
+                 selectedBytes=0, lastModifiedTimestamp="", numFiles=0, numDirty=0,
+                 numOverridden=0, numSkipped=0, numSelectedMatched=0,
+                 numSelectedMismatched=0, numSelectedOverridden=0, numSelectedMissing=0,
+                 numTotalSelected=0, numUnselectedMatched=0, numUnselectedMismatched=0,
+                 numUnselectedOverridden=0, numUnselectedMissing=0,
+                 numTotalUnselected=0, numTotalMatched=0, numTotalMismatched=0,
+                 numTotalOverridden=0, numTotalMissing=0, numTotalSelectable=0,
+                 imageFileHandle=None, version=0):
         model._VersionedData.__init__(self, version)
-        # TODO: general tab data
+        self.isArchive = isArchive
+        self.isHidden = isHidden
+        self.isInstalled = isInstalled
+        self.packageBytes = packageBytes
+        self.selectedBytes = selectedBytes
+        self.lastModifiedTimestamp = lastModifiedTimestamp
+        self.numFiles = numFiles
+        self.numDirty = numDirty
+        self.numOverridden = numOverridden
+        self.numSkipped = numSkipped
+        self.numSelectedMatched = numSelectedMatched
+        self.numSelectedMismatched = numSelectedMismatched
+        self.numSelectedOverridden = numSelectedOverridden
+        self.numSelectedMissing = numSelectedMissing
+        self.numTotalSelected = numTotalSelected
+        self.numUnselectedMatched = numUnselectedMatched
+        self.numUnselectedMismatched = numUnselectedMismatched
+        self.numUnselectedOverridden = numUnselectedOverridden
+        self.numUnselectedMissing = numUnselectedMissing
+        self.numTotalUnselected = numTotalUnselected
+        self.numTotalMatched = numTotalMatched
+        self.numTotalMismatched = numTotalMismatched
+        self.numTotalOverridden = numTotalOverridden
+        self.numTotalMissing = numTotalMissing
+        self.numTotalSelectable = numTotalSelectable
+        self.imageFileHandle = imageFileHandle
 
 class FileNodeDetails(model._VersionedData):
     def __init__(self, version=0):

@@ -291,8 +291,8 @@ class CommandHandler:
         _logger.debug("setting general tab info: %s", setGeneralTabInfoCommand)
         self._installerTab.packageContentsPanel.set_general_tab_info(
             setGeneralTabInfoCommand.isArchive, setGeneralTabInfoCommand.isHidden,
-            setGeneralTabInfoCommand.isInstalled, setGeneralTabInfoCommand.packageSize,
-            setGeneralTabInfoCommand.selectedSize,
+            setGeneralTabInfoCommand.isInstalled, setGeneralTabInfoCommand.packageBytes,
+            setGeneralTabInfoCommand.selectedBytes,
             setGeneralTabInfoCommand.lastModifiedTimestamp,
             setGeneralTabInfoCommand.numFiles,
             setGeneralTabInfoCommand.numDirty,
@@ -306,7 +306,7 @@ class CommandHandler:
             setGeneralTabInfoCommand.numUnselectedMatched,
             setGeneralTabInfoCommand.numUnselectedMismatched,
             setGeneralTabInfoCommand.numUnselectedOverridden,
-            setGeneralTabInfoCommand.numUnselectelectedMissing,
+            setGeneralTabInfoCommand.numUnselectedMissing,
             setGeneralTabInfoCommand.numTotalUnselected,
             setGeneralTabInfoCommand.numTotalMatched,
             setGeneralTabInfoCommand.numTotalMismatched,

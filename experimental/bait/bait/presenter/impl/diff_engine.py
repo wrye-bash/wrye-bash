@@ -510,6 +510,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                                                 isExpanded=False))
 
     def set_selected_nodes(self, nodeIds):
+        _logger.debug("setting selected nodes %s", nodeIds)
         if nodeIds is None:
             self._selectedNodeIds = set()
         else:
@@ -680,7 +681,7 @@ class PackagesTreeDiffEngine(_DiffEngine):
                 _logger.debug("updating managers with target node: %d", nodeId)
                 self._prevSingleSelectedNodeId = nodeId
                 self._prevIsMultipleSelected = False
-                self._generalTabManager.set_target_package(nodeId, False)
+                self._generalTabManager.set_target_package(nodeId)
                 self._packageContentsManager.set_target_package(nodeId, False)
         elif numNodes == 0:
             if self._prevSingleSelectedNodeId is not None or \
@@ -688,14 +689,14 @@ class PackagesTreeDiffEngine(_DiffEngine):
                 _logger.debug("updating managers: nothing selected")
                 self._prevSingleSelectedNodeId = None
                 self._prevIsMultipleSelected = False
-                self._generalTabManager.set_target_package(None, False)
+                self._generalTabManager.set_target_package(None)
                 self._packageContentsManager.set_target_package(None, False)
         elif self._prevSingleSelectedNodeId is not None or \
              self._prevIsMultipleSelected is not True:
             _logger.debug("updating managers: multiple selected")
             self._prevSingleSelectedNodeId = None
             self._prevIsMultipleSelected = True
-            self._generalTabManager.set_target_package(None, True)
+            self._generalTabManager.set_target_package(None)
             self._packageContentsManager.set_target_package(None, True)
 
     def _does_ancestor_match_search(self, nodeId, nodeAttributes):

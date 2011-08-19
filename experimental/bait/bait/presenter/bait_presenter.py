@@ -46,7 +46,8 @@ class BaitPresenter:
         self._colorsAndIcons = colors_and_icons.ColorsAndIcons(presenterIoGateway)
         self._dataFetcher = data_fetcher.DataFetcher(model_)
         # TODO: add other widget managers as they are implemented
-        self._generalTabManager = widget_manager.GeneralTabWidgetManager()
+        self._generalTabManager = widget_manager.GeneralTabWidgetManager(
+            self._dataFetcher, viewCommandQueue)
         self._packageContentsManager = widget_manager.PackageContentsTreeWidgetManager()
         self._packagesTreeDiffEngine = diff_engine.PackagesTreeDiffEngine(
             self._generalTabManager, self._packageContentsManager, viewCommandQueue)
@@ -54,7 +55,8 @@ class BaitPresenter:
             self._dataFetcher, self._packagesTreeDiffEngine)
         self._statusPanelManager = widget_manager.StatusPanelWidgetManager(
             self._dataFetcher, viewCommandQueue)
-        self._managers = [self._packagesTreeManager, self._statusPanelManager]
+        self._managers = [self._packagesTreeManager, self._statusPanelManager,
+                          self._generalTabManager]
         self._filteringManagers = [self._packagesTreeManager]
         self._updateDispatcher = update_dispatcher.UpdateDispatcher(
             model_.updateNotificationQueue, viewCommandQueue, self._managers)

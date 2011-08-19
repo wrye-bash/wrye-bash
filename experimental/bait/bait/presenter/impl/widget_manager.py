@@ -138,19 +138,25 @@ class StatusPanelWidgetManager(_WidgetManagerBase):
         self._dataFetcher.async_fetch(model.ROOT_NODE_ID, model.UpdateTypes.ATTRIBUTES,
                                       self._stateChangeQueue)
 
+    # override
     def _is_in_scope(self, modelUpdateNotification):
         return modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE] == \
                model.UpdateTypes.ATTRIBUTES and \
                modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE] == \
                model.NodeTypes.ROOT
 
+    # override
     def _want_update(self, modelUpdateNotification):
         return modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION] > \
                self._version
 
+    # override
     def _process_state_change(self, stateChange):
         _logger.debug("processing status panel update: %s", stateChange)
         attributes = stateChange[data_fetcher.DATA_IDX]
+        if attributes.version <= self._version:
+            _logger.debug("ignoring stale update")
+            return
         statusData = attributes.statusData
         status = statusData.status
         if status == model.Status.OK:
@@ -263,17 +269,59 @@ class PackagesTreeWidgetManager(_WidgetManagerBase):
 
 class PackageContentsTreeWidgetManager(_WidgetManagerBase):
     def __init__(self):
-        self.targetPackage = None
-        self.isMultiple = False
+        self._isMultiple = False
+        self._targetPackageNodeId = None
     def set_target_package(self, nodeId, isMultiple):
-        self.targetPackage = nodeId
-        self.isMultiple = isMultiple
+        self._isMultiple = isMultiple
+        self._targetPackageNodeId = nodeId
 
 
 class GeneralTabWidgetManager(_WidgetManagerBase):
-    def __init__(self):
-        self.targetPackage = None
-        self.isMultiple = False
-    def set_target_package(self, nodeId, isMultiple):
-        self.targetPackage = nodeId
-        self.isMultiple = isMultiple
+    def __init__(self, dataFetcher, viewCommandQueue):
+        _WidgetManagerBase.__init__(self, "GeneralTab", dataFetcher)
+        self._viewCommandQueue = viewCommandQueue
+        self._targetPackageNodeId = None
+        self._version = None
+
+    def set_target_package(self, nodeId):
+        # TODO: cache last sent command so if we switch away from a package and then right
+        # TODO:   back we can populate the widget immediately instead of having to wait
+        # TODO:   for the details to be fetched
+        _logger.debug("setting target package to %s", nodeId)
+        self._targetPackageNodeId = nodeId
+        # TODO: analyze possibility of deadlock
+        if nodeId is None:
+            self._viewCommandQueue.put(presenter.SetGeneralTabInfoCommand())
+        else:
+            self._version = None
+            self._dataFetcher.async_fetch(
+                nodeId, model.UpdateTypes.DETAILS, self._stateChangeQueue)
+
+    # override
+    def _is_in_scope(self, modelUpdateNotification):
+        return modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE] == \
+               model.UpdateTypes.DETAILS and \
+               modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE] == \
+               model.NodeTypes.PACKAGE
+
+    # override
+    def _want_update(self, modelUpdateNotification):
+        return modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_ID] == \
+               self._targetPackageNodeId and \
+               (self._version is None or \
+                modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION] > \
+                self._version)
+
+    # override
+    def _process_state_change(self, stateChange):
+        _logger.debug("processing general tab panel update: %s", stateChange)
+        details = stateChange[data_fetcher.DATA_IDX]
+        if self._targetPackageNodeId != stateChange[data_fetcher.NODE_ID_IDX] or \
+           (self._version is not None and details.version <= self._version):
+            _logger.debug("ignoring stale update")
+            return
+        self._viewCommandQueue.put(presenter.SetGeneralTabInfoCommand(
+            **{kwarg:getattr(details, kwarg) for kwarg in vars(details) \
+               if kwarg != "version"}
+            ))
+        self._version = details.version

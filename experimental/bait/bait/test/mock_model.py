@@ -24,6 +24,7 @@
 
 import Queue
 import copy
+import datetime
 import itertools
 import logging
 import random
@@ -41,6 +42,76 @@ _ATTRIBUTES_IDX = 0
 _CHILDREN_IDX = 1
 _DETAILS_IDX = 2
 
+_maxTime = int(time.time())
+_minTime = int(0.9 * _maxTime)
+
+
+def _generate_group_node(label, parentId, childrenList):
+    return [node_attributes.GroupNodeAttributes(
+                label, parentId, node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(childrenList),
+            None]
+
+
+def _generate_package_node(parentId, attributeMap):
+    label = "attributes:"
+    attribute = None
+    for attribute in attributeMap:
+        label += " " + attribute
+
+    if "isArchive" in attributeMap:
+        contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
+    else:
+        contextMenuId = node_attributes.ContextMenuIds.PROJECT
+    attributes = node_attributes.PackageNodeAttributes(
+        label, parentId, contextMenuId, **attributeMap)
+    del parentId
+    del attributeMap
+    del label
+    del attribute
+    del contextMenuId
+
+    # generate believable-looking details given a set of attributes
+    isArchive = attributes.isArchive
+    isHidden = attributes.isHidden
+    isInstalled = attributes.isInstalled
+    lastModifiedTimestamp = str(
+        datetime.datetime.fromtimestamp(random.randint(_minTime, _maxTime)))
+
+    numSelectedMatched = random.randint(1, 100) if attributes.hasMatched else 0
+    numSelectedMismatched = random.randint(1, 10) if attributes.hasMismatched else 0
+    numSelectedOverridden = random.randint(1, 10) if attributes.isDirty else 0
+    numSelectedMissing = random.randint(1, 100) if attributes.hasMissing else 0
+    numTotalSelected = numSelectedMatched + numSelectedMismatched + \
+                     numSelectedOverridden + numSelectedMissing
+    numUnselectedMatched = random.randint(1, 100) if attributes.hasMatched else 0
+    numUnselectedMismatched = random.randint(1, 10) if attributes.hasMismatched else 0
+    numUnselectedOverridden = random.randint(0, 10)
+    numUnselectedMissing = random.randint(1, 100) if attributes.hasMissing else 0
+    numTotalUnselected = numUnselectedMatched + numUnselectedMismatched + \
+                     numUnselectedOverridden + numUnselectedMissing
+    numTotalMatched = numSelectedMatched + numUnselectedMatched
+    numTotalMismatched = numSelectedMismatched + numUnselectedMismatched
+    numTotalOverridden = numSelectedOverridden + numUnselectedOverridden
+    numTotalMissing = numSelectedMissing + numUnselectedMissing
+    numTotalSelectable = numTotalSelected + numTotalUnselected
+
+    numOverridden = numSelectedOverridden
+    numSkipped = random.randint(1, 10)
+    numFiles = numTotalSelectable + numSkipped
+    numDirty = random.randint(1, numFiles) if attributes.isDirty else 0
+
+    packageBytes = random.randint(numFiles*1024, numFiles*16*1024)
+    selectedBytes = random.randint(
+        numTotalSelected*1024, packageBytes-numTotalUnselected*1024) \
+                  if numTotalSelected > 0 else 0
+    imageFileHandle = None
+
+    detailsKwArgs = dict(locals())
+    del detailsKwArgs["attributes"]
+
+    return [attributes, None, node_details.PackageNodeDetails(**detailsKwArgs)]
+
 
 def _generate_moving_packages(data, parentId, movingChildren):
     nextId = parentId + 1
@@ -50,20 +121,8 @@ def _generate_moving_packages(data, parentId, movingChildren):
         ["isNotInstalled", "isDirty", "hasMismatched"],
         ["isHidden",  "isArchive", "updateAvailable", "hasSubpackages"]]
     for idx in xrange(4):
-        trueList = attributeLists[idx]
-        if "isArchive" in trueList:
-            contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
-        else:
-            contextMenuId = node_attributes.ContextMenuIds.PROJECT
-        attributeMap = {key:True for key in trueList}
-        label = "attributes:"
-        for attribute in trueList:
-            label += " " + attribute
-        data[nextId] = [
-            node_attributes.PackageNodeAttributes(
-                label, parentId, contextMenuId, **attributeMap),
-            None,
-            node_details.PackageNodeDetails()]
+        attributeMap = {key:True for key in attributeLists[idx]}
+        data[nextId] = _generate_package_node(parentId, attributeMap)
         movingChildren.append(nextId)
         nextId += 1
     return nextId
@@ -71,11 +130,7 @@ def _generate_moving_packages(data, parentId, movingChildren):
 def _generate_blinking_packages(data, parentId, blinkingChildren):
     nextId = parentId + 1
     for idx in xrange(10):
-        data[nextId] = [
-            node_attributes.PackageNodeAttributes(
-                "blank", parentId, node_attributes.ContextMenuIds.PROJECT),
-            None,
-            node_details.PackageNodeDetails()]
+        data[nextId] = _generate_package_node(parentId, {"isArchive":False})
         blinkingChildren.append(nextId)
         nextId += 1
     return nextId
@@ -132,7 +187,9 @@ def _generate_packages_expected_attributes(data, parentId, parentChildren):
     choices = (
         # used for virtual "installed data" package
         ["alwaysVisible", "isInstalled",
-         ("hasMatched", ["isDirty", "hasMismatched"]),
+         ("hasMatched",
+          ["hasMatched", "isDirty", "hasMismatched"],
+          ["isDirty", "hasMismatched"]),
          set((None, "hasMissingDeps"))],
         # must have an attribute related to a file that should be installed
         ["isInstalled",
@@ -152,28 +209,13 @@ def _generate_packages_expected_attributes(data, parentId, parentChildren):
                "hasMissing", "hasSubpackages")))])
     for choice in choices:
         groupChildren = []
-        data[nextId] = (
-            node_attributes.GroupNodeAttributes(
-                "%s Group"%choice[0], parentId, node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(groupChildren),
-            None)
+        data[nextId] = _generate_group_node("%s Group"%choice[0], parentId, groupChildren)
         parentChildren.append(nextId)
         groupId = nextId
         nextId += 1
         for trueList in _expand_choices(choice):
-            if "isArchive" in trueList:
-                contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
-            else:
-                contextMenuId = node_attributes.ContextMenuIds.PROJECT
             attributeMap = {key:True for key in trueList}
-            label = "attributes:"
-            for attribute in trueList:
-                label += " " + attribute
-            data[nextId] = [
-                node_attributes.PackageNodeAttributes(
-                    label, groupId, contextMenuId, **attributeMap),
-                None,
-                node_details.PackageNodeDetails()]
+            data[nextId] = _generate_package_node(groupId, attributeMap)
             groupChildren.append(nextId)
             usedSets.add(frozenset(trueList))
             nextId += 1
@@ -187,32 +229,16 @@ def _generate_packages_unexpected_attributes(data, parentId, parentChildren, ski
         "hasWizard", "hasMatched", "hasMismatched", "hasMissing", "hasSubpackages"]
     for numTrue in xrange(len(attributes)+1):
         groupChildren = []
-        data[nextId] = (
-            node_attributes.GroupNodeAttributes(
-                "%d attribute(s)"%numTrue, parentId,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(groupChildren),
-            None)
+        data[nextId] = _generate_group_node("%d attribute(s)"%numTrue,
+                                            parentId, groupChildren)
         parentChildren.append(nextId)
         groupId = nextId
         nextId += 1
         for trueList in itertools.combinations(attributes, numTrue):
             if frozenset(trueList) in skipSets:
                 continue
-            if "isArchive" in trueList:
-                contextMenuId = node_attributes.ContextMenuIds.ARCHIVE
-            else:
-                contextMenuId = node_attributes.ContextMenuIds.PROJECT
             attributeMap = {key:True for key in trueList}
-            label = "attributes:"
-            for attribute in attributes:
-                if attribute in trueList:
-                    label += " " + attribute
-            data[nextId] = [
-                node_attributes.PackageNodeAttributes(
-                    label, groupId, contextMenuId, **attributeMap),
-                None,
-                node_details.PackageNodeDetails()]
+            data[nextId] = _generate_package_node(groupId, attributeMap)
             groupChildren.append(nextId)
             nextId += 1
     return nextId
@@ -237,11 +263,7 @@ class MockModel:
             None]
 
         # reset trigger
-        self._data[1] = [
-            node_attributes.GroupNodeAttributes(
-                "ResetGroup", model.ROOT_NODE_ID, node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren([2]),
-            None]
+        self._data[1] = _generate_group_node("ResetGroup", model.ROOT_NODE_ID, [2])
         rootChildren.append(1)
         self._data[2] = [
             node_attributes.PackageNodeAttributes(
@@ -256,12 +278,8 @@ class MockModel:
         self._threads.append(monitored_thread.MonitoredThread(
             target=self._moving_run, name="ModelMover", args=(nextId,)))
         movingChildren = []
-        self._data[nextId] = [
-            node_attributes.GroupNodeAttributes(
-                "Packages that change relative priority", model.ROOT_NODE_ID,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(movingChildren),
-            None]
+        self._data[nextId] = _generate_group_node(
+            "Packages that change relative priority", model.ROOT_NODE_ID, movingChildren)
         rootChildren.append(nextId)
         nextId = _generate_moving_packages(self._data, nextId, movingChildren)
 
@@ -269,35 +287,25 @@ class MockModel:
         self._threads.append(monitored_thread.MonitoredThread(
             target=self._blinking_run, name="ModelBlinker", args=(nextId,)))
         blinkingChildren = []
-        self._data[nextId] = [
-            node_attributes.GroupNodeAttributes(
-                "Packages that change attributes", model.ROOT_NODE_ID,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(blinkingChildren),
-            None]
+        self._data[nextId] = _generate_group_node(
+            "Packages that change attributes", model.ROOT_NODE_ID, blinkingChildren)
         rootChildren.append(nextId)
         nextId = _generate_blinking_packages(self._data, nextId, blinkingChildren)
 
         # packages with valid, expected attribute combinations
         expectedAttributesChildren = []
-        self._data[nextId] = [
-            node_attributes.GroupNodeAttributes(
-                "Packages with expected attribute combinations", model.ROOT_NODE_ID,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(expectedAttributesChildren),
-            None]
+        self._data[nextId] = _generate_group_node(
+            "Packages with expected attribute combinations", model.ROOT_NODE_ID,
+            expectedAttributesChildren)
         rootChildren.append(nextId)
         nextId, attributeCombinations = _generate_packages_expected_attributes(
             self._data, nextId, expectedAttributesChildren)
 
         # packages with all other attribute combinations
         unexpectedAttributesChildren = []
-        self._data[nextId] = [
-            node_attributes.GroupNodeAttributes(
-                "Packages with unexpected attribute combinations", model.ROOT_NODE_ID,
-                node_attributes.ContextMenuIds.GROUP),
-            node_children.NodeChildren(unexpectedAttributesChildren),
-            None]
+        self._data[nextId] = _generate_group_node(
+            "Packages with unexpected attribute combinations", model.ROOT_NODE_ID,
+            unexpectedAttributesChildren)
         rootChildren.append(nextId)
         nextId = _generate_packages_unexpected_attributes(
             self._data, nextId, unexpectedAttributesChildren, attributeCombinations)
