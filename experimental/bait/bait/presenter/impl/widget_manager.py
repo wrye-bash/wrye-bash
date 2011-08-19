@@ -26,7 +26,8 @@ import Queue
 import logging
 
 from . import data_fetcher, diff_engine
-from .. import model
+from ... import model, presenter
+from ...model import node_attributes
 from ...util import enum, monitored_thread, process_monitor
 
 
@@ -120,6 +121,55 @@ class _WidgetManagerBase:
     def _process_state_change(self, stateChange):
         _logger.error("_process_state_change not overridden by subclass as required")
         raise NotImplementedError("subclass must implement")
+
+
+class StatusPanelWidgetManager(_WidgetManagerBase):
+    def __init__(self, dataFetcher, viewCommandQueue):
+        _WidgetManagerBase.__init__(self, "StatusPanel", dataFetcher)
+        self._viewCommandQueue = viewCommandQueue
+        self._version = -1
+
+    # override
+    def start(self):
+        _WidgetManagerBase.start(self)
+        # prime the loader for the initial update
+        # this assumes the max size of the data fetcher queue is not so small that we
+        # deadlock here
+        self._dataFetcher.async_fetch(model.ROOT_NODE_ID, model.UpdateTypes.ATTRIBUTES,
+                                      self._stateChangeQueue)
+
+    def _is_in_scope(self, modelUpdateNotification):
+        return modelUpdateNotification[model.UPDATE_TUPLE_IDX_TYPE] == \
+               model.UpdateTypes.ATTRIBUTES and \
+               modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_NODE_TYPE] == \
+               model.NodeTypes.ROOT
+
+    def _want_update(self, modelUpdateNotification):
+        return modelUpdateNotification[model.UPDATE_NODE_TUPLE_IDX_VERSION] > \
+               self._version
+
+    def _process_state_change(self, stateChange):
+        _logger.debug("processing status panel update: %s", stateChange)
+        attributes = stateChange[data_fetcher.DATA_IDX]
+        statusData = attributes.statusData
+        status = statusData.status
+        if status == model.Status.OK:
+            self._viewCommandQueue.put(presenter.SetStatusOkCommand(
+                statusData.installedFiles, statusData.installedMb,
+                statusData.freeInstalledMb, statusData.numLibraryFiles,
+                statusData.libraryMb, statusData.freeLibraryMb))
+        elif status == model.Status.LOADING:
+            self._viewCommandQueue.put(presenter.SetStatusLoadingCommand(
+                statusData.numLoadedFiles, statusData.totalFiles))
+        elif status == model.Status.DIRTY:
+            self._viewCommandQueue.put(presenter.SetStatusDirtyCommand(
+                statusData.dirtyPackageNodeIds))
+        elif status == model.Status.UNSTABLE:
+            self._viewCommandQueue.put(presenter.SetStatusIOCommand(
+                statusData.operations))
+        else:
+            _logger.warn("unhandled status type: %s", status)
+        self._version = attributes.version
 
 
 class PackagesTreeWidgetManager(_WidgetManagerBase):

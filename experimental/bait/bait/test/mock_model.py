@@ -23,6 +23,7 @@
 # =============================================================================
 
 import Queue
+import copy
 import itertools
 import logging
 import random
@@ -58,12 +59,24 @@ def _generate_moving_packages(data, parentId, movingChildren):
         label = "attributes:"
         for attribute in trueList:
             label += " " + attribute
-        data[nextId] = (
+        data[nextId] = [
             node_attributes.PackageNodeAttributes(
                 label, parentId, contextMenuId, **attributeMap),
             None,
-            node_details.PackageNodeDetails())
+            node_details.PackageNodeDetails()]
         movingChildren.append(nextId)
+        nextId += 1
+    return nextId
+
+def _generate_blinking_packages(data, parentId, blinkingChildren):
+    nextId = parentId + 1
+    for idx in xrange(10):
+        data[nextId] = [
+            node_attributes.PackageNodeAttributes(
+                "blank", parentId, node_attributes.ContextMenuIds.PROJECT),
+            None,
+            node_details.PackageNodeDetails()]
+        blinkingChildren.append(nextId)
         nextId += 1
     return nextId
 
@@ -195,25 +208,21 @@ def _generate_packages_unexpected_attributes(data, parentId, parentChildren, ski
     return nextId
 
 
-#  - BlinkerGroup
-#    - Several packages that change their attributes periodically
-#  - Random package generator: edit comments field with desired no. of packages
-#    - initially empty, but will generate random empty packages on request
-#  - Random file generator: edit comments field with desired no. of files
-#    - initially empty, but will generate packages with files on request
-#- All generated packages and files should have names that describe their
-#    attributes so that they can be visually verified to be behaving properly.
 class MockModel:
     def __init__(self):
         self.updateNotificationQueue = Queue.Queue()
         self._updateLock = threading.Lock()
+        self._threads = []
         self._shutdown = False
         self._data = {}
 
+        # root node
+        self._threads.append(monitored_thread.MonitoredThread(
+            target=self._status_run, name="ModelStatus"))
         rootChildren = []
         self._data[model.ROOT_NODE_ID] = [
             node_attributes.RootNodeAttributes(
-                node_attributes.StatusLoadingData(5, 1000)),
+                node_attributes.StatusLoadingData(0, 100)),
             node_children.NodeChildren(rootChildren),
             None]
 
@@ -234,8 +243,8 @@ class MockModel:
         nextId = 3
 
         # group with moving packages
-        self._movingThread = monitored_thread.MonitoredThread(
-            target=self._moving_run, name="ModelMover", args=(nextId,))
+        self._threads.append(monitored_thread.MonitoredThread(
+            target=self._moving_run, name="ModelMover", args=(nextId,)))
         movingChildren = []
         self._data[nextId] = [
             node_attributes.GroupNodeAttributes(
@@ -245,6 +254,19 @@ class MockModel:
             None]
         rootChildren.append(nextId)
         nextId = _generate_moving_packages(self._data, nextId, movingChildren)
+
+        # group with packages that change their attributes periodically
+        self._threads.append(monitored_thread.MonitoredThread(
+            target=self._blinking_run, name="ModelBlinker", args=(nextId,)))
+        blinkingChildren = []
+        self._data[nextId] = [
+            node_attributes.GroupNodeAttributes(
+                "Packages that change attributes", model.ROOT_NODE_ID,
+                node_attributes.ContextMenuIds.GROUP),
+            node_children.NodeChildren(blinkingChildren),
+            None]
+        rootChildren.append(nextId)
+        nextId = _generate_blinking_packages(self._data, nextId, blinkingChildren)
 
         # packages with valid, expected attribute combinations
         expectedAttributesChildren = []
@@ -271,11 +293,15 @@ class MockModel:
             self._data, nextId, unexpectedAttributesChildren, attributeCombinations)
         del attributeCombinations
 
+        self._packageNodeIds = set(xrange(nextId))
+        self._numPackages = nextId - 1
+
 
     def start(self):
         _logger.debug("mock model starting")
-        self._movingThread.setDaemon(True)
-        self._movingThread.start()
+        for thread in self._threads:
+            thread.setDaemon(True)
+            thread.start()
 
     def pause(self):
         _logger.debug("mock model pausing")
@@ -290,6 +316,7 @@ class MockModel:
             self.updateNotificationQueue.put(None)
 
     def get_node_attributes(self, nodeId):
+        self._packageNodeIds.discard(nodeId)
         return self._get_node_element(nodeId, "attributes", _ATTRIBUTES_IDX)
 
     def get_node_children(self, nodeId):
@@ -305,10 +332,39 @@ class MockModel:
         _logger.debug("no %s to retrieve for node %d", elementName, nodeId)
         return None
 
+    def _status_run(self):
+        rootNode = self._data[model.ROOT_NODE_ID]
+        total = self._numPackages
+        cur = 0
+        iterations = 0
+        while cur < total:
+            time.sleep(1)
+            iterations += 1
+            cur = total - len(self._packageNodeIds)
+            _logger.debug("updating status: %d/%d", cur, total)
+            rootNode[_ATTRIBUTES_IDX] = node_attributes.RootNodeAttributes(
+                node_attributes.StatusLoadingData(cur, total),
+                version=cur)
+            with self._updateLock:
+                if self._shutdown: return
+                self.updateNotificationQueue.put((model.UpdateTypes.ATTRIBUTES,
+                                                  model.NodeTypes.ROOT,
+                                                  model.ROOT_NODE_ID, cur))
+        _logger.info("loaded %d packages in %d seconds", total, iterations)
+        rootNode[_ATTRIBUTES_IDX] = node_attributes.RootNodeAttributes(
+            node_attributes.StatusOkData(12345, 3123, 250000, 123000, 22000, 250000),
+            version=cur+1)
+        with self._updateLock:
+            if self._shutdown: return
+            self.updateNotificationQueue.put((model.UpdateTypes.ATTRIBUTES,
+                                              model.NodeTypes.ROOT,
+                                              model.ROOT_NODE_ID, cur+1))
+
     def _moving_run(self, movingGroupNodeId):
+        groupNode = self._data[movingGroupNodeId]
         while True:
             time.sleep(1)
-            groupNode = self._data[movingGroupNodeId]
+            _logger.debug("updating moving group")
             prevGroupNodeChildren = groupNode[_CHILDREN_IDX]
             childList = list(prevGroupNodeChildren.children)
             random.shuffle(childList)
@@ -316,8 +372,31 @@ class MockModel:
             groupNode[_CHILDREN_IDX] = node_children.NodeChildren(childList,
                                                                   version=version)
             with self._updateLock:
-                if self._shutdown: break
-                _logger.debug("updating moving group")
+                if self._shutdown: return
                 self.updateNotificationQueue.put((model.UpdateTypes.CHILDREN,
                                                   model.NodeTypes.GROUP,
                                                   movingGroupNodeId, version))
+
+    def _blinking_run(self, blinkingGroupNodeId):
+        groupNode = self._data[blinkingGroupNodeId]
+        childNodeIds = groupNode[_CHILDREN_IDX].children
+        while True:
+            time.sleep(10)
+            _logger.debug("updating blinking group")
+            for childNodeId in childNodeIds:
+                childNode = self._data[childNodeId]
+                prevChildAttributes = childNode[_ATTRIBUTES_IDX]
+                version = prevChildAttributes.version + 1
+                # copy the attributes from some other random node
+                randomAttributes = random.choice(self._data)[_ATTRIBUTES_IDX]
+                while randomAttributes.nodeType != model.NodeTypes.PACKAGE:
+                    randomAttributes = random.choice(self._data)[_ATTRIBUTES_IDX]
+                childAttributes = copy.copy(randomAttributes)
+                childAttributes.parentNodeId = blinkingGroupNodeId
+                childAttributes.version=version
+                childNode[_ATTRIBUTES_IDX] = childAttributes
+                with self._updateLock:
+                    if self._shutdown: return
+                    self.updateNotificationQueue.put((model.UpdateTypes.ATTRIBUTES,
+                                                      model.NodeTypes.PACKAGE,
+                                                      childNodeId, version))

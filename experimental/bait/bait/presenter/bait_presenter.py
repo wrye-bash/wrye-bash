@@ -52,7 +52,9 @@ class BaitPresenter:
             self._generalTabManager, self._packageContentsManager, viewCommandQueue)
         self._packagesTreeManager = widget_manager.PackagesTreeWidgetManager(
             self._dataFetcher, self._packagesTreeDiffEngine)
-        self._managers = [self._packagesTreeManager]
+        self._statusPanelManager = widget_manager.StatusPanelWidgetManager(
+            self._dataFetcher, viewCommandQueue)
+        self._managers = [self._packagesTreeManager, self._statusPanelManager]
         self._filteringManagers = [self._packagesTreeManager]
         self._updateDispatcher = update_dispatcher.UpdateDispatcher(
             model_.updateNotificationQueue, viewCommandQueue, self._managers)
@@ -67,7 +69,8 @@ class BaitPresenter:
         try:
             self._model.start()
             self._dataFetcher.start()
-            self._packagesTreeManager.start()
+            for manager in self._managers:
+                manager.start()
             self._updateDispatcher.start()
             for manager in self._filteringManagers:
                 manager.handle_filter_update(initialFilterMask)
@@ -91,8 +94,9 @@ class BaitPresenter:
         except: _logger.exception("exception while shutting down dispatcher output")
         try: self._dataFetcher.shutdown()
         except:  _logger.exception("exception while shutting down data fetcher")
-        try: self._packagesTreeManager.shutdown()
-        except:  _logger.exception("exception while shutting down packages tree manager")
+        for manager in self._managers:
+            try: manager.shutdown()
+            except:  _logger.exception("exception while shutting down widget manager")
         try: self._model.shutdown()
         except:  _logger.exception("exception while shutting down model")
         try: self._updateDispatcher.shutdown_input()

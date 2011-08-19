@@ -101,6 +101,6 @@ class UpdateDispatcher:
                         if not handled:
                             _logger.warn("unhandled update: %s", str(updateInfo))
                 except Exception as e:
-                    _logger.warn("invalid model update: %s: %s", str(updateInfo),
-                                 e.message)
+                    _logger.warn("error handling model update: %s:", str(updateInfo),
+                                 exc_info=True)
                 modelUpdateQueue.task_done()

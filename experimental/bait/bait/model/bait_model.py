@@ -43,7 +43,7 @@ class BaitModel:
 
     def shutdown(self):
         _logger.debug("model shutting down")
-        self.updateQueue.put(None)
+        self.updateNotificationQueue.put(None)
 
     def get_node_attributes(self, nodeId):
         _logger.debug("retrieving attributes for node %d", nodeId)

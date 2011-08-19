@@ -27,30 +27,31 @@ from ..util import debug_utils, enum
 
 
 class StatusOkData(debug_utils.Dumpable):
-    def __init__(self):
+    def __init__(self, numInstalledFiles, installedMb, freeInstalledMb, numLibraryFiles,
+                 libraryMb, freeLibraryMb):
         self.status = model.Status.OK
-        self.numLibraryFiles = 0
-        self.installedFiles = 0
-        self.libraryMb = 0
-        self.installedMb = 0
-        self.freeLibraryMb = 0
-        self.freeInstalledMb = 0
+        self.installedFiles = numInstalledFiles
+        self.installedMb = installedMb
+        self.freeInstalledMb = freeInstalledMb
+        self.numLibraryFiles = numLibraryFiles
+        self.libraryMb = libraryMb
+        self.freeLibraryMb = freeLibraryMb
 
 class StatusLoadingData(debug_utils.Dumpable):
     def __init__(self, numLoadedFiles, totalFiles):
         self.status = model.Status.LOADING
-        self.numLoadedFiles = 0
-        self.totalFiles = 0
+        self.numLoadedFiles = numLoadedFiles
+        self.totalFiles = totalFiles
 
 class StatusDirtyData(debug_utils.Dumpable):
-    def __init__(self):
+    def __init__(self, dirtyPackageNodeIds):
         self.status = model.Status.DIRTY
-        self.dirtyPackageNodeIds = []
+        self.dirtyPackageNodeIds = dirtyPackageNodeIds
 
 class StatusUnstableData(debug_utils.Dumpable):
-    def __init__(self):
+    def __init__(self, operations):
         self.status = model.Status.UNSTABLE
-        self.operations = [] # tuples of (operationId, nodeId)
+        self.operations = operations # tuples of (operationId, nodeId)
 
 class RootNodeAttributes(model._VersionedData):
     def __init__(self, statusData, version=0):
