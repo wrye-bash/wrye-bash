@@ -21,8 +21,7 @@
 #
 # =============================================================================
 
-"""This module just stores some data that all modules have to be able to access 
+"""This module just stores some data that all modules have to be able to access
 without worrying about circular imports."""
 
 language = None
-
