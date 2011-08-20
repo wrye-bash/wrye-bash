@@ -171,6 +171,15 @@ def main():
             pass
     if opts.unicode != '':
         bolt.bUseUnicode = int(opts.unicode)
+
+    # ensure we are in the correct directory so relative paths will work properly
+    pathToProg = os.path.dirname(sys.argv[0])
+    if pathToProg:
+        progDir = bolt.Path(pathToProg)
+        progDir.setcwd()
+        del progDir
+    del pathToProg
+
     #--Initialize Directories and some settings
     #  required before the rest has imported
     SetUserPath('bash.ini',opts.userPath)

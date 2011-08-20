@@ -23,10 +23,7 @@
 
 """This module starts the Wrye Bash application in GUI mode."""
 
-from bash import bash, bolt
-
-#For Wrye Bash Launcher.pyw, default to debug mode Off
-bolt.deprintOn = False
+from bash import bash
 
 if __name__ == '__main__':
     bash.main()
