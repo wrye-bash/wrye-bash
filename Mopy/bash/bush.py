@@ -63,6 +63,9 @@ ignoreDataFiles = set((
     r'OBSE\Plugins\Construction Set Extender.dll',
     r'OBSE\Plugins\Construction Set Extender.ini'
     ))
+ignoreDataFilePrefixes = set((
+    r'Meshes\Characters\_Male\specialanims\0FemaleVariableWalk_'
+    ))
 ignoreDataDirs = set((
     r'OBSE\Plugins\ComponentDLLs\CSE',
     r'LSData'
