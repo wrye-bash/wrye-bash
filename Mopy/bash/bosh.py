@@ -10398,6 +10398,7 @@ class Installer(object):
         self.hasWizard = False
         self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
+        self.hasReadme = False
         self.data_sizeCrc = {}
         self.skipExtFiles = set()
         self.skipDirFiles = set()
@@ -11237,7 +11238,6 @@ class InstallerMarker(Installer):
         """Initialize."""
         Installer.__init__(self,archive)
         self.modified = time.time()
-        self.hasReadme = False
 
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
