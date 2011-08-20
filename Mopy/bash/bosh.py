@@ -11237,6 +11237,7 @@ class InstallerMarker(Installer):
         """Initialize."""
         Installer.__init__(self,archive)
         self.modified = time.time()
+        self.hasReadme = False
 
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
