@@ -173,11 +173,12 @@ def main():
         bolt.bUseUnicode = int(opts.unicode)
 
     # ensure we are in the correct directory so relative paths will work properly
-    pathToProg = os.path.dirname(sys.argv[0])
+    if hasattr(sys,"frozen"):
+        pathToProg = os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
+    else:
+        pathToProg = os.path.dirname(unicode(sys.argv[0], sys.getfilesystemencoding()))
     if pathToProg:
-        progDir = bolt.Path(pathToProg)
-        progDir.setcwd()
-        del progDir
+        os.chdir(pathToProg)
     del pathToProg
 
     #--Initialize Directories and some settings
