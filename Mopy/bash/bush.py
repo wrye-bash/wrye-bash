@@ -183,7 +183,7 @@ allBethFiles = set((
     r'Knights.esp',
     r'DLCList.txt',
     ))
-    
+
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
     ('Root',),
