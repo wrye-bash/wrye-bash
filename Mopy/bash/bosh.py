@@ -16491,10 +16491,11 @@ class CBash_IngredientDetails:
                 efname = cast(byref(efname), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
                 range = recipientTypeNumber_Name.get(range,range)
                 actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
-                scripteffect = effect[6:]
                 output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
-                if None not in scripteffect:
-                    output += scriptEffectFormat % tuple(scripteffect)
+                se = effect[6:]
+                if None not in se:
+                    # expand out the modname, formid tuple
+                    output += scriptEffectFormat % (se[0][0], se[0][1], se[1], se[2], se[3], se[4])
                 else:
                     output += noscriptEffectFiller
             output += '\n'
