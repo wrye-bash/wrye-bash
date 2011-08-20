@@ -69,7 +69,7 @@ def SetUserPath(iniPath, uArg=None):
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
     # backup settings if app version has changed or on user request
-    if not basherImported: 
+    if not basherImported:
         import basher, barb
     backup = None
     path = None
@@ -162,7 +162,7 @@ def main():
     bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
-    
+
     if opts.Psyco:
         try:
             import psyco
@@ -228,7 +228,7 @@ def main():
             run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
         if not run:
             return
-        
+
     # process backup/restore options
     # quit if either is true, but only after calling both
     quit = cmdBackup()

@@ -146,7 +146,7 @@ class BackupSettings(BaseBackupSettings):
             for name in path.list():
                 if path.join(name).isfile():
                     self.files[tmpdir.join(name)] = path.join(name)
-        
+
         #backup image files if told to
         if backup_images == 1: #changed images only
             tmpdir = GPath('Oblivion\\Mopy\\bash\\images')
@@ -166,7 +166,7 @@ class BackupSettings(BaseBackupSettings):
             for name in path.list():
                 if path.join(name).isfile() and not name.s.lower() == 'thumbs.db':
                     self.files[tmpdir.join(name)] = path.join(name)
-                    
+
         #backup save profile settings
         savedir = GPath('My Games\\Oblivion')
         profiles = [''] + [x for x in dirs['saveBase'].join('Saves').list() if dirs['saveBase'].join('Saves',x).isdir() and str(x).lower() != 'bash']

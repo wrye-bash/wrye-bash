@@ -680,7 +680,7 @@ class WryeParser(ScriptParser.Parser):
         }
     @staticmethod
     def codebox(lines,pre=True,br=True):
-        self = WryeParser(None,None,None,None,None,None,True) 
+        self = WryeParser(None,None,None,None,None,None,True)
         def colorize(text,color='black',link=True):
             href = text
             text = WryeParser.codeboxRemaps['Text'].get(text,text)

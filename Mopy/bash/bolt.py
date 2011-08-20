@@ -60,7 +60,7 @@ UnicodeEncodings = (
     'U16',      # Some files use UTF-16 though
     'cp1252',   # Western Europe
     'cp500',    # Western Europe
-    'cp932',    # Japanese SJIS-win 
+    'cp932',    # Japanese SJIS-win
     'mbcs',     # Multi-byte character set (depends on the Windows locale)
     )
 NumEncodings = len(UnicodeEncodings)
@@ -72,7 +72,7 @@ def Unicode(name,tryFirstEncoding=False):
         if tryFirstEncoding:
             try:
                 return unicode(name,tryFirstEncoding)
-            except UnicodeDecodeError: 
+            except UnicodeDecodeError:
                 deprint("Unable to decode '%s' in %s." % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
@@ -90,7 +90,7 @@ def Encode(name,tryFirstEncoding=False):
         if tryFirstEncoding:
             try:
                 return name.encode(tryFirstEncoding)
-            except UnicodeEncodeError: 
+            except UnicodeEncodeError:
                 deprint("Unable to encode '%s' in %s." % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
@@ -1075,7 +1075,7 @@ class Path(object):
                 return max(c)
             except ValueError:
                 return 0
-        try:        
+        try:
             mtime = int(os.path.getmtime(self._s))
         except WindowsError, werr:
                 if werr.winerror != 123: raise
@@ -2646,7 +2646,7 @@ class WryeText:
         reHttp = re.compile(r' (http://[_~a-zA-Z0-9\./%-]+)')
         reWww = re.compile(r' (www\.[_~a-zA-Z0-9\./%-]+)')
         #reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')     # \[[^\]]+\] doesn't match.
-        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace('_',''))) 
+        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace('_','')))
         rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)')
         reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)')
         reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I)

@@ -1217,7 +1217,7 @@ class INIList(List):
             elif status == 10: mismatch += 1
             elif status == 20: applied += 1
         return (applied,mismatch,not_applied,invalid)
-        
+
     def ListTweaks(self):
         """Returns text list of tweaks"""
         tweaklist = _('Active Ini Tweaks:\n')
@@ -1228,7 +1228,7 @@ class INIList(List):
             if not self.data[tweak].status == 20: continue
             tweaklist+= '%s\n' % tweak
         tweaklist += '[/spoiler][/xml]\n'
-        return tweaklist 
+        return tweaklist
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -4647,7 +4647,7 @@ class BashFrame(wx.Frame):
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
         deprint(_("Wrye Bash in %s Mode") % (['ANSI','Unicode'][bolt.bUseUnicode]))
-        if bolt.bUseUnicode: 
+        if bolt.bUseUnicode:
             wxver = wx.version()
             deprint(wxver)
             if not 'unicode' in wxver.lower() and not '2.9' in wxver:
@@ -4657,7 +4657,7 @@ class BashFrame(wx.Frame):
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _("It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in Oblivion; see the readme under auto-ghostt for more details. ")
             balt.showWarning(bashFrame,message,_("Too many mod files."))
-                
+
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
         if not title:
@@ -5885,7 +5885,7 @@ class PatchDialog(wx.Dialog):
                 if configIsCBash != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})  
+                patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})
                 if patchConfigs:
                     patchConfigs = self.UpdateConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
@@ -6494,20 +6494,20 @@ class TweakPatcher(Patcher):
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
             subtweaktype = type(v)
-            if subtweaktype == float: 
-                label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.\n%s') % (tweak.key[i]) 
+            if subtweaktype == float:
+                label = _('Enter the desired custom tweak value.\nDue to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.\nIf you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.\n%s') % (tweak.key[i])
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('%s ~ Custom Tweak Value') % (tweak.label),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
-                    return    
+                    return
                 value.append(float(new)/10)
-            elif subtweaktype == int: 
-                label = _('Enter the desired custom tweak value.\n%s') % (tweak.key[i]) 
+            elif subtweaktype == int:
+                label = _('Enter the desired custom tweak value.\n%s') % (tweak.key[i])
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_('Value'),title=_('%s ~ Custom Tweak Value') % (tweak.label),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(new)
             elif subtweaktype in (str,unicode):
-                label = _('Enter the desired custom tweak text.\n%s') % (tweak.key[i]) 
+                label = _('Enter the desired custom tweak text.\n%s') % (tweak.key[i])
                 new = balt.askText(self.gConfigPanel,label,title=_('%s ~ Custom Tweak Text') % (tweak.label),default=self.tweaks[tweakIndex].choiceValues[index][i])
                 if new == None: #user hit cancel
                     return
@@ -8020,7 +8020,7 @@ class Installer_OpenReadme(InstallerLink):
                 archive.tempDir.rmtree(archive.tempDir.stail)
             except:
                 pass
-            
+
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
@@ -9786,7 +9786,7 @@ class User_BackupSettings(Link):
         def PromptConfirm(msg=None):
             msg = msg or _('Do you want to backup your Bash settings now?')
             return balt.askYes(bashFrame,msg,_('Backup Bash Settings?'))
-            
+
         BashFrame.SaveSettings(bashFrame)
         #backup = barb.BackupSettings(bashFrame)
         try:
@@ -10452,7 +10452,7 @@ class Mod_Ghost(Link):
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = True
             bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = fileName not in bosh.modInfos.ordered 
+            toGhost = fileName not in bosh.modInfos.ordered
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
@@ -10904,7 +10904,7 @@ class Mod_MarkMergeable(Link):
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                 no.append("%s:%s" % (fileName.s,canMerge))
-        message = '== %s ' % (['Python','CBash'][self.doCBash])+_('Mergeability')+'\n\n' 
+        message = '== %s ' % (['Python','CBash'][self.doCBash])+_('Mergeability')+'\n\n'
         if yes:
             message += _('=== Mergeable\n* ') + '\n\n* '.join(x.s for x in yes)
         if yes and no:
@@ -11596,7 +11596,7 @@ class Mod_Patch_Update(Link):
             _("Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function."),
             'bash.patch.ReallyUseCBash.294'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
             return
-        if self.CBashMismatch: 
+        if self.CBashMismatch:
             if not balt.askContinue(self.window,
                     _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
                         % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),

@@ -2741,7 +2741,7 @@ class ObCELLRecord(ObBaseRecord):
         retValue = _CGetField(self._CollectionID, self._ModID, self._RecordID, 40, 0, 0, 0, 0, 0, 0, 0)
         if(retValue): return retValue
         return 0
-        
+
     @property
     def bsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
@@ -6069,7 +6069,7 @@ class ObCollection:
         if(ModID == -1):
             raise KeyError("ModName(%s) not found in collection (%08X)\n" % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
         return ObModFile(self._CollectionID, ModID)
-        
+
     def LookupModFileLoadOrder(self, ModName):
         return _CGetModLoadOrderByName(self._CollectionID, str(ModName))
 

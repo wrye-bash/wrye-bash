@@ -82,7 +82,7 @@ def parse():
                         default=False,
                         dest='quietquit',
                         help='Close Bash after creating or restoring backup and do not display any prompts or message dialogs.')
-    parser.set_defaults(backup_images=0)                    
+    parser.set_defaults(backup_images=0)
     backupGroup.add_option('-i', '--include-changed-images',
                         action='store_const',
                         const=1,
@@ -138,7 +138,7 @@ def parse():
                         default='',
                         dest='language',
                         help='Specify the user language overriding the system language settings.')
-    
+
     parser.add_option_group(pathGroup)
     parser.add_option_group(userPathGroup)
     parser.add_option_group(backupGroup)
