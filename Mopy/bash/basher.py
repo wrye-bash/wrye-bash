@@ -1225,7 +1225,7 @@ class INIList(List):
         for tweak in tweaks:
             if not self.data[tweak].status == 20: continue
             tweaklist+= '%s\n' % tweak
-        tweaklist += '[/spoiler][/xml]\n'
+        tweaklist += '[/xml][/spoiler]\n'
         return tweaklist
 
     def RefreshUI(self,files='ALL',detail='SAME'):
@@ -9423,7 +9423,7 @@ class INI_ListINIs(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('List Active INIs...'),_('Lists any errors in the tweak file causing it to be invalid.'))
+        menuItem = wx.MenuItem(menu,self.id,_('List Active INIs...'),_('Lists all fully applied tweak files.'))
         menu.AppendItem(menuItem)
         menuItem.Enable(True)
 
@@ -9433,7 +9433,8 @@ class INI_ListINIs(Link):
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
-        balt.showLog(self.window,text,_('INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_('Active INIs'),asDialog=False,fixedFont=False,icons=bashBlue)
+
 #-------------------------------------------------------------------------------
 class INI_ListErrors(Link):
     """List errors that make an INI Tweak invalid."""
@@ -11670,6 +11671,7 @@ class Mod_Patch_Update(Link):
                 _("The following mods should be deactivated prior to building the patch."),
                 checklists)
             if dialog.ShowModal() == wx.ID_CANCEL:
+                dialog.Destroy()
                 return
             deselect = set()
             for (list,key) in [(unfiltered,unfilteredKey),
@@ -15303,13 +15305,12 @@ def InitINILinks():
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(Files_Open())
+    INIList.mainMenu.append(INI_ListINIs())
     #--Settings
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(SettingsMenu)
 
     #--Item menu
-    INIList.itemMenu.append(INI_ListINIs())
-    INIList.itemMenu.append(SeparatorLink())
     INIList.itemMenu.append(INI_Apply())
     INIList.itemMenu.append(INI_CreateNew())
     INIList.itemMenu.append(INI_ListErrors())
