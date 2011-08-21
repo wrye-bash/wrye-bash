@@ -122,7 +122,7 @@ settingDefaults = {
     'bash.CBashEnabled': True,
     'bash.backupPath': None,
     'bash.framePos': (-1,-1),
-    'bash.frameSize': (1024,500),
+    'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     #--BSA Redirection
@@ -157,7 +157,7 @@ settingDefaults = {
     'bash.balo.full': False,
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {
-        'Activation Status': _('Activation Status'),
+        'Mod Status': _('Mod Status'),
         'Author': _('Author'),
         'Cell': _('Cell'),
         'CRC':_('CRC'),
@@ -208,11 +208,11 @@ settingDefaults = {
     'bash.installers.colReverse': {},
     'bash.installers.sort': 'Order',
     'bash.installers.colWidths': {
-        'Package': 250,
-        'Order': 10,
-        'Modified': 60,
-        'Size': 40,
-        'Files': 20,
+        'Package':230,
+        'Order':25,
+        'Modified':135,
+        'Size':75,
+        'Files':55,
         },
     'bash.installers.colAligns': {
         'Order': 1,
@@ -255,14 +255,14 @@ settingDefaults = {
     'bash.ini.colReverse': {},
     'bash.ini.sortValid': True,
     'bash.ini.colWidths': {
-        'File':200,
+        'File':300,
         'Installer':100,
         },
     'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
     #--Wrye Bash: Mods
-    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Activation Status'],
+    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Mod Status'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'Load Order',
@@ -270,14 +270,14 @@ settingDefaults = {
     'bash.mods.colWidths': {
         'Author':100,
         'File':200,
-        'Group':20,
+        'Group':10,
         'Installer':100,
-        'Load Order':20,
-        'Modified':150,
-        'Rating':20,
+        'Load Order':25,
+        'Modified':135,
+        'Rating':10,
         'Size':75,
-        'CRC':200,
-        'Activation Status': 100,
+        'CRC':60,
+        'Mod Status':50,
         },
     'bash.mods.colAligns': {
         'Size':1,
@@ -325,7 +325,7 @@ settingDefaults = {
         'Modified':1,
         },
     'bash.screens.colWidths': {
-        'File':150,
+        'File':100,
         'Modified':150,
         'Size':75,
         },
@@ -348,9 +348,9 @@ settingDefaults = {
     'bash.people.sort': 'Name',
     'bash.people.colReverse': {},
     'bash.people.colWidths': {
-        'Name': 30,
-        'Karma': 30,
-        'Header': 30,
+        'Name': 80,
+        'Karma': 25,
+        'Header': 50,
         },
     'bash.people.colAligns': {
         'Karma': 1,
@@ -1579,7 +1579,7 @@ class ModList(List):
                     value = ''
             elif col == 'CRC':
                 value = '%08X' % fileInfo.cachedCrc()
-            elif col == 'Activation Status':
+            elif col == 'Mod Status':
                 value = fileInfo.txt_status()
             else:
                 value = '-'
@@ -1696,7 +1696,7 @@ class ModList(List):
             self.items.sort(key=lambda a: data[a].size)
         elif col == 'Status':
             self.items.sort(key=lambda a: data[a].getStatus())
-        elif col == 'Activation Status':
+        elif col == 'Mod Status':
             self.items.sort(key=lambda a: data[a].txt_status())
         elif col == 'CRC':
             self.items.sort(key=lambda a: data[a].cachedCrc())
@@ -10395,7 +10395,7 @@ class Mod_CopyModInfo(Link):
                         value = ''
                 elif col == 'CRC':
                     value = '%08X' % fileInfo.cachedCrc()
-                elif col == 'Activation Status':
+                elif col == 'Mod Status':
                     value = fileInfo.txt_status()
                 text += '\n%s: %s' % (col, value)
             #-- Version, if it exists
@@ -15335,7 +15335,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('Size'))
         sortMenu.links.append(Files_SortBy('Status'))
         sortMenu.links.append(Files_SortBy('CRC'))
-        sortMenu.links.append(Files_SortBy('Activation Status'))
+        sortMenu.links.append(Files_SortBy('Mod Status'))
         ModList.mainMenu.append(sortMenu)
     if True: #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
