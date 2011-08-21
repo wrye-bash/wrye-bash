@@ -5578,7 +5578,7 @@ class PatchDialog(wx.Dialog):
         else:
             doCBash = False
         self.doCBash = doCBash
-        size = balt.sizes.get(self.__class__.__name__,(400,400))
+        size = balt.sizes.get(self.__class__.__name__,(500,600))
         wx.Dialog.__init__(self,parent,-1,_("Update ")+patchInfo.name.s+['',' (CBash)'][doCBash], size=size,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.SetSizeHints(400,300)
@@ -6230,15 +6230,22 @@ class ListPatcher(Patcher):
         """Set item to specified set of items."""
         items = self.items = self.sortConfig(items)
         forceItemCheck = self.forceItemCheck
-        defaultItemCheck = self.__class__.defaultItemCheck
+        defaultItemCheck = self.__class__.canAutoItemCheck and bosh.inisettings['AutoItemCheck']
         self.gList.Clear()
+        autoOn = False
         for index,item in enumerate(items):
             self.gList.Insert(self.getItemLabel(item),index)
             if forceItemCheck:
+                if self.configChecks.get(item) is None:
+                    autoOn = True
                 self.configChecks[item] = True
             else:
+                if defaultItemCheck and self.configChecks.get(item) is None:
+                    autoOn = True
                 self.gList.Check(index,self.configChecks.setdefault(item,defaultItemCheck))
         self.configItems = items
+        if autoOn:
+            self._EnsureEnabled()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all configChecks states."""
