@@ -5394,10 +5394,9 @@ class ObModFile(object):
     def CleanMasters(self):
         return _CCleanModMasters(self._CollectionID, self._ModID)
 
-    def CleanMasters2(self):
-        """Python based master cleaning, as the CBash one doesn't seem to work 100%.
-           This is just a holdover until I can figure out the CBash code enough to make
-           it work right."""
+    def GetUnneededMasters(self):
+        """For Python based master cleaning.  Returns a list of masters that the ModFile has, but doesn't
+           reference anywhere, and so can be safely removed."""
         masters = set()
         for type,block in self.aggregates.iteritems():
             for record in block:
@@ -5437,12 +5436,29 @@ class ObModFile(object):
                         formMaster = quest[0]
                         if formMaster != self.GName:
                             masters.add(formMaster)
-        remove = [x for x in self.TES4.masters if GPath(x) not in masters]
-        numMasters = len(remove)
-        if (numMasters > 0):
-            cMasterNames = (c_char_p * numMasters)(*remove)
+                elif type == 'SCPT':
+                    for ref in record.references:
+                        if not isinstance(ref,tuple):
+                            continue
+                        formMaster = ref[0]
+                        if formMaster != self.GName:
+                            # Only if it's not 'PlayerRef'
+                            if ref != (GPath('Oblivion.esm'),0x14):
+                                masters.add(formMaster)
+        return [x for x in self.TES4.masters if GPath(x) not in masters]
+
+    def RemoveModMasters(self,masters):
+        numMasters = len(masters)
+        if numMasters > 0:
+            cMasterNames = (c_char_p * numMasters)(*masters)
             return _CRemoveModMasters(self._CollectionID, self._ModID, cMasterNames, numMasters)
         return 0
+
+    def CleanMasters2(self):
+        """Python based master cleaning, as the CBash one doesn't seem to work 100%.
+           This is just a holdover until I can figure out the CBash code enough to make
+           it work right."""
+        return self.RemoveModMasters(self.GetUnneededMasters())
 
     def Unload(self):
         _CUnloadMod(self._CollectionID, self._ModID)
