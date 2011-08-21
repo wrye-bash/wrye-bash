@@ -119,10 +119,10 @@ settingDefaults = {
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,'0'),
-    'bash.CBashEnabled': False,
+    'bash.CBashEnabled': True,
     'bash.backupPath': None,
     'bash.framePos': (-1,-1),
-    'bash.frameSize': (600,500),
+    'bash.frameSize': (1024,500),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     #--BSA Redirection
@@ -189,7 +189,7 @@ settingDefaults = {
     'bash.masters.cols': ['File','Num', 'Current Order'],
     'bash.masters.esmsFirst': 1,
     'bash.masters.selectedFirst': 0,
-    'bash.masters.sort': 'Save Order',
+    'bash.masters.sort': 'Num',
     'bash.masters.colReverse': {},
     'bash.masters.colWidths': {
         'File':80,
@@ -207,9 +207,9 @@ settingDefaults = {
     #--Installers
     'bash.installers.cols': ['Package','Order','Modified','Size','Files'],
     'bash.installers.colReverse': {},
-    'bash.installers.sort': 'Package',
+    'bash.installers.sort': 'Order',
     'bash.installers.colWidths': {
-        'Package': 100,
+        'Package': 250,
         'Order': 10,
         'Modified': 60,
         'Size': 40,
@@ -237,8 +237,8 @@ settingDefaults = {
     'bash.installers.skipLandscapeLODMeshes':False,
     'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.skipLandscapeLODNormals':False,
-    'bash.installers.allowOBSEPlugins':False,
-    'bash.installers.sortProjects':True,
+    'bash.installers.allowOBSEPlugins':True,
+    'bash.installers.sortProjects':False,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
@@ -266,7 +266,7 @@ settingDefaults = {
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Activation Status'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
-    'bash.mods.sort': 'File',
+    'bash.mods.sort': 'Load Order',
     'bash.mods.colReverse': {},
     'bash.mods.colWidths': {
         'Author':100,
@@ -359,8 +359,8 @@ settingDefaults = {
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     #--BOSS:
-    'BOSS.ClearLockTimes':False,
-    'BOSS.AlwaysUpdate':False,
+    'BOSS.ClearLockTimes':True,
+    'BOSS.AlwaysUpdate':True,
     }
 
 if bolt.bUseUnicode:
