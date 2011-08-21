@@ -5758,6 +5758,7 @@ class PatchDialog(wx.Dialog):
                 raise
             finally:
                 progress.Destroy()
+                del patchFile
         else:
             try:
                 from datetime import timedelta
@@ -5830,17 +5831,17 @@ class PatchDialog(wx.Dialog):
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
                             % (fileName.s,))
                     modList.RefreshUI()
-                del patchFile
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,str(error),_("File Edit Error"))
             except CancelError:
-                del patchFile
+                pass
             except:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 raise
             finally:
                 progress.Destroy()
+                del patchFile
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
