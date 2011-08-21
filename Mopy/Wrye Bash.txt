@@ -2358,12 +2358,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
-* Usability Improvements:
+* First-run Usability Improvements:
   * Default options have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
-  * Mods with tags that are being bashed for the first time will now automatically be checked in the bashed patch dialog
-  * Corresponding patchers themselves will be automatically enabled
-  * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
   * Default window sizes have been increased so you can actually see their contents on first load
   * Debug .bat file now works for all Python versions and install paths instead of being hardcoded to look for c:/Python27
   * Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory
@@ -2376,6 +2373,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Names tweaker:
     * New tweak: Proper English Names: Staffs -> Staves
     * New tweak: Proper English Names: Dwarfs -> Dwarves
+  * Usability improvements:
+    * Mods with tags that are being bashed for the first time will now automatically be checked in the bashed patch dialog
+    * Corresponding patchers themselves will be automatically enabled if a mod has been autochecked
+    * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
+    * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini)
 * [[#InstallersTab|BAIN]]:
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
@@ -2393,7 +2395,6 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Add Master command can now add multiple masters in one go
-* Select patcher when selecting a patcher option/tweak
 * Fixed Settings backup files should have WB version in their names.
 * Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
 * Replacers tab and associated code totally removed.
