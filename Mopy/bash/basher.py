@@ -2328,6 +2328,9 @@ class INIPanel(SashPanel):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
         bosh.iniInfos.table.save()
+        splitter = self.right.GetParent()
+        if hasattr(self, 'sashPosKey'):
+            settings[self.sashPosKey] = splitter.GetSashPosition()
 
 #------------------------------------------------------------------------------
 class ModPanel(NotebookPanel):
