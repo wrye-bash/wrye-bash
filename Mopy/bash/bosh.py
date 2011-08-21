@@ -12330,13 +12330,12 @@ class InstallersData(bolt.TankData, DataDict):
                             lines.append(text+'\n')
                         elif section != currSection:
                             section = currSection
-                            print text
-                            lines.append('[%s]\n' % section)
+                            lines.append('\n[%s]\n' % section)
                         else:
                             lines.append(text+'\n')
                 # Re-write the tweak
                 with oldIni.open('w') as file:
-                    file.write('; INI Tweak create by Wrye Bash, using settings from old file\n\n')
+                    file.write('; INI Tweak created by Wrye Bash, using settings from old file.\n\n')
                     file.writelines(lines)
         self.refreshStatus()
         return tweaksCreated
