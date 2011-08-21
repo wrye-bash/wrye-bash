@@ -126,7 +126,7 @@ settingDefaults = {
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     #--BSA Redirection
-    'bash.bsaRedirection':False,
+    'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {
         'Bethesda ESMs': [
@@ -179,7 +179,6 @@ settingDefaults = {
         'PlayTime':_('Hours'),
         'Player': _('Player'),
         'Rating': _('Rating'),
-        'Rating':_('Rating'),
         'Save Order': _('Save Order'),
         'Size': _('Size'),
         'Status': _('Status'),
@@ -293,12 +292,12 @@ settingDefaults = {
         'Modified':1,
         },
     'bash.saves.colWidths': {
-        'File':150,
-        'Modified':150,
-        'Size':75,
-        'PlayTime':75,
-        'Player':100,
-        'Cell':150,
+        'File':375,
+        'Modified':135,
+        'Size':65,
+        'PlayTime':50,
+        'Player':70,
+        'Cell':80,
         },
     'bash.saves.colAligns': {
         'Size':1,
