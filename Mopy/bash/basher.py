@@ -1417,20 +1417,24 @@ class INILineCtrl(wx.ListCtrl):
         event.Skip()
 
     def RefreshUI(self,resetScroll=False):
-        ini = bosh.iniInfos.ini.path.open('r')
-        lines = ini.readlines()
-        ini.close()
-
         num = self.GetItemCount()
         if resetScroll:
             self.EnsureVisible(0)
-        for i,line in enumerate(lines):
-            if i >= num:
-                self.InsertStringItem(i, line.rstrip())
-            else:
-                self.SetStringItem(i, 0, line.rstrip())
-        for i in range(len(lines), num):
-            self.DeleteItem(len(lines))
+        ini = None
+        try:
+            ini = bosh.iniInfos.ini.path.open('r')
+            lines = ini.readlines()
+            for i,line in enumerate(lines):
+                if i >= num:
+                    self.InsertStringItem(i, line.rstrip())
+                else:
+                    self.SetStringItem(i, 0, line.rstrip())
+            for i in range(len(lines), num):
+                self.DeleteItem(len(lines))
+        except IOError:
+            balt.showWarning(self, "%s does not exist yet.  Oblivion will create this file on first run.  INI tweaks will not be usable until then." % bosh.iniInfos.ini.path)
+        finally:
+            if ini: ini.close()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
