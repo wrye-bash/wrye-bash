@@ -8262,7 +8262,12 @@ class Installer_Install(InstallerLink):
         try:
             last = (self.mode == 'LAST')
             override = (self.mode != 'MISSING')
-            self.data.install(self.filterInstallables(),progress,last,override)
+            tweaks = self.data.install(self.filterInstallables(),progress,last,override)
+            if tweaks:
+                balt.showInfo(self.window,
+                    _("The following INI Tweaks were created, because the existing INI was different than what BAIN installed:\n") + '\n'.join([' * %s\n' % x.stail for (x,y) in tweaks]),
+                    _("INI Tweaks")
+                    )
         finally:
             progress.Destroy()
             self.data.refresh(what='N')
@@ -9952,6 +9957,92 @@ class Mod_ActorLevels_Import(Link):
             buff = stringBuffer()
             buff.write('* %03d  %s\n' % (changed, fileName.s))
             balt.showLog(self.window,buff.getvalue(),_('Import NPC Levels'),icons=bashBlue)
+
+#------------------------------------------------------------------------------
+class MasterList_AddMasters(Link):
+    """Adds a master."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Add Masters...'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        message = _("WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
+        if not balt.askContinue(self.window,message,'bash.addMaster.continue',_('Add Masters')):
+            return
+        modInfo = self.window.fileInfo
+        wildcard = _('Oblivion Masters')+' (*.esm;*.esp)|*.esm;*.esp'
+        masterPaths = balt.askOpenMulti(self.window,_('Add masters:'),modInfo.dir, '', wildcard)
+        if not masterPaths: return
+        names = []
+        for masterPath in masterPaths:
+            (dir,name) = masterPath.headTail
+            if dir != modInfo.dir:
+                return balt.showError(self.window,
+                    _("File must be selected from Oblivion Data Files directory."))
+            if name in modInfo.header.masters:
+                return balt.showError(self.window,
+                    _("%s is already a master.") % (name.s,))
+            names.append(name)
+        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+            if masterName in bosh.modInfos:
+                masterName = bosh.modInfos[masterName].name
+            modInfo.header.masters.append(masterName)
+        modInfo.header.changed = True
+        self.window.SetFileInfo(modInfo)
+        self.window.InitEdit()
+
+#------------------------------------------------------------------------------
+class MasterList_CleanMasters(Link):
+    """Remove unneeded masters."""
+    def AppendToMenu(self,menu,window,data):
+        if not settings['bash.CBashEnabled']: return
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Clean Masters...'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        message = _("WARNING! For advanced modders only!  Removes masters that are not referenced in any records.")
+        if not balt.askContinue(self.window,message,'bash.cleanMaster.continue',_('Clean Masters')):
+            return
+        modInfo = self.window.fileInfo
+        path = modInfo.getPath()
+        collection = ObCollection(ModsPath=bosh.dirs['mods'].s)
+        collection.addMod(path.stail)
+        collection.load()
+        remove = []
+        try:
+            modFile = collection.LookupModFile(path.stail)
+            remove = [GPath(x) for x in modFile.GetUnneededMasters()]
+        finally:
+            collection.Unload()
+
+        if remove:
+            removeKey = _("Masters")
+            group = [removeKey,
+                          _("These master files are not referenced within the mod, and can safely be removed."),
+                          ]
+            group.extend(remove)
+            checklists = [group]
+            dialog = ChecklistBoxes(bashFrame,_("Remove these masters?"),
+                                    _("The following master files can be safely removed."),
+                                    checklists)
+            if dialog.ShowModal() == wx.ID_CANCEL:
+                dialog.Destroy()
+                return
+            id = dialog.ids[removeKey]
+            checks = dialog.FindWindowById(id)
+            toRemove = set()
+            if checks:
+                for i,mod in enumerate(remove):
+                    if checks.IsChecked(i):
+                        toRemove.add(mod)
+            dialog.Destroy()
+            if toRemove:
+                print 'toRemove:', toRemove
+        else:
+            balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
+
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
     """Adds master."""

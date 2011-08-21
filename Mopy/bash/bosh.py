@@ -6813,16 +6813,17 @@ class IniFile:
 
     def getTweakFileLines(self,tweakPath):
         """Get a line by line breakdown of the tweak file, in this format:
-        [(fulltext,section,setting,value,ini_line_number)]
+        [(fulltext,section,setting,value,status,ini_line_number)]
         where:
         fulltext = full line of text from the ini
+        section = the section that is being edited
         setting = the setting that is being edited
         value = the value the setting is being set to
         status:
             -10: doesn't exist in the ini
               0: does exist, but it's a heading or something else without a value
              10: does exist, but value isn't the same
-             20: deos exist, and value is the same
+             20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to"""
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
@@ -12270,6 +12271,7 @@ class InstallersData(bolt.TankData, DataDict):
             Otherwise: all (unmasked) files.
         """
         progress = progress or bolt.Progress()
+        tweaksCreated = set()
         #--Mask and/or reorder to last
         mask = set()
         if last:
@@ -12289,11 +12291,55 @@ class InstallersData(bolt.TankData, DataDict):
             if not override:
                 destFiles &= installer.missingFiles
             if destFiles:
+                for file in destFiles:
+                    if file.cext == '.ini':
+                        oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
+                        newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
+                        if oldCrc is not None and newCrc is not None:
+                            if newCrc != oldCrc:
+                                target = dirs['mods'].join(file)
+                                # Creat a copy of the old one
+                                baseName = dirs['mods'].join('INI Tweaks', '%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
+                                oldIni = baseName
+                                num = 1
+                                while oldIni.exists():
+                                    if num == 1:
+                                        suffix = ' - Copy'
+                                    else:
+                                        suffix = ' - Copy (%i)' % num
+                                    num += 1
+                                    oldIni = baseName.head.join(baseName.sbody+suffix+baseName.ext)
+                                target.copyTo(oldIni)
+                                tweaksCreated.add((oldIni,target))
                 installer.install(archive,destFiles,self.data_sizeCrcDate,SubProgress(progress,index,index+1))
                 InstallersData.updateTable(destFiles, archive.s)
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
+        if tweaksCreated:
+            # Edit the tweaks
+            iniInfos.refresh()
+            for (oldIni,target) in tweaksCreated:
+                iniFile = bosh.BestIniFile(target)
+                currSection = None
+                lines = []
+                for (text,section,setting,value,status,lineNo) in iniFile.getTweakFileLines(oldIni):
+                    if status in (10,-10):
+                        # A setting that exists in both INI's, but is different,
+                        # or a setting that doesn't exist in the new INI.
+                        if section == ']set[' or section == ']setGS[':
+                            lines.append(text+'\n')
+                        elif section != currSection:
+                            section = currSection
+                            print text
+                            lines.append('[%s]\n' % section)
+                        else:
+                            lines.append(text+'\n')
+                # Re-write the tweak
+                with oldIni.open('w') as file:
+                    file.write('; INI Tweak create by Wrye Bash, using settings from old file\n\n')
+                    file.writelines(lines)
         self.refreshStatus()
+        return tweaksCreated
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
