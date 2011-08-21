@@ -202,7 +202,16 @@ def main():
         import basher
         import barb
         import balt
-    except bolt.PermissionError, e:
+    except (bolt.PermissionError, bolt.BoltError), e:
+        # try really hard to be able to show the error in the GUI
+        try:
+            if "basher" not in locals():
+                # we get here if initBosh threw
+                import basher
+                import barb
+                import balt
+        except:
+            raise e
         if opts.debug:
             if hasattr(sys,'frozen'):
                 app = basher.BashApp()
@@ -213,7 +222,7 @@ def main():
             app = basher.BashApp()
         balt.showError(None,str(e))
         app.MainLoop()
-        raise
+        raise e
 
     if not oneInstanceChecker(): return
     atexit.register(exit)
