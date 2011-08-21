@@ -9498,6 +9498,14 @@ class INI_Apply(Link):
             iniList.RefreshUI('VALID')
             self.window.GetParent().GetParent().GetParent().iniContents.RefreshUI()
             self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+            #--Update installers data
+            data = gInstallers.data.data_sizeCrcDate
+            abspath = iniList.data.ini.path
+            path = abspath.relpath(bosh.dirs['mods'])
+            if data.get(path,None) is not None:
+                data[path] = (abspath.size,abspath.crc,abspath.mtime)
+                gInstallers.data.refreshStatus()
+                gInstallers.RefreshUIMods()
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(Link):
