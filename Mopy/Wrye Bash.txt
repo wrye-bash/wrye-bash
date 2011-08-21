@@ -2358,6 +2358,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
+* Usability Improvements:
+  * Default options have been revamped for a smoother first-time experience
+  * More startup errors are shown in a popup messagebox instead of just being dumped to the log
+  * Mods with tags that are being bashed for the first time will now automatically be checked in the bashed patch dialog
+  * Corresponding patchers themselves will be automatically enabled
+  * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
+  * Default window sizes have been increased so you can actually see their contents on first load
+  * Debug .bat file now works for all Python versions and install paths instead of being hardcoded to look for c:/Python27
+  * Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory
 * [[#BashedPatches|Bashed Patch]]:
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
@@ -2371,6 +2380,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
   * Modified [[#PackageHeaderCommands|Clean Data]] command so that it doesn't remove DLC content or Wrye Bash-related files
+  * It also chooses to ignore other files that are commonly installed outside of Wrye Bash, such as Construction Set Extended and Sensual Walks animation files
 * Unicode Mode:
   * More bugfixes from valda.
   * bugfixes from bluesky404.
