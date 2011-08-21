@@ -554,7 +554,7 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL):
+    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50):
         """Initialize."""
         wx.Panel.__init__(self, parent, wx.ID_ANY)
         splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
@@ -568,9 +568,9 @@ class SashPanel(NotebookPanel):
         sashPos = settings.get(sashPosKey, 0) or sashPos
         splitter.SetSashPosition(sashPos)
         if sashPosKey is not None:
-            self.sashPosKeyKey = sashPosKey
+            self.sashPosKey = sashPosKey
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, self.OnDClick)
-        splitter.SetMinimumPaneSize(50)
+        splitter.SetMinimumPaneSize(minimumSize)
         sizer = vSizer(
             (splitter,1,wx.EXPAND),
             )
@@ -580,11 +580,10 @@ class SashPanel(NotebookPanel):
         """Don't allow unsplitting"""
         event.Veto()
 
-    def OnWindowClose(self, event):
+    def OnCloseWindow(self):
         splitter = self.right.GetParent()
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
-        event.Skip()
 
 class SashTankPanel(NotebookPanel):
     """Subclass of a notebook panel designed for a two pane tank panel."""
