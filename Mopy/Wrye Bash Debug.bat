@@ -30,10 +30,15 @@ SET REGCMD=reg query HKCU\SOFTWARE\Python\PythonCore\2.6\InstallPath /ve
 IF NOT x"%PYPATH%"==x"" GOTO FOUND
 
 ECHO Python not found >%OUTFILE%
+ECHO Python not found
 GOTO END
 
 :FOUND
-"%PYPATH%"Python.exe "Wrye Bash Launcher.pyw" -d >%OUTFILE% 2>&1
+ECHO Found Python in '%PYPATH%' >%OUTFILE%
+ECHO Found Python in '%PYPATH%'
+ECHO Launching Wrye Bash in debug mode >>%OUTFILE%
+ECHO Launching Wrye Bash in debug mode
+"%PYPATH%"Python.exe "Wrye Bash Launcher.pyw" -d >>%OUTFILE% 2>&1
 
 :END
 ENDLOCAL && EXIT /B
