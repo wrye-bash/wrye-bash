@@ -18698,7 +18698,7 @@ class CBash_ListPatcher(CBash_Patcher):
 #------------------------------------------------------------------------------
 class MultiTweakItem:
     """A tweak item, optionally with configuration choices."""
-    def __init__(self,label,tip,key,*choices):
+    def __init__(self,label,tip,key,*choices,**kwargs):
         """Initialize."""
         self.label = label
         self.tip = tip
@@ -18713,12 +18713,13 @@ class MultiTweakItem:
             self.choiceValues.append(choice[1:])
         #--Config
         self.isEnabled = False
+        self.defaultEnabled = kwargs.get('defaultEnabled', False)
         self.chosen = 0
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        self.isEnabled,self.chosen = False,0
+        self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
@@ -18751,7 +18752,7 @@ class CBash_MultiTweakItem:
     scanRequiresChecked = False
     applyRequiresChecked = False
 
-    def __init__(self,label,tip,key,*choices):
+    def __init__(self,label,tip,key,*choices,**kwargs):
         """Initialize."""
         self.label = label
         self.tip = tip
@@ -18766,12 +18767,13 @@ class CBash_MultiTweakItem:
             self.choiceValues.append(choice[1:])
         #--Config
         self.isEnabled = False
+        self.defaultEnabled = kwargs.get('defaultEnabled', False)
         self.chosen = 0
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        self.isEnabled,self.chosen = False,0
+        self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
@@ -18809,7 +18811,7 @@ class MultiTweaker(Patcher):
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
         self.isEnabled = config.get('isEnabled',False)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         for tweak in self.tweaks:
@@ -18841,7 +18843,7 @@ class CBash_MultiTweaker(CBash_Patcher):
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
         self.isEnabled = config.get('isEnabled',False)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         for tweak in self.tweaks:
@@ -23791,6 +23793,7 @@ class AssortedTweak_BowReach(MultiTweakItem):
             'BowReach',
             ('1.0',  '1.0'),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -23841,6 +23844,7 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
+        self.defaultEnabled = True
 
     def getTypes(self):
         return ['WEAP']
@@ -23973,6 +23977,7 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
             'ConsistentRings',
             ('1.0',  '1.0'),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -24023,6 +24028,7 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
+        self.defaultEnabled = True
 
     def getTypes(self):
         return ['CLOT']
@@ -24436,6 +24442,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
             'FogFix',
             ('0.0001',  '0.0001'),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -24487,6 +24494,7 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
             ('0.0001',  '0.0001'),
             )
         self.mod_count = {}
+        self.defaultEnabled = True
 
     def getTypes(self):
         return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
@@ -25149,6 +25157,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
             'SilentScriptEffect',
             (_('0'),    0),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -25214,6 +25223,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
                       'enchantEffect','castingSound','boltSound','hitSound','areaSound',
                       'IsNoHitEffect']
         self.newValues = [None,None,None,9999,None,None,None,None,None,None,None,True]
+        self.defaultEnabled = True
 
     def getTypes(self):
         return ['MGEF']
@@ -25581,6 +25591,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
             'icons',
             (_('1'), 1),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -25793,6 +25804,7 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
             (_('1'), 1),
             )
         self.mod_count = {}
+        self.defaultEnabled = True
 
     def getTypes(self):
         return [_type for _type in self.type_defaultIcon.keys()]
@@ -26265,6 +26277,7 @@ class AssortedTweaker(MultiTweaker):
     editOrder = 32
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
             _("Prevents armor from hiding amulets."),
@@ -26339,6 +26352,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     editOrder = 32
     name = _('Tweak Assorted')
     text = _("Tweak various records in miscellaneous ways.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
             _("Prevents armor from hiding amulets."),
@@ -27060,6 +27074,7 @@ class GmstTweaker(MultiTweaker):
     editOrder = 29
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
@@ -27559,6 +27574,7 @@ class GmstTweaker(MultiTweaker):
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
             ('iVampirismAgeOffset',),
             ('Fix it!',0),
+            defaultEnabled=True
             ),
         GmstTweak(_('AI: Max Dead Actors'),
             _("Maximum number of dead actors allowed before they're removed."),
@@ -27682,6 +27698,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     name = _('Tweak Settings')
     text = _("Tweak game settings.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_GmstTweak(_('Arrow: Litter Count'),
             _("Maximum number of spent arrows allowed in cell."),
@@ -28181,6 +28198,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
             ('iVampirismAgeOffset',),
             ('Fix it!',0),
+            defaultEnabled=True
             ),
         CBash_GmstTweak(_('AI: Max Dead Actors'),
             _("Maximum number of dead actors allowed before they're removed."),
@@ -30392,6 +30410,7 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
+        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -30454,6 +30473,7 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
+        self.defaultEnabled = True
 
     def getTypes(self):
         return ['NPC_']
@@ -31266,6 +31286,7 @@ class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
@@ -31313,6 +31334,7 @@ class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
+    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
