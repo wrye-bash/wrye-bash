@@ -126,7 +126,6 @@ def listArchiveContents(fileName):
 dirs = {} #--app, user, mods, saves, userApp
 tooldirs = {}
 inisettings = {}
-inisettings['AutoItemCheck'] = False
 defaultExt = '.7z'
 writeExts = dict({'.7z':'7z','.zip':'zip'})
 readExts = set(('.rar','.7z.001','.001'))
@@ -18521,7 +18520,7 @@ class ListPatcher(Patcher):
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
     autoKey = None
@@ -18607,7 +18606,7 @@ class CBash_ListPatcher(CBash_Patcher):
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
     autoKey = None
@@ -18866,7 +18865,7 @@ class AliasesPatcher(Patcher):
     name = _("Alias Mod Names")
     text = _("Specify mod aliases for reading CSV source files.")
     tip = None
-    defaultConfig = {'isEnabled':True,'aliases':{}}
+    defaultConfig = {'isEnabled':False,'aliases':{}}
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
@@ -18889,7 +18888,7 @@ class CBash_AliasesPatcher(CBash_Patcher):
     name = _("Alias Mod Names")
     text = _("Specify mod aliases for reading CSV source files.")
     tip = None
-    defaultConfig = {'isEnabled':True,'aliases':{}}
+    defaultConfig = {'isEnabled':False,'aliases':{}}
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
@@ -18915,7 +18914,7 @@ class PatchMerger(ListPatcher):
     text = _("Merge patch mods into Bashed Patch.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Merge'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -18942,7 +18941,7 @@ class CBash_PatchMerger(CBash_ListPatcher):
     text = _("Merge patch mods into Bashed Patch.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Merge',))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -18970,7 +18969,7 @@ class UpdateReferences(ListPatcher):
     name = _('Replace Form IDs')
     text = _("Imports Form Id replacers from csv files into the Bashed Patch.")
     autoKey = 'Formids'
-    defaultItemCheck = False #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -19186,7 +19185,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     name = _('Replace Form IDs')
     text = _("Imports FormId replacers from csv files into the Bashed Patch.")
     autoKey = set(('Formids',))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = _("\n\nAny non-active, non-merged mods referenced by files selected in the following list will be IGNORED.")
 
     #--Config Phase -----------------------------------------------------------
@@ -19531,7 +19530,7 @@ class CBash_ImportPatcher(CBash_ListPatcher):
 ##    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!")
 ##    autoRe = re.compile(r"^UNDEFINED$",re.I)
 ##    autoKey = 'ForceMerge'
-##    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+##    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 ##    unloadedText = ""
 ##    #--Patch Phase ------------------------------------------------------------
 ##    def initPatchFile(self,patchFile,loadMods):
@@ -19550,7 +19549,7 @@ class CellImporter(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')#,'C.Maps')
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19747,7 +19746,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music'))#,'C.Maps'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21119,7 +21118,7 @@ class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _('Import Factions')
     text = _("Import factions from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = 'Factions'
 
     #--Patch Phase ------------------------------------------------------------
@@ -21232,7 +21231,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _('Import Factions')
     text = _("Import factions from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set(('Factions',))
 
     #--Config Phase -----------------------------------------------------------
@@ -21342,7 +21341,7 @@ class ImportRelations(ImportPatcher):
     """Import faction relations to factions."""
     name = _('Import Relations')
     text = _("Import relations from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = 'Relations'
 
     #--Patch Phase ------------------------------------------------------------
@@ -21448,7 +21447,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _('Import Relations')
     text = _("Import relations from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set(('Relations',))
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21890,7 +21889,7 @@ class ImportInventory(ImportPatcher):
     name = _('Import Inventory')
     text = _("Merges changes to NPC, creature and container inventories.")
     autoKey = ('Invent','InventOnly')
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Patch Phase ------------------------------------------------------------
@@ -22019,7 +22018,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     name = _('Import Inventory')
     text = _("Merges changes to NPC, creature and container inventories.")
     autoKey = set(('Invent','InventOnly'))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
@@ -22394,7 +22393,7 @@ class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _('Import Names')
     text = _("Import names from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^Oblivion.esm$",re.I)
     autoKey = 'Names'
 
@@ -22493,7 +22492,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
     name = _('Import Names')
     text = _("Import names from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^Oblivion.esm$",re.I)
     autoKey = set(('Names',))
 
@@ -22830,7 +22829,7 @@ class RoadImporter(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Roads'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22909,7 +22908,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Roads',))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -23000,7 +22999,7 @@ class SoundPatcher(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Sound'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -23143,7 +23142,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Sound',))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -23220,7 +23219,7 @@ class StatsPatcher(ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _('Import Stats')
     text = _("Import stats from any pickupable items from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'Stats'
 
@@ -23333,7 +23332,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _('Import Stats')
     text = _("Import stats from any pickupable items from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Stats',))
 
@@ -23429,7 +23428,7 @@ class SpellsPatcher(ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _('Import Spell Stats')
     text = _("Import stats from any spells from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Spells','SpellStats')
 
@@ -23533,7 +23532,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _('Import Spell Stats')
     text = _("Import stats from any spells from source mods/files.")
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Spells','SpellStats'))
 
@@ -31354,6 +31353,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
     """Updates COBL alchemical catalogs."""
     name = _('Cobl Catalogs')
     text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -31463,6 +31463,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
     unloadedText = ""
     srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
+    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -31618,7 +31619,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
     name = _('Cobl Exhaustion')
     text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
     autoKey = 'Exhaust'
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -31721,7 +31722,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
     name = _('Cobl Exhaustion')
     text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
     autoKey = set(('Exhaust',))
-    defaultItemCheck = inisettings['AutoItemCheck'] #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
@@ -31820,6 +31821,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
     selectCommands = False
+    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -32057,6 +32059,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     allowUnloaded = False
     scanRequiresChecked = False
     applyRequiresChecked = False
+    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -32307,6 +32310,7 @@ class MFactMarker(SpecialPatcher,ListPatcher):
     text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'MFact'
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -32423,6 +32427,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('MFact',))
     unloadedText = ""
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -32707,6 +32712,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         'R.Mouth','R.Ears', 'R.Head','R.Attributes-F', 'R.Attributes-M',
         'R.Skills', 'R.Description','R.AddSpells', 'R.ChangeSpells')
     forceAuto = True
+    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
 
     #--Config Phase -----------------------------------------------------------
     def getAutoItems(self):
@@ -33646,6 +33652,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         CBash_RacePatcher_Spells(),
         CBash_RacePatcher_Eyes(),
         ]
+    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -33720,6 +33727,7 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     name = _('SEWorld Tests')
     text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -33793,6 +33801,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
     text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
     scanRequiresChecked = True
     applyRequiresChecked = False
+    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -34437,7 +34446,7 @@ def initDefaultSettings():
     inisettings['ShowAudioToolLaunchers'] = True
     inisettings['7zExtraCompressionArguments'] = ''
     inisettings['IconSize'] = '16'
-    inisettings['AutoItemCheck'] = False
+    inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
     inisettings['AutoSizeListColumns'] = 0
