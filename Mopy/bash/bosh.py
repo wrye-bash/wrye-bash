@@ -18424,7 +18424,7 @@ class CBash_PatchFile(ObModFile):
         progress(1.0,"Compiled.")
         #--Description
         numRecords = sum([len(x) for x in self.aggregates.values()])
-        self.TES4.description = _("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords)
+        self.TES4.description = Encode_("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords)'mbcs')
 #------------------------------------------------------------------------------
 class Patcher:
     """Abstract base class for patcher elements."""
