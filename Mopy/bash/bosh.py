@@ -7147,11 +7147,6 @@ class OblivionIni(IniFile):
         srcPath = dirs['app'].join('Oblivion_default.ini')
         srcPath.copyTo(self.path)
 
-    def getSettings(self):
-        """Gets settings for self."""
-        self.ensureExists()
-        return IniFile.getSettings(self)
-
     def saveSettings(self,settings):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
