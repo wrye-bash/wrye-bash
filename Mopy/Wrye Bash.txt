@@ -848,6 +848,7 @@ These are the commands found on context menu for mods...
 
 === File Commands
 * __File Operations__
+  * **New Bashed Patch:** Create an empty bashed patch with a name of "Bashed Patch, 0.esp", "Bashed Patch, 1.esp", etc.
   * **New Mod:** Create an empty plugin.
   * **{{A:Create Dummy Masters}}:** Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters.  These dummy plugins can later be removed using the [[#|Clean Dummy Masters]] command.
   * **{{A:Backup}}** Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.
@@ -2393,6 +2394,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Ghost will ghost just the selected mod(s) 
   * [[#|Export Patch Config...]] exports the selcted patch's configuration to a file.
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
+  * File->[[#|New Bashed Patch]] will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
 * Add Master command can now add multiple masters in one go
 * Fixed Settings backup files should have WB version in their names.
