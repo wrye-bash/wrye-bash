@@ -33929,6 +33929,7 @@ class ContentsChecker(SpecialPatcher,Patcher):
     editOrder = 50
     name = _('Contents Checker')
     text = _("Checks contents of leveled lists, inventories and containers for correct types.")
+    defaultConfig = {'isEnabled':True}
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -34032,6 +34033,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     name = _('Contents Checker')
     text = _("Checks contents of leveled lists, inventories and containers for correct types.")
     srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
+    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
