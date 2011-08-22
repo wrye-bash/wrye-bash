@@ -10339,7 +10339,10 @@ class Installer(object):
             totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
             done = 0
             progress(0,_("%s\nCalculating CRCs...\n") % rootName)
-            progress.setFull(max(totalSize,1))
+            # each mod increments the progress bar by at least one, even if it is size 0
+            # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
+            # to prematurely disappear
+            progress.setFull(max(totalSize+len(pending),1))
             for index,rpFile in enumerate(sorted(pending)):
                 progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
                 try:
