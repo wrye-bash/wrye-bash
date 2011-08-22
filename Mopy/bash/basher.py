@@ -5401,12 +5401,7 @@ class BashApp(wx.App):
                 if modInfo.header.author == 'BASHED PATCH': break
             else:
                 progress.Update(68,_("Generating Blank Bashed Patch"))
-                patchInfo = bosh.ModInfo(bosh.modInfos.dir,GPath('Bashed Patch, 0.esp'))
-                patchInfo.mtime = max([time.time()]+[info.mtime for info in bosh.modInfos.values()])
-                patchFile = bosh.ModFile(patchInfo)
-                patchFile.tes4.author = 'BASHED PATCH'
-                patchFile.safeSave()
-                bosh.modInfos.refresh()
+                bosh.PatchFile.generateNextBashedPatch()
             settings['bash.patch.firstBashed'] = True
 
     def InitVersion(self):
@@ -9675,7 +9670,6 @@ class Mods_DumpTranslator(Link):
         reKey = re.compile(r'_\([\'\"](.+?)[\'\"]\)')
         reTrans = bolt.reTrans
         for pyPath in (GPath('bash').join(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt')):
-            pyText = pyPath.open()
             for lineNum,line in enumerate(pyText):
                 line = re.sub('#.*','',line)
                 for key in reKey.findall(line):
@@ -10714,6 +10708,19 @@ class Mod_CleanMod(Link):
             else:
                 message = _("No changes required.")
                 balt.showOk(self.window,message,_('Nvidia Fog Fix'))
+
+#------------------------------------------------------------------------------
+class Mod_CreateBlankBashedPatch(Link):
+    """Create a new bashed patch."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('New Bashed Patch...'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        newPatchName = bosh.PatchFile.generateNextBashedPatch(self.window)
+        if newPatchName is not None:
+            self.window.RefreshUI(detail=newPatchName)
 
 #------------------------------------------------------------------------------
 class Mod_CreateBlank(Link):
@@ -15488,6 +15495,7 @@ def InitModLinks():
     #--ModList: Item Links
     if True: #--File
         fileMenu = MenuLink(_("File"))
+        fileMenu.links.append(Mod_CreateBlankBashedPatch())
         fileMenu.links.append(Mod_CreateBlank())
         fileMenu.links.append(Mod_CreateDummyMasters())
         fileMenu.links.append(SeparatorLink())
