@@ -5571,7 +5571,7 @@ class PatchDialog(wx.Dialog):
     patchers = []       #--All patchers. These are copied as needed.
     CBash_patchers = [] #--All patchers (CBash mode).  These are copied as needed.
 
-    def __init__(self,parent,patchInfo,doCBash=None):
+    def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
         """Initialized."""
         self.parent = parent
         if (doCBash or doCBash is None) and settings['bash.CBashEnabled']:
@@ -5591,7 +5591,10 @@ class PatchDialog(wx.Dialog):
         # it over to the current mode
         configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
         if configIsCBash != self.doCBash:
-            patchConfigs = self.ConvertConfig(patchConfigs)
+            if importConfig:
+                patchConfigs = self.ConvertConfig(patchConfigs)
+            else:
+                patchConfigs = {}
         self.patchInfo = patchInfo
         if doCBash:
             self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
@@ -7577,8 +7580,11 @@ class Installers_Skip(BoolLink):
     """Toggle various skip settings and update."""
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        for installer in self.data.itervalues():
-            installer.refreshDataSizeCrc()
+        with balt.Progress(_("Refreshing Packages..."),'\n'+' '*60, abort=False) as progress:
+            progress.setFull(len(self.data))
+            for index,dataItem in enumerate(self.data.iteritems()):
+                progress(index,_("Refreshing Packages...\n")+str(dataItem[0]))
+                dataItem[1].refreshDataSizeCrc()
         self.data.refresh(what='NS')
         self.gTank.RefreshUI()
 
@@ -11707,14 +11713,15 @@ class Mod_Patch_Update(Link):
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
         if self.doCBash and not balt.askContinue(self.window,
             _("Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function."),
-            'bash.patch.ReallyUseCBash.294'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
+            'bash.patch.ReallyUseCBash.295'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
             return
+        importConfig = True
         if self.CBashMismatch:
-            if not balt.askContinue(self.window,
-                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly.")
+            if not balt.askYes(self.window,
+                    _("The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Should Wrye Bash attempt to import your settings (some may not be copied correctly)?  Selecting 'No' will load the bashed patch defaults.")
                         % (self.data[0].s,['CBash','Python'][self.doCBash],['Python','CBash'][self.doCBash]),
                     'bash.patch.CBashMismatch'):
-                return
+                importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if not self.doCBash:
                 bosh.PatchFile.patchTime = fileInfo.mtime
@@ -11814,7 +11821,7 @@ class Mod_Patch_Update(Link):
             if not warning:
                 return
         try:
-            patchDialog = PatchDialog(self.window,fileInfo,self.doCBash)
+            patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
         except CancelError:
             return
         patchDialog.ShowModal()
