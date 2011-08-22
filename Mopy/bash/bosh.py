@@ -17646,6 +17646,26 @@ class PatchFile(ModFile):
         MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil)
 
     @staticmethod
+    def generateNextBashedPatch(wxParent=None):
+        """Attempts to create a new bashed patch, numbered from 0 to 9.  If a lowered number bashed patch exists,
+           will create the next in the sequence.  if wxParent is not None and we are unable to create a patch,
+           displays a dialog error"""
+        for num in xrange(10):
+            modName = GPath('Bashed Patch, %d.esp' % num)
+            if modName not in modInfos:
+                patchInfo = ModInfo(modInfos.dir,GPath(modName))
+                patchInfo.mtime = max([time.time()]+[info.mtime for info in modInfos.values()])
+                patchFile = ModFile(patchInfo)
+                patchFile.tes4.author = 'BASHED PATCH'
+                patchFile.safeSave()
+                modInfos.refresh()
+                return modName
+        else:
+            if wxParent is not None:
+                balt.showWarning(wxParent, "Unable to create new bashed patch: 10 bashed patches already exist!")
+        return None
+
+    @staticmethod
     def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
