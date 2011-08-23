@@ -11327,8 +11327,7 @@ class InstallerArchive(Installer):
         from archive to self.tempDir.
         fileNames: File names (not paths)."""
         if not fileNames: raise ArgumentError(_("No files to extract for %s.") % archive.s)
-        progress = progress or bolt.Progress()
-        progress.state,progress.full = 0,len(fileNames)
+        # expand wildcards in fileNames to get actual count of files to extract
         bUseUnicode = inisettings['EnableUnicode']
         #--Dump file list
         if bUseUnicode:
@@ -11337,26 +11336,40 @@ class InstallerArchive(Installer):
             out = self.tempList.open('w')
         out.write('\n'.join(fileNames))
         out.close()
-        #--Extract files
-        self.clearTemp()
         apath = dirs['installers'].join(archive)
         if bUseUnicode:
-            command = '"%s" x "%s" -y -o%s @%s -scsUTF8' % (exe7z, apath.s, self.tempDir.s, self.tempList.s)
-            command = Encode(command,'mbcs')
+            args = '"%s" -y -o%s @%s -scsUTF8' % (apath.s, self.tempDir.s, self.tempList.s)
+            args = Encode(args,'mbcs')
         else:
-            command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, self.tempDir.s, self.tempList.s)
+            args = '"%s" -y -o%s @%s -scsWIN' % (apath.s, self.tempDir.s, self.tempList.s)
         if recurse:
-            command += ' -r'
-
+            args += ' -r'
+        command = '"%s" l %s' % (exe7z, args)
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         if bUseUnicode:
-            reExtracting = re.compile(u'Extracting\s+(.+)')
-            reError = re.compile(u'Error:')
+            reExtracting = re.compile(u'^Extracting\s+(.+)')
+            reError = re.compile(u'^Error:')
         else:
-            reExtracting = re.compile('Extracting\s+(.+)')
-            reError = re.compile('Error:')
-        extracted = []
+            reExtracting = re.compile('^Extracting\s+(.+)')
+            reError = re.compile('^Error:')
+        numFiles = 0
         errorLine = []
+        for line in ins:
+            if len(errorLine) or reError.match(line):
+                errorLine.append(line)
+            # we'll likely get a few extra lines, but that's ok
+            numFiles += 1
+        if ins.close():
+            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
+        progress = progress or bolt.Progress()
+        progress.state = 0
+        progress.setFull(numFiles)
+        #--Extract files
+        self.clearTemp()
+
+        command = '"%s" x %s' % (exe7z, args)
+        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+        extracted = []
         index = 0
         for line in ins:
             if bUseUnicode:
