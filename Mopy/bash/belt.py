@@ -99,22 +99,23 @@ class InstallerWizard(wiz.Wizard):
         installer = link.data[path]
         bArchive = link.isSingleArchive()
         if bArchive:
-            # Extract the wizard, and any images as well
-            installer.unpackToTemp(path, [installer.hasWizard,
-                '*.bmp',            # BMP's
-                '*.jpg', '*.jpeg',  # JPEG's
-                '*.png',            # PNG's
-                '*.gif',            # GIF's
-                '*.pcx',            # PCX's
-                '*.pnm',            # PNM's
-                '*.tif', '*.tiff',  # TIFF's
-                '*.tga',            # TGA's
-                '*.iff',            # IFF's
-                '*.xpm',            # XPM's
-                '*.ico',            # ICO's
-                '*.cur',            # CUR's
-                '*.ani',            # ANI's
-                ], recurse=True)
+            with balt.Progress(_('Extracting wizard files...'),'\n'+' '*60,abort=True) as progress:
+                # Extract the wizard, and any images as well
+                installer.unpackToTemp(path, [installer.hasWizard,
+                    '*.bmp',            # BMP's
+                    '*.jpg', '*.jpeg',  # JPEG's
+                    '*.png',            # PNG's
+                    '*.gif',            # GIF's
+                    '*.pcx',            # PCX's
+                    '*.pnm',            # PNM's
+                    '*.tif', '*.tiff',  # TIFF's
+                    '*.tga',            # TGA's
+                    '*.iff',            # IFF's
+                    '*.xpm',            # XPM's
+                    '*.ico',            # ICO's
+                    '*.cur',            # CUR's
+                    '*.ani',            # ANI's
+                    ], bosh.SubProgress(progress,0,0.9), recurse=True)
             self.wizard_file = installer.tempDir.join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
