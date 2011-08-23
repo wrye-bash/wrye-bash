@@ -2380,6 +2380,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
     * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini)
 * [[#InstallersTab|BAIN]]:
+  * Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
   * Modified [[#PackageHeaderCommands|Clean Data]] command so that it doesn't remove DLC content or Wrye Bash-related files
@@ -2410,7 +2411,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
-* [[#|List Mods]]: crc dispaly is off by default and added code to enable crc display if 'c' is pressed.
+* [[#|List Mods]]: crc display is off by default and added code to enable crc display if 'c' is pressed.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
