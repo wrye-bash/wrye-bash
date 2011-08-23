@@ -110,6 +110,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#NvidiaFogFix">Nvidia Fog Fix</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#RebuildPatch">Rebuild Patch</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#ListPatchConfig">List Patch Config...</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ExportPatchConfig">Export Patch Config...</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#RemoveWorldOrphans">Remove World Orphans</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#UndeleteRefs">Undelete Refs</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#Version08">Version 0.8</a></p>
@@ -1077,6 +1078,7 @@
 <h3><a id='ListMods'>List Mods</a></h3>
 <p class="list-1">&bull;&nbsp;  Displays list of currently active mods and copies that same list to the clipboard. Useful for posting your list of mods to forums for load debugging help.</p>
 <p class="list-1">&bull;&nbsp;  Note: Merged, imported and group header mods will also be shown.</p>
+<p class="list-1">&bull;&nbsp;  Displays mod version and if 'c' is pressed displays mod crcs.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='DebugMode'>Debug Mode</a></h3>
 <p class="list-1">&bull;&nbsp;  This feature will activate debug printout. Note that there are few commands for which this will have an effect. (E.g. Update Save Levels... will be affected.)</p>
@@ -1088,6 +1090,7 @@
 <p class="empty">&nbsp;</p>
 <h3><a id='FileCommands'>File Commands</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>File Operations</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>New Bashed Patch:</b></i> Create an empty bashed patch with a name of "Bashed Patch, 0.esp", "Bashed Patch, 1.esp", etc.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>New Mod:</b></i> Create an empty plugin.</p>
   <p class="list-2">&bull;&nbsp;  <i><b><a id='CreateDummyMasters'>Create Dummy Masters</a>:</b></i> Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters.  These dummy plugins can later be removed using the <a href="#CleanDummyMasters">Clean Dummy Masters</a> command.</p>
   <p class="list-2">&bull;&nbsp;  <i><b><a id='Backup'>Backup</a></b></i> Create a backup of the file (saved with the same name and modification time in %oblivion mods%/bash mod data/backups. Note that backups are also automatically created (see "Revert to Backup" below). If you want to be sure that you can later restore from a specific point, use Duplicate or Snapshot instead. The first time this is run (or if not yet run and Bash is doing changes to an esp for the first time) the backup file will instead be named %filename%.espf/esmf.</p>
@@ -1340,6 +1343,9 @@
 <h3><a id='ListPatchConfig'>List Patch Config...</a></h3>
 <p class="list-1">&bull;&nbsp;  Displays a summary of how you have configured your Bashed Patch.</p>
 <p class="list-1">&bull;&nbsp;  This summary will also be copied to your clipboard, so all you have to do to post it on a forum for help is paste it into a post.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='ExportPatchConfig'>Export Patch Config...</a></h3>
+<p class="list-1">&bull;&nbsp;  Exports the Wrye Bash readable patch configuration for your Bashed Patch to a file without loading mergeability and stuff that takes a bit of processing.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='RemoveWorldOrphans'>Remove World Orphans</a></h3>
 <p class="list-1">&bull;&nbsp;  This command is for modders and advanced players only. Less experienced players will generally <i><b>not</b></i> need to use this.</p>
@@ -1943,6 +1949,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Lore Friendly Names: Dwarven->Dwemer:</b> Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.</p>
 <p class="list-1">&bull;&nbsp;  <b>Notes and Scrolls:</b> Choose format and whether you want enchanted scrolls at top (~) or bottom (.) of list. (Note that "~" will not display in inventory.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Potions:</b> Choose format.</p>
+<p class="list-1">&bull;&nbsp;  <b>Proper English Names: Staffs -> Staves:</b> renames any instances of staffs to staves.</p>
+<p class="list-1">&bull;&nbsp;  <b>Proper English Names: Dwarfs -> Dwarves:</b> renames any instances of dwaffs totaves</p>
 <p class="list-1">&bull;&nbsp;  <b>Spells:</b> Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.</p>
   <p class="list-2">&bull;&nbsp;  If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.</p>
   <p class="list-2">&bull;&nbsp;  If you only want to remove existing labels, then use the No Label option ("Fire Ball").</p>
@@ -2191,6 +2199,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Notes:</b> Toggles inclusion of mod group notes.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configuration:</b> Toggles inclusion of mod group configuration info.</p>
 <p class="list-1">&bull;&nbsp;  <b>Suggestions:</b> Toggles inclusion of mod group suggestions.</p>
+<p class="list-1">&bull;&nbsp;  <b>Version Numbers:</b> Toggles inclusion of version numbers for the mods in the mod list.</p>
+<p class="list-1">&bull;&nbsp;  <b>CRCs:</b> Toggles inclusion of CRCs for the mods in the mod list.</p>
 <p class="list-1">&bull;&nbsp;  <b>Scan for UDR's / Scan for Dirty Edits:</b> Toggles scanning mod files for deleted references and Identical to Master records.  With CBash disabled, this can take quite some time.  ITM scanning will only occur if CBash is enabled, UDR scanning works in both CBash and non-CBash mode.</p>
   <p class="list-2">&bull;&nbsp;  The number of ITM records reported by Wrye Bash will usually be a little less than when cleaned in TES4Edit, due to not checking GRUP records.</p>
 <p class="list-1">&bull;&nbsp;  <b>Copy Text:</b> Copies text of report to clipboard. (Useful for forum postings.)</p>
@@ -2632,16 +2642,32 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 </p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_29512122011bluesky404Lojackmyk002PacificMorrowindvalda'>295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]</a></h3>
+<p class="list-1">&bull;&nbsp;  First-run Usability Improvements:</p>
+  <p class="list-2">&bull;&nbsp;  Default options have been revamped for a smoother first-time experience</p>
+  <p class="list-2">&bull;&nbsp;  More startup errors are shown in a popup messagebox instead of just being dumped to the log</p>
+  <p class="list-2">&bull;&nbsp;  Default window sizes have been increased so you can actually see their contents on first load</p>
+  <p class="list-2">&bull;&nbsp;  Debug .bat file now works for all Python versions and install paths instead of being hardcoded to look for c:/Python27</p>
+  <p class="list-2">&bull;&nbsp;  Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory</p>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
   <p class="list-2">&bull;&nbsp;  Assorted tweakers:</p>
     <p class="list-3">&bull;&nbsp;  New tweak: Skyrim-style Weapons.</p>
     <p class="list-3">&bull;&nbsp;  CBash 'Magic: Script Effect Silencer' tweak fixed.</p>
     <p class="list-3">&bull;&nbsp;  VORB tweak now assigns special skeletons correctly</p>
-    <p class="list-3">&bull;&nbsp;  fix type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash</p>
+    <p class="list-3">&bull;&nbsp;  Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash</p>
+  <p class="list-2">&bull;&nbsp;  Names tweaker:</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Staffs -> Staves</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Dwarfs -> Dwarves</p>
+  <p class="list-2">&bull;&nbsp;  Usability improvements:</p>
+    <p class="list-3">&bull;&nbsp;  Mods with tags that are being bashed for the first time will now automatically be checked in the bashed patch dialog</p>
+    <p class="list-3">&bull;&nbsp;  Corresponding patchers themselves will be automatically enabled if a mod has been autochecked</p>
+    <p class="list-3">&bull;&nbsp;  If you would rather do things manually, you can turn the new autocheck behavior off in the ini</p>
+    <p class="list-3">&bull;&nbsp;  When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on &#150; not controlled by the ini)</p>
 <p class="list-1">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a>:</p>
+  <p class="list-2">&bull;&nbsp;  Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed</p>
   <p class="list-2">&bull;&nbsp;  BAIN Wizards: Updated the <a href="wizards.html#EditINI"><span style="color:purple;">EditINI</span></a> function to allow comments.</p>
   <p class="list-2">&bull;&nbsp;  Installer->open readme command added.</p>
   <p class="list-2">&bull;&nbsp;  Modified <a href="#PackageHeaderCommands">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files</p>
+  <p class="list-2">&bull;&nbsp;  It also chooses to ignore other files that are commonly installed outside of Wrye Bash, such as Construction Set Extended and Sensual Walks animation files</p>
 <p class="list-1">&bull;&nbsp;  Unicode Mode:</p>
   <p class="list-2">&bull;&nbsp;  More bugfixes from valda.</p>
   <p class="list-2">&bull;&nbsp;  bugfixes from bluesky404.</p>
@@ -2650,10 +2676,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  <a href="#CreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.</p>
   <p class="list-2">&bull;&nbsp;  <a href="#CopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.</p>
   <p class="list-2">&bull;&nbsp;  Ghost will ghost just the selected mod(s) </p>
+  <p class="list-2">&bull;&nbsp;  <a href="#ExportPatchConfig">Export Patch Config...</a> exports the selcted patch's configuration to a file.</p>
   <p class="list-2">&bull;&nbsp;  File-><a href="#CreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.</p>
+  <p class="list-2">&bull;&nbsp;  File-><a href="#NewBashedPatch">New Bashed Patch</a> will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)</p>
   <p class="list-2">&bull;&nbsp;  Mods Tab-><a href="#CleanDummyMasters">Clean Dummy Masters</a> will delete any empty plugins created using the <a href="#CreateDummyMasters">Create Dummy Masters</a> command.</p>
 <p class="list-1">&bull;&nbsp;  Add Master command can now add multiple masters in one go</p>
-<p class="list-1">&bull;&nbsp;  Select patcher when selecting a patcher option/tweak</p>
 <p class="list-1">&bull;&nbsp;  Fixed Settings backup files should have WB version in their names.</p>
 <p class="list-1">&bull;&nbsp;  Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.</p>
 <p class="list-1">&bull;&nbsp;  Replacers tab and associated code totally removed.</p>
@@ -2663,6 +2690,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Added -L/--Language as cmdline options to set Wrye Bash's language.</p>
 <p class="list-1">&bull;&nbsp;  Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).</p>
 <p class="list-1">&bull;&nbsp;  Ini Panel -> list active ini's command added.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#ModChecker">ModChecker</a>:</p>
+  <p class="list-2">&bull;&nbsp;  Fixed default size to be wide enough to display all buttons.</p>
+  <p class="list-2">&bull;&nbsp;  Added option to toggle display of CRCs for mods in the mod list.</p>
+  <p class="list-2">&bull;&nbsp;  Added option to toggle display of version numbers for mods in the mod list.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#ListMods">List Mods</a>: crc display is off by default and added code to enable crc display if 'c' is pressed.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='_2942182011Lojackmyk002PacificMorrowind'>294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]</a></h3>
 <p class="list-1">&bull;&nbsp;  Small fix to the Python race patcher for dremora records</p>
