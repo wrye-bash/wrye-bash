@@ -5905,6 +5905,7 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
                     except: deprint(_('item %s not in saved configs') % (item))
         self.SetOkEnable()
 
@@ -5940,7 +5941,9 @@ class PatchDialog(wx.Dialog):
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
-                    try: patcher.gList.Check(index,item.isEnabled)
+                    try:
+                        patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
         self.SetOkEnable()
 
