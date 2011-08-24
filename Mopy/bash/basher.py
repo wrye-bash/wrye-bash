@@ -1430,7 +1430,7 @@ class INILineCtrl(wx.ListCtrl):
             for i in range(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:
-            balt.showWarning(self, "%s does not exist yet.  Oblivion will create this file on first run.  INI tweaks will not be usable until then." % bosh.iniInfos.ini.path)
+            balt.showWarning(self, _("%s does not exist yet.  Oblivion will create this file on first run.  INI tweaks will not be usable until then.") % bosh.iniInfos.ini.path)
         finally:
             if ini: ini.close()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
@@ -2596,14 +2596,12 @@ class SaveDetails(wx.Window):
         self.cancel.Disable()
         #--Layout
         sizer = vSizer(
-            #(staticText(self,_("File:")),0,wx.TOP,4),
             (self.file,0,wx.EXPAND|wx.TOP,4),
             (hSizer(
                 (self.playerInfo,1,wx.EXPAND),
                 (self.gCoSaves,0,wx.EXPAND),
                 ),0,wx.EXPAND|wx.TOP,4),
             (self.picture,0,wx.TOP,4),
-            #(staticText(self,_("Masters:")),0,wx.TOP,4),
             (self.masters,2,wx.EXPAND|wx.TOP,4),
             (hSizer(
                 spacer,
@@ -2702,11 +2700,11 @@ class SaveDetails(wx.Window):
         if fileStr == self.fileStr: return
         #--Extension Changed?
         if self.fileStr[-4:].lower() not in ('.ess','.bak'):
-            balt.showError(self,"Incorrect file extension: "+fileStr[-3:])
+            balt.showError(self,_("Incorrect file extension: ")+fileStr[-3:])
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.saveInfo.dir.join(fileStr).exists():
-            balt.showError(self,"File %s already exists." % (fileStr,))
+            balt.showError(self,_("File %s already exists.") % (fileStr,))
             self.file.SetValue(self.fileStr)
         #--Okay?
         else:
@@ -2975,25 +2973,25 @@ class InstallersList(balt.Tank):
                         try:
                             outDir.rmtree(omod.sbody)
                         except:
-                            bolt.deprint("Failed to clean up output dir:\n", traceback=True)
+                            bolt.deprint(_("Failed to clean up output dir:\n"), traceback=True)
                         try:
                             bosh.dirs['mopy'].join('temp').rmtree('temp')
                         except:
-                            bolt.deprint("Failed to clean up temp dir:\n", traceback=True)
+                            bolt.deprint(_("Failed to clean up temp dir:\n"), traceback=True)
                         raise
                     except:
-                        bolt.deprint("Failed to extract '%s'.\n\n" % omod.stail, traceback=True)
+                        bolt.deprint(_("Failed to extract '%s'.\n\n") % omod.stail, traceback=True)
 
                         # Clean up
                         failed.append(' * ' + omod.stail)
                         try:
                             outDir.rmtree(omod.sbody)
                         except:
-                            bolt.deprint("Failed to clean up output dir:\n", traceback=True)
+                            bolt.deprint(_("Failed to clean up output dir:\n"), traceback=True)
                         try:
                             bosh.dirs['mopy'].join('temp').rmtree('temp')
                         except:
-                            bolt.deprint("Failed to clean up temp dir:\n", taceback=True)
+                            bolt.deprint(_("Failed to clean up temp dir:\n"), taceback=True)
             except CancelError:
                 skipped = set(omodnames) - set(completed)
                 msg = ''
@@ -4057,11 +4055,11 @@ class BSADetails(wx.Window):
         if fileStr == self.fileStr: return
         #--Extension Changed?
         if self.fileStr[-4:].lower() not in ('.bsa'):
-            balt.showError(self,"Incorrect file extension: "+fileStr[-3:])
+            balt.showError(self,_("Incorrect file extension: ")+fileStr[-3:])
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.BSAInfo.dir.join(fileStr).exists():
-            balt.showError(self,"File %s already exists." % (fileStr,))
+            balt.showError(self,_("File %s already exists.") % (fileStr,))
             self.file.SetValue(self.fileStr)
         #--Okay?
         else:
@@ -5600,7 +5598,7 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             if 'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
-                raise UncodedError('Name or group not defined for: '+patcher.__class__.__name__)
+                raise UncodedError(_('Name or group not defined for: ')+patcher.__class__.__name__)
             patcher.SetForceCheckCallbackFn(self._ForceCheck)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
@@ -5938,13 +5936,13 @@ class PatchDialog(wx.Dialog):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
                         patcher.gList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.' % (err,item)))
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def SelectAll(self,event=None):
@@ -7712,14 +7710,14 @@ class Installers_ExportDllInfo(Link):
         if not textPath: return
         try:
             out = textPath.open("w")
-            out.write('goodDlls (those dlls that you have chosen to allow to be installed)\n')
+            out.write('goodDlls '+_('(those dlls that you have chosen to allow to be installed)\n'))
             if settings['bash.installers.goodDlls']:
                 for dll in settings['bash.installers.goodDlls']:
                     out.write('dll:'+dll+':\n')
                     for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
                         out.write('version %02d: %s\n' % (index, version))
             else: out.write("None")
-            out.write('badDlls (those dlls that you have chosen to NOT allow to be installed)\n')
+            out.write('badDlls '+_('(those dlls that you have chosen to NOT allow to be installed)\n'))
             if settings['bash.installers.badDlls']:
                 for dll in settings['bash.installers.badDlls']:
                     out.write('dll:'+dll+':\n')
@@ -7894,10 +7892,10 @@ class Installer_Wizard(InstallerLink):
             pos = settings['bash.wizard.pos']
             # Sanity checks on saved size/position
             if not isinstance(pos,tuple) or len(pos) != 2:
-                deprint('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.' % (pos,type(pos)))
+                deprint(_('Saved Wizard position (%s) was not a tuple (%s), reverting to default position.') % (pos,type(pos)))
                 pos = wx.DefaultPosition
             if not isinstance(saved,tuple) or len(saved) != 2:
-                deprint('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.' % (saved, type(saved)))
+                deprint(_('Saved Wizard size (%s) was not a tuple (%s), reverting to default size.') % (saved, type(saved)))
                 pageSize = tuple(default)
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
@@ -7909,10 +7907,10 @@ class Installer_Wizard(InstallerLink):
         ret = wizard.Run()
         # Sanity checks on returned size/position
         if not isinstance(ret.Pos,wx.Point):
-            deprint('Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.' % (ret.Pos, type(ret.Pos)))
+            deprint(_('Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.') % (ret.Pos, type(ret.Pos)))
             ret.Pos = wx.DefaultPosition
         if not isinstance(ret.PageSize,wx.Size):
-            deprint('Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.' % (ret.PageSize, type(ret.PageSize)))
+            deprint(_('Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.') % (ret.PageSize, type(ret.PageSize)))
             ret.PageSize = tuple(default)
         settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
         settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
@@ -9675,22 +9673,23 @@ class Mods_DumpTranslator(Link):
         dumpedKeys = set()
         reKey = re.compile(r'_\([\'\"](.+?)[\'\"]\)')
         reTrans = bolt.reTrans
-        for pyPath in (GPath('bash').join(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt')):
-            for lineNum,line in enumerate(pyText):
-                line = re.sub('#.*','',line)
-                for key in reKey.findall(line):
-                    key = reTrans.match(key).group(2)
-                    if key in dumpedKeys: continue
-                    outFile.write('=== %s, %d\n' % (pyPath.s,lineNum+1))
-                    outFile.write(key+'\n>>>>\n')
-                    value = _(key,False)
-                    if value != key:
-                        value = Encode(value,'mbcs')
-                        outFile.write(value)
-                    outFile.write('\n')
-                    dumpedKeys.add(key)
-                    keyCount += 1
-            pyText.close()
+        for pyPath in (GPath('bash').join(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt','bish','barg','barb','bass','cint','ScriptParser')):
+            with pyPath.open() as pyText:
+                for lineNum,line in enumerate(pyText):
+                    line = re.sub('#.*','',line)
+                    for key in reKey.findall(line):
+                        key = reTrans.match(key).group(2)
+                        if key in dumpedKeys: continue
+                        outFile.write('=== %s, %d\n' % (pyPath.s,lineNum+1))
+                        outFile.write(key+'\n>>>>\n')
+                        value = _(key,False)
+                        if value != key:
+                            value = Encode(value,'mbcs')
+                            outFile.write(value)
+                        outFile.write('\n')
+                        dumpedKeys.add(key)
+                        keyCount += 1
+            #pyText.close()
         outFile.close()
         balt.showOk(self.window,
             (_('%d translation keys written to Mopy\\Data\\%s.') % (keyCount,outPath.stail)),
@@ -10045,7 +10044,7 @@ class MasterList_CleanMasters(Link):
                         toRemove.add(mod)
             dialog.Destroy()
             if toRemove:
-                print 'toRemove:', toRemove
+                print _('toRemove:'), toRemove
         else:
             balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
 
@@ -10424,13 +10423,13 @@ class Mod_CreateBOSSReport(Link):
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
-                text += '\nVersion: %s' % version
+                text += _('\nVersion: %s') % version
             #-- CRC
-            text += '\nCRC: %08X' % fileInfo.cachedCrc()
+            text += _('\nCRC: %08X') % fileInfo.cachedCrc()
             #-- Dirty edits
             udrs,itms,fogs = udr_itm_fog[i]
             if udrs or itms:
-                text += '\nUDR: %i, ITM: %i (via Wrye Bash)' % (len(udrs),len(itms))
+                text += _('\nUDR: %i, ITM: %i (via Wrye Bash)') % (len(udrs),len(itms))
             text += '\n\n'
         if spoiler: text += '[/spoiler]'
 
@@ -10511,7 +10510,7 @@ class Mod_CopyModInfo(Link):
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
-                text += '\nVersion: %s' % version
+                text += _('\nVersion: %s') % version
         if spoiler: text += '[/spoiler]'
 
         # Show results + copy to clipboard
@@ -12529,7 +12528,7 @@ class CBash_Mod_MapMarkers_Import(Link):
             balt.showOk(self.window,_("No relevant Map Markers to import."),_("Import Map Markers"))
         else:
             buff = stringBuffer()
-            buff.write('Imported Map Markers to mod %s:\n' % (fileName.s,))
+            buff.write(_('Imported Map Markers to mod %s:\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
             balt.showLog(self.window,buff.getvalue(),_('Import Map Markers'),icons=bashBlue)
@@ -12647,7 +12646,7 @@ class Mod_SigilStoneDetails_Import(Link):
             balt.showOk(self.window,_("No relevant Sigil Stone details to import."),_("Import Sigil Stone details"))
         else:
             buff = stringBuffer()
-            buff.write('Imported Sigil Stone details to mod %s:\n' % (fileName.s,))
+            buff.write(_('Imported Sigil Stone details to mod %s:\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
             balt.showLog(self.window,buff.getvalue(),_('Import Sigil Stone details'),icons=bashBlue)
@@ -12734,7 +12733,7 @@ class Mod_SpellRecords_Import(Link):
             balt.showOk(self.window,_("No relevant Spell details to import."),_("Import Spell details"))
         else:
             buff = stringBuffer()
-            buff.write('Imported Spell details to mod %s:\n' % (fileName.s,))
+            buff.write(_('Imported Spell details to mod %s:\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
             balt.showLog(self.window,buff.getvalue(),_('Import Spell details'),icons=bashBlue)
@@ -12818,7 +12817,7 @@ class Mod_IngredientDetails_Import(Link):
             balt.showOk(self.window,_("No relevant Ingredient details to import."),_("Import Ingredient details"))
         else:
             buff = stringBuffer()
-            buff.write('Imported Ingredient details to mod %s:\n' % (fileName.s,))
+            buff.write(_('Imported Ingredient details to mod %s:\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write('* %s\n' % (eid))
             balt.showLog(self.window,buff.getvalue(),_('Import Ingredient details'),icons=bashBlue)
@@ -13193,7 +13192,7 @@ class Save_ExportScreenshot(Link):
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
-        imagePath = balt.askSave(bashFrame,_('Save Screenshot as:'), bosh.dirs['patches'].s,'Screenshot %s.jpg' % self.data[0].s,'*.jpg')
+        imagePath = balt.askSave(bashFrame,_('Save Screenshot as:'), bosh.dirs['patches'].s,_('Screenshot %s.jpg') % self.data[0].s,'*.jpg')
         if not imagePath: return
         width,height,data = saveInfo.header.image
         image = wx.EmptyImage(width,height)
@@ -13668,15 +13667,15 @@ class Save_RepairFactions(Link):
                     recFlags = bosh.SreNPC.flags(recFlags)
                     #--Fix Bash v 105 null array bugs
                     if recFlags.factions and not npc.factions and recId not in legitNullFactions:
-                        log('. %08X %s -- Factions' % (recId,eid))
+                        log(_('. %08X %s -- Factions') % (recId,eid))
                         npc.factions = None
                         unFactioned = True
                     if recFlags.modifiers and not npc.modifiers:
-                        log('. %08X %s -- Modifiers' % (recId,eid))
+                        log(_('. %08X %s -- Modifiers') % (recId,eid))
                         npc.modifiers = None
                         unModified = True
                     if recFlags.spells and not npc.spells and recId not in legitNullSpells:
-                        log('. %08X %s -- Spells' % (recId,eid))
+                        log(_('. %08X %s -- Spells') % (recId,eid))
                         npc.spells = None
                         unSpelled = True
                     unNulled = (unFactioned or unSpelled or unModified)
@@ -13685,14 +13684,14 @@ class Save_RepairFactions(Link):
                     if recId == 7:
                         playerStartSpell = saveFile.getIref(0x00000136)
                         if npc.spells != None and playerStartSpell not in npc.spells:
-                            log('. %08X %s -- **DefaultPlayerSpell**' % (recId,eid))
+                            log(_('. %08X %s -- **DefaultPlayerSpell**') % (recId,eid))
                             npc.spells.append(playerStartSpell)
                             refactioned = True #--I'm lying, but... close enough.
                         playerFactionIref = saveFile.getIref(0x0001dbcd)
                         if (npc.factions != None and
                             playerFactionIref not in [iref for iref,level in npc.factions]
                             ):
-                                log('. %08X %s -- **PlayerFaction, 0**' % (recId,eid))
+                                log(_('. %08X %s -- **PlayerFaction, 0**') % (recId,eid))
                                 npc.factions.append((playerFactionIref,0))
                                 refactioned = True
                     #--Compare to mod data
@@ -13708,9 +13707,8 @@ class Save_RepairFactions(Link):
                                 if iref not in curFactions and (recId,fid) not in legitDroppedFactions:
                                     factEid = fact_eid.get(orderedId,'------')
                                     question = _('Restore %s to %s faction?') % (npcEid,factEid)
-                                    if debug:
-                                        print 'refactioned %08X %08X %s %s' % (recId,fid,npcEid,factEid)
-                                    elif not balt.askYes(self.window, question, saveName.s,default=False):
+                                    deprint(_('refactioned %08X %08X %s %s') % (recId,fid,npcEid,factEid))
+                                    if not balt.askYes(self.window, question, saveName.s,default=False):
                                         continue
                                     log('. %08X %s -- **%s, %d**' % (recId,eid,factEid,level))
                                     npc.factions.append((iref,level))
@@ -14420,7 +14418,7 @@ class App_Button(Link):
                     print
                     raise
         else:
-            raise StateError('Application missing: %s' % self.exePath.s)
+            raise StateError(_('Application missing: %s') % self.exePath.s)
 
 class App_Tes4Gecko(App_Button):
     """Left in for unpickling compatibility reasons."""
@@ -14548,7 +14546,7 @@ class App_BOSS(App_Button):
                 finally:
                     cwd.setcwd()
         else:
-            raise StateError('Application missing: %s' % self.exePath.s)
+            raise StateError(_('Application missing: %s') % self.exePath.s)
 
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
@@ -15229,7 +15227,7 @@ def InitStatusBar():
                                     icon = test
                                     break
                     except:
-                        deprint('Error finding icon for %s:' % path.s,traceback=True)
+                        deprint(_('Error finding icon for %s:') % path.s,traceback=True)
                         icon = 'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon

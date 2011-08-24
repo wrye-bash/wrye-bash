@@ -2412,6 +2412,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
 * [[#|List Mods]]: crc display is off by default and added code to enable crc display if 'c' is pressed.
+* Most untranslateable strings adjusted to be translateable (adds more than 240 strings that can now be translated).
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records

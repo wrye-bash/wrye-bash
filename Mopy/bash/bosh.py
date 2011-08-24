@@ -196,7 +196,7 @@ class Path(str):
     compatibility with old pickle files."""
     def __init__(self, path):
         """Initialize."""
-        raise RuntimeError("Path necromancy!")
+        raise RuntimeError(_("Path necromancy!"))
 
     def __getstate__(self):
         """Used by pickler. State is determined by underlying string, so return psempty tuple."""
@@ -1782,8 +1782,8 @@ class MreRecord(object):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
         if self.subrecords == None:
-            raise StateError('Subrecords not unpacked. [%s: %s %08X]' %
-                (self.inName, self.recType, self.fid))
+            raise StateError(_('Subrecords not unpacked. [%s: %s %08X]' %
+                (self.inName, self.recType, self.fid)))
         for subrecord in self.subrecords:
             subrecord.dump(out)
 
@@ -2734,12 +2734,12 @@ class MreGmst(MelRecord):
                 old = bolt.deprintOn
                 bolt.deprintOn = True
                 print
-                print 'Error loading Oblivion_ids.pkl:'
+                print _('Error loading Oblivion_ids.pkl:')
                 deprint(' ',traceback=True)
                 bolt.deprintOn = old
                 print
-                print 'Manually testing if file exists:', dirs['db'].join('Oblivion_ids.pkl').exists()
-                print 'Current working directory:', os.getcwd()
+                print _('Manually testing if file exists:'), dirs['db'].join('Oblivion_ids.pkl').exists()
+                print _('Current working directory:'), os.getcwd()
                 print "dirs['db']:", dirs['db']
                 print
                 raise
@@ -4568,7 +4568,7 @@ class MobCell(MobBase):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError("Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
+                    raise ArgumentError(_("Fids don't match! %08x, %08x") % (myRecord.fid, record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
@@ -4934,7 +4934,7 @@ class MobWorld(MobCells):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError("Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
+                    raise ArgumentError(_("Fids don't match! %08x, %08x") % (myRecord.fid, record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
@@ -5134,10 +5134,10 @@ class ModFile:
                     insSeek(size-20,1,type + '.' + label)
             except:
                 if isinstance(self.fileInfo.name,str):
-                    print "Error in %s" % self.fileInfo.name
+                    print _("Error in %s") % self.fileInfo.name
                     raise
                 else:
-                    print "Error in %s" % self.fileInfo.name.s
+                    print _("Error in %s") % self.fileInfo.name.s
                     raise
         #--Done Reading
         ins.close()
@@ -5238,7 +5238,7 @@ class ModFile:
 
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
-        if not self.longFids: raise StateError("ModFile fids not in long form.")
+        if not self.longFids: raise StateError(_("ModFile fids not in long form."))
         if dirs['mods'].join('Oblivion.esm').exists():
             masters = MasterSet([GPath('Oblivion.esm')])
         elif dirs['mods'].join('Nehrim.esm').exists():
@@ -5458,7 +5458,7 @@ class SreNPC(object):
             for spell in self.spells:
                 buff.write('  %8X\n' % fids[spell])
         if self.ai != None:
-            buff.write('AI:\n  ' + self.ai + '\n')
+            buff.write(_('AI:\n  ') + self.ai + '\n')
         if self.health != None:
             buff.write('Health\n  '+`self.health`+'\n')
             buff.write('Unused2\n  '+`self.unused2`+'\n')
@@ -6085,7 +6085,7 @@ class SaveFile:
         """Returns fid corresponding to iref."""
         if not iref: return default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise 'IRef from Mars.'
+        if iref >= len(self.fids): raise ModError(_('IRef from Mars.'))
         return self.fids[iref]
 
     def getIref(self,fid):
@@ -8616,7 +8616,7 @@ class ModInfos(FileInfos):
                 else:
                     canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
             except Exception, e:
-                deprint (_("Error scanning mod %s (%s)" %(fileName, str(e))))
+                deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
                 canMerge = False #presume non-mergeable.
             if fileName == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
             if canMerge == True:
@@ -8927,34 +8927,34 @@ class ModInfos(FileInfos):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
         Either for all mods in the data folder or if specified for one specific mod.
         """
-        tagList = '=== Current Bash Tags:\n'
+        tagList = _('=== Current Bash Tags:\n')
         if modList:
             for modInfo in modList:
                 tagList += '\n* ' + modInfo.name.s + '\n'
                 if modInfo.getBashTags():
                     if modInfos.table.getItem(modInfo.name,'bashTags',''):
-                        tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                        tagList += _('  * From Manual (if any this overrides Description/BOSS sourced tags): ') + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
                     if modInfo.getBashTagsDesc():
-                        tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                        tagList += _('  * From Description: ') + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                        tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += '  * Removed by  BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
-                    tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
-                else: tagList += '    No tags'
+                        tagList += _('  * Removed by  BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                    tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
+                else: tagList += _('    No tags')
         else:
             for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.name.s.lower(), y.name.s.lower())):
                 if modInfo.getBashTags():
                     tagList += '\n* ' + modInfo.name.s + '\n'
                     if modInfos.table.getItem(modInfo.name,'bashTags',''):
-                        tagList += '  * From Manual (if any this overrides Description/BOSS sourced tags): ' + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                        tagList += _('  * From Manual (if any this overrides Description/BOSS sourced tags): ') + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
                     if modInfo.getBashTagsDesc():
-                        tagList += '  * From Description: ' + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                        tagList += _('  * From Description: ') + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += '  * From BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                        tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += '  * Removed by BOSS Masterlist and or userlist: ' + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
-                    tagList += '  * Result: ' + ', '.join(sorted(modInfo.getBashTags())) + '\n'
+                        tagList += _('  * Removed by BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                    tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
         return tagList
 
     #--Mod Specific ----------------------------------------------------------
@@ -9546,7 +9546,7 @@ class ConfigHelpers:
                                 cleanIt = False
                             self.bossDirtyMods[crc] = (cleanIt, action)
                         except:
-                            deprint("An error occured parsing BOSS's masterlist for dirty crc's:\n", traceback=True)
+                            deprint(_("An error occured parsing BOSS's masterlist for dirty crc's:\n"), traceback=True)
                 ins.close()
                 self.bossMasterTime = path.mtime
         if userpath.exists():
@@ -9623,7 +9623,7 @@ class ConfigHelpers:
         #--Mergeable/NoMerge/Deactivate tagged mods
         shouldMerge = active & modInfos.mergeable
         shouldDeactivateA = [x for x in active if 'Deactivate' in modInfos[x].getBashTags()]
-        shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags()]
+        shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
         shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
         #--Mods with invalid TES4 version
         invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in (0.8,1.0)]
@@ -11320,7 +11320,7 @@ class InstallerArchive(Installer):
         if not inisettings['EnableUnicode']:
             result = ins.close()
             if result:
-                raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (archive.s,result))
+                raise InstallerArchiveError(_('Unable to read archive %s (exit:%s).') % (archive.s,result))
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
@@ -11519,7 +11519,7 @@ class InstallerArchive(Installer):
                         isdir = False
             result = ins.close()
             if result:
-                raise InstallerArchiveError('Unable to read archive %s (exit:%s).' % (apath.s,result))
+                raise InstallerArchiveError(_('Unable to read archive %s (exit:%s).') % (apath.s,result))
 
         text.sort()
         for line in text:
@@ -15630,7 +15630,7 @@ class ScriptText:
                     try:
                         modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     except:
-                        deprint("%s has malformed script header lines - was skipped" % name)
+                        deprint(_("%s has malformed script header lines - was skipped") % name)
                         continue
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
                     eid_data[eid] = (scriptText, FormID)
@@ -16844,9 +16844,9 @@ class PCFaces:
                 saveFile.created[index] = npc
                 break
         else:
-            raise StateError("Record %08X not found in %s." % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(_("Record %08X not found in %s.") % (targetid,saveFile.fileInfo.name.s))
         if npc.recType != 'NPC_':
-            raise StateError("Record %08X in %s is not an NPC." % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(_("Record %08X in %s is not an NPC.") % (targetid,saveFile.fileInfo.name.s))
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue
@@ -27060,7 +27060,7 @@ class GmstTweak(MultiTweakItem):
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if value < 0:
-                deprint("GMST float value can't be a negative number - currently %s - skipping setting GMST." % value)
+                deprint(_("GMST float value can't be a negative number - currently %s - skipping setting GMST.") % value)
                 return
             for record in patchFile.GMST.records:
                 if record.eid.lower() == eid.lower():
@@ -27103,12 +27103,12 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         else:
             return
         if recEid.startswith("f") and type(newValue) != float:
-            deprint("converting custom value to float for GMST %s: %s" % (recEid, newValue))
+            deprint(_("converting custom value to float for GMST %s: %s") % (recEid, newValue))
             newValue = float(newValue)
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint("GMST float value can't be a negative number - currently %s - skipping setting GMST" % newValue)
+                deprint(_("GMST float value can't be a negative number - currently %s - skipping setting GMST") % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -27134,7 +27134,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                         print conflict.ModName
                     raise StateError(_("Tweak Settings: Unable to create GMST!"))
                 if eid.startswith("f") and type(value) != float:
-                    deprint("converting custom value to float for GMST %s: %s" % (eid, value))
+                    deprint(_("converting custom value to float for GMST %s: %s") % (eid, value))
                     value = float(value)
                 record.value = value
             pstate += 1
@@ -32336,7 +32336,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                     for entry in mergedList:
                         fid = entry[1]
                         if not fid:
-                            deprint("WARNING: LeveledList with FormID ('%s',%06X) in '%s' has a malformed entry %s." % (record.fid[0],record.fid[1],record.GName,fid))
+                            deprint(_("WARNING: LeveledList with FormID ('%s',%06X) in '%s' has a malformed entry %s.") % (record.fid[0],record.fid[1],record.GName,fid))
                             continue
                         if fid[0] == None: continue
                         newMergedList.append(entry)
@@ -34640,7 +34640,7 @@ def initSettings(readOnly=False):
             dirs['userApp'].join('bash config.pkl'),
             readOnly))
     except cPickle.UnpicklingError, err:
-        usebck = balt.askYes(None,_("Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash." %(err)),_("Settings Load Error"))
+        usebck = balt.askYes(None,_("Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash.") %(err),_("Settings Load Error"))
         if usebck:
             try:
                 settings = bolt.Settings(PickleDict(
@@ -34648,7 +34648,7 @@ def initSettings(readOnly=False):
                     dirs['userApp'].join('bash config.pkl'),
                     readOnly))
             except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_("Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)" %(err)),_("Settings Load Error"))
+                delete = balt.askYes(None,_("Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)") %(err),_("Settings Load Error"))
                 if delete:
                     dirs['saveBase'].join('BashSettings.dat').remove()
                     settings = bolt.Settings(PickleDict(
