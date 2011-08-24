@@ -68,7 +68,7 @@ if CBashdll:
         _CGetVersionMinor.restype = c_ulong
         _CGetVersionRevision.restype = c_ulong
         if (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision()) < _CBashRequiredVersion:
-            raise ImportError("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)" % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
+            raise ImportError(_("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)") % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
         _CCreateCollection = CBash.CreateCollection
         _CDeleteCollection = CBash.DeleteCollection
         _CLoadCollection = CBash.LoadCollection
@@ -379,7 +379,7 @@ def MakeShortFid(CollectionID, fid):
     if not isinstance(fid,tuple): return fid
     master, object = fid
     if master is None:
-        raise AttributeError("Unable to convert long fid (None, %06X) into a short formID" % object)
+        raise AttributeError(_("Unable to convert long fid (None, %06X) into a short formID") % object)
     masterIndex = _CGetModLoadOrderByName(CollectionID, str(master))
     if(masterIndex == -1): return None
     return int(masterIndex << 24) | int(object & 0x00FFFFFFL)
@@ -397,7 +397,7 @@ def MakeShortMGEFCode(CollectionID, ModID, MGEFCode):
     if not isinstance(MGEFCode,tuple): return MGEFCode
     master, object = MGEFCode
     if master is None:
-        raise AttributeError("Unable to convert long MGEFCode (None, %06X) into a short MGEFCode" % object)
+        raise AttributeError(_("Unable to convert long MGEFCode (None, %06X) into a short MGEFCode") % object)
     masterIndex = _CGetModLoadOrderByName(CollectionID, str(master))
     if(masterIndex == -1): return None
     return int(masterIndex & 0x000000FFL) | int(object & 0xFFFFFF00L)
@@ -1656,7 +1656,7 @@ class ObBaseRecord(object):
             try:
                 identical = _CCompareIdenticalRecords(self._RecordID, other._RecordID)
             except Exception,err: #trace down the stupid stack overflow?!?! - traced down in one instance and can't see anything wrong with the record but this'll handle it as well as possible.
-                deprint(_("Exception reading fid: %s from mod: %s %s" % (str(self.fid),self.ModName,err)))
+                deprint(_("Exception reading fid: %s from mod: %s %s") % (str(self.fid),self.ModName,err))
                 raise # Re-raise, because at this point it's dangerous to try to interract with CBash.dll again (stack corruption)
             if identical:
                 if self._Type == 'CELL':
@@ -6083,7 +6083,7 @@ class ObCollection:
     def LookupModFile(self, ModName):
         ModID = _CGetModIDByName(self._CollectionID, str(ModName))
         if(ModID == -1):
-            raise KeyError("ModName(%s) not found in collection (%08X)\n" % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
+            raise KeyError(_("ModName(%s) not found in collection (%08X)\n") % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
         return ObModFile(self._CollectionID, ModID)
 
     def LookupModFileLoadOrder(self, ModName):
@@ -6099,14 +6099,14 @@ class ObCollection:
         _CDeleteCollection(self._CollectionID)
 
     def Debug_DumpModFiles(self):
-        value = "Collection (%08X) contains the following modfiles:\n" % (self._CollectionID,)
+        value = _("Collection (%08X) contains the following modfiles:\n") % (self._CollectionID,)
         for mod in self.AllMods:
             LoadOrder = _CGetModLoadOrderByID(self._CollectionID, mod._ModID)
             if LoadOrder == -1: LoadOrder = '--'
             else: LoadOrder = '%02X' % (LoadOrder,)
             ModName, FileName = mod.ModName, mod.FileName
             if ModName == FileName:
-                value += "Load Order (%s), Name(%s)\n" % (LoadOrder, ModName)
+                value += _("Load Order (%s), Name(%s)\n") % (LoadOrder, ModName)
             else:
-                value += "Load Order (%s), ModName(%s) FileName(%s)\n" % (LoadOrder, ModName, FileName)
+                value += _("Load Order (%s), ModName(%s) FileName(%s)\n") % (LoadOrder, ModName, FileName)
         return value

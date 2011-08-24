@@ -73,7 +73,7 @@ def Unicode(name,tryFirstEncoding=False):
             try:
                 return unicode(name,tryFirstEncoding)
             except UnicodeDecodeError:
-                deprint("Unable to decode '%s' in %s." % (name, tryFirstEncoding))
+                deprint(_("Unable to decode '%s' in %s.") % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
             try:
@@ -91,7 +91,7 @@ def Encode(name,tryFirstEncoding=False):
             try:
                 return name.encode(tryFirstEncoding)
             except UnicodeEncodeError:
-                deprint("Unable to encode '%s' in %s." % (name, tryFirstEncoding))
+                deprint(_("Unable to encode '%s' in %s.") % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
             try:
@@ -1038,6 +1038,10 @@ class Path(object):
                 return sum([sum(map(getSize,map(lambda z: join(x,z),files))) for x,y,files in os.walk(self._s)])
             except ValueError:
                 return 0
+            #except WindowsError, werr: #why is it looping?!?!?!
+            #        if werr.winerror != 123: raise
+            #        deprint(_("Unable to determine size of %s - probably a unicode error") % self._s)
+            #        return 0
         else:
             try:
                 return os.path.getsize(self._s)
@@ -1278,8 +1282,8 @@ class Path(object):
                 try:
                     return cmp(Encode(self._cs), Encode(other._cs))
                 except UnicodeError:
-                    deprint("Wrye Bash Unicode mode is currently %s" % (['off.','on.'][bUseUnicode]))
-                    deprint("unrecovered Unicode error when dealing with %s - presuming non equal." % (self._cs))
+                    deprint(_("Wrye Bash Unicode mode is currently %s") % (['off.','on.'][bUseUnicode]))
+                    deprint(_("unrecovered Unicode error when dealing with %s - presuming non equal.") % (self._cs))
                     return False
         else:
             try:
@@ -1288,8 +1292,8 @@ class Path(object):
                 try:
                     return cmp(Encode(self._cs), Encode(Path.getCase(other)))
                 except UnicodeError:
-                    deprint("Wrye Bash Unicode mode is currently %s." % (['off','on'][bUseUnicode]))
-                    deprint("unrecovered Unicode error when dealing with %s - presuming non equal.'" % (self._cs))
+                    deprint(_("Wrye Bash Unicode mode is currently %s.") % (['off','on'][bUseUnicode]))
+                    deprint(_("unrecovered Unicode error when dealing with %s - presuming non equal.'") % (self._cs))
                     return False
 
 # Util Constants --------------------------------------------------------------
@@ -1593,7 +1597,7 @@ class OrderedSet(list, MutableSet):
        to the end of the set.
     """
     def update(self, *args, **kwdargs):
-        if kwdargs: raise TypeError("update() takes no keyword arguments")
+        if kwdargs: raise TypeError(("update() takes no keyword arguments"))
         for s in args:
             for e in s:
                 self.add(e)
@@ -1727,7 +1731,7 @@ class MainFunctions:
         key = attrs.pop(0)
         func = self.funcs.get(key)
         if not func:
-            print "Unknown function/object:", key
+            print _("Unknown function/object:"), key
             return
         for attr in attrs:
             func = getattr(func,attr)
@@ -1821,7 +1825,7 @@ class PickleDict:
                             self.vdata.update(cPickle.load(translator))
                             self.data.update(cPickle.load(translator))
                         except:
-                            deprint("unable to unpickle data", traceback=True)
+                            deprint(_("unable to unpickle data"), traceback=True)
                             raise
                     else:
                         self.data.update(header)
@@ -1898,7 +1902,7 @@ class Settings(DataDict):
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
         if key not in self.data:
-            raise ArgumentError("No settings data for "+key)
+            raise ArgumentError(_("No settings data for ")+key)
         if key not in self.changed:
             self.changed.append(key)
 
@@ -2429,7 +2433,7 @@ class LogFile(Log):
 class Progress:
     """Progress Callable: Shows progress when called."""
     def __init__(self,full=1.0):
-        if (1.0*full) == 0: raise ArgumentError('Full must be non-zero!')
+        if (1.0*full) == 0: raise ArgumentError(_('Full must be non-zero!'))
         self.message = ''
         self.full = full
         self.state = 0
@@ -2437,7 +2441,7 @@ class Progress:
 
     def setFull(self,full):
         """Set's full and for convenience, returns self."""
-        if (1.0*full) == 0: raise ArgumentError('Full must be non-zero!')
+        if (1.0*full) == 0: raise ArgumentError(_('Full must be non-zero!'))
         self.full = full
         return self
 
@@ -2447,7 +2451,7 @@ class Progress:
 
     def __call__(self,state,message=''):
         """Update progress with current state. Progress is state/full."""
-        if (1.0*self.full) == 0: raise ArgumentError('Full must be non-zero!')
+        if (1.0*self.full) == 0: raise ArgumentError(_('Full must be non-zero!'))
         if message: self.message = message
         if self.debug: deprint('%0.3f %s' % (1.0*state/self.full, self.message))
         self.doProgress(1.0*state/self.full, self.message)
@@ -2470,7 +2474,7 @@ class SubProgress(Progress):
         Progress.__init__(self,full)
         if baseTo == '+1': baseTo = baseFrom + 1
         if (baseFrom < 0 or baseFrom >= baseTo):
-            raise ArgumentError('BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
+            raise ArgumentError(_('BaseFrom must be >= 0 and BaseTo must be > BaseFrom'))
         self.parent = parent
         self.baseFrom = baseFrom
         self.scale = 1.0*(baseTo-baseFrom)
@@ -2830,15 +2834,15 @@ class WryeText:
             css = WryeText.defaultCss
         else:
             if cssName.ext != '.css':
-                raise "Invalid Css file: "+cssName.s
+                raise BoltError(_("Invalid Css file: ")+cssName.s)
             for dir in cssDirs:
                 cssPath = GPath(dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise 'Css file not found: '+cssName.s
+                raise BoltError(_('Css file not found: ')+cssName.s)
             css = ''.join(cssPath.open().readlines())
             if '<' in css:
-                raise "Non css tag in "+cssPath.s
+                raise BoltError(_("Non css tag in ")+cssPath.s)
         #--Write Output ------------------------------------------------------
         def toutf8(line):
             if not (bUseUnicode or isinstance(line, unicode)):

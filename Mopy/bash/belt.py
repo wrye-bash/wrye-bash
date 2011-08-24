@@ -1004,7 +1004,7 @@ class WryeParser(ScriptParser.Parser):
     # Assignment operators
     def Ass(self, l, r):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error('Cannot assign a value to %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error(_('Cannot assign a value to %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = r.data
         return r.data
     def AssAdd(self, l, r): return self.Ass(l, l+r)
@@ -1064,12 +1064,12 @@ class WryeParser(ScriptParser.Parser):
     # Postfix inc/dec
     def opInc(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error('Cannot increment %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error(_('Cannot increment %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = l.data+1
         return l.data
     def opDec(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error('Cannot decrement %s, type is %s.' % (l.text, ScriptParser.Types[l.type]))
+            error(_('Cannot decrement %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
         self.variables[l.text] = l.data-1
         return l.data
     # Math operators
@@ -1165,30 +1165,30 @@ class WryeParser(ScriptParser.Parser):
             return 0
     def fnEndsWith(self, String, *args):
         if not isinstance(String, basestring):
-            error("Function 'endswith' only operates on string types.")
+            error(_("Function 'endswith' only operates on string types."))
         try:
             return String.endswith(args)
         except:
             return False
     def fnStartsWith(self, String, *args):
         if not isinstance(String, basestring):
-            error("Function 'startswith' only operates on string types.")
+            error(_("Function 'startswith' only operates on string types."))
         try:
             return String.startswith(args)
         except:
             return False
     def fnLower(self, String):
         if not isinstance(String, basestring):
-            error("Function 'lower' only operates on string types.")
+            error(_("Function 'lower' only operates on string types."))
         return String.lower()
     def fnFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, basestring):
-            error("Function 'find' only operates on string types.")
+            error(_("Function 'find' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
     def fnRFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, basestring):
-            error("Function 'rfind' only operates on string types.")
+            error(_("Function 'rfind' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
     def fnGetFilename(self, String):
@@ -1315,11 +1315,11 @@ class WryeParser(ScriptParser.Parser):
             return
         varname = args[0]
         if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name")
+            error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name"))
         if args[1].text == 'from':
             #For varname from value_start to value_end [by value_increment]
             if (len(args) not in [5,7]) or (args[3].text != 'to') or (len(args)==7 and args[5].text != 'by'):
-                error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment")
+                error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment"))
             start = self.ExecuteTokens([args[2]])
             end = self.ExecuteTokens([args[4]])
             if len(args) == 7:
@@ -1365,7 +1365,7 @@ class WryeParser(ScriptParser.Parser):
                 self.variables[varname.text] = List[0]
                 self.PushFlow('For', True, ['For','EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
         else:
-            error("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name")
+            error(_("Invalid syntax for 'For' statement.  Expected format:\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name"))
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
             error(UNEXPECTED % 'EndFor')
