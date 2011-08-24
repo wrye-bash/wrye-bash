@@ -12333,7 +12333,6 @@ class InstallersData(bolt.TankData, DataDict):
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             # Edit the tweaks
-            iniInfos.refresh()
             for (oldIni,target) in tweaksCreated:
                 iniFile = bosh.BestIniFile(target)
                 currSection = None
