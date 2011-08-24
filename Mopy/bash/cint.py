@@ -1864,8 +1864,12 @@ class ObBaseRecord(object):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
-        removed from the list."""
-        pass
+        removed from the list.
+
+        In a case where items either cannot be filtered, or doing so will break
+        the record, False should be returned.  If filtering was successful, True
+        should be returned."""
+        return True
 
     def CopyAsOverride(self, target, CopyFlags=None):
         if CopyFlags is None: CopyFlags = self._CopyFlags
@@ -2968,6 +2972,7 @@ class ObCONTRecord(ObBaseRecord):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.items = [x for x in self.items if x.item[0] in modSet]
+        return True
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -3003,6 +3008,7 @@ class ObCREARecord(ObBaseRecord):
         self.spells = [x for x in self.spells if x[0] in modSet]
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
+        return True
 
     class Sound(ListComponent):
         soundType = CBashGeneric_LIST(1, c_ulong)
@@ -3799,6 +3805,7 @@ class ObLVLCRecord(ObBaseRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -3831,6 +3838,7 @@ class ObLVLIRecord(ObBaseRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -3862,6 +3870,7 @@ class ObLVSPRecord(ObBaseRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -4034,6 +4043,7 @@ class ObNPC_Record(ObBaseRecord):
         self.spells = [x for x in self.spells if x[0] in modSet]
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
+        return True
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -4281,6 +4291,7 @@ class ObQUSTRecord(ObBaseRecord):
         #        and
         #        (not isinstance(x.param2,tuple) or x.param2[0] in modSet)
         #        )]
+        return True
 
 
     class Stage(ListComponent):
@@ -4747,6 +4758,15 @@ class ObSBSPRecord(ObBaseRecord):
 
 class ObSCPTRecord(ObBaseRecord):
     _Type = 'SCPT'
+    def mergeFilter(self, modSet):
+        """Filter references that don't come from the specified modSet.
+           Since we can't actually do this for SCPT records, return False if
+           any references are to mods not in modSet."""
+        for ref in self.references:
+            if ref[0] not in modSet: return False
+        return True
+
+
     class Var(ListComponent):
         index = CBashGeneric_LIST(1, c_ulong)
         unused1 = CBashUINT8ARRAY_LIST(2, 12)
