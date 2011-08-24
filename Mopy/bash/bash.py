@@ -124,7 +124,7 @@ def oneInstanceChecker():
         os.write(lockfd, "%d" % os.getpid())
     except OSError, e:
         # lock file exists and is currently locked by another process
-        print 'already started'
+        print _('already started')
         return False
 
     return True
@@ -193,10 +193,10 @@ def main():
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
-            print "generating HTML file from: '%s'" % opts.genHtml
+            print _("generating HTML file from: '%s'") % opts.genHtml
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
-            print "done"
+            print _("done")
             return
 
         import basher

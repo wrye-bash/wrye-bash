@@ -413,7 +413,7 @@ class Parser(object):
             fn += ']'
             return eval(fn)
         except:
-            error('IndexError')
+            error(_('IndexError'))
 
     def SetOperator(self, name, *args, **kwdargs):
         type = getType(name, self)
@@ -509,13 +509,13 @@ class Parser(object):
             elif tok.type == CLOSE_PARENS:
                 parenDepth -= 1
                 if parenDepth < 0:
-                    error("Missmatched parenthesis.")
+                    error(_("Missmatched parenthesis."))
             elif tok.type == OPEN_BRACKET:
                 bracketDepth += 1
             elif tok.type == CLOSE_BRACKET:
                 bracketDepth -= 1
                 if bracketDepth < 0:
-                    error("Mismatched brackets.")
+                    error(_("Mismatched brackets."))
             if tok.type == COMMA and parenDepth == 0 and bracketDepth == 0:
                     ret.append([])
             else:
@@ -574,7 +574,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
                     rpn.append(stack.pop())
                 if len(stack) == 0:
-                    error("Misplaced ',' or missing parenthesis.")
+                    error(_("Misplaced ',' or missing parenthesis."))
                 if len(stack) > 1 and stack[-2].type == FUNCTION:
                     stack[-2].numArgs += stack[-1].numArgs
                     stack[-1].numArgs = 0
@@ -583,7 +583,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
                     temp.append(stack.pop())
                 if len(stack) <= 1:
-                    error("Misplaced ':' or missing bracket.")
+                    error(_("Misplaced ':' or missing bracket."))
                 stack[-2].numArgs += stack[-1].numArgs
                 if len(temp) == 0 and stack[-1].numArgs == 0:
                     rpn.append(Parser.Token(Parser._marker,Type=UNKNOWN,parser=self))
@@ -597,11 +597,11 @@ class Parser(object):
                 # Dot operator
                 if i.text == self.dotOperator:
                     if idex+1 >= len(tokens):
-                        error("Dot operator: no function to call.")
+                        error(_("Dot operator: no function to call."))
                     if tokens[idex+1].type != FUNCTION:
-                        error("Dot operator: cannot access non-function '%s'." % tokens[idex+1].text)
+                        error(_("Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
                     if not tokens[idex+1].data.dotFunction:
-                        error("Dot operator: cannot access function '%s'." % tokens[idex+1].text)
+                        error(_("Dot operator: cannot access function '%s'.") % tokens[idex+1].text)
                     tokens[idex+1].numArgs += 1
                 # Other operators
                 else:
@@ -626,7 +626,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
                     rpn.append(stack.pop())
                 if len(stack) == 0:
-                    error('Unmatched parenthesis.')
+                    error(_('Unmatched parenthesis.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
                 if len(stack) > 0 and stack[-1].type == FUNCTION:
@@ -637,7 +637,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_BRACKET:
                     temp.append(stack.pop())
                 if len(stack) == 0:
-                    error('Unmatched brackets.')
+                    error(_('Unmatched brackets.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
                 if len(temp) == 0 and numArgs == 0 and stack[-1].numArgs != 0:
@@ -646,14 +646,14 @@ class Parser(object):
                 rpn.extend(temp)
                 stack[-1].numArgs += numArgs + 1
                 if stack[-1].numArgs == 1:
-                    error('IndexError')
+                    error(_('IndexError'))
                 rpn.append(stack.pop())
             else:
-                error("Unrecognized token: '%s', type: %s" % (i.text, Types[i.type]))
+                error(_("Unrecognized token: '%s', type: %s") % (i.text, Types[i.type]))
         while len(stack) > 0:
             i = stack.pop()
             if i.type in [OPEN_PARENS,CLOSE_PARENS]:
-                error('Unmatched parenthesis.')
+                error(_('Unmatched parenthesis.'))
             rpn.append(i)
         self.rpn = rpn
         return rpn
@@ -691,7 +691,7 @@ class Parser(object):
                 stack.append(i)
         if len(stack) == 1:
             return stack[0].data
-        error('Too many values left at the end of evaluation.')
+        error(_('Too many values left at the end of evaluation.'))
 
     def error(self, msg):
         raise ParserError, '(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg)
@@ -762,7 +762,7 @@ class Parser(object):
         if c == ')': return self._stateEndBracket
         if c == ']': return self._stateEndBracket
         if c == ',': return self._stateSpace
-        error("Invalid character: '%s'" % c)
+        error(_("Invalid character: '%s'") % c)
 
     def _stateSQuote(self, c):
         if c == '\\': return self._stateSQuoteEscape
@@ -771,7 +771,7 @@ class Parser(object):
             self._emit(type=STRING)
             return self._stateSpace
         if c == '\n':
-            error('Unterminated single quote.')
+            error(_('Unterminated single quote.'))
         self._grow(c)
         return self._stateSQuote
     def _stateSQuoteEscape(self, c):
@@ -786,7 +786,7 @@ class Parser(object):
             self._emit(type=STRING)
             return self._stateSpace
         if c == '\n':
-            error("Unterminated double quote.")
+            error(_("Unterminated double quote."))
         self._grow(c)
         return self._stateDQuote
     def _stateDQuoteEscape(self, c):
@@ -807,7 +807,7 @@ class Parser(object):
             self._grow(c)
             return self._stateName
         if c in ["'",'"']:
-            error('Unexpected quotation %s following name token.' % c)
+            error(_('Unexpected quotation %s following name token.') % c)
         if c == ':' and self.word.endswith('in'):
             self._grow(c)
             return self._stateOperator
@@ -827,17 +827,17 @@ class Parser(object):
             self._grow(c)
             return self._stateDecimal
         if c in ['"',"'"]:
-            error('Unexpected quotation %s following number token.' % c)
+            error(_('Unexpected quotation %s following number token.') % c)
         return self._stateSpace(c)
     def _stateDecimal(self, c):
         if c in digits:
             self._grow(c)
             return self._stateDecimal
         if c in ['"',"'",'.']:
-            error('Unexpected %s following decimal token.' % c)
+            error(_('Unexpected %s following decimal token.') % c)
         return self._stateSpace(c)
 
     def _stateEndBracket(self, c):
         if c in ['"',"'"]:
-            error('Unexpected quotation %s following parenthesis.' % c)
+            error(_('Unexpected quotation %s following parenthesis.') % c)
         return self._stateSpace(c)

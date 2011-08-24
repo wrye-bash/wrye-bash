@@ -72,7 +72,7 @@ class Data:
             ini.mtime = ini.path.mtime
             savesDir = bosh.dirs['saveBase'].join(ini.getSetting('General','SLocalSavePath','Saves\\'))
             if savesDir != self.savesDir:
-                print '\nMonitoring:',savesDir.stail
+                print _('\nMonitoring:'),savesDir.stail
                 self.setSavesDir(savesDir)
                 self.setSignals()
                 self.clearSignals()
@@ -309,7 +309,7 @@ def monitor(sleepSeconds=0.25):
                 command = monitorCommands[command]
                 command(*args)
             ins.close()
-            print '  Completed\n'
+            print _('  Completed\n')
             data.completed.touch()
             if data.removeRequest:
                 data.request.remove()
@@ -317,7 +317,7 @@ def monitor(sleepSeconds=0.25):
                 time.sleep(0.1)
             data.setSignals()
         except:
-            print '  Failed\n'
+            print _('  Failed\n')
             data.failed.touch()
             traceback.print_exc()
             running = False

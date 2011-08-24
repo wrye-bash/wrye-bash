@@ -186,7 +186,7 @@ class BackupSettings(BaseBackupSettings):
         if not self.PromptFile(): return
 
         deprint('')
-        deprint('BACKUP BASH SETTINGS: ' + self.dir.join(self.archive).s)
+        deprint(_('BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # copy all files to ~tmp backup dir
         for tpath,fpath in self.files.iteritems():
@@ -300,7 +300,7 @@ class RestoreSettings(BaseBackupSettings):
             return
 
         deprint('')
-        deprint('RESTORE BASH SETTINGS: ' + self.dir.join(self.archive).s)
+        deprint(_('RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
         tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')

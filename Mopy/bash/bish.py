@@ -233,7 +233,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     """Copies eyes and hair from one race to another."""
     init(3)
     if dstMod.lower() == 'oblivion.esm':
-        raise "You don't REALLY want to overwrite Oblvion.esm, do you?"
+        raise bolt.BoltError(_("You don't REALLY want to overwrite Oblvion.esm, do you?"))
     srcFactory = bosh.LoadFactory(False,bosh.MreRace)
     dstFactory = bosh.LoadFactory(True,bosh.MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
@@ -252,8 +252,8 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
         if record.eid == dstRaceEid:
             dstRace = record
             break
-    if not srcRace: raise "Didn't find race (eid) %s in %s." % (srcRaceEid,srcMod)
-    if not dstRace: raise "Didn't find race (eid) %s in %s." % (dstRaceEid,dstMod)
+    if not srcRace: raise bosh.ModError(srcMod,_("Didn't find race (eid) %s.") % (srcRaceEid))
+    if not dstRace: raise bosh.ModError(dstMod,_("Didn't find race (eid) %s.") % (dstRaceEid))
     #--Get mapper
     srcMasters = srcFile.tes4.masters[:] + [GPath(srcMod)]
     dstMasters = dstFile.tes4.masters[:] + [GPath(dstMod)]
@@ -279,7 +279,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     dstRace.setChanged()
     #--Save Changes
     dstFile.safeSave()
-    print "  Added %d eyes, %d hair" % (cntEyes,cntHair)
+    print _("  Added %d eyes, %d hair") % (cntEyes,cntHair)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -751,7 +751,7 @@ def gmstIds(fileName=None):
     if maxId > maxOld:
         outData = {'GMST':fids}
         cPickle.dump(outData,GPath(r'Oblivion_ids.pkl').open('w'))
-        print "%d new gmst ids written to Oblivion_ids.pkl" % ((maxId - maxOld),)
+        print _("%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -1199,7 +1199,7 @@ def test(file):
 def create_sample_project(read_file=None,dest_path=None):
     """create a sample project for BAIN testing from a text file list of paths - ie as exported by 'list structure'"""
     if not read_file:
-        print "read file must be specified"
+        print _("read file must be specified")
         return
     if not dest_path:
         dest_path = GPath(os.getcwd()).join("Test BAIN Project")
