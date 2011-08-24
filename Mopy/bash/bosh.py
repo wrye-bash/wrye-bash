@@ -18143,7 +18143,7 @@ class CBash_PatchFile(ObModFile):
                 if record.IsWinning():
                     if doFilter:
                         if not record.fid[0] in loadSet: continue
-                        record.mergeFilter(loadSet)
+                        if not record.mergeFilter(loadSet): continue
                     parent = record.Parent
                     if parent:
                         parentFid = parent.fid
