@@ -17875,12 +17875,12 @@ class PatchFile(ModFile):
                 if record.fid == badForm: continue
                 #--Include this record?
                 if doFilter:
+                    record.mergeFilter(loadSet)
                     masters = MasterSet()
                     record.updateMasters(masters)
                     if not loadSet.issuperset(masters):
                         continue
                 filtered.append(record)
-                if doFilter: record.mergeFilter(loadSet)
                 if iiSkipMerge: continue
                 record = record.getTypeCopy()
                 patchBlock.setRecord(record)
