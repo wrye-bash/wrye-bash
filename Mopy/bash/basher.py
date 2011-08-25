@@ -375,6 +375,7 @@ class BashError(BoltError): pass
 # Constants
 #--Indexed
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
+splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
 
 #--Generic
 ID_RENAME = 6000
@@ -553,10 +554,10 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50):
+    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE):
         """Initialize."""
         wx.Panel.__init__(self, parent, wx.ID_ANY)
-        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if mode == wx.VERTICAL:
@@ -1803,10 +1804,12 @@ class ModList(List):
             docBrowser.SetMod(modName)
 
 #------------------------------------------------------------------------------
-class ModDetails(wx.Window):
+class ModDetails(SashPanel):
     """Details panel for mod tab."""
+#------------------------------------------------------------------------------
     def __init__(self,parent):
-        wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
+        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=300,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        top,bottom = self.left, self.right
         #--Singleton
         global modDetails
         modDetails = self
@@ -1814,71 +1817,74 @@ class ModDetails(wx.Window):
         self.modInfo = None
         self.edited = False
         textWidth = 200
-        #--Version
-        self.version = staticText(self,'v0.0')
-        id = self.fileId = wx.NewId()
-        #--File Name
-        self.file = textCtrl(self,id,size=(textWidth,-1))
-        self.file.SetMaxLength(200)
-        self.file.Bind(wx.EVT_KILL_FOCUS, self.OnEditFile)
-        self.file.Bind(wx.EVT_TEXT, self.OnTextEdit)
-        #--Author
-        id = self.authorId = wx.NewId()
-        self.author = textCtrl(self,id,size=(textWidth,-1))
-        self.author.SetMaxLength(512)
-        wx.EVT_KILL_FOCUS(self.author,self.OnEditAuthor)
-        wx.EVT_TEXT(self.author,id,self.OnTextEdit)
-        #--Modified
-        id = self.modifiedId = wx.NewId()
-        self.modified = textCtrl(self,id,size=(textWidth,-1))
-        self.modified.SetMaxLength(32)
-        wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
-        wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
-        #--Description
-        id = self.descriptionId = wx.NewId()
-        self.description = (
-            wx.TextCtrl(self,id,"",size=(textWidth,150),style=wx.TE_MULTILINE))
-        self.description.SetMaxLength(512)
-        wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
-        wx.EVT_TEXT(self.description,id,self.OnTextEdit)
-        #--Masters
-        id = self.mastersId = wx.NewId()
-        self.masters = MasterList(self,None)
-        #--Save/Cancel
-        self.save = button(self,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
-        self.cancel = button(self,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
-        self.save.Disable()
-        self.cancel.Disable()
-        #--Bash tags
-        self.allTags = bosh.allTags
-        id = self.tagsId = wx.NewId()
-        self.gTags = (
-            wx.TextCtrl(self,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
+        if True: #setup
+            #--Version
+            self.version = staticText(top,'v0.0')
+            id = self.fileId = wx.NewId()
+            #--File Name
+            self.file = textCtrl(top,id)#,size=(textWidth,-1))
+            self.file.SetMaxLength(200)
+            self.file.Bind(wx.EVT_KILL_FOCUS, self.OnEditFile)
+            self.file.Bind(wx.EVT_TEXT, self.OnTextEdit)
+            #--Author
+            id = self.authorId = wx.NewId()
+            self.author = textCtrl(top,id)#,size=(textWidth,-1))
+            self.author.SetMaxLength(512)
+            wx.EVT_KILL_FOCUS(self.author,self.OnEditAuthor)
+            wx.EVT_TEXT(self.author,id,self.OnTextEdit)
+            #--Modified
+            id = self.modifiedId = wx.NewId()
+            self.modified = textCtrl(top,id,size=(textWidth,-1))
+            self.modified.SetMaxLength(32)
+            wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
+            wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
+            #--Description
+            id = self.descriptionId = wx.NewId()
+            self.description = (
+                wx.TextCtrl(top,id,"",size=(textWidth,150),style=wx.TE_MULTILINE))
+            self.description.SetMaxLength(512)
+            wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
+            wx.EVT_TEXT(self.description,id,self.OnTextEdit)
+            #--Masters
+            id = self.mastersId = wx.NewId()
+            self.masters = MasterList(bottom,None)
+            #--Save/Cancel
+            self.save = button(bottom,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
+            self.cancel = button(bottom,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
+            self.save.Disable()
+            self.cancel.Disable()
+            #--Bash tags
+            self.allTags = bosh.allTags
+            id = self.tagsId = wx.NewId()
+            self.gTags = (
+                wx.TextCtrl(bottom,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
         #--Layout
-        sizer = vSizer(
+        detailsSizer = vSizer(
             (hSizer(
-                (staticText(self,_("File:")),0,wx.TOP,4),
+                (staticText(top,_("File:")),0,wx.TOP,4),
                 spacer,
                 (self.version,0,wx.TOP|wx.RIGHT,4)
                 ),0,wx.EXPAND),
-            self.file,
-            (staticText(self,_("Author:")),0,wx.TOP,4),
-            self.author,
-            (staticText(self,_("Modified:")),0,wx.TOP,4),
-            self.modified,
-            (staticText(self,_("Description:")),0,wx.TOP,4),
-            self.description,
-            (staticText(self,_("Masters:")),0,wx.TOP,4),
-            (self.masters,1,wx.EXPAND),
+            (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
+            (hSizer((staticText(top,_("Author:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
+            (hSizer((staticText(top,_("Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
+            (hSizer((staticText(top,_("Description:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
+        detailsSizer.SetSizeHints(top)
+        top.SetSizer(detailsSizer)
+        mastersSizer = vSizer(
+            (hSizer((staticText(bottom,_("Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((self.masters,1,wx.EXPAND)),1,wx.EXPAND),
             (hSizer(
-                spacer,
                 self.save,
                 (self.cancel,0,wx.LEFT,4)
                 ),0,wx.EXPAND|wx.TOP,4),
-            (staticText(self,_("Bash Tags:")),0,wx.TOP,4),
-            self.gTags,
-            )
-        self.SetSizer(sizer)
+            (staticText(bottom,_("Bash Tags:")),0,wx.TOP,4),
+            (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
+        mastersSizer.SetSizeHints(bottom)
+        bottom.SetSizer(mastersSizer)
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
         wx.EVT_MENU(self,ID_TAGS.AUTO,self.DoAutoBashTags)
@@ -2114,7 +2120,6 @@ class ModDetails(wx.Window):
         self.modInfo.setBashTags(modTags)
         modList.RefreshUI(self.modInfo.name)
 
-#------------------------------------------------------------------------------
 class INIPanel(SashPanel):
     def __init__(self, parent):
         SashPanel.__init__(self, parent,'bash.ini.sashPos')
@@ -2333,23 +2338,21 @@ class INIPanel(SashPanel):
             settings[self.sashPosKey] = splitter.GetSashPosition()
 
 #------------------------------------------------------------------------------
-class ModPanel(NotebookPanel):
+class ModPanel(SashPanel):
     def __init__(self,parent):
-        wx.Panel.__init__(self, parent, -1)
+        SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=225)
+        left,right = self.left, self.right
         global modList
-        modList = ModList(self)
+        modList = ModList(left)
         self.list = modList
-        self.modDetails = ModDetails(self)
+        self.modDetails = ModDetails(right)
         modList.details = self.modDetails
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         #--Layout
-        sizer = hSizer(
-            (modList,1,wx.GROW),
-            ((4,-1),0),
-            (self.modDetails,0,wx.EXPAND))
-        self.SetSizer(sizer)
-        self.modDetails.Fit()
+        right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
+        left.SetSizer(hSizer((modList,2,wx.EXPAND),))
+       # self.modDetails.Fit()
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
@@ -2365,6 +2368,11 @@ class ModPanel(NotebookPanel):
         """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
         bosh.modInfos.table.save()
         settings['bash.mods.scrollPos'] = modList.vScrollPos
+        splitter = self.right.GetParent()
+        settings[self.sashPosKey] = splitter.GetSashPosition()
+        splitter = self.modDetails.right.GetParent()
+        settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
+            
 
 #------------------------------------------------------------------------------
 class SaveList(List):
@@ -5903,7 +5911,6 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
                     except: deprint(_('item %s not in saved configs') % (item))
         self.SetOkEnable()
 
@@ -5939,9 +5946,7 @@ class PatchDialog(wx.Dialog):
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                    try: patcher.gList.Check(index,item.isEnabled)
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -7884,6 +7889,7 @@ class Installer_Wizard(InstallerLink):
             installer = self.data[self.selected[0]]
             subs = []
             oldRemaps = installer.remaps
+            installer.resetAllEspmNames()
             gInstallers.refreshCurrent(installer)
             for index in range(gInstallers.gSubList.GetCount()):
                 subs.append(gInstallers.gSubList.GetString(index))
@@ -7899,10 +7905,7 @@ class Installer_Wizard(InstallerLink):
                 pageSize = tuple(default)
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
-            try:
-                wizard = belt.InstallerWizard(self, subs, pageSize, pos)
-            except bolt.CancelError:
-                return
+            wizard = belt.InstallerWizard(self, subs, pageSize, pos)
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         # Sanity checks on returned size/position
@@ -7919,7 +7922,6 @@ class Installer_Wizard(InstallerLink):
             gInstallers.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
-        installer.resetAllEspmNames()
         for index in range(gInstallers.gSubList.GetCount()):
             select = installer.subNames[index + 1] in ret.SelectSubPackages
             gInstallers.gSubList.Check(index, select)
