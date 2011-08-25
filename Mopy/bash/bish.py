@@ -233,7 +233,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     """Copies eyes and hair from one race to another."""
     init(3)
     if dstMod.lower() == 'oblivion.esm':
-        raise bolt.BoltError(_("You don't REALLY want to overwrite Oblvion.esm, do you?"))
+        raise bolt.BoltError(_("You don't REALLY want to overwrite Oblivion.esm, do you?"))
     srcFactory = bosh.LoadFactory(False,bosh.MreRace)
     dstFactory = bosh.LoadFactory(True,bosh.MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
