@@ -11273,54 +11273,59 @@ class InstallerArchive(Installer):
             command = r'"%s" l -slt "%s"' % (exe7z, archive.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = stringBuffer(ins)
-
-        cumCRC = 0
-        if inisettings['EnableUnicode']:
-            for line in ins.splitlines(True):
-                maList = reList.match(line)
-                if maList:
-                    key,value = maList.groups()
-                    if key == u'Solid': self.isSolid = (value[0] == u'+')
-                    elif key == u'Path':
-                        file = value.decode('utf8')
-                    elif key == u'Size': size = int(value)
-                    elif key == u'Attributes': isdir = (value[0] == u'D')
-                    elif key == u'CRC' and value:
-                        crc = int(value,16)
-                    elif key == u'Method':
-                        if file and not isdir and file != archive.s:
-                            fileSizeCrcs.append((file,size,crc))
-                            cumCRC += crc
-                        file = size = crc = isdir = 0
-        else:
-            for line in ins:
-                maList = reList.match(line)
-                if maList:
-                    key,value = maList.groups()
-                    if key == 'Solid': self.isSolid = (value[0] == '+')
-                    elif key == 'Path':
-                        #--Should be able to twist 7z to export names in UTF-8, but can't (at
-                        #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
-                        #  assume file is encoded in cp437 and that we want to decode to cp1252.
-                        #--Hopefully this will mostly resolve problem with german umlauts, etc.
-                        #  It won't solve problems with non-european characters though.
-                       ## try: file = value.decode('cp437').encode('cp1252')
-                       ## except: pass
-                        file = value
-                    elif key == 'Size': size = int(value)
-                    elif key == 'Attributes': isdir = (value[0] == 'D')
-                    elif key == 'CRC' and value:
-                        crc = int(value,16)
-                    elif key == 'Method':
-                        if file and not isdir and file != archive.s:
-                            fileSizeCrcs.append((file,size,crc))
-                            cumCRC += crc
-                        file = size = crc = isdir = 0
-        self.crc = cumCRC & 0xFFFFFFFFL
-        if not inisettings['EnableUnicode']:
-            result = ins.close()
-            if result:
-                raise InstallerArchiveError(_('Unable to read archive %s (exit:%s).') % (archive.s,result))
+        fail = False
+        try:
+            cumCRC = 0
+            if inisettings['EnableUnicode']:
+                for line in ins.splitlines(True):
+                    maList = reList.match(line)
+                    if maList:
+                        key,value = maList.groups()
+                        if key == u'Solid': self.isSolid = (value[0] == u'+')
+                        elif key == u'Path':
+                            file = value.decode('utf8')
+                        elif key == u'Size': size = int(value)
+                        elif key == u'Attributes': isdir = (value[0] == u'D')
+                        elif key == u'CRC' and value:
+                            crc = int(value,16)
+                        elif key == u'Method':
+                            if file and not isdir and file != archive.s:
+                                fileSizeCrcs.append((file,size,crc))
+                                cumCRC += crc
+                            file = size = crc = isdir = 0
+            else:
+                for line in ins:
+                    maList = reList.match(line)
+                    if maList:
+                        key,value = maList.groups()
+                        if key == 'Solid': self.isSolid = (value[0] == '+')
+                        elif key == 'Path':
+                            #--Should be able to twist 7z to export names in UTF-8, but can't (at
+                            #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
+                            #  assume file is encoded in cp437 and that we want to decode to cp1252.
+                            #--Hopefully this will mostly resolve problem with german umlauts, etc.
+                            #  It won't solve problems with non-european characters though.
+                           ## try: file = value.decode('cp437').encode('cp1252')
+                           ## except: pass
+                            file = value
+                        elif key == 'Size': size = int(value)
+                        elif key == 'Attributes': isdir = (value[0] == 'D')
+                        elif key == 'CRC' and value:
+                            crc = int(value,16)
+                        elif key == 'Method':
+                            if file and not isdir and file != archive.s:
+                                fileSizeCrcs.append((file,size,crc))
+                                cumCRC += crc
+                            file = size = crc = isdir = 0
+            self.crc = cumCRC & 0xFFFFFFFFL
+        except:
+            fail = True
+        finally:
+            if not inisettings['EnableUnicode']:
+                result = ins.close()
+                if fail or result:
+                    raise InstallerArchiveError(_("Unable to read archive '%s' (exit:%s).") % (archive.s,result))
+            if fail: raise InstallerArchiveError(_("Unable to read archive '%s'.") % archive.s)
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
