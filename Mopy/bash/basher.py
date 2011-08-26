@@ -1806,7 +1806,7 @@ class ModList(List):
 #------------------------------------------------------------------------------
 class ModDetails(SashPanel):
     """Details panel for mod tab."""
-#------------------------------------------------------------------------------
+
     def __init__(self,parent):
         SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         top,bottom = self.left, self.right
@@ -1845,19 +1845,22 @@ class ModDetails(SashPanel):
             self.description.SetMaxLength(512)
             wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
             wx.EVT_TEXT(self.description,id,self.OnTextEdit)
+            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+            masterPanel = wx.Panel(subSplitter)
+            tagPanel = wx.Panel(subSplitter)
             #--Masters
             id = self.mastersId = wx.NewId()
-            self.masters = MasterList(bottom,None)
+            self.masters = MasterList(masterPanel,None)
             #--Save/Cancel
-            self.save = button(bottom,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
-            self.cancel = button(bottom,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
+            self.save = button(masterPanel,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
+            self.cancel = button(masterPanel,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
             self.save.Disable()
             self.cancel.Disable()
             #--Bash tags
             self.allTags = bosh.allTags
             id = self.tagsId = wx.NewId()
             self.gTags = (
-                wx.TextCtrl(bottom,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
+                wx.TextCtrl(tagPanel,id,"",size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
@@ -1874,17 +1877,25 @@ class ModDetails(SashPanel):
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
+        subSplitter.SetMinimumPaneSize(100)
+        subSplitter.SplitHorizontally(masterPanel,tagPanel)
+        subSplitter.SetSashGravity(0.5)
+        subSplitter.SetSashPosition(settings.get('bash.mods.details.subSplitterSashPos', 0))
         mastersSizer = vSizer(
-            (hSizer((staticText(bottom,_("Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((staticText(masterPanel,_("Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.masters,1,wx.EXPAND)),1,wx.EXPAND),
             (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4)
-                ),0,wx.EXPAND|wx.TOP,4),
-            (staticText(bottom,_("Bash Tags:")),0,wx.TOP,4),
+                ),0,wx.EXPAND|wx.TOP,4),)
+        tagsSizer = vSizer(
+            (staticText(tagPanel,_("Bash Tags:")),0,wx.TOP,4),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
-        mastersSizer.SetSizeHints(bottom)
-        bottom.SetSizer(mastersSizer)
+        mastersSizer.SetSizeHints(masterPanel)
+        masterPanel.SetSizer(mastersSizer)
+        tagsSizer.SetSizeHints(masterPanel)
+        tagPanel.SetSizer(tagsSizer)
+        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
         wx.EVT_MENU(self,ID_TAGS.AUTO,self.DoAutoBashTags)
@@ -2351,8 +2362,7 @@ class ModPanel(SashPanel):
         wx.EVT_SIZE(self,self.OnSize)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((modList,2,wx.EXPAND),))
-       # self.modDetails.Fit()
+        left.SetSizer(hSizer((modList,2,wx.EXPAND)))
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
@@ -2370,9 +2380,11 @@ class ModPanel(SashPanel):
         settings['bash.mods.scrollPos'] = modList.vScrollPos
         splitter = self.right.GetParent()
         settings[self.sashPosKey] = splitter.GetSashPosition()
+        # Mod details Sash Positions
         splitter = self.modDetails.right.GetParent()
         settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
-            
+        splitter = self.modDetails.subSplitter
+        settings['bash.mods.details.subSplitterSashPos'] = splitter.GetSashPosition()
 
 #------------------------------------------------------------------------------
 class SaveList(List):
