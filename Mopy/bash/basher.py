@@ -565,7 +565,7 @@ class SashPanel(NotebookPanel):
         else:
             splitter.SplitHorizontally(self.left, self.right)
         splitter.SetSashGravity(sashGravity)
-        sashPos = settings.get(sashPosKey, 0) or sashPos
+        sashPos = settings.get(sashPosKey, -1) or sashPos
         splitter.SetSashPosition(sashPos)
         if sashPosKey is not None:
             self.sashPosKey = sashPosKey
@@ -1808,7 +1808,7 @@ class ModDetails(SashPanel):
     """Details panel for mod tab."""
 #------------------------------------------------------------------------------
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=300,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         top,bottom = self.left, self.right
         #--Singleton
         global modDetails
@@ -2340,7 +2340,7 @@ class INIPanel(SashPanel):
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=225)
+        SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=150)
         left,right = self.left, self.right
         global modList
         modList = ModList(left)
