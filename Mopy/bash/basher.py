@@ -11790,30 +11790,28 @@ class Mod_Patch_Update(Link):
             dialog = ChecklistBoxes(bashFrame,_("Deactivate these mods prior to patching"),
                 _("The following mods should be deactivated prior to building the patch."),
                 checklists)
-            if dialog.ShowModal() == wx.ID_CANCEL:
+            if dialog.ShowModal() != wx.ID_CANCEL:
+                deselect = set()
+                for (list,key) in [(unfiltered,unfilteredKey),
+                                   (merge,mergeKey),
+                                   (noMerge,noMergeKey),
+                                   (deactivate,deactivateKey),
+                                   ]:
+                    if list:
+                        id = dialog.ids[key]
+                        checks = dialog.FindWindowById(id)
+                        if checks:
+                            for i,mod in enumerate(list):
+                                if checks.IsChecked(i):
+                                    deselect.add(mod)
                 dialog.Destroy()
-                return
-            deselect = set()
-            for (list,key) in [(unfiltered,unfilteredKey),
-                               (merge,mergeKey),
-                               (noMerge,noMergeKey),
-                               (deactivate,deactivateKey),
-                               ]:
-                if list:
-                    id = dialog.ids[key]
-                    checks = dialog.FindWindowById(id)
-                    if checks:
-                        for i,mod in enumerate(list):
-                            if checks.IsChecked(i):
-                                deselect.add(mod)
-            dialog.Destroy()
-            if deselect:
-                with balt.BusyCursor():
-                    for mod in deselect:
-                        bosh.modInfos.unselect(mod,False)
-                    bosh.modInfos.refreshInfoLists()
-                    bosh.modInfos.plugins.save()
-                    self.window.RefreshUI(detail=fileName)
+                if deselect:
+                    with balt.BusyCursor():
+                        for mod in deselect:
+                            bosh.modInfos.unselect(mod,False)
+                        bosh.modInfos.refreshInfoLists()
+                        bosh.modInfos.plugins.save()
+                        self.window.RefreshUI(detail=fileName)
 
         previousMods = set()
         text = ''
