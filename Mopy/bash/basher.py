@@ -5911,6 +5911,7 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
                     except: deprint(_('item %s not in saved configs') % (item))
         self.SetOkEnable()
 
@@ -5946,7 +5947,9 @@ class PatchDialog(wx.Dialog):
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
-                    try: patcher.gList.Check(index,item.isEnabled)
+                    try:
+                        patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -7889,7 +7892,6 @@ class Installer_Wizard(InstallerLink):
             installer = self.data[self.selected[0]]
             subs = []
             oldRemaps = installer.remaps
-            installer.resetAllEspmNames()
             gInstallers.refreshCurrent(installer)
             for index in range(gInstallers.gSubList.GetCount()):
                 subs.append(gInstallers.gSubList.GetString(index))
@@ -7905,7 +7907,10 @@ class Installer_Wizard(InstallerLink):
                 pageSize = tuple(default)
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
-            wizard = belt.InstallerWizard(self, subs, pageSize, pos)
+            try:
+                wizard = belt.InstallerWizard(self, subs, pageSize, pos)
+            except bolt.CancelError:
+                return
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         # Sanity checks on returned size/position
@@ -7922,6 +7927,7 @@ class Installer_Wizard(InstallerLink):
             gInstallers.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
+        installer.resetAllEspmNames()
         for index in range(gInstallers.gSubList.GetCount()):
             select = installer.subNames[index + 1] in ret.SelectSubPackages
             gInstallers.gSubList.Check(index, select)
