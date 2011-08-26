@@ -20727,12 +20727,6 @@ class NPCAIPackagePatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        OOOandUOP = False
-        # Removed OOO compatability check, as newest OOO will have the packages removed in
-        # favor of the UOP ones anyway.
-        ##if GPath("Oscuro's_Oblivion_Overhaul.esm") in self.srcMods or GPath("Oscuro's_Oblivion_Overhaul.esp") in self.srcMods:
-        ##    if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
-        ##        OOOandUOP = True
         longTypes = self.longTypes
         loadFactory = LoadFactory(False,MreCrea,MreNpc)
         progress.setFull(len(self.srcMods))
@@ -20840,12 +20834,6 @@ class NPCAIPackagePatcher(ImportPatcher):
                                                     data[fid]['merged'].insert(slot, pkg)
                                                     break
                                                 i += 1
-                        ##if OOOandUOP:
-                        ##    for pkg in recordData['merged']:
-                        ##        if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
-                        ##            if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
-                        ##                if pkg in data[fid]['merged']:
-                        ##                    data[fid]['merged'].remove(pkg)
             progress.plus()
 
     def getReadClasses(self):
@@ -20914,13 +20902,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         self.previousPackages = {}
         self.mergedPackageList = {}
         self.mod_count = {}
-        # Removed OOO compatability check, as newest OOO will have the packages removed in
-        # favor of the UOP ones anyway.
-        ##if ("Oscuro's_Oblivion_Overhaul.esm" in self.srcs or "Oscuro's_Oblivion_Overhaul.esp" in self.srcs
-        ##    and "Unofficial Oblivion Patch.esp" in self.srcs):
-        ##    self.OOOandUOP = True
-        ##else:
-        ##    self.OOOandUOP = False
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20936,7 +20917,8 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
         if modFile.GName in self.srcs:
             masterPackages = self.previousPackages[recordId].get(recordId[0],None)
-            if masterPackages and not masterPackages ^ newPackages: return
+            # can't just do "not masterPackages ^ newPackages" since the order may have changed
+            if masterPackages is not None and masterPackages == newPackages: return
             if recordId not in self.mergedPackageList:
                 self.mergedPackageList[recordId] = newPackages
             mergedPackages = self.mergedPackageList[recordId]
@@ -20978,11 +20960,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         recordId = record.fid
         if recordId in self.mergedPackageList:
             mergedPackages = list(self.mergedPackageList[recordId])
-            ##if self.OOOandUOP:
-            ##    for pkg in mergedPackages:
-            ##        if pkg[0] == bolt.Path("Oscuro's_Oblivion_Overhaul.esm"):
-            ##            if pkg[1] in [12892,12893,12894,12895,23921,23922,23926,40669,40671]:
-            ##                mergedPackages.remove(pkg)
             if(record.aiPackages != mergedPackages):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
