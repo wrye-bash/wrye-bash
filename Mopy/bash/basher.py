@@ -923,8 +923,7 @@ class MasterList(List):
     mainMenu = Links()
     itemMenu = Links()
 
-    def __init__(self,parent,fileInfo):
-        self.parent = parent
+    def __init__(self,parent,fileInfo,setEditedFn):
         #--Columns
         self.cols = settings['bash.masters.cols']
         self.colNames = settings['bash.colNames']
@@ -951,6 +950,7 @@ class MasterList(List):
         #--Image List
         checkboxesIL = self.checkboxes.GetImageList()
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
+        self._setEditedFn = setEditedFn
 
     #--NewItemNum
     def newId(self):
@@ -1115,7 +1115,7 @@ class MasterList(List):
         self.edited = True
         self.ReList()
         self.PopulateItems()
-        self.parent.SetEdited()
+        self._setEditedFn()
 
     #--Item Sort
     def DoItemSort(self, event):
@@ -1850,7 +1850,7 @@ class ModDetails(SashPanel):
             tagPanel = wx.Panel(subSplitter)
             #--Masters
             id = self.mastersId = wx.NewId()
-            self.masters = MasterList(masterPanel,None)
+            self.masters = MasterList(masterPanel,None,self.SetEdited)
             #--Save/Cancel
             self.save = button(masterPanel,label=_('Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_('Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -2604,7 +2604,7 @@ class SaveDetails(wx.Window):
         self.picture = balt.Picture(self,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN ) #--Native: 256x192
         #--Masters
         id = self.mastersId = wx.NewId()
-        self.masters = MasterList(self,None)
+        self.masters = MasterList(self,None,self.SetEdited)
         #--Save Info
         self.gInfo = wx.TextCtrl(self,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
         self.gInfo.SetMaxLength(2048)
