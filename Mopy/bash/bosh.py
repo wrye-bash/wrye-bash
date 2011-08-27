@@ -22155,8 +22155,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
 
         removable = set(entry.item for entry in record.items)
         changed = False
+        items = record.items_list
         for removeItems,addEntries in reversed(deltas):
-            items = record.items_list
             if removeItems:
                 #--Skip if some items to be removed have already been removed
                 if not removeItems.issubset(removable): continue
