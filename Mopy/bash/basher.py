@@ -565,7 +565,7 @@ class SashPanel(NotebookPanel):
         else:
             splitter.SplitHorizontally(self.left, self.right)
         splitter.SetSashGravity(sashGravity)
-        sashPos = settings.get(sashPosKey, -1) or sashPos
+        sashPos = settings.get(sashPosKey, 0) or sashPos or -1
         splitter.SetSashPosition(sashPos)
         if sashPosKey is not None:
             self.sashPosKey = sashPosKey
@@ -2582,7 +2582,7 @@ class SaveDetails(SashPanel):
     """Savefile details panel."""
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,mode=wx.HORIZONTAL,minimumSize=230,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         top,bottom = self.left, self.right
         readOnlyColour = self.GetBackgroundColour()
         #--Singleton
@@ -2635,7 +2635,7 @@ class SaveDetails(SashPanel):
                 )),
             )
         noteSizer = vSizer(
-            (self.gInfo,1,wx.BOTTOM,4),
+            (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
             )
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
@@ -2785,7 +2785,7 @@ class SaveDetails(SashPanel):
 class SavePanel(SashPanel):
     """Savegames tab."""
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=150)
+        SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
         left,right = self.left, self.right
         global saveList
         saveList = SaveList(left)
@@ -2797,7 +2797,6 @@ class SavePanel(SashPanel):
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
-        self.saveDetails.Fit()
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
