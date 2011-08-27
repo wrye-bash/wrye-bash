@@ -5640,7 +5640,7 @@ class PatchDialog(wx.Dialog):
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             if 'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
                 raise UncodedError(_('Name or group not defined for: ')+patcher.__class__.__name__)
-            patcher.SetForceCheckCallbackFn(self._ForceCheck)
+            patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
@@ -6024,12 +6024,19 @@ class PatchDialog(wx.Dialog):
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
 
-    def _ForceCheck(self,patcher):
+    def _CheckPatcher(self,patcher):
         """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
         index = self.patchers.index(patcher)
         self.gPatchers.Check(index)
         patcher.isEnabled = True
         self.SetOkEnable()
+
+    def _BoldPatcher(self,patcher):
+        """Set the patcher label to bold font.  Called from a patcher when it realizes it has something new in its list"""
+        index = self.patchers.index(patcher)
+        font = self.gPatchers.GetFont()
+        font.SetWeight(wx.FONTWEIGHT_BOLD)
+        self.gPatchers.SetItemFont(index, font)
 
     def OnCheck(self,event):
         """Toggle patcher activity state."""
@@ -6077,12 +6084,17 @@ class PatchDialog(wx.Dialog):
 
 #------------------------------------------------------------------------------
 class Patcher:
-    def SetForceCheckCallbackFn(self,forceCheckCallbackFn):
-        self._forceCheckCallbackFn = forceCheckCallbackFn
+    def SetCallbackFns(self,checkPatcherFn,boldPatcherFn):
+        self._checkPatcherFn = checkPatcherFn
+        self._boldPatcherFn = boldPatcherFn
 
-    def _EnsureEnabled(self):
-        if hasattr(self, '_forceCheckCallbackFn'):
-            self._forceCheckCallbackFn(self)
+    def _EnsurePatcherEnabled(self):
+        if hasattr(self, '_checkPatcherFn'):
+            self._checkPatcherFn(self)
+
+    def _BoldPatcherLabel(self):
+        if hasattr(self, '_boldPatcherFn'):
+            self._boldPatcherFn(self)
 
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
@@ -6254,7 +6266,8 @@ class ListPatcher(Patcher):
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
         #--Init GUI
-        self.SetItems(self.configItems)
+        # SetItems has already been called either explicitly or in OnAutomatic().  why call it again here?
+        #self.SetItems(self.configItems)
         #--Layout
         gSizer = vSizer(
             (gText,),
@@ -6282,12 +6295,18 @@ class ListPatcher(Patcher):
                     autoOn = True
                 self.configChecks[item] = True
             else:
-                if defaultItemCheck and self.configChecks.get(item) is None:
-                    autoOn = True
+                if self.configChecks.get(item) is None:
+                    if defaultItemCheck:
+                        autoOn = True
+                    # indicate that this is a new item by bolding it
+                    font = self.gConfigPanel.GetFont()
+                    font.SetWeight(wx.FONTWEIGHT_BOLD)
+                    self.gList.SetItemFont(index, font)
+                    self._BoldPatcherLabel()
                 self.gList.Check(index,self.configChecks.setdefault(item,defaultItemCheck))
         self.configItems = items
         if autoOn:
-            self._EnsureEnabled()
+            self._EnsurePatcherEnabled()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all configChecks states."""
@@ -6299,9 +6318,9 @@ class ListPatcher(Patcher):
                 ensureEnabled = True
         if event is not None:
             if self.gList.IsChecked(event.GetSelection()):
-                self._EnsureEnabled()
+                self._EnsurePatcherEnabled()
         elif ensureEnabled:
-            self._EnsureEnabled()
+            self._EnsurePatcherEnabled()
 
     def OnAutomatic(self,event=None):
         """Automatic checkbox changed."""
@@ -6458,9 +6477,9 @@ class TweakPatcher(Patcher):
                 ensureEnabled = True
         if event is not None:
             if self.gList.IsChecked(event.GetSelection()):
-                self._EnsureEnabled()
+                self._EnsurePatcherEnabled()
         elif ensureEnabled:
-            self._EnsureEnabled()
+            self._EnsurePatcherEnabled()
 
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
