@@ -2578,11 +2578,12 @@ class SaveList(List):
         self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
-class SaveDetails(wx.Window):
+class SaveDetails(SashPanel):
     """Savefile details panel."""
     def __init__(self,parent):
         """Initialize."""
-        wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
+        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        top,bottom = self.left, self.right
         readOnlyColour = self.GetBackgroundColour()
         #--Singleton
         global saveDetails
@@ -2593,44 +2594,60 @@ class SaveDetails(wx.Window):
         textWidth = 200
         #--File Name
         id = self.fileId = wx.NewId()
-        self.file = wx.TextCtrl(self,id,"",size=(textWidth,-1))
+        self.file = wx.TextCtrl(top,id,"",size=(textWidth,-1))
         self.file.SetMaxLength(256)
         wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
         wx.EVT_TEXT(self.file,id,self.OnTextEdit)
         #--Player Info
-        self.playerInfo = staticText(self," \n \n ")
-        self.gCoSaves = staticText(self,'--\n--')
+        self.playerInfo = staticText(top," \n \n ")
+        self.gCoSaves = staticText(top,'--\n--')
         #--Picture
-        self.picture = balt.Picture(self,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN ) #--Native: 256x192
+        self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN ) #--Native: 256x192
+        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+        masterPanel = wx.Panel(subSplitter)
+        notePanel = wx.Panel(subSplitter)
         #--Masters
         id = self.mastersId = wx.NewId()
-        self.masters = MasterList(self,None,self.SetEdited)
+        self.masters = MasterList(masterPanel,None,self.SetEdited)
         #--Save Info
-        self.gInfo = wx.TextCtrl(self,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
+        self.gInfo = wx.TextCtrl(notePanel,-1,"",size=(textWidth,100),style=wx.TE_MULTILINE)
         self.gInfo.SetMaxLength(2048)
         self.gInfo.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         #--Save/Cancel
-        self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
-        self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)
+        self.save = button(masterPanel,id=wx.ID_SAVE,onClick=self.DoSave)
+        self.cancel = button(masterPanel,id=wx.ID_CANCEL,onClick=self.DoCancel)
         self.save.Disable()
         self.cancel.Disable()
         #--Layout
-        sizer = vSizer(
+        detailsSizer = vSizer(
             (self.file,0,wx.EXPAND|wx.TOP,4),
             (hSizer(
                 (self.playerInfo,1,wx.EXPAND),
                 (self.gCoSaves,0,wx.EXPAND),
                 ),0,wx.EXPAND|wx.TOP,4),
             (self.picture,0,wx.TOP,4),
-            (self.masters,2,wx.EXPAND|wx.TOP,4),
+            )
+        mastersSizer = vSizer(    
+            (self.masters,1,wx.EXPAND|wx.TOP,4),
             (hSizer(
-                spacer,
                 self.save,
                 (self.cancel,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.TOP,4),
-            (self.gInfo,0,wx.TOP,4),
+                )),
             )
-        self.SetSizer(sizer)
+        noteSizer = vSizer(
+            (self.gInfo,1,wx.BOTTOM,4),
+            )
+        detailsSizer.SetSizeHints(top)
+        top.SetSizer(detailsSizer)
+        subSplitter.SetMinimumPaneSize(100)
+        subSplitter.SplitHorizontally(masterPanel,notePanel)
+        subSplitter.SetSashGravity(1.0)
+        subSplitter.SetSashPosition(settings.get('bash.saves.details.subSplitterSashPos', 500))
+        mastersSizer.SetSizeHints(masterPanel)
+        masterPanel.SetSizer(mastersSizer)
+        noteSizer.SetSizeHints(masterPanel)
+        notePanel.SetSizer(noteSizer)
+        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
 
     def SetFile(self,fileName='SAME'):
         """Set file to be viewed."""
@@ -2765,23 +2782,21 @@ class SaveDetails(wx.Window):
         self.SetFile(self.saveInfo.name)
 
 #------------------------------------------------------------------------------
-class SavePanel(NotebookPanel):
+class SavePanel(SashPanel):
     """Savegames tab."""
     def __init__(self,parent):
-        wx.Panel.__init__(self, parent, -1)
+        SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=150)
+        left,right = self.left, self.right
         global saveList
-        saveList = SaveList(self)
+        saveList = SaveList(left)
         self.list = saveList
-        self.saveDetails = SaveDetails(self)
+        self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         #--Layout
-        sizer = hSizer(
-            (saveList,1,wx.GROW),
-            ((4,-1),0),
-            (self.saveDetails,0,wx.EXPAND))
-        self.SetSizer(sizer)
+        right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
+        left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
         self.saveDetails.Fit()
 
     def SetStatusCount(self):
@@ -2803,6 +2818,13 @@ class SavePanel(NotebookPanel):
         table.save()
         bosh.saveInfos.profiles.save()
         settings['bash.saves.scrollPos'] = saveList.vScrollPos
+        splitter = self.right.GetParent()
+        settings[self.sashPosKey] = splitter.GetSashPosition()
+        # Mod details Sash Positions
+        splitter = self.saveDetails.right.GetParent()
+        settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
+        splitter = self.saveDetails.subSplitter
+        settings['bash.saves.details.subSplitterSashPos'] = splitter.GetSashPosition()
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
