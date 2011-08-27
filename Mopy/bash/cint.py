@@ -4763,9 +4763,10 @@ class ObSCPTRecord(ObBaseRecord):
            Since we can't actually do this for SCPT records, return False if
            any references are to mods not in modSet."""
         for ref in self.references:
+            if not isinstance(ref,tuple):
+                continue
             if ref[0] not in modSet: return False
         return True
-
 
     class Var(ListComponent):
         index = CBashGeneric_LIST(1, c_ulong)
