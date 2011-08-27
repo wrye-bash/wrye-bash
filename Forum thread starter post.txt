@@ -1,4 +1,4 @@
-Continuing from the [topic=insertOldTopicNumHere]previous thread[/topic]...
+Continuing from the [topic=]previous thread[/topic]...
 
 Wrye Bash is a multi-featured mod and savegame management tool for Oblivion written in the Python programming language.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
 
@@ -12,7 +12,7 @@ CBash is an elder scrolls master (.esm) and elder scrolls plugin (.esp) file par
 [*] In the future, more interesting kinds of tweaks will be practical to implement
 [/list][b]At this stage CBash still has a few bugs, though, and is in BETA.[/b]
 
-[b]Download[/b]: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] (mirrored at: [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url])
+[b]Download[/b]: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] (mirrored at [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url] and, of course, [url=https://sourceforge.net/projects/oblivionworks/files/Wrye%20Bash/]SourceForge[/url])
 
 [b]Documentation[/b]:
 [list]
@@ -33,11 +33,11 @@ Long version:[spoiler]There are two versions available: the Python version and t
 If you're using the Standalone version, the only thing you need to install manually is the [url=http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2]MSVC++ 2008 Redistributable[/url].
 
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:[spoiler][list]
-  [*]Included in Wrye Python 04a:[list]
-    [*][url=http://www.python.org/ftp/python/2.7.1/python-2.7.1.msi]Python 2.7.1[/url] (Python 2.7.2 is fine as well, it's just not in Wrye Python yet)
-    [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe]wxPython 2.8.12.0 ansi for Python 2.7[/url]
-    [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
-    [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url][/list][*]Other setups _may_work_, but this is the only officially supported setup.
+  [*][url=http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi]Python 2.7.2[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
+  [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe]wxPython 2.8.12.0 ansi for Python 2.7[/url]
+  [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
+  [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
+  [*]Other setups _may_work_, but this is the only officially supported setup.
   [*]Python 3.x: [b][u]NOT Supported[/u][/b]
 [/list]Note that the 32-bit versions are required even if you are on a 64-bit operating system[/spoiler]
 Then:[list]
@@ -82,9 +82,8 @@ Rinse and repeat when a new svn comes out.
 [b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
 
 [b]Related Projects[/b]:[list]
-[*]Load orders should be managed with [url=http://tesnexus.com/downloads/file.php?id=20516]BOSS[/url] (Better Oblivion Sorting Software), which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a recent taglist is shipped with each version of Wrye Bash)
-[*]TheLORDofDOOM has taken on making a FO3 version, Wrye4Fallout3
-[*]And another, a bit further along, by Valda called [topic=1102449"]garybash[/topic]
+[*]Load orders should be managed with [url=http://tesnexus.com/downloads/file.php?id=20516]BOSS[/url] (Better Oblivion Sorting Software), which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
+[*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
 === 294 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda][spoiler][list]
