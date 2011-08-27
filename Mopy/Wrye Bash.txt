@@ -2406,13 +2406,15 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed startup processing so you can in one startup both backup and restore settings.
   * Added -L/--Language as cmdline options to set Wrye Bash's language.
 * Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
-* Ini Panel -> list active ini's command added.
+* Ini Tab -> list active ini's command added.
 * [[#ModChecker|ModChecker]]:
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
 * [[#|List Mods]]: crc display is off by default and added code to enable crc display if 'c' is pressed.
 * Most untranslateable strings adjusted to be translateable (adds more than 240 strings that can now be translated).
+* Mods Tab -> details panel size adjustable and sizes of the subcomponents of that adjustable.
+* Saves Tab -> details panel size adjustable and sizes of the subcomponents of that adjustable.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
