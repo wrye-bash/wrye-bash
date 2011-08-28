@@ -17758,9 +17758,12 @@ class PatchFile(ModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        self.setMods([name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime],[])
+        loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+        if not loadMods:
+            raise BoltError("No active mods dated before the bashed patch")
+        self.setMods(loadMods, [])
         for patcher in self.patchers:
-            patcher.initPatchFile(self,self.loadMods)
+            patcher.initPatchFile(self,loadMods)
 
     def setMods(self,loadMods=None,mergeMods=None):
         """Sets mod lists and sets."""
@@ -18105,9 +18108,12 @@ class CBash_PatchFile(ObModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        self.setMods([name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime],[])
+        loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+        if not loadMods:
+            raise BoltError("No active mods dated before the bashed patch")
+        self.setMods(loadMods,[])
         for patcher in self.patchers:
-            patcher.initPatchFile(self,self.loadMods)
+            patcher.initPatchFile(self,loadMods)
 
     def setMods(self,loadMods=None,mergeMods=None):##,forceMergeMods=[]):
         """Sets mod lists and sets."""
