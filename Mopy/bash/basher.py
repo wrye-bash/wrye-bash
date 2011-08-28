@@ -5791,6 +5791,9 @@ class PatchDialog(wx.Dialog):
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,str(error),_("File Edit Error"))
+            except BoltError, error:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+                balt.showError(self,str(error),_("Processing Error"))
             except CancelError:
                 pass
             except:
@@ -5798,7 +5801,6 @@ class PatchDialog(wx.Dialog):
                 raise
             finally:
                 progress.Destroy()
-                del patchFile
         else:
             try:
                 from datetime import timedelta
@@ -5814,9 +5816,12 @@ class PatchDialog(wx.Dialog):
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
 
                 patchFile = bosh.CBash_PatchFile(patchName,patchers)
-                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
-                patchFile.buildPatch(SubProgress(progress,0.1,0.9)) #try to speed this up!
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))#no speeding needed/really possible (less than 1/4 second even with large LO)
+                #try to speed this up!
+                patchFile.initData(SubProgress(progress,0,0.1))
+                #try to speed this up!
+                patchFile.buildPatch(SubProgress(progress,0.1,0.9))
+                #no speeding needed/really possible (less than 1/4 second even with large LO)
+                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
                 #--Save
                 #patchFile.CleanMasters()
                 patchFile.CleanMasters2()
@@ -5874,6 +5879,9 @@ class PatchDialog(wx.Dialog):
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,str(error),_("File Edit Error"))
+            except BoltError, error:
+                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+                balt.showError(self,str(error),_("Processing Error"))
             except CancelError:
                 pass
             except:
@@ -5881,7 +5889,6 @@ class PatchDialog(wx.Dialog):
                 raise
             finally:
                 progress.Destroy()
-                del patchFile
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
