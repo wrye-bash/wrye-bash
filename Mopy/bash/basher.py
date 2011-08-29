@@ -5629,6 +5629,7 @@ class PatchDialog(wx.Dialog):
                 patchConfigs = self.ConvertConfig(patchConfigs)
             else:
                 patchConfigs = {}
+        isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
         if doCBash:
             self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
@@ -5641,6 +5642,7 @@ class PatchDialog(wx.Dialog):
             if 'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
                 raise UncodedError(_('Name or group not defined for: ')+patcher.__class__.__name__)
             patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
+            patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
@@ -6095,6 +6097,9 @@ class Patcher:
         self._checkPatcherFn = checkPatcherFn
         self._boldPatcherFn = boldPatcherFn
 
+    def SetIsFirstLoad(self,isFirstLoad):
+        self._isFirstLoad = isFirstLoad
+
     def _EnsurePatcherEnabled(self):
         if hasattr(self, '_checkPatcherFn'):
             self._checkPatcherFn(self)
@@ -6102,6 +6107,12 @@ class Patcher:
     def _BoldPatcherLabel(self):
         if hasattr(self, '_boldPatcherFn'):
             self._boldPatcherFn(self)
+
+    def _GetIsFirstLoad(self):
+        if hasattr(self, '_isFirstLoad'):
+            return self._isFirstLoad
+        else:
+            return False
 
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
@@ -6294,28 +6305,33 @@ class ListPatcher(Patcher):
         forceItemCheck = self.forceItemCheck
         defaultItemCheck = self.__class__.canAutoItemCheck and bosh.inisettings['AutoItemCheck']
         self.gList.Clear()
-        autoOn = False
+        isFirstLoad = self._GetIsFirstLoad()
+        patcherOn = False
+        patcherBold = False
         for index,item in enumerate(items):
             itemLabel = self.getItemLabel(item)
             self.gList.Insert(itemLabel,index)
             if forceItemCheck:
                 if self.configChecks.get(item) is None:
-                    autoOn = True
+                    patcherOn = True
                 self.configChecks[item] = True
             else:
+                effectiveDefaultItemCheck = defaultItemCheck and not itemLabel.endswith('.csv')
                 if self.configChecks.get(item) is None:
-                    effectiveDefaultItemCheck = defaultItemCheck and not itemLabel.endswith('.csv')
                     if effectiveDefaultItemCheck:
-                        autoOn = True
-                    # indicate that this is a new item by bolding it
-                    font = self.gConfigPanel.GetFont()
-                    font.SetWeight(wx.FONTWEIGHT_BOLD)
-                    self.gList.SetItemFont(index, font)
-                    self._BoldPatcherLabel()
+                        patcherOn = True
+                    if not isFirstLoad:
+                        # indicate that this is a new item by bolding it and its parent patcher
+                        font = self.gConfigPanel.GetFont()
+                        font.SetWeight(wx.FONTWEIGHT_BOLD)
+                        self.gList.SetItemFont(index, font)
+                        patcherBold = True
                 self.gList.Check(index,self.configChecks.setdefault(item,effectiveDefaultItemCheck))
         self.configItems = items
-        if autoOn:
+        if patcherOn:
             self._EnsurePatcherEnabled()
+        if patcherBold:
+            self._BoldPatcherLabel()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all configChecks states."""
