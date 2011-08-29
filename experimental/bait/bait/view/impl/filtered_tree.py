@@ -281,7 +281,7 @@ class PackagesTree(_FilteredTree):
                 idx = idx + 1
                 bitmap = wx.Bitmap(iconMap[iconId])
                 image = bitmap.ConvertToImage()
-                if image.HasAlpha() or image.HasMask():
+                if image.HasMask() and not image.HasAlpha():
                     image.InitAlpha()
                 bitmap = image.ConvertToBitmap()
                 if imageList is None:
