@@ -6296,21 +6296,23 @@ class ListPatcher(Patcher):
         self.gList.Clear()
         autoOn = False
         for index,item in enumerate(items):
-            self.gList.Insert(self.getItemLabel(item),index)
+            itemLabel = self.getItemLabel(item)
+            self.gList.Insert(itemLabel,index)
             if forceItemCheck:
                 if self.configChecks.get(item) is None:
                     autoOn = True
                 self.configChecks[item] = True
             else:
                 if self.configChecks.get(item) is None:
-                    if defaultItemCheck:
+                    effectiveDefaultItemCheck = defaultItemCheck and not itemLabel.endswith('.csv')
+                    if effectiveDefaultItemCheck:
                         autoOn = True
                     # indicate that this is a new item by bolding it
                     font = self.gConfigPanel.GetFont()
                     font.SetWeight(wx.FONTWEIGHT_BOLD)
                     self.gList.SetItemFont(index, font)
                     self._BoldPatcherLabel()
-                self.gList.Check(index,self.configChecks.setdefault(item,defaultItemCheck))
+                self.gList.Check(index,self.configChecks.setdefault(item,effectiveDefaultItemCheck))
         self.configItems = items
         if autoOn:
             self._EnsurePatcherEnabled()
