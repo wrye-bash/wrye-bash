@@ -2131,6 +2131,7 @@ class ModDetails(SashPanel):
         self.modInfo.setBashTags(modTags)
         modList.RefreshUI(self.modInfo.name)
 
+#------------------------------------------------------------------------------
 class INIPanel(SashPanel):
     def __init__(self, parent):
         SashPanel.__init__(self, parent,'bash.ini.sashPos')
@@ -2625,7 +2626,7 @@ class SaveDetails(SashPanel):
                 (self.playerInfo,1,wx.EXPAND),
                 (self.gCoSaves,0,wx.EXPAND),
                 ),0,wx.EXPAND|wx.TOP,4),
-            (self.picture,0,wx.TOP,4),
+            (self.picture,1,wx.TOP|wx.EXPAND,4),
             )
         mastersSizer = vSizer(    
             (self.masters,1,wx.EXPAND|wx.TOP,4),
