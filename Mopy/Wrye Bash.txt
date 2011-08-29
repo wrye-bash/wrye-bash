@@ -2360,12 +2360,17 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 295 [12/12/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
 * First-run Usability Improvements:
-  * Default options have been revamped for a smoother first-time experience
+  * Default options and widget sizes have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
   * Default window sizes have been increased so you can actually see their contents on first load
-  * Debug .bat file now works for all Python versions and install paths instead of being hardcoded to look for c:/Python27
+  * Debug .bat file now works for all supported Python versions and all Python installation paths instead of being hardcoded to look for c:/Python27
   * Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory
 * [[#BashedPatches|Bashed Patch]]:
+  * Usability improvements:
+    * Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog
+    * Corresponding patchers will be automatically enabled and bolded
+    * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
+    * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini)
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
@@ -2374,26 +2379,23 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Names tweaker:
     * New tweak: Proper English Names: Staffs -> Staves
     * New tweak: Proper English Names: Dwarfs -> Dwarves
-  * Usability improvements:
-    * Mods with tags that are being bashed for the first time will now automatically be checked in the bashed patch dialog
-    * Corresponding patchers themselves will be automatically enabled if a mod has been autochecked
-    * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
-    * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini)
+  * Merge Patcher no longer merges in script records that depend on missing masters
+  * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported
 * [[#InstallersTab|BAIN]]:
   * Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
   * Installer->open readme command added.
   * Modified [[#PackageHeaderCommands|Clean Data]] command so that it doesn't remove DLC content or Wrye Bash-related files
-  * It also chooses to ignore other files that are commonly installed outside of Wrye Bash, such as Construction Set Extended and Sensual Walks animation files
+  * It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
+  * Don't reset subpackage selections if a wizard is started but canceled
 * Unicode Mode:
-  * More bugfixes from valda.
-  * bugfixes from bluesky404.
+  * Bugfixes from valda and bluesky404
 * Added activation status as a new mods column/sort option.
 * New mod commands:
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
   * Ghost will ghost just the selected mod(s) 
-  * [[#|Export Patch Config...]] exports the selcted patch's configuration to a file.
+  * [[#|Export Patch Config...]] exports the selected patch's configuration to a file.
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
   * File->[[#|New Bashed Patch]] will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
@@ -2401,6 +2403,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Fixed Settings backup files should have WB version in their names.
 * Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
 * Replacers tab and associated code totally removed.
+* BALO is now officially deprecated, having been entirely superseded by BOSS.  If you are still using it, please consider using BOSS instead.
 * Fixed CBash crash while scanning for dirty edits on some plugins
 * Startup:
   * Fixed startup processing so you can in one startup both backup and restore settings.
@@ -2412,9 +2415,10 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
 * [[#|List Mods]]: crc display is off by default and added code to enable crc display if 'c' is pressed.
-* Most untranslateable strings adjusted to be translateable (adds more than 240 strings that can now be translated).
-* Mods Tab -> details panel size adjustable and sizes of the subcomponents of that adjustable.
-* Saves Tab -> details panel size adjustable and sizes of the subcomponents of that adjustable.
+* Most untranslatable strings adjusted to be translatable (adds more than 240 strings that can now be translated).
+* UI components in the Mods and Saves Tabs are now resizable
+* Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
+* Fixed progress bar disappearing for some people while loading the installers tab
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
