@@ -5372,7 +5372,7 @@ def GetBashVersion():
     #--Version from readme
     readme = bosh.dirs['mopy'].join('Wrye Bash.txt')
     if readme.exists() and readme.mtime != settings['bash.readme'][0]:
-        reVersion = re.compile("^=== ([\.\d]+) \[")
+        reVersion = re.compile(r'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I)
         for line in readme.open():
             maVersion = reVersion.match(line)
             if maVersion:
