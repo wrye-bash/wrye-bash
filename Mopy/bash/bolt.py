@@ -1626,6 +1626,10 @@ class MemorySet(object):
         a^b -> same as a|b, but only items 'not-deleted' in a but not b, or b but not
                a are marked as 'not-deleted'
         a-b -> same as a|b, but any 'not-deleted' items in b are marked as deleted
+
+        a==b -> compares the 'not-deleted' items of the MemorySets.  If both are the same,
+                and in the same order, then they are equal.
+        a!=b -> oposite of a==b
     """
     def __init__(self, *args, **kwdargs):
         self.items = OrderedSet(*args, **kwdargs)
@@ -1699,6 +1703,9 @@ class MemorySet(object):
         ret = MemorySet(items)
         ret.mask = [x not in discards for x in items]
         return ret
+
+    def __eq__(self,other): return list(self) == list(other)
+    def __ne__(self,other): return list(self) != list(other)
 
 #------------------------------------------------------------------------------
 class MainFunctions:
