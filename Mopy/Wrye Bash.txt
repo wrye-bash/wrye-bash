@@ -1707,6 +1707,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Overview__
 . Allows you to tweak game behavior in miscellaneous ways. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list.
 * __Actor Strength Encumbrance Multiplier:__ Actor strength X this multiplier = actor encumbrance capacity.
+* __AI: Conversation Chance/AI: Conversation Chance - Interior:__ Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
 * __AI: Max Active Actors:__ The maximum number of actors for AI to be processing at once - must be higher than __Combat: Max Actors:__.
 * __AI: Max Dead Actors:__ The maximum number of dead actors allowed before Oblivion begins to remove them.
 * __AI: Max Smile Distance:__ Maximum distance for NPCs to start smiling.
@@ -2381,6 +2382,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * New tweak: Proper English Names: Dwarfs -> Dwarves
   * Merge Patcher no longer merges in script records that depend on missing masters
   * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported
+  * Settings tweaker:
+    * New tweaks: AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
 * [[#InstallersTab|BAIN]]:
   * Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
