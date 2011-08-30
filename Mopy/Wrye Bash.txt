@@ -2358,7 +2358,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295.DEV [XX/XX/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
+=== 295 [XX/XX/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
 * First-run Usability Improvements:
   * Default options and widget sizes have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
