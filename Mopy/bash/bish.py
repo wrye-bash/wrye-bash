@@ -728,7 +728,8 @@ def gmstIds(fileName=None):
                 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket',
                 'iCrimeGoldTresspass','sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2','sBloodParticleDefault',
                 'sBloodParticleExtra1','sBloodParticleExtra2','iAllyHitAllowed','sAutoSaving','sFloraFailureMessage',
-                'sFloraSuccessMessage','sQuickSaving','sFastTravelHorseatGate','sLoadingArea','sQuickLoading','sNoCharge']:
+                'sFloraSuccessMessage','sQuickSaving','sFastTravelHorseatGate','sLoadingArea','sQuickLoading','sNoCharge',
+                'fAISocialchanceForConversationInterior',]:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
