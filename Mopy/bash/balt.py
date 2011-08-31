@@ -96,13 +96,20 @@ class Colors:
         """Add a color to the database."""
         if not isinstance(value,str):
             self.data[key] = wx.Colour(*value)
+        else:
+            self.data[key] = value
 
     def __getitem__(self,key):
         """Dictionary syntax: color = colours[key]."""
         if key in self.data:
-            return self.data[key]
-        else:
-            return wx.TheColourDatabase.Find(key)
+            key = self.data[key]
+            if not isinstance(key,str):
+                return key
+        return wx.TheColourDatabase.Find(key)
+
+    def __iter__(self):
+        for key in self.data:
+            yield key
 
 #--Singleton
 colors = Colors()
