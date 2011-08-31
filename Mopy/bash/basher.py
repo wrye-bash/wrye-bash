@@ -12986,6 +12986,8 @@ class Mod_ScanDirty(Link):
                 return sorted(fids, key=itemgetter(0,1))
             else:
                 return sorted(fids)
+        dirty = []
+        clean = []
         for i,modInfo in enumerate(modInfos):
             udr,itm,fog = ret[i]
             if modInfo.name == GPath('Unofficial Oblivion Patch.esp'):
@@ -12993,18 +12995,25 @@ class Mod_ScanDirty(Link):
                 itm.discard((GPath('Oblivion.esm'),0x00AA3C))
             if modInfo.header.author in ('BASHED PATCH','BASHED LISTS'): itm = set()
             if udr or itm:
-                log('* __'+modInfo.name.s+'__:')
-                log(_('  * UDR: %i') % len(udr))
+                pos = len(dirty)
+                dirty.append('* __'+modInfo.name.s+'__:\n')
+                dirty[pos] += _('  * UDR: %i\n') % len(udr)
                 for fid in sortedFidList(udr): # Sorted by master, then id
-                    log(_('    * %s') % strFid(fid))
+                    dirty[pos] += _('    * %s\n') % strFid(fid)
                 if not settings['bash.CBashEnabled']: continue
                 if itm:
-                    log(_('  * ITM: %i') % len(itm))
+                    dirty[pos] += _('  * ITM: %i\n') % len(itm)
                 for fid in sortedFidList(itm):
-                    log(_('    * %s') % strFid(fid))
+                    dirty[pos] += _('    * %s\n') % strFid(fid)
             else:
-                log('* __'+modInfo.name.s+'__: No dirty edits detected.')
+                clean.append('* __'+modInfo.name.s+'__')
         #-- Show log
+        if dirty:
+            log(_('Detected %d dirty mods:') % len(dirty))
+            for mod in dirty: log(mod)
+        if clean:
+            log(_('Detected %d clean mods:') % len(clean))
+            for mod in clean: log(mod)
         balt.showWryeLog(self.window,log.out.getvalue(),_('Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
 
 # Saves Links -----------------------------------------------------------------
