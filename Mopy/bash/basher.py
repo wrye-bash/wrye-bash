@@ -10717,10 +10717,15 @@ class Mod_SkipDirtyCheckAll(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if self.skip:
-            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list"))
+            menuItem = wx.MenuItem(menu,self.id,_("Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
         else:
-            menuItem = wx.MenuItem(menu,self.id,_("Check against BOSS's dirty mod list"))
+            menuItem = wx.MenuItem(menu,self.id,_("Check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
+        for fileName in self.data:
+            if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
+                menuItem.Check(False)
+                break
+        else: menuItem.Check(True)
 
     def Execute(self,event):
         for fileName in self.data:
