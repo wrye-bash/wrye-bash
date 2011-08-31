@@ -11765,7 +11765,7 @@ class InstallerProject(Installer):
 class InstallersData(bolt.TankData, DataDict):
     """Installers tank data. This is the data source for """
     status_color = {-20:'grey',-10:'red',0:'white',10:'orange',20:'yellow',30:'green'}
-    type_textKey = {1:'BLACK',2:'NAVY'}
+    type_textKey = {1:'default.text',2:'installers.text.complex'}
 
     def __init__(self):
         """Initialize."""
@@ -11934,13 +11934,13 @@ class InstallersData(bolt.TankData, DataDict):
         if installer.type == 2 and len(installer.subNames) == 2:
             textKey = self.type_textKey[1]
         else:
-            textKey = self.type_textKey.get(installer.type,'GREY')
+            textKey = self.type_textKey.get(installer.type,'installers.text.invalid')
         #--Background
-        backKey = (installer.skipDirFiles and 'bash.installers.skipped') or None
+        backKey = (installer.skipDirFiles and 'installers.bkgd.skipped') or None
         if installer.dirty_sizeCrc:
-            backKey = 'bash.installers.dirty'
+            backKey = 'installers.bkgd.dirty'
         elif installer.underrides:
-            backKey = 'bash.installers.outOfOrder'
+            backKey = 'installers.bkgd.outOfOrder'
         #--Icon
         iconKey = ('off','on')[installer.isActive]+'.'+self.status_color[installer.status]
         if installer.type < 0:
