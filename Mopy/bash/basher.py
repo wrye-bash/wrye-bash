@@ -144,7 +144,7 @@ settingDefaults = {
         'ini.bkgd.invalid':             ((0xDF, 0xDF, 0xDF),_('Background color for an invalid INI Tweak file')),
         'tweak.bkgd.invalid':           ((0xFF, 0xD5, 0xAA),_('Background color for an invalid tweak file line')),
         'tweak.bkgd.mismatched':        ((0xFF, 0xFF, 0xBF),_('Background color for a tweak file line that is applied')),
-        'tweak.bkgd.matched':           ('DARKSEAGREEN1',   _('Background color for a tweak file line that is not applied')),
+        'tweak.bkgd.matched':           ((0xC1, 0xFF, 0xC1),_('Background color for a tweak file line that is not applied')),
         #--Installers Tab
         'installers.text.complex':      ('NAVY',            _('Text color for a complex installer')),
         'installers.text.invalid':      ('GREY',            _('Text color for an invalid installer')),
