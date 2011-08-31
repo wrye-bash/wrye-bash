@@ -125,6 +125,33 @@ settingDefaults = {
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
+    #--Colors
+    'bash.colors': {
+        #--Common Colors
+        'default.text':                 ('BLACK',           _('Default text color')),
+        'default.bkgd':                 ('WHITE',           _('Default text background')),
+        #--Mods Tab
+        'mods.text.esm':                ('BLUE',            _('Text color for an ESM')),
+        'mods.text.mergeable':          ((0x00, 0x99, 0x00),_('Text color for a mergeable plugin')),
+        'mods.text.noMerge':            ((0x99, 0x00, 0x99),_("Text color for a mergeable plugin with the 'NoMerge' tag")),
+        'mods.bkgd.doubleTime.exists':  ((0xFF, 0xDC, 0xDC),_('Background color for a plugin with an active time conflict')),
+        'mods.bkgd.doubleTime.load':    ((0xFF, 0x64, 0x64),_('Background color for a plugin with an inactive time conflict')),
+        'mods.bkgd.deactivate':         ((0xFF, 0x64, 0x64),_("Background color for an active plugin with the 'Deactivate' tag")),
+        'mods.bkgd.exOverload':         ((0xFF, 0x99, 0x00),_('Background color for an active plugin in an overloaded Exclusion Group')),
+        'mods.bkgd.ghosted':            ('GREY91',          _('Background color for a ghosted mod')),
+        'mods.bkgd.groupHeader':        ((0xD8,0xD8,0xD8),  _('Background color for a Group header')),
+        #--INI Edits Tab
+        'ini.bkgd.invalid':             ((0xDF, 0xDF, 0xDF),_('Background color for an invalid INI Tweak file')),
+        'tweak.bkgd.invalid':           ((0xFF, 0xD5, 0xAA),_('Background color for an invalid tweak file line')),
+        'tweak.bkgd.mismatched':        ((0xFF, 0xFF, 0xBF),_('Background color for a tweak file line that is applied')),
+        'tweak.bkgd.matched':           ('DARKSEAGREEN1',   _('Background color for a tweak file line that is not applied')),
+        #--Installers Tab
+        'installers.text.complex':      ('NAVY',            _('Text color for a complex installer')),
+        'installers.text.invalid':      ('GREY',            _('Text color for an invalid installer')),
+        'installers.bkgd.skipped':      ((0xE0, 0xE0, 0xE0),_('Background color for an installer with skipped files')),
+        'installers.bkgd.outOfOrder':   ((0xDF, 0xDF, 0xDF),_('Background color for an installer with an unrecognized structure')),
+        'installers.bkgd.dirty':        ((0xFF, 0xBB, 0x33),_('Background color for an installer that is dirty')),
+        },
     #--BSA Redirection
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
@@ -1032,20 +1059,20 @@ class MasterList(List):
         #--Font color
         item = self.list.GetItem(itemDex)
         if masterInfo.isEsm():
-            item.SetTextColour(wx.BLUE)
+            item.SetTextColour(colors['mods.text.esm'])
         else:
-            item.SetTextColour(wx.BLACK)
+            item.SetTextColour(colors['default.text'])
         #--Text BG
         if masterInfo.hasActiveTimeConflict():
-            item.SetBackgroundColour(colors['bash.doubleTime.load'])
+            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
         elif masterInfo.isExOverLoaded():
-            item.SetBackgroundColour(colors['bash.exOverLoaded'])
+            item.SetBackgroundColour(colors['mods.bkgd.exOverload'])
         elif masterInfo.hasTimeConflict():
-            item.SetBackgroundColour(colors['bash.doubleTime.exists'])
+            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif masterInfo.isGhost:
-            item.SetBackgroundColour(colors['bash.mods.isGhost'])
+            item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
         else:
-            item.SetBackgroundColour(colors['bash.doubleTime.not'])
+            item.SetBackgroundColour(colors['default.bkgd'])
         self.list.SetItem(item)
         #--Image
         status = self.GetMasterStatus(itemId)
@@ -1292,11 +1319,11 @@ class INIList(List):
         self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
         #--Font/BG Color
         item = self.list.GetItem(itemDex)
-        item.SetTextColour(wx.BLACK)
+        item.SetTextColour(colors['default.text'])
         if status < 0:
-            item.SetBackgroundColour(colors['bash.installers.outOfOrder'])
+            item.SetBackgroundColour(colors['ini.bkgd.invalid'])
         else:
-            item.SetBackgroundColour(wx.WHITE)
+            item.SetBackgroundColour(colors['default.bkgd'])
         self.list.SetItem(item)
         if fileName in selected:
             self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
@@ -1374,9 +1401,9 @@ class INITweakLineCtrl(wx.ListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            if line[4] == -10: color = colors['bash.ini.invalid']
-            elif line[4] == 10: color = colors['bash.ini.mismatched']
-            elif line[4] == 20: color = colors['bash.ini.matched']
+            if line[4] == -10: color = colors['tweak.bkgd.invalid']
+            elif line[4] == 10: color = colors['tweak.bkgd.mismatched']
+            elif line[4] == 20: color = colors['tweak.bkgd.matched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
@@ -1602,24 +1629,24 @@ class ModList(List):
         item = self.list.GetItem(itemDex)
         mouseText = ""
         if fileInfo.isEsm():
-            item.SetTextColour(wx.BLUE)
+            item.SetTextColour(colors['mods.text.esm'])
             mouseText += _("Master file. ")
         elif fileName in bosh.modInfos.mergeable:
             if 'NoMerge' in bosh.modInfos[fileName].getBashTags():
-                item.SetTextColour(colors['bash.mods.isSemiMergeable'])
+                item.SetTextColour(colors['mods.text.noMerge'])
                 mouseText += _("Technically mergeable but has NoMerge tag.  ")
             else:
-                item.SetTextColour(colors['bash.mods.isMergeable'])
+                item.SetTextColour(colors['mods.text.mergeable'])
                 if checkMark == 2:
                     mouseText += _("Merged into Bashed Patch.  ")
                 else:
                     mouseText += _("Can be merged into Bashed Patch.  ")
         else:
-            item.SetTextColour(wx.BLACK)
+            item.SetTextColour(colors['default.text'])
         #--Image messages
         if status == 30:     mouseText += _("One or more masters are missing.  ")
         elif status == 20:   mouseText += _("Masters have been re-ordered.  ")
-        if checkMark == 1: mouseText += _("Active in load list.  ")
+        if checkMark == 1:   mouseText += _("Active in load list.  ")
         elif checkMark == 3: mouseText += _("Imported into Bashed Patch.  ")
 
         #should mod be deactivated
@@ -1635,25 +1662,25 @@ class ModList(List):
                 item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
-            item.SetBackgroundColour(colors['bash.doubleTime.load'])
+            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             mouseText += _("WARNING: Has same load order as another mod.  ")
         elif 'Deactivate' in bosh.modInfos[fileName].getBashTags() and checkMark == 1:
-            item.SetBackgroundColour(colors['bash.doubleTime.load'])
+            item.SetBackgroundColour(colors['mods.bkgd.deactivate'])
             mouseText += _("Mod should be imported and deactivated.  ")
         elif fileInfo.isExOverLoaded():
-            item.SetBackgroundColour(colors['bash.exOverLoaded'])
+            item.SetBackgroundColour(colors['mods.bkgd.exOverload'])
             mouseText += _("WARNING: Exclusion group is overloaded.  ")
         elif fileInfo.hasTimeConflict():
-            item.SetBackgroundColour(colors['bash.doubleTime.exists'])
+            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
             mouseText += _("Has same time as another (unloaded) mod.  ")
         elif fileName.s[0] in '.+=':
-            item.SetBackgroundColour(colors['bash.mods.groupHeader'])
+            item.SetBackgroundColour(colors['mods.bkgd.groupHeader'])
             mouseText += _("Group header.  ")
         elif fileInfo.isGhost:
-            item.SetBackgroundColour(colors['bash.mods.isGhost'])
+            item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
             mouseText += _("File is ghosted.  ")
         else:
-            item.SetBackgroundColour(colors['bash.doubleTime.not'])
+            item.SetBackgroundColour(colors['default.bkgd'])
         if settings['bash.mods.scanDirty']:
             message = fileInfo.getDirtyMessage()
             mouseText += message[1]
@@ -14790,23 +14817,8 @@ def InitSettings():
 def InitImages():
     """Initialize color and image collections."""
     #--Colors
-    colors['bash.esm'] = (220,220,255)
-    colors['bash.doubleTime.not'] = (255,255,255)
-    colors['bash.doubleTime.exists'] = (255,220,220)
-    colors['bash.doubleTime.load'] = (255,100,100)
-    colors['bash.exOverLoaded'] = (0xFF,0x99,0)
-    colors['bash.masters.remapped'] = (100,255,100)
-    colors['bash.masters.changed'] = (220,255,220)
-    colors['bash.mods.isMergeable'] = (0x00,0x99,0x00)
-    colors['bash.mods.isSemiMergeable'] = (153,0,153)
-    colors['bash.mods.groupHeader'] = (0xD8,0xD8,0xD8)
-    colors['bash.mods.isGhost'] = (0xe8,0xe8,0xe8)
-    colors['bash.installers.skipped'] = (0xe0,0xe0,0xe0)
-    colors['bash.installers.outOfOrder'] = (0xDF,0xDF,0xC5)
-    colors['bash.installers.dirty'] = (0xFF,0xBB,0x33)
-    colors['bash.ini.invalid'] = (0xFF,0xD5,0xAA)
-    colors['bash.ini.mismatched'] = (0xFF,0xFF,0xBF)
-    colors['bash.ini.matched'] = (0xC1,0xFF,0xC1)
+    for key,value in settings['bash.colors'].iteritems():
+        colors[key] = value[0]
 
     #--Standard
     images['save.on'] = Image(GPath(bosh.dirs['images'].join('save_on.png')),wx.BITMAP_TYPE_PNG)
