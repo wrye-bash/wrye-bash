@@ -7771,6 +7771,7 @@ class Installers_UninstallAllPackages(Link):
 
     def Execute(self,event):
         """Handle selection."""
+        if not balt.askYes(self.gTank,fill(_("Really uninstall All Packages?"),70),self.title): return
         progress = balt.Progress(_("Uninstalling..."),'\n'+' '*60)
         try:
             self.data.uninstall(unArchives='ALL',progress=progress)
