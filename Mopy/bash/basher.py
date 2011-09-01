@@ -4996,6 +4996,14 @@ class BashFrame(wx.Frame):
         for key,value in renames.items():
             if value not in modNames:
                 del renames[key]
+        #--Clean colors dictionary
+        currentColors = set(settings['bash.colors'].keys())
+        defaultColors = set(settingDefaults['bash.colors'].keys())
+        invalidColors = currentColors - defaultColors
+        if invalidColors:
+            for key in invalidColors:
+                del settings['bash.colors'][key]
+            settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = set(path.root for path in fileInfos.data.keys())
@@ -5249,7 +5257,7 @@ class ColorDialog(wx.Dialog):
 
     def OnColorPicker(self,event):
         event.Skip()
-        choice = self.comboBox.GetValue()
+        choice = self.GetChoice()
         newColor = self.picker.GetColour()
         self.changes[choice] = newColor
         self.UpdateUIButtons()
