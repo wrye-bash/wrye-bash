@@ -380,19 +380,62 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
       . Notepadpp24.png  &lt;- custom 24x24 icon to use
 
 === Bash Option Buttons
-* OBSE 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* OBSE 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_green_off_24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 24on <img src="bash/images/checkbox_green_on_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * When checked this will launch OBSE when either the Oblivion or TESCS buttons are clicked.
-* Auto-Quit 16off <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32off <img src="bash/images/checkbox_red_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_red_x_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Auto-Quit 16off <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_red_off_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 24on <img src="bash/images/checkbox_red_x_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_red_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_red_x_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
-* BashMon 16 <img src="bash/images/bashmon16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/bashmon32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* BashMon 16 <img src="bash/images/bashmon16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24 <img src="bash/images/bashmon24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/bashmon32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * This launches bashmon.py in a command shell window. This is for use with Breeze582000's Seducers/Succubi mod and Wrye's Morph mod.
   * For more info, see [[http://forums.bethsoft.com/?showtopic=746499 | [WIPZ] Succubi Race]].
-* Help 16 <img src="bash/images/help16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/help32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-  * Show this help file in the default web browser.
-* Doc Browser 16 <img src="bash/images/DocBrowser16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/DocBrowser32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Doc Browser 16 <img src="bash/images/DocBrowser16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24 <img src="bash/images/DocBrowser24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/DocBrowser32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * Show the [[#|Doc Browser]]. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-* Mod Checker 16 <img src="bash/images/ModChecker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/ModChecker32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+* Mod Checker 16 <img src="bash/images/ModChecker16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24 <img src="bash/images/ModChecker24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ModChecker32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
   * Show the [[#|Mod Checker]].
+* Settings 16 <img src="bash/images/tes4gecko16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 24 <img src="bash/images/tes4gecko24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4gecko32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+  * Brings up the [[#BashSettingsMenu|Settings Menu]].
+* Help 16 <img src="bash/images/help16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 24 <img src="bash/images/help24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/help32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+  * Show this help file in the default web browser.
+
+== Bash Settings Menu =========================================================
+The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButtons|Settings button]] on the status bar.  This is where any global settings for Wrye Bash can be accessed.
+
+=== Settings
+* __Backup Settings:__ This backs up all the various bits and pieces of Wrye Bash that you may want to preserve on an upgrade or reinstall.  This includes:
+  * The bash.ini
+  * The Wrye Bash specific documents in Data\Docs
+  * The Mods, Installer, and Converter meta-data stored in Oblivion Mods
+  * Any user profiles you have created
+  * Your Application and UI settings
+  * Your messages from the PM Archive Tab
+  * Your people from the People Tab
+  * Any translation files you have
+  * All files in the Data\Bashed Patches directory
+  * All INI Tweaks
+  * Image files [optional]:
+    * All images
+    * Only changed/custom images
+    * None
+* __Restore Settings:__ Restores your settings from a backup.  This will force a restart of Wrye Bash to ensure the new settings take effect.
+* __Save Settings:__ Normally, Wrye Bash saves its settings to disc only on closing.  Use this to force a save right now.
+* __Export list of allowed/disallowed OBSE plugin dlls:__ This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
+* __Import list of allowed/disallowed OBSE plugin dlls:__ This will import the list of Good/Bad OBSE dll definitions from a text file.
+* __Colors:__ Brings up the [[#|Colors Dialog]].
+
+=== Colors Dialog
+<img src="bash/images/WryeBash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
+The Colors Dialog allows you to customize what colors Wrye Bash uses in the UI to communicate various bits of information.  This is for example, the text color of ESMs, mergeable plugins, etc.  This dialog only allows you to configure the custom colors, as everything else uses your OS's default colors.  If you want to change those, you'll have to do it through your OS's color configuration.
+
+__The Controls__
+* __Combo Box:__ The combo box selects which color you want to configure.  When you select a color, its description will be displayed in the area below it, and its current color will be displayed in the button to the right.
+* __Color Button:__ The color button is just to the right of the combo box.  Click on it to bring up the color picker to select what color you want.
+* __All Defaults:__ This button returns all colors to their default setting.  Note that you still need to Apply the changes for them to take effect.
+* __Default:__ This returns the current color to its default setting.
+* __Apply All:__ This applies all changes that you have made to the colors.
+* __Apply:__ This applies any change to the current color.
+* __Export:__ This will allow you to save your current color scheme to a human readable text file.  Usefull to backup your color settings for a full reinstall or to share with someone else.
+* __Import:__ This imports the color settings saved in a text file.  Don't forget to Apply/Apply All the changes after importing.
+* __Ok:__ This just closes the dialog.  This wont apply any changes you have made, so be sure to use Apply or Apply All first.
+
 
 == Installers Tab =============================================================
 The Installers tab provides a mod package installer facility. In general purpose, it's much like TimeSlip's OBMM tool, however implementation is somewhat different from OBMM. Relative to OBMM, there are several substantial improvements; however in other ways, it is simpler and less powerful than OBMM. (Notably, there is no BSA archive handling in Bain.)
@@ -510,9 +553,9 @@ Due to the (theoretical but potentially significant) dangers of installing execu
   * Select install on the package and confirm or block each dll/x - you only have to do it once per dll/version.
 * __Saving/Editing allowed/disallowed OBSE plugin dlls list__
   * BAIN stores a list of allowed/disallowed OBSE plugin dlls internally, however if desired you can export, manually edit and import or import to a different copy of Wrye Bash if you desire.
-  * To Export: select __Export list of allowed/disallowed OBSE plugin dlls__ from the header menu->setting submenu and save somewhere you will be able to find it later.
+  * To Export: select __Export list of allowed/disallowed OBSE plugin dlls__ from the [[#BashSettingsMenu|Settings Menu]] and save somewhere you will be able to find it later.
   * To edit: just edit that txt file as desired (In case you want to change your mind, accidentally clicked no/yes or just for the fun of it).
-  * To Import: select __Import list of allowed/disallowed OBSE plugin dlls__ from the header menu->setting submenu and select a previously exported allowed/disallowed OBSE plugin dlls list.
+  * To Import: select __Import list of allowed/disallowed OBSE plugin dlls__ from the [[#BashSettingsMenu|Settings Menu]] and select a previously exported allowed/disallowed OBSE plugin dlls list.
 
 === Doc File Sweeping
 In order to prevent clutter and centralize doc file storage, Bain will sweep files that appear to be doc files into Oblivion\Data\Docs. Also, files named simply readme.txt (or readme.doc, etc.) will be renamed according to the package name before being swept into the Docs directory.
@@ -2422,6 +2465,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * UI components in the Mods and Saves Tabs are now resizable
 * Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
 * Fixed progress bar disappearing for some people while loading the installers tab
+* UI colors are now customizable with the [[#|Colors Dialog]].  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
