@@ -114,6 +114,70 @@ SettingsMenu = None
 # Settings --------------------------------------------------------------------
 settings = None
 
+# Color Descriptions ----------------------------------------------------------
+colorInfo = {
+    'default.text': (_('Default Text'),
+                     _('This is the text color used for list items when no other is specifid.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
+                     ),
+    'default.bkgd': (_('Default Background'),
+                     _('This is the text background color used for list items when no other is specified.  For example, an ESM that is not ghosted.'),
+                     ),
+    'mods.text.esm': (_('ESM'),
+                      _('Tabs: Mods, Saves\n\nThis is the text color used for ESMs in the Mods Tab, and in the Masters info on both the Mods Tab and Saves Tab.'),
+                      ),
+    'mods.text.mergeable': (_('Mergeable Plugin'),
+                            _('Tabs: Mods\n\nThis is the text color used for mergeable plugins.'),
+                            ),
+    'mods.text.noMerge': (_("'NoMerge' Plugin"),
+                          _("Tabs: Mods\n\nThis is the text color used for a mergeable plugin that is tagged 'NoMerge'."),
+                          ),
+    'mods.bkgd.doubleTime.exists': (_('Inactive Time Conflict'),
+                                    _('Tabs: Mods\n\nThis is the background color used for a plugin with an inactive time conflict.  This means that two or more plugins have the same timestamp, but only one (or none) of them is active.'),
+                                    ),
+    'mods.bkgd.doubleTime.load': (_('Active Time Conflict'),
+                                  _('Tabs: Mods\n\nThis is the background color used for a plugin with an active time conflict.  This means that two or more plugins with the same timestamp are active.'),
+                                  ),
+    'mods.bkgd.deactivate': (_("'Deactivate' Plugin"),
+                             _("Tabs: Mods\n\nThis is the background color used for an active plugin that is tagged 'Deactivate'."),
+                             ),
+    'mods.bkgd.exOverload': (_('Exclusion Group Overloaded'),
+                             _('Tabs: Mods\n\nThis is the background color used for an active plugin in an overloaded Exclusion Group.  This means that two or more plugins in an Exclusion Group are active, where an Exclusion Group is any group of mods that start with the same name, followed by a comma.\n\nAn example exclusion group:\nBashed Patch, 0.esp\nBashed Patch, 1.esp\n\nBoth of the above plugins belong to the "Bashed Patch," Exclusion Group.'),
+                             ),
+    'mods.bkgd.ghosted': (_('Ghosted Plugin'),
+                          _('Tabs: Mods\n\nThis is the background color used for a ghosted plugin.'),
+                          ),
+    'mods.bkgd.groupHeader': (_('Group Header'),
+                              _('Tabs: Mods\n\nThis is the background color used for a Group marker.'),
+                              ),
+    'ini.bkgd.invalid': (_('Invalid INI Tweak'),
+                         _('Tabs: INI Edits\n\nThis is the background color used for a tweak file that is invalid for the currently selected target INI.'),
+                         ),
+    'tweak.bkgd.invalid': (_('Invalid Tweak Line'),
+                           _('Tabs: INI Edits\n\nThis is the background color used for a line in a tweak file that is invalid for the currently selected target INI.'),
+                           ),
+    'tweak.bkgd.mismatched': (_('Mismatched Tweak Line'),
+                              _('Tabs: INI Edits\n\nThis is the background color used for a line in a tweak file that does not match what is set in the target INI.'),
+                              ),
+    'tweak.bkgd.matched': (_('Matched Tweak Line'),
+                           _('Tabs: INI Edits\n\nThis is the background color used for a line in a tweak file that matches what is set in the target INI.'),
+                           ),
+    'installers.text.complex': (_('Complex Installer'),
+                                _('Tabs: Installers\n\nThis is the text color used for a complex BAIN package.'),
+                                ),
+    'installers.text.invalid': (_('Marker'),
+                                _('Tabs: Installers\n\nThis is the text color used for Markers.'),
+                                ),
+    'installers.bkgd.skipped': (_('Skipped Files'),
+                                _('Tabs: Installers\n\nThis is the background color used for a package with files that will not be installed by BAIN.  This means some files are selected to be installed, but due to your current Skip settings (for example, Skip DistantLOD), will not be installed.'),
+                                ),
+    'installers.bkgd.outOfOrder': (_('Invalid Installer'),
+                                   _('Tabs: Installers\n\nThis is the background color used for an installer with a structure not recognized by BAIN.'),
+                                   ),
+    'installers.bkgd.dirty': (_('Dirty Installer'),
+                              _('Tabs: Installers\n\nThis is the background color used for an installer that is configured in a "dirty" manner.  This means changes have been made to its configuration, and an Anneal or Install needs to be performed to make the install match what is configured.'),
+                              ),
+    }
+
 #--Load config/defaults
 settingDefaults = {
     #--Basics
@@ -128,29 +192,29 @@ settingDefaults = {
     #--Colors
     'bash.colors': {
         #--Common Colors
-        'default.text':                 ('BLACK',           _('Default text color')),
-        'default.bkgd':                 ('WHITE',           _('Default text background')),
+        'default.text':                 'BLACK',
+        'default.bkgd':                 'WHITE',
         #--Mods Tab
-        'mods.text.esm':                ('BLUE',            _('Text color for an ESM')),
-        'mods.text.mergeable':          ((0x00, 0x99, 0x00),_('Text color for a mergeable plugin')),
-        'mods.text.noMerge':            ((0x99, 0x00, 0x99),_("Text color for a mergeable plugin with the 'NoMerge' tag")),
-        'mods.bkgd.doubleTime.exists':  ((0xFF, 0xDC, 0xDC),_('Background color for a plugin with an active time conflict')),
-        'mods.bkgd.doubleTime.load':    ((0xFF, 0x64, 0x64),_('Background color for a plugin with an inactive time conflict')),
-        'mods.bkgd.deactivate':         ((0xFF, 0x64, 0x64),_("Background color for an active plugin with the 'Deactivate' tag")),
-        'mods.bkgd.exOverload':         ((0xFF, 0x99, 0x00),_('Background color for an active plugin in an overloaded Exclusion Group')),
-        'mods.bkgd.ghosted':            ('GREY91',          _('Background color for a ghosted mod')),
-        'mods.bkgd.groupHeader':        ((0xD8,0xD8,0xD8),  _('Background color for a Group header')),
+        'mods.text.esm':                'BLUE',
+        'mods.text.mergeable':          (0x00, 0x99, 0x00),
+        'mods.text.noMerge':            (0x99, 0x00, 0x99),
+        'mods.bkgd.doubleTime.exists':  (0xFF, 0xDC, 0xDC),
+        'mods.bkgd.doubleTime.load':    (0xFF, 0x64, 0x64),
+        'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
+        'mods.bkgd.exOverload':         (0xFF, 0x99, 0x00),
+        'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
+        'mods.bkgd.groupHeader':        (0xD8, 0xD8, 0xD8),
         #--INI Edits Tab
-        'ini.bkgd.invalid':             ((0xDF, 0xDF, 0xDF),_('Background color for an invalid INI Tweak file')),
-        'tweak.bkgd.invalid':           ((0xFF, 0xD5, 0xAA),_('Background color for an invalid tweak file line')),
-        'tweak.bkgd.mismatched':        ((0xFF, 0xFF, 0xBF),_('Background color for a tweak file line that is applied')),
-        'tweak.bkgd.matched':           ((0xC1, 0xFF, 0xC1),_('Background color for a tweak file line that is not applied')),
+        'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
+        'tweak.bkgd.invalid':           (0xFF, 0xD5, 0xAA),
+        'tweak.bkgd.mismatched':        (0xFF, 0xFF, 0xBF),
+        'tweak.bkgd.matched':           (0xC1, 0xFF, 0xC1),
         #--Installers Tab
-        'installers.text.complex':      ('NAVY',            _('Text color for a complex installer')),
-        'installers.text.invalid':      ('GREY',            _('Text color for an invalid installer')),
-        'installers.bkgd.skipped':      ((0xE0, 0xE0, 0xE0),_('Background color for an installer with skipped files')),
-        'installers.bkgd.outOfOrder':   ((0xDF, 0xDF, 0xDF),_('Background color for an installer with an unrecognized structure')),
-        'installers.bkgd.dirty':        ((0xFF, 0xBB, 0x33),_('Background color for an installer that is dirty')),
+        'installers.text.complex':      'NAVY',
+        'installers.text.invalid':      'GREY',
+        'installers.bkgd.skipped':      (0xE0, 0xE0, 0xE0),
+        'installers.bkgd.outOfOrder':   (0xDF, 0xDF, 0xDF),
+        'installers.bkgd.dirty':        (0xFF, 0xBB, 0x33),
         },
     #--BSA Redirection
     'bash.bsaRedirection':True,
@@ -561,6 +625,10 @@ bashMonkey = None
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
+
+    def RefreshUIColors(self):
+        """Called to signal that UI color settings have changed."""
+        pass
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -2212,6 +2280,9 @@ class INIPanel(SashPanel):
         right.SetSizer(rSizer)
         left.SetSizer(lSizer)
 
+    def RefreshUIColors(self):
+        self.RefreshUI()
+
     def OnSelectTweak(self, event):
         tweakFile = iniList.items[event.GetIndex()]
         self.tweakName.SetValue(tweakFile.sbody)
@@ -2391,6 +2462,10 @@ class ModPanel(SashPanel):
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((modList,2,wx.EXPAND)))
+
+    def RefreshUIColors(self):
+        self.list.RefreshUI()
+        self.modDetails.SetFile()
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
@@ -2825,6 +2900,9 @@ class SavePanel(SashPanel):
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
+
+    def RefreshUIColors(self):
+        self.saveDetails.SetFile()
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
@@ -3328,6 +3406,10 @@ class InstallersPanel(SashTankPanel):
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
         commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+
+    def RefreshUIColors(self):
+        """Update any controls using custom colors."""
+        self.gList.RefreshUI()
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -4961,6 +5043,216 @@ class ChecklistBoxes(wx.Dialog):
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
+
+#------------------------------------------------------------------------------
+class ColorDialog(wx.Dialog):
+    """Color configuration dialog"""
+    def __init__(self,parent):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,_('Color Configuration'))
+        self.changes = dict()
+        #--ComboBox
+        keys = [x for x in colors]
+        keys.sort()
+        choices = [colorInfo[x][0] for x in keys]
+        choice = choices[0]
+        self.text_key = dict()
+        for key in keys:
+            text = colorInfo[key][0]
+            self.text_key[text] = key
+        choiceKey = self.text_key[choice]
+        self.comboBox = balt.comboBox(self,wx.ID_ANY,choice,choices=choices,style=wx.CB_READONLY)
+        #--Color Picker
+        self.picker = wx.ColourPickerCtrl(self,wx.ID_ANY)
+        self.picker.SetColour(colors[choiceKey])
+        #--Description
+        help = colorInfo[choiceKey][1]
+        self.textCtrl = wx.TextCtrl(self,wx.ID_ANY,help,style=wx.TE_MULTILINE|wx.TE_READONLY)
+        #--Buttons
+        self.default = button(self,_('Default'),onClick=self.OnDefault)
+        self.defaultAll = button(self,_('All Defaults'),onClick=self.OnDefaultAll)
+        self.apply = button(self,id=wx.ID_APPLY,onClick=self.OnApply)
+        self.applyAll = button(self,_('Apply All'),onClick=self.OnApplyAll)
+        self.exportConfig = button(self,_('Export...'),onClick=self.OnExport)
+        self.importConfig = button(self,_('Import...'),onClick=self.OnImport)
+        self.ok = button(self,id=wx.ID_OK)
+        self.ok.SetDefault()
+        #--Events
+        self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
+        self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
+        #--Layout
+        sizer = vSizer(
+            (hSizer(
+                (self.comboBox,1,wx.EXPAND|wx.RIGHT,5),
+                (self.picker),
+                ),0,wx.EXPAND|wx.ALL,5),
+            (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
+            (hSizer(
+                (self.defaultAll,0,wx.RIGHT,5),
+                (self.applyAll,0,wx.RIGHT,5),
+                (self.exportConfig),
+                ),0,wx.EXPAND|wx.ALL,5),
+            (hSizer(
+                (self.default,0,wx.RIGHT,5),
+                (self.apply,0,wx.RIGHT,5),
+                (self.importConfig),
+                (spacer),
+                (self.ok),
+                ),0,wx.EXPAND|wx.ALL,5),
+            )
+        self.comboBox.SetFocus()
+        self.SetSizer(sizer)
+        self.SetIcons(bashBlue)
+        self.UpdateUIButtons()
+
+    def GetChoice(self):
+        return self.text_key[self.comboBox.GetValue()]
+
+    def UpdateUIColors(self):
+        """Update the bashFrame with the new colors"""
+        nb = bashFrame.notebook
+        with balt.BusyCursor():
+            for i in range(nb.GetPageCount()):
+                nb.GetPage(i).RefreshUIColors()
+
+    def UpdateUIButtons(self):
+        # Apply All and Default All
+        for key in self.changes.keys():
+            if self.changes[key] == colors[key]:
+                del self.changes[key]
+        anyChanged = bool(self.changes)
+        allDefault = True
+        for key in colors:
+            if key in self.changes:
+                color = self.changes[key]
+            else:
+                color = colors[key]
+            default = bool(color == settingDefaults['bash.colors'][key])
+            if not default:
+                allDefault = False
+                break
+        # Apply and Default
+        choice = self.GetChoice()
+        changed = bool(choice in self.changes)
+        if changed:
+            color = self.changes[choice]
+        else:
+            color = colors[choice]
+        default = bool(color == settingDefaults['bash.colors'][choice])
+        # Update the Buttons, ComboBox, and ColorPicker
+        self.apply.Enable(changed)
+        self.applyAll.Enable(anyChanged)
+        self.default.Enable(not default)
+        self.defaultAll.Enable(not allDefault)
+        self.picker.SetColour(color)
+        self.comboBox.SetFocusFromKbd()
+
+    def OnDefault(self,event):
+        event.Skip()
+        choice = self.GetChoice()
+        newColor = settingDefaults['bash.colors'][choice]
+        self.changes[choice] = newColor
+        self.UpdateUIButtons()
+
+    def OnDefaultAll(self,event):
+        event.Skip()
+        for key in colors:
+            default = settingDefaults['bash.colors'][key]
+            if colors[key] != default:
+                self.changes[key] = default
+        self.UpdateUIButtons()
+
+    def OnApply(self,event):
+        event.Skip()
+        choice = self.GetChoice()
+        newColor = self.changes[choice]
+        #--Update settings and colors
+        settings['bash.colors'][choice] = newColor
+        settings.setChanged('bash.colors')
+        colors[choice] = newColor
+        self.UpdateUIButtons()
+        self.UpdateUIColors()
+
+    def OnApplyAll(self,event):
+        event.Skip()
+        for key,newColor in self.changes.iteritems():
+            settings['bash.colors'][key] = newColor
+            colors[key] = newColor
+        settings.setChanged('bash.colors')
+        self.UpdateUIButtons()
+        self.UpdateUIColors()
+
+    def OnExport(self,event):
+        event.Skip()
+        outDir = bosh.dirs['patches']
+        outDir.makedirs()
+        #--File dialog
+        outPath = balt.askSave(self,_('Export color configuration to:'), outDir, _("Colors.txt"), '*.txt')
+        if not outPath: return
+        try:
+            with outPath.open('w') as file:
+                for key in colors:
+                    if key in self.changes:
+                        color = self.changes[key]
+                    else:
+                        color = colors[key]
+                    file.write('%s: %s\n' % (key, color))
+        except Exception,e:
+            balt.showError(self,_('An error occured writing to "%s":\n\n%s') % (outPath.stail,e))
+
+    def OnImport(self,event):
+        event.Skip()
+        inDir = bosh.dirs['patches']
+        inDir.makedirs()
+        #--File dialog
+        inPath = balt.askOpen(self,_('Import color configuration from:'), inDir, _("Colors.txt"), '*.txt', mustExist=True)
+        if not inPath: return
+        try:
+            with inPath.open('r') as file:
+                for line in file:
+                    # Format validation
+                    if ':' not in line:
+                        continue
+                    split = line.split(':')
+                    if len(split) != 2:
+                        continue
+                    key = split[0]
+                    # Verify color exists
+                    if key not in colors:
+                        continue
+                    # Color format verification
+                    color = eval(split[1])
+                    if not isinstance(color, tuple) or len(color) not in (3,4):
+                        continue
+                    ok = True
+                    for value in color:
+                        if not isinstance(value,int):
+                            ok = False
+                            break
+                        if value < 0x00 or value > 0xFF:
+                            ok = False
+                            break
+                    if not ok:
+                        continue
+                    # Save it
+                    if color == colors[key]: continue
+                    self.changes[key] = color
+        except Exception, e:
+            balt.showError(bashFrame,_('An error occured reading from "%s":\n\n%s') % (inPath.stail,e))
+        self.UpdateUIButtons()
+
+    def OnComboBox(self,event):
+        event.Skip()
+        self.UpdateUIButtons()
+        choice = self.GetChoice()
+        help = colorInfo[choice][1]
+        self.textCtrl.SetValue(help)
+
+    def OnColorPicker(self,event):
+        event.Skip()
+        choice = self.comboBox.GetValue()
+        newColor = self.picker.GetColour()
+        self.changes[choice] = newColor
+        self.UpdateUIButtons()
 
 #------------------------------------------------------------------------------
 class DocBrowser(wx.Frame):
@@ -7806,78 +8098,6 @@ class Installers_SortStructure(BoolLink):
         BoolLink.Execute(self,event)
         self.gTank.SortItems()
 
-#------------------------------------------------------------------------------
-class Installers_ExportDllInfo(Link):
-    """Sort by type."""
-    def AppendToMenu(self,menu,window,data):
-        self.wdw = window
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed OBSE plugin dlls"))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.wdw,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
-        if not textPath: return
-        try:
-            out = textPath.open("w")
-            out.write('goodDlls '+_('(those dlls that you have chosen to allow to be installed)\n'))
-            if settings['bash.installers.goodDlls']:
-                for dll in settings['bash.installers.goodDlls']:
-                    out.write('dll:'+dll+':\n')
-                    for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
-                        out.write('version %02d: %s\n' % (index, version))
-            else: out.write("None")
-            out.write('badDlls '+_('(those dlls that you have chosen to NOT allow to be installed)\n'))
-            if settings['bash.installers.badDlls']:
-                for dll in settings['bash.installers.badDlls']:
-                    out.write('dll:'+dll+':\n')
-                    for index, version in enumerate(settings['bash.installers.badDlls'][dll]):
-                        out.write('version %02d: %s\n' % (index, version))
-            else: out.write("None")
-        finally: out.close
-
-class Installers_ImportDllInfo(Link):
-    """Sort by type."""
-    def AppendToMenu(self,menu,window,data):
-        self.wdw = window
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed OBSE plugin dlls"))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askOpen(self.wdw,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
-            textDir, _("OBSE dll permissions.txt"), '*.txt',mustExist=True)
-        if not textPath: return
-        message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
-        if not balt.askYes(self.wdw,message,_('Merge permissions?')): replace = True
-        else: replace = False
-        try:
-            inp = textPath.open("r")
-            Dlls = {'goodDlls':{},'badDlls':{}}
-            for line in inp:
-                if line.startswith('goodDlls'):
-                    current = Dlls['goodDlls']
-                if line.startswith('badDlls'):
-                    current = Dlls['badDlls']
-                elif line.startswith('dll:'):
-                    dll = line[4:-2]
-                    current.setdefault(dll,[])
-                elif line.startswith('version'):
-                    ver = line[13:-2].strip("'").split(",")
-                    current[dll].append([ver[0].strip("'"),int(ver[1]),long(ver[2])])
-        finally: inp.close
-        if not replace:
-            settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
-            settings['bash.installers.badDlls'].update(Dlls['badDlls'])
-        else:
-            settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
-
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerLink(Link):
@@ -9915,8 +10135,9 @@ class Mods_BOSSShowUpdate(BoolLink):
             return
         BoolLink.AppendToMenu(self,menu,window,data)
 
+# Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class User_BackupSettings(Link):
+class Settings_BackupSettings(Link):
     """Saves Bash's settings and user data.."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
@@ -9961,7 +10182,7 @@ class User_BackupSettings(Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class User_RestoreSettings(Link):
+class Settings_RestoreSettings(Link):
     """Saves Bash's settings and user data.."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
@@ -9980,8 +10201,8 @@ class User_RestoreSettings(Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class User_SaveSettings(Link):
-    """Saves Bash's settings and user data.."""
+class Settings_SaveSettings(Link):
+    """Saves Bash's settings and user data."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Save Settings'),help="Save all of Wrye Bash's settings/data now.",kind=wx.ITEM_CHECK)
@@ -9989,6 +10210,92 @@ class User_SaveSettings(Link):
 
     def Execute(self,event):
         BashFrame.SaveSettings(bashFrame)
+
+#------------------------------------------------------------------------------
+class Settings_ExportDllInfo(Link):
+    """Exports list of good and bad dll's."""
+    def AppendToMenu(self,menu,window,data):
+        self.wdw = window
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed OBSE plugin dlls"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.wdw,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
+        if not textPath: return
+        try:
+            out = textPath.open("w")
+            out.write('goodDlls '+_('(those dlls that you have chosen to allow to be installed)\n'))
+            if settings['bash.installers.goodDlls']:
+                for dll in settings['bash.installers.goodDlls']:
+                    out.write('dll:'+dll+':\n')
+                    for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
+                        out.write('version %02d: %s\n' % (index, version))
+            else: out.write("None")
+            out.write('badDlls '+_('(those dlls that you have chosen to NOT allow to be installed)\n'))
+            if settings['bash.installers.badDlls']:
+                for dll in settings['bash.installers.badDlls']:
+                    out.write('dll:'+dll+':\n')
+                    for index, version in enumerate(settings['bash.installers.badDlls'][dll]):
+                        out.write('version %02d: %s\n' % (index, version))
+            else: out.write("None")
+        finally: out.close
+
+#------------------------------------------------------------------------------
+class Settings_ImportDllInfo(Link):
+    """Imports list of good and bad dll's."""
+    def AppendToMenu(self,menu,window,data):
+        self.wdw = window
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed OBSE plugin dlls"))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askOpen(self.wdw,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
+            textDir, _("OBSE dll permissions.txt"), '*.txt',mustExist=True)
+        if not textPath: return
+        message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
+        if not balt.askYes(self.wdw,message,_('Merge permissions?')): replace = True
+        else: replace = False
+        try:
+            inp = textPath.open("r")
+            Dlls = {'goodDlls':{},'badDlls':{}}
+            for line in inp:
+                if line.startswith('goodDlls'):
+                    current = Dlls['goodDlls']
+                if line.startswith('badDlls'):
+                    current = Dlls['badDlls']
+                elif line.startswith('dll:'):
+                    dll = line[4:-2]
+                    current.setdefault(dll,[])
+                elif line.startswith('version'):
+                    ver = line[13:-2].strip("'").split(",")
+                    current[dll].append([ver[0].strip("'"),int(ver[1]),long(ver[2])])
+        finally: inp.close
+        if not replace:
+            settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
+            settings['bash.installers.badDlls'].update(Dlls['badDlls'])
+        else:
+            settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
+
+#------------------------------------------------------------------------------
+class Settings_Colors(Link):
+    """Shows the color configuration dialog."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Colors...'),help=_("Configure the custom colors used in the UI."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        dialog = ColorDialog(bashFrame)
+        dialog.ShowModal()
+        dialog.Destroy()
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -14784,6 +15091,18 @@ class App_DocBrowser(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
+class App_Settings(Link):
+    """Show color configuration dialog."""
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        gButton = bitmapButton(window,Image(GPath(bosh.dirs['images'].join('tes4gecko'+bosh.inisettings['IconSize']+'.png'))).GetBitmap(),style=style,
+            onClick=self.Execute,tip=_('Settings'))
+        return gButton
+
+    def Execute(self,event):
+        SettingsMenu.PopupMenu(self,bashFrame,None)
+
+#------------------------------------------------------------------------------
 class App_ModChecker(Link):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
@@ -14818,7 +15137,7 @@ def InitImages():
     """Initialize color and image collections."""
     #--Colors
     for key,value in settings['bash.colors'].iteritems():
-        colors[key] = value[0]
+        colors[key] = value
 
     #--Standard
     images['save.on'] = Image(GPath(bosh.dirs['images'].join('save_on.png')),wx.BITMAP_TYPE_PNG)
@@ -15366,6 +15685,7 @@ def InitStatusBar():
             _("Launch BashMon")))
     BashStatusBar.buttons.append(App_DocBrowser())
     BashStatusBar.buttons.append(App_ModChecker())
+    BashStatusBar.buttons.append(App_Settings())
     BashStatusBar.buttons.append(App_Help())
 
 def InitMasterLinks():
@@ -15446,9 +15766,6 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
-    #--Settings
-    InstallersPanel.mainMenu.append(SeparatorLink())
-    InstallersPanel.mainMenu.append(SettingsMenu)
 
     #--Item links
     #--File
@@ -15533,9 +15850,6 @@ def InitINILinks():
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(INI_ListINIs())
-    #--Settings
-    INIList.mainMenu.append(SeparatorLink())
-    INIList.mainMenu.append(SettingsMenu)
 
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -15602,9 +15916,6 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
     ModList.mainMenu.append(Mods_BOSSShowUpdate())
     ModList.mainMenu.append(Mods_ScanDirty())
-    #--Settings
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(SettingsMenu)
 
     #--ModList: Item Links
     if True: #--File
@@ -15746,9 +16057,6 @@ def InitSaveLinks():
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
-    #--Settings
-    SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(SettingsMenu)
 
     #--SaveList: Item Links
     if True: #--File
@@ -15865,9 +16173,6 @@ def InitScreenLinks():
         qualityMenu.links.append(Screen_JpgQualityCustom())
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
-    #--Settings
-    ScreensList.mainMenu.append(SeparatorLink())
-    ScreensList.mainMenu.append(SettingsMenu)
 
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
@@ -15888,9 +16193,6 @@ def InitMessageLinks():
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
     MessageList.mainMenu.append(List_Columns('bash.messages.cols',['Subject']))
-    #--Settings
-    MessageList.mainMenu.append(SeparatorLink())
-    MessageList.mainMenu.append(SettingsMenu)
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -15902,9 +16204,6 @@ def InitPeopleLinks():
     PeoplePanel.mainMenu.append(People_Import())
     PeoplePanel.mainMenu.append(SeparatorLink())
     PeoplePanel.mainMenu.append(List_Columns('bash.people.cols',['Name']))
-    #--Settings
-    PeoplePanel.mainMenu.append(SeparatorLink())
-    PeoplePanel.mainMenu.append(SettingsMenu)
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())
     PeoplePanel.itemMenu.append(SeparatorLink())
@@ -15915,12 +16214,18 @@ def InitPeopleLinks():
 def InitSettingsLinks():
     """Initialize settings menu."""
     global SettingsMenu
-    SettingsMenu = MenuLink(_('Settings'))
-    SettingsMenu.links.append(User_BackupSettings())
-    SettingsMenu.links.append(User_RestoreSettings())
-    SettingsMenu.links.append(User_SaveSettings())
-    SettingsMenu.links.append(Installers_ExportDllInfo())
-    SettingsMenu.links.append(Installers_ImportDllInfo())
+    SettingsMenu = Links()
+    #--User settings
+    SettingsMenu.append(Settings_BackupSettings())
+    SettingsMenu.append(Settings_RestoreSettings())
+    SettingsMenu.append(Settings_SaveSettings())
+    #--OBSE Dll info
+    SettingsMenu.append(SeparatorLink())
+    SettingsMenu.append(Settings_ExportDllInfo())
+    SettingsMenu.append(Settings_ImportDllInfo())
+    #--Color config
+    SettingsMenu.append(SeparatorLink())
+    SettingsMenu.append(Settings_Colors())
 
 def InitLinks():
     """Call other link initializers."""
