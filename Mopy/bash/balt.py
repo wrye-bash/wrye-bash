@@ -266,7 +266,7 @@ class textCtrl(wx.TextCtrl):
         event.Skip()
 
 class comboBox(wx.ComboBox):
-    """wx.ComboBox with automatic tooltipi if text is wider than width of control."""
+    """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
         autotooltip = kwdargs.get('autotooltip',True)
         if 'autotooltip' in kwdargs:
