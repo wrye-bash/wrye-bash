@@ -53,7 +53,11 @@ wryeBashDataFiles = set((
     r'Bashed Patch, Thief.esp',
     r'Bashed Patch, Mage.esp',
     r'Bashed Patch, Test.esp',
-    r'ArchiveInvalidationInvalidated!.bsa'
+    r'ArchiveInvalidationInvalidated!.bsa',
+    r'Docs\Bash Readme Template.html',
+    r'Docs\wtxt_sand_small.css',
+    r'Docs\wtxt_teal.css',
+    r'Docs\Bash Readme Template.txt'
     ))
 wryeBashDataDirs = set((
     r'Bash Patches',
