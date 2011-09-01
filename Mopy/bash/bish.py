@@ -54,9 +54,10 @@ from subprocess import *
 from operator import attrgetter,itemgetter
 
 #--Local
+import bolt
+bolt.CBash = os.path.join(os.getcwd(),'..','bash','compiled')
 import bosh
 import bush
-import bolt
 from bolt import _, GPath, mainfunc
 
 indent = 0
@@ -995,6 +996,28 @@ def parseRecords(fileName='Oblivion.esm'):
     print modFile.fileInfo.name.s,'saved.'
     modFile.fileInfo.getHeader()
     modFile.fileInfo.setType('esp')
+
+@mainfunc
+def dumpLSCR(fileName='Oblivion.esm'):
+    def strFid(longFid):
+        return '%s: %06X' % (longFid[0].stail, longFid[1])
+    bosh.initBosh()
+    fileName = GPath(fileName)
+    #--Load up in CBash
+    import cint
+    collection = cint.ObCollection(ModsPath=bosh.dirs['mods'].s)
+    collection.addMod(fileName.stail)
+    collection.load()
+    modFile = collection.LookupModFile(fileName.stail)
+    #--Dump the info
+    outFile = GPath(fileName.root+'.csv')
+    with outFile.open('w') as file:
+        count = 0
+        file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
+        for lscr in modFile.LSCR:
+            file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
+            count += 1
+        print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 # Temp ------------------------------------------------------------------------
 """Very temporary functions."""
