@@ -10202,7 +10202,7 @@ class Settings_RestoreSettings(Link):
         try:
             backup = barb.RestoreSettings(bashFrame)
             if backup.PromptConfirm():
-                backup.restore_images = balt.askYes(self.window,_('Do you want to restore saved images as well as settings?'),_('Restore Settings'))
+                backup.restore_images = balt.askYes(bashFrame,_('Do you want to restore saved images as well as settings?'),_('Restore Settings'))
                 backup.Apply()
         except barb.BackupCancelled: #cancelled
             pass

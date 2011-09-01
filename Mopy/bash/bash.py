@@ -143,19 +143,23 @@ def exit():
     except:
         pass
 
-    if basherImported and basher.appRestart:
-        exePath = GPath(sys.executable)
-        sys.argv = [exePath.stail] + sys.argv + ['--restarting']
-        sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
-        try:
-            import subprocess
-            subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-        except Exception, error:
-            print error
-            print _("Error Attempting to Restart Wrye Bash!")
-            print _("cmd line: "), exePath.s, sys.argv
-            print
-            raise
+    if basherImported:
+        from basher import appRestart
+        if appRestart:
+            exePath = GPath(sys.executable)
+            sys.argv = [exePath.stail] + sys.argv + ['--restarting']
+            # For some reason, quoting the sys.argv items caused it not to work for me.
+            # Is this correct?
+            #sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
+            try:
+                import subprocess
+                subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+            except Exception, error:
+                print error
+                print _("Error Attempting to Restart Wrye Bash!")
+                print _("cmd line: "), exePath.s, sys.argv
+                print
+                raise
 
 # Main ------------------------------------------------------------------------
 def main():
@@ -253,6 +257,9 @@ def main():
     quit = cmdBackup()
     quit = cmdRestore() or quit
     if quit: return
+
+    global basherImported
+    basherImported = True
 
     app.Init()
     app.MainLoop()
