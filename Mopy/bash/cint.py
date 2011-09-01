@@ -52,6 +52,10 @@ elif bolt.CBash == 2: #attempt to force CBash mode
         if exists(_CBashPath):
             CBashdll = _CBashPath
             break
+else: #attempt to force path to CBash dll
+    _CBashPath = path.join(bolt.CBash,"CBash.dll")
+    if path.exists(_CBashPath):
+        CBashdll = _CBashPath
 
 if CBashdll:
     try:
