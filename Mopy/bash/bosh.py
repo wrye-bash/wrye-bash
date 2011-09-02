@@ -13312,7 +13312,7 @@ class CBash_EditorIds:
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
             eid = _coerce(eid,str, AllowNone=True)
             if not reNewEid.match(eid):
-                continue
+                raise bolt.BoltError(_("Invalid editor id: '%s'") % eid)
             fid_eid = group_fid_eid.setdefault(group, {})
             fid_eid[longid] = eid
             #--Explicit old to new def? (Used for script updating.)
