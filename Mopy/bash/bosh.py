@@ -31217,7 +31217,7 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
         keep = patchFile.getKeeper()
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
-            if record.responsibility == 0: return
+            if record.responsibility == 0: continue
             if chosen == 'all':
                 record.responsibility = 0
                 keep(record.fid)
