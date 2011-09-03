@@ -5000,9 +5000,14 @@ class BashFrame(wx.Frame):
         currentColors = set(settings['bash.colors'].keys())
         defaultColors = set(settingDefaults['bash.colors'].keys())
         invalidColors = currentColors - defaultColors
+        missingColors = defaultColors - currentColors
         if invalidColors:
             for key in invalidColors:
                 del settings['bash.colors'][key]
+        if missingColors:
+            for key in missingColors:
+                settings['bash.colors'][key] = settingDefaults['bash.colors'][key]
+        if invalidColors or missingColors:
             settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
