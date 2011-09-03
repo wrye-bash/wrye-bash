@@ -1019,6 +1019,219 @@ def dumpLSCR(fileName='Oblivion.esm'):
             count += 1
         print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
+@mainfunc
+def createLSCR(modName,ddsDirectory='.',formIDFileName='formids.txt',descFileName='descs.txt',reuse=None):
+    import cint
+    import random
+
+    class LSCRData(object):
+        def __init__(self,ddsDirectory,formIDFileName,descFileName,reuse):
+            # Defaults
+            self.DDS = []
+            self.DESC = []
+            self.fids_eids = []
+            self.masters = set()
+            self.missingMasters = set()
+            self.reuse = True
+
+            self.usedDDS = []
+            self.usedDESC = []
+            self.allDDS = False # True when all DDS files have been used at least once
+            self.allDESC = False # Same as above
+
+            if reuse is None:
+                self.reuse = True
+            bosh.initBosh()
+            # Collection DDS Files
+            self.loadDDS(ddsDirectory)
+            # Read Fids file
+            self.loadFIDS(formIDFileName)
+            # Read DESC file
+            self.loadDESCS(descFileName)
+
+        def _getNext(self,notUsed,used,all):
+            if not notUsed:
+                setattr(self,all,True)
+                if self.reuse and used:
+                    notUsed = used[:]
+                    used = []
+                    random.shuffle(notUsed)
+                else:
+                    return None
+            ret = notUsed.pop()
+            used.append(ret)
+            return ret
+
+        def getNextDDS(self): return self._getNext(self.DDS,self.usedDDS,'allDDS')
+        def getNextDESC(self): return self._getNext(self.DESC,self.usedDESC,'allDESC')
+
+        def loadDDS(self,textureDir):
+            ddsDir = GPath(os.getcwd()).join(textureDir,'menus','loading')
+            self.DDS = [GPath('Menus').join('Loading',x) for x in ddsDir.list() if x.cext == '.dds']
+            random.shuffle(self.DDS)
+
+        def loadFIDS(self,fidFile):
+            fidFile = GPath(fidFile)
+            if not fidFile.exists():
+                print "WARNING: FormID text file '%s' could not be found.  All LSCR records will be new records." % (fidFile.s)
+            #--Parse the FormID file
+            self.fids_eids = []
+            self.masters = set()
+            self.missingMasters = set()
+            try:
+                with fidFile.open('r') as file:
+                    for line in file:
+                        # Format is:
+                        # modname: hexformid [optional editor id]
+                        if ':' not in line: continue
+                        parts = line.split(':')
+                        if len(parts) != 2: continue
+                        masterName = parts[0].strip()
+                        parts = parts[1].split()
+                        if len(parts) not in [1,2]:  continue
+                        if len(parts) == 2:
+                            eid = parts[1].strip()
+                        else:
+                            eid = None
+                        try:
+                            recordId = long(parts[0],16)
+                            if recordId < 0 or recordId > 0xFFFFFF:
+                                continue
+                        except:
+                            continue
+                        masterName = bosh.dirs['mods'].join(masterName)
+                        if masterName.exists():
+                            self.masters.add(masterName.tail)
+                        else:
+                            self.missingMasters.add(masterName.tail)
+                        self.fids_eids.append(((masterName.tail,recordId),eid))
+            except Exception, e:
+                print "WARNING: An error occured while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
+
+        def loadDESCS(self,descFile):
+            descFile = GPath(descFile)
+            if not descFile.exists():
+                print "WARNING: DESC text file '%s' could not be found.  All LSCR records will need to be modified by hand to have a DESC subrecord." % (descFile.s)
+            #--Parse DESC file
+            self.DESC = []
+            try:
+                with descFile.open('r') as file:
+                    for line in file:
+                        #--Optional line has 'DESC' at the beginning
+                        if line.startswith('DESC'): continue
+                        self.DESC.append(line.strip())
+            except Exception, e:
+                print "WARNING: An error occured while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
+            random.shuffle(self.DESC)
+
+    bosh.initBosh()
+    modName = bosh.dirs['mods'].join(modName)
+    #--Parse data
+    data = LSCRData(ddsDirectory,formIDFileName,descFileName,reuse)
+    if not data.DESC and not data.DDS and not data.fids_eids:
+        print "WARNING: No DESC subrecords, no textures, and no record overrides were found.  Quiting operation."
+        return
+    #--Check for existing mods
+    if modName.exists():
+        print "WARNING: Plugin '%s' already exists, creating backup: '%s'" % (modName.stail,modName.backup)
+        modName.moveTo(modName.backup)
+    #--Check for loaded data
+    if not data.DESC:
+        print "WARNING: No DESC subrecords were loaded."
+    else:
+        print 'Loaded %i DESC subrecords.' % (len(data.DESC))
+    if not data.DDS:
+        print "WARNING: No textures were found."
+    else:
+        print 'Loaded %i textures.' % (len(data.DDS))
+    #--Now do the mod creation
+    collection = cint.ObCollection(ModsPath=bosh.dirs['mods'].s)
+    for master in data.masters:
+        collection.addMod(master.stail)
+    collection.addMod(modName.stail,IgnoreExisting=True)
+    collection.load()
+    modFile = collection.LookupModFile(modName.stail)
+    # Create overrides for each fid
+    extraDDS = set()
+    extraDESC = set()
+    for fid,eid in data.fids_eids:
+        if fid[0] not in data.masters:
+            print "WARNING: LSCR record '%s' master is missing.  Data from the original record cannot be copied." % (fid[0].s)
+            # Missing master, so "create new" record instead
+            record = modFile.create_LSCR(fid)
+            #--EditorID
+            if eid is not None:
+                record.eid = eid
+            #--Texture
+            icon = data.getNextDDS()
+            if icon:
+                record.iconPath = icon.s
+            #--Description
+            text = data.getNextDESC()
+            if text:
+                record.text = text
+            #--Did this record have reused DESC/DDS's?
+            if data.allDDS: extraDDS.add(fid)
+            if data.allDESC: extraDESC.add(fid)
+        else:
+            # Master is present, so create by override
+            masterFile = collection.LookupModFile(fid[0].stail)
+            record = masterFile.LookupRecord(fid)
+            if not record:
+                print "WARNING: Could not locate record %s in master file '%s'." % (fid,fid[0].stail)
+                continue
+            if record._Type != 'LSCR':
+                print 'WARNING: Record %s is not a Loading Screen, skipping!' % (fid)
+                continue
+            override = record.CopyAsOverride(modFile)
+            if not override:
+                print 'WARNING: Error copying record %s into the mod.' % (fid)
+                continue
+            #--EditorID
+            if eid is not None:
+                override.eid = eid
+            #--Texture
+            icon = data.getNextDDS()
+            if icon:
+                override.iconPath = icon.s
+            #--Description
+            text = data.getNextDESC()
+            if text:
+                override.text = text
+            if data.allDDS: extraDDS.add(fid)
+            if data.allDESC: extraDESC.add(fid)
+    # Use any left over DDS's as new records
+    if not data.allDDS:
+        for dds in data.DDS:
+            record = modFile.create_LSCR()
+            #--Texture
+            record.iconPath = dds.s
+            #--Description
+            text = data.getNextDESC()
+            if text:
+                record.text = text
+            if data.allDESC: extraDESC.add(record.fid)
+    modFile.save()
+    print
+    print 'Operation complete.'
+    if len(data.fids_eids) > 0:
+        for master in data.masters:
+            fids = [x for x in data.fids_eids if x[0][0] == master]
+            num = len(fids)
+            print "Created %i override records for '%s'." % (num, master.s)
+    if len(data.DDS) + len(data.usedDDS) > len(data.fids_eids):
+        print 'Created %i new records.' % (len(data.DDS) + len(data.usedDDS) - len(data.fids_eids))
+    if extraDESC:
+        if data.reuse:
+            print "More records were made than DESC subrecords were available.  %i records reused another record's DESC." % (len(extraDESC))
+        else:
+            print "WARNING: More records were made than DESC subrecords were available.  %i records have no DESC subrecord." % (len(extraDESC))
+    if extraDDS:
+        if data.reuse:
+            print "More records were made than textures were available.  %i records reused another record's texture." % (len(extraDDS))
+        else:
+            print "WARNING: More records were made than textures were available.  %i records have no texture." % (len(extraDDS))
+
 # Temp ------------------------------------------------------------------------
 """Very temporary functions."""
 #--Temp
