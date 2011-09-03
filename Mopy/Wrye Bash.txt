@@ -1787,6 +1787,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Horse Turning Speed:__ Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
 * __Inventory Quantity Prompt:__ Number of items in a stack at which point Oblivion prompts for a quantity.
 * __Jump Higher:__ Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)
+* __Leveled Creature Max level difference:__ Maximum difference to player level for leveled creature.
 * __Leveled Item Max level difference:__ Maximum difference to player level for leveled items.
 * __Magic: Bolt Speed:__ Speed at which at which magic bolts (projectiles) travel.
 * __Magic: Chameleon Refraction:__ Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)
@@ -2426,7 +2427,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Merge Patcher no longer merges in script records that depend on missing masters
   * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported
   * Settings tweaker:
-    * New tweaks: AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
+    * New tweaks:
+      * AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
+      * Leveled Creature Max level difference
 * [[#InstallersTab|BAIN]]:
   * Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
   * BAIN Wizards: Updated the [[wizards.html#EditINI|[color=purple]EditINI[/color]]] function to allow comments.
@@ -2460,6 +2463,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
   * Added option to toggle display of version numbers for mods in the mod list.
+  * Display note if no dirty mods are found (so that users know that it did successfully check and isn't malfunctioning).
 * [[#|List Mods]]: crc display is off by default and added code to enable crc display if 'c' is pressed.
 * Most untranslatable strings adjusted to be translatable (adds more than 240 strings that can now be translated).
 * UI components in the Mods and Saves Tabs are now resizable

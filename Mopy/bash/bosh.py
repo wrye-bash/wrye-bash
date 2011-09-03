@@ -9689,6 +9689,9 @@ class ConfigHelpers:
             log(_("Following mods have special instructions for cleaning with TES4Edit"))
             for mod in sorted(shouldCleanMaybe):
                 log('* __'+mod[0].s+':__  '+mod[1])
+        elif scanDirty and not shouldClean:
+            log.setHeader(_("=== Mods that need cleaning with TES4Edit"))
+            log(_("Congratulations all mods appear clean."))
         if invalidVersion:
             log.setHeader(_("=== Mods with non standard TES4 versions"))
             log(_("Following mods have a TES4 version that isn't recognized as one of the standard versions (0.8 and 1.0).  It is untested what effect this can have on the game, but presumably Oblivion will refuse to load anything above 1.0"))
@@ -27693,6 +27696,17 @@ class GmstTweaker(MultiTweaker):
             ('100',100),
             (_('Custom'),25),
             ),
+        GmstTweak(_('Leveled Creature Max level difference'),
+            _("Maximum difference to player level for leveled creatures."),
+            ('ILevCreaLevelDifferenceMax',),
+            ('1',1),
+            ('5',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),9999),
+            (_('Custom'),8),
+            ),
         GmstTweak(_('Leveled Item Max level difference'),
             _("Maximum difference to player level for leveled items."),
             ('iLevItemLevelDifferenceMax',),
@@ -28334,6 +28348,17 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('50',50),
             ('100',100),
             (_('Custom'),25),
+            ),
+        CBash_GmstTweak(_('Leveled Creature Max level difference'),
+            _("Maximum difference to player level for leveled creatures."),
+            ('ILevCreaLevelDifferenceMax',),
+            ('1',1),
+            ('5',5),
+            ('[8]',8),
+            ('10',10),
+            ('20',20),
+            (_('Unlimited'),9999),
+            (_('Custom'),8),
             ),
         CBash_GmstTweak(_('Leveled Item Max level difference'),
             _("Maximum difference to player level for leveled items."),
