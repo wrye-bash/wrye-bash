@@ -1020,7 +1020,7 @@ def dumpLSCR(fileName='Oblivion.esm'):
         print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
-def createLSCR(modName,ddsDirectory='.',formIDFileName='formids.txt',descFileName='descs.txt',reuse=None):
+def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',descFileName='descs.txt',reuse=None):
     import cint
     import random
 
@@ -1039,8 +1039,8 @@ def createLSCR(modName,ddsDirectory='.',formIDFileName='formids.txt',descFileNam
             self.allDDS = False # True when all DDS files have been used at least once
             self.allDESC = False # Same as above
 
-            if reuse is None:
-                self.reuse = True
+            if reuse is not None:
+                self.reuse = False
             bosh.initBosh()
             # Collection DDS Files
             self.loadDDS(ddsDirectory)
@@ -1119,7 +1119,9 @@ def createLSCR(modName,ddsDirectory='.',formIDFileName='formids.txt',descFileNam
                     for line in file:
                         #--Optional line has 'DESC' at the beginning
                         if line.startswith('DESC'): continue
-                        self.DESC.append(line.strip())
+                        line = line.strip()
+                        if len(line) > 0:
+                            self.DESC.append(line)
             except Exception, e:
                 print "WARNING: An error occured while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
             random.shuffle(self.DESC)
