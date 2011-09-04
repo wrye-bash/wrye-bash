@@ -59,6 +59,7 @@ class _FilteredTree:
         tree.Bind(wx.EVT_TREE_SEL_CHANGED, self._on_sel_changed)
         tree.Bind(wx.EVT_TREE_ITEM_EXPANDED, self._on_item_expanded)
         tree.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self._on_item_collapsed)
+        tree.Bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self._on_tree_tooltip)
 
 
     def set_enabled(self, enabled):
@@ -239,6 +240,17 @@ class _FilteredTree:
         self._nodeExpansionNotificationFn(event.GetItem().GetData()[0], False)
         event.Skip()
 
+    def _on_tree_tooltip(self, event):
+        _logger.debug("getting tooltip")
+        item = event.GetItem()
+        if item:
+            tree = self._tree
+            rect = tree.GetBoundingRect(item, textOnly=True)
+            if rect and tree.GetSize()[0] < rect.GetLeft()+rect.GetWidth():
+                text = tree.GetItemText(item)
+                if text:
+                    event.SetToolTip(wx.ToolTip(text))
+
     def _on_item_deleted(self, nodeId):
         # overridden by PackagesTree
         pass
@@ -279,8 +291,7 @@ class PackagesTree(_FilteredTree):
             for iconId in iconMap:
                 _iconMap[iconId] = idx;
                 idx = idx + 1
-                bitmap = wx.Bitmap(iconMap[iconId])
-                image = bitmap.ConvertToImage()
+                image = wx.Image(iconMap[iconId])
                 if image.HasMask() and not image.HasAlpha():
                     image.InitAlpha()
                 bitmap = image.ConvertToBitmap()

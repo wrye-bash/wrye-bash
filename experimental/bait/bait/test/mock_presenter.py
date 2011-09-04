@@ -88,6 +88,12 @@ _commands = [
                                  iconId=presenter.IconIds.INSTALLER_UNINSTALLABLE),
                              2, 3, presenter.ContextMenuIds.ARCHIVE, False),
     presenter.SetStatusLoadingCommand(6, 6),
+    presenter.AddNodeCommand(
+        presenter.NodeTreeIds.PACKAGES, 6,
+        "Package with very long name to test tooltips when name is wider than the tree",
+        False, presenter.Style(checkboxState=True,
+                               iconId=presenter.IconIds.INSTALLER_MATCHES_WIZ),
+        2, 4, presenter.ContextMenuIds.ARCHIVE, False),
     presenter.SetStatusOkCommand(100, 1023, 24000, 3423, 123, 24000)
     ]
 
