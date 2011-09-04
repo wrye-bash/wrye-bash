@@ -13165,12 +13165,12 @@ class EditorIds:
         #--Done
         return changed
 
-    def readFromText(self,textPath):
+    def readFromText(self,textPath,questionableEidsSet=None):
         """Imports eids from specified text file."""
         type_id_eid = self.type_id_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
-        reNewEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
+        reGoodEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
         for fields in ins:
             if len(fields) < 4 or fields[2][:2] != '0x': continue
             group,mod,objectIndex,eid = fields[:4]
@@ -13178,8 +13178,8 @@ class EditorIds:
             mod = GPath(_coerce(mod,str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
             eid = _coerce(eid,str, AllowNone=True)
-            if not reNewEid.match(eid):
-                continue
+            if questionableEidsSet is not None and not reGoodEid.match(eid):
+                questionableEidsSet.add(eid)
             id_eid = type_id_eid.setdefault(group, {})
             id_eid[longid] = eid
             #--Explicit old to new def? (Used for script updating.)
@@ -13300,12 +13300,12 @@ class CBash_EditorIds:
         #--Done
         return changed
 
-    def readFromText(self,textPath):
+    def readFromText(self,textPath,questionableEidsSet=None):
         """Imports eids from specified text file."""
         group_fid_eid = self.group_fid_eid
         aliases = self.aliases
         ins = bolt.CsvReader(textPath)
-        reNewEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
+        reGoodEid = re.compile('^[a-zA-Z][a-zA-Z0-9]+$')
         for fields in ins:
             if len(fields) < 4 or fields[2][:2] != '0x': continue
             group,mod,objectIndex,eid = fields[:4]
@@ -13314,8 +13314,8 @@ class CBash_EditorIds:
             mod = GPath(_coerce(mod,str))
             longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
             eid = _coerce(eid,str, AllowNone=True)
-            if not reNewEid.match(eid):
-                raise bolt.BoltError(_("Invalid editor id: '%s'") % eid)
+            if questionableEidsSet is not None and not reGoodEid.match(eid):
+                questionableEidsSet.add(eid)
             fid_eid = group_fid_eid.setdefault(group, {})
             fid_eid[longid] = eid
             #--Explicit old to new def? (Used for script updating.)
