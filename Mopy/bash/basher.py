@@ -11907,6 +11907,7 @@ class Mod_EditorIds_Import(Link):
             balt.showError(self.window,_('Source file must be a csv file.'))
             return
         #--Import
+        questionableEidsSet = set()
         try:
             changed = None
             with balt.Progress(_("Import Editor Ids")) as progress:
@@ -11915,7 +11916,7 @@ class Mod_EditorIds_Import(Link):
                 else:
                     editorIds = bosh.EditorIds()
                 progress(0.1,_("Reading %s.") % (textName.s,))
-                editorIds.readFromText(textPath)
+                editorIds.readFromText(textPath,questionableEidsSet)
                 progress(0.2,_("Applying to %s.") % (fileName.s,))
                 changed = editorIds.writeToMod(fileInfo)
                 progress(1.0,_("Done."))
@@ -11924,9 +11925,15 @@ class Mod_EditorIds_Import(Link):
                 balt.showOk(self.window,_("No changes required."))
             else:
                 buff = stringBuffer()
-                format = '%s >> %s\n'
-                for old_new in sorted(changed):
-                    buff.write(format % old_new)
+                format = '%s%s >> %s\n'
+                for old,new in sorted(changed):
+                    if new in questionableEidsSet:
+                        prefix = "* "
+                    else:
+                        prefix = ""
+                    buff.write(format % (prefix,old,new))
+                if questionableEidsSet:
+                    buff.write("\n* these editor ids begin with numbers and may therefore cause the script compiler to generate unexpected results\n")
                 balt.showLog(self.window,buff.getvalue(),_('Objects Changed'),icons=bashBlue)
         except bolt.BoltError as e:
             balt.showWarning(self.window,str(e))
