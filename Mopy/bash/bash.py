@@ -227,6 +227,26 @@ def main():
         balt.showError(None,str(e))
         app.MainLoop()
         raise e
+    except ImportError, e:
+        # try really hard to be able to show the error in any GUI
+        try:
+            import Tkinter
+            root = Tkinter.Tk()
+            frame = Tkinter.Frame(root)
+            frame.pack()
+            
+            button = Tkinter.Button(frame, text="QUIT", fg="red", command=frame.quit, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+            button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
+            
+            w = Tkinter.Text(frame)
+            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (e,))
+            w.config(state=Tkinter.DISABLED)
+            w.pack()
+            root.mainloop()
+            return
+        except StandardError, y:
+            print y
+            raise e
 
     if not oneInstanceChecker(): return
     atexit.register(exit)
