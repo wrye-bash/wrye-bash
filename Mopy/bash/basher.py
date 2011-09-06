@@ -14858,20 +14858,13 @@ class App_Button(Link):
                     cwd.setcwd()
             else:
                 try:
-                    args = ' '.join(self.exeArgs)
-                    os.startfile(self.exePath.s, args)
-                except WindowsError, werr:
-                    if werr.winerror != 740:
-                        print _("Used Path: %s") % self.exePath.s
-                        print _("Used Arguments: "), self.exeArgs
-                        raise
-                    try:
-                        import win32api
-                        win32api.ShellExecute(0,"open",exePath.s,str(self.exeArgs),bosh.dirs['app'].s,1)
-                    except:
-                        print _("Used Path: %s") % self.exePath.s
-                        print _("Used Arguments: "), self.exeArgs
-                        raise WindowsError(werr)
+                    import win32api
+                    r, executable = win32api.FindExecutable(self.exePath.s)
+                    executable = win32api.GetLongPathName(executable)
+                    args = '"%s"' % self.exePath.s
+                    for arg in self.exeArgs:
+                        args += " " + str(arg)
+                    win32api.ShellExecute(0,"open",executable,args,bosh.dirs['app'].s,1)
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % self.exePath.s
@@ -15709,7 +15702,7 @@ def InitStatusBar():
     #--Final couple
     BashStatusBar.buttons.append(
         App_Button(
-            bosh.dirs['bash'].join('bashmon.py'),
+            (bosh.dirs['mopy'].join('Wrye Bash Launcher.pyw'), '-d', '--bashmon'),
             Image(GPath(bosh.dirs['images'].join('Bashmon'+bosh.inisettings['IconSize']+'.png'))),
             _("Launch BashMon")))
     BashStatusBar.buttons.append(App_DocBrowser())
