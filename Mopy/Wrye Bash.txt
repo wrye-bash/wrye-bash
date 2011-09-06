@@ -2454,6 +2454,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Replacers tab and associated code totally removed.
 * BALO is now officially deprecated, having been entirely superseded by BOSS.  If you are still using it, please consider using BOSS instead.
 * Fixed CBash crash while scanning for dirty edits on some plugins
+* Fixed launching of bashmon
 * Startup:
   * Fixed startup processing so you can in one startup both backup and restore settings.
   * Added -L/--Language as cmdline options to set Wrye Bash's language.
@@ -2470,6 +2471,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
 * Fixed progress bar disappearing for some people while loading the installers tab
 * UI colors are now customizable with the [[#|Colors Dialog]].  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
+* Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records

@@ -129,6 +129,9 @@ def parse():
                         default=False,
                         dest='restarting',
                         help=optparse.SUPPRESS_HELP)
+    parser.add_option('--bashmon',
+                        action='store_true',
+                        help=optparse.SUPPRESS_HELP)
     parser.add_option('--genHtml',
                         default=None,
                         help=optparse.SUPPRESS_HELP)

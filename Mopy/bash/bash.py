@@ -185,6 +185,18 @@ def main():
         os.chdir(pathToProg)
     del pathToProg
 
+    if opts.bashmon:
+        # ensure the console is set up properly
+        import ctypes
+        ctypes.windll.kernel32.AllocConsole()
+        sys.stdin = open('CONIN$', 'r')
+        sys.stdout = open('CONOUT$', 'w', 0)
+        sys.stderr = open('CONOUT$', 'w', 0)
+        # run bashmon and exit
+        import bashmon
+        bashmon.monitor(0.25) #--Call monitor with specified sleep interval
+        return
+
     #--Initialize Directories and some settings
     #  required before the rest has imported
     SetUserPath('bash.ini',opts.userPath)
