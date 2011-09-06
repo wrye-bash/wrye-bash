@@ -23,10 +23,36 @@
 
 """This module starts the Wrye Bash application in GUI mode."""
 
-from bash import bash, bolt
+import linecache
+import os
+import sys
+import traceback
 
-#For Wrye Bash Launcher.pyw, default to debug mode Off
-bolt.deprintOn = False
+# get instruction to stop at from commandline
+targetCounter = len(sys.argv) > 1 and int(sys.argv.pop()) or 0
+instCounter = 0
+def instruction_tracer(frame, event, arg):
+    if event == "line":
+        name = frame.f_globals.get("__name__", "unknown")
+        if name.startswith("bash."):
+            filename = frame.f_globals.get("__file__", "unknown")
+            if (filename.endswith(".pyc") or filename.endswith(".pyo")):
+                filename = filename[:-1]
+            lineno = frame.f_lineno
+            line = linecache.getline(filename, lineno)
+            global targetCounter
+            global instCounter
+            instCounter += 1
+            print "%s/%s %s:%s: %s" % (instCounter, targetCounter, name, lineno, line.rstrip())
+            if targetCounter == instCounter:
+                traceback.print_stack()
+                os._exit(1)
+    return instruction_tracer
+
+if targetCounter:
+    sys.settrace(instruction_tracer)
+
+from bash import bash, bolt
 
 if __name__ == '__main__':
     bash.main()

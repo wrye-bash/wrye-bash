@@ -21,13 +21,22 @@
 #
 # =============================================================================
 
-"""This module starts the Wrye Bash application in console mode with debug enabled."""
-#For Wrye Bash Debug.py, default to debug mode On
-from bash import bolt
-bolt.deprintOn = True
+# number of instructions until we know the problem happens
+knownGoodInst = 0
+knownBadInst = 1000000
 
-#Import bolt before bash so errors in Wizards show up
-from bash import bash
+# show slider that ranges from knownGoodInst to knownBadInst
 
-if __name__ == '__main__':
-    bash.main()
+# set slider halfway between knowns
+
+# on "go" button click, run Wrye Bash Launcher.pyw with the slider value as the only argument
+
+# run Oblivion.exe
+
+# ask if Oblivion crashed
+# print slider value and response to log
+
+# if it crashed, reduce knownBadInst to current slider value
+# if it did not crash, raise knownGoodInst to current slider value
+
+# show slider and repeat until knownGoodInst == knownBadInst - 1
