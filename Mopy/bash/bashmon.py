@@ -323,7 +323,3 @@ def monitor(sleepSeconds=0.25):
             running = False
             break
     raw_input('\nSTOPPED: Press any key to exit.')
-
-# Main -------------------------------------------------------------------------
-if __name__ == '__main__':
-    monitor(0.25) #--Call monitor with specified sleep interval
