@@ -31,6 +31,18 @@ import ctypes
 
 from bolt import _,GPath
 
+import traceback
+import os
+targetCounter = 0
+_instCounter = 0
+def checkInstCounter():
+    global _instCounter
+    _instCounter += 1
+    if targetCounter == _instCounter:
+        print "counter: %d" % _instCounter
+        traceback.print_stack()
+        os._exit(1)
+
 # Installer -------------------------------------------------------------------
 bethDataFiles = set((
     #--Vanilla
