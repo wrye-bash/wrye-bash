@@ -17551,9 +17551,12 @@ class SaveSpells:
             self.allSpells.update(modInfo.extras['bash.spellList'])
             return
         #--Else extract spell list
-        loadFactory= LoadFactory(False,MreSpel)
+        loadFactory = LoadFactory(False,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        try: modFile.load(True)
+        except bosh.ModError, err:
+            deprint(_('skipped mod due to read error (%s)') % err)
+            return
         modFile.convertToLongFids(('SPEL',))
         spells = modInfo.extras['bash.spellList'] = dict(
             [(record.fid,record) for record in modFile.SPEL.getActiveRecords()])
