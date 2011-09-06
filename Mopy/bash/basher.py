@@ -11908,6 +11908,7 @@ class Mod_EditorIds_Import(Link):
             return
         #--Import
         questionableEidsSet = set()
+        badEidsList = []
         try:
             changed = None
             with balt.Progress(_("Import Editor Ids")) as progress:
@@ -11916,7 +11917,7 @@ class Mod_EditorIds_Import(Link):
                 else:
                     editorIds = bosh.EditorIds()
                 progress(0.1,_("Reading %s.") % (textName.s,))
-                editorIds.readFromText(textPath,questionableEidsSet)
+                editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_("Applying to %s.") % (fileName.s,))
                 changed = editorIds.writeToMod(fileInfo)
                 progress(1.0,_("Done."))
@@ -11925,7 +11926,7 @@ class Mod_EditorIds_Import(Link):
                 balt.showOk(self.window,_("No changes required."))
             else:
                 buff = stringBuffer()
-                format = '%s%s >> %s\n'
+                format = "%s'%s' >> '%s'\n"
                 for old,new in sorted(changed):
                     if new in questionableEidsSet:
                         prefix = "* "
@@ -11934,6 +11935,10 @@ class Mod_EditorIds_Import(Link):
                     buff.write(format % (prefix,old,new))
                 if questionableEidsSet:
                     buff.write("\n* these editor ids begin with numbers and may therefore cause the script compiler to generate unexpected results\n")
+                if badEidsList:
+                    buff.write("\nThe following EIDs are malformed and were not imported:\n")
+                    for badEid in badEidsList:
+                        buff.write("  '%s'\n" % badEid)
                 balt.showLog(self.window,buff.getvalue(),_('Objects Changed'),icons=bashBlue)
         except bolt.BoltError as e:
             balt.showWarning(self.window,str(e))
