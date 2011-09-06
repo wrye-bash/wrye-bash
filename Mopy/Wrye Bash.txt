@@ -2454,6 +2454,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Replacers tab and associated code totally removed.
 * BALO is now officially deprecated, having been entirely superseded by BOSS.  If you are still using it, please consider using BOSS instead.
 * Fixed CBash crash while scanning for dirty edits on some plugins
+* Fixed launching of bashmon
 * Startup:
   * Fixed startup processing so you can in one startup both backup and restore settings.
   * Added -L/--Language as cmdline options to set Wrye Bash's language.
