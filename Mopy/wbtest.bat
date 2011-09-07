@@ -36,8 +36,8 @@ GOTO END
 :FOUND
 ECHO Found Python in '%PYPATH%' >%OUTFILE%
 ECHO Found Python in '%PYPATH%'
-ECHO Launching Wrye Bash in debug mode >>%OUTFILE%
-ECHO Launching Wrye Bash in debug mode
+ECHO Launching wbtest >>%OUTFILE%
+ECHO Launching wbtest
 "%PYPATH%"Python.exe "wbtest.py" >>%OUTFILE% 2>&1
 
 :END
