@@ -3427,11 +3427,12 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = True
             with balt.Progress(_("Refreshing Installers..."),'\n'+' '*60, abort=True) as progress:
                 try:
-                    if bosh.inisettings['ClearRO']:
-                        progress(0,_("Clearing 'Read Only' flags..."))
-                        cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-                        cmd = Encode(cmd,'mbcs')
-                        ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                   # removed in favour of doing it only as needed in bolt.path
+                   # if bosh.inisettings['ClearRO']:
+                   #     progress(0,_("Clearing 'Read Only' flags..."))
+                   #     cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+                   #     cmd = Encode(cmd,'mbcs')
+                   #     ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                     what = ('DISC','IC')[self.refreshed]
                     if data.refresh(progress,what,self.fullRefresh):
                         self.gList.RefreshUI()
