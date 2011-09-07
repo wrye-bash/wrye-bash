@@ -22,11 +22,14 @@
 #
 # =============================================================================
 
+import subprocess
+import sys
+import win32api
 import wx
 
 
 class TestPanel(wx.Panel):
-    def __init__(self, wxParent):
+    def __init__(self, wxParent, runWryeBashFn, runOblivionFn):
         wx.Panel.__init__(self, wxParent)
 
         # state
@@ -35,24 +38,20 @@ class TestPanel(wx.Panel):
         # initial value is approximate number of instructions it takes to quiesce the UI
         self._knownBadInst = 2200000
         self._crashed = False
+        self._runWryeBashFn = runWryeBashFn
+        self._runOblivionFn = runOblivionFn
 
         panelSizer = wx.BoxSizer(wx.VERTICAL)
-
-        sliderSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._minLabel = wx.StaticText(self, label=str(self._knownGoodInst))
-        sliderSizer.Add(self._minLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        # show slider that ranges from knownGoodInst to knownBadInst
         self._slider = wx.Slider(self, value=self._knownGoodInst, minValue=self._knownGoodInst,
                                  maxValue=self._knownBadInst,
                                  style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
-        sliderSizer.Add(self._slider, 1, wx.ALIGN_CENTER_VERTICAL)
-        self._maxLabel = wx.StaticText(self, label=str(self._knownBadInst))
-        sliderSizer.Add(self._maxLabel, 0, wx.ALIGN_CENTER_VERTICAL)
-        panelSizer.Add(sliderSizer, 1, wx.EXPAND)
+        panelSizer.Add(self._slider, 0, wx.EXPAND)
 
+        instructionSizer = wx.BoxSizer(wx.VERTICAL)
         initialInstruction = "First, we'll verify our expectation that Oblivion should still work after executing only 1 instruction of Wrye Bash"
         self._instructionLabel = wx.StaticText(self, label=initialInstruction)
-        panelSizer.Add(self._instructionLabel, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
+        instructionSizer.Add(self._instructionLabel, 0, wx.EXPAND)
+        panelSizer.Add(instructionSizer, 1, wx.EXPAND|wx.ALL, 10)
 
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -112,13 +111,25 @@ class TestPanel(wx.Panel):
     def _on_run_wrye_bash_click(self, event):
         self._runWryeBashButton.Disable()
         self._update_instructions("Running Wrye Bash (if the Wrye Bash UI finishes loading, just close it)...")
-        # TODO: run Wrye Bash Launcher.pyw with the slider value as the only argument and wait for process to exit
+        try:
+            self._runWryeBashFn(self._slider.GetValue())
+        except Exception as e:
+            print e
+            self._update_instructions("There was a problem running Wrye Bash: " + str(e))
+            self._doneButton.Enable()
+            return
         self._update_instructions("Ready to test Oblivion.")
         self._runOblivionButton.Enable()
     def _on_run_oblivion_click(self, event):
         self._runOblivionButton.Disable()
         self._update_instructions("Running Oblivion and waiting for it to crash/exit...")
-        # TODO: run oblivion and wait for process to exit
+        try:
+            self._runOblivionFn()
+        except Exception as e:
+            print e
+            self._update_instructions("There was a problem running Oblivion: " + str(e))
+            self._doneButton.Enable()
+            return
         self._update_instructions("Please select whether Oblivion crashed")
         self._oblivionWorkedButton.Enable()
         self._oblivionCrashedButton.Enable()
@@ -154,8 +165,6 @@ class TestPanel(wx.Panel):
             self._doneButton.Enable()
         else:
             # update slider and repeat test
-            self._minLabel.SetLabel(str(self._knownGoodInst))
-            self._maxLabel.SetLabel(str(self._knownBadInst))
             self._slider.SetRange(self._knownGoodInst, self._knownBadInst)
             if self._initialTest:
                 self._update_instructions("Now we'll make sure Oblivion does crash after allowing the maximum number of instructions to execute.  If it doesn't, please contact me.")
@@ -178,8 +187,20 @@ class TestPanel(wx.Panel):
 
 
 
-app = wx.PySimpleApp()
-frame = wx.Frame(None, -1, "wbtest", size=(600,150))
-TestPanel(frame)
-frame.Show(True)
-app.MainLoop()
+if __name__ == '__main__':
+    wbProg = "Wrye Bash Launcher.pyw"
+    r, executable = win32api.FindExecutable(wbProg)
+    executable = win32api.GetLongPathName(executable)
+
+    def runWryeBash(instructionLimit):
+        args = '"%s" "%s" %d' % (executable, wbProg, instructionLimit)
+        subprocess.call(args, bufsize=1, stdout=sys.stdout, stderr=sys.stderr)
+
+    def runOblivion():
+        subprocess.call('../Oblivion.exe', cwd='..', close_fds=True)
+
+    app = wx.PySimpleApp()
+    frame = wx.Frame(None, -1, "wbtest", size=(600,200))
+    TestPanel(frame, runWryeBash, runOblivion)
+    frame.Show(True)
+    app.MainLoop()
