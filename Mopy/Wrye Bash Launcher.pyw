@@ -24,13 +24,12 @@
 """This module starts the Wrye Bash application in GUI mode."""
 
 import linecache
+import locale
 import os
 import sys
 import traceback
 
-# get instruction to stop at from commandline
-targetCounter = len(sys.argv) > 1 and int(sys.argv.pop()) or 0
-instCounter = 0
+_instCounter = 0
 def instruction_tracer(frame, event, arg):
     if event == "line":
         name = frame.f_globals.get("__name__", "unknown")
@@ -40,19 +39,34 @@ def instruction_tracer(frame, event, arg):
                 filename = filename[:-1]
             lineno = frame.f_lineno
             line = linecache.getline(filename, lineno)
-            global targetCounter
-            global instCounter
-            instCounter += 1
-            print "%s/%s %s:%s: %s" % (instCounter, targetCounter, name, lineno, line.rstrip())
-            if targetCounter == instCounter:
+            global _targetCounter
+            global _instCounter
+            _instCounter += 1
+            # print the last 100 instructions before the forced exit
+            if _targetCounter <= _instCounter+10:
+                print "%s/%s %s:%s: %s" % (_instCounter, _targetCounter, name, lineno, line.rstrip())
+            if _targetCounter == _instCounter:
                 traceback.print_stack()
                 os._exit(1)
     return instruction_tracer
 
-if targetCounter:
-    sys.settrace(instruction_tracer)
-
-from bash import bash, bolt
-
 if __name__ == '__main__':
+    print "Wrye Bash starting"
+    print "Python version: %d.%d.%d" % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    try:
+        import wx
+        print "wxPython version: %s" % wx.version()
+    except ImportError:
+        print "wxPython not found"
+    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())
+
+    global _targetCounter
+    # get instruction to stop at from commandline
+    _targetCounter = len(sys.argv) > 1 and int(sys.argv.pop()) or 0
+    if _targetCounter:
+        sys.settrace(instruction_tracer)
+
+    # only import bash-related modules after the tracer is set
+    from bash import bash
+
     bash.main()
