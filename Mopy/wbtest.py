@@ -103,8 +103,10 @@ class TestPanel(wx.Panel):
 
     def _update_instructions(self, instStr):
         self._instructionLabel.SetLabel(instStr)
-        self._instructionLabel.Wrap(self.GetSize()[0])
+        self._instructionLabel.Wrap(self.GetSize()[0]-20)
         self.Layout()
+        self._instructionLabel.Fit()
+        self._instructionLabel.Wrap(self.GetSize()[0]-20)
 
     def _on_slider_update(self, event):
         self._sliderPos = self._slider.GetValue()
@@ -137,14 +139,14 @@ class TestPanel(wx.Panel):
         self._crashed = False
         self._oblivionWorkedButton.Disable()
         self._oblivionCrashedButton.Disable()
-        self._update_instructions("Click 'Next' when you are ready to start the next iteration, or 'Back' if you clicked the wrong button.")
+        self._update_instructions("Click 'Next' when you are ready to start the next iteration, or 'Back' if you accidentally clicked the wrong button.")
         self._nextButton.Enable()
         self._backButton.Enable()
     def _on_oblivion_crashed_click(self, event):
         self._oblivionWorkedButton.Disable()
         self._oblivionCrashedButton.Disable()
         self._crashed = True
-        self._update_instructions("Click 'Next' when you have restored a working Oblivion install with MOM and are ready to start the next iteration, or 'Back' if you clicked the wrong button.")
+        self._update_instructions("Click 'Next' when you have restored a working Oblivion install with MOM and are ready to start the next iteration, or 'Back' if you accidentally clicked the wrong button.")
         self._nextButton.Enable()
         self._backButton.Enable()
     def _on_next_click(self, event):
@@ -189,15 +191,20 @@ class TestPanel(wx.Panel):
 
 if __name__ == '__main__':
     wbProg = "Wrye Bash Launcher.pyw"
+    oblivionProg = "../Oblivion.exe"
     r, executable = win32api.FindExecutable(wbProg)
     executable = win32api.GetLongPathName(executable)
 
     def runWryeBash(instructionLimit):
-        args = '"%s" "%s" %d' % (executable, wbProg, instructionLimit)
+        args = '"%s" "%s" -d %d' % (executable, wbProg, instructionLimit)
+        print "running %s" % args
+        sys.stdout.flush()
         subprocess.call(args, bufsize=1, stdout=sys.stdout, stderr=sys.stderr)
 
     def runOblivion():
-        subprocess.call('../Oblivion.exe', cwd='..', close_fds=True)
+        print "running %s" % oblivionProg
+        sys.stdout.flush()
+        subprocess.call(oblivionProg, cwd='..', close_fds=True)
 
     app = wx.PySimpleApp()
     frame = wx.Frame(None, -1, "wbtest", size=(600,200))
