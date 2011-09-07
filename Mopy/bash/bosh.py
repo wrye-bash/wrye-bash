@@ -34608,7 +34608,6 @@ def initDefaultSettings():
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
     inisettings['OblivionTexturesBSAName'] = GPath('Oblivion - Textures - Compressed.bsa')
-    inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
     inisettings['ShowTextureToolLaunchers'] = True
