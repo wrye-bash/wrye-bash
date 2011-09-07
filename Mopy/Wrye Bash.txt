@@ -2437,6 +2437,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Modified [[#PackageHeaderCommands|Clean Data]] command so that it doesn't remove DLC content or Wrye Bash-related files
   * It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
   * Don't reset subpackage selections if a wizard is started but canceled
+  * Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)
 * Unicode Mode:
   * Bugfixes from valda and bluesky404
 * Added activation status as a new mods column/sort option.

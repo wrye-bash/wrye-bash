@@ -8382,11 +8382,6 @@ class Installer_OpenReadme(InstallerLink):
                 # This is going to leave junk temp files behind...
                 archive.unpackToTemp(installer, [archive.hasReadme])
             archive.tempDir.join(archive.hasReadme).start()
-            try:
-                archive.tempDir.rmtree(archive.tempDir.stail)
-            except:
-                pass
-
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
