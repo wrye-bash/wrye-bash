@@ -1205,17 +1205,31 @@ class Path(object):
     def makedirs(self):
         if not self.exists(): os.makedirs(self._s)
     def remove(self):
-        if self.exists(): os.remove(self._s)
+        try:
+            if self.exists(): os.remove(self._s)
+        except WindowsError:
+            deprint(_('Error removing %s...  attempting to clear ReadOnly flag') % self._s)
+            ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+            os.remove(self._s)
+            deprint(_('Successfully removed %s') % self._s)
     def removedirs(self):
-        if self.exists(): os.removedirs(self._s)
+        try:
+            if self.exists(): os.removedirs(self._s)
+        except WindowsError:
+            deprint(_('Error removing %s...  attempting to clear ReadOnly flag') % self._s)
+            ins,err = subprocess.Popen(Encode(r'attrib -R "%s\*" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+            os.remove(self._s)
+            deprint(_('Successfully removed %s') % self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
-            # Clear ReadOnly flag if set
-            cmd = r'attrib -R "%s\*" /S /D' % (self._s)
-            cmd = Encode(cmd,'mbcs')
-            ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
-            shutil.rmtree(self._s)
+            try:
+                shutil.rmtree(self._s)
+            except WindowsError:
+                deprint(_('Error removing %s... attempting to clear ReadOnly flag') % self._s)
+                ins,err = subprocess.Popen(Encode(r'attrib -R "%s\*" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                shutil.rmtree(self._s)
+                deprint(_('Successfully removed %s') % self._s)
 
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
@@ -1244,8 +1258,20 @@ class Path(object):
         if destPath._shead and not os.path.exists(destPath._shead):
             os.makedirs(destPath._shead)
         elif destPath.exists():
-            os.remove(destPath._s)
-        shutil.move(self._s,destPath._s)
+            try:
+                os.remove(destPath._s)
+            except WindowsError:
+                deprint(_('Error removing %s... attempting to clear ReadOnly flag') % destPath._s)
+                ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (destPath._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                os.remove(destPath._s)
+                deprint(_('Successfully removed %s') % destPath._s)
+        try:
+            shutil.move(self._s,destPath._s)
+        except WindowsError:
+                deprint(_('Error moving %s... attempting to clear ReadOnly flag') % self._s)
+                ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                shutil.move(self._s,destPath._s)
+                deprint(_('Successfully moved %s') % self._s)
     def touch(self):
         """Like unix 'touch' command. Creates a file with current date/time."""
         if self.exists():
