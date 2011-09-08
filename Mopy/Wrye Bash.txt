@@ -2403,7 +2403,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [XX/XX/2011] [bluesky404,Lojack,myk002,PacificMorrowind,valda]
+=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda]
 * First-run Usability Improvements:
   * Default options and widget sizes have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
@@ -2424,6 +2424,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Names tweaker:
     * New tweak: Proper English Names: Staffs -> Staves
     * New tweak: Proper English Names: Dwarfs -> Dwarves
+    * Updated NPC/Guard names csvs. (Contributed by Gratis_monsta)
+  * Updated Assorted to Cobl.csv for Replace Form IDs. (Contributed by Gratis_monsta)
   * Merge Patcher no longer merges in script records that depend on missing masters
   * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported
   * Settings tweaker:
@@ -2473,6 +2475,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Fixed progress bar disappearing for some people while loading the installers tab
 * UI colors are now customizable with the [[#|Colors Dialog]].  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
 * Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
+* [[#Custombuttons|Custom launcher buttons]] now support launching of msi created shortcuts.
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
