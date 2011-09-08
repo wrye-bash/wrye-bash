@@ -22,6 +22,7 @@
 #
 # =============================================================================
 
+import os
 import subprocess
 import sys
 import win32api
@@ -194,7 +195,7 @@ if __name__ == '__main__':
     oblivionProg = "../Oblivion/Oblivion.exe"
     wbDir = oblivionDir + "/Mopy"
     wbProg = "Wrye Bash Launcher.pyw"
-    r, executable = win32api.FindExecutable(wbProg)
+    r, executable = win32api.FindExecutable(wbDir + "/" + wbProg)
     executable = win32api.GetLongPathName(executable)
     curCwd = os.getcwd()
 
