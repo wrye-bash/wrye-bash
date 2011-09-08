@@ -532,6 +532,18 @@ NPC_,Mart's Monster Mod.esm,0x01CEB4,ImperialRoadWatchman4,Watchwoman Caniaia
 NPC_,Mart's Monster Mod.esm,0x0020B8,ImperialRoadWatchman5,Watchman Arenar
 NPC_,Mart's Monster Mod.esm,0x0020B9,ImperialRoadWatchman6,Watchwoman Ruccia
 ,,,,
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009477,ImperialLegionForester10,Forester Jermaine
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009478,ImperialLegionForester11,Forester Tilbert
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009479,ImperialLegionForester12,Forester Kurt
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947A,ImperialLegionForester13,Forester Hogan
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947B,ImperialLegionForester14,Forester Cena
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947C,ImperialLegionForester15,Forester Sparr
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009472,ImperialLegionForester5,Forester Tyrulius
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009473,ImperialLegionForester6,Forester Odysseus
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009474,ImperialLegionForester7,Forester Agamemnon
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009475,ImperialLegionForester8,Forester Menelaus
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009476,ImperialLegionForester9,Forester Achilles
+,,,,
 NPC_,Kvatch Rebuilt.esm,0x06058E,KRGuardArenaDay,Private Servius
 NPC_,Kvatch Rebuilt.esm,0x060591,KRGuardBridgeDay,Private Decimus
 NPC_,Kvatch Rebuilt.esm,0x060592,KRGuardCastleExt1Day,Private Amulius
@@ -588,3 +600,128 @@ NPC_,The Arsenal.esp,0x00F8B9,aaTANPCGuard,Guard Arborius
 NPC_,za_bankmod.esp,0x0143B1,NORbankguard,Bank Guard Othrelos
 NPC_,za_bankmod.esp,0x00583F,ZAICBankGuardPostDay02,Vault Guard Dermont
 NPC_,za_bankmod.esp,0x000E24,ZAICBankGuardPostNight01,Vault Guard Dupont
+,,,,
+NPC_,MannimarcoComplete.esp,0x021568,00000BGCamp010,Guard Hercules
+NPC_,MannimarcoComplete.esp,0x02156A,00000BGCamp011,Guard Adamus
+NPC_,MannimarcoComplete.esp,0x02156E,00000BGCamp012,Guard Hysterius
+NPC_,MannimarcoComplete.esp,0x02156F,00000BGCamp013,Guard Mysterius
+NPC_,MannimarcoComplete.esp,0x020E76,00000BGCamp1,Guard Olos
+NPC_,MannimarcoComplete.esp,0x021556,00000BGCamp2,Guard Dongos
+NPC_,MannimarcoComplete.esp,0x021557,00000BGCamp3,Guard Kliopes
+NPC_,MannimarcoComplete.esp,0x021558,00000BGCamp4,Guard Cizzeros
+NPC_,MannimarcoComplete.esp,0x021559,00000BGCamp5,Guard Czarus
+NPC_,MannimarcoComplete.esp,0x021560,00000BGCamp6,Guard Dermont
+NPC_,MannimarcoComplete.esp,0x021562,00000BGCamp7,Guard Hugonius
+NPC_,MannimarcoComplete.esp,0x021564,00000BGCamp8,Guard Vicotorius
+NPC_,MannimarcoComplete.esp,0x021565,00000BGCamp9,Guard Mudes
+NPC_,MannimarcoComplete.esp,0x020727,00000BGForester1,Forester Hades
+NPC_,MannimarcoComplete.esp,0x020729,00000BGForester2,Forester Charon
+NPC_,MannimarcoComplete.esp,0x02072A,00000BGForester3,Forester Hermes
+NPC_,MannimarcoComplete.esp,0x02155E,00000BGForester4,Forester Julius
+NPC_,MannimarcoComplete.esp,0x02156C,00000BGForester5,Forester Laxius
+NPC_,MannimarcoComplete.esp,0x01C571,00000BGGuard1,Guard Adamantius
+NPC_,MannimarcoComplete.esp,0x01DC48,00000BGGuard2,Guard Ferron
+NPC_,MannimarcoComplete.esp,0x01E325,00000BGGuard3,Guard Arget
+NPC_,MannimarcoComplete.esp,0x01E326,00000BGGuard4,Guard Aurius
+NPC_,MannimarcoComplete.esp,0x022A23,00000BGGuardEnf,Enforcer Gelborne
+NPC_,MannimarcoComplete.esp,0x022A24,00000BGGuardJailor1,Jailor Doug
+NPC_,MannimarcoComplete.esp,0x021C69,00000BGOldSoldier,Veteran Numer
+NPC_,MannimarcoComplete.esp,0x01F97B,00000BGRoadGaurd,Roadsman Utherius
+NPC_,MannimarcoComplete.esp,0x08486A,0000BattleMagePatroDine,Legion Battlemage Hubert
+NPC_,MannimarcoComplete.esp,0x08485D,0000BattleMagePatrolMain1,Legion Battlemage Hugo
+NPC_,MannimarcoComplete.esp,0x08486C,0000BattleMagePatrolMain1Night,Legion Battlemage Scale
+NPC_,MannimarcoComplete.esp,0x084868,0000BattleMagePatrolMain2,Legion Battlemage Ruler
+NPC_,MannimarcoComplete.esp,0x08486E,0000BattleMagePatrolMain2Night,Legion Battlemage Royal
+NPC_,MannimarcoComplete.esp,0x08B878,0000BattleMagePatroOutside1,Legion Battlemage Tim
+NPC_,MannimarcoComplete.esp,0x08B87A,0000BattleMagePatroOutside1Night,Legion Battlemage Martin
+NPC_,MannimarcoComplete.esp,0x08B879,0000BattleMagePatroOutside2,Legion Battlemage Luther
+NPC_,MannimarcoComplete.esp,0x08B87B,0000BattleMagePatroOutside2Night,Legion Battlemage Pook
+NPC_,MannimarcoComplete.esp,0x084871,0000BattleMagePatroPass,Legion Battlemage King
+NPC_,MannimarcoComplete.esp,0x084872,0000BattleMagePatroPassNight,Legion Battlemage Spookius
+NPC_,MannimarcoComplete.esp,0x084875,0000BattleMagePatroThrone1,Legion Battlemage Gordo
+NPC_,MannimarcoComplete.esp,0x084877,0000BattleMagePatroThrone1Night,Legion Battlemage Germe
+NPC_,MannimarcoComplete.esp,0x084879,0000BattleMagePatroThrone2,Legion Battlemage Thrist
+NPC_,MannimarcoComplete.esp,0x08487B,0000BattleMagePatroThrone2Night,Legion Battlemage Babius
+NPC_,MannimarcoComplete.esp,0x08487D,0000BattleMagePatroThrone3,Legion Battlemage Clothas
+NPC_,MannimarcoComplete.esp,0x08487F,0000BattleMagePatroThrone3Night,Legion Battlemage Vitamius
+NPC_,MannimarcoComplete.esp,0x04E982,000ImperialLegionSoldierM1,Private Polysach
+NPC_,MannimarcoComplete.esp,0x04E984,000ImperialLegionSoldierM2,Private Glucius
+NPC_,MannimarcoComplete.esp,0x0067AE,1MageSoldierBarrack1,Battlemage Frank
+NPC_,MannimarcoComplete.esp,0x0067B0,1MageSoldierBarrack2,Battlemage Flovius
+NPC_,MannimarcoComplete.esp,0x0067B2,1MageSoldierBarrack3,Battlemage Sausag
+NPC_,MannimarcoComplete.esp,0x0067B4,1MageSoldierBarrack4,Battlemage Gugh
+NPC_,MannimarcoComplete.esp,0x0051F1,1MageSoldierCadlew1,Battlemage Stagg
+NPC_,MannimarcoComplete.esp,0x0051F2,1MageSoldierCadlew2,Battlemage Uranus
+NPC_,MannimarcoComplete.esp,0x0051F3,1MageSoldierCadlew3,Battlemage Chande
+,,,,
+NPC_,Malevolent.esp,0x012F98,ZZMALBrumaCityGuardDummy1,Private Ludicrous
+NPC_,Malevolent.esp,0x012F9C,ZZMALBrumaCityGuardDummy2,Private Phillius
+NPC_,Malevolent.esp,0x012F9D,ZZMALBrumaCityGuardDummy3,Private Gutanius
+NPC_,Malevolent.esp,0x012F9E,ZZMALBrumaCityGuardDummy4,Private Gypsum
+NPC_,Malevolent.esp,0x001D3B,ZZMALBrumaCityGuardDummy5,Private Arsenos
+NPC_,Malevolent.esp,0x004554,ZZMALSoldier01,Private Roy
+NPC_,Malevolent.esp,0x004556,ZZMALSoldier02,Private Ryan
+NPC_,Malevolent.esp,0x0012A0,ZZMALSoldier02Ambush,Private Cadbury
+NPC_,Malevolent.esp,0x004557,ZZMALSoldier03,Private Samson
+NPC_,Malevolent.esp,0x004558,ZZMALSoldier04,Private Gelroy
+NPC_,Malevolent.esp,0x004559,ZZMALSoldier05,Private Leonard
+NPC_,Malevolent.esp,0x00455A,ZZMALSoldier06,Private Vince
+NPC_,Malevolent.esp,0x00455B,ZZMALSoldier07,Private Tremulus
+NPC_,Malevolent.esp,0x00455C,ZZMALSoldier08,Private Isaac
+NPC_,Malevolent.esp,0x00455D,ZZMALSoldier09Lieutenant,Lieutenant Klaus
+NPC_,Malevolent.esp,0x004574,ZZMALSoldier10,Private Bertrand
+NPC_,Malevolent.esp,0x0012A1,ZZMALSoldier10Ambush,Private Lionel
+NPC_,Malevolent.esp,0x004578,ZZMALSoldier11,Private Herb
+NPC_,Malevolent.esp,0x00457A,ZZMALSoldier12,Private Lucius
+NPC_,Malevolent.esp,0x00457F,ZZMALSoldier13BlackSmith,Legion BlackSmith Edgar
+NPC_,Malevolent.esp,0x004582,ZZMALSoldier14Patrol,Private Flaccidius
+NPC_,Malevolent.esp,0x004583,ZZMALSoldier15Patrol,Private Jones
+NPC_,Malevolent.esp,0x004584,ZZMALSoldier16Sleep,Private Septim
+NPC_,Malevolent.esp,0x004585,ZZMALSoldier17Sleep,Private Spartacus
+NPC_,Malevolent.esp,0x004586,ZZMALSoldier18Sleep,Private Dermont
+NPC_,Malevolent.esp,0x004F6A,ZZMALSoldier19Ghost,Private Sadamus
+NPC_,Malevolent.esp,0x00547E,ZZMALSoldier20Sapper,Legion Sapper Dyno
+NPC_,Malevolent.esp,0x00BF31,ZZMALSoldier21,Private Vellum
+NPC_,Malevolent.esp,0x00BF32,ZZMALSoldier22,Private Gythe
+NPC_,Malevolent.esp,0x00BF33,ZZMALSoldier23Chaplain,Chaplain Honorius
+NPC_,Malevolent.esp,0x00BF34,ZZMALSoldier24Chaplain,Chaplain Sextius
+NPC_,Malevolent.esp,0x012508,ZZMALSoldier25,Private Earce
+NPC_,Malevolent.esp,0x012509,ZZMALSoldier26,Private Brosnan
+NPC_,Malevolent.esp,0x01250C,ZZMALSoldier27,Private Ungarius
+NPC_,Malevolent.esp,0x012F5B,ZZMALSoldier28,Private Payne
+NPC_,Malevolent.esp,0x012F5C,ZZMALSoldier29,Private Max
+NPC_,Malevolent.esp,0x012F5D,ZZMALSoldier30,Private Yule
+NPC_,Malevolent.esp,0x012F5E,ZZMALSoldier31,Private Mac
+NPC_,Malevolent.esp,0x012F5F,ZZMALSoldier32,Private Ronald
+NPC_,Malevolent.esp,0x012F60,ZZMALSoldier33,Private Solo
+NPC_,Malevolent.esp,0x012F61,ZZMALSoldier34,Private Cudalus
+NPC_,Malevolent.esp,0x012F62,ZZMALSoldier35,Private Brigg
+NPC_,Malevolent.esp,0x0150C3,ZZMALSoldier36,Private Malthael
+NPC_,Malevolent.esp,0x0150C4,ZZMALSoldier37,Private Nutt
+NPC_,Malevolent.esp,0x0150C5,ZZMALSoldier38,Private Xanthipus
+NPC_,Malevolent.esp,0x0150C6,ZZMALSoldier39,Private Drogilla
+NPC_,Malevolent.esp,0x0150C7,ZZMALSoldier40,Private Amphora
+NPC_,Malevolent.esp,0x0150C8,ZZMALSoldier41,Private Jarsel
+NPC_,Malevolent.esp,0x000D39,ZZMALSoldierUnique,Private Frabjus
+,,,,
+NPC_,Blood&Mud.esp,0x01B0C7,BravilGuardCityNoGuard,Private Polyphemus
+NPC_,Blood&Mud.esp,0x01B0BA,BravilGuardTorroFriend,Private David
+NPC_,Blood&Mud.esp,0x0284EC,BravXCastGuardEscortPlayer,Private Magnus
+NPC_,Blood&Mud.esp,0x0283DC,BravXCastleGuardf1,Private Uther
+NPC_,Blood&Mud.esp,0x0283FE,BravXCastleGuardM1,Private Jenkins
+NPC_,Blood&Mud.esp,0x028402,BravXCastleGuardM2,Private Wortham
+NPC_,Blood&Mud.esp,0x028580,BravXCastleGuardM3,Private Groger
+NPC_,Blood&Mud.esp,0x02858C,BravXCastleGuardM4,Private Fyrthius
+,,,,
+NPC_,The Mystery of the Dulan cult.esp,0x00E807,0dulanforester01,Forester Jupiter
+,,,,
+NPC_,Faregyl.esp,0x00D55C,FaregylImperialLegionSoldier1,Roadsman Julius
+NPC_,Faregyl.esp,0x00D55D,FaregylImperialLegionSoldier2,Roadsman Maximus
+,,,,
+NPC_,Feldscar.esp,0x00B4A1,FeldscarBattlemage,Legion Battlemage Logan
+NPC_,Feldscar.esp,0x00B4A8,FeldscarBattlemageDead,Legion Battlemage Logan
+NPC_,Feldscar.esp,0x0206E7,FeldscarImperialLegionForester,Forester Mark
+NPC_,Feldscar.esp,0x0206E8,FeldscarImperialLegionForester4,Forester Robin
+NPC_,Feldscar.esp,0x0206E9,FeldscarImperialLegionSoldier,Roadsman Ichor
+,,,,
+NPC_,Vergayun.esp,0x0049DB,VergayunInnLegionSoldier,Roadsman Praetor
