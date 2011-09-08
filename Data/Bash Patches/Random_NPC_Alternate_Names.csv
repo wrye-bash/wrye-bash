@@ -842,7 +842,7 @@ CREA,ShiveringIsleTravellers.esp,0x005A3B,MMPRoamingTraderHound01,Windfield
 CREA,ShiveringIsleTravellers.esp,0x005A40,MMPRoamingTraderSIElytra01,Elzar
 CREA,ShiveringIsleTravellers.esp,0x005A3D,MMPRoamingTraderSIGuar11,Clare
 CREA,ShiveringIsleTravellers.esp,0x005A42,MMPWizardSIImp01,Sherwin
-INGR,ShiveringIsleTravellers.esp,0x003146,TradersBaliwogLeg,Baliwog Leg
+INGR,ShiveringIsleTravellers.esp,0x003146,TradersBaliwogLeg,Trader's Baliwog Leg
 NPC_,ShiveringIsleTravellers.esp,0x0067ED,SIRoamingTraderBardGuard01,Guard Umek
 ,,,,
 NPC_,TamrielTravellers.esm,0x008552,MMPRoamingTraderSI01,Doni Nuccius
@@ -862,3 +862,30 @@ NPC_,TamrielTravellers.esm,0x027F00,MMPRoamingBardGuard07,Guard Kellstra
 NPC_,TamrielTravellers.esm,0x027F01,MMPRoamingBardGuard08,Guard Fahrnam
 NPC_,TamrielTravellers.esm,0x027F02,MMPRoamingBardGuard09,Guard Alisa
 NPC_,TamrielTravellers.esm,0x00AE7B,MMPRoamingBardGuard10,Guard Keldorn
+,,,,
+NPC_,MannimarcoComplete.esp,0x04E986,000Mvisitora,Commoner Olo
+NPC_,MannimarcoComplete.esp,0x050C01,000Mvisitorb,Commoner Kliopes
+NPC_,MannimarcoComplete.esp,0x050C02,000Mvisitorc,Commoner Faragyl
+NPC_,MannimarcoComplete.esp,0x050C03,000Mvisitord,Commoner Ulmer
+NPC_,MannimarcoComplete.esp,0x050C04,000Mvisitore,Commoner Mathro
+NPC_,MannimarcoComplete.esp,0x03E1B6,00DeadNecromancer1,Necromancer Teth
+NPC_,MannimarcoComplete.esp,0x03E1B7,00DeadNecromancer2,Necromancer Seth
+NPC_,MannimarcoComplete.esp,0x03E1B8,00DeadNecromancer3,Necromancer Osirion
+NPC_,MannimarcoComplete.esp,0x03E1BA,00DeadNecromancer4,Necromancer Ra
+,,,,
+NPC_,Origin of the Mages Guild.esp,0x098FD2,OMGMageAU1,Mage Hugnal
+NPC_,Origin of the Mages Guild.esp,0x098FD3,OMGMageAU2,Mage Jubin
+NPC_,Origin of the Mages Guild.esp,0x098FD4,OMGMageAU3,Mage Muaang
+NPC_,Origin of the Mages Guild.esp,0x098FD5,OMGMageAU4,Mage Sarvo
+NPC_,Origin of the Mages Guild.esp,0x098FD6,OMGMageAU5,Mage Ithildur
+NPC_,Origin of the Mages Guild.esp,0x098FD7,OMGMageAU6,Mage Steek
+NPC_,Origin of the Mages Guild.esp,0x08897F,OMGMageJourneyman1,Apprentice Zuba
+NPC_,Origin of the Mages Guild.esp,0x088980,OMGMageJourneyman2,Apprentice Marshal
+NPC_,Origin of the Mages Guild.esp,0x088981,OMGMageJourneyman3,Apprentice Watt
+NPC_,Origin of the Mages Guild.esp,0x088982,OMGMageJourneyman4,Apprentice Ohm
+NPC_,Origin of the Mages Guild.esp,0x088983,OMGMageJourneyman5,Apprentice Joule
+NPC_,Origin of the Mages Guild.esp,0x009D12,OMGMageVault1,Clerk Newton
+NPC_,Origin of the Mages Guild.esp,0x00A3E7,OMGMageVault3,Clerk Voltaire
+NPC_,Origin of the Mages Guild.esp,0x03E095,OMGMageVault4,Clerk Edison
+,,,,
+NPC_,PTMudwater.esp,0x0746AB,PTArgTravelingMerchant,Traveling Merchant Klaus
