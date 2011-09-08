@@ -10225,7 +10225,6 @@ class Settings_SaveSettings(Link):
 class Settings_ExportDllInfo(Link):
     """Exports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        self.wdw = window
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed OBSE plugin dlls"))
         menu.AppendItem(menuItem)
@@ -10234,7 +10233,7 @@ class Settings_ExportDllInfo(Link):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.wdw,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
+        textPath = balt.askSave(self.window,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
         if not textPath: return
         try:
             out = textPath.open("w")
@@ -10258,7 +10257,6 @@ class Settings_ExportDllInfo(Link):
 class Settings_ImportDllInfo(Link):
     """Imports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        self.wdw = window
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed OBSE plugin dlls"))
         menu.AppendItem(menuItem)
@@ -10267,11 +10265,11 @@ class Settings_ImportDllInfo(Link):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.wdw,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
+        textPath = balt.askOpen(self.window,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
             textDir, _("OBSE dll permissions.txt"), '*.txt',mustExist=True)
         if not textPath: return
         message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
-        if not balt.askYes(self.wdw,message,_('Merge permissions?')): replace = True
+        if not balt.askYes(self.window,message,_('Merge permissions?')): replace = True
         else: replace = False
         try:
             inp = textPath.open("r")
@@ -15125,7 +15123,7 @@ class App_Settings(Link):
         return gButton
 
     def Execute(self,event):
-        SettingsMenu.PopupMenu(self,bashFrame,None)
+        SettingsMenu.PopupMenu(bashFrame.GetStatusBar(),bashFrame,None)
 
 #------------------------------------------------------------------------------
 class App_ModChecker(Link):
