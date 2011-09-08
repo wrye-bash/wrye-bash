@@ -190,21 +190,32 @@ class TestPanel(wx.Panel):
 
 
 if __name__ == '__main__':
+    oblivionDir = "../Oblivion"
+    oblivionProg = "../Oblivion/Oblivion.exe"
+    wbDir = oblivionDir + "/Mopy"
     wbProg = "Wrye Bash Launcher.pyw"
-    oblivionProg = "../Oblivion.exe"
     r, executable = win32api.FindExecutable(wbProg)
     executable = win32api.GetLongPathName(executable)
+    curCwd = os.getcwd()
 
     def runWryeBash(instructionLimit):
         args = '"%s" "%s" -d %d' % (executable, wbProg, instructionLimit)
         print "running %s" % args
         sys.stdout.flush()
-        subprocess.call(args, bufsize=1, stdout=sys.stdout, stderr=sys.stderr)
+        try:
+            os.chdir(wbDir)
+            subprocess.call(args, bufsize=1, stdout=sys.stdout, stderr=sys.stderr)
+        finally:
+            os.chdir(curCwd)
 
     def runOblivion():
         print "running %s" % oblivionProg
         sys.stdout.flush()
-        subprocess.call(oblivionProg, cwd='..', close_fds=True)
+        try:
+            os.chdir(oblivionDir)
+            subprocess.call(oblivionProg, cwd='..', close_fds=True)
+        finally:
+            os.chdir(curCwd)
 
     app = wx.PySimpleApp()
     frame = wx.Frame(None, -1, "wbtest", size=(600,200))

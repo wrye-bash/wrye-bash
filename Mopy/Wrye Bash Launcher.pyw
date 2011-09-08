@@ -61,7 +61,7 @@ if __name__ == '__main__':
     print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())
 
     global _targetCounter
-    # get instruction to stop at from commandline
+    # get instruction to stop at from last arg of commandline
     _targetCounter = len(sys.argv) > 1 and int(sys.argv.pop()) or 0
     if _targetCounter:
         sys.settrace(instruction_tracer)
