@@ -14765,6 +14765,11 @@ class App_Button(Link):
             self.appArgs = ''.join(self.exeArgs)
         else:
             self.isJava = False
+        #--shortcut
+        if self.exePath and self.exePath.ext.lower() == '.lnk': #Sometimes exePath is "None"
+            self.isShortcut = True
+        else:
+            self.isShortcut = False
         #--OBSE stuff
         self.obseTip = obseTip
         self.obseArg = obseArg
@@ -14793,7 +14798,9 @@ class App_Button(Link):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            if self.isJava:
+            if self.isShortcut:
+                os.startfile(self.exePath.s)
+            elif self.isJava:
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
                     self.workingDir.setcwd()
@@ -15646,6 +15653,8 @@ def InitStatusBar():
     for link in bosh.links:
         (target,workingdir,args,icon,description) = bosh.links[link]
         path = GPath(target)
+        if target.lower().find(r'installer\{') != -1:
+            path = bosh.dirs['mopy'].join('Apps').join(link)
         if path.exists():
             icon,idex = icon.split(',')
             if icon == '':
