@@ -214,7 +214,7 @@ if __name__ == '__main__':
         sys.stdout.flush()
         try:
             os.chdir(oblivionDir)
-            subprocess.call(oblivionProg, cwd='..', close_fds=True)
+            subprocess.call(oblivionProg, None, close_fds=True)
         finally:
             os.chdir(curCwd)
 
