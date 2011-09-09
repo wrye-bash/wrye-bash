@@ -2476,6 +2476,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * UI colors are now customizable with the [[#|Colors Dialog]].  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
 * Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 * [[#Custombuttons|Custom launcher buttons]] now support launching of msi created shortcuts.
+* Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
