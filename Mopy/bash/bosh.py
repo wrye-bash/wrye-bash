@@ -15654,7 +15654,7 @@ class ScriptText:
         if eid_data: return True
         return False
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp):
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
         x = len(skip)
@@ -15666,6 +15666,18 @@ class ScriptText:
         with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
+                if skipcomments:
+                    tmp = ''
+                    for line in text.split('\n'):
+                        pos = line.find(';')
+                        if pos == -1:
+                                tmp += line + '\n'       
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + '\n'
+                    text = tmp
                 z += 1
                 progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
                 if x == 0 or skip.lower() != eid[:x].lower():
@@ -15778,7 +15790,7 @@ class CBash_ScriptText:
         if eid_data: return True
         return False
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp):
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
         x = len(skip)
@@ -15790,6 +15802,18 @@ class CBash_ScriptText:
         with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
+                if skipcomments:
+                    tmp = ''
+                    for line in text.split('\n'):
+                        pos = line.find(';')
+                        if pos == -1:
+                                tmp += line + '\n'       
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + '\n'
+                    text = tmp
                 z += 1
                 progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
                 if x == 0 or skip.lower() != eid[:x].lower():

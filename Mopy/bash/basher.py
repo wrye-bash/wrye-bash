@@ -376,6 +376,9 @@ settingDefaults = {
         },
     'bash.mods.renames': {},
     'bash.mods.scanDirty': False,
+    'bash.mods.export.skip': '',
+    'bash.mods.export.deprefix': '',
+    'bash.mods.export.skipcomments': False,
     #--Wrye Bash: Saves
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
@@ -12558,17 +12561,40 @@ class Mod_Scripts_Export(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
-        skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
-            _('Skip Prefix?'),'')
-        if skip == None: return
-        deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
-            _('Remove Prefix from file names?'),'')
-        if deprefix == None: return
+        def OnOk(event):
+            dialog.EndModal(1)
+            settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
+            settings['bash.mods.export.skip'] = gskip.GetValue().strip()
+            settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
+        dialog = wx.Dialog(bashFrame,-1,_('Export Scripts Options'),size=(400,180),style=wx.DEFAULT_DIALOG_STYLE)
+        gskip = textCtrl(dialog)
+        gdeprefix = textCtrl(dialog)
+        gskipcomments = toggleButton(dialog,'Filter Out Comments',tip="If active doesn't export comments in the scripts")
+        gskip.SetValue(settings['bash.mods.export.skip'])
+        gdeprefix.SetValue(settings['bash.mods.export.deprefix'])
+        gskipcomments.SetValue(settings['bash.mods.export.skipcomments'])
+        sizer = vSizer(
+            staticText(dialog,_("Skip prefix (leave blank to not skip any), non-case sensitive):"),style=wx.ST_NO_AUTORESIZE),
+            gskip,
+            spacer,
+            staticText(dialog,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext\n(Leave blank to not cut any prefix, non-case sensitive):'),style=wx.ST_NO_AUTORESIZE),
+            gdeprefix,
+            spacer,
+            gskipcomments,
+            (hSizer(
+                spacer,
+                button(dialog,id=wx.ID_OK,onClick=OnOk),
+                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            )
+        dialog.SetSizer(sizer)
+        questions = dialog.ShowModal()
+        if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = balt.askDirectory(self.window,
             _('Choose directory to export scripts to'),defaultPath)
-        if not textDir == defaultPath:
+        if textDir != defaultPath:
             for asDir,sDirs,sFiles in os.walk(defaultPath.s):
                 if not (sDirs or sFiles):
                     defaultPath.removedirs()
@@ -12580,7 +12606,7 @@ class Mod_Scripts_Export(Link):
         else:
             ScriptText = bosh.CBash_ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = ScriptText.writeToText(fileInfo,skip,textDir,deprefix,fileName.s)
+        exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
         balt.showLog(self.window,exportedScripts,_('Export Scripts'),icons=bashBlue)
 
