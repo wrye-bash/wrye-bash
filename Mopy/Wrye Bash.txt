@@ -5,7 +5,7 @@
 * __[[#|Installation]]__
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
 * [[http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/|RELZ Topic]]
-* [[https://sourceforge.net/projects/oblivionworks/|SourceForge Developement Site]]
+* [[https://sourceforge.net/projects/oblivionworks/|SourceForge Development Site]]
 * Download: [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]]
 * [[wizards.html|BAIN Wizard Reference]]
 * [[patch_option_reference.html|Patch Option Reference]]
@@ -118,7 +118,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * Install all components. It's best to accept the default settings for each installer.
   * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
 * __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]) or Install ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.exe]])__
-  * For the manual archive instalation, unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy.
+  * For the manual archive installation, unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Upgrading__
   * If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any python components.
@@ -247,16 +247,16 @@ __Overview:__
 
 
 == Global Bash Keyboard Shortcuts =============================================
-These keyboard commands work pretty much everywhere (as in if you want it it will almost certainly work) in Bash.
+These keyboard commands work pretty much everywhere (as in if you want it, it will almost certainly work) in Bash.
 
 *__Listing:__
   * <code> ctrl-numpad plus (+)</code>: fits column sizes to fit what is displayable.
   * <code> ctrl-a</code>: selects all.
-  * <code> shift-crtl-a</code>: deselects all.
+  * <code> shift-ctrl-a</code>: deselects all.
 
 
 == Launch Buttons =============================================================
-At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications (if they're installed). You'll also find one or two toggle buttons.
+At the bottom left of Bash's main window you'll find launch buttons for Oblivion and other applications if they're installed. You'll also find one or two toggle buttons.
 
 === Application Buttons
 * __Overview:__
@@ -432,9 +432,9 @@ __The Controls__
 * __Default:__ This returns the current color to its default setting.
 * __Apply All:__ This applies all changes that you have made to the colors.
 * __Apply:__ This applies any change to the current color.
-* __Export:__ This will allow you to save your current color scheme to a human readable text file.  Usefull to backup your color settings for a full reinstall or to share with someone else.
+* __Export:__ This will allow you to save your current color scheme to a human readable text file.  Useful to backup your color settings for a full reinstall or to share with someone else.
 * __Import:__ This imports the color settings saved in a text file.  Don't forget to Apply/Apply All the changes after importing.
-* __Ok:__ This just closes the dialog.  This wont apply any changes you have made, so be sure to use Apply or Apply All first.
+* __Ok:__ This just closes the dialog.  This won't apply any changes you have made, so be sure to use Apply or Apply All first.
 
 
 == Installers Tab =============================================================
@@ -523,7 +523,7 @@ Details for the currently selected package will be show on the right. There are 
 === Package Structure
 Bain recognizes three package structures:
 * __Simple__
-  * If the package has esps, esms or bsas at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejón, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.
+  * If the package has esps, esms or bsas at the top level, or if it has any of the regular Oblivion\Data subdirectories (specifically currently recognized are screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejon, ini tweaks, scripts, pluggy, ini, obse (last one only if option to install OBSE plugins is active)) at that level, then it will be categorized as a simple package.
 * __Complex__
   * If a package is not simple, but has subdirectories which appear simple (have esps/esms/bsas and/or have standard sub-directories), then it will be categorized as complex.
   * In this case, each top level subdirectory (that appears simple), will be treated as a sub-package, and you'll be able to activate or deactivate it as desired before installing.
@@ -539,7 +539,7 @@ Bain will skip over (never install) certain types of files in the package.
   * This is for modders who want to keep files related to the project in the project directory, but not have it be considered for syncing with is useful for project directories and files for modders
   * It's also useful for including material in a package archive that is there for background info, but should not be installed. E.g. screenshots, copies of resource readmes, etc.
 * __Directory Skipping__
-. Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejón' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
+. Bain will skip files from directories that it does not recognize. I.e. it will only install files that go directly into the Oblivion\Data directory or one of its regular subdirectories (Meshes, Textures, Sound, etc.). Files from irregular directories will be skipped unless it is a recognized special dir (ini, ini tweaks, pluggy, scripts, streamline', and '_tejon' etc.) or you select the has extra directories option in which case they will be installed. If files are skipped because of this, you'll find them listed in the debug pane on the right.
 * __Extension Skipping__
 . Bain will skip files with certain extensions - mostly executables (exe, dll/dlx (unless in the OBSE/plugins directory and then only with a large warning)) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
 * __Other Skips__
@@ -1118,7 +1118,7 @@ These are the commands found on context menu for mods...
 * Generates a report on the selected mods, for posting in the latest BOSS thread.  The report includes the plugin name, a link to the download (if it can be determined from the installer), the plugin version, plugin CRC, and ITM and UDR counts (as determined by Wrye Bash, so the ITM count may be less than what TES4Edit reports).
 
 === Copy Mod Info
-* Generates a report on the selected mod(s) with the info from the currently displayed columns (ie size, author etc.).
+* Generates a report on the selected mod(s) with the info from the currently displayed columns (i.e. size, author etc.).
 
 === Mark Levelers
 * Obsolete. Replaced by automatic tagging (see [[#|Bash Tags]]).
@@ -1279,7 +1279,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * __Import Patch Configuration:__ Restores your Bashed Patch's configuration by reading an external file saved using the __Export Patch Configuration__ command.
 * __Build the Patch__
   * Once you have at least one component selected, the OK button will become enabled. Click on it to update the patch, or click Cancel to quit without updating the patch mod.
-  * If specified in the bash.ini a sound will be played on succesfull completion/failure.
+  * If specified in the bash.ini a sound will be played on successful completion/failure.
 
 === Patch Notes
 * __Load Order__
@@ -1501,7 +1501,7 @@ __Importers__ are components that import specific information from selected mods
 === Import Inventory
 * This option will merge changes to npc, container and creature inventories from the selected mods. Only mods marked with the <code>Invent</code> or <code>InventOnly</code> [[#BashTags|tag]] will appear in the list.
 * __Invent vs. InventOnly__
-  * "InventOnly" is a hack -- i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack -- where it would still be hack, but at least a more clearly labelled hack.
+  * "InventOnly" is a hack -- i.e. "a quick job that produces what is needed, but not well." It's there to support Vacuity's Item Interchange and that's pretty much it. It probably should not be used except for Item Interchange or a mod very much like II. Ideally, it should be separated into two tags: Invent,IIHack -- where it would still be hack, but at least a more clearly labeled hack.
   * InventOnly basically does Invent, but also does
   * Invent
   * Sometimes it's desirable to change only the inventory of an actor or container. This is desirable when modifying the inventory of creatures that have been changed by overhauls -- especially when you can't rely on the overhauls being present.
@@ -1713,7 +1713,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Magic: Script Effect Silencer__
   * Script Effect will be silenced and have no graphics.
 * __Set Sound Attenuation Levels:__
-  * The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
+  * The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
 * __Set Sound Attenuation Levels: Nirnroots Only__
   * The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
 * __Skyrim-style Weapons:__
@@ -1740,7 +1740,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
 * __Notes and Scrolls:__ Choose format and whether you want enchanted scrolls at top (~) or bottom (.) of list. (Note that "~" will not display in inventory.)
 * __Potions:__ Choose format.
 * __Proper English Names: Staffs -> Staves:__ renames any instances of staffs to staves.
-* __Proper English Names: Dwarfs -> Dwarves:__ renames any instances of dwaffs totaves
+* __Proper English Names: Dwarfs -> Dwarves:__ renames any instances of dwarfs to dwarves
 * __Spells:__ Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
   * If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.
   * If you only want to remove existing labels, then use the No Label option ("Fire Ball").
@@ -1891,7 +1891,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
   * Voice: The last mod tagged with Voice-M (Voice-F) will win for males (females). This tag is useful for (the very few) mods which replace/change default voices.
 * __Avoiding Googly Eyes__
   * "Googly eyes" happens when an eye texture built for one eye mesh is used in combination with a different eye mesh. In vanilla Oblivion, this never happens because all races use the same eye meshes. However, several of the cosmetics mods change the meshes for various races. When different cosmetics mods are mixed or (sometimes) when custom races are used, this can result in at least some eyes for a given race being mismatched to the eye mesh for that race.
-  * As of version 104, Bash will try to prevent this sort of eye texture/mesh mis-matching. Unfortunately, Bash cannot guarantee success in all cases.
+  * As of version 104, Bash will try to prevent this sort of eye texture/mesh mismatching. Unfortunately, Bash cannot guarantee success in all cases.
   * Some suggestions for modders:
     * When adding a custom race, use either only vanilla eyes, or only custom eyes. I.e. do not mix custom eyes and vanilla eyes. If you mix vanilla eyes and custom eyes, and if the race is playable, then bash will filter down to just the vanilla eyes.
     * When creating a cosmetics mod, do **not** replace the vanilla eye resource with a different eye mesh resource. Instead, create a new eye mesh resource and use that. Note: If you're using one of the standard alternative eye resources (e.g. Rens) then use the standard path for that. When bash does its filtering, it determines what eye mesh each eye is using, and then filters the eyes for a given race to so that only eyes using the same mesh will be used. This is why it's important for mesh resources to be consistent.
@@ -1999,7 +1999,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
   * **[bg=#FFD5AA]Orange:[/bg]** The specific heading or tweak is invalid for the target ini.
   * **[bg=#FFFFBF]Yellow:[/bg]** The specific tweak is different than the current setting in the target ini.
   * **[bg=#C1FFC1]Green:[/bg]** The specific tweak matches what is in the target ini.
-* Clicking on a line in the tweak file or the target ini will show show scroll the tweak file or target ini (as applicable) to the matching line.
+* Clicking on a line in the tweak file or the target ini will show the tweak file or target ini (as applicable) to the matching line.
 * **Warning:** Incorrect Oblivion.ini settings can cause general weirdness, CTDs or even damage to your computer! (Or so I've heard.) Advanced graphics settings in particular tend to be card/computer specific and should not be casually copied from one computer to another.
 * **Note:** The background load section of the ini file changed with the introduction of Patch 1.2. It would probably be a bad thing to apply pre 1.2 background settings to a 1.2 configuration and vice versa.
 * __Checkbox Colors__
@@ -2531,12 +2531,12 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
   * Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).
   * Export Stats (CBash)
-  * Fixed compatiblity with BOSS 1.8
+  * Fixed compatibility with BOSS 1.8
 * Enhancements/New Features (General):
   * [[#Custombuttons|Custom launcher buttons]] are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
   * Calling external programs that require administrator privileges is now supported
   * Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
-  * Added the GOTY version of the non-SI esm and an altertate 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
+  * Added the GOTY version of the non-SI esm and an alternate 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
   * New mod->Export Cell Blocks Info command.
   * New start menu icon.
   * OBSE is now enabled by default if detected.
@@ -2545,7 +2545,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Fixed a bug in the Race Patcher that would fail on some Dremora records.
   * Fixed a bug when selecting 'Cancel' after trying to export a screenshot from a saved game.
   * More Unicode fixes from valda.
-  * If custom icon extraction fails for a Cutsom Launcher button, Wrye Bash will attempt to fall back to the 16x16 one.
+  * If custom icon extraction fails for a Custom Launcher button, Wrye Bash will attempt to fall back to the 16x16 one.
   * Fixed a bug where line endings weren't correctly stripped in the INI Edits Tab, resulting in 'boxes' showing in the UI.
   * Fixed a bug when Wrye Bash tries to activate a newly built Bashed Patch, and 255 mods are active.
 
@@ -2554,7 +2554,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Bugs fixed (CBash):
     * Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
     * Bug with the [[#ImportActorsAIPackages|NPC AI Packages]] patcher fixed (incorrectly detecting if OOO and the UOP were installed).
-    * Bash will now propery report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+    * Bash will now properly report mergeable mods that have active non-mergeable dependant mods as not mergeable.
     * Hack added to make sure that OOO.esp is reported as non-mergeable.
     * Fix for mergeability detection for corrupted/unrecognized format mods (presume non-mergeable and warn if in debug mode but don't fail - which could prevent rebuilding of patch in CBash mode).
     * [[#ImportNPCFaces|NPC Face data]] should properly be merged, vice overridden.
@@ -2567,7 +2567,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRC's will be properly read from the masterlist now.
-  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears ouside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809|here]]
+  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears outside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809|here]]
   * Fixed the launching of OBSE when a Steam install is detected.
 * Updated NSIS installer.
 * Unicode Mode:
@@ -2582,8 +2582,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * --no-psyco: disable Psyco import.
     * -C/--Cbash-mode: force cbash mode (requires CBash.dll to be named one of Rename_CBash.dll, CBash.dll or _CBash.dll).
     * -P/--Python-mode: force python mode (whether or not CBash.dll exists).
-    * -U/--Unicode: equivalent to setting __bEnableUnicode__ to **True** in bash.ini (but the cmdline options overide the ini when specified).
-    * -A/--Ansi: equivalent to setting __bEnableUnicode__ to **False** in bash.ini (but the cmdline options overide the ini when specified).
+    * -U/--Unicode: equivalent to setting __bEnableUnicode__ to **True** in bash.ini (but the cmdline options override the ini when specified).
+    * -A/--Ansi: equivalent to setting __bEnableUnicode__ to **False** in bash.ini (but the cmdline options override the ini when specified).
     * -i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.
     * -I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.
 * Preliminary support for BOSS 1.8
@@ -2624,7 +2624,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wizards:
     * New functions:
       * [[wizards.html#GetEspmStatus|[color=purple]GetEspmStatus[/color]]]: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
-      * [[wizards.html#EditINI|[color=purple]EditINI[/color]]]: Create ini tweaks progmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+      * [[wizards.html#EditINI|[color=purple]EditINI[/color]]]: Create ini tweaks programmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
       * [[wizards.html#Exec|[color=purple]Exec[/color]]]: Execute wizard lines stored in a string.  Useful for dynamically creating menus.
       * [[wizards.html#endswith|[color=purple]endswith[/color]]]: Test what a string ends with.
       * [[wizards.html#startswith|[color=purple]startswith[/color]]]: Test what a string starts with.
@@ -2688,14 +2688,14 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set __bResetBSATimestamps__ to **False** in bash.ini
   * In cases where the __bUseMyGameDirectory__ is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
   * Unicode improvements: (all only applicable in unicode mode)
-    * Fixed viewing/saving modfiles with tejón and other non-ascii author names.
+    * Fixed viewing/saving modfiles with tejon and other non-ascii author names.
     * Fixed project view/scanning for projects containing non-ascii filenames.
     * Fixed project->archive packaging for projects that contain files with non-ascii names.
     * Warning added if using Unicode Wrye Bash but using non-unicode wxPython.
     * Fixed viewing savefile with non-ascii data (contributed by valda).
-    * Fixed omod config viewing/editing wtih non-ascii data.
+    * Fixed omod config viewing/editing with non-ascii data.
     * Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).
-    * Fixed translateable messages to be returned in unicode (contributed by valda).
+    * Fixed translatable messages to be returned in unicode (contributed by valda).
   * Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
   * Selectable jpeg quality in the [[#|Screenshots Tab]].
   * Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
@@ -2843,7 +2843,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Unpack to Project now works on multiple selections (though then uses automatic naming for the projects names)
 * General:
   * The error message for unexpected subrecords is now a little more helpful.
-  * A few untranslateable strings fixed to be translateable (as reported by DJ_Kovrik)
+  * A few untranslatable strings fixed to be translatable (as reported by DJ_Kovrik)
   * Updated Russian Translation (contributed by DJ_Kovrik).
   * BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
   * Updated BOSS Launcher and various other code to work with new BOSS version (1.6+) and still work with the old one.
@@ -3027,7 +3027,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Now supports applying tweaks to any Ini
   * Supports script type Ini files.  Can modify any __set__ or __setGS__ command.
   * Files ending in '.ace','.tgz','.tar','.tar.gz','.omod' will no longer be installed by BAIN. (requested by myk002)
-* comtypes is optional now.  It is required for a couple function but most have work arounds enabled (i.e. Bashed Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
+* comtypes is optional now.  It is required for a couple function but most have workarounds enabled (i.e. Bashed Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
 * You can delete Installers and INI Edits with the Delete key now.
 * You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
 * German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
@@ -3038,7 +3038,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Added option in Patch dialogue to save configuration (i.e. then you can click cancel without losing the configuration changes you've done).
 * Taglist updated to BOSS masterlist revision 943.
 
-=== 283 [18/04/2010] [Lojack,PacificMorrowind,Warrudar]
+=== 283 [18/04/2010] [Lojack,PacificMorrowind,Waruddar]
 * Taglist: updated to masterlist version 824 and a bunch of cruft removed.
 * Fixes:
   * Fixed untranslatable strings reported by ThreeD.
