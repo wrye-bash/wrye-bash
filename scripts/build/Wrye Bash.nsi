@@ -17,7 +17,7 @@
 
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
-    OutFile "${WB_NAME} -- Installer.exe"
+    OutFile "scripts\dist\${WB_NAME} - Installer.exe"
     ; Request application privileges for Windows Vista
     RequestExecutionLevel admin
     VIProductVersion ${WB_FILEVERSION}
@@ -1150,13 +1150,15 @@ NoComTypes:
         ${If} $CheckState_OB == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_OB != $Empty
-                SetOutPath $Path_OB
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                SetOutPath $Path_OB\Mopy
+                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+                SetOutPath $Path_OB\Data
+                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
                     SetOutPath "$Path_OB\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version" "True"
                 ${Else}
@@ -1166,7 +1168,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_OB_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_OB\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" "True"
                 ${Else}
@@ -1179,13 +1181,15 @@ NoComTypes:
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Nehrim != $Empty
-                SetOutPath $Path_Nehrim
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                SetOutPath $Path_Nehrim\Mopy
+                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+                SetOutPath $Path_Nehrim\Data
+                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
                     SetOutPath "$Path_Nehrim\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version" "True"
                 ${Else}
@@ -1195,7 +1199,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Nehrim\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" "True"
                 ${Else}
@@ -1208,13 +1212,15 @@ NoComTypes:
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex1 != $Empty
-                SetOutPath $Path_Ex1
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                SetOutPath $Path_Ex1\Mopy
+                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+                SetOutPath $Path_Ex1\Data
+                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
                     SetOutPath "$Path_Ex1\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version" "True"
                 ${Else}
@@ -1224,7 +1230,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Ex1\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" "True"
                 ${Else}
@@ -1237,13 +1243,15 @@ NoComTypes:
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex2 != $Empty
-                SetOutPath $Path_Ex2
-                File /r /x "*svn*" /x "*experimental*" /x "*.tmp" /x "*.nsi" /x "*.bat" /x "*.py*" /x "*.py" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Data" "Mopy"
+                SetOutPath $Path_Ex2\Mopy
+                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+                SetOutPath $Path_Ex2\Data
+                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
                     SetOutPath "$Path_Ex2\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw"
+                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version" "True"
                 ${Else}
@@ -1253,7 +1261,7 @@ NoComTypes:
                 ${EndIf}
                 ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
                     SetOutPath "$Path_Ex2\Mopy"
-                    File /r "mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
                     ; Write the installation path into the registry
                     WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" "True"
                 ${Else}
@@ -1333,38 +1341,6 @@ NoComTypes:
                 ${ElseIf} $CheckState_Ex2_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash.exe"
                 ${EndIf}
-            ${EndIf}
-        ${EndIf}
-    SectionEnd
-
-    Section "Batch Files" Batch_Files
-        # only install batch files if the python version were installed -- they don't work with the standalone version
-        ${If} $CheckState_OB == ${BST_CHECKED}
-        ${AndIf} $CheckState_OB_Py == ${BST_CHECKED}
-            ${If} Path_OB != $Empty
-                SetOutPath $Path_OB
-                File /r "*.bat"
-            ${EndIf}
-        ${EndIf}
-        ${If} $CheckState_Nehrim == ${BST_CHECKED}
-        ${AndIf} $CheckState_Nehrim_Py == ${BST_CHECKED}
-            ${If} Path_Nehrim != $Empty
-                SetOutPath $Path_Nehrim
-                File /r "*.bat"
-            ${EndIf}
-        ${EndIf}
-        ${If} $CheckState_Ex1 == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex1_Py == ${BST_CHECKED}
-            ${If} Path_Ex1 != $Empty
-                SetOutPath $Path_Ex1
-                File /r "*.bat"
-            ${EndIf}
-        ${EndIf}
-        ${If} $CheckState_Ex2 == ${BST_CHECKED}
-        ${AndIf} $CheckState_Ex2_Py == ${BST_CHECKED}
-            ${If} Path_Ex2 != $Empty
-                SetOutPath $Path_Ex2
-                File /r "*.bat"
             ${EndIf}
         ${EndIf}
     SectionEnd
@@ -2343,7 +2319,6 @@ NoComTypes:
   !insertmacro MUI_LANGUAGE "English"
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
-  LangString DESC_Batch_Files ${LANG_ENGLISH} "Batch files to print debug output to a text file."
   LangString PAGE_INSTALLLOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location(s)"
   LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and, if desired, extra locations in which to install Wrye Bash."
   LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
@@ -2356,5 +2331,4 @@ NoComTypes:
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${Main} $(DESC_Main)
     !insertmacro MUI_DESCRIPTION_TEXT ${Shortcuts_SM} $(DESC_Shortcuts_SM)
-    !insertmacro MUI_DESCRIPTION_TEXT ${Batch_Files} $(DESC_Batch_Files)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
