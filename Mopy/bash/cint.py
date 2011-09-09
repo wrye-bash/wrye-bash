@@ -5470,6 +5470,23 @@ class ObModFile(object):
                             # Only if it's not 'PlayerRef'
                             if ref != (GPath('Oblivion.esm'),0x14):
                                 masters.add(formMaster)
+                elif type == 'RACE':
+                    for spell in record.spells:
+                        formMaster = spell[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for relation in record.relations:
+                        formMaster = relation.faction[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for hair in record.hairs:
+                        formMaster = hair[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
+                    for eye in record.eyes:
+                        formMaster = eye[0]
+                        if formMaster != self.GName:
+                            masters.add(formMaster)
         return [x for x in self.TES4.masters if GPath(x) not in masters]
 
     def RemoveModMasters(self,masters):
