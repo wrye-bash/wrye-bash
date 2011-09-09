@@ -3418,7 +3418,7 @@ class InstallersPanel(SashTankPanel):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
             settings['bash.installers.isFirstRun'] = False
-            message = _("Do you want to enable Installers If you do, Bash will first need to initialize some data. If you have many mods installed, this can take on the order of five minutes.\n\nIf you prefer to not enable Installers at this time, you can always enable it later from the column header context menu.")
+            message = _("Do you want to enable Installers?\n\n\tIf you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.\n\n\tIf not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'.")
             settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
@@ -7892,7 +7892,7 @@ class Installers_Enabled(BoolLink):
     def Execute(self,event):
         """Handle selection."""
         enabled = settings[self.key]
-        message = _("Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes.")
+        message = _("Do you want to enable Installers?\n\n\tIf you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.")
         if not enabled and not balt.askYes(self.gTank,fill(message,80),self.title):
             return
         enabled = settings[self.key] = not enabled

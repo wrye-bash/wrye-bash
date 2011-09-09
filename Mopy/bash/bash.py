@@ -239,7 +239,7 @@ def main():
         balt.showError(None,str(e))
         app.MainLoop()
         raise e
-    except ImportError, e:
+    except (ImportError, StandardError), e:
         # try really hard to be able to show the error in any GUI
         try:
             import Tkinter
