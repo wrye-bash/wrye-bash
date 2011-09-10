@@ -26828,7 +26828,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          }[key]
         self.mod_count = {}
 
-
     def getTypes(self):
         return ['CLOT']
     #--Patch Phase ------------------------------------------------------------
@@ -26838,8 +26837,9 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
             return
 
         maxWeight = self.choiceValues[self.chosen][0]
+        superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
 
-        if (record.weight > maxWeight) and self.isMyType(record):
+        if (record.weight > maxWeight) and self.isMyType(record) and (record.weight < superWeight):
             for attr in self.matchFlags:
                 if(getattr(record, attr)):
                     break
@@ -33434,7 +33434,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         for bashKey in bashTags & self.autoKey:
             if bashKey == 'Hair':
                 #Using sets would make this clearer, and probably faster (though speed isn't a concern)
-                #So this is a bit convulated, but makes the apply section work without special casing this tag
+                #So this is a bit convoluted, but makes the apply section work without special casing this tag
                 #Hairs should perhaps have it's own patcher, but...
                 allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
                 allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0] and hair[0])
