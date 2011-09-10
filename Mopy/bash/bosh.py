@@ -31406,7 +31406,7 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
             _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            'BiggerOrcsand Nords',
+            'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
             ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
             ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
