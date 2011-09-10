@@ -98,7 +98,6 @@ if(CBash):
         #This particular callback may disappear, or be morphed into something else
         raise CBashError("Check the log.")
         return
-
     try:
         _CGetVersionMajor = CBash.GetVersionMajor
         _CGetVersionMinor = CBash.GetVersionMinor
@@ -237,13 +236,10 @@ if(CBash):
     _CGetRecordUpdatedReferences.restype = c_long
     _CSetIDFields.restype = c_long
     _CGetFieldAttribute.restype = c_ulong
-
     LoggingCallback = CFUNCTYPE(c_long, c_char_p)(LoggingCB)
     RaiseCallback = CFUNCTYPE(None)(RaiseCB)
     CBash.RedirectMessages(LoggingCallback)
     CBash.AllowRaising(RaiseCallback)
-
-
 
 #Helper functions
 class API_FIELDS(object):
@@ -615,28 +611,26 @@ class FormID(object):
 
     @staticmethod
     def FilterValid(formIDs, target, AsShort=False):
-        if isinstance(formIDs, FormID):
-            if AsShort:
-                if formIDs.ValidateFormID(target): return [formIDs.GetShortFormID(target)]
-                return []
-            if formIDs.ValidateFormID(target): return [formIDs]
-            return []
-        try:
-            if AsShort: return [x.GetShortFormID(target) for x in formIDs if x.ValidateFormID(target)]
-            return [x for x in formIDs if x.ValidateFormID(target)]
-        except TypeError:
-            if formIDs.ValidateFormID(target): return [formIDs]
-        return []
+        if AsShort: return [x.GetShortFormID(target) for x in formIDs if x.ValidateFormID(target)]
+        return [x for x in formIDs if x.ValidateFormID(target)]
 
     @staticmethod
-    def FilterValidDict(formIDs, target, KeysAreFormIDs=True, AsShort=False):
+    def FilterValidDict(formIDs, target, KeysAreFormIDs, ValuesAreFormIDs, AsShort=False):
         if KeysAreFormIDs:
-            if AsShort:
-                return dict([(formID.GetShortFormID(target), value) for formID, value in formIDs.iteritems() if formID.ValidateFormID(target)])
-            return dict([(formID, value) for formID, value in formIDs.iteritems() if formID.ValidateFormID(target)])
-        if AsShort:
-            return dict([(key, formID.GetShortFormID(target)) for key, formID in formIDs.iteritems() if formID.ValidateFormID(target)])
-        return dict([(key, formID) for key, formID in formIDs.iteritems() if formID.ValidateFormID(target)])
+            if ValuesAreFormIDs:
+                if AsShort:
+                    return dict([(key.GetShortFormID(target), value.GetShortFormID(target)) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])
+                return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])                
+            else:
+                if AsShort:
+                    return dict([(key.GetShortFormID(target), value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
+                return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
+        else:
+            if ValuesAreFormIDs:
+                if AsShort:
+                    return dict([(key, value.GetShortFormID(target)) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])
+                return dict([(key, value) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])                
+        return formIDs
 
     def ValidateFormID(self, target):
         """Tests whether the FormID is valid for the destination.
@@ -894,29 +888,27 @@ class ActorValue(object):
 
     @staticmethod
     def FilterValid(actorValues, target, AsShort=False):
-        if isinstance(actorValues, ActorValue):
-            if AsShort:
-                if actorValues.ValidateActorValue(target): return [actorValues.GetShortActorValue(target)]
-                return []
-            if actorValues.ValidateActorValue(target): return [actorValues]
-            return []
-        try:
-            if AsShort: return [x.GetShortActorValue(target) for x in actorValues if x.ValidateActorValue(target)]
-            return [x for x in actorValues if x.ValidateActorValue(target)]
-        except TypeError:
-            if actorValues.ValidateActorValue(target): return [actorValues]
-        return []
+        if AsShort: return [x.GetShortActorValue(target) for x in actorValues if x.ValidateActorValue(target)]
+        return [x for x in actorValues if x.ValidateActorValue(target)]
 
     @staticmethod
-    def FilterValidDict(actorValues, target, KeysAreActorValues=True, AsShort=False):
+    def FilterValidDict(actorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
         if KeysAreActorValues:
-            if AsShort:
-                return dict([(actorValue.GetShortActorValue(target), value) for actorValue, value in actorValues.iteritems() if actorValue.ValidateActorValue(target)])
-            return dict([(actorValue, value) for actorValue, value in actorValues.iteritems() if actorValue.ValidateActorValue(target)])
-        if AsShort:
-            return dict([(key, actorValue.GetShortActorValue(target)) for key, actorValue in actorValues.iteritems() if actorValue.ValidateActorValue(target)])
-        return dict([(key, actorValue) for key, actorValue in actorValues.iteritems() if actorValue.ValidateActorValue(target)])
-
+            if ValuesAreActorValues:
+                if AsShort:
+                    return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])                
+            else:
+                if AsShort:
+                    return dict([(key.GetShortActorValue(target), value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+        else:
+            if ValuesAreActorValues:
+                if AsShort:
+                    return dict([(key, value.GetShortActorValue(target)) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])                
+        return actorValues
+    
     def ValidateActorValue(self, target):
         """Tests whether the ActorValue is valid for the destination target.
            The test result is saved, so work isn't duplicated if ActorValues are first
@@ -1186,29 +1178,27 @@ class MGEFCode(object):
 
     @staticmethod
     def FilterValid(mgefCodes, target, AsShort=False):
-        if isinstance(mgefCodes, MGEFCode):
-            if AsShort:
-                if mgefCodes.ValidateMGEFCode(target): return [mgefCodes.GetShortMGEFCode(target)]
-            else:
-                if mgefCodes.ValidateMGEFCode(target): return [mgefCodes]
-            return []
-        try:
-            if AsShort: return [x.GetShortMGEFCode(target) for x in mgefCodes if x.ValidateMGEFCode(target)]
-            return [x for x in mgefCodes if x.ValidateMGEFCode(target)]
-        except TypeError:
-            if mgefCodes.ValidateMGEFCode(target): return [mgefCodes]
-        return []
+        if AsShort: return [x.GetShortMGEFCode(target) for x in mgefCodes if x.ValidateMGEFCode(target)]
+        return [x for x in mgefCodes if x.ValidateMGEFCode(target)]
 
     @staticmethod
-    def FilterValidDict(mgefCodes, target, KeysAreMGEFCodes=True, AsShort=False):
+    def FilterValidDict(mgefCodes, target, KeysAreMGEFCodes, ValuesAreMGEFCodes, AsShort=False):
         if KeysAreMGEFCodes:
-            if AsShort:
-                return dict([(mgefCode.GetShortMGEFCode(target), value) for mgefCode, value in mgefCodes.iteritems() if mgefCode.ValidateMGEFCode(target)])
-            return dict([(mgefCode, value) for mgefCode, value in mgefCodes.iteritems() if mgefCode.ValidateMGEFCode(target)])
-        if AsShort:
-            return dict([(key, mgefCode.GetShortMGEFCode(target)) for key, mgefCode in mgefCodes.iteritems() if mgefCode.ValidateMGEFCode(target)])
-        return dict([(key, mgefCode) for key, mgefCode in mgefCodes.iteritems() if mgefCode.ValidateMGEFCode(target)])
-
+            if ValuesAreMGEFCodes:
+                if AsShort:
+                    return dict([(key.GetShortMGEFCode(target), value.GetShortFormID(target)) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])
+                return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])                
+            else:
+                if AsShort:
+                    return dict([(key.GetShortMGEFCode(target), value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
+                return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
+        else:
+            if ValuesAreMGEFCodes:
+                if AsShort:
+                    return dict([(key, value.GetShortMGEFCode(target)) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])
+                return dict([(key, value) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])                
+        return mgefCodes
+    
     def ValidateMGEFCode(self, target):
         """Tests whether the MGEFCode is valid for the destination RecordID.
            The test result is saved, so work isn't duplicated if MGEFCodes are first
@@ -3059,14 +3049,13 @@ class FnvBaseRecord(object):
     def GetRecordUpdatedReferences(self):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        OldFormIDs = FormID.FilterValid(OldFormIDs, self._RecordID, True)
-        NewFormIDs = FormID.FilterValid(NewFormIDs, self._RecordID, True)
-        length = len(OldFormIDs)
-        if length != len(NewFormIDs):
-            raise AttributeError(_("Mismatched length of filtered references to update."))
-        OldFormIDs = (c_ulong * length)(*OldFormIDs)
-        NewFormIDs = (c_ulong * length)(*NewFormIDs)
+    def UpdateReferences(self, Old_NewFormIDs):
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        length = len(Old_NewFormIDs)
+        if length != len(Old_NewFormIDs):
+            return []
+        OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
+        NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
         _CUpdateReferences(0, self._RecordID, OldFormIDs, NewFormIDs, byref(Changes), length)
         return [x for x in Changes]
@@ -10960,14 +10949,13 @@ class ObBaseRecord(object):
     def GetRecordUpdatedReferences(self):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        OldFormIDs = FormID.FilterValid(OldFormIDs, self._RecordID, True)
-        NewFormIDs = FormID.FilterValid(NewFormIDs, self._RecordID, True)
-        length = len(OldFormIDs)
-        if length != len(NewFormIDs):
-            raise AttributeError(_("Mismatched length of filtered references to update."))
-        OldFormIDs = (c_ulong * length)(*OldFormIDs)
-        NewFormIDs = (c_ulong * length)(*NewFormIDs)
+    def UpdateReferences(self, Old_NewFormIDs):
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        length = len(Old_NewFormIDs)
+        if length != len(Old_NewFormIDs):
+            return []
+        OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
+        NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
         _CUpdateReferences(0, self._RecordID, OldFormIDs, NewFormIDs, byref(Changes), length)
         return [x for x in Changes]
@@ -14693,15 +14681,13 @@ class ObModFile(object):
             return [cRecord.value for cRecord in cRecords if cRecord]
         return []
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        RecordID = _CGetRecordID(self._ModID, 0, 0)
-        OldFormIDs = FormID.FilterValid(OldFormIDs, RecordID, True)
-        NewFormIDs = FormID.FilterValid(NewFormIDs, RecordID, True)
-        length = len(OldFormIDs)
-        if length != len(NewFormIDs):
-            raise AttributeError(_("Mismatched length of filtered references to update."))
-        OldFormIDs = (c_ulong * length)(*OldFormIDs)
-        NewFormIDs = (c_ulong * length)(*NewFormIDs)
+    def UpdateReferences(self, Old_NewFormIDs):
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        length = len(Old_NewFormIDs)
+        if length != len(Old_NewFormIDs):
+            return []
+        OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
+        NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
         _CUpdateReferences(self._ModID, 0, OldFormIDs, NewFormIDs, byref(Changes), length)
         return [x for x in Changes]
@@ -15191,15 +15177,13 @@ class FnvModFile(object):
             return [cRecord.value for cRecord in cRecords if cRecord]
         return []
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        RecordID = _CGetRecordID(self._ModID, 0, 0)
-        OldFormIDs = FormID.FilterValid(OldFormIDs, RecordID, True)
-        NewFormIDs = FormID.FilterValid(NewFormIDs, RecordID, True)
-        length = len(OldFormIDs)
-        if length != len(NewFormIDs):
-            raise AttributeError(_("Mismatched length of filtered references to update."))
-        OldFormIDs = (c_ulong * length)(*OldFormIDs)
-        NewFormIDs = (c_ulong * length)(*NewFormIDs)
+    def UpdateReferences(self, Old_NewFormIDs):
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        length = len(Old_NewFormIDs)
+        if length != len(Old_NewFormIDs):
+            return []
+        OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
+        NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
         _CUpdateReferences(self._ModID, 0, OldFormIDs, NewFormIDs, byref(Changes), length)
         return [x for x in Changes]
@@ -15977,7 +15961,7 @@ class ObCollection:
     def DeleteAllCollections():
         return _CDeleteAllCollections()
 
-    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Flags=0x00000078):
+    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Saveable=True, LoadMasters=True, Flags=0x00000079):
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
 ##        // If neither is set, the mod isn't loaded
@@ -16053,6 +16037,17 @@ class ObCollection:
         else:
             Flags |= fIsFullLoad
             Flags &= ~fIsMinLoad
+
+        if Saveable:
+            Flags |= fIsSaveable
+        else:
+            Flags &= ~fIsSaveable
+
+        if LoadMasters:
+            Flags |= fIsLoadMasters
+        else:
+            Flags &= ~fIsLoadMasters
+
         _CAddMod(self._CollectionID, str(FileName), Flags)
         return None
 
