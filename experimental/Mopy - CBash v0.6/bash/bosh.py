@@ -13744,6 +13744,7 @@ class CBash_FidReplacer:
         #--Done
         if not sum(counts): return False
         modFile.save()
+        Current.Close()
         entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
         entries.sort(key=itemgetter(1))
         return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
@@ -14005,7 +14006,7 @@ class CBash_MapMarkers:
         for record in modFile.REFRS:
             if record.base == markerFid:
                 fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
-
+            record.UnloadRecord()
         Current.Close()
 
     def writeToMod(self,modInfo):
@@ -14026,14 +14027,17 @@ class CBash_MapMarkers:
         fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
         for record in modFile.REFRS:
             fid = record.fid
-            if not fid in fid_markerdata: continue
-            if record.base == markerFid:
-                oldValues = [getattr(record, attr) for attr in attrs]
-                newValues = fid_markerdata[fid]
-                if oldValues != newValues:
-                    changed.append(oldValues[0]) #eid
-                    for attr, value in zip(attrs, newValues):
-                        setattr(record, attr, value)
+            if not fid in fid_markerdata or record.base != markerFid:
+                record.UnloadRecord()
+                continue
+            oldValues = [getattr(record, attr) for attr in attrs]
+            newValues = fid_markerdata[fid]
+            if oldValues == newValues:
+                record.UnloadRecord()
+                continue
+            changed.append(oldValues[0]) #eid
+            for attr, value in zip(attrs, newValues):
+                setattr(record, attr, value)
 
         if changed: modFile.save()
         Current.Close()
@@ -14106,7 +14110,7 @@ class CBash_CellBlockInfo:
 
         for record in modFile.CELLS:
             celldata[record.eid] = record.bsb
-
+            record.UnloadRecord()
         Current.Close()
 
     def writeToText(self,textPath):
@@ -14325,6 +14329,7 @@ class CBash_SigilStoneDetails:
         for record in modFile.SGST:
             fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath,
                                      record.script, record.uses, record.value, record.weight, record.effects_list]
+        Current.Close()
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -14346,7 +14351,6 @@ class CBash_SigilStoneDetails:
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             if not ValidateList(newStats, modFile): continue
-            if not newStats[5].Validate(modFile): continue #record.script
             oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
                         record.uses, record.value, record.weight, record.effects_list]
             if oldStats != newStats:
@@ -14402,9 +14406,9 @@ class CBash_SigilStoneDetails:
                 seflags = _coerce(seflags, int, AllowNone=True)
                 sename = _coerce(sename, str, AllowNone=True)
                 if None in (semod,seobj,seschool,sevisual,seflags,sename):
-                    effect.extend([None,None,None,None,None])
+                    effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
                 else:
-                    effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, sevisual,seflags, sename])
+                    effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, MGEFCode(sevisual),seflags, sename])
                 effects.append(tuple(effect))
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
         ins.close()
@@ -14438,6 +14442,7 @@ class CBash_SigilStoneDetails:
             for effect in effects:
                 efname,magnitude,area,duration,range,actorvalue = effect[:6]
                 efname = efname[0] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
+                actorvalue = actorvalue[0] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all ActorValues are raw)
                 range = recipientTypeNumber_Name.get(range,range)
                 actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                 scripteffect = effect[6:]
@@ -14738,6 +14743,7 @@ class CBash_ItemStats:
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
+            fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
             for fid, attr_value in fid_attr_value.iteritems():
                 record = modFile.LookupRecord(fid)
                 if record and record._Type == group:
@@ -14747,6 +14753,7 @@ class CBash_ItemStats:
                             setattr(record,attr,value)
                         changed[fid[0]] = 1 + changed.get(fid[0],0)
         if changed: modFile.save()
+        Current.Close()
         return changed
 
     def readFromText(self,textPath):
@@ -14759,7 +14766,7 @@ class CBash_ItemStats:
             if len(fields) < 3 or fields[2][:2] != '0x': continue
             group,modName,objectStr = fields[0:3]
             modName = GPath(_coerce(modName,str))
-            longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+            longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
             attrs = self.class_attrs[group]
             attr_value = {}
             for attr, value in zip(attrs, fields[3:3+len(attrs)]):
@@ -14852,7 +14859,7 @@ class CBash_ItemStats:
             attrs = self.class_attrs[group]
             out.write(Encode(header,'mbcs'))
             for longid in getSortedIds(fid_attr_value):
-                out.write('"%s","%s","0x%06X",' % (group,Encode(longid[0].s,'mbcs'),longid[1]))
+                out.write('"%s","%s","0x%06X",' % (group,Encode(str(longid[0]),'mbcs'),longid[1]))
                 attr_value = fid_attr_value[longid]
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
@@ -14959,7 +14966,6 @@ class CBash_ItemPrices:
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group):
                 fid_stats[record.fid] = map(record.__getattribute__,attrs)
-                record.UnloadRecord()
         Current.Close()
 
     def writeToMod(self,modInfo):
@@ -14977,6 +14983,7 @@ class CBash_ItemPrices:
 
         changed = {} #--changed[modName] = numChanged
         for group, fid_stats in class_fid_stats.iteritems():
+            fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
             for fid, stats in fid_stats.iteritems():
                 record = modFile.LookupRecord(fid)
                 if record and record._Type == group:
@@ -14996,7 +15003,7 @@ class CBash_ItemPrices:
             if len(fields) < 6 or not fields[1].startswith('0x'): continue
             mmod,mobj,value,eid,name,group = fields[:6]
             mmod = GPath(_coerce(mmod, str))
-            longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+            longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
             value = _coerce(value, int)
             eid = _coerce(eid, str, AllowNone=True)
             name = _coerce(name, str, AllowNone=True)
@@ -15018,7 +15025,7 @@ class CBash_ItemPrices:
             if not fid_stats: continue
             out.write(Encode(header,'mbcs'))
             for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
-                out.write(Encode('"%s","0x%06X",' % (fid[0].s,fid[1]),'mbcs'))
+                out.write(Encode('"%s","0x%06X",' % (str(fid[0]),fid[1]),'mbcs'))
                 out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
         out.close()
 #------------------------------------------------------------------------------
@@ -15438,14 +15445,17 @@ class CBash_CompleteItemData:
         changed = {} #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
+            fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
             for fid, attr_value in fid_attr_value.iteritems():
                 record = modFile.LookupRecord(fid)
                 if record and record._Type == group:
+                    if not ValidateDict(attr_value, modFile): continue
                     oldValues = map(record.__getattribute__,attrs)
                     if oldValues != attr_value:
                         map(record.__setattr__,attrs, attr_value)
                         changed[fid[0]] = 1 + changed.get(fid[0],0)
         if changed: modFile.save()
+        Current.Close()
         return changed
 
     def readEffectsFromText(self, fields):
@@ -15454,8 +15464,7 @@ class CBash_CompleteItemData:
         while len(_effects) >= 13:
             _effect, _effects = _effects[1:13], _effects[13:]
             name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name, str, AllowNone=True)
-            name = cast(name, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
+            name = _coerce(name, str, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
             magnitude = _coerce(magnitude, int, AllowNone=True)
             area = _coerce(area, int, AllowNone=True)
             duration = _coerce(duration, int, AllowNone=True)
@@ -15467,7 +15476,7 @@ class CBash_CompleteItemData:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
             if None in (name,magnitude,area,duration,range,actorvalue):
                 continue
-            effect = [name,magnitude,area,duration,range,actorvalue]
+            effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
             semod = _coerce(semod, str, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
             seschool = _coerce(seschool, int, AllowNone=True)
@@ -15475,10 +15484,9 @@ class CBash_CompleteItemData:
             seflags = _coerce(seflags, int, AllowNone=True)
             sename = _coerce(sename, str, AllowNone=True)
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
-                effect.extend([None,None,None,None,None])
+                effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
             else:
-                sefid = (GPath(aliases.get(semod,semod)),seobj)
-                effect.extend([sefid, seschool, sevisual,seflags, sename])
+                effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, MGEFCode(sevisual),seflags, sename])
             effects.append(tuple(effect))
         return effects
 
@@ -15487,8 +15495,8 @@ class CBash_CompleteItemData:
         eid,full,weight,value,uses,iconPath,modPath,modb,smod,sobj = fields[:10]
         fields = fields[:10]
         smod = _coerce(smod, str, AllowNone=True)
-        if smod is None: sid = None
-        else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+        if smod is None: sid = FormID(None,None)
+        else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
         eid = _coerce(eid, str, AllowNone=True)
         full = _coerce(full, str, AllowNone=True)
         modPath = _coerce(modPath, str, AllowNone=True)
@@ -15510,7 +15518,7 @@ class CBash_CompleteItemData:
             group,modName,objectStr = fields[:3]
             fields = fields[3:]
             modName = GPath(_coerce(modName,str))
-            longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+            longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
             attrs = self.class_attrs[group]
             if group == 'ALCH':
                 pass
@@ -15606,7 +15614,7 @@ class CBash_CompleteItemData:
             attrs = self.class_attrs[group]
             out.write(header)
             for longid in getSortedIds(fid_attr_value):
-                out.write('"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                out.write('"%s","%s","0x%06X",' % (group,str(longid[0]),longid[1]))
                 attr_value = fid_attr_value[longid]
                 write(out, attrs, map(attr_value.get, attrs))
         out.close()
@@ -15768,7 +15776,6 @@ class CBash_ScriptText:
                 z += 1
                 progress((0.5/y*z),_("Reading scripts in %s.") % (file))
                 eid_data[record.eid] = (record.scriptText, record.fid)
-                record.UnloadRecord()
         finally: #just to ensure the progress bar gets destroyed
             progress = progress.Destroy()
             Current.Close()
@@ -15831,9 +15838,9 @@ class CBash_ScriptText:
                         lines = text.readlines()
                     finally:
                         text.close()
-                    modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                    modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
-                    eid_data[ISTRING(eid)] = (ISTRING(scriptText), FormID) #script text is case insensitive
+                    eid_data[ISTRING(eid)] = (ISTRING(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
 
@@ -15872,18 +15879,18 @@ class CBash_ScriptText:
                     with outpath.open('wb') as out:
                         formid = '0x%06X' %(longid[1])
                         try:
-                            out.write(';'+Encode(longid[0].s,'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                            out.write(';'+Encode(str(longid[0]),'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
                         except UnicodeDecodeError:
                             try:
-                                out.write((';'.decode('cp1252')+longid[0].s.decode('cp1252')+'\r\n;'.decode('cp1252')+formid.decode('cp1252')+'\r\n;'.decode('cp1252')+eid.decode('cp1252')+'\r\n'+text.decode('cp1252')).encode('cp1252'))
+                                out.write((';'.decode('cp1252')+str(longid[0]).decode('cp1252')+'\r\n;'.decode('cp1252')+formid.decode('cp1252')+'\r\n;'.decode('cp1252')+eid.decode('cp1252')+'\r\n'+text.decode('cp1252')).encode('cp1252'))
                             except UnicodeDecodeError, err:
                                 print err
                                 print outpath
-                                print ';',longid[0].s,'\r\n;',formid,'\r\n;',eid,'\r\n',text
+                                print ';',str(longid[0]),'\r\n;',formid,'\r\n;',eid,'\r\n',text
                             except UnicodeEncodeError, err:
                                 print err
                                 print outpath
-                                print ';',longid[0].s,'\r\n;',formid,'\r\n;',eid,'\r\n',text
+                                print ';',str(longid[0]),'\r\n;',formid,'\r\n;',eid,'\r\n',text
                     exportedScripts.append(eid)
         return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
 
@@ -16175,7 +16182,7 @@ class CBash_SpellRecords:
 
         for record in modFile.SPEL:
             fid_stats[record.fid] = map(record.__getattribute__, attrs)
-            record.UnloadRecord()
+        Current.Close()
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -16194,6 +16201,7 @@ class CBash_SpellRecords:
         for record in modFile.SPEL:
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
+            if not ValidateList(newStats, modFile): continue
             oldStats = map(record.__getattribute__,attrs)
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
@@ -16201,6 +16209,7 @@ class CBash_SpellRecords:
 
         #--Done
         if changed: modFile.save()
+        Current.Close()
         return changed
 
     def readFromText(self,textPath):
@@ -16216,7 +16225,7 @@ class CBash_SpellRecords:
                 group = _coerce(group, str)
                 if group.lower() != 'spel': continue
                 mmod = _coerce(mmod, str)
-                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
                 eid = _coerce(eid, str, AllowNone=True)
                 full = _coerce(full, str, AllowNone=True)
                 cost = _coerce(cost, int)
@@ -16242,9 +16251,7 @@ class CBash_SpellRecords:
                 while len(_effects) >= 13:
                     _effect, _effects = _effects[1:13], _effects[13:]
                     name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-                    name = _coerce(name, str, AllowNone=True)
-                    if name is not None:
-                        name = cast(name, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
+                    name = _coerce(name, str, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
                     magnitude = _coerce(magnitude, int, AllowNone=True)
                     area = _coerce(area, int, AllowNone=True)
                     duration = _coerce(duration, int, AllowNone=True)
@@ -16256,7 +16263,7 @@ class CBash_SpellRecords:
                         actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
                     if None in (name,magnitude,area,duration,range,actorvalue):
                         continue
-                    effect = [name,magnitude,area,duration,range,actorvalue]
+                    effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
                     semod = _coerce(semod, str, AllowNone=True)
                     seobj = _coerce(seobj, int, 16, AllowNone=True)
                     seschool = _coerce(seschool, int, AllowNone=True)
@@ -16264,11 +16271,9 @@ class CBash_SpellRecords:
                     seflags = _coerce(seflags, bool, AllowNone=True)
                     sename = _coerce(sename, str, AllowNone=True)
                     if None in (semod,seobj,seschool,sevisual,seflags,sename):
-                        effect.extend([None,None,None,None,None])
+                        effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
                     else:
-                        sevisual = cast(sevisual, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
-                        sefid = (GPath(aliases.get(semod,semod)),seobj)
-                        effect.extend([sefid, seschool, sevisual,seflags, sename])
+                        effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, MGEFCode(sevisual),seflags, sename])
                     effects.append(tuple(effect))
                 fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
         finally:
@@ -16301,26 +16306,24 @@ class CBash_SpellRecords:
                 eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                output = rowFormat % ('SPEL',Encode(str(fid[0]),'mbcs'),fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
                 for effect in effects:
                     efname,magnitude,area,duration,range,actorvalue = effect[:6]
-                    efname = c_ulong(efname)
-                    efname = cast(byref(efname), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
+                    efname = efname[0] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
+                    actorvalue = actorvalue[0] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all ActorValues are raw)
                     range = recipientTypeNumber_Name.get(range,range)
                     actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                     output += effectFormat % (efname,magnitude,area,duration,range,Encode(actorvalue,'mbcs'))
                     longid,seschool,sevisual,seflags,sename = effect[6:]
                     if None not in (longid,seschool,sevisual,seflags,sename):
-                        sevisual = c_ulong(sevisual)
-                        sevisual = cast(byref(sevisual), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
-                        output += scriptEffectFormat % (Encode(longid[0].s,'mbcs'),longid[1],seschool,sevisual,seflags,sename)
+                        output += scriptEffectFormat % (Encode(str(longid[0]),'mbcs'),longid[1],seschool,sevisual[0],seflags,sename)
                     else:
                         output += noscriptEffectFiller
             else:
                 eid,name,cost,levelType,spellType = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
-                output = rowFormat % ('SPEL',Encode(fid[0].s,'mbcs'),fid[1],eid,name,cost,levelType,spellType)
+                output = rowFormat % ('SPEL',Encode(str(fid[0]),'mbcs'),fid[1],eid,name,cost,levelType,spellType)
             output += '\n'
             out.write(output)
         out.close()

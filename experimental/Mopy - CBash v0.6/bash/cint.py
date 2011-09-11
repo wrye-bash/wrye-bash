@@ -1214,8 +1214,9 @@ class MGEFCode(object):
         return self.mgefCode.GetShortMGEFCode(target)
 
 def ValidateList(Elements, Target):
-    """Convenience function to ensure that a list of values is valid for the destination.
-       Returns true if all of the FormIDs/ActorValues/MGEFCodes in the list are valid."""
+    """Convenience function to ensure that a tuple/list of values is valid for the destination.
+       Supports nested tuple/list values.
+       Returns true if all of the FormIDs/ActorValues/MGEFCodes in the tuple/list are valid."""
     isValid = True
     for element in Elements:
         if not isValid: return isValid
@@ -1223,6 +1224,33 @@ def ValidateList(Elements, Target):
             isValid = element.Validate(Target)
         elif isinstance(element, (tuple, list)):
             isValid = ValidateList(element, Target)
+    return isValid
+
+def ValidateDict(Elements, Target):
+    """Convenience function to ensure that a dict is valid for the destination.
+       Supports nested dictionaries, and tuple/list values.
+       Returns true if all of the FormIDs/ActorValues/MGEFCodes in the dict are valid."""
+    isValid = True
+    for key, value in Elements.iteritems():
+        if isinstance(key, (FormID, ActorValue, MGEFCode)):
+            isValid = key.Validate(Target)
+        if not isValid: return isValid
+        
+        if isinstance(value, (FormID, ActorValue, MGEFCode)):
+            isValid = value.Validate(Target)
+        if not isValid: return isValid
+        
+        if isinstance(key, (tuple, list)):
+            isValid = ValidateList(key, Target)
+        if not isValid: return isValid
+        
+        if isinstance(value, (tuple, list)):
+            isValid = ValidateList(value, Target)
+        if not isValid: return isValid
+        
+        if isinstance(value, dict):
+            isValid = ValidateDict(value, Target)
+        if not isValid: return isValid
     return isValid
 
 def getattr_deep(obj, attr):
