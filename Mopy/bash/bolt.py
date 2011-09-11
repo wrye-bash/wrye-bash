@@ -1329,13 +1329,18 @@ reUnixNewLine = re.compile(r'(?<!\r)\n')
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class CsvReader:
-    """For reading csv files. Handles both command tab separated (excel) formats."""
+    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats."""
     def __init__(self,path):
         import csv
         self.ins = path.open('rb')
         format = ('excel','excel-tab')['\t' in self.ins.readline()]
-        self.ins.seek(0)
-        self.reader = csv.reader(self.ins,format)
+        if format == 'excel': 
+            delimiter = (',',';')[';' in self.ins.readline()]
+            self.ins.seek(0)
+            self.reader = csv.reader(self.ins,format,delimiter=delimiter)
+        else:
+            self.ins.seek(0)
+            self.reader = csv.reader(self.ins,format)
 
     def __iter__(self):
         return self
