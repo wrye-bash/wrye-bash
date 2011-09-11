@@ -14475,7 +14475,7 @@ class ItemStats:
 
     @staticmethod
     def sint(value):
-        return _coerce(value, int, AllowNone=True)
+        return _coerce(value, int, AllowNone=False)
 
     @staticmethod
     def snoneint(value):
@@ -14492,7 +14492,7 @@ class ItemStats:
                           'value':self.sint,
                           'damage':self.sint,
                           'speed':self.sfloat,
-                          'enchantPoints':self.snoneint,
+                          'enchantPoints':self.sint,
                           'health':self.sint,
                           'strength':self.sint,
                           'duration':self.sint,
