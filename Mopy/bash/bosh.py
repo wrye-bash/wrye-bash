@@ -6758,7 +6758,7 @@ class BsaFile:
         return (reset,inval,intxt)
 
 #--------------------------------------------------------------------------------
-class IniFile:
+class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(';.*')
     reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
@@ -6769,6 +6769,22 @@ class IniFile:
         self.path = path
         self.defaultSection = defaultSection
         self.isCorrupted = False
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = IniFile.reComment.sub('',line).strip()
+                maSetting = IniFile.reSetting.match(stripped)
+                if maSetting:
+                    count += 1
+                    continue
+                maSection = IniFile.reSection.match(stripped)
+                if maSection:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         """Gets a single setting from the file."""
@@ -6939,15 +6955,12 @@ class IniFile:
 def BestIniFile(path):
     if path.csbody == 'oblivion':
         return oblivionIni
-    ini = IniFile(path)
-    ini_settings = ini.getSettings()
-    if len(ini_settings) > 0:
-        return ini
-    obse = OBSEIniFile(path)
-    ini_settings = obse.getSettings()
-    if len(ini_settings) > 0:
-        return obse
-    return ini
+    INICount = IniFile.formatMatch(path)
+    OBSECount = OBSEIniFile.formatMatch(path)
+    if INICount >= OBSECount:
+        return IniFile(path)
+    else:
+        return OBSEIniFile(path)
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
@@ -6959,6 +6972,22 @@ class OBSEIniFile(IniFile):
         """Change the default section to something that can't
         occur in a normal ini"""
         IniFile.__init__(self,path,'')
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = OBSEIniFile.reComment.sub('',line).strip()
+                maSet = OBSEIniFile.reSet.match(stripped)
+                if maSet:
+                    count += 1
+                    continue
+                maSetGS = OBSEIniFile.reSetGS.match(stripped)
+                if maSetGS:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
@@ -8129,7 +8158,19 @@ class INIInfo(FileInfo):
         text = ['%s:' % path.stail]
 
         if len(tweak) == 0:
-            text.append(' Invalid INI formatted file.')
+            tweak = BestIniFile(path)
+            if type(ini) in (OblivionIni,IniFile):
+                # Target is a "true" INI format file
+                if type(tweak) in (OblivionIni,IniFile):
+                    # Tweak is also a "true" INI format
+                    text.append(_(' No valid INI format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: INI\n  Tweak format: Batch Script'))
+            else:
+                if type(tweak) == OBSEIniFile:
+                    text.append(_(' No valid Batch Script format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: Batch Script\n  Tweak format: INI'))
         else:
             for key in tweak:
                 if key not in settings:
@@ -12353,7 +12394,10 @@ class InstallersData(bolt.TankData, DataDict):
                             lines.append(text+'\n')
                         elif section != currSection:
                             section = currSection
+                            if not section: continue
                             lines.append('\n[%s]\n' % section)
+                        elif not section:
+                            continue
                         else:
                             lines.append(text+'\n')
                 # Re-write the tweak
