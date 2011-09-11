@@ -207,6 +207,30 @@ FORMIDAttrs = {
                 'WEAP':['script','enchantment']
                 }
 
+FORMIDListAttrs = {
+                'LVLI':[{'entries':'listId'}],
+                'LVSP':[{'entries':'listId'}],
+                'LVLC':[{'entries':'listId'}],
+                'NPC_':['spells',{'factions':'faction'},{'items':'item'},'aiPackages'],
+                'CREA':['spells',{'factions':'faction'},{'items':'item'},'aiPackages'],
+                'DIAL':['quests'],
+                'SCPT':['references'],
+                'RACE':['spells',{'relations':'faction'},'hairs','eyes'],
+                }
+
+def enumFORMIDAttrs(record):
+    """Returns a list of all the FormIDs referenced by the record."""
+    items = [reduce(getattr,attr.split('.'),record) for attr in FORMIDAttrs.get(record._Type,[])]
+    for attr in FORMIDListAttrs.get(record._Type,[]):
+        if isinstance(attr,str):
+            items.extend(reduce(getattr,attr.split('.'),record))
+        elif isinstance(attr,dict):
+            for realattr,subattr in attr.iteritems():
+                for item in reduce(getattr, realattr.split('.'),record):
+                    items.append(reduce(getattr,subattr.split('.'),item))
+    items = [x for x in items if x and isinstance(x, tuple) and len(x) == 2]
+    return items
+
 #Helper functions
 class API_FIELDS(object):
     """These fields MUST be defined in the same order as in CBash's Common.h"""
@@ -5428,65 +5452,9 @@ class ObModFile(object):
                 recordMaster = record.fid[0]
                 if recordMaster != self.GName:
                     masters.add(recordMaster)
-                if type in FORMIDAttrs:
-                    for attr in FORMIDAttrs[type]:
-                        formId = getattr(record,attr)
-                        if not formId: continue
-                        if formId[0] != self.GName:
-                            masters.add(formId[0])
-                if type in ('LVLI','LVSP','LVLC'):
-                    for entry in record.entries:
-                        formMaster = entry.listId[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                elif type in ('NPC_','CREA'):
-                    for spell in record.spells:
-                        formMaster = spell[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for faction in record.factions:
-                        formMaster = faction.faction[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for item in record.items:
-                        formMaster = item.item[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for aipack in record.aiPackages:
-                        formMaster = aipack[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                elif type == 'DIAL':
-                    for quest in record.quests:
-                        formMaster = quest[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                elif type == 'SCPT':
-                    for ref in record.references:
-                        if not isinstance(ref,tuple):
-                            continue
-                        formMaster = ref[0]
-                        if formMaster != self.GName:
-                            # Only if it's not 'PlayerRef'
-                            if ref != (GPath('Oblivion.esm'),0x14):
-                                masters.add(formMaster)
-                elif type == 'RACE':
-                    for spell in record.spells:
-                        formMaster = spell[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for relation in record.relations:
-                        formMaster = relation.faction[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for hair in record.hairs:
-                        formMaster = hair[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
-                    for eye in record.eyes:
-                        formMaster = eye[0]
-                        if formMaster != self.GName:
-                            masters.add(formMaster)
+                for fid in enumFORMIDAttrs(record):
+                    masters.add(fid[0])
+        masters.discard(self.GName)
         return [x for x in self.TES4.masters if GPath(x) not in masters]
 
     def RemoveModMasters(self,masters):
