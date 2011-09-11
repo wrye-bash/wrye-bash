@@ -6758,7 +6758,7 @@ class BsaFile:
         return (reset,inval,intxt)
 
 #--------------------------------------------------------------------------------
-class IniFile:
+class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(';.*')
     reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
@@ -6769,6 +6769,22 @@ class IniFile:
         self.path = path
         self.defaultSection = defaultSection
         self.isCorrupted = False
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = IniFile.reComment.sub('',line).strip()
+                maSetting = IniFile.reSetting.match(stripped)
+                if maSetting:
+                    count += 1
+                    continue
+                maSection = IniFile.reSection.match(stripped)
+                if maSection:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         """Gets a single setting from the file."""
@@ -6939,15 +6955,12 @@ class IniFile:
 def BestIniFile(path):
     if path.csbody == 'oblivion':
         return oblivionIni
-    ini = IniFile(path)
-    ini_settings = ini.getSettings()
-    if len(ini_settings) > 0:
-        return ini
-    obse = OBSEIniFile(path)
-    ini_settings = obse.getSettings()
-    if len(ini_settings) > 0:
-        return obse
-    return ini
+    INICount = IniFile.formatMatch(path)
+    OBSECount = OBSEIniFile.formatMatch(path)
+    if INICount >= OBSECount:
+        return IniFile(path)
+    else:
+        return OBSEIniFile(path)
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
@@ -6959,6 +6972,22 @@ class OBSEIniFile(IniFile):
         """Change the default section to something that can't
         occur in a normal ini"""
         IniFile.__init__(self,path,'')
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = OBSEIniFile.reComment.sub('',line).strip()
+                maSet = OBSEIniFile.reSet.match(stripped)
+                if maSet:
+                    count += 1
+                    continue
+                maSetGS = OBSEIniFile.reSetGS.match(stripped)
+                if maSetGS:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
@@ -8129,7 +8158,19 @@ class INIInfo(FileInfo):
         text = ['%s:' % path.stail]
 
         if len(tweak) == 0:
-            text.append(' Invalid INI formatted file.')
+            tweak = BestIniFile(path)
+            if type(ini) in (OblivionIni,IniFile):
+                # Target is a "true" INI format file
+                if type(tweak) in (OblivionIni,IniFile):
+                    # Tweak is also a "true" INI format
+                    text.append(_(' No valid INI format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: INI\n  Tweak format: Batch Script'))
+            else:
+                if type(tweak) == OBSEIniFile:
+                    text.append(_(' No valid Batch Script format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: Batch Script\n  Tweak format: INI'))
         else:
             for key in tweak:
                 if key not in settings:
@@ -12352,7 +12393,10 @@ class InstallersData(bolt.TankData, DataDict):
                             lines.append(text+'\n')
                         elif section != currSection:
                             section = currSection
+                            if not section: continue
                             lines.append('\n[%s]\n' % section)
+                        elif not section:
+                            continue
                         else:
                             lines.append(text+'\n')
                 # Re-write the tweak
@@ -13908,7 +13952,7 @@ class CBash_MapMarkers:
         """Initialize."""
         self.fid_markerdata = {}
         self.aliases = aliases or {}
-        self.markerFid = (GPath('Oblivion.esm'), 0x000010)
+        self.markerFid = FormID(GPath('Oblivion.esm'), 0x000010)
         self.attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
         self.markerTypeNumber_Name = {
             None : 'NONE',
@@ -13961,7 +14005,6 @@ class CBash_MapMarkers:
         for record in modFile.REFRS:
             if record.base == markerFid:
                 fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
-            record.UnloadRecord()
 
         Current.Close()
 
@@ -13980,6 +14023,7 @@ class CBash_MapMarkers:
             print error[0]
             return
 
+        fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
         for record in modFile.REFRS:
             fid = record.fid
             if not fid in fid_markerdata: continue
@@ -14003,7 +14047,7 @@ class CBash_MapMarkers:
             if len(fields) < 13 or fields[1][:2] != '0x': continue
             mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
             mod = GPath(_coerce(mod, str))
-            longid = (aliases.get(mod,mod),_coerce(objectIndex, int, 16))
+            longid = FormID(aliases.get(mod,mod),_coerce(objectIndex, int, 16))
             eid = _coerce(eid, str, AllowNone=True)
             markerName = _coerce(markerName, str, AllowNone=True)
             markerType = _coerce(_markerType, int)
@@ -14034,7 +14078,7 @@ class CBash_MapMarkers:
         for longid in longids:
             eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fid_markerdata[longid]
             markerType = markerTypeNumber_Name.get(markerType,markerType)
-            out.write(rowFormat % (longid[0].s,longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+            out.write(rowFormat % (str(longid[0]),longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
         out.close()
 
 #------------------------------------------------------------------------------
@@ -14062,7 +14106,6 @@ class CBash_CellBlockInfo:
 
         for record in modFile.CELLS:
             celldata[record.eid] = record.bsb
-            record.UnloadRecord()
 
         Current.Close()
 
@@ -14280,7 +14323,8 @@ class CBash_SigilStoneDetails:
             return
 
         for record in modFile.SGST:
-            fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, record.effects_list]
+            fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath,
+                                     record.script, record.uses, record.value, record.weight, record.effects_list]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -14297,15 +14341,20 @@ class CBash_SigilStoneDetails:
             print error[0]
             return
 
+        fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
         for record in modFile.SGST:
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
-            oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, record.effects_list]
+            if not ValidateList(newStats, modFile): continue
+            if not newStats[5].Validate(modFile): continue #record.script
+            oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
+                        record.uses, record.value, record.weight, record.effects_list]
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
                 record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, effects = newStats
                 record.effects_list = effects
         if changed: modFile.save()
+        Current.Close()
         return changed
 
     def readFromText(self,textPath):
@@ -14316,10 +14365,10 @@ class CBash_SigilStoneDetails:
             if len(fields) < 12 or fields[1][:2] != '0x': continue
             mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
             mmod = _coerce(mmod, str)
-            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+            mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
             smod = _coerce(smod, str, AllowNone=True)
-            if smod is None: sid = None
-            else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+            if smod is None: sid = FormID(None,None)
+            else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
             eid = _coerce(eid, str, AllowNone=True)
             full = _coerce(full, str, AllowNone=True)
             modPath = _coerce(modPath, str, AllowNone=True)
@@ -14333,8 +14382,7 @@ class CBash_SigilStoneDetails:
             while len(_effects) >= 13:
                 _effect, _effects = _effects[1:13], _effects[13:]
                 name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-                name = _coerce(name, str, AllowNone=True)
-                name = cast(name, POINTER(c_ulong)).contents.value #convert 4 char string to int (doesn't support obme)
+                name = _coerce(name, str, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
                 magnitude = _coerce(magnitude, int, AllowNone=True)
                 area = _coerce(area, int, AllowNone=True)
                 duration = _coerce(duration, int, AllowNone=True)
@@ -14346,7 +14394,7 @@ class CBash_SigilStoneDetails:
                     actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
                 if None in (name,magnitude,area,duration,range,actorvalue):
                     continue
-                effect = [name,magnitude,area,duration,range,actorvalue]
+                effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
                 semod = _coerce(semod, str, AllowNone=True)
                 seobj = _coerce(seobj, int, 16, AllowNone=True)
                 seschool = _coerce(seschool, int, AllowNone=True)
@@ -14356,8 +14404,7 @@ class CBash_SigilStoneDetails:
                 if None in (semod,seobj,seschool,sevisual,seflags,sename):
                     effect.extend([None,None,None,None,None])
                 else:
-                    sefid = (GPath(aliases.get(semod,semod)),seobj)
-                    effect.extend([sefid, seschool, sevisual,seflags, sename])
+                    effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, sevisual,seflags, sename])
                 effects.append(tuple(effect))
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
         ins.close()
@@ -14385,13 +14432,12 @@ class CBash_SigilStoneDetails:
             eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
             scriptfid = scriptfid or (GPath('None'), None)
             try:
-                output = rowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],uses,value,weight)
+                output = rowFormat % (str(fid[0]),fid[1],eid,name,modpath,modb,iconpath,str(scriptfid[0]),scriptfid[1],uses,value,weight)
             except TypeError:
-                output = altrowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],uses,value,weight)
+                output = altrowFormat % (str(fid[0]),fid[1],eid,name,modpath,modb,iconpath,str(scriptfid[0]),scriptfid[1],uses,value,weight)
             for effect in effects:
                 efname,magnitude,area,duration,range,actorvalue = effect[:6]
-                efname = c_ulong(efname)
-                efname = cast(byref(efname), POINTER(c_char * 4)).contents.value #convert int to 4 char string (doesn't support obme)
+                efname = efname[0] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
                 range = recipientTypeNumber_Name.get(range,range)
                 actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
                 scripteffect = effect[6:]
@@ -14432,7 +14478,7 @@ class ItemStats:
 
     @staticmethod
     def sint(value):
-        return _coerce(value, int, AllowNone=True)
+        return _coerce(value, int, AllowNone=False)
 
     @staticmethod
     def snoneint(value):
@@ -14449,7 +14495,7 @@ class ItemStats:
                           'value':self.sint,
                           'damage':self.sint,
                           'speed':self.sfloat,
-                          'enchantPoints':self.snoneint,
+                          'enchantPoints':self.sint,
                           'health':self.sint,
                           'strength':self.sint,
                           'duration':self.sint,
@@ -31431,7 +31477,7 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
             _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            'BiggerOrcsand Nords',
+            'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
             ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
             ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),

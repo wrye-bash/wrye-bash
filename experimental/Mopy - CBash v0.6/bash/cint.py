@@ -1210,6 +1210,18 @@ class MGEFCode(object):
         """Resolves the various MGEFCode classes to a single 32-bit value used by CBash"""
         return self.mgefCode.GetShortMGEFCode(target)
 
+def ValidateList(Elements, Target):
+    """Convenience function to ensure that a list of values is valid for the destination.
+       Returns true if all of the FormIDs/ActorValues/MGEFCodes in the list are valid."""
+    isValid = True
+    for element in Elements:
+        if not isValid: return isValid
+        if isinstance(element, (FormID, ActorValue, MGEFCode)):
+            isValid = element.Validate(Target)
+        elif isinstance(element, (tuple, list)):
+            isValid = ValidateList(element, Target)
+    return isValid
+
 def getattr_deep(obj, attr):
     return reduce(getattr, attr.split('.'), obj)
 
