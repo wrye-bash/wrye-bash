@@ -12747,7 +12747,7 @@ class Mod_Stats_Import(Link):
             else:
                 buff = stringBuffer()
                 for modName in sorted(changed):
-                    buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+                    buff.write('* %03d  %s\n' % (changed[modName], modName.s))
                 balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
