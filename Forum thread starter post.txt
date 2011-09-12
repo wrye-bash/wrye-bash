@@ -4,13 +4,23 @@ Wrye Bash is a multi-featured mod and savegame management tool for Oblivion writ
 
 Its two best-known features are the Bashed Patch, which allows you to enable multiple overlapping mod plugins and have them work together sensibly, and the BAIN installation framework, an easy-to-use interface for installing and uninstalling mods that automatically heals your game data when multiple mods try to install the same files.  Related to and beyond these, it also has many capabilities targeted at mod creators and power users.
 
-[b]FAQ of the day[/b]: What is CBash?
-CBash is an elder scrolls master (.esm) and elder scrolls plugin (.esp) file parser.  It is written in C, and allows us to build Bashed Patches much faster on most systems than the original Python code.  Moreover, CBash parses more types of records than the Python code does, since parsing those records in Python would be prohibitively slow.  The practical benefits of using CBash are:
+[b]FAQ[/b]:
+[spoiler][list=1][*]What the heck do all these acronyms mean?
+Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:[list][*][b]WB[/b]: Wrye Bash.  Written in Python.
+[*][b]WBSA[/b]: Wrye Bash Standalone. Wrye Bash packaged with the required Python interpreter and all dependencies into one neat executable package. Still internally runs on Python, but since the interpreter is internal to the exe, no Python components are required to be installed.
+[*][b]PBash[/b]: A Bashed Patch built with the "classic" Python mode patchers. These patchers read, process, and write mod records all in Python.
+[*][b]CBash[/b]:[list=1][*] A Bashed Patch built with the CBash (see #2) mode patchers. These patchers still do mod processing in Python, but utilize CBash.dll to do the file reading and writing.
+[*]The CBash.dll. A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).[/list]The practical benefits of using CBash are:
 [list=1]
 [*] Building the bashed patch is much faster
 [*] More plugins are mergeable, giving you the ability to cram more goodness into Oblivion
 [*] In the future, more interesting kinds of tweaks will be practical to implement
 [/list][b]At this stage CBash still has a few bugs, though, and is in BETA.[/b]
+[*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
+[*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
+[*][b]BAIT[/b]: Bash Asynchronous Installer Tab. Still written in Python. Will use multi-threading to have a UI that still responds while BAIT gathers data (CRC's, etc).
+[/list]
+[/spoiler]
 
 [b]Download[/b]: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] (mirrored at [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url] and, of course, [url=https://sourceforge.net/projects/oblivionworks/files/Wrye%20Bash/]SourceForge[/url])
 
