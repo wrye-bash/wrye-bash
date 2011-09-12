@@ -1240,7 +1240,7 @@ def ValidateDict(Elements, Target):
             isValid = value.Validate(Target)
         if not isValid: return isValid
         
-        if isinstance(key, (tuple, list)):
+        if isinstance(key, tuple):
             isValid = ValidateList(key, Target)
         if not isValid: return isValid
         
@@ -3122,7 +3122,7 @@ class FnvBaseRecord(object):
             return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
         return []
 
-    def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
+    def ConflictDetails(self, attrs=None):
         """New: attrs is an iterable, for each item, the following is checked:
            if the item is a string type: changes are reported
            if the item is another iterable (set,list,tuple), then if any of the subitems is
@@ -11022,7 +11022,7 @@ class ObBaseRecord(object):
             return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
         return []
 
-    def ConflictDetails(self, attrs=None, GetExtendedConflicts=False):
+    def ConflictDetails(self, attrs=None):
         """New: attrs is an iterable, for each item, the following is checked:
            if the item is a string type: changes are reported
            if the item is another iterable (set,list,tuple), then if any of the subitems is
@@ -14688,7 +14688,7 @@ class ObModFile(object):
             _FormID = 0
             _EditorID = RecordIdentifier
         else:
-            _FormID = FormID(RecordIdentifier).GetShortFormID(self)
+            _FormID = RecordIdentifier.GetShortFormID(self)
             _EditorID = 0
         if not (_EditorID or _FormID): return False
         if _CGetRecordID(self._ModID, _FormID, _EditorID):
@@ -14701,7 +14701,7 @@ class ObModFile(object):
             _FormID = 0
             _EditorID = RecordIdentifier
         else:
-            _FormID = FormID(RecordIdentifier).GetShortFormID(self)
+            _FormID = RecordIdentifier.GetShortFormID(self)
             _EditorID = 0
         if not (_EditorID or _FormID): return None
         RecordID = _CGetRecordID(self._ModID, _FormID, _EditorID)
@@ -15196,7 +15196,7 @@ class FnvModFile(object):
             _FormID = 0
             _EditorID = RecordIdentifier
         else:
-            _FormID = FormID(RecordIdentifier).GetShortFormID(self)
+            _FormID = RecordIdentifier.GetShortFormID(self)
             _EditorID = 0
         if not (_EditorID or _FormID): return False
         if _CGetRecordID(self._ModID, _FormID, _EditorID):
@@ -15209,7 +15209,7 @@ class FnvModFile(object):
             _FormID = 0
             _EditorID = RecordIdentifier
         else:
-            _FormID = FormID(RecordIdentifier).GetShortFormID(self)
+            _FormID = RecordIdentifier.GetShortFormID(self)
             _EditorID = 0
         if not (_EditorID or _FormID): return None
         RecordID = _CGetRecordID(self._ModID, _FormID, _EditorID)
