@@ -9955,7 +9955,7 @@ class Mods_AutoGhost(BoolLink):
 class Mods_AutoGroup(BoolLink):
     """Turn on autogrouping."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Auto Group'),
+                                          _('Auto Group (Deprecated -- Please use BOSS instead)'),
                                           'bash.balo.autoGroup',
                                           )
 
@@ -9981,7 +9981,7 @@ class Mods_Deprint(Link):
 class Mods_FullBalo(BoolLink):
     """Turn Full Balo off/on."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Full Balo'),
+                                          _('Full Balo (Deprecated -- Please use BOSS instead)'),
                                           'bash.balo.full',
                                           )
 
