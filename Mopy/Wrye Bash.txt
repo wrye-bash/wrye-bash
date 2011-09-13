@@ -2412,22 +2412,23 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory
 * [[#BashedPatches|Bashed Patch]]:
   * Usability improvements:
-    * Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog
-    * Corresponding patchers will be automatically enabled and bolded
-    * If you would rather do things manually, you can turn the new autocheck behavior off in the ini
-    * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini)
+    * Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog.
+    * Corresponding patchers will be automatically enabled and bolded.
+    * If you would rather do things manually, you can turn the new autocheck behavior off in the ini.
+    * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini).
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
-    * VORB tweak now assigns special skeletons correctly
-    * Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash
+    * VORB tweak now assigns special skeletons correctly.
+    * Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.
   * Names tweaker:
-    * New tweak: Proper English Names: Staffs -> Staves
-    * New tweak: Proper English Names: Dwarfs -> Dwarves
+    * New tweak: Proper English Names: Staffs -> Staves.
+    * New tweak: Proper English Names: Dwarfs -> Dwarves.
     * Updated NPC/Guard names csvs. (Contributed by Gratis_monsta)
   * Updated Assorted to Cobl.csv for Replace Form IDs. (Contributed by Gratis_monsta)
-  * Merge Patcher no longer merges in script records that depend on missing masters
-  * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported
+  * Merge Patcher no longer merges in script records that depend on missing masters.
+  * Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported.
+  * Revert to Default option added; just reverts the patch config to default.
   * Settings tweaker:
     * New tweaks:
       * AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
@@ -2451,7 +2452,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * File->[[#|Create Dummy Masters]] will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
   * File->[[#|New Bashed Patch]] will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
   * Mods Tab->[[#|Clean Dummy Masters]] will delete any empty plugins created using the [[#|Create Dummy Masters]] command.
-* Add Master command can now add multiple masters in one go
+* Add Master command can now add multiple masters in one go.
 * Fixed Settings backup files should have WB version in their names.
 * Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
 * Replacers tab and associated code totally removed.
