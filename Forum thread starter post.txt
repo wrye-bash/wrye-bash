@@ -18,7 +18,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [/list][b]At this stage CBash still has a few bugs, though, and is in BETA.[/b]
 [*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
 [*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
-[*][b]BAIT[/b]: Bash Asynchronous Installer Tab. Still written in Python. Will use multi-threading to have a UI that still responds while BAIT gathers data (CRC's, etc).
+[*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Written in Python. Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
 [/list]
 [/spoiler]
 
