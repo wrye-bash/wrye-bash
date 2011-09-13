@@ -5985,6 +5985,7 @@ class PatchDialog(wx.Dialog):
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
+        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
@@ -6015,6 +6016,7 @@ class PatchDialog(wx.Dialog):
                 (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
+                (self.gRevertToDefault,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             (hSizer(
                 spacer,
@@ -6324,6 +6326,25 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    try:
+                        patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+        self.SetOkEnable()
+        
+    def DefaultConfig(self,event=None):
+        """Revert configuration back to default"""
+        patchConfigs = {}
+        for index,patcher in enumerate(self.patchers):
+            patcher.getConfig(patchConfigs)
+            self.gPatchers.Check(index,patcher.isEnabled)
+            if isinstance(patcher, ListPatcher):
+                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
+                for index, item in enumerate(patcher.items):
+                    try: patcher.gList.Check(index,patcher.configChecks[item])
+                    except Exception, err: continue #all mods basically will generate this so to warn would be ANNOYING and uninformative
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
@@ -9122,7 +9143,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
         """Handle selection."""
         subs = _('Sub-Packages List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gSubList.GetCount()):
-            subs += gInstallers.gSubList.GetString(index) + '\n'
+            subs += ['** ','   '][installer.subActives[index+1]] + gInstallers.gSubList.GetString(index) + '\n'
         subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
