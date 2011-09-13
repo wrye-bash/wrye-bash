@@ -6279,7 +6279,10 @@ class PatchDialog(wx.Dialog):
                 patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})
                 if patchConfigs:
                     patchConfigs = self.UpdateConfig(patchConfigs)
+        if patchConfigs is None:
+            patchConfigs = {}
         for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
             if isinstance(patcher, ListPatcher):
@@ -6319,6 +6322,7 @@ class PatchDialog(wx.Dialog):
         if bosh.CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
             if isinstance(patcher, ListPatcher):
@@ -6338,19 +6342,17 @@ class PatchDialog(wx.Dialog):
         """Revert configuration back to default"""
         patchConfigs = {}
         for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(True)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
             if isinstance(patcher, ListPatcher):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: continue #all mods basically will generate this so to warn would be ANNOYING and uninformative
+                patcher.SetItems(patcher.getAutoItems())
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
                         patcher.gList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def SelectAll(self,event=None):
@@ -6641,9 +6643,6 @@ class ListPatcher(Patcher):
                 (self.gDeselectAll,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
-        #--Init GUI
-        # SetItems has already been called either explicitly or in OnAutomatic().  why call it again here?
-        #self.SetItems(self.configItems)
         #--Layout
         gSizer = vSizer(
             (gText,),
