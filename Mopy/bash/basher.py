@@ -376,6 +376,9 @@ settingDefaults = {
         },
     'bash.mods.renames': {},
     'bash.mods.scanDirty': False,
+    'bash.mods.export.skip': '',
+    'bash.mods.export.deprefix': '',
+    'bash.mods.export.skipcomments': False,
     #--Wrye Bash: Saves
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
@@ -3415,7 +3418,7 @@ class InstallersPanel(SashTankPanel):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
             settings['bash.installers.isFirstRun'] = False
-            message = _("Do you want to enable Installers If you do, Bash will first need to initialize some data. If you have many mods installed, this can take on the order of five minutes.\n\nIf you prefer to not enable Installers at this time, you can always enable it later from the column header context menu.")
+            message = _("Do you want to enable Installers?\n\n\tIf you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.\n\n\tIf not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'.")
             settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
@@ -3427,11 +3430,12 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = True
             with balt.Progress(_("Refreshing Installers..."),'\n'+' '*60, abort=True) as progress:
                 try:
-                    if bosh.inisettings['ClearRO']:
-                        progress(0,_("Clearing 'Read Only' flags..."))
-                        cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
-                        cmd = Encode(cmd,'mbcs')
-                        ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+                   # removed in favour of doing it only as needed in bolt.path
+                   # if bosh.inisettings['ClearRO']:
+                   #     progress(0,_("Clearing 'Read Only' flags..."))
+                   #     cmd = r'attrib -R "%s\*" /S /D' % (bosh.dirs['mods'])
+                   #     cmd = Encode(cmd,'mbcs')
+                   #     ins,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                     what = ('DISC','IC')[self.refreshed]
                     if data.refresh(progress,what,self.fullRefresh):
                         self.gList.RefreshUI()
@@ -5981,6 +5985,7 @@ class PatchDialog(wx.Dialog):
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
+        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
@@ -6011,6 +6016,7 @@ class PatchDialog(wx.Dialog):
                 (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
+                (self.gRevertToDefault,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             (hSizer(
                 spacer,
@@ -6273,7 +6279,10 @@ class PatchDialog(wx.Dialog):
                 patchConfigs = table.getItem(bolt.Path('Saved Bashed Patch Configuration (%s)' % (['CBash','Python'][self.doCBash])),'bash.patch.configs',{})
                 if patchConfigs:
                     patchConfigs = self.UpdateConfig(patchConfigs)
+        if patchConfigs is None:
+            patchConfigs = {}
         for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
             if isinstance(patcher, ListPatcher):
@@ -6313,6 +6322,7 @@ class PatchDialog(wx.Dialog):
         if bosh.CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
             if isinstance(patcher, ListPatcher):
@@ -6326,6 +6336,23 @@ class PatchDialog(wx.Dialog):
                         patcher.gList.Check(index,item.isEnabled)
                         patcher.gList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+        self.SetOkEnable()
+        
+    def DefaultConfig(self,event=None):
+        """Revert configuration back to default"""
+        patchConfigs = {}
+        for index,patcher in enumerate(self.patchers):
+            patcher.SetIsFirstLoad(True)
+            patcher.getConfig(patchConfigs)
+            self.gPatchers.Check(index,patcher.isEnabled)
+            if isinstance(patcher, ListPatcher):
+                patcher.SetItems(patcher.getAutoItems())
+            elif isinstance(patcher, TweakPatcher):
+                for index, item in enumerate(patcher.tweaks):
+                    try:
+                        patcher.gList.Check(index,item.isEnabled)
+                        patcher.gList.SetString(index,item.getListLabel())
+                    except Exception, err: deprint(_('Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def SelectAll(self,event=None):
@@ -6616,9 +6643,6 @@ class ListPatcher(Patcher):
                 (self.gDeselectAll,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
-        #--Init GUI
-        # SetItems has already been called either explicitly or in OnAutomatic().  why call it again here?
-        #self.SetItems(self.configItems)
         #--Layout
         gSizer = vSizer(
             (gText,),
@@ -7888,7 +7912,7 @@ class Installers_Enabled(BoolLink):
     def Execute(self,event):
         """Handle selection."""
         enabled = settings[self.key]
-        message = _("Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes.")
+        message = _("Do you want to enable Installers?\n\n\tIf you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.")
         if not enabled and not balt.askYes(self.gTank,fill(message,80),self.title):
             return
         enabled = settings[self.key] = not enabled
@@ -8381,11 +8405,6 @@ class Installer_OpenReadme(InstallerLink):
                 # This is going to leave junk temp files behind...
                 archive.unpackToTemp(installer, [archive.hasReadme])
             archive.tempDir.join(archive.hasReadme).start()
-            try:
-                archive.tempDir.rmtree(archive.tempDir.stail)
-            except:
-                pass
-
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
@@ -9123,7 +9142,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
         """Handle selection."""
         subs = _('Sub-Packages List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gSubList.GetCount()):
-            subs += gInstallers.gSubList.GetString(index) + '\n'
+            subs += ['** ','   '][installer.subActives[index+1]] + gInstallers.gSubList.GetString(index) + '\n'
         subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
@@ -9956,7 +9975,7 @@ class Mods_AutoGhost(BoolLink):
 class Mods_AutoGroup(BoolLink):
     """Turn on autogrouping."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Auto Group'),
+                                          _('Auto Group (Deprecated -- Please use BOSS instead)'),
                                           'bash.balo.autoGroup',
                                           )
 
@@ -9982,7 +10001,7 @@ class Mods_Deprint(Link):
 class Mods_FullBalo(BoolLink):
     """Turn Full Balo off/on."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Full Balo'),
+                                          _('Full Balo (Deprecated -- Please use BOSS instead)'),
                                           'bash.balo.full',
                                           )
 
@@ -10229,7 +10248,6 @@ class Settings_SaveSettings(Link):
 class Settings_ExportDllInfo(Link):
     """Exports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        self.wdw = window
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed OBSE plugin dlls"))
         menu.AppendItem(menuItem)
@@ -10238,7 +10256,7 @@ class Settings_ExportDllInfo(Link):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.wdw,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
+        textPath = balt.askSave(self.window,_('Export list of allowed/disallowed OBSE plugin dlls to:'), textDir, _("OBSE dll permissions.txt"), '*.txt')
         if not textPath: return
         try:
             out = textPath.open("w")
@@ -10262,7 +10280,6 @@ class Settings_ExportDllInfo(Link):
 class Settings_ImportDllInfo(Link):
     """Imports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        self.wdw = window
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed OBSE plugin dlls"))
         menu.AppendItem(menuItem)
@@ -10271,11 +10288,11 @@ class Settings_ImportDllInfo(Link):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.wdw,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
+        textPath = balt.askOpen(self.window,_('Import list of allowed/disallowed OBSE plugin dlls from:'),
             textDir, _("OBSE dll permissions.txt"), '*.txt',mustExist=True)
         if not textPath: return
         message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
-        if not balt.askYes(self.wdw,message,_('Merge permissions?')): replace = True
+        if not balt.askYes(self.window,message,_('Merge permissions?')): replace = True
         else: replace = False
         try:
             inp = textPath.open("r")
@@ -12564,17 +12581,40 @@ class Mod_Scripts_Export(Link):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+' Exported Scripts')
-        skip = balt.askText(self.window,_('Skip prefix (leave blank to not skip any), non-case sensitive):'),
-            _('Skip Prefix?'),'')
-        if skip == None: return
-        deprefix = balt.askText(self.window,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive):'),
-            _('Remove Prefix from file names?'),'')
-        if deprefix == None: return
+        def OnOk(event):
+            dialog.EndModal(1)
+            settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
+            settings['bash.mods.export.skip'] = gskip.GetValue().strip()
+            settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
+        dialog = wx.Dialog(bashFrame,-1,_('Export Scripts Options'),size=(400,180),style=wx.DEFAULT_DIALOG_STYLE)
+        gskip = textCtrl(dialog)
+        gdeprefix = textCtrl(dialog)
+        gskipcomments = toggleButton(dialog,'Filter Out Comments',tip="If active doesn't export comments in the scripts")
+        gskip.SetValue(settings['bash.mods.export.skip'])
+        gdeprefix.SetValue(settings['bash.mods.export.deprefix'])
+        gskipcomments.SetValue(settings['bash.mods.export.skipcomments'])
+        sizer = vSizer(
+            staticText(dialog,_("Skip prefix (leave blank to not skip any), non-case sensitive):"),style=wx.ST_NO_AUTORESIZE),
+            gskip,
+            spacer,
+            staticText(dialog,_('Remove prefix from file names f.e. enter cob to save script cobDenockInit\nas DenockInit.ext rather than as cobDenockInit.ext\n(Leave blank to not cut any prefix, non-case sensitive):'),style=wx.ST_NO_AUTORESIZE),
+            gdeprefix,
+            spacer,
+            gskipcomments,
+            (hSizer(
+                spacer,
+                button(dialog,id=wx.ID_OK,onClick=OnOk),
+                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            )
+        dialog.SetSizer(sizer)
+        questions = dialog.ShowModal()
+        if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():
             defaultPath.makedirs()
         textDir = balt.askDirectory(self.window,
             _('Choose directory to export scripts to'),defaultPath)
-        if not textDir == defaultPath:
+        if textDir != defaultPath:
             for asDir,sDirs,sFiles in os.walk(defaultPath.s):
                 if not (sDirs or sFiles):
                     defaultPath.removedirs()
@@ -12586,7 +12626,7 @@ class Mod_Scripts_Export(Link):
         else:
             ScriptText = bosh.CBash_ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = ScriptText.writeToText(fileInfo,skip,textDir,deprefix,fileName.s)
+        exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
         balt.showLog(self.window,exportedScripts,_('Export Scripts'),icons=bashBlue)
 
@@ -12727,7 +12767,7 @@ class Mod_Stats_Import(Link):
             else:
                 buff = stringBuffer()
                 for modName in sorted(changed):
-                    buff.write('* %03d  %s:\n' % (changed[modName], modName.s))
+                    buff.write('* %03d  %s\n' % (changed[modName], modName.s))
                 balt.showLog(self.window,buff.getvalue(),_('Import Stats'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -14769,6 +14809,11 @@ class App_Button(Link):
             self.appArgs = ''.join(self.exeArgs)
         else:
             self.isJava = False
+        #--shortcut
+        if self.exePath and self.exePath.ext.lower() == '.lnk': #Sometimes exePath is "None"
+            self.isShortcut = True
+        else:
+            self.isShortcut = False
         #--OBSE stuff
         self.obseTip = obseTip
         self.obseArg = obseArg
@@ -14797,7 +14842,9 @@ class App_Button(Link):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            if self.isJava:
+            if self.isShortcut:
+                os.startfile(self.exePath.s)
+            elif self.isJava:
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
                     self.workingDir.setcwd()
@@ -15122,7 +15169,7 @@ class App_Settings(Link):
         return gButton
 
     def Execute(self,event):
-        SettingsMenu.PopupMenu(self,bashFrame,None)
+        SettingsMenu.PopupMenu(bashFrame.GetStatusBar(),bashFrame,None)
 
 #------------------------------------------------------------------------------
 class App_ModChecker(Link):
@@ -15650,6 +15697,8 @@ def InitStatusBar():
     for link in bosh.links:
         (target,workingdir,args,icon,description) = bosh.links[link]
         path = GPath(target)
+        if target.lower().find(r'installer\{') != -1:
+            path = bosh.dirs['mopy'].join('Apps').join(link)
         if path.exists():
             icon,idex = icon.split(',')
             if icon == '':

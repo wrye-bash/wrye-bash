@@ -6758,7 +6758,7 @@ class BsaFile:
         return (reset,inval,intxt)
 
 #--------------------------------------------------------------------------------
-class IniFile:
+class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(';.*')
     reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
@@ -6769,6 +6769,22 @@ class IniFile:
         self.path = path
         self.defaultSection = defaultSection
         self.isCorrupted = False
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = IniFile.reComment.sub('',line).strip()
+                maSetting = IniFile.reSetting.match(stripped)
+                if maSetting:
+                    count += 1
+                    continue
+                maSection = IniFile.reSection.match(stripped)
+                if maSection:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         """Gets a single setting from the file."""
@@ -6939,15 +6955,12 @@ class IniFile:
 def BestIniFile(path):
     if path.csbody == 'oblivion':
         return oblivionIni
-    ini = IniFile(path)
-    ini_settings = ini.getSettings()
-    if len(ini_settings) > 0:
-        return ini
-    obse = OBSEIniFile(path)
-    ini_settings = obse.getSettings()
-    if len(ini_settings) > 0:
-        return obse
-    return ini
+    INICount = IniFile.formatMatch(path)
+    OBSECount = OBSEIniFile.formatMatch(path)
+    if INICount >= OBSECount:
+        return IniFile(path)
+    else:
+        return OBSEIniFile(path)
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
@@ -6959,6 +6972,22 @@ class OBSEIniFile(IniFile):
         """Change the default section to something that can't
         occur in a normal ini"""
         IniFile.__init__(self,path,'')
+
+    @staticmethod
+    def formatMatch(path):
+        count = 0
+        with path.open('r') as file:
+            for line in file:
+                stripped = OBSEIniFile.reComment.sub('',line).strip()
+                maSet = OBSEIniFile.reSet.match(stripped)
+                if maSet:
+                    count += 1
+                    continue
+                maSetGS = OBSEIniFile.reSetGS.match(stripped)
+                if maSetGS:
+                    count += 1
+                    continue
+        return count
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
@@ -8129,7 +8158,19 @@ class INIInfo(FileInfo):
         text = ['%s:' % path.stail]
 
         if len(tweak) == 0:
-            text.append(' Invalid INI formatted file.')
+            tweak = BestIniFile(path)
+            if type(ini) in (OblivionIni,IniFile):
+                # Target is a "true" INI format file
+                if type(tweak) in (OblivionIni,IniFile):
+                    # Tweak is also a "true" INI format
+                    text.append(_(' No valid INI format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: INI\n  Tweak format: Batch Script'))
+            else:
+                if type(tweak) == OBSEIniFile:
+                    text.append(_(' No valid Batch Script format lines.'))
+                else:
+                    text.append(_(' Format mismatch:\n  Target format: Batch Script\n  Tweak format: INI'))
         else:
             for key in tweak:
                 if key not in settings:
@@ -12353,7 +12394,10 @@ class InstallersData(bolt.TankData, DataDict):
                             lines.append(text+'\n')
                         elif section != currSection:
                             section = currSection
+                            if not section: continue
                             lines.append('\n[%s]\n' % section)
+                        elif not section:
+                            continue
                         else:
                             lines.append(text+'\n')
                 # Re-write the tweak
@@ -14431,7 +14475,7 @@ class ItemStats:
 
     @staticmethod
     def sint(value):
-        return _coerce(value, int, AllowNone=True)
+        return _coerce(value, int, AllowNone=False)
 
     @staticmethod
     def snoneint(value):
@@ -14448,7 +14492,7 @@ class ItemStats:
                           'value':self.sint,
                           'damage':self.sint,
                           'speed':self.sfloat,
-                          'enchantPoints':self.snoneint,
+                          'enchantPoints':self.sint,
                           'health':self.sint,
                           'strength':self.sint,
                           'duration':self.sint,
@@ -15654,7 +15698,7 @@ class ScriptText:
         if eid_data: return True
         return False
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp):
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
         x = len(skip)
@@ -15666,6 +15710,18 @@ class ScriptText:
         with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
+                if skipcomments:
+                    tmp = ''
+                    for line in text.split('\n'):
+                        pos = line.find(';')
+                        if pos == -1:
+                                tmp += line + '\n'       
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + '\n'
+                    text = tmp
                 z += 1
                 progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
                 if x == 0 or skip.lower() != eid[:x].lower():
@@ -15778,7 +15834,7 @@ class CBash_ScriptText:
         if eid_data: return True
         return False
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp):
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
         """Writes stats to specified text file."""
         eid_data = self.eid_data
         x = len(skip)
@@ -15790,6 +15846,18 @@ class CBash_ScriptText:
         with balt.Progress(_("Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
+                if skipcomments:
+                    tmp = ''
+                    for line in text.split('\n'):
+                        pos = line.find(';')
+                        if pos == -1:
+                                tmp += line + '\n'       
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + '\n'
+                    text = tmp
                 z += 1
                 progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
                 if x == 0 or skip.lower() != eid[:x].lower():
@@ -26804,7 +26872,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          }[key]
         self.mod_count = {}
 
-
     def getTypes(self):
         return ['CLOT']
     #--Patch Phase ------------------------------------------------------------
@@ -26814,8 +26881,9 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
             return
 
         maxWeight = self.choiceValues[self.chosen][0]
+        superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
 
-        if (record.weight > maxWeight) and self.isMyType(record):
+        if (record.weight > maxWeight) and self.isMyType(record) and (record.weight < superWeight):
             for attr in self.matchFlags:
                 if(getattr(record, attr)):
                     break
@@ -31382,7 +31450,7 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
             _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            'BiggerOrcsand Nords',
+            'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
             ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
             ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
@@ -33179,9 +33247,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     mesh_eye[mesh] = []
                 mesh_eye[mesh].append(eye)
             currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-            #print race.eid, mesh_eye
             try:
-                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
+                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
             except IndexError:
                 maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?
@@ -33410,7 +33477,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         for bashKey in bashTags & self.autoKey:
             if bashKey == 'Hair':
                 #Using sets would make this clearer, and probably faster (though speed isn't a concern)
-                #So this is a bit convulated, but makes the apply section work without special casing this tag
+                #So this is a bit convoluted, but makes the apply section work without special casing this tag
                 #Hairs should perhaps have it's own patcher, but...
                 allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
                 allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0] and hair[0])
@@ -33642,29 +33709,13 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eye_meshes = self.eye_meshes
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
-        except KeyError, errd:
-            print errd
-            print _("Skipping the race eye patcher: unable to locate the default blue eye (%s, %06X).") % (self.blueEye[0].s, self.blueEye[1])
-            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
-            print
-            print ObCollection.Debug_DumpModFiles()
-            print
-            print _("eye_meshes contents")
-            for eye, meshes in eye_meshes.iteritems():
-                print PrintFormID(eye), ":", meshes
+        except KeyError:
+            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
-        except KeyError, errd:
-            print errd
-            print _("Skipping the race eye patcher: unable to locate the default argonian eye (%s, %06X).") % (self.argonian[0].s, self.argonian[1])
-            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
-            print
-            print ObCollection.Debug_DumpModFiles()
-            print
-            print _("eye_meshes contents")
-            for eye, meshes in eye_meshes.iteritems():
-                print PrintFormID(eye), ":", meshes
+        except KeyError:
+            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         fixedRaces = set()
         fixedNPCs = set([(GPath('Oblivion.esm'), 0x000007)]) #causes player to be skipped
@@ -33707,9 +33758,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                             continue
                         rightEye, leftEye = eye_meshes[eye]
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
-
                     try:
-                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
+                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]),reverse=True)[0]
                     except IndexError:
                         maxEyesMeshes = blueEyeMeshes
                     meshesCount = len(meshes_eyes)
@@ -34608,7 +34658,6 @@ def initDefaultSettings():
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
     inisettings['OblivionTexturesBSAName'] = GPath('Oblivion - Textures - Compressed.bsa')
-    inisettings['ClearRO'] = True
     inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
     inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
     inisettings['ShowTextureToolLaunchers'] = True

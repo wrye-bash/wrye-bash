@@ -58,7 +58,7 @@ import bolt
 bolt.CBash = os.path.join(os.getcwd(),'..','bash','compiled')
 import bosh
 import bush
-from bolt import _, GPath, mainfunc
+from bolt import _, GPath, Path, mainfunc
 
 indent = 0
 longest = 0
@@ -1020,27 +1020,80 @@ def dumpLSCR(fileName='Oblivion.esm'):
         print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
-def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',descFileName='descs.txt',reuse=None):
+def createLSCR(*args):
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('modName',
+                        type=Path,
+                        help='Name of the ESP to create.',
+                        )
+    parser.add_argument('-textures',
+                        action='store',
+                        type=Path,
+                        default=GPath('textures'),
+                        dest='ddsPath',
+                        help="Path to the 'Textures' folder containing the DDS textures for the Loading Screens.  Default: 'textures'",
+                        )
+    parser.add_argument('-formids',
+                        action='store',
+                        type=Path,
+                        default=GPath('formids.txt'),
+                        dest='formidPath',
+                        help="Path to the text file containing FormIDs of records to overwrite.  Default: 'formids.txt'",
+                        )
+    parser.add_argument('-descs',
+                        action='store',
+                        type=Path,
+                        default=GPath('descs.txt'),
+                        dest='descPath',
+                        help="Path to the text file containing strings to be used as DESC subrecords.  Default: 'descs.txt'",
+                        )
+    parser.add_argument('-lnams',
+                        action='store',
+                        type=Path,
+                        default=GPath('lnams.txt'),
+                        dest='lnamPath',
+                        help="Path to the text file containing FormIDs to be added to each Loading Screen as a Direct LNAM subrecord.  Default: 'lnams.txt'",
+                        )
+    parser.add_argument('-noreuse',
+                        action='store_false',
+                        default=True,
+                        dest='reuse',
+                        help='If specified, when more LSCR records need to be created, but available textures or DESC strings have run out, these field will be left blank.',
+                        )
+    parser.add_argument('-clearlnam',
+                        action='store_true',
+                        default=False,
+                        dest='clearLNAM',
+                        help='If specified, when override records are created, their LNAM subrecords will be cleared out.',
+                        )
+    parser.add_argument('-keepemptylnam',
+                        action='store_true',
+                        default=False,
+                        dest='keepEmptyLnam',
+                        help='If specified, when override records are created, if the original record had no LNAM data, then no new LNAM data will be added.',
+                        )
+    opts = parser.parse_args(list(args))
+
     import cint
     import random
 
     class LSCRData(object):
-        def __init__(self,ddsDirectory,formIDFileName,descFileName,reuse):
+        def __init__(self,ddsDirectory,formIDFileName,descFileName,lnamFileName,reuse,clearLNAM):
             # Defaults
             self.DDS = []
             self.DESC = []
+            self.LNAM = []
             self.fids_eids = []
             self.masters = set()
             self.missingMasters = set()
-            self.reuse = True
+            self.reuse = reuse
 
             self.usedDDS = []
             self.usedDESC = []
             self.allDDS = False # True when all DDS files have been used at least once
             self.allDESC = False # Same as above
 
-            if reuse is not None:
-                self.reuse = False
             bosh.initBosh()
             # Collection DDS Files
             self.loadDDS(ddsDirectory)
@@ -1048,6 +1101,10 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
             self.loadFIDS(formIDFileName)
             # Read DESC file
             self.loadDESCS(descFileName)
+            # Read LNAM file
+            self.loadLNAMS(lnamFileName,clearLNAM)
+
+            self.updateMasters()
 
         def _getNext(self,notUsed,used,all):
             if not notUsed:
@@ -1076,8 +1133,6 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
                 print "WARNING: FormID text file '%s' could not be found.  All LSCR records will be new records." % (fidFile.s)
             #--Parse the FormID file
             self.fids_eids = []
-            self.masters = set()
-            self.missingMasters = set()
             try:
                 with fidFile.open('r') as file:
                     for line in file:
@@ -1100,10 +1155,6 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
                         except:
                             continue
                         masterName = bosh.dirs['mods'].join(masterName)
-                        if masterName.exists():
-                            self.masters.add(masterName.tail)
-                        else:
-                            self.missingMasters.add(masterName.tail)
                         self.fids_eids.append(((masterName.tail,recordId),eid))
             except Exception, e:
                 print "WARNING: An error occured while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
@@ -1126,10 +1177,54 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
                 print "WARNING: An error occured while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
             random.shuffle(self.DESC)
 
+        def loadLNAMS(self,lnamFile,clearLNAM):
+            lnamFile = GPath(lnamFile)
+            if not lnamFile.exists():
+                if clearLNAM:
+                    print "WARNING: LNAM text file '%s' could not be found, and this tool is currently set to clear all LNAM subrecords from override records.  No LSCR records will have LNAM data." % (lnamFile.s)
+                else:
+                    print "WARNING: LNAM text file '%s' could not be found.  All new LSCR records will have no LNAM data." % (lnamFile.s)
+                return
+            self.LNAM = []
+            try:
+                with lnamFile.open('r') as file:
+                    for line in file:
+                        if ':' not in line: continue
+                        parts = line.split(':')
+                        if len(parts) != 2: continue
+                        masterName = parts[0].strip()
+                        parts = parts[1].split()
+                        try:
+                            recordId = long(parts[0],16)
+                            if recordId < 0 or recordId > 0xFFFFFF:
+                                continue
+                        except:
+                            continue
+                        masterName = bosh.dirs['mods'].join(masterName)
+                        self.LNAM.append((masterName.tail,recordId))
+            except Exception, e:
+                print "WARNING: An error occured while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
+
+        def updateMasters(self):
+            self.masters = set()
+            self.missingMasters = set()
+            for fid,eid in self.fids_eids:
+                master = bosh.dirs['mods'].join(fid[0])
+                if master.exists():
+                    self.masters.add(fid[0])
+                else:
+                    self.missingMasters.add(fid[0])
+            for lnam in self.LNAM:
+                master = bosh.dirs['mods'].join(lnam[0])
+                if master.exists():
+                    self.masters.add(fid[0])
+                else:
+                    self.missingMasters.add(fid[0])
+
     bosh.initBosh()
-    modName = bosh.dirs['mods'].join(modName)
+    modName = bosh.dirs['mods'].join(opts.modName)
     #--Parse data
-    data = LSCRData(ddsDirectory,formIDFileName,descFileName,reuse)
+    data = LSCRData(opts.ddsPath,opts.formidPath,opts.descPath,opts.lnamPath,opts.reuse,opts.clearLNAM)
     if not data.DESC and not data.DDS and not data.fids_eids:
         print "WARNING: No DESC subrecords, no textures, and no record overrides were found.  Quiting operation."
         return
@@ -1146,6 +1241,16 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
         print "WARNING: No textures were found."
     else:
         print 'Loaded %i textures.' % (len(data.DDS))
+    if not data.LNAM:
+        if opts.clearLNAM:
+            print "WARNING: No LNAM subrecords were loaded.  No records will have LNAM data."
+        else:
+            print "WARNING: No LNAM subrecords were loaded.  No new records will have LNAM data."
+    else:
+        print 'Loaded %i LNAM subrecords.' % (len(data.LNAM))
+    #--Check for missing masters
+    for master in data.missingMasters:
+        print "WARNING: Expected master file '%s' is not present.  Applicable data from those records cannot be verified and/or copied." % (master.stail)
     #--Now do the mod creation
     collection = cint.ObCollection(ModsPath=bosh.dirs['mods'].s)
     for master in data.masters:
@@ -1172,6 +1277,10 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
             text = data.getNextDESC()
             if text:
                 record.text = text
+            #--LNAM
+            for lnam in data.LNAM:
+                loc = record.create_location()
+                loc.direct = lnam
             #--Did this record have reused DESC/DDS's?
             if data.allDDS: extraDDS.add(fid)
             if data.allDESC: extraDESC.add(fid)
@@ -1200,6 +1309,15 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
             text = data.getNextDESC()
             if text:
                 override.text = text
+            #--LNAM
+            if opts.keepEmptyLnam and len(override.locations_list) == 0:
+                pass
+            else:
+                if opts.clearLNAM:
+                    override.locations = None
+                for lnam in data.LNAM:
+                    loc = override.create_location()
+                    loc.direct = lnam
             if data.allDDS: extraDDS.add(fid)
             if data.allDESC: extraDESC.add(fid)
     # Use any left over DDS's as new records
@@ -1212,6 +1330,10 @@ def createLSCR(modName,ddsDirectory='textures',formIDFileName='formids.txt',desc
             text = data.getNextDESC()
             if text:
                 record.text = text
+            #--LNAM
+            for lnam in data.LNAM:
+                loc = record.create_location()
+                loc.direct = lnam
             if data.allDESC: extraDESC.add(record.fid)
     modFile.save()
     print

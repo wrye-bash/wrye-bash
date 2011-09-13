@@ -161,11 +161,25 @@ def exit():
                 print
                 raise
 
+def dump_environment():
+    import locale
+    print "Wrye Bash starting"
+    print "Python version: %d.%d.%d" % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    try:
+        import wx
+        print "wxPython version: %s" % wx.version()
+    except ImportError:
+        print "wxPython not found"
+    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())
+
 # Main ------------------------------------------------------------------------
 def main():
     bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
+
+    # useful for understanding context of bug reprots
+    if opts.debug: dump_environment()
 
     if opts.Psyco:
         try:
@@ -239,7 +253,7 @@ def main():
         balt.showError(None,str(e))
         app.MainLoop()
         raise e
-    except ImportError, e:
+    except (ImportError, StandardError), e:
         # try really hard to be able to show the error in any GUI
         try:
             import Tkinter

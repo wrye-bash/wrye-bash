@@ -363,6 +363,8 @@ def generateTweakLines(wizardEdits, target):
             format = wizardEdits[realSection][0]+' %(setting)s to %(value)s%(comment)s'
         elif realSection == ']setgs[':
             format = wizardEdits[realSection][0]+' %(setting)s %(value)s%(comment)s'
+        elif not realSection:
+            continue
         else:
             lines.append('')
             lines.append('[%s]' % wizardEdits[realSection][0])
