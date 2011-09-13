@@ -33172,9 +33172,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     mesh_eye[mesh] = []
                 mesh_eye[mesh].append(eye)
             currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-            #print race.eid, mesh_eye
+
             try:
-                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
+                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
             except IndexError:
                 maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?
@@ -33635,29 +33635,13 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eye_meshes = self.eye_meshes
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
-        except KeyError, errd:
-            print errd
-            print _("Skipping the race eye patcher: unable to locate the default blue eye (%s, %06X).") % (self.blueEye[0].s, self.blueEye[1])
-            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
-            print
-            print Current.Debug_DumpModFiles()
-            print
-            print _("eye_meshes contents")
-            for eye, meshes in eye_meshes.iteritems():
-                print PrintFormID(eye), ":", meshes
+        except KeyError:
+            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
-        except KeyError, errd:
-            print errd
-            print _("Skipping the race eye patcher: unable to locate the default argonian eye (%s, %06X).") % (self.argonian[0].s, self.argonian[1])
-            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
-            print
-            print Current.Debug_DumpModFiles()
-            print
-            print _("eye_meshes contents")
-            for eye, meshes in eye_meshes.iteritems():
-                print PrintFormID(eye), ":", meshes
+        except KeyError:
+            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         fixedRaces = set()
         fixedNPCs = set([(GPath('Oblivion.esm'), 0x000007)]) #causes player to be skipped
@@ -33702,7 +33686,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
 
                     try:
-                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
+                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]),reverse=True)[0]
                     except IndexError:
                         maxEyesMeshes = blueEyeMeshes
                     meshesCount = len(meshes_eyes)
