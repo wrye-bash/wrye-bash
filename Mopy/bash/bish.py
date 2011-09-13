@@ -1087,15 +1087,13 @@ def createLSCR(*args):
             self.fids_eids = []
             self.masters = set()
             self.missingMasters = set()
-            self.reuse = True
+            self.reuse = reuse
 
             self.usedDDS = []
             self.usedDESC = []
             self.allDDS = False # True when all DDS files have been used at least once
             self.allDESC = False # Same as above
 
-            if reuse is not None:
-                self.reuse = False
             bosh.initBosh()
             # Collection DDS Files
             self.loadDDS(ddsDirectory)
