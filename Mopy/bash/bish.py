@@ -1067,6 +1067,12 @@ def createLSCR(*args):
                         dest='clearLNAM',
                         help='If specified, when override records are created, their LNAM subrecords will be cleared out.',
                         )
+    parser.add_argument('-removedesc',
+                        action='store_true',
+                        default=False,
+                        dest='removeDESC',
+                        help='If specified, override records will always have their DESC subrecord overwritten, even if no DESC subrecords are available to use.  In otherwords, the DESC subrecord will be blanked.',
+                        )
     parser.add_argument('-keepemptylnam',
                         action='store_true',
                         default=False,
@@ -1309,6 +1315,8 @@ def createLSCR(*args):
             text = data.getNextDESC()
             if text:
                 override.text = text
+            elif opts.removeDESC:
+                override.text = ' '
             #--LNAM
             if opts.keepEmptyLnam and len(override.locations_list) == 0:
                 pass
