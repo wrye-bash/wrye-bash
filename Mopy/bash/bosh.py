@@ -10939,9 +10939,20 @@ class InstallerConverter(object):
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
         ins = cStringIO.StringIO(Encode(ins))
         setter = object.__setattr__
-        map(self.__setattr__, self.persistBCF, cPickle.load(ins))
+        # translate data types to new hierarchy
+        class _Translator:
+            def __init__(self, streamToWrap):
+                self._stream = streamToWrap
+            def read(self, numBytes):
+                return self._translate(self._stream.read(numBytes))
+            def readline(self):
+                return self._translate(self._stream.readline())
+            def _translate(self, s):
+                return re.sub('^(bolt|bosh)$', r'bash.\1', s)
+        translator = _Translator(ins)
+        map(self.__setattr__, self.persistBCF, cPickle.load(translator))
         if fullLoad:
-            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(ins))
+            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
         ins.close()
 
     def save(self, destInstaller):
