@@ -33624,6 +33624,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         self.femaleHairs = set()
         self.id_meshes = {}
         self.id_eyes = {}
+        self.srcEyes = {}
         self.eye_meshes = {}
         self.finishedOnce = False
 
@@ -33649,12 +33650,15 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             return
         elif record._Type == 'EYES':
             self.eyeNames.update({record.fid:record.full})
+            self.srcEyes.setdefault(modFile.GName,set()).add(record.fid)
             return
         eye_meshes = self.eye_meshes
+        srcEyes = self.srcEyes.get(modFile.GName,set())
         curEyes = set(record.eyes)
         eyePaths = (record.rightEye.modPath, record.leftEye.modPath)
         for eye in curEyes:
-            if eye not in eye_meshes:
+            # only map eyes that are (re)defined in this mod
+            if eye in srcEyes:
                 eye_meshes[eye] = eyePaths
         if modFile.GName in self.srcs and self.autoKey & bashTags:
             allEyes = self.id_eyes.setdefault(recordId,set())
