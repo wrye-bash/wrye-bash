@@ -4781,7 +4781,7 @@ class BashFrame(wx.Frame):
         bashFrame = self
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, -1, 'Wrye Bash', pos, size,style)
+        wx.Frame.__init__(self, parent, -1, 'Wrye Bash', pos, size, style)
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -4804,6 +4804,7 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
+        self.Layout()
         deprint(_("Wrye Bash in %s Mode") % (['ANSI','Unicode'][bolt.bUseUnicode]))
         if bolt.bUseUnicode:
             wxver = wx.version()
