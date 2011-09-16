@@ -2247,7 +2247,6 @@ class INIPanel(SashPanel):
         #--Watch for changes to the target INI
         self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
         self.trackedInfo.track(self.GetChoice())
-        print self.trackedInfo.data
         #--Ini file
         self.iniContents = INILineCtrl(right)
         #--Tweak file
