@@ -33718,7 +33718,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eyePaths = (record.rightEye.modPath, record.leftEye.modPath)
         for eye in curEyes:
             # only map eyes that are (re)defined in this mod
-            if eye in srcEyes:
+            if eye not in eye_meshes or eye in srcEyes:
                 eye_meshes[eye] = eyePaths
         if modFile.GName in self.srcs and self.autoKey & bashTags:
             allEyes = self.id_eyes.setdefault(recordId,set())
