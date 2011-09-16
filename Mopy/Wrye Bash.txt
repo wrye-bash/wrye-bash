@@ -548,7 +548,7 @@ Bain will skip over (never install) certain types of files in the package.
 === OBSE Plugin Installation
 Due to the (theoretical but potentially significant) dangers of installing executable files the only type that can be installed are OBSE plugin dll/x files. 
 * __Enabling OBSE dll/x plugin installation__
-  * Format archive with OBSE dlls so that the dll(s) are located in <optional subpackage>\obse\plugins\ or a subfolder therein.
+  * Format archive with OBSE dlls so that the dll(s) are located in &lt;optional subpackage&gt;\obse\plugins\ or a subfolder therein.
   * In BAIN deselect __Skip OBSE Plugins__ in the package header menu.
   * Select install on the package and confirm or block each dll/x - you only have to do it once per dll/version.
 * __Saving/Editing allowed/disallowed OBSE plugin dlls list__
