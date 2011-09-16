@@ -110,6 +110,7 @@ modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
 iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
+trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
@@ -8262,19 +8263,16 @@ class TrackedFileInfos(DataDict):
         data = self.data
         changed = set()
         for name in data.keys():
-            if not name.exists():
+            fileInfo = self.factory('',name)
+            if not fileInfo.sameAs(data[name]):
+                errorMsg = fileInfo.getHeaderError()
+                if errorMsg:
+                    self.corrupted[name] = errorMsg
+                    data.pop(name,None)
+                else:
+                    data[name] = fileInfo
+                    self.corrupted.pop(name,None)
                 changed.add(name)
-            else:
-                fileInfo = self.factory('',name)
-                if not fileInfo.sameAs(data[name]):
-                    errorMsg = fileInfo.getHeaderError()
-                    if errorMsg:
-                        self.corrupted[name] = errorMsg
-                        data.pop(name,None)
-                    else:
-                        data[name] = fileInfo
-                        self.corrupted.pop(name,None)
-                    changed.add(name)
         return changed
 
     def track(self,fileName):
@@ -10302,6 +10300,7 @@ class Installer(object):
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.xlsx','.ods','.odp','.ppt','.pptx'))
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
+    commonlyEditedExts = scriptExts | set(('.xml',))
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -10784,6 +10783,12 @@ class Installer(object):
                     dest = 'Docs\\'+file
                 elif fileExt in imageExts:
                     dest = 'Docs\\'+file
+            if fileExt in Installer.commonlyEditedExts:
+                if trackedInfos is not None:
+                    # The 'INI Tweaks' directory is already tracked by INIInfos,
+                    # But INIInfos wont update the Installers Tab UI on changes.
+                    track = dirs['mods'].join(dest)
+                    trackedInfos.track(track)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
