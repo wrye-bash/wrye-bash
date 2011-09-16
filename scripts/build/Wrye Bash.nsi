@@ -415,23 +415,41 @@
             Pop $3
         IntOp $0 $0 + 18
         ${If} $PythonVersionInstall == $True
-            ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
             ${If} $Python_Path != $Empty
                 StrCpy $Python_Ver "27"
             ${Else}
-                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
+                ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath" ""
+                ${If} $Python_Path == $Empty
+                    ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
+                ${EndIf}
+                ${If} $Python_Path == $Empty
+                    ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath" ""
+                ${EndIf}
                 ${If} $Python_Path == $Empty
                     ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
                 ${EndIf}
                 ${If} $Python_Path != $Empty
                     StrCpy $Python_Ver "26"
                 ${Else}
-                    ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
+                    ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.5\InstallPath" ""
                     ${If} $Python_Path == $Empty
-                        ReadRegStr $Python_Path HKCU "SOFTWARE\PYTHON\PythonCore\2.5\InstallPath" ""
+                        ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
+                    ${EndIf}
+                    ${If} $Python_Path == $Empty
+                        ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.5\InstallPath" ""
+                    ${EndIf}
+                    ${If} $Python_Path == $Empty
+                        ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
                     ${EndIf}
                     ${If} $Python_Path != $Empty
                         StrCpy $Python_Ver "25"
