@@ -487,7 +487,7 @@ ID_REVERT_FIRST  = 6101
 ID_BACKUP_NOW    = 6102
 
 #--Label Menus
-ID_LOADERS   = balt.IdList(10000, 90,'SAVE','EDIT','NONE')
+ID_LOADERS   = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL')
 ID_GROUPS    = balt.IdList(10100,290,'EDIT','NONE')
 ID_RATINGS   = balt.IdList(10400, 90,'EDIT','NONE')
 ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
@@ -9762,6 +9762,7 @@ class Mods_LoadList:
 
     def AppendToMenu(self,menu,window,data):
         self.window = window
+        menu.Append(ID_LOADERS.ALL,_('All'))
         menu.Append(ID_LOADERS.NONE,_('None'))
         menu.Append(ID_LOADERS.SAVE,_('Save List...'))
         menu.Append(ID_LOADERS.EDIT,_('Edit Lists...'))
@@ -9773,6 +9774,7 @@ class Mods_LoadList:
             menu.FindItemById(ID_LOADERS.SAVE).Enable(False)
         #--Events
         wx.EVT_MENU(bashFrame,ID_LOADERS.NONE,self.DoNone)
+        wx.EVT_MENU(bashFrame,ID_LOADERS.ALL,self.DoAll)
         wx.EVT_MENU(bashFrame,ID_LOADERS.SAVE,self.DoSave)
         wx.EVT_MENU(bashFrame,ID_LOADERS.EDIT,self.DoEdit)
         wx.EVT_MENU_RANGE(bashFrame,ID_LOADERS.BASE,ID_LOADERS.MAX,self.DoList)
@@ -9781,6 +9783,14 @@ class Mods_LoadList:
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
         modList.RefreshUI()
+
+    def DoAll(self,event):
+        """Select all mods."""
+        selectList = [GPath(modName) for modName in modList.items]
+        errorMessage = bosh.modInfos.selectExact(selectList)
+        modList.RefreshUI()
+        if errorMessage:
+            balt.showError(self.window,errorMessage,item)
 
     def DoList(self,event):
         """Select mods in list."""
