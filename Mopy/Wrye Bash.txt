@@ -2020,7 +2020,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
-* __Copy to new Tweak:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the values of the target INI instead of the selected tweak.
+* __Create Tweak with current settings:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the current values of the target INI.
 * __List Errors:__ If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
 * __Open:__ Open the tweak file for editing.
 * __Delete:__ Delete the tweak file.
