@@ -9912,7 +9912,7 @@ class INI_CreateNew(Link):
         Link.AppendToMenu(self,menu,window,data)
         ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
         tweak = data[0]
-        menuItem = wx.MenuItem(menu,self.id,_('Copy to new Tweak...'),_("Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
+        menuItem = wx.MenuItem(menu,self.id,_('Create Tweak with current settings...'),_("Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(data) == 1)
 
@@ -9920,7 +9920,7 @@ class INI_CreateNew(Link):
         """Handle creating a new INI tweak."""
         pathFrom = self.data[0]
         fileName = pathFrom.sbody + ' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,_('Copy to new Tweak...'),bosh.dirs['mods'].join('INI Tweaks'),fileName,_('INI Tweak File (*.ini)|*.ini'))
+        path = balt.askSave(self.window,_('Copy Tweak with current settings...'),bosh.dirs['mods'].join('INI Tweaks'),fileName,_('INI Tweak File (*.ini)|*.ini'))
         if not path: return
         bosh.dirs['mods'].join('INI Tweaks', pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
