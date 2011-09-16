@@ -872,6 +872,7 @@ These are the commands for the context menu for the mods list. (You'll get this 
 
 === Load Lists
 * Aside from using checkboxes to select and unselect mods, you can also use load lists. These are accessed through the column context menu, and work in the same way at the [[#|Load Masters]] command.
+* __All:__ Activates all mods.
 * __None:__ Deactivates all mods.
 * __Save List...__ Saves your currently activated mods to a new load list.
 * __Edit Lists...__ Allows you to delete and rename previously defined load lists.
@@ -923,7 +924,7 @@ These are the commands found on context menu for mods...
   * **Revert to Snapshot** Reverts the file to a selected snapshot.
 
 === Add Master
-* Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.
+* Adds specified masters to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.
 * **Warning:** For advanced modders only. You should only use this if you know exactly what you're doing.
 
 === Decompile All
@@ -2445,6 +2446,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Bugfixes from valda and bluesky404
 * Added activation status as a new mods column/sort option.
 * New mod commands:
+  * [[#LoadLists|Load All]] will activate all mods (up to 255 of them, at least)
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
   * Ghost will ghost just the selected mod(s) 
