@@ -9790,7 +9790,7 @@ class Mods_LoadList:
         errorMessage = bosh.modInfos.selectExact(selectList)
         modList.RefreshUI()
         if errorMessage:
-            balt.showError(self.window,errorMessage,item)
+            balt.showError(self.window,errorMessage,_('Select All'))
 
     def DoList(self,event):
         """Select mods in list."""
