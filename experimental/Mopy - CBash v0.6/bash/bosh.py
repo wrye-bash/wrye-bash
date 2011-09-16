@@ -21166,11 +21166,13 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         deathitem = record.ConflictDetails(('deathItem',))
-        if deathitem and deathitem['deathItem'].ValidateFormID(self.patchFile):
-            self.id_deathItem[record.fid] = deathitem['deathItem']
-        else:
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+        if deathitem:
+            if deathitem['deathItem'].ValidateFormID(self.patchFile):
+                self.id_deathItem[record.fid] = deathitem['deathItem']
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -21568,23 +21570,12 @@ class CBash_ImportRelations(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
-
+        scan_more(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvFid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction and (faction[0] is not None and faction[0] in self.patchFile.loadSet))
+            newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
         elif(fid in self.fid_faction_mod):
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction and (faction[0] is not None and faction[0] in self.patchFile.loadSet))
+            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
         else:
             return
         curRelations = set(record.relations_list)
@@ -21776,19 +21767,23 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         script = record.ConflictDetails(('script',))
         if script:
-            # Only save if different from the master record
-            if record.GetParentMod().GName != record.fid[0]:
-                history = record.History()
-                if history and len(history) > 0:
-                    masterRecord = history[0]
-                    if masterRecord.GetParentMod().GName == record.fid[0] and masterRecord.script == record.script:
-                        return # Same
-            self.id_script[record.fid] = script['script']
+            if record.script.ValidateFormID(self.patchFile):
+                # Only save if different from the master record
+                if record.GetParentMod().GName != record.fid[0]:
+                    history = record.History()
+                    if history and len(history) > 0:
+                        masterRecord = history[0]
+                        if masterRecord.GetParentMod().GName == record.fid[0] and masterRecord.script == record.script:
+                            return # Same
+                self.id_script[record.fid] = script['script']
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_script and record.script != self.id_script[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -22126,8 +22121,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         if not masters: return
         masterEntries = []
         for masterEntry in masters:
-            masterEntries.extend(masterEntry.items_list)
-        entries = record.items_list
+            masterEntries.extend([(item,count) for item,count in masterEntry.items if item.ValidateFormID(self.patchFile)])
+        entries = [(item,count) for item,count in record.items if item.ValidateFormID(self.patchFile)]
         masterItems = set(item for item,count in masterEntries)
         modItems = set(item for item,count in entries)
         removeItems = masterItems - modItems
@@ -22141,17 +22136,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
+        scan_more(modFile,record,bashTags)
         deltas = self.id_deltas.get(record.fid)
         if not deltas: return
         #If only the inventory is imported, the deltas have to be applied to
@@ -22167,7 +22152,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 else:
                     record = conflicts[1]
 
-        removable = set(entry.item for entry in record.items)
+        removable = set(item for item,count in record.items if item.ValidateFormID(self.patchFile))
         changed = False
         items = record.items_list
         for removeItems,addEntries in reversed(deltas):
@@ -22186,10 +22171,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         if changed:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                try:
-                    override.items_list = items
-                except AttributeError:
-                    override.items_list = [item for item in items if item[0][0]]
+                override.items_list = items
                 class_mod_count = self.class_mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -22408,12 +22390,12 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         curData = {'deleted':[],'merged':[]}
-        curspells = record.spells
-##            print curspells
+        curspells = FormID.FilterValid(record.spells, self.patchFile)
         parentRecords = record.History()
         if parentRecords:
-            if parentRecords[-1].spells != curspells or 'Actors.SpellsForceAdd' in bashTags:
-                for spell in parentRecords[-1].spells:
+            parentSpells = FormID.FilterValid(parentRecords[-1].spells, self.patchFile)
+            if parentSpells != curspells or 'Actors.SpellsForceAdd' in bashTags:
+                for spell in parentSpells:
                     if spell not in curspells:
                         curData['deleted'].append(spell)
             curData['merged'] = curspells
@@ -22432,17 +22414,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         mergedSpells = self.id_spells.get(recordId,None)
         if mergedSpells:
@@ -22625,18 +22597,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
-
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         full = self.id_full.get(recordId, None)
         full = self.csvId_full.get(recordId, full)
@@ -22800,10 +22761,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_face = {}
-        ##Can't allow merging from unloaded mods if fids are involved. Might end up with a dependency on that mod.
-        ##self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
-        self.faceData = ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','fnam')
-        self.faceFidData = ('eye','hair')
+        self.faceData = ('fggs_p','fgga_p','fgts_p','eye','hair','hairLength','hairRed','hairBlue','hairGreen','fnam')
         self.mod_count = {}
 
     def getTypes(self):
@@ -22812,35 +22770,28 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
+        attrs = []
         if 'NpcFacesForceFullImport' in bashTags:
-            face = {}
-            for attr in self.faceFidData:
-                face[attr] = getattr(record,attr)
-            for fidvalue in face.values():
-                if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                    #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                    return
-            for attr in self.faceData:
-                face[attr] = getattr(record,attr)
-            self.id_face[record.fid] = face
-        else:
-            fidattrs, attrs = [], []
-            if 'Npc.HairOnly' in bashTags:
-                fidattrs += ['hair']
-                attrs =['hairLength','hairRed','hairBlue','hairGreen']
-            if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
-            if fidattrs:
-                attr_fidvalue = record.ConflictDetails(fidattrs)
+            face = dict((attr,getattr(record,attr)) for attr in self.faceData)
+            if ValidateDict(face):
+                self.id_face[record.fid] = face
             else:
-                attr_fidvalue = record.ConflictDetails(self.faceFidData)
-            for fidvalue in attr_fidvalue.values():
-                if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                    #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                    return
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+            return
+        elif 'NpcFaces' in bashTags:
+            attrs = self.faceData
+        else:
+            if 'Npc.HairOnly' in bashTags:
+                attrs = ['hair', 'hairLength','hairRed','hairBlue','hairGreen']
+            if 'Npc.EyesOnly' in bashTags:
+                attrs += ['eye']
+        if not attrs:
+            return
+        face = record.ConflictDetails(attrs)
+            
+        if ValidateDict(face):
             fid = record.fid
             # Only save if different from the master record
             if record.GetParentMod().GName != fid[0]:
@@ -22848,32 +22799,20 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                 if history and len(history) > 0:
                     masterRecord = history[0]
                     if masterRecord.GetParentMod().GName == record.fid[0]:
-                        same = True
-                        for attr in (attrs + fidattrs) or (self.faceFidData + self.faceData):
-                            if getattr(masterRecord,attr) != getattr(record,attr):
-                                same = False
+                        for attr, value in face.iteritems():
+                            if getattr(masterRecord,attr) != value:
                                 break
-                        if same:
+                        else:
                             return
-            self.id_face.setdefault(fid,{}).update(attr_fidvalue)
-            if fidattrs:
-                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(attrs))
-            else:
-                self.id_face.setdefault(fid,{}).update(record.ConflictDetails(self.faceData))
+            self.id_face.setdefault(fid,{}).update(face)
+        else:
+            #Ignore the record. Another option would be to just ignore the invalid formIDs
+            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
+        scan_more(modFile,record,bashTags)
 
         recordId = record.fid
         prev_face_value = self.id_face.get(recordId,None)
@@ -23015,18 +22954,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
-
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record
@@ -23039,28 +22967,25 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 return
             #So some records that are actually equal won't pass the above test and end up copied over
             #Bloats the patch a little, but won't hurt anything.
-            if newRoad.fid[0] in self.patchFile.loadSet:
+            if newRoad.fid.ValidateFormID(self.patchFile):
                 copyRoad = newRoad #Copy the new road over
-            elif curRoad and curRoad.fid[0] in self.patchFile.loadSet:
-                copyRoad = curRoad #Copy the current road over (it's formID is acceptable)
+            elif curRoad and curRoad.fid.ValidateFormID(self.patchFile):
+                copyRoad = curRoad #Copy the current road over (its formID is acceptable)
             else:
-                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                #Ignore the record.
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
 
-            parent = self.patchFile.Current.LookupRecords(copyRoad.Parent.fid)
-            override = parent[0].CopyAsOverride(self.patchFile) #Copies the winning parent world over if needed
+            override = copyRoad.CopyAsOverride(self.patchFile, UseWinningParents=True) #Copies the road over (along with the winning version of its parents if needed)
             if override:
-                override = copyRoad.CopyAsOverride(self.patchFile) #Copies the road over
-                if override:
-                    #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
-                    for copyattr in newRoad.copyattrs:
-                        setattr(override, copyattr, getattr(newRoad, copyattr))
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+                #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
+                for copyattr in newRoad.copyattrs:
+                    setattr(override, copyattr, getattr(newRoad, copyattr))
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -23249,21 +23174,18 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
+        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
+        if conflicts:
+            if ValidateDict(conflicts, self.patchFile):
+                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -23455,25 +23377,23 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        self.fid_attr_value.setdefault(record.fid,{}).update(record.ConflictDetails(self.class_attrs[record._Type]))
+        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
+        if conflicts:
+            if ValidateDict(conflicts, self.patchFile):
+                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
-
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId, None)
-        prev_attr_value = self.csvFid_attr_value.get(recordId, prev_attr_value)
+        csv_attr_value = self.csvFid_attr_value.get(recordId, None)
+        if csv_attr_value and ValidateDict(csv_attr_value, self.patchFile):
+            prev_attr_value = csv_attr_value
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
@@ -23651,25 +23571,23 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        self.id_stats.setdefault(record.fid,{}).update(record.ConflictDetails(self.attrs))
+        conflicts = record.ConflictDetails(self.attrs)
+        if conflicts:
+            if ValidateDict(conflicts, self.patchFile):
+                self.id_stats.setdefault(record.fid,{}).update(conflicts)
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: break
-
+        scan_more(modFile,record,bashTags)
         recordId = record.fid
-        prev_values = self.id_stats.get(recordId, None)
-        prev_values = self.csvId_stats.get(recordId, prev_values)
+        prev_values = self.fid_attr_value.get(recordId, None)
+        csv_values = self.csvId_stats.get(recordId, None)
+        if csv_values and ValidateDict(csv_values, self.patchFile):
+            prev_values = csv_values
         if prev_values:
             rec_values = dict((attr,getattr(record,attr)) for attr in prev_values)
             if rec_values != prev_values:
@@ -33172,9 +33090,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     mesh_eye[mesh] = []
                 mesh_eye[mesh].append(eye)
             currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-
+            #print race.eid, mesh_eye
             try:
-                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
+                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]))[0]
             except IndexError:
                 maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?
@@ -33635,13 +33553,29 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eye_meshes = self.eye_meshes
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
-        except KeyError:
-            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+        except KeyError, errd:
+            print errd
+            print _("Skipping the race eye patcher: unable to locate the default blue eye (%s, %06X).") % (self.blueEye[0].s, self.blueEye[1])
+            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
+            print
+            print Current.Debug_DumpModFiles()
+            print
+            print _("eye_meshes contents")
+            for eye, meshes in eye_meshes.iteritems():
+                print PrintFormID(eye), ":", meshes
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
-        except KeyError:
-            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+        except KeyError, errd:
+            print errd
+            print _("Skipping the race eye patcher: unable to locate the default argonian eye (%s, %06X).") % (self.argonian[0].s, self.argonian[1])
+            print _("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.")
+            print
+            print Current.Debug_DumpModFiles()
+            print
+            print _("eye_meshes contents")
+            for eye, meshes in eye_meshes.iteritems():
+                print PrintFormID(eye), ":", meshes
             return
         fixedRaces = set()
         fixedNPCs = set([(GPath('Oblivion.esm'), 0x000007)]) #causes player to be skipped
@@ -33686,7 +33620,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
 
                     try:
-                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]),reverse=True)[0]
+                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]))[0]
                     except IndexError:
                         maxEyesMeshes = blueEyeMeshes
                     meshesCount = len(meshes_eyes)
