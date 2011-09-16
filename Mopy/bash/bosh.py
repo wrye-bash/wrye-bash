@@ -11381,7 +11381,12 @@ class InstallerArchive(Installer):
             ins = listArchiveContents(archive.s)
         else:
             command = r'"%s" l -slt "%s"' % (exe7z, archive.s)
-            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            try:
+                ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            except WindowsError as e:
+                errorMessage = _("%s: Unable to process archive '%s' with the command: '%s'.") % (e,archive.s,command)
+                deprint(errorMessage)
+                raise InstallerArchiveError(errorMessage)
             ins = stringBuffer(ins)
         fail = False
         try:
