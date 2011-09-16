@@ -3476,6 +3476,23 @@ class InstallersPanel(SashTankPanel):
         if bosh.inisettings['AutoSizeListColumns']:
             for i in range(0,self.gList.gList.GetColumnCount()):
                 self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
+        changed = bosh.trackedInfos.refresh()
+        if changed:
+            # Some tracked files changed, update the ui
+            data = self.data.data_sizeCrcDate
+            refresh = False
+            for file in changed:
+                path = file.relpath(bosh.dirs['mods'])
+                if file.exists():
+                    data[path] = (file.size,file.crc,file.mtime)
+                    refresh = True
+                else:
+                    if data.get(path,None) is not None:
+                        data.pop(path,None)
+                        refresh = True
+            if refresh:
+                self.data.refreshStatus()
+                self.RefreshUIMods()
         self.SetStatusCount()
 
     def OnShowInfoPage(self,event):
@@ -5771,6 +5788,7 @@ class BashApp(wx.App):
         bosh.configHelpers = bosh.ConfigHelpers()
         bosh.configHelpers.refresh()
         bosh.oblivionIni = bosh.OblivionIni()
+        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh(doAutoGroup=True)
         progress.Update(30,_("Initializing SaveInfos"))
@@ -9886,14 +9904,6 @@ class INI_Apply(Link):
             iniList.RefreshUI('VALID')
             self.window.GetParent().GetParent().GetParent().iniContents.RefreshUI()
             self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
-            #--Update installers data
-            data = gInstallers.data.data_sizeCrcDate
-            abspath = iniList.data.ini.path
-            path = abspath.relpath(bosh.dirs['mods'])
-            if data.get(path,None) is not None:
-                data[path] = (abspath.size,abspath.crc,abspath.mtime)
-                gInstallers.data.refreshStatus()
-                gInstallers.RefreshUIMods()
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(Link):
