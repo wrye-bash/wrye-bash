@@ -2244,6 +2244,10 @@ class INIPanel(SashPanel):
         self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
         self.SortChoices()
+        #--Watch for changes to the target INI
+        self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
+        self.trackedInfo.track(self.GetChoice())
+        print self.trackedInfo.data
         #--Ini file
         self.iniContents = INILineCtrl(right)
         #--Tweak file
@@ -2308,6 +2312,11 @@ class INIPanel(SashPanel):
         else:
             return self.sortKeys[index]
 
+    def OnShow(self):
+        changed = self.trackedInfo.refresh()
+        if self.GetChoice() in changed:
+            self.RefreshUI()
+
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
             # Refresh the drop down list
@@ -2345,6 +2354,9 @@ class INIPanel(SashPanel):
                 selected = selected[0]
             else:
                 selected = None
+        if refresh:
+            self.trackedInfo.clear()
+            self.trackedInfo.track(self.GetChoice())
         self.iniContents.RefreshUI(refresh)
         self.tweakContents.RefreshUI(selected)
         if iniList is not None: iniList.RefreshUI()

@@ -8239,6 +8239,56 @@ class BSAInfo(FileInfo):
         self.setmtime(mtime)
 
 #------------------------------------------------------------------------------
+class TrackedFileInfos(DataDict):
+    """Similar to FileInfos, but doesn't use a PickleDict to save information
+       about the tracked files at all."""
+    def __init__(self,factory=FileInfo):
+        self.factory = factory
+        self.data = {}
+        self.corrupted = {}
+
+    def refreshFile(self,fileName):
+        try:
+            fileInfo = self.factory('',fileName)
+            fileInfo.isGhost = not fileName.exists() and (fileName+'.ghost').exists()
+            fileInfo.getHeader()
+            self.data[fileName] = fileInfo
+        except FileError, error:
+            self.corrupted[fileName] = error.message
+            self.data.pop(fileName,None)
+            raise
+
+    def refresh(self):
+        data = self.data
+        changed = set()
+        for name in data.keys():
+            if not name.exists():
+                changed.add(name)
+            else:
+                fileInfo = self.factory('',name)
+                if not fileInfo.sameAs(data[name]):
+                    errorMsg = fileInfo.getHeaderError()
+                    if errorMsg:
+                        self.corrupted[name] = errorMsg
+                        data.pop(name,None)
+                    else:
+                        data[name] = fileInfo
+                        self.corrupted.pop(name,None)
+                    changed.add(name)
+        return changed
+
+    def track(self,fileName):
+        self.refreshFile(fileName)
+
+    def untrack(self,fileName):
+        self.data.pop(fileName,None)
+        self.corrupted.pop(fileName,None)
+
+    def clear(self):
+        self.data = {}
+        self.corrupted = {}
+
+#------------------------------------------------------------------------------
 class FileInfos(DataDict):
     def __init__(self,dir,factory=FileInfo):
         """Init with specified directory and specified factory type."""
