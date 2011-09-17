@@ -10373,6 +10373,108 @@ class Settings_Colors(Link):
         dialog.ShowModal()
         dialog.Destroy()
 
+#------------------------------------------------------------------------------
+class Settings_CheckForUpdates(Link):
+    """Checks TESNexus for newer versions."""
+    WBFileId = 22368
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Check for updates...'),help=_("Checks TESNexus for newer versions of Wrye Bash."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        WBFileId = Settings_CheckForUpdates.WBFileId
+        currentVersion = tuple([int(x) for x in settings['bash.readme'][1].split('.')])
+        import multiprocessing
+        import bweb
+        pool = multiprocessing.Pool(processes=1)
+        f = bweb.getTESNexusFiles
+        args = (WBFileId, None)
+        result = pool.apply_async(f, args)
+        prevTime = time.time()
+        try:
+            with balt.Progress('Check for updates...','Contacting TESNexus...',abort=True) as progress:
+                progress.setFull(10)
+                while not result.ready():
+                    currTime = time.time()
+                    elapsedTime = currTime - prevTime
+                    while elapsedTime > 9.99:
+                        elapsedTime -= 9.99
+                        prevTime = currTime - elapsedTime
+                    progress(elapsedTime)
+                    result.wait(0.05)
+                try:
+                    versions = result.get()
+                except Exception, e:
+                    balt.showError(self.window,_("An error occured while contacting TESNexus:\n\n%s") % e)
+                    return
+        except CancelError:
+            return
+        finally:
+            pool.terminate()
+        main = versions.get('main files',[])
+        if main:
+            maxMain = max([x[1] for x in main])
+        else:
+            maxMain = (0,)
+        beta = versions.get('optional files',[])
+        if beta:
+            maxBeta = max([x[1] for x in beta])
+        else:
+            maxBeta = (0,)
+        currentStr = '.'.join([str(x) for x in currentVersion])
+        mainStr = '.'.join([str(x) for x in maxMain])
+        betaStr = '.'.join([str(x) for x in maxBeta])
+
+        msg = None
+        title = _('Check for updates')
+        if currentVersion > maxMain:
+            # User has a Beta/RC/SVN version
+            if currentVersion > maxBeta:
+                # SVN
+                balt.showOk(self.window,
+                    _("No new versions of Wrye Bash are available at TESNexus, however you appear to be using an SVN release (%s).  Be sure to check for updates with your SVN client.")
+                    % currentStr,
+                    title)
+                return
+            elif currentVersion == maxBeta:
+                # Beta/RC, up to date
+                balt.showOk(self.window,
+                    _("Wrye Bash is currently up to date (%s).")
+                    % currentStr,
+                    title)
+                return
+            else: # currentVersion < maxBeta
+                # Beta/RC, not up to date
+                msg = (_("You appear to be using a Beta/RC release of Wrye Bash (%s).  A newer Beta/RC is available (%s).\n\nWould you like to visit TESNexus to download the Beta/RC version?")
+                       % (currentStr,betaStr))
+        elif currentVersion == maxMain:
+            # User has current Stable version
+            if currentVersion >= maxBeta:
+                # And it's >= whatever Beta/RC is available
+                balt.showOk(self.window,
+                    _("Wrye Bash is currently up to date (%s).")
+                    % currentStr,
+                    title)
+                return
+            else: # currentVersion < maxBeta
+                # But there's a 'better' Beta/RC available
+                msg = (_("Wrye Bash is currently up to date (%s), but a newer Beta/RC is available (%s).\n\nWould you like to visit TESNexus to download the Beta/RC version?")
+                       % (currentStr, betaStr))
+        else: # currentVersion < maxMain
+            # Using an older version
+            if currentVersion < maxBeta and maxBeta > maxMain:
+                # There's also a new Beta/RC available
+                msg = (_("You are using an older version of Wrye Bash (%s).  There is a newer stable release (%s) and a newer Beta/RC release (%s).\n\nWould you like to visit TESNexus to download one of these versions?")
+                       % (currentStr, mainStr, betaStr))
+            else:
+                msg = (_("You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).\n\nWould you like to visist TESNexus to download the updated version?")
+                       % (currentStr, mainStr))
+        if msg:
+            if balt.askYes(self.window,msg,title):
+                os.startfile('http://www.tesnexus.com/downloads/file.php?id=%i'%WBFileId)
+
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Mod_ActorLevels_Export(Link):
@@ -16342,6 +16444,7 @@ def InitSettingsLinks():
     #--Color config
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_Colors())
+    SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""
