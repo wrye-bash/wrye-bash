@@ -22758,11 +22758,11 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH",
-                "SPEL","BSGN","ACTI","APPA","ARMO","BOOK","CLOT",
-                "CONT","DOOR","INGR","LIGH","MISC","FLOR","FURN",
-                "WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH",
-                "SGST","WRLD","CELL","DIAL","QUST"]
+        return ['CLAS','FACT','HAIR','EYES','RACE','MGEF','ENCH',
+                'SPEL','BSGN','ACTI','APPA','ARMO','BOOK','CLOT',
+                'CONT','DOOR','INGR','LIGH','MISC','FLOR','FURN',
+                'WEAP','AMMO','NPC_','CREA','SLGM','KEYM','ALCH',
+                'SGST','WRLD','CELLS','DIAL','QUST']
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -29532,7 +29532,7 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
