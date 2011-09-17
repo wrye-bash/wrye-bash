@@ -19477,7 +19477,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
                 'CLOT','CONT','DOOR','INGR','LIGH','MISC',
                 'FLOR','FURN','WEAP','AMMO','NPC_','CREA',
                 'LVLC','SLGM','KEYM','ALCH','SGST','LVLI',
-                'WTHR','CLMT','REGN','CELL','WRLD','ACHRS',
+                'WTHR','CLMT','REGN','CELLS','WRLD','ACHRS',
                 'ACRES','REFRS','DIAL','INFOS','QUST','IDLE',
                 'PACK','LSCR','LVSP','ANIO','WATR']
 
@@ -24724,11 +24724,16 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
         self.defaultEnabled = True
 
     def getTypes(self):
-        return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
+        return ['CELLS'] #or 'CELL', but we want this patcher to run in the same
+                         #group as the CellImporter, so we'll have to skip
+                         #worldspaces.  It shouldn't be a problem in those CELLs.
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+        if record.Parent:
+            # It's a CELL that showed up because we said 'CELLS' instead of 'CELL'
+            return
         if not (record.fogNear or record.fogFar or record.fogClip):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -29850,7 +29855,7 @@ class CBash_NamesTweak_Dwarfs(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
@@ -30127,7 +30132,7 @@ class CBash_NamesTweak_staffs(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
