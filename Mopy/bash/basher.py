@@ -9798,6 +9798,7 @@ class Mods_LoadList:
                     modInfos.select(mod)
             # then activate as many of the remaining mods as we can
             for mod in modInfos.mergeable:
+                if "Deactivate" in modInfos[mod].getBashTags(): continue
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
         except bosh.PluginsFullError:
