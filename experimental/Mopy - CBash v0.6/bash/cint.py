@@ -14779,13 +14779,13 @@ class ObModFile(object):
     def Unload(self):
         _CUnloadMod(self._ModID)
 
-    def save(self, CloseCollection=True, CleanMasters=True):
+    def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
         flags = 0
         if(CleanMasters):
             flags |= 0x00000001
         if(CloseCollection):
             flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags))
+        return _CSaveMod(self._ModID, c_ulong(flags), str(DestinationName))
 
     @property
     def TES4(self):
@@ -15287,13 +15287,13 @@ class FnvModFile(object):
     def Unload(self):
         _CUnloadMod(self._ModID)
 
-    def save(self, CloseCollection=True, CleanMasters=True):
+    def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
         flags = 0
         if(CleanMasters):
             flags |= 0x00000001
         if(CloseCollection):
             flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags))
+        return _CSaveMod(self._ModID, c_ulong(flags), str(DestinationName))
 
     @property
     def TES4(self):
