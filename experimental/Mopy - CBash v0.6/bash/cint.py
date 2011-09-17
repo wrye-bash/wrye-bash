@@ -2868,11 +2868,21 @@ class Effect(ListComponent):
     rangeType = CBashGeneric_LIST(6, c_ulong)
     actorValue = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(7) #OBME
     script = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(8) #OBME
-    school = CBashGeneric_LIST(9, c_ulong)
+    schoolType = CBashGeneric_LIST(9, c_ulong)
     visual = CBashMGEFCODE_OR_UINT32_LIST(10) #OBME
     flags = CBashGeneric_LIST(11, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(12, 3)
     full = CBashSTRING_LIST(13) #OBME
+    IsHostile = CBashBasicFlag('flags', 0x01)
+    IsSelf = CBashBasicType('rangeType', 0, 'IsTouch')
+    IsTouch = CBashBasicType('rangeType', 1, 'IsSelf')
+    IsTarget = CBashBasicType('rangeType', 2, 'IsSelf')
+    IsAlteration = CBashBasicType('schoolType', 0, 'IsConjuration')
+    IsConjuration = CBashBasicType('schoolType', 1, 'IsAlteration')
+    IsDestruction = CBashBasicType('schoolType', 2, 'IsAlteration')
+    IsIllusion = CBashBasicType('schoolType', 3, 'IsAlteration')
+    IsMysticism = CBashBasicType('schoolType', 4, 'IsAlteration')
+    IsRestoration = CBashBasicType('schoolType', 5, 'IsAlteration')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     recordVersion = CBashGeneric_LIST(14, c_ubyte) #OBME
@@ -2890,10 +2900,6 @@ class Effect(ListComponent):
     baseCost = CBashFLOAT32_LIST(24) #OBME
     resistAV = CBashACTORVALUE_LIST(25) #OBME
     reserved2 = CBashUINT8ARRAY_LIST(26, 0x10) #OBME
-    IsHostile = CBashBasicFlag('flags', 0x01)
-    IsSelf = CBashBasicType('rangeType', 0, 'IsTouch')
-    IsTouch = CBashBasicType('rangeType', 1, 'IsSelf')
-    IsTarget = CBashBasicType('rangeType', 2, 'IsSelf')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     IsUsingHostileOverride = CBashBasicFlag('efixOverrides', 0x00000001) #OBME
@@ -2942,7 +2948,7 @@ class Effect(ListComponent):
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
     exportattrs = copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
-                 'actorValue', 'script', 'school', 'visual', 'IsHostile',
+                 'actorValue', 'script', 'schoolType', 'visual', 'IsHostile',
                  'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
@@ -13164,7 +13170,7 @@ class ObMGEFRecord(ObBaseRecord):
     flags = CBashGeneric(11, c_ulong)
     baseCost = CBashFLOAT32(12)
     associated = CBashFORMID(13)
-    school = CBashGeneric(14, c_long)
+    schoolType = CBashGeneric(14, c_ulong)
     ##0xFFFFFFFF is None for resistValue
     resistValue = CBashGeneric(15, c_ulong)
     numCounters = CBashGeneric(16, c_ushort)
@@ -13180,6 +13186,12 @@ class ObMGEFRecord(ObBaseRecord):
     cefEnchantment = CBashFLOAT32(26)
     cefBarter = CBashFLOAT32(27)
     counterEffects = CBashMGEFCODE_OR_UINT32_ARRAY(28)
+    IsAlteration = CBashBasicType('schoolType', 0, 'IsConjuration')
+    IsConjuration = CBashBasicType('schoolType', 1, 'IsAlteration')
+    IsDestruction = CBashBasicType('schoolType', 2, 'IsAlteration')
+    IsIllusion = CBashBasicType('schoolType', 3, 'IsAlteration')
+    IsMysticism = CBashBasicType('schoolType', 4, 'IsAlteration')
+    IsRestoration = CBashBasicType('schoolType', 5, 'IsAlteration')
     #Note: the vanilla code discards mod changes to most flag bits
     #  only those listed as changeable below may be edited by non-obme mods
     # comments garnered from JRoush's OBME
@@ -13264,7 +13276,7 @@ class ObMGEFRecord(ObBaseRecord):
     IsHidden = CBashBasicFlag('OBMEFlags', 0x40000000) #OBME
     copyattrs = ObBaseRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
                                           'modb', 'modt_p', 'flags', 'baseCost',
-                                          'associated', 'school', 'resistValue',
+                                          'associated', 'schoolType', 'resistValue',
                                           'numCounters', 'light', 'projectileSpeed',
                                           'effectShader', 'enchantEffect',
                                           'castingSound', 'boltSound', 'hitSound',
@@ -13272,7 +13284,7 @@ class ObMGEFRecord(ObBaseRecord):
                                           'counterEffects']
     exportattrs = ObBaseRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
                                           'modb', 'flags', 'baseCost',
-                                          'associated', 'school', 'resistValue',
+                                          'associated', 'schoolType', 'resistValue',
                                           'numCounters', 'light', 'projectileSpeed',
                                           'effectShader', 'enchantEffect',
                                           'castingSound', 'boltSound', 'hitSound',
