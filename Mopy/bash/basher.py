@@ -9786,11 +9786,23 @@ class Mods_LoadList:
 
     def DoAll(self,event):
         """Select all mods."""
-        selectList = [GPath(modName) for modName in modList.items]
-        errorMessage = bosh.modInfos.selectExact(selectList)
+        modInfos = bosh.modInfos
+        try:
+            # first select the bashed patch(es) and their masters
+            for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in ('BASHED PATCH','BASHED LISTS')]:
+                if not modInfos.isSelected(bashedPatch):
+                    modInfos.select(bashedPatch)
+            # then activate mods that are not tagged NoMerge or Deactivate
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags()]:
+                if not modInfos.isSelected(mod):
+                    modInfos.select(mod)
+            # then activate as many of the remaining mods as we can
+            for mod in modInfos.mergeable:
+                if not modInfos.isSelected(mod):
+                    modInfos.select(mod)
+        except bosh.PluginsFullError:
+            balt.showError(self.window, _("Mod list is full, so some mods were skipped"), _('Select All'))
         modList.RefreshUI()
-        if errorMessage:
-            balt.showError(self.window,errorMessage,_('Select All'))
 
     def DoList(self,event):
         """Select mods in list."""
