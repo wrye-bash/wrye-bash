@@ -40,10 +40,10 @@ In particular, see:
 * Pacific Morrowind: New imports, exports, tweaks, etc.
 * Lojack: Wizard based install system, Ini tab, etc.
 * myk002: Project management, Asynchronous installer tab, etc.
+* Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 
 === Past Authors
 * **Wrye**: Monkey God of Modding!
-* Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 * Ralgor: Cell support and Import Cells.
 * Raziel23x: new tweaks etc.
 * Haama: OBSE cofile definitions, various fixes, improvements etc
@@ -2404,7 +2404,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda]
+=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
 * First-run Usability Improvements:
   * Default options and widget sizes have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
@@ -2480,6 +2480,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 * [[#Custombuttons|Custom launcher buttons]] now support launching of msi created shortcuts.
 * Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
+* CBash no longer causes random occurances of googly eyes
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
