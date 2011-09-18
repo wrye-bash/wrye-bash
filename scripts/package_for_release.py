@@ -88,7 +88,7 @@ def mv(file, dest):
 
 #--Create the standard manual installer version
 def BuildManualVersion(version, pipe=None):
-    archive = os.path.join(dest, 'Wrye Bash %s - Archive Version.7z' % version)
+    archive = os.path.join(dest, 'Wrye Bash %s - Python Source.7z' % version)
     cmd_7z = [exe7z, 'a', '-mx9', '-xr!.svn', '-xr!*.pyc', archive, 'Mopy', 'Data']
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
 
@@ -173,7 +173,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
 
 #--Package up all the files for the StandAlone version    
 def PackStandaloneVersion(version, pipe=None):
-    archive = os.path.join(dest, 'Wrye Bash %s - Standalone Version.7z' % version)
+    archive = os.path.join(dest, 'Wrye Bash %s - Standalone Executable.7z' % version)
     cmd_7z = [exe7z, 'a', '-mx9',
               '-xr!.svn',   # Skip '.svn' dirs
               '-xr!*.py', '-xr!*.pyc', '-xr!*.pyw', '-xr!*.bat', # Skip python source
