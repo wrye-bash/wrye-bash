@@ -1,10 +1,13 @@
 ; Wrye Bash.nsi
 
 ;-------------------------------- Includes:
-    !include MUI2.nsh
-    !include LogicLib.nsh
-    !include nsDialogs.nsh
-    !include WordFunc.nsh
+    !include "MUI2.nsh"
+    !include "LogicLib.nsh"
+    !include "nsDialogs.nsh"
+    !include "WordFunc.nsh"
+    !include "StrFunc.nsh"
+    ; declare used functions
+    ${StrLoc}
 
     ; Variables are defined by the packaging script; just define failsafe values
     !ifndef WB_NAME
@@ -118,6 +121,7 @@
 ;-------------------------------- Page List:
     !insertmacro MUI_PAGE_WELCOME
     Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
+    Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
     Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
     !insertmacro MUI_PAGE_COMPONENTS
     !insertmacro MUI_PAGE_INSTFILES
@@ -400,6 +404,62 @@
     FunctionEnd
 
 
+;-------------------------------- Check Locations Page
+    Function PAGE_CHECK_LOCATIONS
+        !insertmacro MUI_HEADER_TEXT $(PAGE_CHECK_LOCATIONS_TITLE) $(PAGE_CHECK_LOCATIONS_SUBTITLE)
+
+        ; test for installation in program files
+        StrCpy $1 $Empty
+        ${If} $CheckState_OB == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_OB "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${Endif}
+        ${Endif}
+        ${If} $CheckState_Nehrim == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Nehrim "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${Endif}
+        ${Endif}
+        ${If} $CheckState_Ex1 == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Ex1 "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${Endif}
+        ${Endif}
+        ${If} $CheckState_Ex2 == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Ex2 "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${Endif}
+        ${Endif}
+
+        ${If} $1 == $Empty
+            ; nothing installed in program files: skip this page
+            Abort
+        ${Endif}
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 24u "You are attempting to install Wrye Bash into the Program Files directory."
+        Pop $Label
+        SetCtlColors $Label "FF0000" "transparent"
+
+        ${NSD_CreateLabel} 0 24 100% 128u "This is a very common cause of problems when using Wrye Bash.  It is highly recommended that you stop this installation now, reinstall Oblivion into another directory outside of Program Files, such as C:\Games\Oblivion, and install Wrye Bash at that location.$\n$\nThe problems with installing in Program Files stem from a feature of Windows that did not exist when Oblivion was released: User Access Controls (UAC).  If you continue with the install into Program Files, you may have trouble starting or using Wrye Bash, as it may not be able to access its own files."
+        Pop $Label
+
+        nsDialogs::Show
+    FunctionEnd
+
+    Function PAGE_CHECK_LOCATIONS_Leave
+    FunctionEnd
+
+
 ;-------------------------------- Requirements Page
     Function PAGE_REQUIREMENTS
         !insertmacro MUI_HEADER_TEXT $(PAGE_REQUIREMENTS_TITLE) $(PAGE_REQUIREMENTS_SUBTITLE)
@@ -411,9 +471,6 @@
         ${EndIf}
 
         IntOp $0 0 + 0
-        ${NSD_CreateLabel} 0 $0u 100% 8u "Checking for requirements"
-            Pop $3
-        IntOp $0 $0 + 18
         ${If} $PythonVersionInstall == $True
             ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
             ${If} $Python_Path == $Empty
@@ -2339,8 +2396,10 @@ NoComTypes:
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
   LangString PAGE_INSTALLLOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location(s)"
   LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and, if desired, extra locations in which to install Wrye Bash."
+  LangString PAGE_CHECK_LOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location Check"
+  LangString PAGE_CHECK_LOCATIONS_SUBTITLE ${LANG_ENGLISH} "A risky installation location has been detected."
   LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
-  LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Please rectify the following missing requirements"
+  LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Checking for requirements"
   LangString unPAGE_SELECT_GAMES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
   LangString PAGE_FINISH_TITLE ${LANG_ENGLISH} "Finished installing ${WB_NAME}"
   LangString PAGE_FINISH_SUBTITLE ${LANG_ENGLISH} "Please select post-install tasks."
