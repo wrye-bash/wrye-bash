@@ -9017,6 +9017,7 @@ class ModInfos(FileInfos):
         Either for all mods in the data folder or if specified for one specific mod.
         """
         tagList = _('=== Current Bash Tags:\n')
+        tagList += '[spoiler][xml]'
         if modList:
             for modInfo in modList:
                 tagList += '\n* ' + modInfo.name.s + '\n'
@@ -9028,11 +9029,12 @@ class ModInfos(FileInfos):
                     if configHelpers.getBashTags(modInfo.name):
                         tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += _('  * Removed by  BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                        tagList += _('  * Removed by BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
                 else: tagList += _('    No tags')
         else:
-            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.name.s.lower(), y.name.s.lower())):
+            # sort output by load order
+            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
                 if modInfo.getBashTags():
                     tagList += '\n* ' + modInfo.name.s + '\n'
                     if modInfos.table.getItem(modInfo.name,'bashTags',''):
@@ -9044,6 +9046,7 @@ class ModInfos(FileInfos):
                     if configHelpers.getBashRemoveTags(modInfo.name):
                         tagList += _('  * Removed by BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
+        tagList += '[/xml][/spoiler]'
         return tagList
 
     #--Mod Specific ----------------------------------------------------------
