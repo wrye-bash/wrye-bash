@@ -18386,6 +18386,16 @@ class CBash_PatchFile(ObModFile):
     def buildPatch(self,progress):
         """Scans load+merge mods."""
         if not len(self.loadMods): return
+        typeOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
+                     'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
+                     'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
+                     'LIGH','MISC','STAT','GRAS','TREE','FLOR','FURN',
+                     'WEAP','AMMO','FACT','LVLC','LVLI','LVSP','NPC_',
+                     'CREA','CONT','SLGM','KEYM','ALCH','SBSP','SGST',
+                     'WTHR','QUST','IDLE','PACK','CSTY','LSCR','ANIO',
+                     'WATR','EFSH','CLMT','REGN','ACHRS','ACRES',
+                     'REFRS','PGRDS','LANDS','ROADS','INFOS','CELL',
+                     'CELLS','DIAL','WRLD']
         iiModeSet = set(('InventOnly','IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
@@ -18490,7 +18500,9 @@ class CBash_PatchFile(ObModFile):
             pstate = 0
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(type_patchers),1))
-            for type, patchers in type_patchers.iteritems():
+            for type in typeOrder:
+                patchers = type_patchers.get(type, None)
+                if patchers is None: continue
                 iiFilter = IIMSet and not (iiMode or type in levelLists)
                 #Filter the used patchers as needed
                 if iiMode:
