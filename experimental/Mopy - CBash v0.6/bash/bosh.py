@@ -8702,9 +8702,9 @@ class ModInfos(FileInfos):
             fileInfo = self[fileName]
             try:
                 if doCBash:
-                    canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+                    canMerge = CBash_PatchFile.modIsMergeable(fileInfo)
                 else:
-                    canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+                    canMerge = PatchFile.modIsMergeable(fileInfo)
             except Exception, e:
                 deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
                 canMerge = False #presume non-mergeable.
@@ -12454,7 +12454,7 @@ class InstallersData(bolt.TankData, DataDict):
         if tweaksCreated:
             # Edit the tweaks
             for (oldIni,target) in tweaksCreated:
-                iniFile = bosh.BestIniFile(target)
+                iniFile = BestIniFile(target)
                 currSection = None
                 lines = []
                 for (text,section,setting,value,status,lineNo) in iniFile.getTweakFileLines(oldIni):
@@ -17357,7 +17357,7 @@ class SaveSpells:
         loadFactory = LoadFactory(False,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
         try: modFile.load(True)
-        except bosh.ModError, err:
+        except ModError, err:
             deprint(_('skipped mod due to read error (%s)') % err)
             return
         modFile.convertToLongFids(('SPEL',))
@@ -19685,7 +19685,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
 
         prev_attr_value = self.fid_attr_value.get(recordId,None)
@@ -19979,7 +19979,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
 
         prev_attr_value = self.fid_attr_value.get(record.fid,None)
         if prev_attr_value:
@@ -20259,7 +20259,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -20449,7 +20449,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -20712,7 +20712,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if recordId in self.mergedPackageList:
             mergedPackages = list(self.mergedPackageList[recordId])
@@ -20907,7 +20907,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -21110,7 +21110,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvId_factions):
             newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
@@ -21301,7 +21301,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvFid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
@@ -21514,7 +21514,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_script and record.script != self.id_script[recordId]):
             override = record.CopyAsOverride(self.patchFile)
@@ -21867,7 +21867,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         deltas = self.id_deltas.get(record.fid)
         if not deltas: return
         #If only the inventory is imported, the deltas have to be applied to
@@ -22145,7 +22145,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         mergedSpells = self.id_spells.get(recordId,None)
         if mergedSpells:
@@ -22328,7 +22328,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         full = self.id_full.get(recordId, None)
         full = self.csvId_full.get(recordId, full)
@@ -22543,7 +22543,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
 
         recordId = record.fid
         prev_face_value = self.id_face.get(recordId,None)
@@ -22685,7 +22685,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         #If a previous road was scanned, and it is replaced by a new road
         curRoad = record
@@ -22916,7 +22916,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
@@ -23119,7 +23119,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId, None)
         csv_attr_value = self.csvFid_attr_value.get(recordId, None)
@@ -23313,7 +23313,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_values = self.fid_attr_value.get(recordId, None)
         csv_values = self.csvId_stats.get(recordId, None)
@@ -28876,7 +28876,7 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
 class TextReplacer(MultiTweakItem):
     """Base class for replacing any text via regular expressions."""
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, *choices):
+    def __init__(self, reMatch, reReplace, label, tip, key, choices):
         MultiTweakItem.__init__(self, label, tip, key, choices)
         self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                             'CLAS','CLOT','CONT','CREA','DOOR',
@@ -28884,7 +28884,7 @@ class TextReplacer(MultiTweakItem):
                             'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                             'MISC','NPC_','QUST','RACE','SCPT','SGST',
                             'SKIL','SLGM','SPEL','WEAP']
-        self.reMatch = re.compile(reMatch)
+        self.reMatch = reMatch
         self.reReplace = reReplace
 
     #--Config Phase -----------------------------------------------------------
@@ -28924,7 +28924,7 @@ class TextReplacer(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         count = {}
         keep = patchFile.getKeeper()
-        reMatch = self.reMatch
+        reMatch = re.compile(self.reMatch)
         reReplace = self.reReplace
         for type in self.activeTypes:
             if type not in patchFile.tops: continue
@@ -29027,9 +29027,9 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
     editOrder = 32
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, *choices):
+    def __init__(self, reMatch, reReplace, label, tip, key, choices):
         CBash_MultiTweakItem.__init__(self, label, tip, key, choices)
-        self.reMatch = re.compile(reMatch)
+        self.reMatch = reMatch
         self.reReplace = reReplace
         self.mod_count = {}
 
@@ -29050,6 +29050,7 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
+        reMatch = re.compile(self.reMatch)
         changed = False
         if hasattr(record, 'full'):
             changed = self.reMatch.search(record.full or '')
@@ -29553,7 +29554,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
 
         #--Some setup
-        skeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
+        skeletonDir = dirs['mods'].join('Meshes','Characters','_male')
         modSkeletonDir = GPath('Characters').join('_male')
 
         if skeletonDir.exists():
@@ -29627,7 +29628,7 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         if not self.skeletonList is None:
             return
         self.skeletonList = []
-        skeletonDir = bosh.dirs['mods'].join('Meshes', 'Characters', '_male')
+        skeletonDir = dirs['mods'].join('Meshes', 'Characters', '_male')
         if skeletonDir.exists():
             self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
             self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
@@ -32468,7 +32469,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.fid_faction_mod):
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
@@ -32557,7 +32558,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_tag_values):
             allAttrs = []
@@ -32621,7 +32622,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         if(recordId in self.id_spells):
             newSpells = self.id_spells[recordId]
@@ -32712,7 +32713,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        scan_more(modFile,record,bashTags)
+        self.scan_more(modFile,record,bashTags)
         if record._Type in ('HAIR','EYES'):
             return
 
