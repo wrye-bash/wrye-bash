@@ -18017,6 +18017,17 @@ class CBash_PatchFile(ObModFile):
     def buildPatch(self,progress):
         """Scans load+merge mods."""
         if not len(self.loadMods): return
+        typeOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
+                     'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
+                     'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
+                     'LIGH','MISC','STAT','GRAS','TREE','FLOR','FURN',
+                     'WEAP','AMMO','FACT','LVLC','LVLI','LVSP','NPC_',
+                     'CREA','CONT','SLGM','KEYM','ALCH','SBSP','SGST',
+                     'WTHR','QUST','IDLE','PACK','CSTY','LSCR','ANIO',
+                     'WATR','EFSH','CLMT','REGN','ACHRS','ACRES',
+                     'REFRS','PGRDS','LANDS','ROADS','INFOS','CELL',
+                     'CELLS','DIAL','WRLD']
+        
         iiModeSet = set(('InventOnly','IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
@@ -18137,7 +18148,9 @@ class CBash_PatchFile(ObModFile):
             pstate = 0
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(type_patchers),1))
-            for type, patchers in type_patchers.iteritems():
+            for type in typeOrder:
+                patchers = type_patchers.get(type, None)
+                if patchers is None: continue
                 iiFilter = IIMSet and not (iiMode or type in levelLists)
                 #Filter the used patchers as needed
                 if iiMode:
@@ -18185,9 +18198,6 @@ class CBash_PatchFile(ObModFile):
             if isMerged:
                 progress(index,_("%s\nMerging...") % modFile.ModName)
                 self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
-##            if isForceMerged:
-##                progress(index,_("%s\nMerging...") % modFile.ModName)
-##                self.forceMergeModFile(modFile,nullProgress,doFilter,iiMode)
             maxVersion = max(modFile.TES4.version, maxVersion)
         # Force 1.0 as max TES4 version for now, as we don't expext any new esp format changes,
         # and if they do come about, we can always change this.  Plus this will solve issues where
@@ -19224,225 +19234,6 @@ class CBash_ImportPatcher(CBash_ListPatcher):
                     self.scan(mod,conflict,tags)
             else: return
 
-#------------------------------------------------------------------------------
-# Waruddar - 12/14/2010 - All ForceMerger related code commented out
-# Way too dangerous. Should be left undone until there's a situation that forces the issue.
-# Pasting in some slightly edited discussion on the topic I had with andalaybay (who was wanting to merge in new script/quest records)
-
-# Importing new scripts into the bash patch is extremely advanced usage and breaks
-# many of the expectations that quest modders are used to
-# (such as the persistence and reliability of local variables).
-
-#If a formID within the bashed patch changes to one that hasn't been in use,
-#  Oblivion thinks it's an entirely new record and that the old formID was deleted.
-#  Things disappear, things reappear that shouldn't, scripts / quests get restarted, etc.
-#  With careful design, quests and scripts can survive this:
-
-#1) Write a script that doesn't depend on any internal variables
-#2) Get/SetModLocalData.
-#   At the start of the script, use GetModLocalData to populate the persistent script variables.
-#   Whenever you change a variable that needs to be persistent, use SetModLocalData.
-#   This *may* cause bloating though...
-#   the data will probably stick around even if the bashed patch is rebuilt without your patches.
-#   Then again, that may be desirable.
-#3) Store all your variables in a parent mod.
-#   A stringmap would work nicely...
-#   whenever a patch script is run for the first time, check the array to see if there are any stored values.
-#   Whenever you set a variable, be sure to also update the stringmap.
-#   The data will stick around until the parent mod is removed (which is probably ideal).
-#4) I think Pluggy has the ability to read/write text files, so you could store the data in there instead.
-#   Kinda overkill though.
-
-#Another concern is that if a formID changes to one that was previously used by a different record, Oblivion may blow up.
-#  Imagine that a player imports two scripts (Script1 and Script2) into their Bashed Patch
-#  and Script1 happens to get the formID 0xFE001234 and Script2 gets the formID of 0xFE001235.
-#  The player rebuilds their patch and the formIDs get switched...
-#  Script1 now has the formID of 0xFE001235 and Script2 gets the formID of 0xFE001234.
-#  This is bad.
-
-#Oblivion doesn't know that the scripts were replaced...
-#  it thinks the scripts were merely updated, so it doesn't reset the variables.
-#  Instead, it tries to fill in Script1's variables with the values previously belonging to Script2.
-#  Script2 gets a similar treatment. Confusion reigns, scripts fail, and the game could potentially crash.
-#  Luckily, this can still be worked around with careful script design...
-#  every time the game is restarted, you have to assume that every variable can't be trusted
-#  and needs to be filled in from an external source
-
-#Now imagine if the formIDs that got swapped belonged to two quests.
-#  The wrong quest could end up being stopped (or started).
-#  So an imported script cannot safely stop it's own quest.
-#  When the patch is rebuilt, it may result in a completely different quest being stopped.
-
-#If the formIDs that got swapped belonged to a script and a quest, I don't know what would happen.
-#  Presumably, Oblivion would notice that the formIDs refer to a completely different record type
-#  and treat them as new records.
-#  It could just as easily crash the game or cause oddities.
-#  This would have to be tested....
-#  if it does cause problems, it can still be worked around by breaking the available formIDs
-#  into ranges and restricting each record type to a specific range
-#  (0xFE000000 - 0xFE005000 are only assigned to quests, 0xFE005001 - 0xFE00A000 are only assigned to scripts, etc).
-#  That would ensure that a quest is only swapped with another quest if any swapping occurs.
-#  Complicates things quite a bit, but doable.
-
-#These are the sorts of reasons why this hasn't been traditionally allowed by Bash.
-##class ForceMerger(ImportPatcher):
-##    """Merges changes to graphics (models and icons)."""
-##    name = _('Force Merge mods')
-##    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!\nCurrently only supports force merging of Script and Quest Records.")
-##    tip = text
-##    autoRe = re.compile(r"^UNDEFINED$",re.I)
-##    autoKey = 'ForceMerge'
-##
-##    #--Patch Phase ------------------------------------------------------------
-##    def initPatchFile(self,patchFile,loadMods):
-##        """Prepare to handle specified patch mod. All functions are called after this."""
-##        Patcher.initPatchFile(self,patchFile,loadMods)
-##        self.id_data = {} #--Names keyed by long fid.
-##        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-##        self.sourceMods = self.getConfigChecked()
-##        self.isActive = len(self.sourceMods) != 0
-##        self.classestemp = set()
-##        #--Needs Longs
-##        self.longTypes = set(('SCPT','QUST'))
-##
-##    def initData(self,progress):
-##        """Get graphics from source files."""
-##        if not self.isActive: return
-##        id_data = self.id_data
-##        recAttrs_class = self.recAttrs_class
-##        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-##        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-##        progress.setFull(len(self.sourceMods))
-##        cachedMasters = {}
-##        for index,srcMod in enumerate(self.sourceMods):
-##            temp_id_data = {}
-##            if srcMod not in modInfos: continue
-##            srcInfo = modInfos[srcMod]
-##            srcFile = ModFile(srcInfo,loadFactory)
-##            masters = srcInfo.header.masters
-##            srcFile.load(True)
-##            srcFile.convertToLongFids(longTypes)
-##            mapper = srcFile.getLongMapper()
-##            for recClass,recAttrs in recAttrs_class.iteritems():
-##                if recClass.classType not in srcFile.tops: continue
-##                self.srcClasses.add(recClass)
-##                self.classestemp.add(recClass)
-##                for record in srcFile.tops[recClass.classType].getActiveRecords():
-##                    fid = mapper(record.fid)
-##                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-##            for master in masters:
-##                if not master in modInfos: continue # or break filter mods
-##                if master in cachedMasters:
-##                    masterFile = cachedMasters[master]
-##                else:
-##                    masterInfo = modInfos[master]
-##                    masterFile = ModFile(masterInfo,loadFactory)
-##                    masterFile.load(True)
-##                    masterFile.convertToLongFids(longTypes)
-##                    cachedMasters[master] = masterFile
-##                mapper = masterFile.getLongMapper()
-##                for recClass,recAttrs in recAttrs_class.iteritems():
-##                    if recClass.classType not in masterFile.tops: continue
-##                    if recClass not in self.classestemp: continue
-##                    for record in masterFile.tops[recClass.classType].getActiveRecords():
-##                        fid = mapper(record.fid)
-##                        if fid not in temp_id_data: continue
-##                        for attr, value in temp_id_data[fid].iteritems():
-##                            if value == record.__getattribute__(attr): continue
-##                            else:
-##                                if fid not in id_data: id_data[fid] = dict()
-##                                try:
-##                                    id_data[fid][attr] = temp_id_data[fid][attr]
-##                                except KeyError:
-##                                    id_data[fid].setdefault(attr,value)
-##            progress.plus()
-##        temp_id_data = None
-##        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-##        self.isActive = bool(self.srcClasses)
-##
-##    def scanModFile(self, modFile, progress):
-##        """Scan mod file against source data."""
-##        if not self.isActive: return
-##        id_data = self.id_data
-##        modName = modFile.fileInfo.name
-##        mapper = modFile.getLongMapper()
-##        if self.longTypes:
-##            modFile.convertToLongFids(self.longTypes)
-##        for recClass in self.srcClasses:
-##            type = recClass.classType
-##            if type not in modFile.tops: continue
-##            patchBlock = getattr(self.patchFile,type)
-##            for record in modFile.tops[type].getActiveRecords():
-##                fid = record.fid
-##                if not record.longFids: fid = mapper(fid)
-##                if fid not in id_data: continue
-##                for attr,value in id_data[fid].iteritems():
-##                    if record.__getattribute__(attr) != value:
-##                        patchBlock.setRecord(record.getTypeCopy(mapper))
-##                        break
-##
-##    def buildPatch(self,log,progress):
-##        """Merge last version of record with patched graphics data as needed."""
-##        if not self.isActive: return
-##        modFile = self.patchFile
-##        keep = self.patchFile.getKeeper()
-##        id_data = self.id_data
-##        type_count = {}
-##        for recClass in self.srcClasses:
-##            type = recClass.classType
-##            if type not in modFile.tops: continue
-##            type_count[type] = 0
-##            for record in modFile.tops[type].records:
-##                fid = record.fid
-##                if fid not in id_data: continue
-##                for attr,value in id_data[fid].iteritems():
-##                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
-##                        if record.__getattribute__(attr).lower() != value.lower():
-##                            break
-##                        continue
-##                    elif attr == 'model':
-##                        try:
-##                            if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
-##                                break
-##                            continue
-##                        except:
-##                            break #assume they are not equal (ie they aren't __both__ NONE)
-##                    if record.__getattribute__(attr) != value:
-##                        break
-##                else:
-##                    continue
-##                for attr,value in id_data[fid].iteritems():
-##                    record.__setattr__(attr,value)
-##                keep(fid)
-##                type_count[type] += 1
-##        id_data = None
-##        log.setHeader('= '+self.__class__.name)
-##        log(_("=== Source Mods"))
-##        for mod in self.sourceMods:
-##            log("* " +mod.s)
-##        log(_("\n=== Modified Records"))
-##        for type,count in sorted(type_count.iteritems()):
-##            if count: log("* %s: %d" % (type,count))
-##class CBash_ForceMerger(CBash_ListPatcher):
-##    """Merges specified patches into Bashed Patch."""
-##    scanOrder = 12
-##    editOrder = 12
-##    group = _('General')
-##    name = _('Force Merge Mods')
-##    text = _("Merge whole mods into Bashed Patch.\nNOTE: USE WITH MAJOR CARE - CAN CAUSE PROBLEMS IF YOU MERGE THE WRONG MODS!")
-##    autoRe = re.compile(r"^UNDEFINED$",re.I)
-##    autoKey = 'ForceMerge'
-##    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-##    unloadedText = ""
-##    #--Patch Phase ------------------------------------------------------------
-##    def initPatchFile(self,patchFile,loadMods):
-##        """Prepare to handle specified patch mod. All functions are called after this."""
-##        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-##        self.srcMods = self.getConfigChecked()
-##        self.isActive = bool(self.srcMods)
-##        if not self.isActive: return
-##        if self.isEnabled: #--Since other mods may rely on this
-##            patchFile.setMods(None,None,self.srcMods)
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -21692,8 +21483,7 @@ class ImportScriptContents(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
-##class CBash_ImportScriptContents(CBash_ImportPatcher):
-##    raise NotImplementedError
+
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
     """Merge changes to actor inventories."""
