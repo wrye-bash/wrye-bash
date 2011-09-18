@@ -6281,7 +6281,7 @@ class SaveFile:
                             for i in range(numElements):
                                 if keyType == 1:
                                     key, = unpack('=d',8)
-                                    keyStr = '%d' % key
+                                    keyStr = '%f' % key
                                 elif keyType == 3:
                                     keyLen, = unpack('=H',2)
                                     key = ins.read(keyLen)
@@ -6291,7 +6291,7 @@ class SaveFile:
                                 dataType, = unpack('=B',1)
                                 if dataType == 1:
                                     data, = unpack('=d',8)
-                                    dataStr = '%d' % data
+                                    dataStr = '%f' % data
                                 elif dataType == 2:
                                     data, = unpack('=I',4)
                                     dataStr = '%08X' % data
