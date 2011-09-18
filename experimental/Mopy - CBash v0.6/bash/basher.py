@@ -5053,38 +5053,52 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
-class ChecklistBoxes(wx.Dialog):
-    """A window with 1 or more checklists."""
-    def __init__(self,parent,title,message,checklists):
-        """checklists is in this format:
+class ListBoxes(wx.Dialog):
+    """A window with 1 or more lists."""
+    def __init__(self,parent,title,message,lists,check=True,tree=False,style=wx.DEFAULT_DIALOG_STYLE,changedlabels={}):
+        """lists is in this format:
         [title,tooltip,item1,item2,itemn],
         [title,tooltip,....],
+        or if check == False & tree == True
+        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
+        [title,tooltip,....],
         """
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=wx.DEFAULT_DIALOG_STYLE)
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=style)
         self.SetIcons(bashBlue)
-        sizer = wx.FlexGridSizer(len(checklists)+1,1)
+        sizer = wx.FlexGridSizer(len(lists)+1,1)
         self.ids = {}
-        for i,group in enumerate(checklists):
+        labels = {wx.ID_CANCEL:_('Cancel'),wx.ID_OK:_('OK')}
+        labels.update(changedlabels)
+        for i,group in enumerate(lists):
             title = group[0]
             tip = group[1]
-            items = [x.s for x in group[2:]]
+            try: items = [x.s for x in group[2:]]
+            except: items = [x for x in group[2:]]
             if len(items) == 0: continue
             box = wx.StaticBox(self,wx.ID_ANY,title)
             subsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
-            checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+            if check:
+                checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+                for i in xrange(len(items)):
+                    checks.Check(i,True)
+            else: #if tree really for now anyways
+                checks = wx.TreeCtrl(self,wx.ID_ANY,size=(150,200),style=wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HIDE_ROOT)
+                root = checks.AddRoot(title)
+                for item in group[2]:
+                    child = checks.AppendItem(root,item.s)
+                    for subitem in group[2][item]:
+                        sub = checks.AppendItem(child,subitem.s)
             self.ids[title] = checks.GetId()
             checks.SetToolTip(balt.tooltip(tip))
-            for i in xrange(len(items)):
-                checks.Check(i,True)
             subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,1,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
-        okButton = button(self,id=wx.ID_OK)
+        okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
         okButton.SetDefault()
         sizer.Add(hSizer(
             (balt.spacer),
             (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
-            (button(self,id=wx.ID_CANCEL),0,wx.ALIGN_RIGHT),
+            (button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT),
             ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
@@ -10626,7 +10640,7 @@ class MasterList_CleanMasters(Link):
                               ]
                 group.extend(remove)
                 checklists = [group]
-                dialog = ChecklistBoxes(bashFrame,_("Remove these masters?"),
+                dialog = ListBoxes(bashFrame,_("Remove these masters?"),
                                         _("The following master files can be safely removed."),
                                         checklists)
                 if dialog.ShowModal() == wx.ID_CANCEL:
@@ -12406,9 +12420,9 @@ class Mod_Patch_Update(Link):
             group.extend(deactivate)
             checklists.append(group)
         if checklists:
-            dialog = ChecklistBoxes(bashFrame,_("Deactivate these mods prior to patching"),
+            dialog = ListBoxes(bashFrame,_("Deactivate these mods prior to patching"),
                 _("The following mods should be deactivated prior to building the patch."),
-                checklists)
+                checklists,changedlabels={wx.ID_CANCEL:_('Skip')})
             if dialog.ShowModal() != wx.ID_CANCEL:
                 deselect = set()
                 for (list,key) in [(unfiltered,unfilteredKey),
@@ -12433,23 +12447,23 @@ class Mod_Patch_Update(Link):
                         self.window.RefreshUI(detail=fileName)
 
         previousMods = set()
-        text = ''
+        missing = {}
+        delinquent = {}
         for mod in bosh.modInfos.ordered:
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
                 if master not in bosh.modInfos.ordered:
-                    label = _('MISSING MASTER')
+                    missing.setdefault(mod,[]).append(master)
                 elif master not in previousMods:
-                    label = _('DELINQUENT MASTER')
-                else:
-                    label = ''
-                if label:
-                    text += '* '+mod.s+'\n'
-                    text += '    %s: %s\n' % (label,master.s)
+                    delinquent.setdefault(mod,[]).append(master)
             previousMods.add(mod)
-        if text:
-            warning = balt.askYes(self.window,(_('WARNING!\nThe following mod(s) have master file error(s):\n%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?') % (text)),_("Missing or Delinquent Master Errors"))
-            if not warning:
+        if missing or delinquent:
+            warning = ListBoxes(bashFrame,_("Master Errors"),
+                _('WARNING!\nThe following mod(s) have master file error(s). Please adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?'),
+                [[_("Missing Master Errors"),_('These mods have missing masters; which will make your game unusable and you will probably have to regenerate your patch after fixing them anyways so just go fix them now.'),missing],
+                [_("Delinquent Master Errors"),_('These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them anyways so just go fix them now.'),delinquent]],
+                check=False,tree=True,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
+            if warning.ShowModal() == wx.ID_CANCEL:
                 return
         try:
             patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
